@@ -155,7 +155,7 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
   console.log(regexArr);
   for (let [i, reg] of regexArr.entries()) {
     res = res.replace(reg, (match) => {
-      return `{{c${i + 1}:: ${match} }}`
+      return `{{c${i + 1}::${match} }}`
     });
   }
   res = await mdToHtml(res);
