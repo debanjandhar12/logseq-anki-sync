@@ -1,0 +1,28 @@
+{
+  "name": "logseq-anki-sync",
+  "version": "0.0.1",
+  "description": "An logseq to anki cloze sync tool.",
+  "main": "dist/index.html",
+  "targets": {
+    "main": false
+  },
+  "default": "dist/index.html",
+  "author": "@debanjandhar12",
+  "scripts": {
+    "dev": "parcel ./index.html --public-url ./",
+    "build": "parcel build --public-url . --no-source-maps index.html"
+  },
+  "license": "MIT",
+  "logseq": {
+    "id": "_rw1zys138",
+    "icon": "/imgs/anki.png"
+  },
+  "dependencies": {
+    "@logseq/libs": "^0.0.1-alpha.22",
+    "remarkable":"2.0.1"
+  },
+  "devDependencies": {
+    "@parcel/transformer-inline-string": "2.0.0-beta.2",
+    "parcel": "^2.0.0-beta.2"
+  }
+}
