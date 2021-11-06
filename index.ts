@@ -44,13 +44,16 @@ logseq.ready(main).catch(console.error)
 
 // --- Main Functions ---
 async function syncObsidianToAnki() {
-  let info = await logseq.App.getUserConfigs();
+  let backup = confirm('Do you want to take backup?');
   let graphName = (await logseq.App.getCurrentGraph()).name;
   logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${graphName}`);
   console.log(`Starting Logseq to Anki Sync for graph ${graphName}`);
 
   // -Request Access-
   await AnkiConnect.requestPermission();
+
+  // -- Create backup of Anki --
+  try { if (backup) await AnkiConnect.createBackup(); } catch (e) { console.error(e); }
 
   // -Create models if it doesn't exists-
   await AnkiConnect.createModel(`${graphName}Model`, ["uuid", "Text", "Extra", "Breadcrumb", "Config", "Tobedefinedlater", "Tobedefinedlater2"], AnkiCardTemplates.frontTemplate, AnkiCardTemplates.backTemplate);
