@@ -4,6 +4,7 @@ import * as AnkiConnect from './AnkiConnect';
 import * as AnkiConnectExtended from './AnkiConnectExtended';
 import { AnkiCardTemplates } from './templates/AnkiCardTemplates';
 import { Remarkable } from 'remarkable';
+import path from "path";
 
 const delay = (t = 100) => new Promise(r => setTimeout(r, t))
 
@@ -45,7 +46,6 @@ logseq.ready(main).catch(console.error)
 async function syncObsidianToAnki() {
   let info = await logseq.App.getUserConfigs();
   let graphName = (await logseq.App.getCurrentGraph()).name;
-
   logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${graphName}`);
   console.log(`Starting Logseq to Anki Sync for graph ${graphName}`);
 
@@ -130,24 +130,6 @@ async function syncObsidianToAnki() {
   console.log(summery);
 }
 
-async function mdToHtml(md): Promise<string> {
-  let html = md;
-  html = html.replace(/^(\w|-)*::.*/gm, "");  //Remove properties
-  html = html.replaceAll(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\\\( $1 \\\\)"); // Convert inline math
-  html = html.replaceAll(/\$\$([\s\S]*?)\$\$/g, "\\\\[ $1 \\\\]"); // Convert block math
-
-  let remarkable = new Remarkable('full', {
-    html: false,
-    breaks: false,
-    typographer: false,
-  });
-  remarkable.inline.ruler.disable(['sub', 'sup', 'ins']);
-  remarkable.block.ruler.disable(['code']);
-  html = remarkable.render(html);
-
-  return html;
-}
-
 async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promise<string> {
   let res = text;
 
@@ -158,7 +140,33 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
       return `{{c${i + 1}::${match} }}`
     });
   }
-  res = await mdToHtml(res);
+  res = res.replace(/^(\w|-)*::.*/gm, "");  //Remove properties
+  res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\\\( $1 \\\\)"); // Convert inline math
+  res = res.replace(/\$\$([\s\S]*?)\$\$/g, "\\\\[ $1 \\\\]"); // Convert block math
+
+  let remarkable = new Remarkable('full', {
+    html: true,
+    breaks: true,
+    typographer: false,
+  });
+  remarkable.inline.ruler.disable(['sub', 'sup', 'ins']);
+  remarkable.block.ruler.disable(['code']);
+  const originalLinkValidator = remarkable.inline.validateLink;
+  const dataLinkRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z-]+=[a-z-]+)?)?(;base64)?,[a-z0-9!$&',()*+,;=\-._~:@/?%\s]*\s*$/i;
+  const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
+  const isWebURL = /^(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
+  remarkable.inline.validateLink = (url: string) => originalLinkValidator(url) || encodeURI(url).match(dataLinkRegex)|| (encodeURI(url).match(isImage) && !encodeURI(url).match(isWebURL));
+  const originalImageRender = remarkable.renderer.rules.image;
+  let graphPath = (await logseq.App.getCurrentGraph()).path;
+  remarkable.renderer.rules.image = (...a) => {
+      if((encodeURI(a[0][a[1]].src).match(isImage) && !encodeURI(a[0][a[1]].src).match(isWebURL))) { // Image is relative to vault
+          let imgPath = path.join(path.join(graphPath,"/assets/", a[0][a[1]].src));
+          AnkiConnect.storeMediaFileByPath(encodeURIComponent(a[0][a[1]].src), imgPath); // Flatten and save
+          a[0][a[1]].src = encodeURIComponent(a[0][a[1]].src); // Flatten image and convert to markdown.
+      }
+      return originalImageRender(...a);   
+  };
+  res = remarkable.render(res);
   console.log(res);
 
   return res;
