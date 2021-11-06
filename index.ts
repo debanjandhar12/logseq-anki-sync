@@ -44,7 +44,7 @@ logseq.ready(main).catch(console.error)
 
 // --- Main Functions ---
 async function syncObsidianToAnki() {
-  let backup = confirm('Do you want to take backup?');
+  let backup = logseq.baseInfo.settings.backup || false;
   let graphName = (await logseq.App.getCurrentGraph()).name;
   logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${graphName}`);
   console.log(`Starting Logseq to Anki Sync for graph ${graphName}`);
