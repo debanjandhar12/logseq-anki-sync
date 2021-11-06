@@ -33,7 +33,7 @@ function main(baseInfo: LSPluginBaseInfo) {
     template: `
       <a data-on-click="syncObsidianToAnkiWrapper"
          class="button">
-        <i class="ti ti-brand-reddit"></i>
+        <i class="ti ti-play-card"></i>
       </a>
     `
   })
