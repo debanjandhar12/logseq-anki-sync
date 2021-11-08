@@ -13,12 +13,12 @@ function main(baseInfo: LSPluginBaseInfo) {
   let syncing = false;
 
   logseq.provideModel({
-    async syncObsidianToAnkiWrapper() { // Wrapper function for error handling
+    async syncLogseqToAnkiWrapper() { // Wrapper function for error handling
       if (syncing) { console.log(`Syncing already in process...`); return; }
       syncing = true;
 
       try {
-        await syncObsidianToAnki();
+        await syncLogseqToAnki();
       } catch (e) {
         logseq.App.showMsg(e.toString(), 'warning')
         console.error(e);
@@ -26,7 +26,7 @@ function main(baseInfo: LSPluginBaseInfo) {
         syncing = false;
       }
     }
-  })
+  });
 
   logseq.App.registerUIItem('toolbar', {
     key: 'logseq-anki',
@@ -36,14 +36,14 @@ function main(baseInfo: LSPluginBaseInfo) {
         <i class="ti ti-play-card"></i>
       </a>
     `
-  })
+  });
 }
 
 // Bootstrap
 logseq.ready(main).catch(console.error)
 
 // --- Main Functions ---
-async function syncObsidianToAnki() {
+async function syncLogseqToAnki() {
   let backup = logseq.baseInfo.settings.backup || false;
   let graphName = (await logseq.App.getCurrentGraph()).name;
   logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${graphName}`);
