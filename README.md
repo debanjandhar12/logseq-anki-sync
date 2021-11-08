@@ -1,4 +1,4 @@
-## Logseq Anki Sync
+# Logseq Anki Sync
 
 This is a sample that show you how to manipulate blocks :)
 
