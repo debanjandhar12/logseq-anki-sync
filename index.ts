@@ -31,7 +31,7 @@ function main(baseInfo: LSPluginBaseInfo) {
   logseq.App.registerUIItem('toolbar', {
     key: 'logseq-anki',
     template: `
-      <a data-on-click="syncObsidianToAnkiWrapper"
+      <a data-on-click="syncLogseqToAnkiWrapper"
          class="button">
         <i class="ti ti-play-card"></i>
       </a>
