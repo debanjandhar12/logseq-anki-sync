@@ -141,8 +141,6 @@ async function syncLogseqToAnki() {
 async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promise<string> {
   let res = text;
   res = res.replace(/^(\w|-)*::.*/gm, "");  //Remove properties
-  res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\\\( $1 \\\\)"); // Convert inline math
-  res = res.replace(/\$\$([\s\S]*?)\$\$/g, "\\\\[ $1 \\\\]"); // Convert block math
 
   console.log(regexArr);
   regexArr = string_to_arr(regexArr);
@@ -152,6 +150,9 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
       return `{{c${i + 1}::${match.replace(/\\/gi,"\\\\")} }}`
     });
   }
+
+  res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\\\( $1 \\\\)"); // Convert inline math
+  res = res.replace(/\$\$([\s\S]*?)\$\$/g, "\\\\[ $1 \\\\]"); // Convert block math
 
   let remarkable = new Remarkable('full', {
     html: true,
