@@ -23,7 +23,7 @@ export function string_to_arr(str: string) : any {
     // Define and match the grammer
     const grammer = ohm.grammar(String.raw`
     StrRegArray {
-        Exp = listOf<StrOrRegex, separator>
+        Exp = listOf<StrOrRegex, separator> separator*
         separator = "," (whitespace)*
         StrOrRegex = (Regex | Str)
         Str = "\'" seqStr "\'"
@@ -42,21 +42,20 @@ export function string_to_arr(str: string) : any {
          unicodeSpaceSeparator = "\u2000".."\u200B" | "\u3000"
          lineTerminator = "\n" | "\r" | "\u2028" | "\u2029"
       }`);
-      let matchResult = grammer.match(str);
-      if(matchResult.failed()) {throw "Cannot parse array list from string"; return r;}
+    let matchResult = grammer.match(str);
+    if(matchResult.failed()) {throw "Cannot parse array list from string"; return r;}
 
-      // Define and assciate semantic actions with grammar
-      const actions = {
-        nonemptyListOf(a,b,c) { a.myOperation();c.myOperation(); },
-        _iter(...a) { for (let b of a) b.myOperation();},
-        StrOrRegex(a) { a.myOperation(); },
-        Regex(a,b,c,d) { r.push(regexPraser(this.sourceString)) },
-        Str(a,b,c) { r.push(this.children[1].sourceString) },
-      }
-      const s = grammer.createSemantics();
-      s.addOperation('myOperation', actions);
-      s(matchResult).myOperation();
-
-      console.log(r);
+    // Define and assciate semantic actions with grammar
+    const actions = {
+    Exp(a,b) { a.myOperation();b.myOperation(); },
+    nonemptyListOf(a,b,c) { a.myOperation();c.myOperation(); },
+    _iter(...a) { for (let b of a) b.myOperation();},
+    StrOrRegex(a) { a.myOperation(); },
+    Regex(a,b,c,d) { r.push(regexPraser(this.sourceString)) },
+    Str(a,b,c) { r.push(this.children[1].sourceString) },
+    }
+    const s = grammer.createSemantics();
+    s.addOperation('myOperation', actions);
+    s(matchResult).myOperation();
     return r;
 }
