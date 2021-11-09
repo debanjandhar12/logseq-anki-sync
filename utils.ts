@@ -50,6 +50,7 @@ export function string_to_arr(str: string) : any {
     Exp(a,b) { a.myOperation();b.myOperation(); },
     nonemptyListOf(a,b,c) { a.myOperation();c.myOperation(); },
     _iter(...a) { for (let b of a) b.myOperation();},
+    separator(a, b) {},
     StrOrRegex(a) { a.myOperation(); },
     Regex(a,b,c,d) { r.push(regexPraser(this.sourceString)) },
     Str(a,b,c) { r.push(this.children[1].sourceString) },
