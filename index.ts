@@ -74,6 +74,8 @@ async function syncLogseqToAnki() {
   // -- Declare some variables to keep track of different operations performed --
   let created, updated, deleted, failedCreated, failedUpdated, failedDeleted: number;
   created = updated = deleted = failedCreated = failedUpdated = failedDeleted = 0;
+  let failedCreatedArr, failedUpdatedArr: any;
+  failedCreatedArr = []; failedUpdatedArr = []; 
 
   // --Add or update cards in anki--
   for (let block of blocks) {
@@ -86,7 +88,7 @@ async function syncLogseqToAnki() {
         block.ankiId = await AnkiConnect.addNote(block.uuid, deck, `${graphName}Model`, { "uuid": block.uuid, "Text": anki_html, "Extra": "", "Breadcrumb": breadcrumb_html }, tags);
         console.log(`Added note with uuid ${block.uuid}`);
         created++;
-      } catch (e) { console.error(e); failedCreated++; }
+      } catch (e) { console.error(e); failedCreated++; failedCreatedArr.push(block); }
     }
     else {
       try {
@@ -97,7 +99,7 @@ async function syncLogseqToAnki() {
         await AnkiConnect.updateNote(block.ankiId, deck, `${graphName}Model`, { "uuid": block.uuid, "Text": anki_html, "Extra": "", "Breadcrumb": breadcrumb_html }, tags);
         console.log(`Updated note with uuid ${block.uuid}`);
         updated++;
-      } catch (e) { console.error(e); failedUpdated++; }
+      } catch (e) { console.error(e); failedUpdated++; failedUpdatedArr.push(block); }
     }
   }
 
@@ -132,6 +134,8 @@ async function syncLogseqToAnki() {
   if (failedCreated > 0 || failedUpdated > 0 || failedDeleted > 0) status = 'warning';
   logseq.App.showMsg(summery, status);
   console.log(summery);
+  if (failedCreated > 0) console.log("failedCreatedArr:", failedCreatedArr);
+  if (failedUpdated > 0) console.log("failedUpdatedArr:", failedUpdatedArr);
 }
 
 async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promise<string> {
