@@ -75,7 +75,7 @@ async function syncLogseqToAnki() {
   let created, updated, deleted, failedCreated, failedUpdated, failedDeleted: number;
   created = updated = deleted = failedCreated = failedUpdated = failedDeleted = 0;
   let failedCreatedArr, failedUpdatedArr: any;
-  failedCreatedArr = []; failedUpdatedArr = []; 
+  failedCreatedArr = []; failedUpdatedArr = [];
 
   // --Add or update cards in anki--
   for (let block of blocks) {
@@ -147,7 +147,7 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
   console.log(regexArr);
   for (let [i, reg] of regexArr.entries()) {
     res = res.replace(reg, (match) => {
-      return `{{c${i + 1}::${match.replace(/\\/gi,"\\\\")} }}`
+      return `{{c${i + 1}::${match.replace(/\\/gi, "\\\\")} }}`
     });
   }
 
@@ -165,16 +165,16 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
   const dataLinkRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z-]+=[a-z-]+)?)?(;base64)?,[a-z0-9!$&',()*+,;=\-._~:@/?%\s]*\s*$/i;
   const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
   const isWebURL = /^(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
-  remarkable.inline.validateLink = (url: string) => originalLinkValidator(url) || encodeURI(url).match(dataLinkRegex)|| (encodeURI(url).match(isImage) && !encodeURI(url).match(isWebURL));
+  remarkable.inline.validateLink = (url: string) => originalLinkValidator(url) || encodeURI(url).match(dataLinkRegex) || (encodeURI(url).match(isImage) && !encodeURI(url).match(isWebURL));
   const originalImageRender = remarkable.renderer.rules.image;
   let graphPath = (await logseq.App.getCurrentGraph()).path;
   remarkable.renderer.rules.image = (...a) => {
-      if((encodeURI(a[0][a[1]].src).match(isImage) && !encodeURI(a[0][a[1]].src).match(isWebURL))) { // Image is relative to vault
-          let imgPath = path.join(path.join(graphPath,"/assets/", a[0][a[1]].src));
-          AnkiConnect.storeMediaFileByPath(encodeURIComponent(a[0][a[1]].src), imgPath); // Flatten and save
-          a[0][a[1]].src = encodeURIComponent(a[0][a[1]].src); // Flatten image and convert to markdown.
-      }
-      return originalImageRender(...a);   
+    if ((encodeURI(a[0][a[1]].src).match(isImage) && !encodeURI(a[0][a[1]].src).match(isWebURL))) { // Image is relative to vault
+      let imgPath = path.join(path.join(graphPath, "/assets/", a[0][a[1]].src));
+      AnkiConnect.storeMediaFileByPath(encodeURIComponent(a[0][a[1]].src), imgPath); // Flatten and save
+      a[0][a[1]].src = encodeURIComponent(a[0][a[1]].src); // Flatten image and convert to markdown.
+    }
+    return originalImageRender(...a);
   };
   res = remarkable.render(res);
   console.log(res);

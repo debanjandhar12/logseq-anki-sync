@@ -1,14 +1,14 @@
 import * as ohm from "ohm-js";
 import { removeEmptyNotes } from "./AnkiConnect";
 
-export function regexPraser(input: string) : RegExp {
+export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
         throw new Error("Invalid input. Input must be a string");
     }
     // Parse input
     var m = input.match(/(\/)(.+)\1([a-z]*)/i);
     // Invalid input (input not in format /regex/i)
-    if(m == null) throw "Input string is not in required format for conversion to regex.";
+    if (m == null) throw "Input string is not in required format for conversion to regex.";
     // Invalid flags
     if (m[3] && !/^(?!.*?(.).*?\1)[gmixXsuUAJ]+$/.test(m[3])) {
         return RegExp(input);
@@ -17,7 +17,7 @@ export function regexPraser(input: string) : RegExp {
     return new RegExp(m[2], m[3]);
 }
 
-export function string_to_arr(str: string) : any {
+export function string_to_arr(str: string): any {
     let r = [];
 
     // Define and match the grammer
@@ -43,18 +43,18 @@ export function string_to_arr(str: string) : any {
          lineTerminator = "\n" | "\r" | "\u2028" | "\u2029"
       }`);
     let matchResult = grammer.match(str);
-    if(matchResult.failed()) {throw "Cannot parse array list from string"; return r;}
+    if (matchResult.failed()) { throw "Cannot parse array list from string"; return r; }
 
     // Define and assciate semantic actions with grammar
     const actions = {
-    Exp(a,b) { a.semanticOperation();b.semanticOperation(); },
-    nonemptyListOf(a,b,c) { a.semanticOperation();c.semanticOperation(); },
-    emptyListOf() { },
-    _iter(...a) { for (let b of a) b.semanticOperation();},
-    separator(a, b) {},
-    StrOrRegex(a) { a.semanticOperation(); },
-    Regex(a,b,c,d) { r.push(regexPraser(this.sourceString)) },
-    Str(a,b,c) { r.push(this.children[1].sourceString) },
+        Exp(a, b) { a.semanticOperation(); b.semanticOperation(); },
+        nonemptyListOf(a, b, c) { a.semanticOperation(); c.semanticOperation(); },
+        emptyListOf() { },
+        _iter(...a) { for (let b of a) b.semanticOperation(); },
+        separator(a, b) { },
+        StrOrRegex(a) { a.semanticOperation(); },
+        Regex(a, b, c, d) { r.push(regexPraser(this.sourceString)) },
+        Str(a, b, c) { r.push(this.children[1].sourceString) },
     }
     const s = grammer.createSemantics();
     s.addOperation('semanticOperation', actions);

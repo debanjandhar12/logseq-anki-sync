@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@logseq/libs": "^0.0.1-alpha.22",
-    "remarkable":"2.0.1"
+    "remarkable": "2.0.1"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.0.0-beta.2",
