@@ -4304,6 +4304,11 @@ object.values@^1.1.0:
     define-properties "^1.1.3"
     es-abstract "^1.18.2"
 
+ohm-js@^16.0.0:
+  version "16.0.0"
+  resolved "https://registry.yarnpkg.com/ohm-js/-/ohm-js-16.0.0.tgz#4f18b5f196e9aebfcdb57f782a25582b75a5bb8f"
+  integrity sha512-e0xfOO/OdF3IE+H3VibMlW/wJr5bNJIEa5bnVvoxEjPNTJ6Djjt3seAKHu6CWfByRnJFk5TsiSX3Vz7GWoM0og==
+
 on-finished@~2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/on-finished/-/on-finished-2.3.0.tgz#20f1336481b083cd75337992a16971aa2d906947"

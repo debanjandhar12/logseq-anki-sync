@@ -5,6 +5,7 @@ import * as AnkiConnectExtended from './AnkiConnectExtended';
 import { AnkiCardTemplates } from './templates/AnkiCardTemplates';
 import { Remarkable } from 'remarkable';
 import path from "path";
+import { string_to_arr } from './utils';
 
 const delay = (t = 100) => new Promise(r => setTimeout(r, t))
 
@@ -78,7 +79,7 @@ async function syncLogseqToAnki() {
   for (let block of blocks) {
     if (block.ankiId == null || isNaN(block.ankiId)) {
       try {
-        let anki_html = await addClozesToMdAndConvertToHtml(block.content, `[${block.properties.ankicloze}]`);
+        let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.ankicloze}`);
         let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
         let breadcrumb_html = `<a href="#">${block.page.originalName}</a>`;
         let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
@@ -89,7 +90,7 @@ async function syncLogseqToAnki() {
     }
     else {
       try {
-        let anki_html = await addClozesToMdAndConvertToHtml(block.content, `[${block.properties.ankicloze}]`);
+        let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.ankicloze}`);
         let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
         let breadcrumb_html = `<a href="#">${block.page.originalName}</a>`;
         let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
@@ -136,7 +137,8 @@ async function syncLogseqToAnki() {
 async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promise<string> {
   let res = text;
 
-  regexArr = eval(regexArr)
+  console.log(regexArr);
+  regexArr = string_to_arr(regexArr);
   console.log(regexArr);
   for (let [i, reg] of regexArr.entries()) {
     res = res.replace(reg, (match) => {
