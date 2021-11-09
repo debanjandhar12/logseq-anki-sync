@@ -49,6 +49,7 @@ export function string_to_arr(str: string) : any {
     const actions = {
     Exp(a,b) { a.semanticOperation();b.semanticOperation(); },
     nonemptyListOf(a,b,c) { a.semanticOperation();c.semanticOperation(); },
+    emptyListOf() { },
     _iter(...a) { for (let b of a) b.semanticOperation();},
     separator(a, b) {},
     StrOrRegex(a) { a.semanticOperation(); },
