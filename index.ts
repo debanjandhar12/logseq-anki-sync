@@ -170,7 +170,7 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
   let graphPath = (await logseq.App.getCurrentGraph()).path;
   remarkable.renderer.rules.image = (...a) => {
     if ((encodeURI(a[0][a[1]].src).match(isImage) && !encodeURI(a[0][a[1]].src).match(isWebURL))) { // Image is relative to vault
-      let imgPath = path.join(path.join(graphPath, "/assets/", a[0][a[1]].src));
+      let imgPath = path.join(graphPath, a[0][a[1]].src.replace(/^(\.\.\/)+/, ""));
       AnkiConnect.storeMediaFileByPath(encodeURIComponent(a[0][a[1]].src), imgPath); // Flatten and save
       a[0][a[1]].src = encodeURIComponent(a[0][a[1]].src); // Flatten image and convert to markdown.
     }
