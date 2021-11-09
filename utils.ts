@@ -28,9 +28,9 @@ export function string_to_arr(str: string) : any {
         StrOrRegex = (Regex | Str)
         Str = "\'" seqStr "\'"
         Regex =  "/" seqReg "/" (letter|lineTerminator)*
-        seqReg = (("\\/" |"\\"|~("/")  any))+
-        seqStr = (("\\'" |"\\"| ~("\'")  any))*
-      
+        seqReg = (("\\/" |"\\\\"|~("/")  any))+
+        seqStr = (("\\\\"|"\\'"| ~("\'")  any))*
+            
         // External rules
         whitespace = "\t"
                    | "\x0B"    -- verticalTab
