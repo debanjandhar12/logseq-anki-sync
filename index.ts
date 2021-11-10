@@ -147,13 +147,12 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
   console.log(regexArr);
   for (let [i, reg] of regexArr.entries()) {
     res = res.replace(reg, (match) => {
-      return `{{c${i + 1}::${match.replace(/\\/gi, "\\\\")} }}`
+      return `{{c${i + 1}::${match} }}`
     });
   }
-
+  res = res.replace(/\\/gi, "\\\\"); //Fix blackkslashes
   res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\\\( $1 \\\\)"); // Convert inline math
   res = res.replace(/\$\$([\s\S]*?)\$\$/g, "\\\\[ $1 \\\\]"); // Convert block math
-
   let remarkable = new Remarkable('full', {
     html: true,
     breaks: true,
