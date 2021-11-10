@@ -5,7 +5,7 @@ import * as AnkiConnectExtended from './AnkiConnectExtended';
 import { AnkiCardTemplates } from './templates/AnkiCardTemplates';
 import { Remarkable } from 'remarkable';
 import path from "path";
-import { string_to_arr } from './utils';
+import { decodeHTMLEntities, string_to_arr } from './utils';
 
 const delay = (t = 100) => new Promise(r => setTimeout(r, t))
 
@@ -176,6 +176,7 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
     return originalImageRender(...a);
   };
   res = remarkable.render(res);
+  res = decodeHTMLEntities(res);
   console.log(res);
 
   return res;
