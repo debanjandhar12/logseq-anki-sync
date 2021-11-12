@@ -150,9 +150,17 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
       return `{{c${i + 1}::${match} }}`
     });
   }
+
+  res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math
+  res = res.replace(/\$\$([\s\S]*?)\$\$/g, "\\[ $1 \\]"); // Convert block math
+  res = res.replace(/#\+BEGIN_(QUOTE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert quote org blocks
+    return `<blockquote">${g3.trim()}</blockquote>`;
+  }); 
+  res = res.replace(/#\+BEGIN_(\w+)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert named org blocks
+    return `<span class="${g1.toLowerCase()}">${g3.trim()}</span>`; // div is buggy with remarkable
+  }); 
+
   res = res.replace(/\\/gi, "\\\\"); //Fix blackkslashes
-  res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\\\( $1 \\\\)"); // Convert inline math
-  res = res.replace(/\$\$([\s\S]*?)\$\$/g, "\\\\[ $1 \\\\]"); // Convert block math
   let remarkable = new Remarkable('full', {
     html: true,
     breaks: true,
