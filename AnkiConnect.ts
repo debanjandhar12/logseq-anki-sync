@@ -119,7 +119,7 @@ export async function createModel(modelName: string, fields: string[], frontTemp
             "model": {
                 "name": modelName,
                 "templates": {
-                    'Card': {
+                    "Card": {
                         "Front": frontTemplate,
                         "Back": backTemplate
                     }

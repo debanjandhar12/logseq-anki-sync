@@ -153,13 +153,16 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
 
   res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math
   res = res.replace(/\$\$([\s\S]*?)\$\$/g, "\\[ $1 \\]"); // Convert block math
-  res = res.replace(/#\+BEGIN_(QUOTE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert quote org blocks
+  res = res.replace(/#\+BEGIN_(INFO|PROOF)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Remove proof, info org blocks
+    return ``; 
+  }); 
+    res = res.replace(/#\+BEGIN_(QUOTE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert quote org blocks
     return `<blockquote">${g3.trim()}</blockquote>`;
   });
   res = res.replace(/#\+BEGIN_(CENTER)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert center org blocks
     return `<span class="text-center">${g3.trim()}</span>`; // div is buggy with remarkable
   });
-  res = res.replace(/#\+BEGIN_(COMMENT)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert comment org blocks
+  res = res.replace(/#\+BEGIN_(COMMENT)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Remove comment org blocks
     return ``; 
   }); 
   res = res.replace(/#\+BEGIN_(\w+)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert named org blocks
