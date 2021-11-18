@@ -149,16 +149,17 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
   let math = get_math_inside_md(res);
   for (let [i, reg] of regexArr.entries()) {
     if (typeof reg == "string")
+      //@ts-expect-error
       res = res.replaceAll(reg, (match) => {
         if (math.find(math =>math.includes(match)))
-          return `{{c${i + 1}::${match} }}`;
+          return `{{c${i + 1}::${match.replace(/}}/g,"} } ")} }}`;
         else
           return `{{c${i + 1}::${match}}}`;
       });
     else
       res = res.replace(reg, (match) => {
         if (math.find(math =>math.includes(match)))
-          return `{{c${i + 1}::${match} }}`;
+          return `{{c${i + 1}::${match.replace(/}}/g,"} } ")} }}`;
         else
           return `{{c${i + 1}::${match}}}`;
       });
