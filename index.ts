@@ -5,7 +5,7 @@ import * as AnkiConnectExtended from './AnkiConnectExtended';
 import { AnkiCardTemplates } from './templates/AnkiCardTemplates';
 import { Remarkable } from 'remarkable';
 import path from "path";
-import { decodeHTMLEntities, string_to_arr } from './utils';
+import { decodeHTMLEntities, string_to_arr, get_math_inside_md } from './utils';
 
 const delay = (t = 100) => new Promise(r => setTimeout(r, t))
 
@@ -145,10 +145,23 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
   console.log(regexArr);
   regexArr = string_to_arr(regexArr);
   console.log(regexArr);
+  // Get list of math clozes
+  let math = get_math_inside_md(res);
   for (let [i, reg] of regexArr.entries()) {
-    res = res.replace(reg, (match) => {
-      return `{{c${i + 1}::${match} }}`
-    });
+    if (typeof reg == "string")
+      res = res.replaceAll(reg, (match) => {
+        if (math.find(math =>math.includes(match)))
+          return `{{c${i + 1}::${match} }}`;
+        else
+          return `{{c${i + 1}::${match}}}`;
+      });
+    else
+      res = res.replace(reg, (match) => {
+        if (math.find(math =>math.includes(match)))
+          return `{{c${i + 1}::${match} }}`;
+        else
+          return `{{c${i + 1}::${match}}}`;
+      });
   }
 
   res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math

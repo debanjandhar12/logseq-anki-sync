@@ -81,3 +81,18 @@ export function decodeHTMLEntities(text) {
 
     return text;
 }
+
+
+export function get_math_inside_md(res: string) : Array<string> {
+    let res2 = res;
+    let arr = [];
+    res2 = res2.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match) => {
+      arr.push(match);
+      return "\\( $1 \\)"
+    });
+    res2 = res2.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
+      arr.push(match);
+      return "\\( $1 \\)"
+    }); 
+    return arr;
+  }

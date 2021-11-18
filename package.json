@@ -1,6 +1,6 @@
 {
   "name": "logseq-anki-sync",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "An logseq to anki cloze sync tool.",
   "main": "dist/index.html",
   "targets": {
