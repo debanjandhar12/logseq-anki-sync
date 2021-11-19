@@ -150,7 +150,7 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
   for (let [i, reg] of regexArr.entries()) {
     if (typeof reg == "string")
       //@ts-expect-error
-      res = res.replaceAll(reg, (match) => {
+      res = res.replaceAll(reg.trim(), (match) => {
         if (math.find(math =>math.includes(match)))
           return `{{c${i + 1}::${match.replace(/}}/g,"} } ")} }}`;
         else
