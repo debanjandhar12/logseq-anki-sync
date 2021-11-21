@@ -67,7 +67,8 @@ async function syncLogseqToAnki() {
     [(get ?p :ankicloze) ?t]
   ]`);
   blocks = await Promise.all(blocks.map(async (block) => {
-    return { ...(await logseq.Editor.getBlock(block[0].uuid.Wd)), ankiId: await AnkiConnectExtended.getAnkiIDForModelFromUUID(block[0].uuid.Wd, `${graphName}Model`), page: await logseq.Editor.getPage(block[0].page.id) };
+    let page =  (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
+    return { ...(await logseq.Editor.getBlock(block[0].uuid["$uuid$"])), ankiId: await AnkiConnectExtended.getAnkiIDForModelFromUUID(block[0].uuid["$uuid$"], `${graphName}Model`), page: page };
   }));
   console.log("Blocks:", blocks);
 
