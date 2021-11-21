@@ -142,7 +142,7 @@ async function syncLogseqToAnki() {
 
 async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promise<string> {
   let res = text;
-  res = res.replace(/^(\w|-)*::.*/gm, "");  //Remove properties
+  res = res.replace(/^\s*(\w|-)*::.*/gm, "");  //Remove properties
 
   console.log(regexArr);
   regexArr = string_to_arr(regexArr);
