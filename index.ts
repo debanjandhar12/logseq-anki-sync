@@ -60,11 +60,11 @@ async function syncLogseqToAnki() {
   await AnkiConnect.createModel(`${graphName}Model`, ["uuid", "Text", "Extra", "Breadcrumb", "Config", "Tobedefinedlater", "Tobedefinedlater2"], AnkiCardTemplates.frontTemplate, AnkiCardTemplates.backTemplate);
 
   // -- Find blocks for which anki notes are to be created --
-  let blocks_ankicloze = await logseq.DB.datascriptQuery(`
+  let blocks_replacecloze = await logseq.DB.datascriptQuery(`
   [:find (pull ?b  [*])
   :where
     [?b :block/properties ?p]
-    [(get ?p :ankicloze) ?t]
+    [(get ?p :replacecloze)]
   ]`);
   let blocks_logseqCloze = await logseq.DB.datascriptQuery(`
   [:find (pull ?b  [*])
@@ -72,7 +72,7 @@ async function syncLogseqToAnki() {
   [?b :block/content ?content]
   [(clojure.string/includes? ?content "{{cloze")]
   ]`);
-  let blocks = [...blocks_ankicloze, ...blocks_logseqCloze];
+  let blocks = [...blocks_replacecloze, ...blocks_logseqCloze];
   blocks = await Promise.all(blocks.map(async (block) => {
     let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
     if(!block[0].properties["id"]) await logseq.Editor.upsertBlockProperty(uuid, "id", uuid); // Force persistence of logseq uuid after re-index by writing in file
@@ -91,7 +91,7 @@ async function syncLogseqToAnki() {
   for (let block of blocks) {
     if (block.ankiId == null || isNaN(block.ankiId)) {
       try {
-        let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.ankicloze}`);
+        let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.replacecloze}`);
         let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
         let breadcrumb_html = `<a href="#">${block.page.originalName}</a>`;
         let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
@@ -102,7 +102,7 @@ async function syncLogseqToAnki() {
     }
     else {
       try {
-        let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.ankicloze}`);
+        let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.replacecloze}`);
         let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
         let breadcrumb_html = `<a href="#">${block.page.originalName}</a>`;
         let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
@@ -148,20 +148,21 @@ async function syncLogseqToAnki() {
   if (failedUpdated > 0) console.log("failedUpdatedArr:", failedUpdatedArr);
 }
 
-async function addClozesToMdAndConvertToHtml(text: string, ankiClozeArr: any): Promise<string> {
+async function addClozesToMdAndConvertToHtml(text: string, replaceClozeArr: any): Promise<string> {
   let cloze_id = 1;
   let res = text;
   res = res.replace(/^\s*(\w|-)*::.*/gm, "");  //Remove properties
 
   // --- Add anki-cloze array clozes ---
-  console.log(ankiClozeArr);
-  if(ankiClozeArr && ankiClozeArr.trim() != "" && ankiClozeArr != 'undefined') { ankiClozeArr = string_to_arr(ankiClozeArr); }
-  else {ankiClozeArr = [];}
-  console.log(ankiClozeArr);
+  console.log(replaceClozeArr);
+  if(replaceClozeArr && replaceClozeArr.trim() != "" && replaceClozeArr != 'undefined') { replaceClozeArr = string_to_arr(replaceClozeArr); }
+  else {replaceClozeArr = [];}
+  console.log(replaceClozeArr);
   // Get list of math clozes
   let math = get_math_inside_md(res);
-  for (let [i, reg] of ankiClozeArr.entries()) {
+  for (let [i, reg] of replaceClozeArr.entries()) {
     if (typeof reg == "string")
+      // @ts-expect-error
       res = res.replaceAll(reg.trim(), (match) => {
         if (math.find(math =>math.includes(match)))
           return `{{c${cloze_id}::${match.replace(/}}/g,"} } ")} }}`;

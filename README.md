@@ -9,7 +9,7 @@ Right now its very messy (it works but i wont recomend using it). This is someth
 The capital of Japan is {{cloze Tokyo}}.
 ```
 ```md
-ankicloze:: " '\sin^2 x + \cos^2 y' "
+replacecloze:: " '\sin^2 x + \cos^2 y' "
 $$\sin^2 x + \cos^2 y = 1$$
 ```
 
