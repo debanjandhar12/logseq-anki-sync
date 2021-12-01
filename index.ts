@@ -141,16 +141,17 @@ async function syncLogseqToAnki() {
   if (failedUpdated > 0) console.log("failedUpdatedArr:", failedUpdatedArr);
 }
 
-async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promise<string> {
+async function addClozesToMdAndConvertToHtml(text: string, ankiClozeArr: any): Promise<string> {
   let res = text;
   res = res.replace(/^\s*(\w|-)*::.*/gm, "");  //Remove properties
 
-  console.log(regexArr);
-  regexArr = string_to_arr(regexArr);
-  console.log(regexArr);
+  // --- Add anki-cloze array clozes ---
+  console.log(ankiClozeArr);
+  ankiClozeArr = string_to_arr(ankiClozeArr);
+  console.log(ankiClozeArr);
   // Get list of math clozes
   let math = get_math_inside_md(res);
-  for (let [i, reg] of regexArr.entries()) {
+  for (let [i, reg] of ankiClozeArr.entries()) {
     if (typeof reg == "string")
       //@ts-expect-error
       res = res.replaceAll(reg.trim(), (match) => {
@@ -168,6 +169,7 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
       });
   }
 
+  // --- Convert some logseq markup to html ---
   res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math
   res = res.replace(/\$\$([\s\S]*?)\$\$/g, "\\[ $1 \\]"); // Convert block math
   res = res.replace(/#\+BEGIN_(INFO|PROOF)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Remove proof, info org blocks
@@ -176,7 +178,7 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
     res = res.replace(/#\+BEGIN_(QUOTE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert quote org blocks
     return `<blockquote">${g3.trim()}</blockquote>`;
   });
-  res = res.replace(/#\+BEGIN_(CENTER)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert center org blocks
+  res = res.replace(/#\+BEGIN_(CENTER|LEFT)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert center and left org blocks
     return `<span class="text-center">${g3.trim()}</span>`; // div is buggy with remarkable
   });
   res = res.replace(/#\+BEGIN_(COMMENT)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Remove comment org blocks
@@ -186,6 +188,7 @@ async function addClozesToMdAndConvertToHtml(text: string, regexArr: any): Promi
     return `<span class="${g1.toLowerCase()}">${g3.trim()}</span>`; // div is buggy with remarkable
   }); 
 
+  // --- Convert markdown to html ---
   res = res.replace(/\\/gi, "\\\\"); //Fix blackkslashes
   let remarkable = new Remarkable('full', {
     html: true,
