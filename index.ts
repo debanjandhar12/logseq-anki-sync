@@ -60,12 +60,19 @@ async function syncLogseqToAnki() {
   await AnkiConnect.createModel(`${graphName}Model`, ["uuid", "Text", "Extra", "Breadcrumb", "Config", "Tobedefinedlater", "Tobedefinedlater2"], AnkiCardTemplates.frontTemplate, AnkiCardTemplates.backTemplate);
 
   // -- Find blocks for which anki notes are to be created --
-  let blocks = await logseq.DB.datascriptQuery(`
+  let blocks_ankicloze = await logseq.DB.datascriptQuery(`
   [:find (pull ?b  [*])
   :where
     [?b :block/properties ?p]
     [(get ?p :ankicloze) ?t]
   ]`);
+  let blocks_logseqCloze = await logseq.DB.datascriptQuery(`
+  [:find (pull ?b  [*])
+  :where
+  [?b :block/content ?content]
+  [(clojure.string/includes? ?content "{{cloze")]
+  ]`);
+  let blocks = [...blocks_ankicloze, ...blocks_logseqCloze];
   blocks = await Promise.all(blocks.map(async (block) => {
     let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
     if(!block[0].properties["id"]) await logseq.Editor.upsertBlockProperty(uuid, "id", uuid); // Force persistence of logseq uuid after re-index by writing in file
@@ -142,12 +149,14 @@ async function syncLogseqToAnki() {
 }
 
 async function addClozesToMdAndConvertToHtml(text: string, ankiClozeArr: any): Promise<string> {
+  let cloze_id = 1;
   let res = text;
   res = res.replace(/^\s*(\w|-)*::.*/gm, "");  //Remove properties
 
   // --- Add anki-cloze array clozes ---
   console.log(ankiClozeArr);
-  ankiClozeArr = string_to_arr(ankiClozeArr);
+  if(ankiClozeArr && ankiClozeArr.trim() != "" && ankiClozeArr != 'undefined') { ankiClozeArr = string_to_arr(ankiClozeArr); }
+  else {ankiClozeArr = [];}
   console.log(ankiClozeArr);
   // Get list of math clozes
   let math = get_math_inside_md(res);
@@ -156,18 +165,23 @@ async function addClozesToMdAndConvertToHtml(text: string, ankiClozeArr: any): P
       //@ts-expect-error
       res = res.replaceAll(reg.trim(), (match) => {
         if (math.find(math =>math.includes(match)))
-          return `{{c${i + 1}::${match.replace(/}}/g,"} } ")} }}`;
+          return `{{c${cloze_id++}::${match.replace(/}}/g,"} } ")} }}`;
         else
-          return `{{c${i + 1}::${match}}}`;
+          return `{{c${cloze_id++}::${match}}}`;
       });
     else
       res = res.replace(reg, (match) => {
         if (math.find(math =>math.includes(match)))
-          return `{{c${i + 1}::${match.replace(/}}/g,"} } ")} }}`;
+          return `{{c${cloze_id++}::${match.replace(/}}/g,"} } ")} }}`;
         else
-          return `{{c${i + 1}::${match}}}`;
+          return `{{c${cloze_id++}::${match}}}`;
       });
   }
+  
+  // --- Add logseq clozes ---
+  res = res.replace(/\{\{cloze (.*)\}\}/g, (match, group1) => {
+    return `{{c${cloze_id++}::${group1}}}`;
+  });
 
   // --- Convert some logseq markup to html ---
   res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math
