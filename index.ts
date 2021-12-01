@@ -198,10 +198,14 @@ async function addClozesToMdAndConvertToHtml(text: string, ankiClozeArr: any): P
   res = res.replace(/#\+BEGIN_(COMMENT)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Remove comment org blocks
     return ``; 
   }); 
-  res = res.replace(/#\+BEGIN_([^ \n]+)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert named org blocks
-    return `<span class="${g1.toLowerCase()}">${g3.trim()}</span>`; // div is buggy with remarkable
-  }); 
-
+  while(true) {
+    let oldres = res;
+    res = res.replace(/#\+BEGIN_([^ \n]+)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert named org blocks
+      return `<span class="${g1.toLowerCase()}">${g3.trim()}</span>`; // div is buggy with remarkable
+    }); 
+    if(oldres == res) break;
+  }
+  
   // --- Convert markdown to html ---
   res = res.replace(/\\/gi, "\\\\"); //Fix blackkslashes
   let remarkable = new Remarkable('full', {
