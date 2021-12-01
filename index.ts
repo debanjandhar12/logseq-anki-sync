@@ -67,9 +67,10 @@ async function syncLogseqToAnki() {
     [(get ?p :ankicloze) ?t]
   ]`);
   blocks = await Promise.all(blocks.map(async (block) => {
-    if(!block[0].properties["id"]) await logseq.Editor.upsertBlockProperty(block[0].uuid["$uuid$"], "id", block[0].uuid["$uuid$"]); // Force persistence of uuid after re-index by writing in file
+    let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
+    if(!block[0].properties["id"]) await logseq.Editor.upsertBlockProperty(uuid, "id", uuid); // Force persistence of logseq uuid after re-index by writing in file
     let page =  (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
-    return { ...(await logseq.Editor.getBlock(block[0].uuid["$uuid$"])), ankiId: await AnkiConnectExtended.getAnkiIDForModelFromUUID(block[0].uuid["$uuid$"], `${graphName}Model`), page: page };
+    return { ...(await logseq.Editor.getBlock(uuid)), ankiId: await AnkiConnectExtended.getAnkiIDForModelFromUUID(uuid, `${graphName}Model`), page: page };
   }));
   console.log("Blocks:", blocks);
 
