@@ -195,7 +195,7 @@ async function addClozesToMdAndConvertToHtml(text: string, ankiClozeArr: any): P
   res = res.replace(/#\+BEGIN_(CENTER|LEFT)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert center and left org blocks
     return `<span class="text-center">${g3.trim()}</span>`; // div is buggy with remarkable
   });
-  res = res.replace(/#\+BEGIN_(COMMENT)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Remove comment org blocks
+  res = res.replace(/#\+BEGIN_(COMMENT|LEFT2)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Remove comment org blocks
     return ``; 
   }); 
   res = res.replace(/#\+BEGIN_(\w+)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert named org blocks
