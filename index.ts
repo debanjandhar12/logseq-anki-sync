@@ -162,20 +162,20 @@ async function addClozesToMdAndConvertToHtml(text: string, ankiClozeArr: any): P
   let math = get_math_inside_md(res);
   for (let [i, reg] of ankiClozeArr.entries()) {
     if (typeof reg == "string")
-      //@ts-expect-error
       res = res.replaceAll(reg.trim(), (match) => {
         if (math.find(math =>math.includes(match)))
-          return `{{c${cloze_id++}::${match.replace(/}}/g,"} } ")} }}`;
+          return `{{c${cloze_id}::${match.replace(/}}/g,"} } ")} }}`;
         else
-          return `{{c${cloze_id++}::${match}}}`;
+          return `{{c${cloze_id}::${match}}}`;
       });
     else
       res = res.replace(reg, (match) => {
         if (math.find(math =>math.includes(match)))
-          return `{{c${cloze_id++}::${match.replace(/}}/g,"} } ")} }}`;
+          return `{{c${cloze_id}::${match.replace(/}}/g,"} } ")} }}`;
         else
-          return `{{c${cloze_id++}::${match}}}`;
+          return `{{c${cloze_id}::${match}}}`;
       });
+    cloze_id++;
   }
   
   // --- Add logseq clozes ---
