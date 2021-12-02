@@ -25,7 +25,7 @@ export function string_to_arr(str: string): any {
     StrRegArray {
         Exp = listOf<StrOrRegex, separator> separator*
         separator = (whitespace)* "," (whitespace)*
-        StrOrRegex = (Regex | Str)
+        StrOrRegex = (Regex | Str | "")
         Str = "\'" seqStr "\'"
         Regex =  "/" seqReg "/" (letter|lineTerminator)*
         seqReg = (("\\/" |"\\\\"|~("/")  any))+
@@ -53,6 +53,7 @@ export function string_to_arr(str: string): any {
         _iter(...a) { for (let b of a) b.semanticOperation(); },
         separator(a, b, c) { },
         StrOrRegex(a) { a.semanticOperation(); },
+        _terminal() { },
         Regex(a, b, c, d) { r.push(regexPraser(this.sourceString)) },
         Str(a, b, c) { r.push(this.children[1].sourceString) },
     }
