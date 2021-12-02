@@ -24,7 +24,7 @@ export function string_to_arr(str: string): any {
     const grammer = ohm.grammar(String.raw`
     StrRegArray {
         Exp = listOf<StrOrRegex, separator> separator*
-        separator = "," (whitespace)*
+        separator = (whitespace)* "," (whitespace)*
         StrOrRegex = (Regex | Str)
         Str = "\'" seqStr "\'"
         Regex =  "/" seqReg "/" (letter|lineTerminator)*
@@ -51,7 +51,7 @@ export function string_to_arr(str: string): any {
         nonemptyListOf(a, b, c) { a.semanticOperation(); c.semanticOperation(); },
         emptyListOf() { },
         _iter(...a) { for (let b of a) b.semanticOperation(); },
-        separator(a, b) { },
+        separator(a, b, c) { },
         StrOrRegex(a) { a.semanticOperation(); },
         Regex(a, b, c, d) { r.push(regexPraser(this.sourceString)) },
         Str(a, b, c) { r.push(this.children[1].sourceString) },
