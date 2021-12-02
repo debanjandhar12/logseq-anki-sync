@@ -93,6 +93,7 @@ async function syncLogseqToAnki() {
       try {
         let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.replacecloze}`);
         let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
+        if(typeof deck != "string") deck = deck[0];
         let breadcrumb_html = `<a href="#">${block.page.originalName}</a>`;
         let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
         block.ankiId = await AnkiConnect.addNote(block.uuid, deck, `${graphName}Model`, { "uuid": block.uuid, "Text": anki_html, "Extra": "", "Breadcrumb": breadcrumb_html }, tags);
@@ -104,6 +105,7 @@ async function syncLogseqToAnki() {
       try {
         let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.replacecloze}`);
         let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
+        if(typeof deck != "string") deck = deck[0];
         let breadcrumb_html = `<a href="#">${block.page.originalName}</a>`;
         let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
         await AnkiConnect.updateNote(block.ankiId, deck, `${graphName}Model`, { "uuid": block.uuid, "Text": anki_html, "Extra": "", "Breadcrumb": breadcrumb_html }, tags);
