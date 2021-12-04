@@ -50,13 +50,13 @@ async function syncLogseqToAnki() {
   logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${graphName}`);
   console.log(`Starting Logseq to Anki Sync for graph ${graphName}`);
 
-  // -Request Access-
+  // -- Request Access --
   await AnkiConnect.requestPermission();
 
   // -- Create backup of Anki --
   try { if (backup) await AnkiConnect.createBackup(); } catch (e) { console.error(e); }
 
-  // -Create models if it doesn't exists-
+  // -- Create models if it doesn't exists --
   await AnkiConnect.createModel(`${graphName}Model`, ["uuid", "Text", "Extra", "Breadcrumb", "Config", "Tobedefinedlater", "Tobedefinedlater2"], AnkiCardTemplates.frontTemplate, AnkiCardTemplates.backTemplate);
 
   // -- Find blocks for which anki notes are to be created --
@@ -89,25 +89,22 @@ async function syncLogseqToAnki() {
 
   // --Add or update cards in anki--
   for (let block of blocks) {
-    if (block.ankiId == null || isNaN(block.ankiId)) {
+    // -- Get the content of the block --
+    let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.replacecloze}`);
+    let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
+    if(typeof deck != "string") deck = deck[0];
+    let breadcrumb_html = `<a href="#">${block.page.originalName}</a>`;
+    let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
+    
+    if (block.ankiId == null || isNaN(block.ankiId)) {  // Create as Note doesn't exist in anki
       try {
-        let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.replacecloze}`);
-        let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
-        if(typeof deck != "string") deck = deck[0];
-        let breadcrumb_html = `<a href="#">${block.page.originalName}</a>`;
-        let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
         block.ankiId = await AnkiConnect.addNote(block.uuid, deck, `${graphName}Model`, { "uuid": block.uuid, "Text": anki_html, "Extra": "", "Breadcrumb": breadcrumb_html }, tags);
         console.log(`Added note with uuid ${block.uuid}`);
         created++;
       } catch (e) { console.error(e); failedCreated++; failedCreatedArr.push(block); }
     }
-    else {
+    else {  // Update as Note exists in anki
       try {
-        let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.replacecloze}`);
-        let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
-        if(typeof deck != "string") deck = deck[0];
-        let breadcrumb_html = `<a href="#">${block.page.originalName}</a>`;
-        let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
         await AnkiConnect.updateNote(block.ankiId, deck, `${graphName}Model`, { "uuid": block.uuid, "Text": anki_html, "Extra": "", "Breadcrumb": breadcrumb_html }, tags);
         console.log(`Updated note with uuid ${block.uuid}`);
         updated++;
@@ -115,13 +112,13 @@ async function syncLogseqToAnki() {
     }
   }
 
-  // --Delete the deleted cards--
+  // -- Delete the notes no longer available in Logseq but available in Anki --
   await AnkiConnect.invoke("reloadCollection", {});
   // Get Anki Notes made from this logseq graph
-  let q = await AnkiConnect.query(`note:${graphName}Model`)
+  let q = await AnkiConnect.query(`note:${graphName}Model`);
   let ankiNoteIds: number[] = q.map(i => parseInt(i));
   console.log(ankiNoteIds);
-  // Flatten curren logseq block's anki ids
+  // Flatten current logseq block's anki ids
   let blockAnkiIds: number[] = blocks.map(block => parseInt(block.ankiId));
   console.log(blockAnkiIds);
   // Delete anki notes created by app which are no longer in logseq graph
