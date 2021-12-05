@@ -1,11 +1,8 @@
 import '@logseq/libs'
 import { LSPluginBaseInfo } from '@logseq/libs/dist/libs'
 import * as AnkiConnect from './AnkiConnect';
-import * as AnkiConnectExtended from './AnkiConnectExtended';
 import { AnkiCardTemplates } from './templates/AnkiCardTemplates';
-import { Remarkable } from 'remarkable';
-import path from "path";
-import { decodeHTMLEntities, string_to_arr, get_math_inside_md } from './utils';
+import { ClozeBlock } from './ClozeBlock';
 
 const delay = (t = 100) => new Promise(r => setTimeout(r, t))
 
@@ -47,6 +44,7 @@ logseq.ready(main).catch(console.error)
 async function syncLogseqToAnki() {
   let backup = logseq.baseInfo.settings.backup || false;
   let graphName = (await logseq.App.getCurrentGraph()).name;
+  let modelName = `${graphName}Model`;
   logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${graphName}`);
   console.log(`Starting Logseq to Anki Sync for graph ${graphName}`);
 
@@ -57,28 +55,13 @@ async function syncLogseqToAnki() {
   try { if (backup) await AnkiConnect.createBackup(); } catch (e) { console.error(e); }
 
   // -- Create models if it doesn't exists --
-  await AnkiConnect.createModel(`${graphName}Model`, ["uuid", "Text", "Extra", "Breadcrumb", "Config", "Tobedefinedlater", "Tobedefinedlater2"], AnkiCardTemplates.frontTemplate, AnkiCardTemplates.backTemplate);
+  await AnkiConnect.createModel(modelName, ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"], AnkiCardTemplates.frontTemplate, AnkiCardTemplates.backTemplate);
 
   // -- Find blocks for which anki notes are to be created --
-  let blocks_replacecloze = await logseq.DB.datascriptQuery(`
-  [:find (pull ?b  [*])
-  :where
-    [?b :block/properties ?p]
-    [(get ?p :replacecloze)]
-  ]`);
-  let blocks_logseqCloze = await logseq.DB.datascriptQuery(`
-  [:find (pull ?b  [*])
-  :where
-  [?b :block/content ?content]
-  [(clojure.string/includes? ?content "{{cloze")]
-  ]`);
-  let blocks = [...blocks_replacecloze, ...blocks_logseqCloze];
-  blocks = await Promise.all(blocks.map(async (block) => {
-    let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
-    if(!block[0].properties["id"]) await logseq.Editor.upsertBlockProperty(uuid, "id", uuid); // Force persistence of logseq uuid after re-index by writing in file
-    let page =  (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
-    return { ...(await logseq.Editor.getBlock(uuid)), ankiId: await AnkiConnectExtended.getAnkiIDForModelFromUUID(uuid, `${graphName}Model`), page: page };
-  }));
+  let blocks = [...(await ClozeBlock.getBlocksFromLogseq())];
+  for (let block of blocks) { // Force persistance of block uuids accross re-index by adding id property to block in logseq
+    if (!block.properties["id"]) {await logseq.Editor.upsertBlockProperty(block.uuid, "id", block.uuid);}
+  }
   console.log("Blocks:", blocks);
 
   // -- Declare some variables to keep track of different operations performed --
@@ -87,39 +70,38 @@ async function syncLogseqToAnki() {
   let failedCreatedArr, failedUpdatedArr: any;
   failedCreatedArr = []; failedUpdatedArr = [];
 
-  // --Add or update cards in anki--
+  // -- Add or update notes in anki --
   for (let block of blocks) {
-    // -- Get the content of the block --
-    let anki_html = await addClozesToMdAndConvertToHtml(block.content, `${block.properties.replacecloze}`);
+    // Prepare the content of the anki note from block
+    let html = (await block.addClozes().convertToHtml()).getContent();
     let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
-    if(typeof deck != "string") deck = deck[0];
-    let breadcrumb_html = `<a href="#">${block.page.originalName}</a>`;
+    if (typeof deck != "string") deck = deck[0];
+    let breadcrumb = `<a href="#">${block.page.originalName}</a>`;
     let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
-    
-    if (block.ankiId == null || isNaN(block.ankiId)) {  // Create as Note doesn't exist in anki
+    let extra = "";
+    let ankiId = await block.getAnkiId();
+    if (ankiId == null || isNaN(ankiId)) {  // Perform create as note doesn't exist in anki
       try {
-        block.ankiId = await AnkiConnect.addNote(block.uuid, deck, `${graphName}Model`, { "uuid": block.uuid, "Text": anki_html, "Extra": "", "Breadcrumb": breadcrumb_html }, tags);
-        console.log(`Added note with uuid ${block.uuid}`);
+        ankiId = await AnkiConnect.addNote(deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
+        console.log(`Added note with uuid ${block.uuid} and type ${block.type}`);
         created++;
       } catch (e) { console.error(e); failedCreated++; failedCreatedArr.push(block); }
     }
-    else {  // Update as Note exists in anki
+    else {  // Perform update as note exists in anki
       try {
-        await AnkiConnect.updateNote(block.ankiId, deck, `${graphName}Model`, { "uuid": block.uuid, "Text": anki_html, "Extra": "", "Breadcrumb": breadcrumb_html }, tags);
-        console.log(`Updated note with uuid ${block.uuid}`);
+        await AnkiConnect.updateNote(ankiId, deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
+        console.log(`Updated note with uuid ${block.uuid} and type ${block.type}`);
         updated++;
       } catch (e) { console.error(e); failedUpdated++; failedUpdatedArr.push(block); }
     }
   }
 
-  // -- Delete the notes no longer available in Logseq but available in Anki --
-  await AnkiConnect.invoke("reloadCollection", {});
-  // Get Anki Notes made from this logseq graph
-  let q = await AnkiConnect.query(`note:${graphName}Model`);
-  let ankiNoteIds: number[] = q.map(i => parseInt(i));
+  // -- Delete the notes in anki whose respective blocks is no longer available in logseq --
+  // Get anki notes made from this logseq graph
+  let ankiNoteIds: number[] = (await AnkiConnect.query(`note:${modelName}`)).map(i => parseInt(i));
   console.log(ankiNoteIds);
   // Flatten current logseq block's anki ids
-  let blockAnkiIds: number[] = blocks.map(block => parseInt(block.ankiId));
+  let blockAnkiIds: number[] = await Promise.all(blocks.map(async block => await block.getAnkiId()));
   console.log(blockAnkiIds);
   // Delete anki notes created by app which are no longer in logseq graph
   for (let ankiNoteId of ankiNoteIds) {
@@ -132,7 +114,7 @@ async function syncLogseqToAnki() {
     }
   }
 
-  // --Update Anki and show summery in logseq--
+  // -- Update anki and show result summery in logseq --
   await AnkiConnect.invoke("removeEmptyNotes", {});
   await AnkiConnect.invoke("reloadCollection", {});
   let summery = `Sync Completed! Created Blocks: ${created} Updated Blocks: ${updated} Deleted Blocks: ${deleted} `;
@@ -145,94 +127,4 @@ async function syncLogseqToAnki() {
   console.log(summery);
   if (failedCreated > 0) console.log("failedCreatedArr:", failedCreatedArr);
   if (failedUpdated > 0) console.log("failedUpdatedArr:", failedUpdatedArr);
-}
-
-async function addClozesToMdAndConvertToHtml(text: string, replaceClozeArr: any): Promise<string> {
-  let cloze_id = 1;
-  let res = text;
-  res = res.replace(/^\s*(\w|-)*::.*/gm, "");  //Remove properties
-
-  // --- Add anki-cloze array clozes ---
-  console.log(replaceClozeArr);
-  if(replaceClozeArr && replaceClozeArr.trim() != "" && replaceClozeArr != 'undefined') { replaceClozeArr = string_to_arr(replaceClozeArr); }
-  else {replaceClozeArr = [];}
-  console.log(replaceClozeArr);
-  // Get list of math clozes
-  let math = get_math_inside_md(res);
-  for (let [i, reg] of replaceClozeArr.entries()) {
-    if (typeof reg == "string")
-      // @ts-expect-error
-      res = res.replaceAll(reg.trim(), (match) => {
-        if (math.find(math =>math.includes(match)))
-          return `{{c${cloze_id}::${match.replace(/}}/g,"} } ")} }}`;
-        else
-          return `{{c${cloze_id}::${match}}}`;
-      });
-    else
-      res = res.replace(reg, (match) => {
-        if (math.find(math =>math.includes(match)))
-          return `{{c${cloze_id}::${match.replace(/}}/g,"} } ")} }}`;
-        else
-          return `{{c${cloze_id}::${match}}}`;
-      });
-    cloze_id++;
-  }
-  
-  // --- Add logseq clozes ---
-  res = res.replace(/\{\{cloze (.*)\}\}/g, (match, group1) => {
-    return `{{c${cloze_id++}::${group1}}}`;
-  });
-
-  // --- Convert some logseq markup to html ---
-  res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math
-  res = res.replace(/\$\$([\s\S]*?)\$\$/g, "\\[ $1 \\]"); // Convert block math
-  res = res.replace(/#\+BEGIN_(INFO|PROOF)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Remove proof, info org blocks
-    return ``; 
-  }); 
-    res = res.replace(/#\+BEGIN_(QUOTE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert quote org blocks
-    return `<blockquote">${g3.trim()}</blockquote>`;
-  });
-  res = res.replace(/#\+BEGIN_(CENTER)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert center org blocks
-    return `<span class="text-center">${g3.trim()}</span>`; // div is buggy with remarkable
-  });
-  res = res.replace(/#\+BEGIN_(COMMENT)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Remove comment org blocks
-    return ``; 
-  }); 
-  while(true) {
-    let oldres = res;
-    res = res.replace(/#\+BEGIN_([^ \n]+)( .*)?\n((.|\n)*?)#\+END_\1/gi, function(match, g1, g2, g3) { // Convert named org blocks
-      return `<span class="${g1.toLowerCase()}">${g3.trim()}</span>`; // div is buggy with remarkable
-    }); 
-    if(oldres == res) break;
-  }
-  
-  // --- Convert markdown to html ---
-  res = res.replace(/\\/gi, "\\\\"); //Fix blackkslashes
-  let remarkable = new Remarkable('full', {
-    html: true,
-    breaks: true,
-    typographer: false,
-  });
-  remarkable.inline.ruler.disable(['sub', 'sup', 'ins']);
-  remarkable.block.ruler.disable(['code']);
-  const originalLinkValidator = remarkable.inline.validateLink;
-  const dataLinkRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z-]+=[a-z-]+)?)?(;base64)?,[a-z0-9!$&',()*+,;=\-._~:@/?%\s]*\s*$/i;
-  const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
-  const isWebURL = /^(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
-  remarkable.inline.validateLink = (url: string) => originalLinkValidator(url) || encodeURI(url).match(dataLinkRegex) || (encodeURI(url).match(isImage) && !encodeURI(url).match(isWebURL));
-  const originalImageRender = remarkable.renderer.rules.image;
-  let graphPath = (await logseq.App.getCurrentGraph()).path;
-  remarkable.renderer.rules.image = (...a) => {
-    if ((encodeURI(a[0][a[1]].src).match(isImage) && !encodeURI(a[0][a[1]].src).match(isWebURL))) { // Image is relative to vault
-      let imgPath = path.join(graphPath, a[0][a[1]].src.replace(/^(\.\.\/)+/, ""));
-      AnkiConnect.storeMediaFileByPath(encodeURIComponent(a[0][a[1]].src), imgPath); // Flatten and save
-      a[0][a[1]].src = encodeURIComponent(a[0][a[1]].src); // Flatten image and convert to markdown.
-    }
-    return originalImageRender(...a);
-  };
-  res = remarkable.render(res);
-  res = decodeHTMLEntities(res);
-  console.log(res);
-
-  return res;
 }

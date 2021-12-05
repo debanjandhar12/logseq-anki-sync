@@ -45,7 +45,7 @@ export async function createDeck(deckName: string): Promise<any> {
 }
 
 
-export async function addNote(uuid: string, deckName: string, modelName: string, fields, tags: string[]): Promise<any> {
+export async function addNote(deckName: string, modelName: string, fields, tags: string[]): Promise<any> {
     let r; // Bug Fix: Await doesnt work proerly without this
     r = await createDeck(deckName); // Create Deck with name if it does not exists
 
