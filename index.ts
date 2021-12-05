@@ -1,8 +1,9 @@
 import '@logseq/libs'
-import { LSPluginBaseInfo } from '@logseq/libs/dist/libs'
+import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
 import * as AnkiConnect from './AnkiConnect';
 import { AnkiCardTemplates } from './templates/AnkiCardTemplates';
 import { ClozeBlock } from './ClozeBlock';
+import _ from 'lodash';
 
 const delay = (t = 100) => new Promise(r => setTimeout(r, t))
 
@@ -74,11 +75,11 @@ async function syncLogseqToAnki() {
   for (let block of blocks) {
     // Prepare the content of the anki note from block
     let html = (await block.addClozes().convertToHtml()).getContent();
-    let deck: any = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("deck")) ? block.page.properties.deck : "Default";
+    let deck: any = _.get(block, 'properties.deck') || _.get(block, 'page.properties.deck') || "Default";
     if (typeof deck != "string") deck = deck[0];
     let breadcrumb = `<a href="#">${block.page.originalName}</a>`;
-    let tags = (block.page.hasOwnProperty("properties") && block.page.properties.hasOwnProperty("tags")) ? block.page.properties.tags : [];
-    let extra = "";
+    let tags = [...(_.get(block, 'properties.tags') || []), ...(_.get(block, 'page.properties.tags') || [])];
+    let extra = _.get(block, 'properties.extra') || _.get(block, 'page.properties.extra') || "";
     let ankiId = await block.getAnkiId();
     if (ankiId == null || isNaN(ankiId)) {  // Perform create as note doesn't exist in anki
       try {

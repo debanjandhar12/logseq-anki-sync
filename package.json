@@ -18,8 +18,9 @@
     "icon": "/imgs/anki.png"
   },
   "dependencies": {
-    "@logseq/libs": "^0.0.1-alpha.22",
-    "remarkable": "2.0.1"
+    "@logseq/libs": "^0.0.1-alpha.32",
+    "remarkable": "2.0.1",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.0.0-beta.2",
