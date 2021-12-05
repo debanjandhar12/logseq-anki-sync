@@ -5,7 +5,6 @@ import { string_to_arr, get_math_inside_md } from './utils';
 export class ClozeBlock extends Block {
     public type: string = "cloze";
 
-    // @type: any
     public constructor(uuid: string, content: string, properties: any, page: any) {
         super(uuid, content, properties, page);
     }
@@ -65,8 +64,8 @@ export class ClozeBlock extends Block {
         [:find (pull ?b  [*])
         :where
         [?b :block/content ?content]
-        [(clojure.string/includes? ?content "{{cloze ")]
-        [(clojure.string/includes? ?content "}}")]
+        [(re-pattern "{{cloze .*}}") ?regex]
+        [(re-find ?regex ?content)]
         ]`);
 
         let blocks: any = [...logseqCloze_blocks, ...replaceCloze_blocks];
