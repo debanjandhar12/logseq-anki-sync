@@ -65,7 +65,8 @@ export class ClozeBlock extends Block {
         [:find (pull ?b  [*])
         :where
         [?b :block/content ?content]
-        [(clojure.string/includes? ?content "{{cloze")]
+        [(clojure.string/includes? ?content "{{cloze ")]
+        [(clojure.string/includes? ?content "}}")]
         ]`);
 
         let blocks: any = [...logseqCloze_blocks, ...replaceCloze_blocks];
