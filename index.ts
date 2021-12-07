@@ -36,6 +36,8 @@ function main(baseInfo: LSPluginBaseInfo) {
       </a>
     `
   });
+
+  ClozeBlock.initLogseqOperations();
 }
 
 // Bootstrap

@@ -9,6 +9,13 @@ export class ClozeBlock extends Block {
         super(uuid, content, properties, page);
     }
 
+    public static initLogseqOperations = (() => { // Init logseq operations at start of the program
+        logseq.Editor.registerSlashCommand("Replace Cloze", [
+            ["editor/input", `replacecloze:: " '' "`, {"backward-pos": 3}],
+            ["editor/clear-current-slash"],
+        ]);
+    });
+
     public addClozes(): ClozeBlock {
         let cloze_id = 1;
         let result = this.content;
