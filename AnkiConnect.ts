@@ -98,7 +98,7 @@ export async function createBackup(): Promise<any> {
 }
 
 // Create a model with given name if it does not exists
-export async function createModel(modelName: string, fields: string[], frontTemplate: string, backTemplate: string): Promise<void> {
+export async function createModel(modelName: string, fields: string[], template_front: string, template_back: string, template_files: any): Promise<void> {
     let models = await invoke("modelNames", {});
     if (!models.includes(modelName)) {
         await invoke("createModel", {
@@ -106,8 +106,8 @@ export async function createModel(modelName: string, fields: string[], frontTemp
             "cardTemplates": [
                 {
                     "Name": "Card",
-                    "Front": frontTemplate,
-                    "Back": backTemplate
+                    "Front": template_front,
+                    "Back": template_back
                 }
             ]
         });
@@ -120,8 +120,8 @@ export async function createModel(modelName: string, fields: string[], frontTemp
                 "name": modelName,
                 "templates": {
                     "Card": {
-                        "Front": frontTemplate,
-                        "Back": backTemplate
+                        "Front": template_front,
+                        "Back": template_back
                     }
                 }
             }
@@ -129,6 +129,18 @@ export async function createModel(modelName: string, fields: string[], frontTemp
     }
     // Solves #1 by failing silenty, #1 was caused by AnkiConnect calling old Anki API but apprarenty even if it gives error, it works correctly.
     catch (e) { if (e == "save() takes from 1 to 2 positional arguments but 3 were given") console.error(e); else throw e; };
+
+    // Iterate over files obj and add them to anki
+    for (var filename in template_files){
+        try {await storeMediaFileByContent(filename, template_files[filename]);} catch(e) { console.error(e); }
+    }
+}
+
+export async function storeMediaFileByContent(filename: string, content: string): Promise<any> {
+    return await invoke('storeMediaFile', {
+        filename: filename,
+        data: btoa(content)
+    });
 }
 
 export async function storeMediaFileByPath(filename: string, path: string): Promise<any> {

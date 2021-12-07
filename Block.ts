@@ -1,6 +1,7 @@
 import '@logseq/libs'
 import { decodeHTMLEntities } from './utils';
 import { Remarkable } from 'remarkable';
+import hljs from "highlight.js";
 import * as AnkiConnect from './AnkiConnect';
 import path from "path";
 
@@ -77,21 +78,45 @@ export abstract class Block {
         });
         remarkable.inline.ruler.disable(['sub', 'sup', 'ins']);
         remarkable.block.ruler.disable(['code']);
+        // Handle codeblocks
+        remarkable.set({
+            langPrefix: 'hljs language-',
+            highlight: function (str, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    try {
+                        return hljs.highlight(lang, str).value;
+                    } catch (err) {}
+                }
+                try {
+                    return hljs.highlightAuto(str).value;
+                } catch (err) {}
+                return '';
+            }
+        });          
+        const originalFenceRenderRule = remarkable.renderer.rules.fence;
+        remarkable.renderer.rules.fence = (tokens, idx, ...args) => {
+          if(!tokens[idx].params) {
+            tokens[idx].params = "auto";
+          }
+          return originalFenceRenderRule(tokens, idx, ...args);
+        };      
+        // Handle Images
         const originalLinkValidator = remarkable.inline.validateLink;
         const dataLinkRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z-]+=[a-z-]+)?)?(;base64)?,[a-z0-9!$&',()*+,;=\-._~:@/?%\s]*\s*$/i;
         const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
         const isWebURL = /^(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
         remarkable.inline.validateLink = (url: string) => originalLinkValidator(url) || encodeURI(url).match(dataLinkRegex) || (encodeURI(url).match(isImage) && !encodeURI(url).match(isWebURL));
-        const originalImageRender = remarkable.renderer.rules.image;
+        const originalImageRenderRule = remarkable.renderer.rules.image;
         let graphPath = (await logseq.App.getCurrentGraph()).path;
-        remarkable.renderer.rules.image = (...a) => {
-            if ((encodeURI(a[0][a[1]].src).match(isImage) && !encodeURI(a[0][a[1]].src).match(isWebURL))) { // Image is relative to vault
-                let imgPath = path.join(graphPath, a[0][a[1]].src.replace(/^(\.\.\/)+/, ""));
-                AnkiConnect.storeMediaFileByPath(encodeURIComponent(a[0][a[1]].src), imgPath); // Flatten and save
-                a[0][a[1]].src = encodeURIComponent(a[0][a[1]].src); // Flatten image and convert to markdown.
+        remarkable.renderer.rules.image = (...args) => {
+            if ((encodeURI(args[0][args[1]].src).match(isImage) && !encodeURI(args[0][args[1]].src).match(isWebURL))) { // Image is relative to vault
+                let imgPath = path.join(graphPath, args[0][args[1]].src.replace(/^(\.\.\/)+/, ""));
+                AnkiConnect.storeMediaFileByPath(encodeURIComponent(args[0][args[1]].src), imgPath); // Flatten and save
+                args[0][args[1]].src = encodeURIComponent(args[0][args[1]].src); // Flatten image and convert to markdown.
             }
-            return originalImageRender(...a);
+            return originalImageRenderRule(...args);
         };
+        // Render and decode html
         result = remarkable.render(result);
         result = decodeHTMLEntities(result);
 

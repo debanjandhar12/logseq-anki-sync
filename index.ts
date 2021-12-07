@@ -1,7 +1,7 @@
 import '@logseq/libs'
 import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
 import * as AnkiConnect from './AnkiConnect';
-import { AnkiCardTemplates } from './templates/AnkiCardTemplates';
+import { template_front, template_back, template_files } from './templates/AnkiCardTemplates';
 import { ClozeBlock } from './ClozeBlock';
 import _ from 'lodash';
 
@@ -58,7 +58,7 @@ async function syncLogseqToAnki() {
   try { if (backup) await AnkiConnect.createBackup(); } catch (e) { console.error(e); }
 
   // -- Create models if it doesn't exists --
-  await AnkiConnect.createModel(modelName, ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"], AnkiCardTemplates.frontTemplate, AnkiCardTemplates.backTemplate);
+  await AnkiConnect.createModel(modelName, ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"], template_front, template_back, template_files);
 
   // -- Find blocks for which anki notes are to be created --
   let blocks = [...(await ClozeBlock.getBlocksFromLogseq())];
