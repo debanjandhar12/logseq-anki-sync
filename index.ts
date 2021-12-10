@@ -68,15 +68,16 @@ async function syncLogseqToAnki() {
   console.log("Blocks:", blocks);
 
   // -- Declare some variables to keep track of different operations performed --
-  let created, updated, deleted, failedCreated, failedUpdated, failedDeleted: number;
-  created = updated = deleted = failedCreated = failedUpdated = failedDeleted = 0;
-  let failedCreatedArr, failedUpdatedArr: any;
-  failedCreatedArr = []; failedUpdatedArr = [];
+  let created, updated, deleted, failedCreated, failedUpdated, failedDeleted, failedConversion: number;
+  created = updated = deleted = failedCreated = failedUpdated = failedDeleted = failedConversion = 0;
+  let failedConversionArr, failedCreatedArr, failedUpdatedArr: any;
+  failedConversionArr = []; failedCreatedArr = []; failedUpdatedArr = [];
 
   // -- Add or update notes in anki --
   for (let block of blocks) {
     // Prepare the content of the anki note from block
-    let html = (await block.addClozes().convertToHtml()).getContent();
+    let html;
+    try {html = (await block.addClozes().convertToHtml()).getContent();} catch (e) { console.error(e); failedConversion++; failedConversionArr.push(block); continue; }
     let deck: any = _.get(block, 'properties.deck') || _.get(block, 'page.properties.deck') || "Default";
     if (typeof deck != "string") deck = deck[0];
     let breadcrumb = `<a href="#">${block.page.originalName}</a>`;
@@ -125,9 +126,11 @@ async function syncLogseqToAnki() {
   if (failedCreated > 0) summery += `Failed Created Blocks: ${failedCreated} `;
   if (failedUpdated > 0) summery += `Failed Updated Blocks: ${failedUpdated} `;
   if (failedDeleted > 0) summery += `Failed Deleted Blocks: ${failedDeleted} `;
-  if (failedCreated > 0 || failedUpdated > 0 || failedDeleted > 0) status = 'warning';
+  if (failedConversion > 0) summery += `Failed Conversion Blocks: ${failedConversion} `;
+  if (failedCreated > 0 || failedUpdated > 0 || failedDeleted > 0 || failedConversion > 0) status = 'warning';
   logseq.App.showMsg(summery, status);
   console.log(summery);
   if (failedCreated > 0) console.log("failedCreatedArr:", failedCreatedArr);
   if (failedUpdated > 0) console.log("failedUpdatedArr:", failedUpdatedArr);
+  if (failedConversion > 0) console.log("failedConversionArr:", failedConversionArr);
 }
