@@ -1,6 +1,6 @@
 # Logseq Anki Sync
 
-This is in beta test (wont recomend to use in main graph yet). 
+This is in beta test (not recomend to use in main graph and main anki profile yet). 
 
 ### What works for now:
 **Example 1**
@@ -21,10 +21,9 @@ $$\sin^2 x + \cos^2 y = 1$$
 ```
 ## Features
 
-- 🐾 Supports Logseq's original srs clozes and card syntax.
+- 🐾 Supports Logseq's original srs clozes and card syntax (+ more).
 - 🖼 Rendering of markdown **Math, Code, Images etc...**, aswell as some logseq elements.
 - 📘 **Adding cards to user-specified deck** on a *per-file* or *per-block* basis.
-- ❔ Supports many ways to make cards other than logseq's original syntax.
 - ♻ Syncing is done by **creating, updating, deleting** from logseq to anki (one-way sync).
 - 🥳 Many other features like **extra field, tags** etc...
 
@@ -57,3 +56,10 @@ $$\sin^2 x + \cos^2 y = 1$$
 - Ensure yarn is installed. `npm install -g yarn`
 - Install dependencies `yarn install`.
 - Run the build `yarn run dev` or `yarn run build`. 
+
+# FAQ
+
+<details>
+ <summary>How to restore anki deck in case of accidental deletation?</summary>
+ Anki automatically stores the last 50 backup (by default) in the folder <code>C:\Users\{WindowsUserName}\AppData\Roaming\Anki2\{AnkiProfileName}\backups</code>. You can restore your deck from there.
+</details>
