@@ -32,15 +32,14 @@ export class MultilineCardBlock extends Block {
             result += `\n<li class="children">`;
             if(direction == "<->" || direction == "->")
                 result += `{{c1::`;
-            result += `${child.content.replace(/\n/g, "</br>").replace(/\{\{c\d+::(.*)\}\}/g, "$2")}`;
+            result += `${child.html_content.replace(/\{\{c\d+::(.*)\}\}/g, "$2")}`;
             if(direction == "<->" || direction == "->")
                 result += ` }}`;
-            result += `\n</li>`;
+            result += `</li>`;
         }
         result += `</ul>`;
 
         this.content = result;
-        console.log(this.content);
         return this;
     }
 
@@ -53,12 +52,11 @@ export class MultilineCardBlock extends Block {
         [?b :block/refs ?p]
         ]`);
         let blocks: any = [...logseqCard_blocks];
-        console.log(blocks);
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
             let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
             block = await logseq.Editor.getBlock(uuid,{includeChildren: true});
-            return new MultilineCardBlock(uuid, block.content, block.properties || {}, page, block.children || []);
+            return new MultilineCardBlock(uuid, block.content, block.properties || {}, page, await Promise.all(_.map(block.children, async child => _.extend({html_content: await Block.convertToHtml(child.content)}, child))) || []);
         }));
 
         return blocks;

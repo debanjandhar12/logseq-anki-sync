@@ -81,6 +81,11 @@ h5 {
     text-shadow: 0 0 6px black;
 }
 
+.children p {
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+}
+
 /* --- custom css for logseq elements --- */
 blockquote {
     display: block;
