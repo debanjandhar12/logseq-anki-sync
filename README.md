@@ -10,6 +10,7 @@ The capital of Japan is {{cloze Tokyo}}.
 **Example 2**
 ```md
 What is the capital of Japan? #card
+direction:: <->
 ```
 - ```md
     Tokyo
