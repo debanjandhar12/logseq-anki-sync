@@ -62,13 +62,13 @@ export class ClozeBlock extends Block {
 
     public static async getBlocksFromLogseq(): Promise<ClozeBlock[]> {
         let replaceCloze_blocks = await logseq.DB.datascriptQuery(`
-        [:find (pull ?b  [*])
+        [:find (pull ?b [*])
         :where
           [?b :block/properties ?p]
           [(get ?p :replacecloze)]
         ]`);
         let logseqCloze_blocks = await logseq.DB.datascriptQuery(`
-        [:find (pull ?b  [*])
+        [:find (pull ?b [*])
         :where
         [?b :block/content ?content]
         [(re-pattern "{{cloze .*}}") ?regex]
