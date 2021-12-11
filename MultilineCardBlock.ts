@@ -1,5 +1,6 @@
 import { Block } from "./block";
 import '@logseq/libs'
+import _ from 'lodash';
 
 export class MultilineCardBlock extends Block {
     public type: string = "multiline_card";
@@ -18,15 +19,22 @@ export class MultilineCardBlock extends Block {
 
     public addClozes(): MultilineCardBlock {
         let result = this.content;
-
-        // Remove anki clozes from content
+        let direction = _.get(this, 'properties.direction');
+        if(direction != "->" && direction != "<-" && direction != "<->") direction = "->";
+        // Add cloze to the parent block if direction is <-> or <-
         result = result.replace(/\{\{c\d+::(.*)\}\}/g, "$2");
-
+        if(direction == "<->" || direction == "<-") 
+            result = `{{c2:: \n ${result} \n}}`;
+        
+        // Add the content of children blocks and cloze it if direction is <-> or ->
         result+=`\n<ul class="children-list">`;
-        // Add the content of children blocks as clozes
         for(const child of this.children) {
             result += `\n<li class="children">`;
-            result += `{{c1::${child.content.replace(/\n/g, "</br>").replace(/\{\{c\d+::(.*)\}\}/g, "$2")} }}`;
+            if(direction == "<->" || direction == "->")
+                result += `{{c1::`;
+            result += `${child.content.replace(/\n/g, "</br>").replace(/\{\{c\d+::(.*)\}\}/g, "$2")}`;
+            if(direction == "<->" || direction == "->")
+                result += ` }}`;
             result += `\n</li>`;
         }
         result += `</ul>`;
