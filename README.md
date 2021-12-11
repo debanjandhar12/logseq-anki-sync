@@ -29,7 +29,7 @@ $$\sin^2 x + \cos^2 y = 1$$
 
 ## Installation
 
-1. Download the logseq-anki-sync-0.0.5.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\deban\.logseq\plugins`. 
+1. Download the logseq-anki-sync-0.0.51.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\deban\.logseq\plugins`. 
    This will be available in logseq store in January.
 
 2. Download Anki if not installed.
@@ -45,7 +45,7 @@ $$\sin^2 x + \cos^2 y = 1$$
    - Restart Anki.
 
 4. Now, you can use the plugin by clicking Sync to Anki button. <br />
-   NB: Always make sure the anki is running before clicking the Sync to Anki button in obsidian.
+   NB: Always make sure the anki is running before clicking the Sync to Anki button.
 
 5. If you receive the message bellow, click `Yes`. <br />
    <p align="center">
