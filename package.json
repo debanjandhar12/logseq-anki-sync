@@ -9,8 +9,8 @@
   "default": "dist/index.html",
   "author": "@debanjandhar12",
   "scripts": {
-    "dev": "parcel ./index.html --public-url ./",
-    "build": "parcel build --public-url . --no-source-maps index.html"
+    "dev": "parcel ./src/index.html --public-url ./",
+    "build": "parcel build --public-url . --no-source-maps ./src/index.html"
   },
   "license": "MIT",
   "logseq": {
@@ -18,13 +18,13 @@
     "icon": "/imgs/anki.png"
   },
   "dependencies": {
-    "@logseq/libs": "^0.0.1-alpha.32",
+    "@logseq/libs": "^0.0.1-alpha.33",
     "remarkable": "2.0.1",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.0.0-beta.2",
-    "parcel": "^2.0.0-beta.2",
+    "parcel": "2.0.0-beta.2",
     "ohm-js": "^16.0.0",
     "@types/lodash": "^4.14.177",
     "highlight.js": "^11.3.1"
