@@ -52,6 +52,35 @@ h5 {
     display: block;
 }
 
+/* --- multiline card css --- */
+.children-list {
+    border-left: 2px solid;
+    border-left-color: #e9ecef;
+    padding-top: 2px;
+    list-style: none;
+    padding-left: 20px;
+}
+
+.children {
+    display: flex;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.children::before {
+    content: "\2022";
+    color: #e9ecef;
+    cursor: pointer;
+    border-radius: 80%;
+    padding-right: 10px;
+    transition: 0.3s;
+}
+
+.children:hover::before {
+    color: #b7b6b5;
+    text-shadow: 0 0 6px black;
+}
+
 /* --- custom css for logseq elements --- */
 blockquote {
     display: block;
@@ -107,7 +136,7 @@ blockquote {
     text-align: left;
 }
 
-.left .MathJax  {
+.left .MathJax {
     text-align: left !important;
 }
 

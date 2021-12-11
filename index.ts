@@ -3,6 +3,7 @@ import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
 import * as AnkiConnect from './AnkiConnect';
 import { template_front, template_back, template_files } from './templates/AnkiCardTemplates';
 import { ClozeBlock } from './ClozeBlock';
+import { MultilineCardBlock } from './MultilineCardBlock';
 import _ from 'lodash';
 
 const delay = (t = 100) => new Promise(r => setTimeout(r, t))
@@ -38,6 +39,7 @@ function main(baseInfo: LSPluginBaseInfo) {
   });
 
   ClozeBlock.initLogseqOperations();
+  MultilineCardBlock.initLogseqOperations();
 }
 
 // Bootstrap
@@ -61,7 +63,7 @@ async function syncLogseqToAnki() {
   await AnkiConnect.createModel(modelName, ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"], template_front, template_back, template_files);
 
   // -- Find blocks for which anki notes are to be created --
-  let blocks = [...(await ClozeBlock.getBlocksFromLogseq())];
+  let blocks = [...(await ClozeBlock.getBlocksFromLogseq()), ...(await MultilineCardBlock.getBlocksFromLogseq())];
   for (let block of blocks) { // Force persistance of block uuids accross re-index by adding id property to block in logseq
     if (!block.properties["id"]) {await logseq.Editor.upsertBlockProperty(block.uuid, "id", block.uuid);}
   }
