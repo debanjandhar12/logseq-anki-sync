@@ -1,17 +1,57 @@
 # Logseq Anki Sync
 
-This is an port of my [Obsidian-Anki-Sync](https://github.com/debanjandhar12/Obsidian-Anki-Sync) for Logseq (with much simplier syntax).
-
-Right now its very messy (it works but i wont recomend using it). This is something I plan to work on in January (refactor, more syntax to do stuff?) so if you have any suggestions feel free to create issue or something.
+This is in beta test (wont recomend to use in main graph yet). 
 
 ### What works for now:
+**Example 1**
 ```md
 The capital of Japan is {{cloze Tokyo}}.
 ```
+**Example 2**
+```md
+What is the capital of Japan? #card
+```
+- ```md
+    Tokyo
+    ```
+**Example 3**
 ```md
 replacecloze:: " '\sin^2 x + \cos^2 y' "
 $$\sin^2 x + \cos^2 y = 1$$
 ```
+## Features
+
+- 🐾 Supports Logseq's original srs clozes and card syntax.
+- 🖼 Rendering of markdown **Math, Code, Images etc...**, aswell as some logseq elements.
+- 📘 **Adding cards to user-specified deck** on a *per-file* or *per-block* basis.
+- ❔ Supports many ways to make cards other than logseq's original syntax.
+- ♻ Syncing is done by **creating, updating, deleting** from logseq to anki (one-way sync).
+- 🥳 Many other features like **extra field, tags** etc...
+
+## Installation
+
+1. Download the logseq-anki-sync-0.0.5.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\deban\.logseq\plugins`. 
+   This will be available in logseq store in January.
+
+2. Download Anki if not installed.
+
+3. Install AnkiConnect on Anki.
+
+   - Open Anki.
+
+   - Select `Tools` > `Add-ons `. Now a Anki addon's dialog will open. 
+
+   - Now click `Get Add-ons...` in addon's dialog and enter [2055492159](https://ankiweb.net/shared/info/2055492159) into the text box labeled `Code` and press the `OK` button to proceed.
+
+   - Restart Anki.
+
+4. Now, you can use the plugin by clicking Sync to Anki button. <br />
+   NB: Always make sure the anki is running before clicking the Sync to Anki button in obsidian.
+
+5. If you receive the message bellow, click `Yes`. <br />
+   <p align="center">
+      <img src="https://raw.githubusercontent.com/debanjandhar12/Obsidian-Anki-Sync/main/docs/images/permission.png" />
+   </p>
 
 # Compiling Instructions
 - Ensure yarn is installed. `npm install -g yarn`
