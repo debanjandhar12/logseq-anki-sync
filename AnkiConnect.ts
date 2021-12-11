@@ -139,7 +139,7 @@ export async function createModel(modelName: string, fields: string[], template_
 export async function storeMediaFileByContent(filename: string, content: string): Promise<any> {
     return await invoke('storeMediaFile', {
         filename: filename,
-        data: window.btoa(encodeURIComponent((content)))
+        data: btoa(content)
     });
 }
 
