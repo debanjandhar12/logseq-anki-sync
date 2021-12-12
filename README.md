@@ -33,6 +33,7 @@ This is in beta test (not recomend to use in main graph and main anki profile ye
 * [How to make cloze cards inside math and code?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-cloze-cards-inside-math-and-code%3F)
 * [How to make multiline cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-multiline-cards%3F)
 * [How to set or change the deck for cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F)
+
 **Developer Documentation**
 * [Compiling Instructions](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Compiling-Instructions)
 
