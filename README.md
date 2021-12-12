@@ -1,6 +1,5 @@
 # Logseq Anki Sync
 This is in beta test (not recomend to use in main graph and main anki profile yet). 
-
 <p align="center">
   <img width="580px" src="https://user-images.githubusercontent.com/49021233/145706852-b509d971-28eb-41cb-80fd-4292f46ddf70.gif" />
 </p>
@@ -13,28 +12,28 @@ This is in beta test (not recomend to use in main graph and main anki profile ye
 * 🥳 Many other features like **extra field, tags** etc...
 
 ## Installation
-1. Download the logseq-anki-sync-0.1.0.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\<user>\.logseq\plugins`. 
+1. Download the logseq-anki-sync-0.1.0.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\deban\.logseq\plugins`. 
 2. Download Anki if not installed.
 3. Install AnkiConnect on Anki.
    * Open Anki.
    * Select `Tools` > `Add-ons `. Now a Anki addon's dialog will open. 
    * Now click `Get Add-ons...` in addon's dialog and enter [2055492159](https://ankiweb.net/shared/info/2055492159) into the text box labeled `Code` and press the `OK` button to proceed.
    * Restart Anki.
-4. Now, you can use the plugin by clicking Sync to Anki button. <br />
+4. Now, you can use the plugin by clicking Sync to Anki button.
    NB: Always make sure the anki is running before clicking the Sync to Anki button.
-5. If you receive the message bellow, click `Yes`. <br />
+5. If you receive the message bellow, click `Yes`.
    <p align="center">
       <img src="https://raw.githubusercontent.com/debanjandhar12/Obsidian-Anki-Sync/main/docs/images/permission.png" />
    </p>
 
 # Documentation
-**User Documentation**
+<b>User Documentation</b>
 * [How to make simple cloze cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-simple-cloze-cards%3F)
 * [How to make cloze cards inside math and code?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-cloze-cards-inside-math-and-code%3F)
 * [How to make multiline cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-multiline-cards%3F)
 * [How to set or change the deck for cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F)
 
-**Developer Documentation**
+<b>Developer Documentation</b>
 * [Compiling Instructions](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Compiling-Instructions)
 
 # FAQ
