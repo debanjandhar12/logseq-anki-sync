@@ -23,8 +23,8 @@ export class MultilineCardBlock extends Block {
         let result = this.content;
         let direction = _.get(this, 'properties.direction');
         if(direction != "->" && direction != "<-" && direction != "<->") {
-            if((this.tags.includes("backward") && this.tags.includes("forward")) || this.tags.includes("bidirectional")) direction = "<->";
-            else if(this.tags.includes("backward")) direction = "<-";
+            if((this.tags.includes("reversed") && this.tags.includes("forward")) || this.tags.includes("bidirectional")) direction = "<->";
+            else if(this.tags.includes("reversed")) direction = "<-";
             else direction = "->";
         } 
 
