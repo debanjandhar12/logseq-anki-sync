@@ -13,8 +13,16 @@ export class MultilineCardBlock extends Block {
     }
 
     public static initLogseqOperations = (() => { // Init logseq operations at start of the program
-        logseq.Editor.registerSlashCommand("Card", [
-            ["editor/input", `#card`],
+        logseq.Editor.registerSlashCommand("Card (Forward)", [
+            ["editor/input", `#card #forward`],
+            ["editor/clear-current-slash"],
+        ]);
+        logseq.Editor.registerSlashCommand("Card (Reversed)", [
+            ["editor/input", `#card #reversed`],
+            ["editor/clear-current-slash"],
+        ]);
+        logseq.Editor.registerSlashCommand("Card (Bidirectional)", [
+            ["editor/input", `#card #bidirectional`],
             ["editor/clear-current-slash"],
         ]);
     });
