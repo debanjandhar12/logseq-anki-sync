@@ -1,6 +1,7 @@
 import { Block } from "./block";
 import '@logseq/libs'
 import { string_to_arr, get_math_inside_md } from './utils';
+import _ from 'lodash';
 
 export class ClozeBlock extends Block {
     public type: string = "cloze";
@@ -74,7 +75,6 @@ export class ClozeBlock extends Block {
         [(re-pattern "{{cloze .*}}") ?regex]
         [(re-find ?regex ?content)]
         ]`);
-
         let blocks: any = [...logseqCloze_blocks, ...replaceCloze_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
@@ -82,6 +82,7 @@ export class ClozeBlock extends Block {
             block = await logseq.Editor.getBlock(uuid);
             return new ClozeBlock(uuid, block.content, block.properties || {}, page);
         }));
+        blocks = _.uniqBy(blocks, 'uuid');
 
         return blocks;
     }
