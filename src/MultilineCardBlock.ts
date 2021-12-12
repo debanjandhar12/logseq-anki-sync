@@ -58,7 +58,13 @@ export class MultilineCardBlock extends Block {
         [?p :block/name "card"]
         [?b :block/refs ?p]
         ]`);
-        let blocks: any = [...logseqCard_blocks];
+        let flashCard_blocks = await logseq.DB.datascriptQuery(`
+        [:find (pull ?b [*])
+        :where
+        [?p :block/name "flashcard"]
+        [?b :block/refs ?p]
+        ]`);
+        let blocks: any = [...logseqCard_blocks, ...flashCard_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
             let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
@@ -67,6 +73,7 @@ export class MultilineCardBlock extends Block {
             let children = await Promise.all(_.map(block.children, async child => _.extend({html_content: await Block.convertToHtml(child.content)}, child))) || [];
             return new MultilineCardBlock(uuid, block.content, block.properties || {}, page, tags, children);
         }));
+        blocks = _.uniqBy(blocks, 'uuid');
 
         return blocks;
     }
