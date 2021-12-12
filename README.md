@@ -6,11 +6,11 @@ This is in beta test (not recomend to use in main graph and main anki profile ye
 </p>
 
 ## Features
-- 🐾 Supports Logseq's original srs clozes and card syntax (+ **more**).
-- 🖼 Rendering of markdown **Math, Code, Images etc...**, aswell as some logseq elements.
-- 📘 **Adding cards to user-specified deck** on a *per-file* or *per-block* basis.
-- ♻ Syncing is done by **creating, updating, deleting** from logseq to anki (one-way sync).
-- 🥳 Many other features like **extra field, tags** etc...
+* 🐾 Supports Logseq's original srs clozes and card syntax (+ **more**).
+* 🖼 Rendering of markdown **Math, Code, Images etc...**, aswell as some logseq elements.
+* 📘 **Adding cards to user-specified deck** on a *per-file* or *per-block* basis.
+* ♻ Syncing is done by **creating, updating, deleting** from logseq to anki (one-way sync).
+* 🥳 Many other features like **extra field, tags** etc...
 
 ## Installation
 1. Download the logseq-anki-sync-0.0.51.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\deban\.logseq\plugins`. 
