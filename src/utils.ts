@@ -97,3 +97,15 @@ export function get_math_inside_md(res: string) : Array<string> {
     }); 
     return arr;
   }
+
+export function get_better_error_msg(msg: string) : string {
+    switch (msg) {
+        case "failed to issue request":
+            return "Please ensure Anki is open in background with AnkiConnect installed properly. See installation instruction for more information.";
+        case "Permission to access anki was denied":
+            return "Please give permission to access anki by clicking Yes when promted.";
+        case "collection is not available":
+            return "Please select an Anki Profile before syncing.";
+    }
+    return msg;
+}

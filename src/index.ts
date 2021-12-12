@@ -5,6 +5,7 @@ import { template_front, template_back, template_files } from './templates/AnkiC
 import { ClozeBlock } from './ClozeBlock';
 import { MultilineCardBlock } from './MultilineCardBlock';
 import _ from 'lodash';
+import { get_better_error_msg } from './utils';
 
 const delay = (t = 100) => new Promise(r => setTimeout(r, t))
 
@@ -20,7 +21,7 @@ function main(baseInfo: LSPluginBaseInfo) {
       try {
         await syncLogseqToAnki();
       } catch (e) {
-        logseq.App.showMsg(e.toString(), 'warning')
+        logseq.App.showMsg(get_better_error_msg(e.toString()), 'warning');
         console.error(e);
       } finally {
         syncing = false;
