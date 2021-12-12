@@ -1,5 +1,4 @@
 # Logseq Anki Sync
-
 This is in beta test (not recomend to use in main graph and main anki profile yet). 
 
 <p align="center">
@@ -7,7 +6,6 @@ This is in beta test (not recomend to use in main graph and main anki profile ye
 </p>
 
 ## Features
-
 - 🐾 Supports Logseq's original srs clozes and card syntax (+ **more**).
 - 🖼 Rendering of markdown **Math, Code, Images etc...**, aswell as some logseq elements.
 - 📘 **Adding cards to user-specified deck** on a *per-file* or *per-block* basis.
@@ -16,22 +14,14 @@ This is in beta test (not recomend to use in main graph and main anki profile ye
 
 ## Installation
 1. Download the logseq-anki-sync-0.0.51.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\deban\.logseq\plugins`. 
-
 2. Download Anki if not installed.
-
 3. Install AnkiConnect on Anki.
-
    - Open Anki.
-
    - Select `Tools` > `Add-ons `. Now a Anki addon's dialog will open. 
-
    - Now click `Get Add-ons...` in addon's dialog and enter [2055492159](https://ankiweb.net/shared/info/2055492159) into the text box labeled `Code` and press the `OK` button to proceed.
-
    - Restart Anki.
-
 4. Now, you can use the plugin by clicking Sync to Anki button. <br />
    NB: Always make sure the anki is running before clicking the Sync to Anki button.
-
 5. If you receive the message bellow, click `Yes`. <br />
    <p align="center">
       <img src="https://raw.githubusercontent.com/debanjandhar12/Obsidian-Anki-Sync/main/docs/images/permission.png" />
@@ -39,22 +29,14 @@ This is in beta test (not recomend to use in main graph and main anki profile ye
 
 # Documentation
 **User Documentation**
-
-- [How to make simple cloze cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-simple-cloze-cards%3F)
-
-- [How to make cloze cards inside math and code?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-cloze-cards-inside-math-and-code%3F)
-
-- [How to make multiline cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-multiline-cards%3F)
-
-- [How to set or change the deck for cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F)
-
+* [How to make simple cloze cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-simple-cloze-cards%3F)
+* [How to make cloze cards inside math and code?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-cloze-cards-inside-math-and-code%3F)
+* [How to make multiline cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-multiline-cards%3F)
+* [How to set or change the deck for cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F)
 **Developer Documentation**
-
-- [Compiling Instructions](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Compiling-Instructions)
-
+* [Compiling Instructions](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Compiling-Instructions)
 
 # FAQ
-
 <details>
  <summary>How to restore anki deck in case of accidental deletation?</summary>
  Anki automatically stores the last 50 backup (by default) in the folder <code>C:\Users\{WindowsUserName}\AppData\Roaming\Anki2\{AnkiProfileName}\backups</code>. You can restore your deck from there.
