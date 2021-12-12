@@ -57,6 +57,11 @@ export class ClozeBlock extends Block {
             return `{{c${cloze_id++}::${group1}}}`;
         });
 
+        // --- Add org block clozes ---
+        result = result.replace(/#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { 
+            return `<span class="cloze">{{c${cloze_id++}::\n${g3.trim()}\n}}</span>`;
+        });
+
         this.content = result;
         return this;
     }
@@ -75,7 +80,14 @@ export class ClozeBlock extends Block {
         [(re-pattern "{{cloze .*}}") ?regex]
         [(re-find ?regex ?content)]
         ]`);
-        let blocks: any = [...logseqCloze_blocks, ...replaceCloze_blocks];
+        let orgCloze_blocks = await logseq.DB.datascriptQuery(`
+        [:find (pull ?b [*])
+        :where
+        [?b :block/content ?content]
+        [(re-pattern "#\\\\+BEGIN_(CLOZE)( .*)?\\\\n((.|\\\\n)*?)#\\\\+END_\\\\1") ?regex]
+        [(re-find ?regex ?content)]
+        ]`);
+        let blocks: any = [...logseqCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
             let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
