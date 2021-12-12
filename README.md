@@ -13,7 +13,7 @@ This is in beta test (not recomend to use in main graph and main anki profile ye
 * 🥳 Many other features like **extra field, tags** etc...
 
 ## Installation
-1. Download the logseq-anki-sync-0.0.51.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\deban\.logseq\plugins`. 
+1. Download the logseq-anki-sync-0.1.0.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\deban\.logseq\plugins`. 
 2. Download Anki if not installed.
 3. Install AnkiConnect on Anki.
    * Open Anki.
