@@ -15,7 +15,7 @@
   "license": "MIT",
   "logseq": {
     "id": "_rw1zys138",
-    "icon": "/imgs/icon.png"
+    "icon": "/icon.png"
   },
   "dependencies": {
     "@logseq/libs": "^0.0.1-alpha.33",
