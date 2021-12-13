@@ -30,9 +30,9 @@ function main(baseInfo: LSPluginBaseInfo) {
   });
 
   logseq.App.registerUIItem('toolbar', {
-    key: 'logseq-anki',
+    key: 'logseq-anki-sync',
     template: `
-      <a data-on-click="syncLogseqToAnkiWrapper"
+      <a title="Start Logseq to Anki Sync" data-on-click="syncLogseqToAnkiWrapper"
          class="button">
         <i class="ti ti-play-card"></i>
       </a>
