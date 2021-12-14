@@ -13,7 +13,7 @@ This plugin is in alpha test (not recomend to use in main graph and main anki pr
 
 ## Installation
 1. Download the logseq-anki-sync-0.1.1.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\deban\.logseq\plugins`. 
-2. Download and install [Anki](https://apps.ankiweb.net/) Anki if not done already. 
+2. Download and install [Anki](https://apps.ankiweb.net/) if not done already. 
 3. Install AnkiConnect on Anki.
    * Open Anki.
    * Select `Tools` > `Add-ons `. Now a Anki addon's dialog will open. 
@@ -56,5 +56,5 @@ This plugin is in alpha test (not recomend to use in main graph and main anki pr
 <details>
  <summary>I found a bug. What to do?</summary>
  Please create a issue: <br />
- https://github.com/debanjandhar12/logseq-anki-sync/issues
+ <a href="https://github.com/debanjandhar12/logseq-anki-sync/issues">https://github.com/debanjandhar12/logseq-anki-sync/issues</a>
 </details>
