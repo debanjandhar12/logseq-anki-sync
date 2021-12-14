@@ -48,7 +48,6 @@ logseq.ready(main).catch(console.error)
 
 // --- Main Functions ---
 async function syncLogseqToAnki() {
-  let backup = logseq.baseInfo.settings.backup || false;
   let graphName = (await logseq.App.getCurrentGraph()).name;
   let modelName = `${graphName}Model`;
   logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${graphName}`);
@@ -56,9 +55,6 @@ async function syncLogseqToAnki() {
 
   // -- Request Access --
   await AnkiConnect.requestPermission();
-
-  // -- Create backup of Anki --
-  try { if (backup) await AnkiConnect.createBackup(); } catch (e) { console.error(e); }
 
   // -- Create models if it doesn't exists --
   await AnkiConnect.createModel(modelName, ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"], template_front, template_back, template_files);
