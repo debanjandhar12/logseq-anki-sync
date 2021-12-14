@@ -5,7 +5,7 @@ import { template_front, template_back, template_files } from './templates/AnkiC
 import { ClozeBlock } from './ClozeBlock';
 import { MultilineCardBlock } from './MultilineCardBlock';
 import _ from 'lodash';
-import { get_better_error_msg } from './utils';
+import { get_better_error_msg, confirm } from './utils';
 
 const delay = (t = 100) => new Promise(r => setTimeout(r, t))
 
@@ -65,6 +65,18 @@ async function syncLogseqToAnki() {
     if (!block.properties["id"]) {await logseq.Editor.upsertBlockProperty(block.uuid, "id", block.uuid);}
   }
   console.log("Blocks:", blocks);
+
+  // -- Prompt the user what actions are going to be performed --
+  let show_actions_before_sync = logseq.baseInfo.settings.show_actions_before_sync || true;
+  if(show_actions_before_sync) {
+    let willCreate = 0, willUpdate, willDelete;
+    for(let block of blocks) {let ankiId = await block.getAnkiId(); if (ankiId == null || isNaN(ankiId)) willCreate++;} 
+    willUpdate = blocks.length - willCreate;
+    let ankiNotes = await AnkiConnect.query(`note:${modelName}`);
+    willDelete = ankiNotes.length - willUpdate;
+    let confirm_msg = `<b>The logseq to anki sync plugin will attempt to perform the following actions:</b><br/>Create ${willCreate} new notes<br/>Update ${willUpdate} existing notes<br/>Delete ${willDelete} notes<br/><br/>Are you sure you want to coninue?`;
+    if(!(await confirm(confirm_msg))) {console.log("Sync Aborted by user!"); return;}
+  }
 
   // -- Declare some variables to keep track of different operations performed --
   let created, updated, deleted, failedCreated, failedUpdated, failedDeleted, failedConversion: number;
