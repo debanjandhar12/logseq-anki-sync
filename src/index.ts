@@ -11,12 +11,12 @@ const delay = (t = 100) => new Promise(r => setTimeout(r, t))
 
 // --- Register UI Elements Onload ---
 function main(baseInfo: LSPluginBaseInfo) {
-  let syncing = false;
+  let isSyncing = false;
 
   logseq.provideModel({
     async syncLogseqToAnkiWrapper() { // Wrapper function for error handling
-      if (syncing) { console.log(`Syncing already in process...`); return; }
-      syncing = true;
+      if (isSyncing) { console.log(`Syncing already in process...`); return; }
+      isSyncing = true;
 
       try {
         await syncLogseqToAnki();
@@ -24,7 +24,7 @@ function main(baseInfo: LSPluginBaseInfo) {
         logseq.App.showMsg(get_better_error_msg(e.toString()), 'warning');
         console.error(e);
       } finally {
-        syncing = false;
+        isSyncing = false;
       }
     }
   });
