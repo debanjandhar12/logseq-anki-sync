@@ -56,5 +56,5 @@ This plugin is in alpha test (not recomend to use in main graph and main anki pr
 <details>
  <summary>I found a bug. What to do?</summary>
  Please create a issue: <br />
- <a href="https://github.com/debanjandhar12/logseq-anki-sync/issues">https://github.com/debanjandhar12/logseq-anki-sync/issues</a>
+ https://github.com/debanjandhar12/logseq-anki-sync/issues
 </details>
