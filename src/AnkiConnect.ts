@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 const ANKI_PORT = 8765;
 
 // Read https://github.com/FooSoft/anki-connect#supported-actions
@@ -51,7 +53,8 @@ export async function addNote(deckName: string, modelName: string, fields, tags:
 
     // Some versions of Anki doesnt allow to add notes without cloze
     // The trick below adds an empty note with a cloze block, and then overwites it to overcome the above problem.
-    let ankiId = await invoke("addNote", { "note": { "modelName": modelName, "deckName": deckName, "fields": { ...fields, "Text": "{{c1:: placeholder}}" }, "tags": tags, "options": { "allowDuplicate": true } } });
+    let cloze_id = _.get(/\{\{c(\d+)::(.*)\}\}/g.exec(fields["Text"]), 1) || 1;
+    let ankiId = await invoke("addNote", { "note": { "modelName": modelName, "deckName": deckName, "fields": { ...fields, "Text": `{{c${cloze_id}:: placeholder}}` }, "tags": tags, "options": { "allowDuplicate": true } } });
     r = updateNote(ankiId, deckName, modelName, fields, tags);
     return ankiId;
 }
