@@ -77,7 +77,8 @@ export class MultilineCardBlock extends Block {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
             let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
             block = await logseq.Editor.getBlock(uuid,{includeChildren: true});
-            let tags = await Promise.all(_.map(block.refs, async page => { return (await logseq.Editor.getPage(page.id)).name; }));
+            let tags = await Promise.all(_.map(block.refs, async page => { return _.get(await logseq.Editor.getPage(page.id), 'name') }));
+            console.log(tags);
             let children = await Promise.all(_.map(block.children, async child => _.extend({html_content: await Block.convertToHtml(child.content)}, child))) || [];
             return new MultilineCardBlock(uuid, block.content, block.properties || {}, page, tags, children);
         }));
