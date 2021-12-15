@@ -12,14 +12,16 @@ This plugin is in alpha test (not recomend to use in main graph and main anki pr
 * 🥳 Many other features like **extra field, tags** etc...
 
 ## Installation
-1. Download the logseq-anki-sync-0.1.1.zip from Releases and put it in a new folder inside your loseq plugin folder. In windows loseq plugin folder is usually at  `C:\Users\deban\.logseq\plugins`. 
+1. Install Logseq Anki Sync from Marketplace.
+   * Go to `⋯` > `Settings` > `Advanced` and enable Developer Mode.
+   * Now, go to `⋯` > `Plugin` > `Marketplace` and find Logseq Anki Sync and click install.
 2. Download and install [Anki](https://apps.ankiweb.net/) if not done already. 
 3. Install AnkiConnect on Anki.
    * Open Anki.
    * Select `Tools` > `Add-ons `. Now a Anki addon's dialog will open. 
    * Now click `Get Add-ons...` in addon's dialog and enter [2055492159](https://ankiweb.net/shared/info/2055492159) into the text box labeled `Code` and press the `OK` button to proceed.
-   * Restart Anki.
-4. Now, you can use the plugin by clicking Sync to Anki button in Logseq's toolbar.
+   * **Restart** Anki.
+4. Now, you can use the plugin by clicking Sync to Anki button in Logseq's toolbar.<br/>
    NB: Make sure the anki is running in background before clicking the Sync to Anki button.
 5. If you receive the message bellow, click `Yes`.
    <p align="center">
