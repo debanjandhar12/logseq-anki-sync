@@ -48,7 +48,7 @@ logseq.ready(main).catch(console.error)
 
 // --- Main Functions ---
 async function syncLogseqToAnki() {
-  let graphName = (await logseq.App.getCurrentGraph()).name;
+  let graphName = _.get(await logseq.App.getCurrentGraph(), 'name') || 'Default';
   let modelName = `${graphName}Model`;
   logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${graphName}`);
   console.log(`Starting Logseq to Anki Sync for graph ${graphName}`);

@@ -4,6 +4,7 @@ import { Remarkable } from 'remarkable';
 import hljs from "highlight.js";
 import * as AnkiConnect from './AnkiConnect';
 import path from "path";
+import _ from 'lodash';
 
 export abstract class Block {
     public uuid: string;
@@ -29,7 +30,7 @@ export abstract class Block {
     public async getAnkiId(): Promise<number> {
         if (this.ankiId) return this.ankiId;
 
-        let graphName = (await logseq.App.getCurrentGraph()).name;
+        let graphName = _.get(await logseq.App.getCurrentGraph(), 'name') || 'Default';
         let modelName = `${graphName}Model`;
         this.ankiId = parseInt((await AnkiConnect.query(`uuid-type:${this.uuid}-${this.type} note:${modelName}`))[0]);
         console.log(this.ankiId);
