@@ -74,7 +74,7 @@ async function syncLogseqToAnki() {
     willUpdate = blocks.length - willCreate;
     let ankiNotes = await AnkiConnect.query(`note:${modelName}`);
     willDelete = ankiNotes.length - willUpdate;
-    let confirm_msg = `<b>The logseq to anki sync plugin will attempt to perform the following actions:</b><br/>Create ${willCreate} new notes<br/>Update ${willUpdate} existing notes<br/>Delete ${willDelete} notes<br/><br/>Are you sure you want to coninue?`;
+    let confirm_msg = `<b>The logseq to anki sync plugin will attempt to perform the following actions:</b><br/>Create ${willCreate} new anki notes<br/>Update ${willUpdate} existing anki notes<br/>Delete ${willDelete} anki notes<br/><br/>Are you sure you want to coninue?`;
     if(!(await confirm(confirm_msg))) {console.log("Sync Aborted by user!"); return;}
   }
 
