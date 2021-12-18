@@ -31,7 +31,7 @@ export abstract class Block {
         if (this.ankiId) return this.ankiId;
 
         let graphName = _.get(await logseq.App.getCurrentGraph(), 'name') || 'Default';
-        let modelName = `${graphName}Model`;
+        let modelName = `${graphName}Model`.replace(/\s/g, "_");
         this.ankiId = parseInt((await AnkiConnect.query(`uuid-type:${this.uuid}-${this.type} note:${modelName}`))[0]);
         console.log(this.ankiId);
         return this.ankiId;
