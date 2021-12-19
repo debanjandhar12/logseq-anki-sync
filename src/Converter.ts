@@ -3,6 +3,7 @@ import { Remarkable } from 'remarkable';
 import hljs from "highlight.js";
 import path from "path";
 import * as AnkiConnect from './AnkiConnect';
+import '@logseq/libs'
 
 export async function convertLogseqMarkuptoHtml(content) {
     let result = content;
