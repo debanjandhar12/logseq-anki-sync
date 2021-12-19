@@ -95,7 +95,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
     let result = content;
 
     result = await convertLogseqMarkuptoHtml(result);
-    if (format == "markdown") {
+    if (format == "markdown" || format == "md") {
         result = await convertMdtoHtml(result);
     } else if (format == "org") {
         result = await convertOrgtoHtml(result);
