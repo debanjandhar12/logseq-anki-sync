@@ -49,21 +49,21 @@ export async function convertMdtoHtml(content) {
             if (lang && hljs.getLanguage(lang)) {
                 try {
                     return hljs.highlight(lang, str).value;
-                } catch (err) {}
+                } catch (err) { }
             }
             try {
                 return hljs.highlightAuto(str).value;
-            } catch (err) {}
+            } catch (err) { }
             return '';
         }
-    });          
+    });
     const originalFenceRenderRule = remarkable.renderer.rules.fence;
     remarkable.renderer.rules.fence = (tokens, idx, ...args) => {
-      if(!tokens[idx].params) {
-        tokens[idx].params = "auto";
-      }
-      return originalFenceRenderRule(tokens, idx, ...args);
-    };      
+        if (!tokens[idx].params) {
+            tokens[idx].params = "auto";
+        }
+        return originalFenceRenderRule(tokens, idx, ...args);
+    };
     // Handle Images
     const originalLinkValidator = remarkable.inline.validateLink;
     const dataLinkRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z-]+=[a-z-]+)?)?(;base64)?,[a-z0-9!$&',()*+,;=\-._~:@/?%\s]*\s*$/i;
@@ -86,17 +86,18 @@ export async function convertMdtoHtml(content) {
     return result;
 }
 
-export async function convertOrgtoHtml(content) {
+export async function convertOrgtoHtml(content) { // TODO: Add support for org-mode
     let result = content;
     return result;
 }
+
 export async function convertToHtml(content: string, format: string = "markdown"): Promise<string> {
-    let result = content;   
+    let result = content;
 
     result = await convertLogseqMarkuptoHtml(result);
     if (format == "markdown") {
         result = await convertMdtoHtml(result);
-    } else if (format == "org") { 
+    } else if (format == "org") {
         result = await convertOrgtoHtml(result);
     };
 
