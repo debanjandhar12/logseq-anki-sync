@@ -1,6 +1,7 @@
 import { Block } from "./block";
 import '@logseq/libs'
 import _ from 'lodash';
+import * as Converter from './Converter';
 
 export class MultilineCardBlock extends Block {
     public type: string = "multiline_card";
@@ -79,7 +80,7 @@ export class MultilineCardBlock extends Block {
             block = await logseq.Editor.getBlock(uuid,{includeChildren: true});
             let tags = await Promise.all(_.map(block.refs, async page => { return _.get(await logseq.Editor.getPage(page.id), 'name') }));
             console.log(tags);
-            let children = await Promise.all(_.map(block.children, async child => _.extend({html_content: await Block.convertToHtml(child.content)}, child))) || [];
+            let children = await Promise.all(_.map(block.children, async child => _.extend({html_content: await Converter.convertToHtml(child.content)}, child))) || [];
             return new MultilineCardBlock(uuid, block.content, block.properties || {}, page, tags, children);
         }));
         blocks = _.uniqBy(blocks, 'uuid');
