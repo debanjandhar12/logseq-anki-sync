@@ -6,7 +6,7 @@ import * as AnkiConnect from './AnkiConnect';
 
 export async function convertLogseqMarkuptoHtml(content) {
     let result = content;
-    result = result.replace(/^\s*(\w|-)*::.*/gm, "");  //Remove properties
+    result = result.replace(/^\s*(\w|-)*::.*/gm, "").replace(/:PROPERTIES:\n((.|\n)*?):END:/gm, "");  //Remove properties
     result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math
     result = result.replace(/\$\$([\s\S]*?)\$\$/g, "\\[ $1 \\]"); // Convert block math
     result = result.replace(/#\+BEGIN_(INFO|PROOF)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { // Remove proof, info org blocks
