@@ -14,7 +14,7 @@
     "dev": "parcel ./src/index.html --public-url ./",
     "build": "parcel build ./src/index.html --public-url ./"
   },
-  "license": "Creative Commons Zero v1.0 Universal",
+  "license": "CC0-1.0 License",
   "logseq": {
     "id": "_rw1zys138",
     "icon": "/icon.png"
