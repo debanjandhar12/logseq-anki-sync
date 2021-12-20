@@ -11,24 +11,9 @@ const delay = (t = 100) => new Promise(r => setTimeout(r, t))
 
 // --- Register UI Elements Onload ---
 function main(baseInfo: LSPluginBaseInfo) {
-  let isSyncing = false;
-
   logseq.provideModel({
-    async syncLogseqToAnkiWrapper() { // Wrapper function for error handling
-      if (isSyncing) { console.log(`Syncing already in process...`); return; }
-      isSyncing = true;
-
-      try {
-        await syncLogseqToAnki();
-      } catch (e) {
-        logseq.App.showMsg(get_better_error_msg(e.toString()), 'warning');
-        console.error(e);
-      } finally {
-        isSyncing = false;
-      }
-    }
+    syncLogseqToAnkiWrapper: syncLogseqToAnkiWrapper,
   });
-
   logseq.App.registerUIItem('toolbar', {
     key: 'logseq-anki-sync',
     template: `
@@ -38,6 +23,10 @@ function main(baseInfo: LSPluginBaseInfo) {
       </a>
     `
   });
+  logseq.App.registerCommandPalette({
+    key: `logseq-anki-sync-command-palette`,
+    label: `Start Logseq to Anki Sync`
+  }, syncLogseqToAnkiWrapper);
 
   ClozeBlock.initLogseqOperations();
   MultilineCardBlock.initLogseqOperations();
@@ -47,6 +36,21 @@ function main(baseInfo: LSPluginBaseInfo) {
 logseq.ready(main).catch(console.error)
 
 // --- Main Functions ---
+let isSyncing = false;
+async function syncLogseqToAnkiWrapper() { // Wrapper function for error handling
+  if (isSyncing) { console.log(`Syncing already in process...`); return; }
+  isSyncing = true;
+
+  try {
+    await syncLogseqToAnki();
+  } catch (e) {
+    logseq.App.showMsg(get_better_error_msg(e.toString()), 'warning');
+    console.error(e);
+  } finally {
+    isSyncing = false;
+  }
+}
+
 async function syncLogseqToAnki() {
   let graphName = _.get(await logseq.App.getCurrentGraph(), 'name') || 'Default';
   let modelName = `${graphName}Model`.replace(/\s/g, "_");
