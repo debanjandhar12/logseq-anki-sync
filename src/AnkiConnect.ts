@@ -72,7 +72,7 @@ export async function updateNote(ankiId: number, deckName: string, modelName: st
     for (let tag of tags)
         r = await invoke("addTags", { "notes": [ankiId], "tags": tag });
     r = await invoke("clearUnusedTags", {});
-
+    console.log(fields);
     return await invoke("updateNoteFields", { "note": { id: ankiId, "deckName": deckName, "modelName": modelName, "fields": fields } });
 }
 
@@ -135,7 +135,7 @@ export async function createModel(modelName: string, fields: string[], template_
 
     // Iterate over files obj and add them to anki
     for (var filename in template_files){
-        try {await storeMediaFileByContent(filename, template_files[filename]);} catch(e) { console.error(e); }
+        try {await storeMediaFileByContent(filename, template_files[filename]);} catch(e) { console.log(filename);console.error(e); }
     }
 }
 

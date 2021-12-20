@@ -1,13 +1,13 @@
 import { decodeHTMLEntities } from './utils';
-import { Remarkable } from 'remarkable';
 import hljs from "highlight.js";
 import path from "path";
 import * as AnkiConnect from './AnkiConnect';
 import '@logseq/libs'
+import * as cheerio from 'cheerio';
 
 export async function convertLogseqMarkuptoHtml(content) {
     let result = content;
-    result = result.replace(/^\s*(\w|-)*::.*/gm, "").replace(/:PROPERTIES:\n((.|\n)*?):END:/gm, "");  //Remove properties
+    result = result.replace(/^\s*(\w|-)*::.*\n/gm, "").replace(/:PROPERTIES:\n((.|\n)*?):END:\n/gm, "");  //Remove properties
     result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math
     result = result.replace(/\$\$([\s\S]*?)\$\$/g, "\\[ $1 \\]"); // Convert block math
     result = result.replace(/#\+BEGIN_(INFO|PROOF)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { // Remove proof, info org blocks
@@ -34,60 +34,69 @@ export async function convertLogseqMarkuptoHtml(content) {
 
 export async function convertMdtoHtml(content) {
     let result = content;
-    result = result.replace(/\\/gi, "\\\\"); //Fix blackkslashes
-    let remarkable = new Remarkable('full', {
-        html: true,
-        breaks: true,
-        typographer: false,
-    });
-    remarkable.inline.ruler.disable(['sub', 'sup', 'ins']);
-    remarkable.block.ruler.disable(['code']);
-    // Handle codeblocks
-    remarkable.set({
-        langPrefix: 'hljs language-',
-        highlight: function (str, lang) {
-            if (lang && hljs.getLanguage(lang)) {
-                try {
-                    return hljs.highlight(lang, str).value;
-                } catch (err) { }
-            }
-            try {
-                return hljs.highlightAuto(str).value;
-            } catch (err) { }
-            return '';
-        }
-    });
-    const originalFenceRenderRule = remarkable.renderer.rules.fence;
-    remarkable.renderer.rules.fence = (tokens, idx, ...args) => {
-        if (!tokens[idx].params) {
-            tokens[idx].params = "auto";
-        }
-        return originalFenceRenderRule(tokens, idx, ...args);
-    };
-    // Handle Images
-    const originalLinkValidator = remarkable.inline.validateLink;
+    // @ts-expect-error
+    result = Mldoc.export("html", result,
+        JSON.stringify({
+            "toc": false,
+            "heading_number": false,
+            "keep_line_break": false,
+            "format": "Markdown",
+            "heading_to_list": false,
+            "exporting_keep_properties": false,
+            "inline_type_with_pos": true,
+            "export_md_remove_options": [],
+            "hiccup_in_block": true
+        }),
+        JSON.stringify({})
+    );
+    const $ = cheerio.load(result, {decodeEntities: false});
     const dataLinkRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z-]+=[a-z-]+)?)?(;base64)?,[a-z0-9!$&',()*+,;=\-._~:@/?%\s]*\s*$/i;
     const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
-    const isWebURL = /^(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
-    remarkable.inline.validateLink = (url: string) => originalLinkValidator(url) || encodeURI(url).match(dataLinkRegex) || (encodeURI(url).match(isImage) && !encodeURI(url).match(isWebURL));
-    const originalImageRenderRule = remarkable.renderer.rules.image;
+    const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
     let graphPath = (await logseq.App.getCurrentGraph()).path;
-    remarkable.renderer.rules.image = (...args) => {
-        if ((encodeURI(args[0][args[1]].src).match(isImage) && !encodeURI(args[0][args[1]].src).match(isWebURL))) { // Image is relative to vault
-            let imgPath = path.join(graphPath, args[0][args[1]].src.replace(/^(\.\.\/)+/, ""));
-            AnkiConnect.storeMediaFileByPath(encodeURIComponent(args[0][args[1]].src), imgPath); // Flatten and save
-            args[0][args[1]].src = encodeURIComponent(args[0][args[1]].src); // Flatten image and convert to markdown.
+    $('img').each(function(i, elm) {
+        if ((encodeURI(elm.attribs.src).match(isImage) && !encodeURI(elm.attribs.src).match(isWebURL))) {
+            let imgPath = path.join(graphPath, elm.attribs.src.replace(/^(\.\.\/)+/, ""));
+            AnkiConnect.storeMediaFileByPath(encodeURIComponent(elm.attribs.src), imgPath); // Flatten and save
+            elm.attribs.src = encodeURIComponent(elm.attribs.src); // Flatten image and convert to markdown.
         }
-        return originalImageRenderRule(...args);
-    };
-    // Render and decode html
-    result = remarkable.render(result);
-    result = decodeHTMLEntities(result);
+        else elm.attribs.src = elm.attribs.src.replace(/^http(s?):\/?\/?/i, "http$1://");
+    });
+    result = $('#content ul li').html(); 
     return result;
 }
 
-export async function convertOrgtoHtml(content) { // TODO: Add support for org-mode
+export async function convertOrgtoHtml(content) {
     let result = content;
+    // @ts-expect-error
+    result = Mldoc.export("html", result,
+        JSON.stringify({
+            "toc": false,
+            "heading_number": false,
+            "keep_line_break": false,
+            "format": "Org",
+            "heading_to_list": false,
+            "exporting_keep_properties": false,
+            "inline_type_with_pos": true,
+            "export_md_remove_options": [],
+            "hiccup_in_block": true
+        }),
+        JSON.stringify({})
+    );
+    const $ = cheerio.load(result, {decodeEntities: false});
+    const dataLinkRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z-]+=[a-z-]+)?)?(;base64)?,[a-z0-9!$&',()*+,;=\-._~:@/?%\s]*\s*$/i;
+    const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
+    const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
+    let graphPath = (await logseq.App.getCurrentGraph()).path;
+    $('img').each(function(i, elm) {
+        if ((encodeURI(elm.attribs.src).match(isImage) && !encodeURI(elm.attribs.src).match(isWebURL))) {
+            let imgPath = path.join(graphPath, elm.attribs.src.replace(/^(\.\.\/)+/, ""));
+            AnkiConnect.storeMediaFileByPath(encodeURIComponent(elm.attribs.src), imgPath); // Flatten and save
+            elm.attribs.src = encodeURIComponent(elm.attribs.src); // Flatten image and convert to markdown.
+        }
+        else elm.attribs.src = elm.attribs.src.replace(/^http(s?):\/?\/?/i, "http$1://");
+    });
+    result = $('#content ul li').html(); 
     return result;
 }
 
@@ -101,5 +110,6 @@ export async function convertToHtml(content: string, format: string = "markdown"
         result = await convertOrgtoHtml(result);
     };
 
+    console.log(content, result);
     return result;
 }

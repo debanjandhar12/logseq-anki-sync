@@ -92,7 +92,7 @@ async function syncLogseqToAnki() {
   for (let block of blocks) {
     // Prepare the content of the anki note from block
     let html;
-    try {html = (await block.addClozes().convertToHtml()).getContent();} catch (e) { console.error(e); failedConversion++; failedConversionArr.push(block); continue; }
+    try {html = (await block.addClozes().convertToHtml()).getContent();console.log(html);} catch (e) { console.error(e); failedConversion++; failedConversionArr.push(block); continue; }
     let deck: any = _.get(block, 'properties.deck') || _.get(block, 'page.properties.deck') || "Default";
     if (typeof deck != "string") deck = deck[0];
     let breadcrumb = `<a href="#">${block.page.originalName}</a>`;
