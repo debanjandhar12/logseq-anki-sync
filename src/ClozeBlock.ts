@@ -22,8 +22,8 @@ export class ClozeBlock extends Block {
         let result = this.content;
 
         // Remove logseq properties as it might cause problems during cloze creation
-        result = safeReplace(result, /^\s*(\w|-)*::.*\n\n?/gm, ""); //Remove md properties
-        result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n/gm, ""); //Remove org properties
+        result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
+        result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
     
         // --- Add anki-cloze array clozes ---
         let replaceclozeArr: any = `${this.properties.replacecloze}`;
