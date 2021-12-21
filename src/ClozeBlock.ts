@@ -53,7 +53,7 @@ export class ClozeBlock extends Block {
         }
 
         // --- Add logseq clozes ---
-        result = result.replace(/\{\{cloze (.*)\}\}/g, (match, group1) => {
+        result = result.replace(/\{\{cloze (.*?)\}\}/g, (match, group1) => {
             return `{{c${cloze_id++}::${group1}}}`;
         });
 
