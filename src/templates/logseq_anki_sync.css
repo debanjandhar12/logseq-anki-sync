@@ -86,7 +86,7 @@ h5 {
     margin-block-end: 0px;
 }
 
-/* --- custom css for logseq elements --- */
+/* --- logseq elements --- */
 blockquote {
     display: block;
     text-indent: 0;
@@ -101,6 +101,21 @@ blockquote {
 .text-center {
     display: block;
     text-align: center;
+}
+
+a.tag:before {
+    content: "#";
+}  
+
+a.tag {
+    cursor: pointer;
+    color: #106ba3;
+    opacity: 0.8;
+}
+
+a.tag:hover {
+    opacity: 1;
+    transition: 0.3s;
 }
 
 /* personal logseq elements */
