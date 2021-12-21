@@ -54,6 +54,12 @@ export async function convertMdtoHtml(content) {
     const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
     const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
     let graphPath = (await logseq.App.getCurrentGraph()).path;
+    $('pre code').each(function(i, elm) { // Syntax hightlight block code (block codes are preceded by pre)
+        $(elm).addClass("hljs");
+        if(elm.attribs["data-lang"]) {
+            $(elm).html(hljs.highlight(elm.attribs["data-lang"], $(elm).html()).value.replace(/\n$/, ""));
+        } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, ""));
+    });
     $('img').each(function(i, elm) {
         if ((encodeURI(elm.attribs.src).match(isImage) && !encodeURI(elm.attribs.src).match(isWebURL))) {
             let imgPath = path.join(graphPath, elm.attribs.src.replace(/^(\.\.\/)+/, ""));
@@ -88,6 +94,12 @@ export async function convertOrgtoHtml(content) {
     const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
     const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
     let graphPath = (await logseq.App.getCurrentGraph()).path;
+    $('pre code').each(function(i, elm) { // Syntax hightlight block code (block codes are preceded by pre)
+        $(elm).addClass("hljs");
+        if(elm.attribs["data-lang"]) {
+            $(elm).html(hljs.highlight(elm.attribs["data-lang"], $(elm).html()).value.replace(/\n$/, ""));
+        } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, ""));
+    });
     $('img').each(function(i, elm) {
         if ((encodeURI(elm.attribs.src).match(isImage) && !encodeURI(elm.attribs.src).match(isWebURL))) {
             let imgPath = path.join(graphPath, elm.attribs.src.replace(/^(\.\.\/)+/, ""));
