@@ -87,7 +87,7 @@ h5 {
 }
 
 /* --- logseq elements --- */
-blockquote {
+blockquote, .quote {
     display: block;
     text-indent: 0;
     padding: 8px 20px;
@@ -98,7 +98,7 @@ blockquote {
     color: rgb(40, 40, 40);
 }
 
-.text-center {
+.center {
     display: block;
     text-align: center;
 }
@@ -150,6 +150,10 @@ a.tag:hover {
     background-color: #fbfaf8;
     margin: 1rem 0;
     color: rgb(40, 40, 40);
+}
+
+.info, .proof, .comment {
+    display: none;
 }
 
 .left {
