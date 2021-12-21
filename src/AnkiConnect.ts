@@ -53,7 +53,7 @@ export async function addNote(deckName: string, modelName: string, fields, tags:
 
     // Some versions of Anki doesnt allow to add notes without cloze
     // The trick below adds an empty note with a cloze block, and then overwites it to overcome the above problem.
-    let cloze_id = _.get(/\{\{c(\d+)::(.*)\}\}/g.exec(fields["Text"]), 1) || 1;
+    let cloze_id = _.get(/(\{\{c(\d+)::)((.|\n)*)\}\}/g.exec(fields["Text"]), 2) || 1;
     let ankiId = await invoke("addNote", { "note": { "modelName": modelName, "deckName": deckName, "fields": { ...fields, "Text": `{{c${cloze_id}:: placeholder}}` }, "tags": tags, "options": { "allowDuplicate": true } } });
     r = updateNote(ankiId, deckName, modelName, fields, tags);
     return ankiId;
@@ -72,7 +72,6 @@ export async function updateNote(ankiId: number, deckName: string, modelName: st
     for (let tag of tags)
         r = await invoke("addTags", { "notes": [ankiId], "tags": tag });
     r = await invoke("clearUnusedTags", {});
-    console.log(fields);
     return await invoke("updateNoteFields", { "note": { id: ankiId, "deckName": deckName, "modelName": modelName, "fields": fields } });
 }
 

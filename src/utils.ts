@@ -117,7 +117,7 @@ export function getRandomUnicodeString(length?: number) : string {
 }
 
 // Replace function that avoids replacing inside math and code blocks
-export function safeReplace(content: string, regex : RegExp, replaceArg: any) : string {
+export function safeReplace(content: string, regex : RegExp | string, replaceArg: any) : string {
     let result = content;
     let hashmap = {};
     result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match) => { // Escape inline math

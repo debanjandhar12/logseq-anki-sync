@@ -4,7 +4,7 @@ import path from "path";
 import * as AnkiConnect from './AnkiConnect';
 import '@logseq/libs'
 import * as cheerio from 'cheerio';
-import { safeReplace } from './utils';
+import { getRandomUnicodeString, safeReplace } from './utils';
 
 export async function convertLogseqMarkuptoHtml(content) {
     let result = content;
@@ -21,6 +21,24 @@ export async function convertLogseqMarkuptoHtml(content) {
 
 export async function convertMdtoHtml(content) {
     let result = content;
+
+    // --- Hacky fix for inline html support and {{c\d+:: content}} marcos ---
+    // Put all html content in a hashmap
+    let hashmap = {};
+    result = safeReplace(result, /(<((\w|-)*?)((.|\n)*?)>((.|\n)*?)<\/\2>)|(<((.|\n)*?)\/>)/ig, (match) => {
+        let str = getRandomUnicodeString();
+        hashmap[str] = match;
+        return str;
+    }); 
+    result = safeReplace(result, /(\{\{c(\d+)::)((.|\n)*)\}\}/g, (match, g1, g2, g3, ...arg) => {
+        let strFront = getRandomUnicodeString();
+        let strBack = getRandomUnicodeString();
+        hashmap[strFront] = g1;
+        hashmap[strBack] = "}}";
+        return `${strFront}${g3}${strBack}`;
+    }); 
+
+    // Render the markdown
     // @ts-expect-error
     result = Mldoc.export("html", result,
         JSON.stringify({
@@ -36,6 +54,8 @@ export async function convertMdtoHtml(content) {
         }),
         JSON.stringify({})
     );
+
+    // Render images and and codes
     const $ = cheerio.load(result, {decodeEntities: false});
     const dataLinkRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z-]+=[a-z-]+)?)?(;base64)?,[a-z0-9!$&',()*+,;=\-._~:@/?%\s]*\s*$/i;
     const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
@@ -55,7 +75,13 @@ export async function convertMdtoHtml(content) {
         }
         else elm.attribs.src = elm.attribs.src.replace(/^http(s?):\/?\/?/i, "http$1://");
     });
-    result = $('#content ul li').html(); 
+    result = $('#content ul li').html();
+
+    // Bring back html content and clozes from hasmap
+    for(let key in hashmap) {
+        result = safeReplace(result, key, hashmap[key]);
+    }
+
     return result;
 }
 
