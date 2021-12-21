@@ -19,7 +19,7 @@ export class ClozeBlock extends Block {
 
     public addClozes(): ClozeBlock {
         let cloze_id = 1;
-        let result = this.content;
+        let result : string = this.content;
 
         // Remove logseq properties as it might cause problems during cloze creation
         result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
@@ -36,7 +36,6 @@ export class ClozeBlock extends Block {
         let math = get_math_inside_md(result); // get list of math inside md
         for (let [i, reg] of replaceclozeArr.entries()) {
             if (typeof reg == "string")
-                // @ts-expect-error
                 result = result.replaceAll(reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(), (match) => {
                     if (math.find(math => math.includes(match)))
                         return `{{c${cloze_id}::${match.replace(/}}/g, "} } ")} }}`; // Add extra space between braces
