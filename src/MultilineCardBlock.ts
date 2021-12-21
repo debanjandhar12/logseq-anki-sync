@@ -7,8 +7,8 @@ export class MultilineCardBlock extends Block {
     public type: string = "multiline_card";
     public children: any[];
     public tags: any[];
-    public constructor(uuid: string, content: string, properties: any, page: any, tags: any = [], children: any = []) {
-        super(uuid, content, properties, page);
+    public constructor(uuid: string, content: string, format: string, properties: any, page: any, tags: any = [], children: any = []) {
+        super(uuid, content, format, properties, page);
         this.children = children;
         this.tags = tags;
     }
@@ -80,7 +80,7 @@ export class MultilineCardBlock extends Block {
             let tags = await Promise.all(_.map(block.refs, async page => { return _.get(await logseq.Editor.getPage(page.id), 'name') }));
             console.log(tags);
             let children = await Promise.all(_.map(block.children, async child => _.extend({html_content: await Converter.convertToHtml(child.content)}, child))) || [];
-            return new MultilineCardBlock(uuid, block.content, block.properties || {}, page, tags, children);
+            return new MultilineCardBlock(uuid, block.content, block.format, block.properties || {}, page, tags, children);
         }));
         blocks = _.uniqBy(blocks, 'uuid');
 

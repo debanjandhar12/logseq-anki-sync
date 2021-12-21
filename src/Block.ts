@@ -6,16 +6,19 @@ import * as Converter from './Converter';
 export abstract class Block {
     public uuid: string;
     public content: string;
-    public page: any;
+    public format: string;
     public properties: any;
+    public page: any;
     public type: string;
     private ankiId: number;
 
-    public constructor(uuid: string, content: string, properties: any, page: any) {
+    public constructor(uuid: string, content: string, format: string, properties: any, page: any) {
         this.uuid = uuid;
         this.content = content;
+        this.format = format;
         this.properties = properties;
         this.page = page;
+        console.log("Hehe2"+format);
     }
 
     public abstract addClozes(): Block;
@@ -35,8 +38,7 @@ export abstract class Block {
     }
 
     public async convertToHtml(): Promise<Block> {
-        let result = this.content;
-        this.content = await Converter.convertToHtml(result);
+        this.content = await Converter.convertToHtml(this.content, this.format);
         return this;
     }
 
