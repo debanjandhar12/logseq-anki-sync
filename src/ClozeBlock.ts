@@ -1,6 +1,6 @@
 import { Block } from "./block";
 import '@logseq/libs'
-import { string_to_arr, get_math_inside_md } from './utils';
+import { string_to_arr, get_math_inside_md, safeReplace } from './utils';
 import _ from 'lodash';
 
 export class ClozeBlock extends Block {
@@ -22,8 +22,9 @@ export class ClozeBlock extends Block {
         let result = this.content;
 
         // Remove logseq properties as it might cause problems during cloze creation
-        result = result.replace(/^\s*(\w|-)*::.*\n/gm, "").replace(/:PROPERTIES:\n((.|\n)*?):END:\n/gm, "");
-
+        result = safeReplace(result, /^\s*(\w|-)*::.*\n/gm, ""); //Remove md properties
+        result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n/gm, ""); //Remove org properties
+    
         // --- Add anki-cloze array clozes ---
         let replaceclozeArr: any = `${this.properties.replacecloze}`;
         if (replaceclozeArr && replaceclozeArr.trim() != "" && replaceclozeArr != 'undefined') { replaceclozeArr = string_to_arr(replaceclozeArr); }
@@ -53,12 +54,12 @@ export class ClozeBlock extends Block {
         }
 
         // --- Add logseq clozes ---
-        result = result.replace(/\{\{cloze (.*)\}\}/g, (match, group1) => {
+        result = safeReplace(result, /\{\{cloze (.*)\}\}/g, (match, group1) => {
             return `{{c${cloze_id++}::${group1}}}`;
         });
 
         // --- Add org block clozes ---
-        result = result.replace(/#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { 
+        result = safeReplace(result, /#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { 
             return `<span class="cloze">{{c${cloze_id++}::\n${g3.trim()}\n}}</span>`;
         });
 

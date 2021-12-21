@@ -46,11 +46,10 @@ export class MultilineCardBlock extends Block {
         result+=`\n<ul class="children-list">`;
         for(const child of this.children) {
             result += `\n<li class="children">`;
+            let sanitized_html_content = child.html_content.replace(/\{\{c\d+::(.*)\}\}/g, "$2");
             if(direction == "<->" || direction == "->")
-                result += `{{c1::`;
-            result += `${child.html_content.replace(/\{\{c\d+::(.*)\}\}/g, "$2")}`;
-            if(direction == "<->" || direction == "->")
-                result += ` }}`;
+                result += `{{c1:: ${sanitized_html_content} }}`;
+            else result += `${sanitized_html_content}`;
             result += `</li>`;
         }
         result += `</ul>`;
