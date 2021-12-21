@@ -122,12 +122,12 @@ export function safeReplace(content: string, regex : RegExp | string, replaceArg
     let hashmap = {};
     result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match) => { // Escape inline math
         let str = getRandomUnicodeString();
-        hashmap[str] = match;
+        hashmap[str] = match.replaceAll("$","$$$$");
         return str;
     });
     result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match) => { // Escape block math
         let str = getRandomUnicodeString();
-        hashmap[str] = match;
+        hashmap[str] = match.replaceAll("$","$$$$");
         return str;
     });
     result = result.replace(/```(.*)\n(.|\n)*?\n```/g, (match) => { // Escape code

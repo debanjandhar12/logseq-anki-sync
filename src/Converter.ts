@@ -6,7 +6,7 @@ import '@logseq/libs'
 import * as cheerio from 'cheerio';
 import { getRandomUnicodeString, safeReplace } from './utils';
 
-export async function convertLogseqMarkuptoHtml(content) {
+export async function convertLogseqMarkuptoHtml(content : string) : Promise<string> {
     let result = content;
     result = safeReplace(result, /^\s*(\w|-)*::.*\n/gm, ""); //Remove md properties
     result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n/gm, ""); //Remove org properties
@@ -21,7 +21,7 @@ export async function convertLogseqMarkuptoHtml(content) {
 
 export async function convertMdtoHtml(content) {
     let result = content;
-
+    result = await convertLogseqMarkuptoHtml(result);
     // --- Hacky fix for inline html support and {{c\d+:: content}} marcos ---
     // Put all html content in a hashmap
     let hashmap = {};
