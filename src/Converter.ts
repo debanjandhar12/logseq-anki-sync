@@ -8,7 +8,7 @@ import { getRandomUnicodeString, safeReplace } from './utils';
 
 export async function convertLogseqMarkuptoHtml(content : string) : Promise<string> {
     let result = content;
-    result = safeReplace(result, /^\s*(\w|-)*::.*\n/gm, ""); //Remove md properties
+    result = safeReplace(result, /^\s*(\w|-)*::.*\n\n?/gm, ""); //Remove md properties
     result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n/gm, ""); //Remove org properties
     // TODO: Convert embeded page refs and block refs here.
     result = safeReplace(result, /\[\[(.*?)\]\]/gm, `<a href="#$1" class="page-reference">$1</a>`); // Convert page refs
