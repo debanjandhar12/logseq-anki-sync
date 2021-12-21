@@ -138,6 +138,26 @@ a.page-reference:hover {
     background-color: #c8e6fa;
 }
 
+a.block-reference {
+    color: #106ba3;
+}
+
+a.block-reference:before {
+    color: rgb(115,115,115);
+    content: "((";
+    opacity: 0.3;
+}
+
+a.block-reference:after {
+    color: rgb(115,115,115);
+    content: "))";
+    opacity: 0.3;
+}
+
+a.block-reference:hover {
+    background-color: #c8e6fa;
+}
+
 /* personal logseq elements */
 .eexample {
     display: block;

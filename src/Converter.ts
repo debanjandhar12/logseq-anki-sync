@@ -12,6 +12,7 @@ export async function convertLogseqMarkuptoHtml(content) {
     result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n/gm, ""); //Remove org properties
     // TODO: Convert embeded page refs and block refs here.
     result = safeReplace(result, /\[\[(.*?)\]\]/gm, `<a href="#$1" class="page-reference">$1</a>`); // Convert page refs
+    result = safeReplace(result, /\(\((.*?)\)\)/gm, `<a href="#$1" class="block-reference">$1</a>`); // Convert block refs
 
     result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math
     result = result.replace(/\$\$([\s\S]*?)\$\$/g, "\\[ $1 \\]"); // Convert block math
