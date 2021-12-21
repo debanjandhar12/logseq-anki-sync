@@ -1,6 +1,7 @@
 import * as ohm from "ohm-js";
 import { removeEmptyNotes } from "./AnkiConnect";
 import _ from 'lodash';
+import replaceAsync from "string-replace-async";
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
@@ -136,6 +137,31 @@ export function safeReplace(content: string, regex : RegExp | string, replaceArg
         return str;
     });
     result = result.replace(regex, replaceArg);
+    for(let key in hashmap) {
+        result = result.replace(key, hashmap[key]);
+    }
+    return result;
+}
+
+export async function safeReplaceAsync(content: string, regex : RegExp | string, replaceArg: any) : Promise<string> {
+    let result = content;
+    let hashmap = {};
+    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match) => { // Escape inline math
+        let str = getRandomUnicodeString();
+        hashmap[str] = match.replaceAll("$","$$$$");
+        return str;
+    });
+    result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match) => { // Escape block math
+        let str = getRandomUnicodeString();
+        hashmap[str] = match.replaceAll("$","$$$$");
+        return str;
+    });
+    result = result.replace(/```(.*)\n(.|\n)*?\n```/g, (match) => { // Escape code
+        let str = getRandomUnicodeString();
+        hashmap[str] = match;
+        return str;
+    });
+    result = await replaceAsync(result, regex, replaceArg);
     for(let key in hashmap) {
         result = result.replace(key, hashmap[key]);
     }

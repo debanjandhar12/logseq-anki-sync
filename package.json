@@ -24,7 +24,8 @@
     "highlight.js": "^11.3.1",
     "lodash": "^4.17.21",
     "ohm-js": "^16.0.0",
-    "remarkable": "2.0.1"
+    "remarkable": "2.0.1",
+    "string-replace-async": "^3.0.2"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.0.0-beta.2",

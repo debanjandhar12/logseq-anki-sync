@@ -1,16 +1,20 @@
-import { decodeHTMLEntities } from './utils';
 import hljs from "highlight.js";
 import path from "path";
 import * as AnkiConnect from './AnkiConnect';
 import '@logseq/libs'
 import * as cheerio from 'cheerio';
-import { getRandomUnicodeString, safeReplace } from './utils';
+import { getRandomUnicodeString, safeReplace, safeReplaceAsync, decodeHTMLEntities } from './utils';
 
-export async function convertLogseqMarkuptoHtml(content : string) : Promise<string> {
+export async function convertLogseqMarkuptoHtml(content : string, format: string = "markdown") : Promise<string> {
     let result = content;
     result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
     result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
-    // TODO: Convert embeded page refs and block refs here.
+    // TODO: Convert embeded page refs here.
+    result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {
+        return `<div class="embed-block">
+                <ul><li class="children">${await convertToHtml((await logseq.Editor.getBlock(g1)).content, format)}</li></ul>
+                </div>`;
+    }); 
     result = safeReplace(result, /\[\[(.*?)\]\]/gm, `<a href="#$1" class="page-reference">$1</a>`); // Convert page refs
     result = safeReplace(result, /\(\((.*?)\)\)/gm, `<a href="#$1" class="block-reference">$1</a>`); // Convert block refs
 
@@ -25,7 +29,7 @@ export async function convertMdtoHtml(content) {
     // --- Hacky fix for inline html support and {{c\d+:: content}} marcos ---
     // Put all html content in a hashmap
     let hashmap = {};
-    result = safeReplace(result, /(<((\w|-)*?)((.|\n)*?)>((.|\n)*?)<\/\2>)|(<((.|\n)*?)\/>)/ig, (match) => {
+    result = safeReplace(result, /(<((\w|-)*?)((.|\n)*?)>((.|\n)*?)<\/\2>)|(<((.|\n)*?)\/>)|(<(br|img|a)((.|\n)*?)>)/ig, (match) => {
         let str = getRandomUnicodeString();
         hashmap[str] = match;
         return str;
@@ -154,7 +158,7 @@ export async function convertOrgtoHtml(content) {
 export async function convertToHtml(content: string, format: string = "markdown"): Promise<string> {
     let result = content;
 
-    result = await convertLogseqMarkuptoHtml(result);
+    result = await convertLogseqMarkuptoHtml(result, format);
     if (format == "markdown" || format == "md") {
         result = await convertMdtoHtml(result);
     } else if (format == "org") {

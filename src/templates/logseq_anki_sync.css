@@ -158,6 +158,15 @@ a.block-reference:hover {
     background-color: #c8e6fa;
 }
 
+.embed-block {
+    width: 100%;
+    padding: 0.75em 0.5em;
+    border: 2px solid #000;
+    border-radius: 8px;
+    margin: 0.2em 0 0.5em;
+    box-shadow: 0 0 0 2px #e9ecef;
+    background: #f8f9fa;
+}
 /* personal logseq elements */
 .eexample {
     display: block;
