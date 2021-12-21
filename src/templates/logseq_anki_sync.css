@@ -118,6 +118,26 @@ a.tag:hover {
     transition: 0.3s;
 }
 
+a.page-reference {
+    color: #106ba3;
+}
+
+a.page-reference:before {
+    color: rgb(115,115,115);
+    content: "[[";
+    opacity: 0.3;
+}
+
+a.page-reference:after {
+    color: rgb(115,115,115);
+    content: "]]";
+    opacity: 0.3;
+}
+
+a.page-reference:hover {
+    background-color: #c8e6fa;
+}
+
 /* personal logseq elements */
 .eexample {
     display: block;
