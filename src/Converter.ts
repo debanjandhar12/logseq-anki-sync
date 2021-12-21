@@ -10,25 +10,6 @@ export async function convertLogseqMarkuptoHtml(content) {
     result = result.replace(/^\s*(\w|-)*::.*\n/gm, "").replace(/:PROPERTIES:\n((.|\n)*?):END:\n/gm, "");  //Remove properties
     result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math
     result = result.replace(/\$\$([\s\S]*?)\$\$/g, "\\[ $1 \\]"); // Convert block math
-    result = result.replace(/#\+BEGIN_(INFO|PROOF)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { // Remove proof, info org blocks
-        return ``;
-    });
-    result = result.replace(/#\+BEGIN_(QUOTE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { // Convert quote org blocks
-        return `<blockquote">${g3.trim()}</blockquote>`;
-    });
-    result = result.replace(/#\+BEGIN_(CENTER)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { // Convert center org blocks
-        return `<span class="text-center">${g3.trim()}</span>`; // div is buggy with remarkable
-    });
-    result = result.replace(/#\+BEGIN_(COMMENT)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { // Remove comment org blocks
-        return ``;
-    });
-    while (true) {  // Convert named org blocks recursively
-        let oldres = result;
-        result = result.replace(/#\+BEGIN_([^ \n]+)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) {
-            return `<span class="${g1.toLowerCase()}">${g3.trim()}</span>`; // div is buggy with remarkable
-        });
-        if (oldres == result) break;
-    }
     return result;
 }
 
