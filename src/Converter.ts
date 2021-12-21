@@ -26,14 +26,24 @@ export async function convertLogseqMarkuptoHtml(content : string, format: string
 export async function convertMdtoHtml(content) {
     let result = content;
     result = await convertLogseqMarkuptoHtml(result);
+
+    let $ = cheerio.load(result, {decodeEntities: false});
     // --- Hacky fix for inline html support and {{c\d+:: content}} marcos ---
     // Put all html content in a hashmap
-    let hashmap = {};
-    result = safeReplace(result, /(<((\w|-)*?)((.|\n)*?)>((.|\n)*?)<\/\2>)|(<((.|\n)*?)\/>)|(<(br|img|a)((.|\n)*?)>)/ig, (match) => {
-        let str = getRandomUnicodeString();
-        hashmap[str] = match;
-        return str;
-    }); 
+    let hashmap = {}; let queue = [$("body")];
+    while(queue.length > 0) {
+        queue.pop().children("*").each((i, el) => {
+            if(el.type == "tag") {
+                let str = getRandomUnicodeString();
+                hashmap[str] = $.html(el);
+                console.log($(el), hashmap[str]);
+                $(el).replaceWith(str);
+            } 
+            else queue.push($(el));
+        });
+    }
+    result = $("body").html();
+    console.log(result);
     result = safeReplace(result, /(\{\{c(\d+)::)((.|\n)*)\}\}/g, (match, g1, g2, g3, ...arg) => {
         let strFront = getRandomUnicodeString();
         let strBack = getRandomUnicodeString();
@@ -60,7 +70,7 @@ export async function convertMdtoHtml(content) {
     );
 
     // Render images and and codes
-    const $ = cheerio.load(result, {decodeEntities: false});
+    $ = cheerio.load(result, {decodeEntities: false});
     const dataLinkRegex = /^\s*data:([a-z]+\/[a-z]+(;[a-z-]+=[a-z-]+)?)?(;base64)?,[a-z0-9!$&',()*+,;=\-._~:@/?%\s]*\s*$/i;
     const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
     const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
