@@ -30,18 +30,15 @@ export async function convertMdtoHtml(content) {
     let $ = cheerio.load(result, {decodeEntities: false});
     // --- Hacky fix for inline html support and {{c\d+:: content}} marcos ---
     // Put all html content in a hashmap
-    let hashmap = {}; let queue = [$("body")];
-    while(queue.length > 0) {
-        queue.pop().children("*").each((i, el) => {
-            if(el.type == "tag") {
-                let str = getRandomUnicodeString();
-                hashmap[str] = $.html(el);
-                console.log($(el), hashmap[str]);
-                $(el).replaceWith(str);
-            } 
-            else queue.push($(el));
-        });
-    }
+    let hashmap = {}; 
+    $("body").children("*").each((i, el) => {
+        if(el.type == "tag") {
+            let str = getRandomUnicodeString();
+            hashmap[str] = $.html(el);
+            console.log($(el), hashmap[str]);
+            $(el).replaceWith(str);
+        } 
+    });
     result = $("body").html();
     console.log(result);
     result = safeReplace(result, /(\{\{c(\d+)::)((.|\n)*)\}\}/g, (match, g1, g2, g3, ...arg) => {
