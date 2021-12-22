@@ -1,5 +1,5 @@
 import { Block } from "./block";
-import '@logseq/libs'
+import '@logseq/libs';
 import _ from 'lodash';
 import * as Converter from './Converter';
 

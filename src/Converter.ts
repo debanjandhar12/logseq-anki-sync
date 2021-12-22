@@ -1,7 +1,7 @@
 import hljs from "highlight.js";
 import path from "path";
 import * as AnkiConnect from './AnkiConnect';
-import '@logseq/libs'
+import '@logseq/libs';
 import * as cheerio from 'cheerio';
 import { getRandomUnicodeString, safeReplace, safeReplaceAsync } from './utils';
 
@@ -9,6 +9,7 @@ export async function convertLogseqMarkuptoHtml(content: string, format: string 
     let result = content;
     result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
     result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
+    
     // TODO: Convert embeded page refs here.
     result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {
         let block_content = "";

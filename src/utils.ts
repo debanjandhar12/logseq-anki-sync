@@ -2,6 +2,7 @@ import * as ohm from "ohm-js";
 import { removeEmptyNotes } from "./AnkiConnect";
 import _ from 'lodash';
 import replaceAsync from "string-replace-async";
+import '@logseq/libs';
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
@@ -121,7 +122,7 @@ export function getRandomUnicodeString(length?: number) : string {
 export function safeReplace(content: string, regex : RegExp | string, replaceArg: any) : string {
     let result = content;
     let hashmap = {};
-    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match) => { // Escape inline math
+    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match : string) => { // Escape inline math
         let str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$","$$$$");
         return str;
