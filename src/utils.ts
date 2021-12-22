@@ -66,7 +66,7 @@ export function string_to_arr(str: string): any {
     return r;
 }
 
-export function decodeHTMLEntities(text) {
+export function decodeHTMLEntities(text, exclude = ["gt", "lt"]) {
     var entities = [
         ['amp', '&'],
         ['apos', '\''],
@@ -79,7 +79,8 @@ export function decodeHTMLEntities(text) {
         ['nbsp', ' '],
         ['quot', '"']
     ];
-
+    entities = entities.filter(e => !exclude.includes(e[0]));
+    
     for (var i = 0, max = entities.length; i < max; ++i)
         text = text.replace(new RegExp('&' + entities[i][0] + ';', 'g'), entities[i][1]);
 

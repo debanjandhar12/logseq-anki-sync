@@ -3,7 +3,7 @@ import path from "path";
 import * as AnkiConnect from './AnkiConnect';
 import '@logseq/libs';
 import * as cheerio from 'cheerio';
-import { getRandomUnicodeString, safeReplace, safeReplaceAsync } from './utils';
+import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from './utils';
 
 export async function convertLogseqMarkuptoHtml(content: string, format: string = "markdown"): Promise<string> {
     let result = content;
@@ -47,7 +47,6 @@ export async function convertToHtml(content: string, format: string = "markdown"
         if (el.type == "tag") {
             let str = getRandomUnicodeString();
             hashmap[str] = $.html(el);
-            console.log("Hashmap", $(el), hashmap[str]);
             $(el).replaceWith(str);
         }
     });
@@ -100,7 +99,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
         }
         else elm.attribs.src = elm.attribs.src.replace(/^http(s?):\/?\/?/i, "http$1://"); // Fix web image path
     });
-    result = $('#content ul li').html();
+    result = decodeHTMLEntities($('#content ul li').html());
 
     // Bring back inline html content and clozes from hashmap
     for (let key in hashmap) {
