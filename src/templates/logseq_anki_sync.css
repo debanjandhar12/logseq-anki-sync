@@ -53,27 +53,33 @@ h5 {
 }
 
 /* --- multiline card css --- */
-.children-list {
+.left-border {
     border-left: 2px solid;
     border-left-color: #e9ecef;
+    padding-left: 40px !important;
+}
+
+.children-list {
+    display: flex;
+    flex-direction: column;
     padding-top: 2px;
     list-style: none;
-    padding-left: 20px;
+    padding-left: 30px;
 }
 
 .children {
-    display: flex;
     padding-top: 3px;
     padding-bottom: 3px;
+    position: relative;
 }
 
 .children::before {
     content: "\2022";
-    color: #e9ecef;
+    color: #d4d5d6;
     cursor: pointer;
-    border-radius: 80%;
-    padding-right: 10px;
-    transition: 0.3s;
+	  position: absolute;
+		left: -18px;
+		top: 4px;
 }
 
 .children:hover::before {
@@ -159,7 +165,7 @@ a.block-reference:hover {
 }
 
 .embed-block {
-    width: 100%;
+    max-width: 100%;
     padding: 0.75em 0.5em;
     border: 2px solid #000;
     border-radius: 8px;

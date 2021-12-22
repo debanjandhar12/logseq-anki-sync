@@ -12,7 +12,7 @@ export async function convertLogseqMarkuptoHtml(content : string, format: string
     // TODO: Convert embeded page refs here.
     result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {
         return `<div class="embed-block">
-                <ul><li class="children">${await convertToHtml((await logseq.Editor.getBlock(g1)).content, format)}</li></ul>
+                <ul class="children-list"><li class="children">${await convertToHtml((await logseq.Editor.getBlock(g1)).content, format)}</li></ul>
                 </div>`;
     }); 
     result = safeReplace(result, /\[\[(.*?)\]\]/gm, `<a href="#$1" class="page-reference">$1</a>`); // Convert page refs

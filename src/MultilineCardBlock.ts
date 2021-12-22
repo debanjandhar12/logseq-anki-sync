@@ -43,7 +43,7 @@ export class MultilineCardBlock extends Block {
             result = `{{c2:: \n ${result} \n}}`;
         
         // Add the content of children blocks and cloze it if direction is <-> or ->
-        result+=`\n<ul class="children-list">`;
+        result+=`\n<ul class="children-list left-border">`;
         for(const child of this.children) {
             result += `\n<li class="children">`;
             let sanitized_html_content = child.html_content.replace(/(\{\{c(\d+)::)((.|\n)*)\}\}/g, "$3");
