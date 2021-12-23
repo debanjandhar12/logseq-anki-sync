@@ -40,17 +40,21 @@ export class MultilineCardBlock extends Block {
         // Add cloze to the parent block if direction is <-> or <-
         result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3");
         if (direction == "<->" || direction == "<-")
-            result = `{{c2:: \n ${result} \n}}`;
+            result = `{{c2:: ${result} \n}}`;
 
         // Add the content of children blocks and cloze it if direction is <-> or ->
+        let cloze_id = 1;
         result += `\n<ul class="children-list left-border">`;
         for (const child of this.children) {
             result += `\n<li class="children">`;
             let sanitized_html_content = child.html_content.replace(/(\{\{c(\d+)::)((.|\n)*)\}\}/g, "$3");
             if (direction == "<->" || direction == "->")
-                result += `{{c1:: ${sanitized_html_content} }}`;
+                result += `{{c${cloze_id}:: ${sanitized_html_content} }}`;
             else result += `${sanitized_html_content}`;
             result += `</li>`;
+            // Handle incremental multiline card
+            if(this.tags.includes("incremental")) cloze_id++;
+            if(cloze_id == 2) cloze_id++;
         }
         result += `</ul>`;
 
