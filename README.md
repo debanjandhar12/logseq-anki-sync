@@ -1,14 +1,15 @@
 # Logseq Anki Sync
-This plugin is in alpha test (not recomend to use in main graph and main anki profile yet). 
+An Logseq to Anki Flashcards integration plugin. <br/>
+Anki is a Spaced Reperation System similar to Logseq's Spaced Reperation System but with more features such as practice all flashcards from a topic before a exam, suspend card from a topic etc.
 <p align="center">
   <img width="580px" src="https://user-images.githubusercontent.com/49021233/145706852-b509d971-28eb-41cb-80fd-4292f46ddf70.gif" />
 </p>
 
 ## Features
-* 🐾 Supports Logseq's original srs clozes and card syntax (+ **more**).
-* 🖼 Supports markdown **Math, Code, Images etc...**, aswell as some logseq elements.
+* 🐾 Supports Logseq's original srs clozes and card syntax **(+ a lot more)**.
+* 🖼 Supports markdown (math, code, Images etc...) aswell as some logseq elements.
 * 📘 **Adding cards to user-specified deck** on a *per-page* or *per-block* basis.
-* ♻ Syncing is done by **creating, updating, deleting** from logseq to anki (one-way sync).
+* ♻ Syncing is done by creating, updating, deleting from logseq to anki (one-way sync).
 * 🥳 Many other features like **extra field, tags** etc...
 
 ## Installation
