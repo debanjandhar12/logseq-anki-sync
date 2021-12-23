@@ -1,6 +1,6 @@
 # Logseq Anki Sync
-An Logseq to Anki Flashcards integration plugin. <br/>
-Anki is a Spaced Reperation System similar to Logseq's Spaced Reperation System but with more features such as practice all flashcards from a topic before a exam, suspend card from a topic etc.
+An **Logseq** to **Anki Flashcards** integration plugin. <br/>
+**Anki** is a spaced reperation system similar to logseq's flashcard but with more features such as practice all flashcards from a topic before a exam, suspend card from a topic etc.
 <p align="center">
   <img width="580px" src="https://user-images.githubusercontent.com/49021233/145706852-b509d971-28eb-41cb-80fd-4292f46ddf70.gif" />
 </p>
