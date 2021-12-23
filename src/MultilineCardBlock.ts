@@ -80,7 +80,12 @@ export class MultilineCardBlock extends Block {
             block = await logseq.Editor.getBlock(uuid,{includeChildren: true});
             let tags = await Promise.all(_.map(block.refs, async page => { return _.get(await logseq.Editor.getPage(page.id), 'name') }));
             console.log(tags);
-            let children = await Promise.all(_.map(block.children, async child => _.extend({html_content: await Converter.convertToHtml(child.content)}, child))) || [];
+            let children = await Promise.all(_.map(block.children, 
+                async child => {
+                    let child_extra = _.get(child,"properties.extra");
+                    if(child_extra) {child.content += `\n<div class="extra">${child_extra}<div>`;}
+                    return _.extend({html_content: await Converter.convertToHtml(child.content)}, child)
+                })) || [];
             return new MultilineCardBlock(uuid, block.content, block.properties || {}, page, tags, children);
         }));
         blocks = _.uniqBy(blocks, 'uuid');
