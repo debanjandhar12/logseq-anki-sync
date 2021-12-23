@@ -40,7 +40,7 @@ export class MultilineCardBlock extends Block {
         // Add cloze to the parent block if direction is <-> or <-
         result = result.replace(/\{\{c\d+::(.*)\}\}/g, "$2");
         if(direction == "<->" || direction == "<-") 
-            result = `{{c2:: \n ${result} \n}}`;
+            result = `{{c2:: ${result} \n}}`;
         
         // Add the content of children blocks and cloze it if direction is <-> or ->
         result+=`\n<ul class="children-list">`;
