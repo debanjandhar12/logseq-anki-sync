@@ -1,6 +1,6 @@
 {
   "name": "logseq-anki-sync",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "title":"Logseq Anki Sync",
   "description": "An Logseq to Anki Flashcards integration plugin.",
   "main": "dist/index.html",
@@ -14,7 +14,7 @@
     "dev": "parcel ./src/index.html --public-url ./",
     "build": "parcel build ./src/index.html --public-url ./"
   },
-  "license": "CC0-1.0 License",
+  "license": "CC0-1.0",
   "logseq": {
     "id": "_rw1zys138",
     "icon": "/icon.png"
