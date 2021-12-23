@@ -67,9 +67,11 @@ export async function updateNote(ankiId: number, deckName: string, modelName: st
     let r = await invoke("changeDeck", { "cards": cards, "deck": deckName }); // Move cards made by note to new deck and create new deck if deck not created
 
     // Remove all old tags and add new ones
-    for (let tag of noteinfo.tags)
+    let to_remove_tags = _.difference(noteinfo.tags, tags);
+    let to_add_tags = _.difference(tags, noteinfo.tags);
+    for (let tag of to_remove_tags)
         r = await invoke("removeTags", { "notes": [ankiId], "tags": tag });
-    for (let tag of tags)
+    for (let tag of to_add_tags)
         r = await invoke("addTags", { "notes": [ankiId], "tags": tag });
     r = await invoke("clearUnusedTags", {});
     return await invoke("updateNoteFields", { "note": { id: ankiId, "deckName": deckName, "modelName": modelName, "fields": fields } });
