@@ -26,10 +26,6 @@
     color: blue !important;
 }
 
-.nightMode .cloze {
-    color: lightblue !important;
-}
-
 table,
 th,
 td {
@@ -172,4 +168,17 @@ a.block-reference:hover {
     margin: 0.2em 0 0.5em;
     box-shadow: 0 0 0 2px #e9ecef;
     background: #f8f9fa;
+}
+
+/* --- Night Mode support css --- */
+.nightMode .cloze {
+    color: lightblue !important;
+}
+
+.nightMode .text {
+    color: white !important;
+}
+
+.nightMode .quote, .embed-block, blockquote {
+    color: black !important;
 }
