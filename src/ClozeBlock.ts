@@ -92,9 +92,12 @@ export class ClozeBlock extends Block {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
             let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
             block = await logseq.Editor.getBlock(uuid);
-            return new ClozeBlock(uuid, block.content, block.properties || {}, page);
+            if (block) {
+                return new ClozeBlock(uuid, block.content, block.properties || {}, page);
+            } else return null;    
         }));
         blocks = _.uniqBy(blocks, 'uuid');
+        blocks = _.without(blocks, undefined, null);
 
         return blocks;
     }
