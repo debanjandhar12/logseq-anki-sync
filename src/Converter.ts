@@ -53,7 +53,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
     result = $("body").html();
 
     // Put all anki cloze marcos in hashmap
-    result = safeReplace(result, /(\{\{c(\d+)::)((.|\n)*?)\}\}/g, (match, g1, g2, g3, ...arg) => {
+    result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, (match, g1, g2, g3, ...arg) => {
         let strFront = getRandomUnicodeString();
         let strBack = getRandomUnicodeString();
         hashmap[strFront] = g1;
