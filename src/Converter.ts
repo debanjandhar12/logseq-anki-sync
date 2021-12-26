@@ -90,7 +90,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
             $(elm).html(hljs.highlight(elm.attribs["data-lang"], $(elm).html()).value.replace(/\n$/, ""));
         } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, ""));
     });
-    $('img').each(function (i, elm) {
+    $('img').each(function (i, elm) {   // Handle images
         if ((encodeURI(elm.attribs.src).match(isImage) && !encodeURI(elm.attribs.src).match(isWebURL))) {
             try {
                 let imgPath = path.join(graphPath, elm.attribs.src.replace(/^(\.\.\/)+/, ""));
@@ -99,6 +99,14 @@ export async function convertToHtml(content: string, format: string = "markdown"
             elm.attribs.src = encodeURIComponent(elm.attribs.src); // Flatten image path
         }
         else elm.attribs.src = elm.attribs.src.replace(/^http(s?):\/?\/?/i, "http$1://"); // Fix web image path
+    });
+    $('.mathblock, .latex-environment').each(function (i, elm) {    // Handle org math and latex-environment blocks
+        let math = $(elm).html();
+        // Remove all types of math braces in math
+        math = math.replace(/\\\[([\s\S]*?)\\\]/g, "$1");
+        math = math.replace(/\\\(([\s\S]*?)\\\)/g, "$1");
+        // Add block math braces in math
+        $(elm).html(`\\[ ${math} \\]`);
     });
     result = decodeHTMLEntities($('#content ul li').html());
 
