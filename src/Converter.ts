@@ -31,7 +31,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
     let result = content;
 
     result = await convertLogseqMarkuptoHtml(result, format);
-
+    let r = result;
     if (format == "markdown" || format == "md") {
         format = "Markdown";
     } else if (format == "org") {
@@ -60,6 +60,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
         hashmap[strBack] = "}}";
         return `${strFront}${g3}${strBack}`;
     });
+    let r2 = result;
 
     // Render the markdown
     // @ts-expect-error
@@ -71,13 +72,13 @@ export async function convertToHtml(content: string, format: string = "markdown"
             "format": format,
             "heading_to_list": false,
             "exporting_keep_properties": false,
-            "inline_type_with_pos": true,
+            "inline_type_with_pos": false,
             "export_md_remove_options": [],
             "hiccup_in_block": true
         }),
         JSON.stringify({})
     );
-
+    let r3 = result;
     // Render images and and codes
     $ = cheerio.load(result, { decodeEntities: false });
     const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
@@ -106,6 +107,6 @@ export async function convertToHtml(content: string, format: string = "markdown"
         result = safeReplace(result, key, hashmap[key]);
     }
 
-    console.log(content, hashmap, result);
+    console.log(content, r, hashmap, r2,"-----\n",r3,"-----\n", result);
     return result;
 }
