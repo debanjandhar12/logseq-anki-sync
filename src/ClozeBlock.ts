@@ -59,7 +59,7 @@ export class ClozeBlock extends Block {
 
         // --- Add org block clozes ---
         result = safeReplace(result, /#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { 
-            return `<span class="cloze">{{c${cloze_id++}::\n${g3.trim()}\n}}</span>`;
+            return `{{c${cloze_id++}::\n${g3.trim()}\n}}`;
         });
 
         this.content = result;
