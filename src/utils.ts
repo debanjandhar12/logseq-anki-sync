@@ -91,14 +91,14 @@ export function decodeHTMLEntities(text, exclude = ["gt", "lt"]) {
 export function get_math_inside_md(res: string) : Array<string> {
     let res2 = res;
     let arr = [];
-    res2 = res2.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match) => {
-      arr.push(match);
-      return "\\( $1 \\)"
-    });
     res2 = res2.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
       arr.push(match);
       return "\\( $1 \\)"
     }); 
+    res2 = res2.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match) => {
+        arr.push(match);
+        return "\\( $1 \\)"
+      });  
     return arr;
 }
 
@@ -123,12 +123,12 @@ export function getRandomUnicodeString(length?: number) : string {
 export function safeReplace(content: string, regex : RegExp | string, replaceArg: any) : string {
     let result = content;
     let hashmap = {};
-    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match : string) => { // Escape inline math
+    result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match) => { // Escape block math
         let str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$","$$$$");
         return str;
     });
-    result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match) => { // Escape block math
+    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match : string) => { // Escape inline math
         let str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$","$$$$");
         return str;
@@ -148,12 +148,12 @@ export function safeReplace(content: string, regex : RegExp | string, replaceArg
 export async function safeReplaceAsync(content: string, regex : RegExp | string, replaceArg: any) : Promise<string> {
     let result = content;
     let hashmap = {};
-    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match) => { // Escape inline math
+    result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match) => { // Escape block math
         let str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$","$$$$");
         return str;
     });
-    result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match) => { // Escape block math
+    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match : string) => { // Escape inline math
         let str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$","$$$$");
         return str;

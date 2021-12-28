@@ -22,7 +22,6 @@ export async function convertLogseqMarkuptoHtml(content: string, format: string 
     result = safeReplace(result, /\[(.*?)\]\(\(\((.*?)\)\)\)/gm, `<a href="#$2" class="block-reference">$1</a>`); // Convert block ref link
     result = safeReplace(result, /\(\((.*?)\)\)/gm, `<a href="#$1" class="block-reference">$1</a>`); // Convert block refs
 
-    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, "\\( $1 \\)"); // Convert inline math
     return result;
 }
 
@@ -103,7 +102,6 @@ export async function convertToHtml(content: string, format: string = "markdown"
         let math = $(elm).html();
         // Remove all types of math braces in math
         math = math.replace(/\\\[([\s\S]*?)\\\]/g, "$1");
-        math = math.replace(/\\\(([\s\S]*?)\\\)/g, "$1");
         math = math.replace(/\$\$([\s\S]*?)\$\$/g, "$1");
 
         // Add block math braces in math
