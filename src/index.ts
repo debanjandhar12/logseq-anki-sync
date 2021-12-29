@@ -40,7 +40,6 @@ let isSyncing = false;
 async function syncLogseqToAnkiWrapper() { // Wrapper function for error handling
   if (isSyncing) { console.log(`Syncing already in process...`); return; }
   isSyncing = true;
-
   try {
     await syncLogseqToAnki();
   } catch (e) {
@@ -83,6 +82,7 @@ async function syncLogseqToAnki() {
   }
 
   // -- Declare some variables to keep track of different operations performed --
+  let start_time = performance.now();
   let created, updated, deleted, failedCreated, failedUpdated, failedDeleted, failedConversion: number;
   created = updated = deleted = failedCreated = failedUpdated = failedDeleted = failedConversion = 0;
   let failedConversionArr, failedCreatedArr, failedUpdatedArr: any;
@@ -148,4 +148,5 @@ async function syncLogseqToAnki() {
   if (failedCreated > 0) console.log("failedCreatedArr:", failedCreatedArr);
   if (failedUpdated > 0) console.log("failedUpdatedArr:", failedUpdatedArr);
   if (failedConversion > 0) console.log("failedConversionArr:", failedConversionArr);
+console.log("syncLogseqToAnki() Time Taken:", (performance.now() - start_time).toFixed(2), "ms");
 }
