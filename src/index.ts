@@ -40,7 +40,7 @@ let isSyncing = false;
 async function syncLogseqToAnkiWrapper() { // Wrapper function for error handling
   if (isSyncing) { console.log(`Syncing already in process...`); return; }
   isSyncing = true;
-
+  let start_time = performance.now();
   try {
     await syncLogseqToAnki();
   } catch (e) {
@@ -48,6 +48,7 @@ async function syncLogseqToAnkiWrapper() { // Wrapper function for error handlin
     console.error(e);
   } finally {
     isSyncing = false;
+    console.log("syncLogseqToAnki() Time Taken:", (performance.now() - start_time).toFixed(2), "ms");
   }
 }
 
