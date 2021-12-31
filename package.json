@@ -25,14 +25,14 @@
     "lodash": "^4.17.21",
     "ohm-js": "^16.0.0",
     "remarkable": "2.0.1",
-    "string-replace-async": "^3.0.2"
+    "string-replace-async": "^3.0.2",
+    "mldoc": "1.2.5",
+    "cheerio ": "1.0.0-rc.10"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.0.0-beta.2",
     "parcel": "2.0.0-beta.2",
-    "@types/lodash": "^4.14.177",
-    "mldoc": "1.2.5",
-    "cheerio ": "1.0.0-rc.10"
+    "@types/lodash": "^4.14.177"
   },
   "alias": {
     "Mldoc": {
