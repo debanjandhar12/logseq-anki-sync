@@ -54,6 +54,11 @@ export async function convertToHtml(content: string, format: string = "markdown"
     result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, (match, g1, g2, g3, ...arg) => {
         let strFront = getRandomUnicodeString();
         let strBack = getRandomUnicodeString();
+
+        // fix: if there is a newline before cloze, we need to add new line after hash charecters
+        let charecter_before_match = result.substring(result.indexOf(match)-1, result.indexOf(match));
+        if((charecter_before_match == "\n" || charecter_before_match == "") && (g3.match(/^\s*?\$\$/g) || g3.match(/^\s*?#\+/g)))
+            g3 = `\n${g3}`;
         hashmap[strFront] = g1;
         hashmap[strBack] = "}}";
         return `${strFront}${g3}${strBack}`;
