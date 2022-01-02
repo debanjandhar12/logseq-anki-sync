@@ -7,7 +7,7 @@ An **Logseq** to **Anki Flashcards** integration plugin. <br/>
 
 ## Features
 * 🐾 Supports Logseq's original srs clozes and card syntax **(+ a lot more)**.
-* 🖼 Supports markdown (math, code, Images etc...) aswell as some logseq elements.
+* 🖼 Supports markdown (math, code, Images etc...) as well as some logseq elements.
 * 📘 **Adding cards to user-specified deck** on a *per-page* or *per-block* basis.
 * ♻ Syncing is done by creating, updating, deleting from logseq to anki (one-way sync).
 * 🥳 Many other features like **extra field, tags** etc...
