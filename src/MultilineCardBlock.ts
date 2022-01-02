@@ -2,6 +2,7 @@ import { Block } from "./block";
 import '@logseq/libs';
 import _ from 'lodash';
 import * as Converter from './Converter';
+import { safeReplace } from './utils';
 
 export class MultilineCardBlock extends Block {
     public type: string = "multiline_card";
@@ -39,8 +40,9 @@ export class MultilineCardBlock extends Block {
 
         // Add cloze to the parent block if direction is <-> or <-
         result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3");
+        result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, "");
         if (direction == "<->" || direction == "<-")
-            result = `{{c2:: ${result} \n}}`;
+            result = `{{c2:: ${result} }}`;
 
         // Add the content of children blocks and cloze it if direction is <-> or ->
         let cloze_id = 1;
