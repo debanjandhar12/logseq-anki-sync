@@ -1,4 +1,4 @@
-# Logseq Anki Sync  <a href="https://github.com/debanjandhar12/logseq-anki-sync/stargazers"><img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat-square"></a>
+# Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat-square" />](https://github.com/debanjandhar12/logseq-anki-sync/stargazers)
 An **Logseq** to **Anki Flashcards** integration plugin. <br/>
 **Anki** is a spaced reperation system similar to logseq's flashcard but with more features such as practice all flashcards from a topic before a exam, suspend card from a topic etc.
 <p align="center">
