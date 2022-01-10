@@ -112,7 +112,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
         // Add block math braces in math
         $(elm).html(`\\[ ${math} \\]`);
     });
-    result = decodeHTMLEntities(decodeHTMLEntities($('#content ul li').html()));
+    result = decodeHTMLEntities(decodeHTMLEntities($('#content ul li').html() || ""));
 
     // Bring back inline html content and clozes from hashmap
     for (let key in hashmap) {
