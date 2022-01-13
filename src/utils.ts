@@ -95,7 +95,7 @@ export function get_math_inside_md(res: string) : Array<string> {
       arr.push(match);
       return "\\( $1 \\)"
     }); 
-    res2 = res2.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match) => {
+    res2 = res2.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g, (match) => {
         arr.push(match);
         return "\\( $1 \\)"
       });  
@@ -128,7 +128,7 @@ export function safeReplace(content: string, regex : RegExp | string, replaceArg
         hashmap[str] = match.replaceAll("$","$$$$");
         return str;
     });
-    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match : string) => { // Escape inline math
+    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g, (match : string) => { // Escape inline math
         let str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$","$$$$");
         return str;
@@ -153,7 +153,7 @@ export async function safeReplaceAsync(content: string, regex : RegExp | string,
         hashmap[str] = match.replaceAll("$","$$$$");
         return str;
     });
-    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match : string) => { // Escape inline math
+    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g, (match : string) => { // Escape inline math
         let str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$","$$$$");
         return str;
