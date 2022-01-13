@@ -7,7 +7,7 @@ import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsy
 
 export async function convertLogseqMarkuptoHtml(content: string, format: string = "markdown"): Promise<string> {
     let result = content;
-    result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
+    result = safeReplace(result, /\s*(\w|-)*::.*\n?\n?/g, ""); //Remove md properties
     result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
     
     // TODO: Convert embeded page refs here.
@@ -119,6 +119,6 @@ export async function convertToHtml(content: string, format: string = "markdown"
         result = safeReplace(result, key, hashmap[key]);
     }
 
-    console.log(content, r, hashmap, r2,"-----\n",r3,"-----\n", result);
+    //console.log(content, r, hashmap, r2,"-----\n",r3,"-----\n", result);
     return result;
 }
