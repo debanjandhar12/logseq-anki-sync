@@ -22,7 +22,7 @@ export class ClozeBlock extends Block {
         let result : string = this.content;
 
         // Remove logseq properties as it might cause problems during cloze creation
-        result = safeReplace(result, /\s*(\w|-)*::.*\n?\n?/g, ""); //Remove md properties
+        result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
         result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
     
         // --- Add anki-cloze array clozes ---

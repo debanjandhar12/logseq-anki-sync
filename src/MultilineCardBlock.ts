@@ -40,7 +40,7 @@ export class MultilineCardBlock extends Block {
 
         // Add cloze to the parent block if direction is <-> or <-
         result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3");
-        result = safeReplace(result, /\s*(\w|-)*::.*\n?\n?/g, "");
+        result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, "");
         if (direction == "<->" || direction == "<-")
             result = `{{c2:: ${result} }}`;
 
