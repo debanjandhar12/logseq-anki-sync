@@ -15,7 +15,7 @@ export async function convertLogseqMarkuptoHtml(content: string, format: string 
     // TODO: Convert embeded page refs here.
     result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {
         let block_content = "";
-        try { block_content = (await logseq.Editor.getBlock(g1)).content; } catch (e) { console.error(e); }
+        try { block_content = (await logseq.Editor.getBlock(g1)).content; } catch (e) { console.warn(e); }
         return `<div class="embed-block">
                 <ul class="children-list"><li class="children">${await convertToHtml(block_content, format)}</li></ul>
                 </div>`;
@@ -100,7 +100,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
             try {
                 let imgPath = path.join(graphPath, path.resolve(elm.attribs.src));
                 AnkiConnect.storeMediaFileByPath(encodeURIComponent(elm.attribs.src), imgPath); // Flatten image path and save in anki
-            } catch (e) { console.log(e); }
+            } catch (e) { console.warn(e); }
             elm.attribs.src = encodeURIComponent(elm.attribs.src); // Flatten image path
         }
         else elm.attribs.src = elm.attribs.src.replace(/^http(s?):\/?\/?/i, "http$1://"); // Fix web image path
