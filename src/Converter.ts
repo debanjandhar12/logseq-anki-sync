@@ -5,6 +5,8 @@ import '@logseq/libs';
 import * as cheerio from 'cheerio';
 import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from './utils';
 
+const debug = false;
+
 export async function convertLogseqMarkuptoHtml(content: string, format: string = "markdown"): Promise<string> {
     let result = content;
     result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
@@ -119,6 +121,6 @@ export async function convertToHtml(content: string, format: string = "markdown"
         result = safeReplace(result, key, hashmap[key]);
     }
 
-    console.log(content, r, hashmap, r2,"-----\n",r3,"-----\n", result);
+    if(debug) console.log(content, r, hashmap, r2,"-----\n",r3,"-----\n", result);
     return result;
 }
