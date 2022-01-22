@@ -98,7 +98,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
     $('img').each(function (i, elm) {   // Handle images
         if ((encodeURI(elm.attribs.src).match(isImage) && !encodeURI(elm.attribs.src).match(isWebURL))) {
             try {
-                let imgPath = path.join(graphPath, elm.attribs.src.replace(/^(\.\.\/)+/, ""));
+                let imgPath = path.join(graphPath, path.resolve(elm.attribs.src));
                 AnkiConnect.storeMediaFileByPath(encodeURIComponent(elm.attribs.src), imgPath); // Flatten image path and save in anki
             } catch (e) { console.log(e); }
             elm.attribs.src = encodeURIComponent(elm.attribs.src); // Flatten image path
