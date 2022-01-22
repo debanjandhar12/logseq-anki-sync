@@ -1,5 +1,8 @@
 import * as ohm from "ohm-js";
 import { removeEmptyNotes } from "./AnkiConnect";
+import _ from 'lodash';
+import replaceAsync from "string-replace-async";
+import '@logseq/libs';
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
@@ -63,7 +66,7 @@ export function string_to_arr(str: string): any {
     return r;
 }
 
-export function decodeHTMLEntities(text) {
+export function decodeHTMLEntities(text, exclude = ["gt", "lt"]) {
     var entities = [
         ['amp', '&'],
         ['apos', '\''],
@@ -76,7 +79,8 @@ export function decodeHTMLEntities(text) {
         ['nbsp', ' '],
         ['quot', '"']
     ];
-
+    entities = entities.filter(e => !exclude.includes(e[0]));
+    
     for (var i = 0, max = entities.length; i < max; ++i)
         text = text.replace(new RegExp('&' + entities[i][0] + ';', 'g'), entities[i][1]);
 
@@ -87,16 +91,16 @@ export function decodeHTMLEntities(text) {
 export function get_math_inside_md(res: string) : Array<string> {
     let res2 = res;
     let arr = [];
-    res2 = res2.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\s\S]*?\S)\$/g, (match) => {
-      arr.push(match);
-      return "\\( $1 \\)"
-    });
     res2 = res2.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
       arr.push(match);
       return "\\( $1 \\)"
     }); 
+    res2 = res2.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g, (match) => {
+        arr.push(match);
+        return "\\( $1 \\)"
+      });  
     return arr;
-  }
+}
 
 export function get_better_error_msg(msg: string) : string {
     switch (msg) {
@@ -108,6 +112,62 @@ export function get_better_error_msg(msg: string) : string {
             return "Please select an Anki Profile before syncing.";
     }
     return msg;
+}
+
+export function getRandomUnicodeString(length?: number) : string {
+    var chars = "\u2ddf\u22b3\u22b0\u278c\u23a1\u230f\u245d\u25da\u2efa\u2b79\u2b4d\u24e8\u2b8e\u2be4\u22cb\u2fed\u2063\u27c9\u24cf\u2904\u24a3\u24d0\u25e7\u22b5\u21da\u20ce\u2435\u2686\u2ba6\u27af\u244e\u23be\u298a\u26b0\u29ec\u2351\u234c\u2e7c\u2236\u243c\u2756\u21bf\u232b\u2936\u2b11\u2798\u20fe";
+    return _.sampleSize(chars, length || 12).join("");
+}
+
+// Replace function that avoids replacing inside math and code blocks
+export function safeReplace(content: string, regex : RegExp | string, replaceArg: any) : string {
+    let result = content;
+    let hashmap = {};
+    result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match) => { // Escape block math
+        let str = getRandomUnicodeString();
+        hashmap[str] = match.replaceAll("$","$$$$");
+        return str;
+    });
+    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g, (match : string) => { // Escape inline math
+        let str = getRandomUnicodeString();
+        hashmap[str] = match.replaceAll("$","$$$$");
+        return str;
+    });
+    result = result.replace(/```(.*)\n(.|\n)*?\n```/g, (match) => { // Escape code
+        let str = getRandomUnicodeString();
+        hashmap[str] = match;
+        return str;
+    });
+    result = result.replace(regex, replaceArg);
+    for(let key in hashmap) {
+        result = result.replace(key, hashmap[key]);
+    }
+    return result;
+}
+
+export async function safeReplaceAsync(content: string, regex : RegExp | string, replaceArg: any) : Promise<string> {
+    let result = content;
+    let hashmap = {};
+    result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match) => { // Escape block math
+        let str = getRandomUnicodeString();
+        hashmap[str] = match.replaceAll("$","$$$$");
+        return str;
+    });
+    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g, (match : string) => { // Escape inline math
+        let str = getRandomUnicodeString();
+        hashmap[str] = match.replaceAll("$","$$$$");
+        return str;
+    });
+    result = result.replace(/```(.*)\n(.|\n)*?\n```/g, (match) => { // Escape code
+        let str = getRandomUnicodeString();
+        hashmap[str] = match;
+        return str;
+    });
+    result = await replaceAsync(result, regex, replaceArg);
+    for(let key in hashmap) {
+        result = result.replace(key, hashmap[key]);
+    }
+    return result;
 }
 
 export async function confirm(msg: string) : Promise<boolean> {

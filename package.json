@@ -1,14 +1,14 @@
 {
   "name": "logseq-anki-sync",
-  "version": "0.3.1",
-  "title":"Logseq Anki Sync",
+  "version": "1.0.0",
+  "title": "Logseq Anki Sync",
   "description": "An Logseq to Anki Flashcards integration plugin.",
   "main": "dist/index.html",
   "targets": {
     "main": false
   },
   "default": "dist/index.html",
-  "repo":"debanjandhar12/logseq-anki-sync",
+  "repo": "debanjandhar12/logseq-anki-sync",
   "author": "@debanjandhar12",
   "scripts": {
     "dev": "parcel ./src/index.html --public-url ./",
@@ -21,14 +21,22 @@
   },
   "dependencies": {
     "@logseq/libs": "^0.0.1-alpha.33",
-    "remarkable": "2.0.1",
+    "highlight.js": "^11.3.1",
     "lodash": "^4.17.21",
     "ohm-js": "^16.0.0",
-    "highlight.js": "^11.3.1"
+    "remarkable": "2.0.1",
+    "string-replace-async": "^3.0.2",
+    "mldoc": "1.2.5",
+    "cheerio ": "1.0.0-rc.10"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.0.0-beta.2",
     "parcel": "2.0.0-beta.2",
     "@types/lodash": "^4.14.177"
+  },
+  "alias": {
+    "Mldoc": {
+      "global": "Mldoc"
+    }
   }
 }

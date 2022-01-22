@@ -148,5 +148,5 @@ async function syncLogseqToAnki() {
   if (failedCreated > 0) console.log("failedCreatedArr:", failedCreatedArr);
   if (failedUpdated > 0) console.log("failedUpdatedArr:", failedUpdatedArr);
   if (failedConversion > 0) console.log("failedConversionArr:", failedConversionArr);
-console.log("syncLogseqToAnki() Time Taken:", (performance.now() - start_time).toFixed(2), "ms");
+  console.log("syncLogseqToAnki() Time Taken:", (performance.now() - start_time).toFixed(2), "ms");
 }

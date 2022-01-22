@@ -19,15 +19,17 @@
     font-family: arial;
     font-size: 12px;
     color: rgb(65, 65, 65);
+    background-color: rgb(226,236,240);
+    border-radius: 6px;
+    padding:2px;
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-bottom: 4px;
 }
 
 .cloze {
     font-weight: bold !important;
     color: blue !important;
-}
-
-.nightMode .cloze {
-    color: lightblue !important;
 }
 
 table,
@@ -53,11 +55,15 @@ h5 {
 }
 
 /* --- multiline card css --- */
+.left-border {
+    border-left: 2px solid;
+    border-left-color: #e9ecef;
+    padding-left: 40px !important;
+}
+
 .children-list {
     display: flex;
     flex-direction: column;
-    border-left: 2px solid;
-    border-left-color: #e9ecef;
     padding-top: 2px;
     list-style: none;
     padding-left: 30px;
@@ -73,9 +79,9 @@ h5 {
     content: "\2022";
     color: #d4d5d6;
     cursor: pointer;
-    position: absolute;
-    left: -18px;
-    top: 4px;
+	  position: absolute;
+		left: -18px;
+		top: 4px;
 }
 
 .children:hover::before {
@@ -88,8 +94,8 @@ h5 {
     margin-block-end: 0px;
 }
 
-/* --- custom css for logseq elements --- */
-blockquote {
+/* --- logseq elements --- */
+blockquote, .quote {
     display: block;
     text-indent: 0;
     padding: 8px 20px;
@@ -100,60 +106,85 @@ blockquote {
     color: rgb(40, 40, 40);
 }
 
-.text-center {
+.center {
     display: block;
     text-align: center;
 }
 
-/* personal logseq elements */
-.eexample {
-    display: block;
-    text-indent: 0;
-    padding: 8px 20px;
-    border-left: 4px solid;
-    border-left-color: #c7c193;
-    background-color: #fbfaf8;
-    margin: 1rem 0;
-    color: rgb(40, 40, 40);
+a.tag:before {
+    content: "#";
+}  
+
+a.tag {
+    cursor: pointer;
+    color: #106ba3;
+    opacity: 0.8;
 }
 
-.defination {
-    display: block;
-    text-indent: 0;
-    padding: 8px 20px;
-    border-left: 4px solid;
-    border-left-color: #799bbc;
-    background-color: #fbfaf8;
-    margin: 1rem 0;
-    color: rgb(40, 40, 40);
+a.tag:hover {
+    opacity: 1;
+    transition: 0.3s;
 }
 
-.theorem {
-    display: block;
-    text-indent: 0;
-    padding: 8px 20px;
-    border-left: 3px solid;
-    border-left-color: #79a9bc;
-    background-color: #fbfaf8;
-    margin: 1rem 0;
-    color: rgb(40, 40, 40);
+a.page-reference {
+    color: #106ba3;
 }
 
-.left {
-    text-align: left;
+a.page-reference:before {
+    color: rgb(115,115,115);
+    content: "[[";
+    opacity: 0.3;
 }
 
-.left .MathJax {
-    text-align: left !important;
+a.page-reference:after {
+    color: rgb(115,115,115);
+    content: "]]";
+    opacity: 0.3;
 }
 
-.left2 {
-    text-align: left;
+a.page-reference:hover {
+    background-color: #c8e6fa;
 }
 
-.left2 .MathJax {
-    text-align: left !important;
-    font-size: 80%;
-    margin: 0px;
-    padding: 0px;
+a.block-reference {
+    color: #106ba3;
+}
+
+a.block-reference:before {
+    color: rgb(115,115,115);
+    content: "((";
+    opacity: 0.3;
+}
+
+a.block-reference:after {
+    color: rgb(115,115,115);
+    content: "))";
+    opacity: 0.3;
+}
+
+a.block-reference:hover {
+    background-color: #c8e6fa;
+}
+
+.embed-block {
+    max-width: 100%;
+    padding: 0.75em 0.5em;
+    border: 2px solid #000;
+    border-radius: 8px;
+    margin: 0.2em 0 0.5em;
+    box-shadow: 0 0 0 2px #e9ecef;
+    background: #f8f9fa;
+}
+
+/* --- Night Mode support css --- */
+.nightMode .cloze {
+    color: lightblue !important;
+}
+
+.nightMode .text {
+    color: white !important;
+}
+
+.nightMode .quote, .embed-block, blockquote {
+    color: black !important;
 }

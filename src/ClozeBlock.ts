@@ -1,13 +1,13 @@
 import { Block } from "./block";
 import '@logseq/libs'
-import { string_to_arr, get_math_inside_md } from './utils';
+import { string_to_arr, get_math_inside_md, safeReplace } from './utils';
 import _ from 'lodash';
 
 export class ClozeBlock extends Block {
     public type: string = "cloze";
 
-    public constructor(uuid: string, content: string, properties: any, page: any) {
-        super(uuid, content, properties, page);
+    public constructor(uuid: string, content: string, format: string, properties: any, page: any) {
+        super(uuid, content, format, properties, page);
     }
 
     public static initLogseqOperations = (() => { // Init logseq operations at start of the program
@@ -19,11 +19,12 @@ export class ClozeBlock extends Block {
 
     public addClozes(): ClozeBlock {
         let cloze_id = 1;
-        let result = this.content;
+        let result : string = this.content;
 
         // Remove logseq properties as it might cause problems during cloze creation
-        result = result.replace(/^\s*(\w|-)*::.*/gm, "").replace(/:PROPERTIES:\n((.|\n)*?):END:/gm, "");
-
+        result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
+        result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
+    
         // --- Add anki-cloze array clozes ---
         let replaceclozeArr: any = `${this.properties.replacecloze}`;
         if (replaceclozeArr && replaceclozeArr.trim() != "" && replaceclozeArr != 'undefined') { replaceclozeArr = string_to_arr(replaceclozeArr); }
@@ -35,7 +36,6 @@ export class ClozeBlock extends Block {
         let math = get_math_inside_md(result); // get list of math inside md
         for (let [i, reg] of replaceclozeArr.entries()) {
             if (typeof reg == "string")
-                // @ts-expect-error
                 result = result.replaceAll(reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(), (match) => {
                     if (math.find(math => math.includes(match)))
                         return `{{c${cloze_id}::${match.replace(/}}/g, "} } ")} }}`; // Add extra space between braces
@@ -53,13 +53,13 @@ export class ClozeBlock extends Block {
         }
 
         // --- Add logseq clozes ---
-        result = result.replace(/\{\{cloze (.*?)\}\}/g, (match, group1) => {
+        result = safeReplace(result, /\{\{cloze (.*?)\}\}/g, (match, group1) => {
             return `{{c${cloze_id++}::${group1}}}`;
         });
 
         // --- Add org block clozes ---
-        result = result.replace(/#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { 
-            return `<span class="cloze">{{c${cloze_id++}::\n${g3.trim()}\n}}</span>`;
+        result = safeReplace(result, /#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { 
+            return `{{c${cloze_id++}::\n${g3.trim()}\n}}`;
         });
 
         this.content = result;
@@ -92,9 +92,9 @@ export class ClozeBlock extends Block {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
             let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
             block = await logseq.Editor.getBlock(uuid);
-            if (block) {
-                return new ClozeBlock(uuid, block.content, block.properties || {}, page);
-            } else return null;    
+            if(block)
+                return new ClozeBlock(uuid, block.content, block.format, block.properties || {}, page);
+            else return null;
         }));
         blocks = _.uniqBy(blocks, 'uuid');
         blocks = _.without(blocks, undefined, null);

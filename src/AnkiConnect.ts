@@ -53,7 +53,7 @@ export async function addNote(deckName: string, modelName: string, fields, tags:
 
     // Some versions of Anki doesnt allow to add notes without cloze
     // The trick below adds an empty note with a cloze block, and then overwites it to overcome the above problem.
-    let cloze_id = _.get(/\{\{c(\d+)::(.*)\}\}/g.exec(fields["Text"]), 1) || 1;
+    let cloze_id = _.get(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g.exec(fields["Text"]), 2) || 1;
     let ankiId = await invoke("addNote", { "note": { "modelName": modelName, "deckName": deckName, "fields": { ...fields, "Text": `{{c${cloze_id}:: placeholder}}` }, "tags": tags, "options": { "allowDuplicate": true } } });
     r = updateNote(ankiId, deckName, modelName, fields, tags);
     return ankiId;
@@ -67,12 +67,13 @@ export async function updateNote(ankiId: number, deckName: string, modelName: st
     let r = await invoke("changeDeck", { "cards": cards, "deck": deckName }); // Move cards made by note to new deck and create new deck if deck not created
 
     // Remove all old tags and add new ones
-    for (let tag of noteinfo.tags)
+    let to_remove_tags = _.difference(noteinfo.tags, tags);
+    let to_add_tags = _.difference(tags, noteinfo.tags);
+    for (let tag of to_remove_tags)
         r = await invoke("removeTags", { "notes": [ankiId], "tags": tag });
-    for (let tag of tags)
+    for (let tag of to_add_tags)
         r = await invoke("addTags", { "notes": [ankiId], "tags": tag });
     r = await invoke("clearUnusedTags", {});
-
     return await invoke("updateNoteFields", { "note": { id: ankiId, "deckName": deckName, "modelName": modelName, "fields": fields } });
 }
 
@@ -135,7 +136,7 @@ export async function createModel(modelName: string, fields: string[], template_
 
     // Iterate over files obj and add them to anki
     for (var filename in template_files){
-        try {await storeMediaFileByContent(filename, template_files[filename]);} catch(e) { console.error(e); }
+        try {await storeMediaFileByContent(filename, template_files[filename]);} catch(e) { console.log(filename);console.error(e); }
     }
 }
 
