@@ -29,14 +29,19 @@ export class MultilineCardBlock extends Block {
         ]);
     });
 
-    public addClozes(): MultilineCardBlock {
-        let result = this.content;
+    private getCardDirection(): String {
         let direction = _.get(this, 'properties.direction');
         if (direction != "->" && direction != "<-" && direction != "<->") {
             if ((this.tags.includes("reversed") && this.tags.includes("forward")) || this.tags.includes("bidirectional")) direction = "<->";
             else if (this.tags.includes("reversed")) direction = "<-";
             else direction = "->";
         }
+        return direction;
+    }
+
+    public addClozes(): MultilineCardBlock {
+        let result = this.content;
+        let direction = this.getCardDirection();
 
         // Add cloze to the parent block if direction is <-> or <-
         result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3");
@@ -98,7 +103,9 @@ export class MultilineCardBlock extends Block {
         }));
         blocks = _.uniqBy(blocks, 'uuid');
         blocks = _.without(blocks, undefined, null);
-
+        blocks = _.filter(blocks, (block) => { // Remove cards that do not have children and are not reversed or bidirectional
+            return block.getCardDirection() == "<->" || block.getCardDirection() == "<-" || block.children.length > 0;
+        });
         return blocks;
     }
 }
