@@ -2,6 +2,7 @@ import '@logseq/libs'
 import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
 import * as AnkiConnect from './AnkiConnect';
 import { template_front, template_back, template_files } from './templates/AnkiCardTemplates';
+import { Block } from './Block';
 import { ClozeBlock } from './ClozeBlock';
 import { MultilineCardBlock } from './MultilineCardBlock';
 import _ from 'lodash';
@@ -54,7 +55,7 @@ async function syncLogseqToAnki() {
   let graphName = _.get(await logseq.App.getCurrentGraph(), 'name') || 'Default';
   let modelName = `${graphName}Model`.replace(/\s/g, "_");
   logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${graphName}`);
-  console.log(`Starting Logseq to Anki Sync for graph ${graphName}`);
+  console.log(`%cStarting Logseq to Anki Sync for graph ${graphName}`, 'color: green; font-size: 1.5em;');
 
   // -- Request Access --
   await AnkiConnect.requestPermission();
@@ -83,16 +84,15 @@ async function syncLogseqToAnki() {
 
   // -- Declare some variables to keep track of different operations performed --
   let start_time = performance.now();
-  let created, updated, deleted, failedCreated, failedUpdated, failedDeleted, failedConversion: number;
-  created = updated = deleted = failedCreated = failedUpdated = failedDeleted = failedConversion = 0;
-  let failedConversionArr, failedCreatedArr, failedUpdatedArr: any;
-  failedConversionArr = []; failedCreatedArr = []; failedUpdatedArr = [];
+  let created, updated, deleted, failedCreated, failedUpdated, failedDeleted: number;
+  created = updated = deleted = failedCreated = failedUpdated = failedDeleted = 0;
+  let failedCreatedArr: Array<Block> = [], failedUpdatedArr: Array<Block> = [];
+  // failedCreatedArr = []; failedUpdatedArr = [];
 
   // -- Add or update notes in anki --
   for (let block of blocks) {
     // Prepare the content of the anki note from block
     let html;
-    try {html = (await block.addClozes().convertToHtml()).getContent();} catch (e) { console.error(e); failedConversion++; failedConversionArr.push(block); continue; }
     let deck: any = _.get(block, 'properties.deck') || _.get(block, 'page.properties.deck') || "Default";
     if (typeof deck != "string") deck = deck[0];
     let breadcrumb = `<a href="#">${block.page.originalName}</a>`;
@@ -101,15 +101,17 @@ async function syncLogseqToAnki() {
     let ankiId = await block.getAnkiId();
     if (ankiId == null || isNaN(ankiId)) {  // Perform create as note doesn't exist in anki
       try {
+        console.log(`%cAdding note with uuid ${block.uuid} and type ${block.type}`, 'color: blue; background: #eee;');
+        html = (await block.addClozes().convertToHtml()).getContent();
         ankiId = await AnkiConnect.addNote(deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
-        console.log(`Added note with uuid ${block.uuid} and type ${block.type}`);
         created++;
       } catch (e) { console.error(e); failedCreated++; failedCreatedArr.push(block); }
     }
     else {  // Perform update as note exists in anki
       try {
+        console.log(`%cUpdating note with uuid ${block.uuid} and type ${block.type}`, 'color: blue; background: #eee;');
+        html = (await block.addClozes().convertToHtml()).getContent();
         await AnkiConnect.updateNote(ankiId, deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
-        console.log(`Updated note with uuid ${block.uuid} and type ${block.type}`);
         updated++;
       } catch (e) { console.error(e); failedUpdated++; failedUpdatedArr.push(block); }
     }
@@ -141,12 +143,10 @@ async function syncLogseqToAnki() {
   if (failedCreated > 0) summery += `Failed Created Blocks: ${failedCreated} `;
   if (failedUpdated > 0) summery += `Failed Updated Blocks: ${failedUpdated} `;
   if (failedDeleted > 0) summery += `Failed Deleted Blocks: ${failedDeleted} `;
-  if (failedConversion > 0) summery += `Failed Conversion Blocks: ${failedConversion} `;
-  if (failedCreated > 0 || failedUpdated > 0 || failedDeleted > 0 || failedConversion > 0) status = 'warning';
+  if (failedCreated > 0 || failedUpdated > 0 || failedDeleted > 0) status = 'warning';
   logseq.App.showMsg(summery, status);
   console.log(summery);
   if (failedCreated > 0) console.log("failedCreatedArr:", failedCreatedArr);
   if (failedUpdated > 0) console.log("failedUpdatedArr:", failedUpdatedArr);
-  if (failedConversion > 0) console.log("failedConversionArr:", failedConversionArr);
   console.log("syncLogseqToAnki() Time Taken:", (performance.now() - start_time).toFixed(2), "ms");
 }
