@@ -43,8 +43,11 @@ export class MultilineCardBlock extends Block {
         let result = this.content;
         let direction = this.getCardDirection();
 
-        // Add cloze to the parent block if direction is <-> or <-
+        // Remove clozes and double braces one after another
         result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3");
+        result = result.replace(/}}/g, "} } ");
+        
+        // Add cloze to the parent block if direction is <-> or <-
         result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, "");
         if (direction == "<->" || direction == "<-")
             result = `{{c2:: ${result} }}`;
