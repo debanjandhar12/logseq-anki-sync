@@ -26,30 +26,37 @@ export class ClozeBlock extends Block {
         result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
     
         // --- Add anki-cloze array clozes ---
-        let replaceclozeArr: any = `${this.properties.replacecloze}`;
-        if (replaceclozeArr && replaceclozeArr.trim() != "" && replaceclozeArr != 'undefined') { replaceclozeArr = string_to_arr(replaceclozeArr); }
-        else { replaceclozeArr = []; }
-        console.log(`${this.properties.replacecloze}`, replaceclozeArr);
+        if(this.properties.replacecloze) {
+            let replaceclozeArr: any;
+            if(typeof this.properties.replacecloze == "string" && this.properties.replacecloze.trim() != "") {
+                replaceclozeArr = string_to_arr(this.properties.replacecloze.replace(/(^\s*"|\s*"$)/g, ''));
+            }
+            else if (typeof this.properties.replacecloze == "object" && this.properties.replacecloze.constructor == Array) { 
+                replaceclozeArr = string_to_arr(this.properties.replacecloze.join(','));
+            }
+            else replaceclozeArr = [];
+            console.log(`${this.properties.replacecloze}`, replaceclozeArr);
 
-        // Add the clozes while ensuring that adding cloze in math mode double braces doesn't break the cloze
-        // This is done by adding extra space the braces between two double brace
-        let math = get_math_inside_md(result); // get list of math inside md
-        for (let [i, reg] of replaceclozeArr.entries()) {
-            if (typeof reg == "string")
-                result = result.replaceAll(reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(), (match) => {
-                    if (math.find(math => math.includes(match)))
-                        return `{{c${cloze_id}::${match.replace(/}}/g, "} } ")} }}`; // Add extra space between braces
-                    else
-                        return `{{c${cloze_id}::${match}}}`;
-                });
-            else
-                result = result.replace(reg, (match) => {
-                    if (math.find(math => math.includes(match)))
-                        return `{{c${cloze_id}::${match.replace(/}}/g, "} } ")} }}`; // Add extra space between braces
-                    else
-                        return `{{c${cloze_id}::${match}}}`;
-                });
-            cloze_id++;
+            // Add the clozes while ensuring that adding cloze in math mode double braces doesn't break the cloze
+            // This is done by adding extra space the braces between two double brace
+            let math = get_math_inside_md(result); // get list of math inside md
+            for (let [i, reg] of replaceclozeArr.entries()) {
+                if (typeof reg == "string")
+                    result = result.replaceAll(reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(), (match) => {
+                        if (math.find(math => math.includes(match)))
+                            return `{{c${cloze_id}::${match.replace(/}}/g, "} } ")} }}`; // Add extra space between braces
+                        else
+                            return `{{c${cloze_id}::${match}}}`;
+                    });
+                else
+                    result = result.replace(reg, (match) => {
+                        if (math.find(math => math.includes(match)))
+                            return `{{c${cloze_id}::${match.replace(/}}/g, "} } ")} }}`; // Add extra space between braces
+                        else
+                            return `{{c${cloze_id}::${match}}}`;
+                    });
+                cloze_id++;
+            }
         }
 
         // --- Add logseq clozes ---
