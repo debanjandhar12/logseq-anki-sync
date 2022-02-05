@@ -32,6 +32,13 @@
     color: blue !important;
 }
 
+.extra {
+    background-color: antiquewhite;
+    border-radius: 4px;
+    padding: 3px;
+    font-size: small;
+}
+
 table,
 th,
 td {
