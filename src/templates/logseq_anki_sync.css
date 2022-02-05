@@ -58,7 +58,7 @@ h5 {
 .left-border {
     border-left: 2px solid;
     border-left-color: #e9ecef;
-    padding-left: 40px !important;
+    padding-left: 30px !important;
 }
 
 .children-list {
@@ -79,9 +79,9 @@ h5 {
     content: "\2022";
     color: #d4d5d6;
     cursor: pointer;
-	  position: absolute;
-		left: -18px;
-		top: 4px;
+    position: absolute;
+    left: -18px;
+    top: 4px;
 }
 
 .children:hover::before {
