@@ -39,6 +39,17 @@ export class MultilineCardBlock extends Block {
         return direction;
     }
 
+    private getChildrenMaxDepth(): Number {
+        let maxDepth = _.get(this, 'properties.depth') || 9999;
+        for (let tag of this.tags) { 
+            let match = tag.match(/^depth-(\d+)$/i);
+            if (match) {
+                maxDepth = parseInt(match[1]);
+            }
+        }
+        return maxDepth;
+    }
+
     public addClozes(): MultilineCardBlock {
         let result = this.content;
         let direction = this.getCardDirection();
@@ -54,7 +65,10 @@ export class MultilineCardBlock extends Block {
 
         // Add the content of children blocks and cloze it if direction is <-> or ->
         let cloze_id = 1;
+        
+        let maxDepth = this.getChildrenMaxDepth();
         let addChildrenToResult = (children: any, level: number = 0) => {
+            if (level >= maxDepth) return "";
             let result = `\n<ul class="children-list left-border">`;
             for (let child of children) {
                 result += `\n<li class="children">`;
