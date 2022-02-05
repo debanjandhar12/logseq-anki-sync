@@ -84,7 +84,7 @@ export class MultilineCardBlock extends Block {
                 let child_content = _.get(child,"content") || "";
                 if(child_extra) {child_content += `\n<div class="extra">${child_extra}<div>`;}
                 let new_children = await this.augmentChildrenArray(_.get(child,"children") || []);
-                return _.assign(child, {html_content: await Converter.convertToHtml(child_content), children: new_children})
+                return _.assign(child, {html_content: await Converter.convertToHtml(child_content, _.get(child,"format") || "markdown"), children: new_children})
             })) || [];
         return output;
     }
