@@ -54,24 +54,40 @@ export class MultilineCardBlock extends Block {
 
         // Add the content of children blocks and cloze it if direction is <-> or ->
         let cloze_id = 1;
-        result += `\n<ul class="children-list left-border">`;
-        for (const child of this.children) {
-            result += `\n<li class="children">`;
-            let sanitized_html_content = child.html_content.replace(/(\{\{c(\d+)::)((.|\n)*)\}\}/g, "$3");
-            if (direction == "<->" || direction == "->")
-                result += `{{c${cloze_id}:: ${sanitized_html_content} }}`;
-            else result += `${sanitized_html_content}`;
-            result += `</li>`;
-            // Handle incremental multiline card
-            if(this.tags.includes("incremental")) cloze_id++;
-            if(cloze_id == 2) cloze_id++;
-        }
-        result += `</ul>`;
+        let addChildrenToResult = (children: any, level: number = 0) => {
+            let result = `\n<ul class="children-list left-border">`;
+            for (let child of children) {
+                result += `\n<li class="children">`;
+                let sanitized_html_content = child.html_content.replace(/(\{\{c(\d+)::)((.|\n)*)\}\}/g, "$3");
+                if (child.children.length > 0) sanitized_html_content += addChildrenToResult(child.children, level + 1);
 
+                if(level == 0 && (direction == "<->" || direction == "->")) {
+                        result += `{{c${cloze_id}:: ${sanitized_html_content} }}`;
+                    if(this.tags.includes("incremental")) cloze_id++;
+                    if(cloze_id == 2) cloze_id++;
+                } else result += sanitized_html_content;
+                result += `</li>`;
+            }
+            result += `</ul>`;
+            return result;
+        }
+        result += addChildrenToResult(this.children);
+        
         this.content = result;
         return this;
     }
 
+    private static async augmentChildrenArray(children: any): Promise<any> {
+        let output = await Promise.all(_.map(children, 
+            async child => {
+                let child_extra = _.get(child,"properties.extra");
+                let child_content = _.get(child,"content") || "";
+                if(child_extra) {child_content += `\n<div class="extra">${child_extra}<div>`;}
+                let new_children = await this.augmentChildrenArray(_.get(child,"children") || []);
+                return _.assign(child, {html_content: await Converter.convertToHtml(child_content), children: new_children})
+            })) || [];
+        return output;
+    }
 
     public static async getBlocksFromLogseq(): Promise<MultilineCardBlock[]> {
         let logseqCard_blocks = await logseq.DB.datascriptQuery(`
@@ -94,13 +110,7 @@ export class MultilineCardBlock extends Block {
             if (block) {
                 let tags = await Promise.all(_.map(block.refs, async page => { return _.get(await logseq.Editor.getPage(page.id), 'name') }));
                 console.log(tags);
-                let children = await Promise.all(_.map(block.children, 
-                    async child => {
-                        let child_extra = _.get(child,"properties.extra");
-                        let child_content = _.get(child,"content") || "";
-                        if(child_extra) {child_content += `\n<div class="extra">${child_extra}<div>`;}
-                        return _.extend({html_content: await Converter.convertToHtml(child_content)}, child)
-                    })) || [];
+                let children = await this.augmentChildrenArray(block.children);
                 return new MultilineCardBlock(uuid, block.content, block.format, block.properties || {}, page, tags, children);
             } else return null;
         }));
