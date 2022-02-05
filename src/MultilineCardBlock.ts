@@ -81,7 +81,7 @@ export class MultilineCardBlock extends Block {
         let output = await Promise.all(_.map(children, 
             async child => {
                 let child_extra = _.get(child,"properties.extra");
-                let child_content = _.get(child,"content") || "";
+                let child_content = _.get(child,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/}}/g, "} } ") || "";
                 if(child_extra) {child_content += `\n<div class="extra">${child_extra}<div>`;}
                 let new_children = await this.augmentChildrenArray(_.get(child,"children") || []);
                 return _.assign(child, {html_content: await Converter.convertToHtml(child_content, _.get(child,"format") || "markdown"), children: new_children})
