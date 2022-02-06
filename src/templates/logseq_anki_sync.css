@@ -83,6 +83,7 @@ h5 {
     padding-top: 3px;
     padding-bottom: 3px;
     position: relative;
+    min-height:16px;
 }
 
 .children::before {
@@ -176,7 +177,7 @@ a.block-reference:hover {
     background-color: #c8e6fa;
 }
 
-.embed-block {
+.embed-page, .embed-block {
     max-width: 100%;
     padding: 0.75em 0.5em;
     border: 2px solid #000;
@@ -184,6 +185,16 @@ a.block-reference:hover {
     margin: 0.2em 0 0.5em;
     box-shadow: 0 0 0 2px #e9ecef;
     background: #f8f9fa;
+}
+
+a.embed-header {
+    margin-left: 6px;
+    font-weight: 600;
+    color: #106ba3;
+}
+
+a.embed-header:hover {
+    color: #004174;
 }
 
 /* --- Night Mode support css --- */
