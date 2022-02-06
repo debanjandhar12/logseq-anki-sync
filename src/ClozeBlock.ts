@@ -44,14 +44,14 @@ export class ClozeBlock extends Block {
                 if (typeof reg == "string")
                     result = result.replaceAll(reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(), (match) => {
                         if (math.find(math => math.includes(match)))
-                            return `{{c${cloze_id}::${match.replace(/}}/g, "} } ")} }}`; // Add extra space between braces
+                            return `{{c${cloze_id}::${match.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") }}`; // Add extra space between braces
                         else
                             return `{{c${cloze_id}::${match}}}`;
                     });
                 else
                     result = result.replace(reg, (match) => {
                         if (math.find(math => math.includes(match)))
-                            return `{{c${cloze_id}::${match.replace(/}}/g, "} } ")} }}`; // Add extra space between braces
+                            return `{{c${cloze_id}::${match.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ")} }}`; // Add extra space between braces
                         else
                             return `{{c${cloze_id}::${match}}}`;
                     });

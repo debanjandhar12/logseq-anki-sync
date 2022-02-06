@@ -15,7 +15,7 @@ export async function convertLogseqMarkuptoHtml(content: string, format: string 
     
     result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {
         let block_content = "";
-        try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
+        try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
         return `<div class="embed-block">
                 <ul class="children-list"><li class="children">${await convertToHtml(block_content, format)}</li></ul>
                 </div>`;
@@ -27,7 +27,7 @@ export async function convertLogseqMarkuptoHtml(content: string, format: string 
             let result = `\n<ul class="children-list">`;
             for (let child of children) {
                 result += `\n<li class="children">`;
-                let block_content = _.get(child,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/}}/g, "} } ") || "";
+                let block_content = _.get(child,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
                 let format = _.get(child,"format") || "markdown";
                 let html = await convertToHtml(block_content, format);
                 if (child.children.length > 0) html += await getPageContentHTML(child.children, level + 1);

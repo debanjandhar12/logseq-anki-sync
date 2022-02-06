@@ -56,7 +56,7 @@ export class MultilineCardBlock extends Block {
 
         // Remove clozes and double braces one after another
         result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3");
-        result = result.replace(/}}/g, "} } ");
+        result = result.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ");
         
         // Add cloze to the parent block if direction is <-> or <-
         result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, "");
@@ -95,7 +95,7 @@ export class MultilineCardBlock extends Block {
         let output = await Promise.all(_.map(children, 
             async child => {
                 let child_extra = _.get(child,"properties.extra");
-                let child_content = _.get(child,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/}}/g, "} } ") || "";
+                let child_content = _.get(child,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
                 if(child_extra) {child_content += `\n<div class="extra">${child_extra}<div>`;}
                 let new_children = await this.augmentChildrenArray(_.get(child,"children") || []);
                 return _.assign(child, {html_content: await Converter.convertToHtml(child_content, _.get(child,"format") || "markdown"), children: new_children})
