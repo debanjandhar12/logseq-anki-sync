@@ -13,14 +13,14 @@ export async function convertLogseqMarkuptoHtml(content: string, format: string 
     result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
     result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
     
-    result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {
+    result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {  // Convert block embed
         let block_content = "";
         try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
         return `<div class="embed-block">
                 <ul class="children-list"><li class="children">${await convertToHtml(block_content, format)}</li></ul>
                 </div>`;
     });
-    result = await safeReplaceAsync(result, /\{\{embed \[\[(.*?)\]\] *?\}\}/gm, async (match, g1) => {
+    result = await safeReplaceAsync(result, /\{\{embed \[\[(.*?)\]\] *?\}\}/gm, async (match, g1) => { // Convert page embed
         let pageTree = [];
         let getPageContentHTML = async (children: any, level: number = 0) => {
             if(level >= 100) return "";
@@ -48,7 +48,14 @@ export async function convertLogseqMarkuptoHtml(content: string, format: string 
     
     result = safeReplace(result, /\[\[(.*?)\]\]/gm, `<a href="#$1" class="page-reference">$1</a>`); // Convert page refs
     result = safeReplace(result, /\[(.*?)\]\(\(\((.*?)\)\)\)/gm, `<a href="#$2" class="block-reference">$1</a>`); // Convert block ref link
-    result = safeReplace(result, /\(\((.*?)\)\)/gm, `<a href="#$1" class="block-reference">$1</a>`); // Convert block refs
+    result = await safeReplaceAsync(result, /\(\((.*?)\)\)/gm, async (match, g1) => { // Convert block refs
+        let block_content = `${g1}`;
+        try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
+        block_content = safeReplace(block_content, /^\s*(\w|-)*::.*\n?\n?/gm, ""); 
+        block_content = safeReplace(block_content, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); 
+        let block_content_first_line = block_content.split("\n").find(line => line.trim() != "");
+        return `<a href="#${g1}" class="block-reference">${block_content_first_line}</a>`;
+    });
 
     return result;
 }
