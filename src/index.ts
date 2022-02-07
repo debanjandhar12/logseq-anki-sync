@@ -98,6 +98,7 @@ async function syncLogseqToAnki() {
     let breadcrumb = `<a href="#">${block.page.originalName}</a>`;
     let tags = [...(_.get(block, 'properties.tags') || []), ...(_.get(block, 'page.properties.tags') || [])];
     let extra = _.get(block, 'properties.extra') || _.get(block, 'page.properties.extra') || "";
+    if (Array.isArray(extra)) extra = extra.join(" ");
     let ankiId = await block.getAnkiId();
     if (ankiId == null || isNaN(ankiId)) {  // Perform create as note doesn't exist in anki
       try {
