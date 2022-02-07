@@ -42,7 +42,7 @@ export class MultilineCardBlock extends Block {
     private getChildrenMaxDepth(): Number {
         let maxDepth = _.get(this, 'properties.depth') || 9999;
         for (let tag of this.tags) { 
-            let match = tag.match(/^depth-(\d+)$/i);
+            let match = /^depth-(\d+)$/i.exec(tag);
             if (match) {
                 maxDepth = parseInt(match[1]);
             }
