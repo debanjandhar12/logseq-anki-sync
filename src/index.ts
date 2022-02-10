@@ -1,6 +1,7 @@
 import '@logseq/libs'
 import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
 import * as AnkiConnect from './AnkiConnect';
+import { LazyAnkiNoteManager } from './LazyAnkiNoteManager';
 import { template_front, template_back, template_files } from './templates/AnkiCardTemplates';
 import { Block } from './Block';
 import { ClozeBlock } from './ClozeBlock';
@@ -60,6 +61,12 @@ async function syncLogseqToAnki() {
   // -- Request Access --
   await AnkiConnect.requestPermission();
 
+  // -- Prepare Anki Note Manager --
+  let ankiNoteManager = new LazyAnkiNoteManager(modelName);
+  await ankiNoteManager.init();
+  ClozeBlock.setAnkiNoteManager(ankiNoteManager);
+  MultilineCardBlock.setAnkiNoteManager(ankiNoteManager);
+  
   // -- Create models if it doesn't exists --
   await AnkiConnect.createModel(modelName, ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"], template_front, template_back, template_files);
 
@@ -69,11 +76,12 @@ async function syncLogseqToAnki() {
     if (!block.properties["id"]) {await logseq.Editor.upsertBlockProperty(block.uuid, "id", block.uuid);}
   }
   console.log("Blocks:", blocks);
+  
 
   // -- Prompt the user what actions are going to be performed --
   let show_actions_before_sync = logseq.baseInfo.settings.show_actions_before_sync || true;
+  let willCreate = 0, willUpdate, willDelete;
   if(show_actions_before_sync) {
-    let willCreate = 0, willUpdate, willDelete;
     for(let block of blocks) {let ankiId = await block.getAnkiId(); if (ankiId == null || isNaN(ankiId)) willCreate++;} 
     willUpdate = blocks.length - willCreate;
     let ankiNotes = await AnkiConnect.query(`note:${modelName}`);
@@ -84,10 +92,7 @@ async function syncLogseqToAnki() {
 
   // -- Declare some variables to keep track of different operations performed --
   let start_time = performance.now();
-  let created, updated, deleted, failedCreated, failedUpdated, failedDeleted: number;
-  created = updated = deleted = failedCreated = failedUpdated = failedDeleted = 0;
-  let failedCreatedArr: Array<Block> = [], failedUpdatedArr: Array<Block> = [];
-  // failedCreatedArr = []; failedUpdatedArr = [];
+  let failedCreated: Set<string> = new Set(), failedUpdated: Set<string> = new Set(), failedDeleted: Set<string> = new Set();
 
   // -- Add or update notes in anki --
   for (let block of blocks) {
@@ -104,50 +109,56 @@ async function syncLogseqToAnki() {
       try {
         console.log(`%cAdding note with uuid ${block.uuid} and type ${block.type}`, 'color: blue; background: #eee;');
         html = (await block.addClozes().convertToHtml()).getContent();
-        ankiId = await AnkiConnect.addNote(deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
-        created++;
-      } catch (e) { console.error(e); failedCreated++; failedCreatedArr.push(block); }
+        let ankiId = await AnkiConnect.addNote(deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
+        block.ankiId = ankiId;
+      } catch (e) { console.error(e); failedCreated.add(block.uuid); }
     }
     else {  // Perform update as note exists in anki
       try {
         console.log(`%cUpdating note with uuid ${block.uuid} and type ${block.type}`, 'color: blue; background: #eee;');
         html = (await block.addClozes().convertToHtml()).getContent();
-        await AnkiConnect.updateNote(ankiId, deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
-        updated++;
-      } catch (e) { console.error(e); failedUpdated++; failedUpdatedArr.push(block); }
+        ankiNoteManager.updateNote(ankiId, deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
+      } catch (e) { console.error(e); failedUpdated.add(block.uuid); }
+    }
+  }
+  for(let result of await ankiNoteManager.execute("updateNote")) {
+    if(result != null && result.error != null) {
+      console.error(result.error);
+      failedUpdated.add(result.error.uuid); // todo: add error handling
     }
   }
 
+
   // -- Delete the notes in anki whose respective blocks is no longer available in logseq --
-  // Get anki notes made from this logseq graph
-  let ankiNoteIds: number[] = (await AnkiConnect.query(`note:${modelName}`)).map(i => parseInt(i));
-  console.log(ankiNoteIds);
-  // Flatten current logseq block's anki ids
-  let blockAnkiIds: number[] = await Promise.all(blocks.map(async block => await block.getAnkiId()));
-  console.log(blockAnkiIds);
+  let ankiNoteIds: number[] = (await AnkiConnect.query(`note:${modelName}`)).map(i => parseInt(i)); // Get anki notes made from this logseq graph
+  let blockAnkiIds: number[] = await Promise.all(blocks.map(async block => await block.getAnkiId())); // Flatten current logseq block's anki ids
   // Delete anki notes created by app which are no longer in logseq graph
   for (let ankiNoteId of ankiNoteIds) {
     if (!blockAnkiIds.includes(ankiNoteId)) {
-      try {
-        await AnkiConnect.deteteNote(ankiNoteId);
-        console.log(`Deleted note with ankiId ${ankiNoteId}`);
-        deleted++;
-      } catch (e) { console.error(e); failedDeleted++; }
+        console.log(`Deleting note with ankiId ${ankiNoteId}`);
+        ankiNoteManager.deleteNote(ankiNoteId);
+    }
+  }
+  for(let result of await ankiNoteManager.execute("deleteNote")) {
+    if(result != null && result.error != null) {
+      console.error(result.error);
+      failedDeleted.add(result.error.ankiId); // todo: add error handling
     }
   }
 
   // -- Update anki and show result summery in logseq --
   await AnkiConnect.invoke("removeEmptyNotes", {});
   await AnkiConnect.invoke("reloadCollection", {});
-  let summery = `Sync Completed! Created Blocks: ${created} Updated Blocks: ${updated} Deleted Blocks: ${deleted} `;
+  let summery = `Sync Completed! Created Blocks: ${willCreate-failedCreated.size} Updated Blocks: ${willUpdate-failedUpdated.size} Deleted Blocks: ${willDelete-failedDeleted.size} `;
   let status = 'success';
-  if (failedCreated > 0) summery += `Failed Created Blocks: ${failedCreated} `;
-  if (failedUpdated > 0) summery += `Failed Updated Blocks: ${failedUpdated} `;
-  if (failedDeleted > 0) summery += `Failed Deleted Blocks: ${failedDeleted} `;
-  if (failedCreated > 0 || failedUpdated > 0 || failedDeleted > 0) status = 'warning';
+  if (failedCreated.size > 0) summery += `Failed Created: ${failedCreated.size} `;
+  if (failedUpdated.size > 0) summery += `Failed Updated: ${failedUpdated.size} `;
+  if (failedDeleted.size > 0) summery += `Failed Deleted: ${failedDeleted.size} `;
+  if (failedCreated.size > 0 || failedUpdated.size > 0 || failedDeleted.size > 0) status = 'warning';
   logseq.App.showMsg(summery, status);
   console.log(summery);
-  if (failedCreated > 0) console.log("failedCreatedArr:", failedCreatedArr);
-  if (failedUpdated > 0) console.log("failedUpdatedArr:", failedUpdatedArr);
+  if (failedCreated.size > 0) console.log("Failed Created:", failedCreated);
+  if (failedUpdated.size > 0) console.log("Failed Updated:", failedUpdated);
+  if (failedDeleted.size > 0) console.log("Failed Deleted:", failedDeleted);
   console.log("syncLogseqToAnki() Time Taken:", (performance.now() - start_time).toFixed(2), "ms");
 }
