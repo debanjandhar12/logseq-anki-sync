@@ -71,20 +71,48 @@ export async function convertToHtml(content: string, format: string = "markdown"
         format = "Org";
     };
 
-    let $ = cheerio.load(result, { decodeEntities: false });
+    let mldocsOptions = {
+        "toc": false,
+        "heading_number": false,
+        "keep_line_break": false,
+        "format": format,
+        "heading_to_list": false,
+        "exporting_keep_properties": false,
+        "inline_type_with_pos": true,
+        "export_md_remove_options": [],
+        "hiccup_in_block": true
+    };
+
     // --- Hacky fix for inline html support and {{c\d+:: content}} marcos using hashmap ---
     let hashmap = {};
 
     // Put all html content in hashmap
-    $("body").children("*").each((i, el) => {
-        if (el.type == "tag") {
-            let str = getRandomUnicodeString();
-            hashmap[str] = $.html(el);
-            $(el).replaceWith(str);
-        }
-    });
-    result = $("body").html();
+    // @ts-expect-error
+    let parsedJson = Mldoc.parseInlineJson(result,
+        JSON.stringify(mldocsOptions),
+        JSON.stringify({})
+    );
+    try { parsedJson = JSON.parse(parsedJson) } catch {parsedJson = [];};
+    for(let i = parsedJson.length-1; i >= 0; i--) {
+        // node's start_pos is bound to be larger than next item's end_pos due to how Mldoc.parseInlineJson works
+        let node = parsedJson[i];
+        if(node[node.length-1]["start_pos"] == null) continue;
+        if(node[0][0] == null) continue;
 
+        let type = node[0][0];
+        let content = node[0][1];
+        let start_pos = node[node.length-1]["start_pos"];
+        let end_pos = node[node.length-1]["end_pos"];
+        if(type == "Raw_Html" || type == "Inline_Html") {
+            if(content != result.substring(start_pos, end_pos)) {
+                console.error("Error: content mismatch", content, result.substring(start_pos, end_pos));
+            }
+            let str = getRandomUnicodeString();
+            hashmap[str] = result.substring(start_pos, end_pos);
+            result = result.substring(0, start_pos) + str + result.substring(end_pos);    
+        }
+    }
+    
     // Put all anki cloze marcos in hashmap
     result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, (match, g1, g2, g3, ...arg) => {
         let strFront = getRandomUnicodeString();
@@ -118,7 +146,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
     );
     let r3 = result;
     // Render images and and codes
-    $ = cheerio.load(result, { decodeEntities: false });
+    let $ = cheerio.load(result, { decodeEntities: false });
     const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
     const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
     let graphPath = (await logseq.App.getCurrentGraph()).path;
