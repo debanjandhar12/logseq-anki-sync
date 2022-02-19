@@ -34,7 +34,7 @@ An **Logseq** to **Anki Flashcards** integration plugin. <br/>
 * [How to make incremental multiline cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-incremental-multiline-cards%3F)
 * [How to set or change the deck for cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F)
 * [How to add extra details to card?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-add-extra-details-to-card%3F)
-* <b>Advanced:</b> [How to add custom css for cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-add-custom-css-for-cards%3F)
+* <b>Advanced:</b> [Setting children depth in multiline cards](https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v1.1.0), [How to add custom css for cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-add-custom-css-for-cards%3F)
 * <b>Others:</b> [Common FAQ](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Common-FAQ)
 
 <b>Developer Documentation</b>
