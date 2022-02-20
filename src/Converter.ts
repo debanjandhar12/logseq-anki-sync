@@ -118,6 +118,11 @@ export async function convertToHtml(content: string, format: string = "markdown"
         let strFront = getRandomUnicodeString();
         let strBack = getRandomUnicodeString();
 
+        // temportary fix: cloze end charecters }} getting deleted after code block ends
+        if(g3.trim().endsWith("```")) {
+            g3 = `${g3}\n`;
+        }
+
         // fix: if there is a newline before cloze, we need to add new line after hash charecters
         let charecter_before_match = result.substring(result.indexOf(match)-1, result.indexOf(match));
         if((charecter_before_match == "\n" || charecter_before_match == "") && (g3.match(/^\s*?\$\$/g) || g3.match(/^\s*?#\+/g)))
@@ -131,17 +136,7 @@ export async function convertToHtml(content: string, format: string = "markdown"
     // Render the markdown
     // @ts-expect-error
     result = Mldoc.export("html", result,
-        JSON.stringify({
-            "toc": false,
-            "heading_number": false,
-            "keep_line_break": false,
-            "format": format,
-            "heading_to_list": false,
-            "exporting_keep_properties": false,
-            "inline_type_with_pos": false,
-            "export_md_remove_options": [],
-            "hiccup_in_block": true
-        }),
+        JSON.stringify(mldocsOptions),
         JSON.stringify({})
     );
     let r3 = result;
