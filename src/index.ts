@@ -94,7 +94,7 @@ async function syncLogseqToAnki() {
   let start_time = performance.now();
   let failedCreated: Set<string> = new Set(), failedUpdated: Set<string> = new Set(), failedDeleted: Set<string> = new Set();
 
-  // -- Add or update notes in anki --
+  // -- Add or update notes in anki and log respective errors --
   for (let block of blocks) {
     // Prepare the content of the anki note from block
     let html;
@@ -109,22 +109,36 @@ async function syncLogseqToAnki() {
       try {
         console.log(`%cAdding note with uuid ${block.uuid} and type ${block.type}`, 'color: blue; background: #eee;');
         html = (await block.addClozes().convertToHtml()).getContent();
-        let ankiId = await AnkiConnect.addNote(deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
-        block.ankiId = ankiId;
-      } catch (e) { console.error(e); failedCreated.add(block.uuid); }
+        ankiNoteManager.addNote(deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
+      } catch (e) { console.error(e); failedCreated.add(`${block.uuid}-${block.type}`); }
     }
     else {  // Perform update as note exists in anki
       try {
         console.log(`%cUpdating note with uuid ${block.uuid} and type ${block.type}`, 'color: blue; background: #eee;');
         html = (await block.addClozes().convertToHtml()).getContent();
         ankiNoteManager.updateNote(ankiId, deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
-      } catch (e) { console.error(e); failedUpdated.add(block.uuid); }
+      } catch (e) { console.error(e); failedUpdated.add(`${block.uuid}-${block.type}`); }
     }
   }
-  for(let result of await ankiNoteManager.execute("updateNote")) {
-    if(result != null && result.error != null) {
-      console.error(result.error);
-      failedUpdated.add(result.error.uuid); // todo: add error handling
+  let [addedNoteAnkiIdUUIDPairs, subOperationResults] = await ankiNoteManager.execute("addNotes");
+  for(let addedNoteAnkiIdUUIDPair of addedNoteAnkiIdUUIDPairs) { // update ankiId of added blocks
+    let uuidtype = addedNoteAnkiIdUUIDPair["uuid-type"];
+    let uuid = uuidtype.split("-").slice(0, -1).join("-");
+    let type = uuidtype.split("-").slice(-1)[0];
+    let block = _.find(blocks, { "uuid": uuid, "type": type });
+    block["ankiId"] = addedNoteAnkiIdUUIDPair["ankiId"];
+    console.log(block);
+  }
+  for(let subOperationResult of subOperationResults) {
+    if(subOperationResult != null && subOperationResult.error != null) {
+      console.error(subOperationResult.error);
+      failedCreated.add(subOperationResult["uuid-type"]); 
+    }
+  }
+  for(let subOperationResult of await ankiNoteManager.execute("updateNotes")) {
+    if(subOperationResult != null && subOperationResult.error != null) {
+      console.error(subOperationResult.error);
+      failedUpdated.add(subOperationResult.error.uuid); 
     }
   }
 
@@ -139,15 +153,14 @@ async function syncLogseqToAnki() {
         ankiNoteManager.deleteNote(ankiNoteId);
     }
   }
-  for(let result of await ankiNoteManager.execute("deleteNote")) {
+  for(let result of await ankiNoteManager.execute("deleteNotes")) {
     if(result != null && result.error != null) {
       console.error(result.error);
-      failedDeleted.add(result.error.ankiId); // todo: add error handling
+      failedDeleted.add(result.error.ankiId); 
     }
   }
 
   // -- Update anki and show result summery in logseq --
-  await AnkiConnect.invoke("removeEmptyNotes", {});
   await AnkiConnect.invoke("reloadCollection", {});
   let summery = `Sync Completed! Created Blocks: ${willCreate-failedCreated.size} Updated Blocks: ${willUpdate-failedUpdated.size} Deleted Blocks: ${willDelete-failedDeleted.size} `;
   let status = 'success';
