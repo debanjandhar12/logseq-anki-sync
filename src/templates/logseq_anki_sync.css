@@ -28,8 +28,8 @@
 }
 
 .cloze {
-    font-weight: bold !important;
-    color: blue !important;
+    font-weight: bold;
+    color: blue;
 }
 
 .extra {
@@ -40,7 +40,7 @@
 }
 
 .extra:empty {
-    display: none !important;
+    display: none;
 }
 
 table,
@@ -68,7 +68,7 @@ h5 {
 .left-border {
     border-left: 2px solid;
     border-left-color: #e9ecef;
-    padding-left: 30px !important;
+    padding-left: 30px;
 }
 
 .children-list {
@@ -199,13 +199,13 @@ a.embed-header:hover {
 
 /* --- Night Mode support css --- */
 .nightMode .cloze {
-    color: lightblue !important;
+    color: lightblue;
 }
 
 .nightMode .text {
-    color: white !important;
+    color: white;
 }
 
 .nightMode .quote, .embed-block, blockquote {
-    color: black !important;
+    color: black;
 }
