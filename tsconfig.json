@@ -1,10 +1,12 @@
 {
     "compilerOptions": {
         "lib": [
+          "es2021",
           "ES2021.String"
         ],
         "esModuleInterop": true,
         "sourceMap": true,
-        "removeComments": true
+        "removeComments": true,
+        "moduleResolution": "node"
     }
 }
