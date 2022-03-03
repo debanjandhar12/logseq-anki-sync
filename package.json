@@ -15,7 +15,7 @@
     "oldDev": "parcel serve ./src/index.html --public-url ./",
     "build": "parcel build ./src/index.html --public-url ./"
   },
-  "license": "CC0-1.0",
+  "license": "AGPL-3.0",
   "logseq": {
     "id": "_rw1zys138",
     "icon": "/icon.png"
