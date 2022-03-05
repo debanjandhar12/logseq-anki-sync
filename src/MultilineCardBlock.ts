@@ -1,4 +1,4 @@
-import { Block } from "./block";
+import { Block } from "./Block";
 import '@logseq/libs';
 import _ from 'lodash';
 import * as Converter from './Converter';

@@ -5,6 +5,7 @@ import '@logseq/libs';
 import * as cheerio from 'cheerio';
 import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from './utils';
 import _ from 'lodash';
+import {Mldoc} from 'mldoc';
 
 const debug = false;
 
@@ -87,7 +88,6 @@ export async function convertToHtml(content: string, format: string = "markdown"
     let hashmap = {};
 
     // Put all html content in hashmap
-    // @ts-expect-error
     let parsedJson = Mldoc.parseInlineJson(result,
         JSON.stringify(mldocsOptions),
         JSON.stringify({})
@@ -134,7 +134,6 @@ export async function convertToHtml(content: string, format: string = "markdown"
     let r2 = result;
 
     // Render the markdown
-    // @ts-expect-error
     result = Mldoc.export("html", result,
         JSON.stringify(mldocsOptions),
         JSON.stringify({})

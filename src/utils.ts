@@ -1,5 +1,4 @@
-import * as ohm from "ohm-js";
-import { removeEmptyNotes } from "./AnkiConnect";
+import ohm from 'ohm-js';
 import _ from 'lodash';
 import replaceAsync from "string-replace-async";
 import '@logseq/libs';

@@ -1,6 +1,6 @@
 # Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub" height="28"/>](https://github.com/debanjandhar12/logseq-anki-sync/)
-An **Logseq** to **Anki Flashcards** integration plugin. <br/>
-**Anki** is a spaced reperation system similar to logseq's flashcard but with more features such as practice all flashcards from a topic before a exam, suspend card from a topic etc.
+A **Logseq** to **Anki Flashcards** integration plugin. <br/>
+**Anki** is a spaced repetition system similar to logseq's flashcard but with more features such as practice all flashcards from a topic before a exam, suspend card from a topic etc.
 <p align="center">
   <img width="580px" src="https://user-images.githubusercontent.com/49021233/145706852-b509d971-28eb-41cb-80fd-4292f46ddf70.gif" />
 </p>
