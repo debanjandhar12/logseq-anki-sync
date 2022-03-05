@@ -1,1 +1,6 @@
- 
+/***
+* This files contains the css for the back side of anki cards. 
+*/
+.extra {
+    display: block;
+}
