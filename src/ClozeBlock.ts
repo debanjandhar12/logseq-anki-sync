@@ -1,4 +1,4 @@
-import { Block } from "./block";
+import { Block } from "./Block";
 import '@logseq/libs'
 import { string_to_arr, get_math_inside_md, safeReplace } from './utils';
 import _ from 'lodash';
