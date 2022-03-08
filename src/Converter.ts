@@ -9,7 +9,7 @@ import {Mldoc} from 'mldoc';
 
 const debug = false;
 
-export async function logseqToHtml(content: string, format: string = "markdown"): Promise<string> {
+export async function convertLogseqToHtml(content: string, format: string = "markdown"): Promise<string> {
     let result = content;
 
     result = await processProperties(result, format);
@@ -128,21 +128,22 @@ export async function logseqToHtml(content: string, format: string = "markdown")
     return result;
 }
 
-export async function processProperties(content: string, format: string = "markdown"): Promise<string> {
+async function processProperties(content: string, format: string = "markdown"): Promise<string> {
     let result = content;
     result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
     result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
     return result;
 }
 
-export async function processEmbeds(content: string, format: string = "markdown"): Promise<string> {
+
+async function processEmbeds(content: string, format: string = "markdown"): Promise<string> {
     let result = content;
 
     result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {  // Convert block embed
         let block_content = "";
         try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
         return `<div class="embed-block">
-                <ul class="children-list"><li class="children">${await logseqToHtml(block_content, format)}</li></ul>
+                <ul class="children-list"><li class="children">${await convertLogseqToHtml(block_content, format)}</li></ul>
                 </div>`;
     });
 
@@ -155,7 +156,7 @@ export async function processEmbeds(content: string, format: string = "markdown"
                 result += `\n<li class="children">`;
                 let block_content = _.get(child,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
                 let format = _.get(child,"format") || "markdown";
-                let html = await logseqToHtml(block_content, format);
+                let html = await convertLogseqToHtml(block_content, format);
                 if (child.children.length > 0) html += await getPageContentHTML(child.children, level + 1);
 
                 result += html;
