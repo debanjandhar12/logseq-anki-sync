@@ -1,7 +1,7 @@
 import '@logseq/libs'
 import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
-import * as AnkiConnect from './AnkiConnect';
-import { LazyAnkiNoteManager } from './LazyAnkiNoteManager';
+import * as AnkiConnect from './anki-connect/AnkiConnect';
+import { LazyAnkiNoteManager } from './anki-connect/LazyAnkiNoteManager';
 import { template_front, template_back, template_files } from './templates/AnkiCardTemplates';
 import { Note } from './notes/Note';
 import { ClozeNote } from './notes/ClozeNote';
