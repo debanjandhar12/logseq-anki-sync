@@ -33,7 +33,7 @@ export abstract class Note {
         return this.content;
     }
 
-    public async getAnkiId(): Promise<number> {
+    public getAnkiId(): number {
         if (this.ankiId) return this.ankiId;
         let ankiNotesArr = Array.from(Note.ankiNoteManager.noteInfoMap.values());
         let filteredankiNotesArr = ankiNotesArr.filter((note) => note.fields["uuid-type"].value == `${this.uuid}-${this.type}`);
