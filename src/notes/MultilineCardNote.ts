@@ -1,10 +1,10 @@
-import { Block } from "./Block";
+import { Note } from "./Note";
 import '@logseq/libs';
 import _ from 'lodash';
-import * as Converter from './Converter';
-import { safeReplace } from './utils';
+import * as Converter from '../Converter';
+import { safeReplace } from '../utils';
 
-export class MultilineCardBlock extends Block {
+export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
     public children: any[];
     public tags: any[];
@@ -50,7 +50,7 @@ export class MultilineCardBlock extends Block {
         return maxDepth;
     }
 
-    public addClozes(): MultilineCardBlock {
+    public addClozes(): MultilineCardNote {
         let result = this.content;
         let direction = this.getCardDirection();
 
@@ -103,7 +103,7 @@ export class MultilineCardBlock extends Block {
         return output;
     }
 
-    public static async getBlocksFromLogseq(): Promise<MultilineCardBlock[]> {
+    public static async getNotesFromLogseqBlocks(): Promise<MultilineCardNote[]> {
         let logseqCard_blocks = await logseq.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
@@ -125,7 +125,7 @@ export class MultilineCardBlock extends Block {
                 let tags = await Promise.all(_.map(block.refs, async page => { return _.get(await logseq.Editor.getPage(page.id), 'name') }));
                 console.log(tags);
                 let children = await this.augmentChildrenArray(block.children);
-                return new MultilineCardBlock(uuid, block.content, block.format, block.properties || {}, page, tags, children);
+                return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, children);
             } else return null;
         }));
         blocks = _.uniqBy(blocks, 'uuid');

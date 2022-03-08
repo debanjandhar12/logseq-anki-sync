@@ -3,9 +3,9 @@ import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
 import * as AnkiConnect from './AnkiConnect';
 import { LazyAnkiNoteManager } from './LazyAnkiNoteManager';
 import { template_front, template_back, template_files } from './templates/AnkiCardTemplates';
-import { Block } from './Block';
-import { ClozeBlock } from './ClozeBlock';
-import { MultilineCardBlock } from './MultilineCardBlock';
+import { Note } from './notes/Note';
+import { ClozeNote } from './notes/ClozeNote';
+import { MultilineCardNote } from './notes/MultilineCardNote';
 import _ from 'lodash';
 import { get_better_error_msg, confirm } from './utils';
 
@@ -30,8 +30,8 @@ function main(baseInfo: LSPluginBaseInfo) {
     label: `Start Logseq to Anki Sync`
   }, syncLogseqToAnkiWrapper);
 
-  ClozeBlock.initLogseqOperations();
-  MultilineCardBlock.initLogseqOperations();
+  ClozeNote.initLogseqOperations();
+  MultilineCardNote.initLogseqOperations();
 }
 
 // Bootstrap
@@ -64,26 +64,25 @@ async function syncLogseqToAnki() {
   // -- Prepare Anki Note Manager --
   let ankiNoteManager = new LazyAnkiNoteManager(modelName);
   await ankiNoteManager.init();
-  ClozeBlock.setAnkiNoteManager(ankiNoteManager);
-  MultilineCardBlock.setAnkiNoteManager(ankiNoteManager);
+  Note.setAnkiNoteManager(ankiNoteManager);
   
   // -- Create models if it doesn't exists --
   await AnkiConnect.createModel(modelName, ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"], template_front, template_back, template_files);
 
-  // -- Find blocks for which anki notes are to be created --
-  let blocks = [...(await ClozeBlock.getBlocksFromLogseq()), ...(await MultilineCardBlock.getBlocksFromLogseq())];
-  for (let block of blocks) { // Force persistance of block uuids accross re-index by adding id property to block in logseq
-    if (!block.properties["id"]) {await logseq.Editor.upsertBlockProperty(block.uuid, "id", block.uuid);}
+  // -- Get the notes that are to be synced from logseq --
+  let notes = [...(await ClozeNote.getNotesFromLogseqBlocks()), ...(await MultilineCardNote.getNotesFromLogseqBlocks())];
+  for (let note of notes) { // Force persistance of note's logseq block uuids accross re-index by adding id property to block in logseq
+    if (!note.properties["id"]) {await logseq.Editor.upsertBlockProperty(note.uuid, "id", note.uuid);}
   }
-  console.log("Blocks:", blocks);
+  console.log("Blocks:", notes);
   
 
   // -- Prompt the user what actions are going to be performed --
   let show_actions_before_sync = logseq.baseInfo.settings.show_actions_before_sync || true;
   let willCreate = 0, willUpdate, willDelete;
   if(show_actions_before_sync) {
-    for(let block of blocks) {let ankiId = await block.getAnkiId(); if (ankiId == null || isNaN(ankiId)) willCreate++;} 
-    willUpdate = blocks.length - willCreate;
+    for(let note of notes) {let ankiId = await note.getAnkiId(); if (ankiId == null || isNaN(ankiId)) willCreate++;} 
+    willUpdate = notes.length - willCreate;
     let ankiNotes = await AnkiConnect.query(`note:${modelName}`);
     willDelete = ankiNotes.length - willUpdate;
     let confirm_msg = `<b>The logseq to anki sync plugin will attempt to perform the following actions:</b><br/>Create ${willCreate} new anki notes<br/>Update ${willUpdate} existing anki notes<br/>Delete ${willDelete} anki notes<br/><br/>Are you sure you want to coninue?`;
@@ -95,29 +94,29 @@ async function syncLogseqToAnki() {
   let failedCreated: Set<string> = new Set(), failedUpdated: Set<string> = new Set(), failedDeleted: Set<string> = new Set();
 
   // -- Add or update notes in anki and log respective errors --
-  for (let block of blocks) {
+  for (let note of notes) {
     // Prepare the content of the anki note from block
     let html;
-    let deck: any = _.get(block, 'properties.deck') || _.get(block, 'page.properties.deck') || "Default";
+    let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || "Default";
     if (typeof deck != "string") deck = deck[0];
-    let breadcrumb = `<a href="#">${block.page.originalName}</a>`;
-    let tags = [...(_.get(block, 'properties.tags') || []), ...(_.get(block, 'page.properties.tags') || [])];
-    let extra = _.get(block, 'properties.extra') || _.get(block, 'page.properties.extra') || "";
+    let breadcrumb = `<a href="#">${note.page.originalName}</a>`;
+    let tags = [...(_.get(note, 'properties.tags') || []), ...(_.get(note, 'page.properties.tags') || [])];
+    let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
     if (Array.isArray(extra)) extra = extra.join(" ");
-    let ankiId = await block.getAnkiId();
+    let ankiId = await note.getAnkiId();
     if (ankiId == null || isNaN(ankiId)) {  // Perform create as note doesn't exist in anki
       try {
-        console.log(`%cAdding note with uuid ${block.uuid} and type ${block.type}`, 'color: blue; background: #eee;');
-        html = (await block.addClozes().convertToHtml()).getContent();
-        ankiNoteManager.addNote(deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
-      } catch (e) { console.error(e); failedCreated.add(`${block.uuid}-${block.type}`); }
+        console.log(`%cAdding note with uuid ${note.uuid} and type ${note.type}`, 'color: blue; background: #eee;');
+        html = (await note.addClozes().convertToHtml()).getContent();
+        ankiNoteManager.addNote(deck, modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
+      } catch (e) { console.error(e); failedCreated.add(`${note.uuid}-${note.type}`); }
     }
     else {  // Perform update as note exists in anki
       try {
-        console.log(`%cUpdating note with uuid ${block.uuid} and type ${block.type}`, 'color: blue; background: #eee;');
-        html = (await block.addClozes().convertToHtml()).getContent();
-        ankiNoteManager.updateNote(ankiId, deck, modelName, { "uuid-type": `${block.uuid}-${block.type}`, "uuid": block.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
-      } catch (e) { console.error(e); failedUpdated.add(`${block.uuid}-${block.type}`); }
+        console.log(`%cUpdating note with uuid ${note.uuid} and type ${note.type}`, 'color: blue; background: #eee;');
+        html = (await note.addClozes().convertToHtml()).getContent();
+        ankiNoteManager.updateNote(ankiId, deck, modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
+      } catch (e) { console.error(e); failedUpdated.add(`${note.uuid}-${note.type}`); }
     }
   }
   let [addedNoteAnkiIdUUIDPairs, subOperationResults] = await ankiNoteManager.execute("addNotes");
@@ -125,9 +124,9 @@ async function syncLogseqToAnki() {
     let uuidtype = addedNoteAnkiIdUUIDPair["uuid-type"];
     let uuid = uuidtype.split("-").slice(0, -1).join("-");
     let type = uuidtype.split("-").slice(-1)[0];
-    let block = _.find(blocks, { "uuid": uuid, "type": type });
-    block["ankiId"] = addedNoteAnkiIdUUIDPair["ankiId"];
-    console.log(block);
+    let note = _.find(notes, { "uuid": uuid, "type": type });
+    note["ankiId"] = addedNoteAnkiIdUUIDPair["ankiId"];
+    console.log(note);
   }
   for(let subOperationResult of subOperationResults) {
     if(subOperationResult != null && subOperationResult.error != null) {
@@ -145,7 +144,7 @@ async function syncLogseqToAnki() {
 
   // -- Delete the notes in anki whose respective blocks is no longer available in logseq --
   let ankiNoteIds: number[] = (await AnkiConnect.query(`note:${modelName}`)).map(i => parseInt(i)); // Get anki notes made from this logseq graph
-  let blockAnkiIds: number[] = await Promise.all(blocks.map(async block => await block.getAnkiId())); // Flatten current logseq block's anki ids
+  let blockAnkiIds: number[] = await Promise.all(notes.map(async block => await block.getAnkiId())); // Flatten current logseq block's anki ids
   // Delete anki notes created by app which are no longer in logseq graph
   for (let ankiNoteId of ankiNoteIds) {
     if (!blockAnkiIds.includes(ankiNoteId)) {
