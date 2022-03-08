@@ -1,9 +1,9 @@
-import { Block } from "./Block";
+import { Note } from "./Note";
 import '@logseq/libs'
-import { string_to_arr, get_math_inside_md, safeReplace } from './utils';
+import { string_to_arr, get_math_inside_md, safeReplace } from '../utils';
 import _ from 'lodash';
 
-export class ClozeBlock extends Block {
+export class ClozeNote extends Note {
     public type: string = "cloze";
 
     public constructor(uuid: string, content: string, format: string, properties: any, page: any) {
@@ -17,7 +17,7 @@ export class ClozeBlock extends Block {
         ]);
     });
 
-    public addClozes(): ClozeBlock {
+    public addClozes(): ClozeNote {
         let cloze_id = 1;
         let result : string = this.content;
 
@@ -73,7 +73,7 @@ export class ClozeBlock extends Block {
         return this;
     }
 
-    public static async getBlocksFromLogseq(): Promise<ClozeBlock[]> {
+    public static async getNotesFromLogseqBlocks(): Promise<ClozeNote[]> {
         let replaceCloze_blocks = await logseq.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
@@ -100,7 +100,7 @@ export class ClozeBlock extends Block {
             let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
             block = await logseq.Editor.getBlock(uuid);
             if(block)
-                return new ClozeBlock(uuid, block.content, block.format, block.properties || {}, page);
+                return new ClozeNote(uuid, block.content, block.format, block.properties || {}, page);
             else return null;
         }));
         blocks = _.uniqBy(blocks, 'uuid');

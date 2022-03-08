@@ -1,6 +1,6 @@
 import hljs from "highlight.js";
 import path from "path";
-import * as AnkiConnect from './AnkiConnect';
+import * as AnkiConnect from './anki-connect/AnkiConnect';
 import '@logseq/libs';
 import * as cheerio from 'cheerio';
 import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from './utils';
@@ -9,68 +9,16 @@ import {Mldoc} from 'mldoc';
 
 const debug = false;
 
-export async function convertLogseqMarkuptoHtml(content: string, format: string = "markdown"): Promise<string> {
-    let result = content;
-    result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
-    result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
-    
-    result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {  // Convert block embed
-        let block_content = "";
-        try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
-        return `<div class="embed-block">
-                <ul class="children-list"><li class="children">${await convertToHtml(block_content, format)}</li></ul>
-                </div>`;
-    });
-    result = await safeReplaceAsync(result, /\{\{embed \[\[(.*?)\]\] *?\}\}/gm, async (match, g1) => { // Convert page embed
-        let pageTree = [];
-        let getPageContentHTML = async (children: any, level: number = 0) => {
-            if(level >= 100) return "";
-            let result = `\n<ul class="children-list">`;
-            for (let child of children) {
-                result += `\n<li class="children">`;
-                let block_content = _.get(child,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
-                let format = _.get(child,"format") || "markdown";
-                let html = await convertToHtml(block_content, format);
-                if (child.children.length > 0) html += await getPageContentHTML(child.children, level + 1);
-
-                result += html;
-                result += `</li>`;
-            }
-            result += `</ul>`;
-            return result;
-        }
-        try { pageTree = await logseq.Editor.getPageBlocksTree(g1); } catch (e) { console.warn(e); }
-        
-        return `<div class="embed-page">
-                <a href="#${g1}" class="embed-header">${g1}</a>
-                ${await getPageContentHTML(pageTree)}
-                </div>`;
-    });
-    
-    result = safeReplace(result, /\[\[(.*?)\]\]/gm, `<a href="#$1" class="page-reference">$1</a>`); // Convert page refs
-    result = safeReplace(result, /\[(.*?)\]\(\(\((.*?)\)\)\)/gm, `<a href="#$2" class="block-reference">$1</a>`); // Convert block ref link
-    result = await safeReplaceAsync(result, /\(\((.*?)\)\)/gm, async (match, g1) => { // Convert block refs
-        let block_content = `${g1}`;
-        try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
-        block_content = safeReplace(block_content, /^\s*(\w|-)*::.*\n?\n?/gm, ""); 
-        block_content = safeReplace(block_content, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); 
-        let block_content_first_line = block_content.split("\n").find(line => line.trim() != "");
-        return `<a href="#${g1}" class="block-reference">${block_content_first_line}</a>`;
-    });
-
-    return result;
-}
-
-export async function convertToHtml(content: string, format: string = "markdown"): Promise<string> {
+export async function convertLogseqToHtml(content: string, format: string = "markdown"): Promise<string> {
     let result = content;
 
-    result = await convertLogseqMarkuptoHtml(result, format);
+    result = await processProperties(result, format);
+    result = await processEmbeds(result, format);
+
     let r = result;
-    if (format == "markdown" || format == "md") {
-        format = "Markdown";
-    } else if (format == "org") {
+    if (format == "org") {
         format = "Org";
-    };
+    } else format = "Markdown";
 
     let mldocsOptions = {
         "toc": false,
@@ -177,5 +125,64 @@ export async function convertToHtml(content: string, format: string = "markdown"
     }
 
     if(debug) console.log(content, r, hashmap, r2,"-----\n",r3,"-----\n", result);
+    return result;
+}
+
+async function processProperties(content: string, format: string = "markdown"): Promise<string> {
+    let result = content;
+    result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
+    result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
+    return result;
+}
+
+
+async function processEmbeds(content: string, format: string = "markdown"): Promise<string> {
+    let result = content;
+
+    result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {  // Convert block embed
+        let block_content = "";
+        try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
+        return `<div class="embed-block">
+                <ul class="children-list"><li class="children">${await convertLogseqToHtml(block_content, format)}</li></ul>
+                </div>`;
+    });
+
+    result = await safeReplaceAsync(result, /\{\{embed \[\[(.*?)\]\] *?\}\}/gm, async (match, g1) => { // Convert page embed
+        let pageTree = [];
+        let getPageContentHTML = async (children: any, level: number = 0) => {
+            if(level >= 100) return "";
+            let result = `\n<ul class="children-list">`;
+            for (let child of children) {
+                result += `\n<li class="children">`;
+                let block_content = _.get(child,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
+                let format = _.get(child,"format") || "markdown";
+                let html = await convertLogseqToHtml(block_content, format);
+                if (child.children.length > 0) html += await getPageContentHTML(child.children, level + 1);
+
+                result += html;
+                result += `</li>`;
+            }
+            result += `</ul>`;
+            return result;
+        }
+        try { pageTree = await logseq.Editor.getPageBlocksTree(g1); } catch (e) { console.warn(e); }
+        
+        return `<div class="embed-page">
+                <a href="#${g1}" class="embed-header">${g1}</a>
+                ${await getPageContentHTML(pageTree)}
+                </div>`;
+    });
+    
+    result = safeReplace(result, /\[\[(.*?)\]\]/gm, `<a href="#$1" class="page-reference">$1</a>`); // Convert page refs
+    result = safeReplace(result, /\[(.*?)\]\(\(\((.*?)\)\)\)/gm, `<a href="#$2" class="block-reference">$1</a>`); // Convert block ref link
+    result = await safeReplaceAsync(result, /\(\((.*?)\)\)/gm, async (match, g1) => { // Convert block refs
+        let block_content = `${g1}`;
+        try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
+        block_content = safeReplace(block_content, /^\s*(\w|-)*::.*\n?\n?/gm, ""); 
+        block_content = safeReplace(block_content, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); 
+        let block_content_first_line = block_content.split("\n").find(line => line.trim() != "");
+        return `<a href="#${g1}" class="block-reference">${block_content_first_line}</a>`;
+    });
+
     return result;
 }
