@@ -73,6 +73,7 @@ export async function updateNote(ankiId: number, deckName: string, modelName: st
         r = await invoke("removeTags", { "notes": [ankiId], "tags": tag });
     for (let tag of to_add_tags)
         r = await invoke("addTags", { "notes": [ankiId], "tags": tag });
+    r = await invoke("clearUnusedTags", {});
     return await invoke("updateNoteFields", { "note": { id: ankiId, "deckName": deckName, "modelName": modelName, "fields": fields } });
 }
 

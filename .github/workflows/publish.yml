@@ -42,7 +42,7 @@ jobs:
           VERSION: v${{ steps.package.outputs.package_version }}
         with:
           allowUpdates: false
-          draft: false
+          draft: true
           prerelease: false
           generateReleaseNotes: true
           tag: v${{ steps.package.outputs.package_version }}
