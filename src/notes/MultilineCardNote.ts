@@ -123,7 +123,6 @@ export class MultilineCardNote extends Note {
             block = await logseq.Editor.getBlock(uuid, { includeChildren: true });
             if (block) {
                 let tags = await Promise.all(_.map(block.refs, async page => { return _.get(await logseq.Editor.getPage(page.id), 'name') }));
-                console.log(tags);
                 let children = await this.augmentChildrenArray(block.children);
                 return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, children);
             } else return null;

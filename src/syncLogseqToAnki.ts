@@ -65,7 +65,6 @@ export class LogseqToAnkiSync {
                toDeleteNotes.push(ankiId);
             }
         }
-        console.log(noteAnkiIds, AnkiIds, toDeleteNotes);
 
         // -- Prompt the user what actions are going to be performed --
         let confirm_msg = `<b>The logseq to anki sync plugin will attempt to perform the following actions:</b><br/>Create ${toCreateNotes.length} new anki notes<br/>Update ${toUpdateNotes.length} existing anki notes<br/>Delete ${toDeleteNotes.length} anki notes<br/><br/>Are you sure you want to coninue?`;

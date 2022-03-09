@@ -7,30 +7,29 @@ import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsy
 import _ from 'lodash';
 import {Mldoc} from 'mldoc';
 
-const debug = false;
+let mldocsOptions = {
+    "toc": false,
+    "heading_number": false,
+    "keep_line_break": false,
+    "format": "Markdown",
+    "heading_to_list": false,
+    "exporting_keep_properties": false,
+    "inline_type_with_pos": true,
+    "export_md_remove_options": [],
+    "hiccup_in_block": true
+};
 
 export async function convertLogseqToHtml(content: string, format: string = "markdown"): Promise<string> {
     let result = content;
+    if(logseq.settings.converterDebug) console.log("--Start Converting--\nOriginal:", result);
 
     result = await processProperties(result, format);
     result = await processEmbeds(result, format);
+    if(logseq.settings.converterDebug) console.log("After processing embeded:", result);
 
-    let r = result;
     if (format == "org") {
-        format = "Org";
-    } else format = "Markdown";
-
-    let mldocsOptions = {
-        "toc": false,
-        "heading_number": false,
-        "keep_line_break": false,
-        "format": format,
-        "heading_to_list": false,
-        "exporting_keep_properties": false,
-        "inline_type_with_pos": true,
-        "export_md_remove_options": [],
-        "hiccup_in_block": true
-    };
+        mldocsOptions.format = "Org";
+    } else mldocsOptions.format = "Markdown";
 
     // --- Hacky fix for inline html support and {{c\d+:: content}} marcos using hashmap ---
     let hashmap = {};
@@ -79,14 +78,13 @@ export async function convertLogseqToHtml(content: string, format: string = "mar
         hashmap[strBack] = "}}";
         return `${strFront}${g3}${strBack}`;
     });
-    let r2 = result;
+    if(logseq.settings.converterDebug) console.log("After replacing errorinous terms:", result);
 
     // Render the markdown
     result = Mldoc.export("html", result,
         JSON.stringify(mldocsOptions),
         JSON.stringify({})
     );
-    let r3 = result;
     // Render images and and codes
     let $ = cheerio.load(result, { decodeEntities: false });
     const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
@@ -118,13 +116,14 @@ export async function convertLogseqToHtml(content: string, format: string = "mar
         $(elm).html(`\\[ ${math} \\]`);
     });
     result = decodeHTMLEntities(decodeHTMLEntities($('#content ul li').html() || ""));
+    if(logseq.settings.converterDebug) console.log("After Mldoc.export:", result);
 
     // Bring back inline html content and clozes from hashmap
     for (let key in hashmap) {
         result = safeReplace(result, key, hashmap[key]);
     }
 
-    if(debug) console.log(content, r, hashmap, r2,"-----\n",r3,"-----\n", result);
+    if(logseq.settings.converterDebug) console.log("After bringing back errorinous terms:", result,"\n---End---");
     return result;
 }
 
