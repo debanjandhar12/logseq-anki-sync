@@ -40,6 +40,26 @@ function main(baseInfo: LSPluginBaseInfo) {
   MultilineCardNote.initLogseqOperations();
 
   logseq.useSettingsSchema(settingsTemplate);
+  logseq.onSettingsChanged(() => {
+    if(logseq.settings.hideNativeFlashcard) {
+      logseq.provideStyle({
+        key: 'open-calendar',
+        style: String.raw`
+        .flashcards-nav {
+          display: none;
+        }
+       `});
+    }
+    else {
+      logseq.provideStyle({
+        key: 'open-calendar',
+        style: String.raw`
+        .flashcards-nav {
+          display: block;
+        }
+       `});
+    }
+  });
 }
 
 // Bootstrap

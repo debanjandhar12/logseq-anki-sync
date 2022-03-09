@@ -2,6 +2,13 @@ import '@logseq/libs';
 import { SettingSchemaDesc } from '@logseq/libs/dist/LSPlugin';
 
 export const settingsTemplate: SettingSchemaDesc[] = [{
+  key: "hideNativeFlashcard",
+  type: 'boolean',
+  default: false,
+  title: "Hide Logseq's Native Flashcards",
+  description: "Hide Logseq's native flashcards from the left sidebar.",
+  },
+  {
     key: "syncDebug",
     type: 'boolean',
     default: false,
