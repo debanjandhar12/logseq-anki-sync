@@ -1,18 +1,18 @@
-# Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub" height="28"/>](https://github.com/debanjandhar12/logseq-anki-sync/)
-A **Logseq** to **Anki Flashcards** integration plugin. <br/>
-**Anki** is a spaced repetition system similar to logseq's flashcard but with more features such as practice all flashcards from a topic before a exam, suspend card from a topic etc.
+# Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat-square" height="28"/>](https://github.com/debanjandhar12/logseq-anki-sync/) [<img align="right" src="https://cdn.buymeacoffee.com/buttons/default-orange.png" height="28"/>](https://www.buymeacoffee.com/debanjandhar12)
+**Anki** is a spaced repetition system similar to logseq's flashcard but with more features. For example, you can all practice cards for a specific topic before an exam without affecting card scheduling. <br/>
+This plugin allows you to **sync cards from logseq to anki** using logseq's flashcard syntax. Also, you can set things like **card direction**.
 <p align="center">
   <img width="580px" src="https://user-images.githubusercontent.com/49021233/145706852-b509d971-28eb-41cb-80fd-4292f46ddf70.gif" />
 </p>
 
-## Features
+## 🚀 Features
 * 🐾 Supports Logseq's original srs clozes and card syntax **(+ a lot more)**.
 * 🖼 Supports markdown and org mode (math, code, images, embed etc) through [mldoc](https://github.com/logseq/mldoc).
 * 📘 **Adding cards to user-specified deck** on a *per-page* or *per-block* basis.
 * 🥳 Many other features like **incremental cards, srs direction, extra field, tags** etc...
 * ♻ Syncing is done by creating, updating, deleting from logseq to anki (one-way sync).
 
-## Installation
+## 🛠️ Installation
 1. Install Logseq Anki Sync from Marketplace.
    * Go to `⋯` > `Settings` > `Advanced` and enable Developer Mode.
    * Now, go to `⋯` > `Plugin` > `Marketplace` and find Logseq Anki Sync and click install.
@@ -26,7 +26,7 @@ A **Logseq** to **Anki Flashcards** integration plugin. <br/>
    NB: Make sure the anki is running in background before clicking the Sync to Anki button.
 5. If you receive a [logseq wants to access anki message](https://raw.githubusercontent.com/debanjandhar12/Obsidian-Anki-Sync/main/docs/images/permission.png), click `Yes`.
 
-# Documentation
+# 🗎 Documentation
 <b>User Documentation</b>
 * [How to make simple cloze cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-simple-cloze-cards%3F)
 * [How to make cloze cards inside math and code?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-make-cloze-cards-inside-math-and-code%3F)
@@ -40,10 +40,14 @@ A **Logseq** to **Anki Flashcards** integration plugin. <br/>
 <b>Developer Documentation</b>
 * [Compiling Instructions](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Compiling-Instructions)
 * [Structure of this Plugin](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Structure-of-this-Plugin)
+> Please create a [github issue](https://github.com/debanjandhar12/logseq-anki-sync/issues) for any feature request and reporting bugs.
 
-# Pricing
-This plugin is free for everyone, however, if you would like to thank me or help with further development, you can donate in one of the following ways:<br/>
-[<img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" height="60" />](https://www.buymeacoffee.com/debanjandhar12)
+# 🙏 Support
+Loved the tool? Please consider donating 💸 to help it improve! You can also help by spreading the word.<br/>
+<p align="center">
+<a href="https://www.buymeacoffee.com/debanjandhar12" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="50" style="border-radius:1px" />
+</p>
 
+  #### Sponsors:
+[chs33](https://github.com/chs33)
 
-> NB: Please create a [github issue](https://github.com/debanjandhar12/logseq-anki-sync/issues) for any feature request and reporting bugs.
