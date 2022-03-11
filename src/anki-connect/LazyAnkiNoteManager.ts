@@ -50,6 +50,7 @@ export class LazyAnkiNoteManager {
         this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
 
         // Remove all old unneeded tags and add new ones
+        tags = tags.map(tag => tag.replace(/\s/g, "_")); // Anki doesn't like spaces in tags
         let to_remove_tags = _.difference(noteinfo.tags, tags);
         let to_add_tags = _.difference(tags, noteinfo.tags);
         for (let tag of to_remove_tags){
@@ -61,8 +62,18 @@ export class LazyAnkiNoteManager {
             this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
         }
 
-        this.updateNoteActionsQueue.push({"action": "updateNoteFields", "params": { "note": { id: ankiId, "deckName": deckName, "modelName": modelName, "fields": fields } } });
-        this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
+        let needsUpdate = false;
+        for (let key in fields) {
+            if (noteinfo.fields[key].value != fields[key]) {
+                if(logseq.settings.syncDebug) console.log("Difference found:", key, noteinfo.fields[key].value, fields[key]);
+                needsUpdate = true;
+                break;
+            }
+        }
+        if(needsUpdate) {
+            this.updateNoteActionsQueue.push({"action": "updateNoteFields", "params": { "note": { id: ankiId, "deckName": deckName, "modelName": modelName, "fields": fields } } });
+            this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
+        }
     }
 
     deleteNote(ankiId: number): void {
