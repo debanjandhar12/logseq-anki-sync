@@ -1,5 +1,5 @@
 # Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat-square" height="28"/>](https://github.com/debanjandhar12/logseq-anki-sync/) [<img align="right" src="https://cdn.buymeacoffee.com/buttons/default-orange.png" height="28"/>](https://www.buymeacoffee.com/debanjandhar12)
-**Anki** is a spaced repetition system similar to logseq's flashcard but with more features. For example, you can all practice cards for a specific topic before an exam without affecting card scheduling. <br/>
+**Anki** is a spaced repetition system similar to logseq's flashcard but with more features. For example, you can practice all cards for a specific topic before an exam without affecting card scheduling. <br/>
 This plugin allows you to **sync cards from logseq to anki** using logseq's flashcard syntax. Also, you can set things like **card direction**.
 <p align="center">
   <img width="580px" src="https://user-images.githubusercontent.com/49021233/145706852-b509d971-28eb-41cb-80fd-4292f46ddf70.gif" />
