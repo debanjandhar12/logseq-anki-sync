@@ -62,15 +62,15 @@ export class LazyAnkiNoteManager {
             this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
         }
 
-        let needsUpdate = false;
+        let needsFieldUpdate = false;
         for (let key in fields) {
             if (noteinfo.fields[key].value != fields[key]) {
                 if(logseq.settings.syncDebug) console.log("Difference found:", key, noteinfo.fields[key].value, fields[key]);
-                needsUpdate = true;
+                needsFieldUpdate = true;
                 break;
             }
         }
-        if(needsUpdate) {
+        if(needsFieldUpdate) {
             this.updateNoteActionsQueue.push({"action": "updateNoteFields", "params": { "note": { id: ankiId, "deckName": deckName, "modelName": modelName, "fields": fields } } });
             this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
         }
