@@ -15,6 +15,7 @@ let mldocsOptions = {
     "heading_to_list": false,
     "exporting_keep_properties": false,
     "inline_type_with_pos": true,
+    "parse_outline_only": false,
     "export_md_remove_options": [],
     "hiccup_in_block": true
 };
@@ -39,7 +40,8 @@ export async function convertLogseqToHtml(content: string, format: string = "mar
         JSON.stringify(mldocsOptions),
         JSON.stringify({})
     );
-    try { parsedJson = JSON.parse(parsedJson) } catch {parsedJson = [];};
+    try { parsedJson = JSON.parse(parsedJson); } catch {parsedJson = [];};
+    let resultUTF8 = new TextEncoder().encode(result);  // Convert to utf8 array as mldocs outputs position according to utf8 https://github.com/logseq/mldoc/issues/120
     for(let i = parsedJson.length-1; i >= 0; i--) {
         // node's start_pos is bound to be larger than next item's end_pos due to how Mldoc.parseInlineJson works
         let node = parsedJson[i];
@@ -51,14 +53,15 @@ export async function convertLogseqToHtml(content: string, format: string = "mar
         let start_pos = node[node.length-1]["start_pos"];
         let end_pos = node[node.length-1]["end_pos"];
         if(type == "Raw_Html" || type == "Inline_Html") {
-            if(content != result.substring(start_pos, end_pos)) {
+            if(content != new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos))) {
                 console.error("Error: content mismatch", content, result.substring(start_pos, end_pos));
             }
             let str = getRandomUnicodeString();
-            hashmap[str] = result.substring(start_pos, end_pos);
-            result = result.substring(0, start_pos) + str + result.substring(end_pos);    
+            hashmap[str] =  new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
+            resultUTF8 = new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);    
         }
     }
+    result = new TextDecoder().decode(resultUTF8);
     
     // Put all anki cloze marcos in hashmap
     result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, (match, g1, g2, g3, ...arg) => {
