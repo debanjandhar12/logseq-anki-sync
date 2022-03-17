@@ -22,9 +22,9 @@
     font-family: arial;
     font-size: 12px;
     color: rgb(65, 65, 65);
-    background-color: rgb(226,236,240);
+    background-color: rgb(226, 236, 240);
     border-radius: 6px;
-    padding:2px;
+    padding: 2px;
     padding-left: 6px;
     padding-right: 6px;
     margin-bottom: 4px;
@@ -86,7 +86,7 @@ h5 {
     padding-top: 3px;
     padding-bottom: 3px;
     position: relative;
-    min-height:16px;
+    min-height: 16px;
 }
 
 .children::before {
@@ -127,7 +127,7 @@ blockquote, .quote {
 
 a.tag:before {
     content: "#";
-}  
+}
 
 a.tag {
     cursor: pointer;
@@ -145,13 +145,13 @@ a.page-reference {
 }
 
 a.page-reference:before {
-    color: rgb(115,115,115);
+    color: rgb(115, 115, 115);
     content: "[[";
     opacity: 0.3;
 }
 
 a.page-reference:after {
-    color: rgb(115,115,115);
+    color: rgb(115, 115, 115);
     content: "]]";
     opacity: 0.3;
 }
@@ -160,24 +160,33 @@ a.page-reference:hover {
     background-color: #c8e6fa;
 }
 
-a.block-reference {
-    color: #106ba3;
+span.block-ref {
+    border-bottom: .5px solid;
+    border-bottom-color: #d8e1e8;
+    cursor: alias;
+    display: inline-block;
 }
 
-a.block-reference:before {
-    color: rgb(115,115,115);
+span.block-ref:hover {
+    background-color: #c8e6fa;
+}
+
+span.failed-block-ref {
+    background-color: #f56565;
+    border-radius: 4px;
+    cursor: not-allowed;
+}
+
+span.failed-block-ref:before {
+    color: rgb(115, 115, 115);
     content: "((";
     opacity: 0.3;
 }
 
-a.block-reference:after {
-    color: rgb(115,115,115);
+span.failed-block-ref:after {
+    color: rgb(115, 115, 115);
     content: "))";
     opacity: 0.3;
-}
-
-a.block-reference:hover {
-    background-color: #c8e6fa;
 }
 
 .embed-page, .embed-block {
