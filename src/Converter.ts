@@ -37,7 +37,7 @@ export async function convertLogseqToHtml(content: string, format: string = "mar
 
     // Put all html content in hashmap
     let parsedJson = Mldoc.parseInlineJson(result,
-        JSON.stringify(mldocsOptions),
+        JSON.stringify({...mldocsOptions, "parse_outline_only": true}),
         JSON.stringify({})
     );
     try { parsedJson = JSON.parse(parsedJson); } catch { parsedJson = []; };
