@@ -20,7 +20,6 @@ export abstract class Note {
         this.format = format;
         this.properties = properties;
         this.page = page;
-        console.log("Hehe2"+format);
     }
 
     public static setAnkiNoteManager(ankiNoteManager: LazyAnkiNoteManager) {

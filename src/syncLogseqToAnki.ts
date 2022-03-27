@@ -35,20 +35,20 @@ export class LogseqToAnkiSync {
         // -- Request Access --
         await AnkiConnect.requestPermission();
         
-        // -- Prepare Anki Note Manager --
-        let ankiNoteManager = new LazyAnkiNoteManager(this.modelName);
-        await ankiNoteManager.init();
-        Note.setAnkiNoteManager(ankiNoteManager);
-
         // -- Create models if it doesn't exists --
         await AnkiConnect.createModel(this.modelName, ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"], template_front, template_back, template_files);
 
         // -- Get the notes that are to be synced from logseq --
         let notes : Array<Note> = [...(await ClozeNote.getNotesFromLogseqBlocks()), ...(await MultilineCardNote.getNotesFromLogseqBlocks())];
         for (let note of notes) { // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
-            if (!note.properties["id"]) { await logseq.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); }
+            if (!note.properties["id"]) { logseq.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); }
         }
         console.log("Notes:", notes);
+
+        // -- Prepare Anki Note Manager --
+        let ankiNoteManager = new LazyAnkiNoteManager(this.modelName);
+        await ankiNoteManager.init();
+        Note.setAnkiNoteManager(ankiNoteManager);
 
         // -- Declare some variables to keep track of different operations performed --
         let failedCreated: Set<string> = new Set(), failedUpdated: Set<string> = new Set(), failedDeleted: Set<string> = new Set();

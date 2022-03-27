@@ -11,11 +11,9 @@ import { get_better_error_msg, confirm } from './utils';
 import { LogseqToAnkiSync } from './syncLogseqToAnki';
 import { settingsTemplate } from './constants';
 
-const delay = (t = 100) => new Promise(r => setTimeout(r, t))
-
 // --- Register UI Elements Onload ---
 function main(baseInfo: LSPluginBaseInfo) {
-  let syncLogseqToAnki = function() { new LogseqToAnkiSync().sync();  };
+  let syncLogseqToAnki = async function() { await new LogseqToAnkiSync().sync();  };
   logseq.provideModel({
     syncLogseqToAnki: syncLogseqToAnki,
   });
