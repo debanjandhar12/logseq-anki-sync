@@ -135,14 +135,14 @@ export async function createModel(modelName: string, fields: string[], template_
 
     // Iterate over files obj and add them to anki
     for (var filename in template_files){
-        try {await storeMediaFileByContent(filename, template_files[filename]);} catch(e) { console.error(filename);console.error(e); }
+        try {await storeMediaFileByContent(filename, template_files[filename]);} catch(e) { console.error(filename); console.error(e); }
     }
 }
 
 export async function storeMediaFileByContent(filename: string, content: string): Promise<any> {
     return await invoke('storeMediaFile', {
         filename: filename,
-        data: btoa(content)
+        data: Buffer.from(content).toString('base64')
     });
 }
 
