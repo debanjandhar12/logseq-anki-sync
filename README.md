@@ -1,4 +1,4 @@
-# Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat-square" height="28"/>](https://github.com/debanjandhar12/logseq-anki-sync/) [<img align="right" src="https://cdn.buymeacoffee.com/buttons/default-orange.png" height="28"/>](https://www.buymeacoffee.com/debanjandhar12)
+# Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat-square" height="28"/>](https://github.com/debanjandhar12/logseq-anki-sync/) [<img align="right" src="https://raw.githubusercontent.com/debanjandhar12/logseq-anki-sync/main/imgs/buymeacoffee.webp" height="30"/>](https://www.buymeacoffee.com/debanjandhar12)
 **Anki** is a spaced repetition system similar to logseq's flashcard but with more features. For example, you can practice all cards for a specific topic before an exam without affecting card scheduling. <br/>
 This plugin allows you to **sync cards from logseq to anki** using logseq's flashcard syntax. Also, you can set things like **card direction**.
 <p align="center">
@@ -45,9 +45,10 @@ This plugin allows you to **sync cards from logseq to anki** using logseq's flas
 # 🙏 Support
 Loved the tool? Please consider donating 💸 to help it improve! You can also help by spreading the word.<br/>
 <p align="center">
-<a href="https://www.buymeacoffee.com/debanjandhar12" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="50" style="border-radius:1px" />
+<a href="https://www.buymeacoffee.com/debanjandhar12" target="_blank"><img src="https://raw.githubusercontent.com/debanjandhar12/logseq-anki-sync/main/imgs/buymeacoffee.webp" alt="Buy Me A Coffee" height="55" style="border-radius:1px" />
 </p>
 
-  #### Sponsors:
-[chs33](https://github.com/chs33)
+#### Sponsors:
+ 
+[chs33](https://github.com/chs33) [Tubo](https://github.com/Tubo)
 
