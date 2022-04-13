@@ -1,6 +1,13 @@
-<span class="breadcrumb2">
-    {{Breadcrumb}}
-</span>
+<div style="display: flex; justify-content: space-between;">
+    <div class="bubble breadcrumb2">
+        {{Breadcrumb}}
+    </div>
+    <div class="note-actions">
+        <span class="note-action bubble" onclick="scrollToClozeElement()" title="Scroll to cloze">
+            ⇂
+        </span>
+    </div>
+</div>
 <span class="text">
     {{cloze:Text}}
 </span>
