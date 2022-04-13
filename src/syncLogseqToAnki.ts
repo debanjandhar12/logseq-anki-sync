@@ -38,17 +38,17 @@ export class LogseqToAnkiSync {
         // -- Create models if it doesn't exists --
         await AnkiConnect.createModel(this.modelName, ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"], template_front, template_back, template_files);
 
-        // -- Get the notes that are to be synced from logseq --
-        let notes : Array<Note> = [...(await ClozeNote.getNotesFromLogseqBlocks()), ...(await MultilineCardNote.getNotesFromLogseqBlocks())];
-        for (let note of notes) { // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
-            if (!note.properties["id"]) { logseq.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); }
-        }
-        console.log("Notes:", notes);
-
         // -- Prepare Anki Note Manager --
         let ankiNoteManager = new LazyAnkiNoteManager(this.modelName);
         await ankiNoteManager.init();
         Note.setAnkiNoteManager(ankiNoteManager);
+        
+        // -- Get the notes that are to be synced from logseq --
+        let notes : Array<Note> = [...(await ClozeNote.getNotesFromLogseqBlocks()), ...(await MultilineCardNote.getNotesFromLogseqBlocks())];
+        for (let note of notes) { // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
+            if (!note.properties["id"]) { try { logseq.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); } catch (e) { console.error(e); } }
+        }
+        console.log("Notes:", notes);
 
         // -- Declare some variables to keep track of different operations performed --
         let failedCreated: Set<string> = new Set(), failedUpdated: Set<string> = new Set(), failedDeleted: Set<string> = new Set();
@@ -95,14 +95,7 @@ export class LogseqToAnkiSync {
     private async createNotes(toCreateNotes: Note[], failedCreated: Set<any>, ankiNoteManager: LazyAnkiNoteManager): Promise<void> {
         for (let note of toCreateNotes) {
             try {
-                let html = (await note.addClozes().convertToHtml()).getContent();
-                let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || "Default";
-                if (typeof deck != "string") deck = deck[0];
-                let breadcrumb = `<a href="#">${note.page.originalName}</a>`;
-                let tags = [...(_.get(note, 'properties.tags') || []), ...(_.get(note, 'page.properties.tags') || [])];
-                let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
-                if (Array.isArray(extra)) extra = extra.join(" ");
-                let ankiId = note.getAnkiId();
+                let [html, deck, breadcrumb, tags, extra] = await this.parseNote(note);
                 ankiNoteManager.addNote(deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
             } catch (e) {
                 console.error(e); failedCreated.add(`${note.uuid}-${note.type}`);
@@ -130,13 +123,7 @@ export class LogseqToAnkiSync {
     private async updateNotes(toUpdateNotes: Note[], failedUpdated: Set<any>, ankiNoteManager: LazyAnkiNoteManager): Promise<void> {
         for (let note of toUpdateNotes) {
             try {
-                let html = (await note.addClozes().convertToHtml()).getContent();
-                let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || "Default";
-                if (typeof deck != "string") deck = deck[0];
-                let breadcrumb = `<a href="#">${note.page.originalName}</a>`;
-                let tags = [...(_.get(note, 'properties.tags') || []), ...(_.get(note, 'page.properties.tags') || [])];
-                let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
-                if (Array.isArray(extra)) extra = extra.join(" ");
+                let [html, deck, breadcrumb, tags, extra] = await this.parseNote(note);
                 let ankiId = note.getAnkiId();
                 ankiNoteManager.updateNote(ankiId, deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
             } catch (e) {
@@ -164,5 +151,18 @@ export class LogseqToAnkiSync {
                 failedDeleted.add(subOperationResult.error.ankiId);
             }
         }
+    }
+
+    private async parseNote(note: Note): Promise<[string, string, string, Array<string>, string]> {
+        let html = (await note.addClozes().convertToHtml()).getContent();
+        let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || "Default";
+        if (typeof deck != "string") deck = deck[0];
+        deck = deck.replace(/\//g, "::");
+        if(deck == "Default" && _.get(note, 'page.properties.title') != null && _.get(note, 'page.properties.title').includes("/")) deck = _.get(note, 'page.properties.title').split("/").slice(0, -1).join("::");
+        let breadcrumb = `<a href="#">${note.page.originalName}</a>`;
+        let tags = [...(_.get(note, 'properties.tags') || []), ...(_.get(note, 'page.properties.tags') || [])];
+        let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
+        if (Array.isArray(extra)) extra = extra.join(" ");
+        return [html, deck, breadcrumb, tags, extra];
     }
 }
