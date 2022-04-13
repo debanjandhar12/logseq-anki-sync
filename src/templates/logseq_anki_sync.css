@@ -165,7 +165,7 @@ span.block-ref {
     border-bottom: .5px solid;
     border-bottom-color: #d8e1e8;
     cursor: alias;
-    display: inline-block;
+    display: inline;
 }
 
 span.block-ref:hover {
