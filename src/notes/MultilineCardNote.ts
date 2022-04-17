@@ -8,8 +8,8 @@ export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
     public children: any[];
     public tags: any[];
-    public constructor(uuid: string, content: string, format: string, properties: any, page: any, tags: any = [], children: any = []) {
-        super(uuid, content, format, properties, page);
+    public constructor(uuid: string, content: string, format: string, properties: any, page: any, tags: any = [], parent: number, children: any = []) {
+        super(uuid, content, format, properties, page, parent);
         this.children = children;
         this.tags = tags;
     }
@@ -124,7 +124,7 @@ export class MultilineCardNote extends Note {
             if (block) {
                 let tags = await Promise.all(_.map(block.refs, async page => { return _.get(await logseq.Editor.getPage(page.id), 'name') }));
                 let children = await this.augmentChildrenArray(block.children);
-                return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, children);
+                return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, block.parent.id, children);
             } else return null;
         }));
         blocks = _.uniqBy(blocks, 'uuid');

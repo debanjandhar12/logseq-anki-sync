@@ -6,8 +6,8 @@ import _ from 'lodash';
 export class ClozeNote extends Note {
     public type: string = "cloze";
 
-    public constructor(uuid: string, content: string, format: string, properties: any, page: any) {
-        super(uuid, content, format, properties, page);
+    public constructor(uuid: string, content: string, format: string, properties: any, page: any, parent: number) {
+        super(uuid, content, format, properties, page, parent);
     }
 
     public static initLogseqOperations = (() => { // Init logseq operations at start of the program
@@ -100,7 +100,7 @@ export class ClozeNote extends Note {
             let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
             block = await logseq.Editor.getBlock(uuid);
             if(block)
-                return new ClozeNote(uuid, block.content, block.format, block.properties || {}, page);
+                return new ClozeNote(uuid, block.content, block.format, block.properties || {}, page, block.parent.id);
             else return null;
         }));
         blocks = _.uniqBy(blocks, 'uuid');

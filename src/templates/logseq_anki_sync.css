@@ -223,6 +223,10 @@ a.embed-header:hover {
     margin-bottom: 4px;
 }
 
+.note-action {
+    margin: 4px;
+}
+
 .note-action:hover {
     cursor: pointer;
 }

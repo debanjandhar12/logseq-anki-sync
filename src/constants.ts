@@ -9,6 +9,15 @@ export const settingsTemplate: SettingSchemaDesc[] = [{
   description: "Hide Logseq's native flashcards from the left sidebar.",
   },
   {
+    key: "breadcrumbDisplay",
+    type: 'enum',
+    default: "Show Page name only",
+    title: "What to display in the breadcrumb?",
+    description: "Pick what to display in the breadcrumb. NB: Show Page name and parent blocks context might slightly increase syncing time.",
+    enumChoices: ["Show Page name only", "Show Page name and parent blocks context"],
+    enumPicker: "select"
+  },
+  {
     key: "syncDebug",
     type: 'boolean',
     default: false,
