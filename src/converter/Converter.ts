@@ -1,7 +1,7 @@
 import hljs from "highlight.js";
 import '@logseq/libs';
 import * as cheerio from 'cheerio';
-import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from './utils';
+import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils';
 import _ from 'lodash';
 import { Mldoc } from 'mldoc';
 

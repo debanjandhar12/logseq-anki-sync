@@ -1,7 +1,7 @@
 import '@logseq/libs'
 import { LazyAnkiNoteManager } from '../anki-connect/LazyAnkiNoteManager';
 import _ from 'lodash';
-import { convertToHTMLFile, HTMLFile } from '../Converter';
+import { convertToHTMLFile, HTMLFile } from '../converter/CachedConverter';
 
 export abstract class Note {
     public uuid: string;

@@ -1,7 +1,7 @@
 import { Note } from "./Note";
 import '@logseq/libs';
 import _ from 'lodash';
-import { convertToHTMLFile, HTMLFile } from '../Converter';
+import { convertToHTMLFile, HTMLFile } from '../converter/CachedConverter';
 import { safeReplace } from '../utils';
 
 export class MultilineCardNote extends Note {
