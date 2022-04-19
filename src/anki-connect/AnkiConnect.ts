@@ -152,3 +152,9 @@ export async function storeMediaFileByPath(filename: string, path: string): Prom
         path: path
     });
 }
+
+export async function guiBrowse(query: string): Promise<any> {
+    return await invoke('guiBrowse', {
+        query: query
+    });
+}

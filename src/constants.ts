@@ -18,6 +18,13 @@ export const settingsTemplate: SettingSchemaDesc[] = [{
     enumPicker: "select"
   },
   {
+  key: "previewNotesInAnki",
+  type: 'boolean',
+  default: false,
+  title: "Show Preview notes Context Menu",
+  description: "Shows a 'Preview notes from block in Anki' Context Menu",
+  },
+  {
     key: "syncDebug",
     type: 'boolean',
     default: false,

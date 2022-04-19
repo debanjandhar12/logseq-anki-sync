@@ -9,11 +9,12 @@ import { MultilineCardNote } from './notes/MultilineCardNote';
 import _ from 'lodash';
 import { get_better_error_msg, confirm } from './utils';
 import { LogseqToAnkiSync } from './syncLogseqToAnki';
+import { previewBlockNotesInAnki } from './previewBlockNotesInAnki';
 import { settingsTemplate } from './constants';
 
 // --- Register UI Elements Onload ---
 function main(baseInfo: LSPluginBaseInfo) {
-  let syncLogseqToAnki = async function() { await new LogseqToAnkiSync().sync();  };
+  let syncLogseqToAnki = function() { new LogseqToAnkiSync().sync();  };
   logseq.provideModel({
     syncLogseqToAnki: syncLogseqToAnki,
   });
@@ -33,6 +34,9 @@ function main(baseInfo: LSPluginBaseInfo) {
       </a>
     `
   });
+
+  if(logseq.settings.previewNotesInAnki)
+    logseq.Editor.registerBlockContextMenuItem("Preview notes from block in Anki", previewBlockNotesInAnki);
 
   ClozeNote.initLogseqOperations();
   MultilineCardNote.initLogseqOperations();
@@ -57,7 +61,7 @@ function main(baseInfo: LSPluginBaseInfo) {
         }
        `});
     }
-  });
+  }); 
 }
 
 // Bootstrap
