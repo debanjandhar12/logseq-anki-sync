@@ -174,7 +174,7 @@ export class LogseqToAnkiSync {
         let {html, assets} = await note.addClozes().convertToHtmlFile();
         
         // Parse deck using logic described at https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F
-        let deck: any = _.get(note, 'page.properties.deck') || "Default";
+        let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || "Default";
         try {
             let parentID = note.uuid;
             let parent;
