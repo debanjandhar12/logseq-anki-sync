@@ -11,7 +11,7 @@ export const settingsTemplate: SettingSchemaDesc[] = [{
   {
     key: "breadcrumbDisplay",
     type: 'enum',
-    default: "Show Page name only",
+    default: "Show Page name and parent blocks context",
     title: "What to display in the breadcrumb?",
     description: "Pick what to display in the breadcrumb. NB: Show Page name and parent blocks context might slightly increase syncing time.",
     enumChoices: ["Show Page name only", "Show Page name and parent blocks context"],
