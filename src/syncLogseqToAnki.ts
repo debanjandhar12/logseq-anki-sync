@@ -174,7 +174,20 @@ export class LogseqToAnkiSync {
         let {html, assets} = await note.addClozes().convertToHtmlFile();
         
         // Parse deck using logic described at https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F
-        let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || "Default";
+        let deck: any = _.get(note, 'page.properties.deck') || "Default";
+        try {
+            let parentID = note.uuid;
+            let parent;
+            while ((parent = await logseq.App.getBlock(parentID)) != null) {
+                if(_.get(parent, 'properties.deck') != null){
+                    deck = _.get(parent, 'properties.deck');
+                    break;
+                }
+                parentID = parent.parent.id;
+            }
+        } catch (e) {
+            console.error(e);
+        }
         if (typeof deck != "string") deck = deck[0];
         deck = deck.replace(/\//g, "::");
         if(deck == "Default" && _.get(note, 'page.properties.title') != null && _.get(note, 'page.properties.title').includes("/")) deck = _.get(note, 'page.properties.title').split("/").slice(0, -1).join("::");
