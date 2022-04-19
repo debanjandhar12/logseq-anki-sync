@@ -13,6 +13,7 @@ export class LazyAnkiNoteManager {
     private updateNoteUuidTypeQueue: Array<any> = [];
     private deleteNoteActionsQueue: Array<any> = [];
     private deleteNoteAnkiIdQueue: Array<any> = [];
+    private storeAssetActionsQueue: Array<any> = [];
 
     constructor(modelName: string) {
         this.modelName = modelName;
@@ -81,6 +82,10 @@ export class LazyAnkiNoteManager {
         this.deleteNoteAnkiIdQueue.push(ankiId);
     }
 
+    storeAsset(filename: string, path: string): void {
+        this.storeAssetActionsQueue.push({"action": "storeMediaFile", "params": { filename, path } });
+    }
+
     async execute(operation: string): Promise<any> {
         let result = [];
         switch (operation) {
@@ -144,6 +149,15 @@ export class LazyAnkiNoteManager {
                 }
                 this.deleteNoteActionsQueue = [];
                 this.deleteNoteAnkiIdQueue = [];
+                break;
+            case "storeAssets": // Returns nothing
+                try{
+                    this.storeAssetActionsQueue = _.uniqBy(this.storeAssetActionsQueue, 'params.filename');
+                    result = await AnkiConnect.invoke("multi", { "actions": this.storeAssetActionsQueue });
+                    console.log(result);
+                }
+                catch(e){ console.log(e); }
+                this.storeAssetActionsQueue = [];
                 break;
         }
         return result;

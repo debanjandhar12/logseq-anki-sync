@@ -1,13 +1,14 @@
 import { Note } from "./Note";
 import '@logseq/libs';
 import _ from 'lodash';
-import { convertLogseqToHtml } from '../Converter';
+import { convertToHTMLFile, HTMLFile } from '../Converter';
 import { safeReplace } from '../utils';
 
 export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
     public children: any[];
     public tags: any[];
+    private childrenAssets: Set<string> = new Set();
     public constructor(uuid: string, content: string, format: string, properties: any, page: any, tags: any = [], parent: number, children: any = []) {
         super(uuid, content, format, properties, page, parent);
         this.children = children;
@@ -72,7 +73,8 @@ export class MultilineCardNote extends Note {
             let result = `\n<ul class="children-list left-border">`;
             for (let child of children) {
                 result += `\n<li class="children">`;
-                let sanitized_html_content = child.html_content.replace(/(\{\{c(\d+)::)((.|\n)*)\}\}/g, "$3");
+                let sanitized_html_content = child.htmlFile.html.replace(/(\{\{c(\d+)::)((.|\n)*)\}\}/g, "$3");
+                child.htmlFile.assets.forEach(asset => this.childrenAssets.add(asset));
                 if (child.children.length > 0) sanitized_html_content += addChildrenToResult(child.children, level + 1);
 
                 if(level == 0 && (direction == "<->" || direction == "->")) {
@@ -98,7 +100,7 @@ export class MultilineCardNote extends Note {
                 let child_content = _.get(child,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
                 if(child_extra) {child_content += `\n<div class="extra">${child_extra}</div>`;}
                 let new_children = await this.augmentChildrenArray(_.get(child,"children") || []);
-                return _.assign(child, {html_content: await convertLogseqToHtml(child_content, _.get(child,"format") || "markdown"), children: new_children})
+                return _.assign(child, {htmlFile: await convertToHTMLFile(child_content, _.get(child,"format") || "markdown"), children: new_children})
             })) || [];
         return output;
     }
@@ -133,5 +135,11 @@ export class MultilineCardNote extends Note {
             return block.getCardDirection() == "<->" || block.getCardDirection() == "<-" || block.children.length > 0;
         });
         return blocks;
+    }
+
+    public async convertToHtmlFile(): Promise<HTMLFile> {
+        let {html, assets} = await convertToHTMLFile(this.content, this.format);
+        this.childrenAssets.forEach(asset => assets.add(asset));
+        return {html, assets};
     }
 }

@@ -1,8 +1,7 @@
 import '@logseq/libs'
-import * as AnkiConnect from '../anki-connect/AnkiConnect';
 import { LazyAnkiNoteManager } from '../anki-connect/LazyAnkiNoteManager';
 import _ from 'lodash';
-import { convertLogseqToHtml } from '../Converter';
+import { convertToHTMLFile, HTMLFile } from '../Converter';
 
 export abstract class Note {
     public uuid: string;
@@ -43,9 +42,8 @@ export abstract class Note {
         return this.ankiId;
     }
 
-    public async convertToHtml(): Promise<Note> {
-        this.content = await convertLogseqToHtml(this.content, this.format);
-        return this;
+    public async convertToHtmlFile(): Promise<HTMLFile> {
+        return await convertToHTMLFile(this.content, this.format);
     }
 
     // public static async abstract getBlocksFromLogseq(): Block[];

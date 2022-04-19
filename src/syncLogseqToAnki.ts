@@ -7,6 +7,7 @@ import { ClozeNote } from './notes/ClozeNote';
 import { MultilineCardNote } from './notes/MultilineCardNote';
 import _ from 'lodash';
 import { get_better_error_msg, confirm } from './utils';
+import path from 'path';
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -95,7 +96,13 @@ export class LogseqToAnkiSync {
     private async createNotes(toCreateNotes: Note[], failedCreated: Set<any>, ankiNoteManager: LazyAnkiNoteManager): Promise<void> {
         for (let note of toCreateNotes) {
             try {
-                let [html, deck, breadcrumb, tags, extra] = await this.parseNote(note);
+                let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
+                // Add assets
+                const graphPath = (await logseq.App.getCurrentGraph()).path;
+                assets.forEach(asset => {
+                    ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
+                });
+                // Create note
                 ankiNoteManager.addNote(deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
             } catch (e) {
                 console.error(e); failedCreated.add(`${note.uuid}-${note.type}`);
@@ -118,12 +125,20 @@ export class LogseqToAnkiSync {
                 failedCreated.add(subOperationResult["uuid-type"]);
             }
         }
+
+        ankiNoteManager.execute("storeAssets");
     }
 
     private async updateNotes(toUpdateNotes: Note[], failedUpdated: Set<any>, ankiNoteManager: LazyAnkiNoteManager): Promise<void> {
         for (let note of toUpdateNotes) {
             try {
-                let [html, deck, breadcrumb, tags, extra] = await this.parseNote(note);
+                let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
+                // Add assets
+                const graphPath = (await logseq.App.getCurrentGraph()).path;
+                assets.forEach(asset => {
+                    ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
+                });
+                // Update note
                 let ankiId = note.getAnkiId();
                 ankiNoteManager.updateNote(ankiId, deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
             } catch (e) {
@@ -138,6 +153,8 @@ export class LogseqToAnkiSync {
                 failedUpdated.add(subOperationResult["uuid-type"]);
             }
         }
+
+        ankiNoteManager.execute("storeAssets");
     }
 
     private async deleteNotes(toDeleteNotes: number[], ankiNoteManager: LazyAnkiNoteManager, failedDeleted) {
@@ -153,8 +170,8 @@ export class LogseqToAnkiSync {
         }
     }
 
-    private async parseNote(note: Note): Promise<[string, string, string, Array<string>, string]> {
-        let html = (await note.addClozes().convertToHtml()).getContent();
+    private async parseNote(note: Note): Promise<[string, Set<string>, string, string, string[], string]> {
+        let {html, assets} = await note.addClozes().convertToHtmlFile();
         
         // Parse deck using logic described at https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F
         let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || "Default";
@@ -187,6 +204,6 @@ export class LogseqToAnkiSync {
         let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
         if (Array.isArray(extra)) extra = extra.join(" ");
 
-        return [html, deck, breadcrumb, tags, extra];
+        return [html, assets, deck, breadcrumb, tags, extra];
     }
 }

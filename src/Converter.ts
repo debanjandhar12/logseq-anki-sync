@@ -1,6 +1,4 @@
 import hljs from "highlight.js";
-import path from "path";
-import * as AnkiConnect from './anki-connect/AnkiConnect';
 import '@logseq/libs';
 import * as cheerio from 'cheerio';
 import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from './utils';
@@ -20,13 +18,18 @@ let mldocsOptions = {
     "hiccup_in_block": true
 };
 
-export async function convertLogseqToHtml(content: string, format: string = "markdown"): Promise<string> {
-    let result = content;
-    if (logseq.settings.converterDebug) console.log("--Start Converting--\nOriginal:", result);
+export interface HTMLFile {
+    html: string;
+    assets: Set<string>;
+}
 
-    result = await processProperties(result, format);
-    result = await processEmbeds(result, format);
-    if (logseq.settings.converterDebug) console.log("After processing embeded:", result);
+export async function convertToHTMLFile(content: string, format: string = "markdown"): Promise<HTMLFile> {
+    let resultContent = content, resultAssets = new Set<string>();
+    if (logseq.settings.converterDebug) console.log("--Start Converting--\nOriginal:", resultContent);
+
+    ({html: resultContent, assets: resultAssets} = await processProperties({html:  resultContent, assets: resultAssets}, format));
+    ({html: resultContent, assets: resultAssets} = await processEmbeds({html:  resultContent, assets: resultAssets}, format));
+    if (logseq.settings.converterDebug) console.log("After processing embeded:", resultContent);
 
     if (format == "org") {
         mldocsOptions.format = "Org";
@@ -36,12 +39,12 @@ export async function convertLogseqToHtml(content: string, format: string = "mar
     let hashmap = {};
 
     // Put all html content in hashmap
-    let parsedJson = Mldoc.parseInlineJson(result,
+    let parsedJson = Mldoc.parseInlineJson(resultContent,
         JSON.stringify({...mldocsOptions, "parse_outline_only": true}),
         JSON.stringify({})
     );
     try { parsedJson = JSON.parse(parsedJson); } catch { parsedJson = []; };
-    let resultUTF8 = new TextEncoder().encode(result);  // Convert to utf8 array as mldocs outputs position according to utf8 https://github.com/logseq/mldoc/issues/120
+    let resultUTF8 = new TextEncoder().encode(resultContent);  // Convert to utf8 array as mldocs outputs position according to utf8 https://github.com/logseq/mldoc/issues/120
     for (let i = parsedJson.length - 1; i >= 0; i--) {
         // node's start_pos is bound to be larger than next item's end_pos due to how Mldoc.parseInlineJson works
         let node = parsedJson[i];
@@ -54,17 +57,17 @@ export async function convertLogseqToHtml(content: string, format: string = "mar
         let end_pos = node[node.length - 1]["end_pos"];
         if (type == "Raw_Html" || type == "Inline_Html") {
             if (content != new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos))) {
-                console.error("Error: content mismatch", content, result.substring(start_pos, end_pos));
+                console.error("Error: content mismatch", content, resultContent.substring(start_pos, end_pos));
             }
             let str = getRandomUnicodeString();
             hashmap[str] = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
             resultUTF8 = new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
         }
     }
-    result = new TextDecoder().decode(resultUTF8);
+    resultContent = new TextDecoder().decode(resultUTF8);
 
     // Put all anki cloze marcos in hashmap
-    result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, (match, g1, g2, g3, ...arg) => {
+    resultContent = resultContent.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, (match, g1, g2, g3, ...arg) => {
         let strFront = getRandomUnicodeString();
         let strBack = getRandomUnicodeString();
 
@@ -74,25 +77,24 @@ export async function convertLogseqToHtml(content: string, format: string = "mar
         }
 
         // fix: if there is a newline before cloze, we need to add new line after hash charecters
-        let charecter_before_match = result.substring(result.indexOf(match) - 1, result.indexOf(match));
+        let charecter_before_match = resultContent.substring(resultContent.indexOf(match) - 1, resultContent.indexOf(match));
         if ((charecter_before_match == "\n" || charecter_before_match == "") && (g3.match(/^\s*?\$\$/g) || g3.match(/^\s*?#\+/g)))
             g3 = `\n${g3}`;
         hashmap[strFront] = g1;
         hashmap[strBack] = "}}";
         return `${strFront}${g3}${strBack}`;
     });
-    if (logseq.settings.converterDebug) console.log("After replacing errorinous terms:", result);
+    if (logseq.settings.converterDebug) console.log("After replacing errorinous terms:", resultContent);
 
     // Render the markdown
-    result = Mldoc.export("html", result,
+    resultContent = Mldoc.export("html", resultContent,
         JSON.stringify(mldocsOptions),
         JSON.stringify({})
     );
     // Render images and and codes
-    let $ = cheerio.load(result, { decodeEntities: false });
+    let $ = cheerio.load(resultContent, { decodeEntities: false });
     const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
     const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
-    let graphPath = (await logseq.App.getCurrentGraph()).path;
     $('pre code').each(function (i, elm) { // Syntax hightlight block code (block codes are preceded by pre)
         $(elm).addClass("hljs");
         if (elm.attribs["data-lang"]) {
@@ -101,10 +103,7 @@ export async function convertLogseqToHtml(content: string, format: string = "mar
     });
     $('img').each(function (i, elm) {   // Handle images
         if ((encodeURI(elm.attribs.src).match(isImage) && !encodeURI(elm.attribs.src).match(isWebURL))) {
-            try {
-                let imgPath = path.join(graphPath, path.resolve(elm.attribs.src));
-                AnkiConnect.storeMediaFileByPath(encodeURIComponent(elm.attribs.src), imgPath); // Flatten image path and save in anki
-            } catch (e) { console.warn(e); }
+            resultAssets.add(elm.attribs.src);
             elm.attribs.src = encodeURIComponent(elm.attribs.src); // Flatten image path
         }
         else elm.attribs.src = elm.attribs.src.replace(/^http(s?):\/?\/?/i, "http$1://"); // Fix web image path
@@ -118,50 +117,60 @@ export async function convertLogseqToHtml(content: string, format: string = "mar
         // Add block math braces in math
         $(elm).html(`\\[ ${math} \\]`);
     });
-    result = decodeHTMLEntities(decodeHTMLEntities($('#content ul li').html() || ""));
-    if (logseq.settings.converterDebug) console.log("After Mldoc.export:", result);
+    resultContent = decodeHTMLEntities(decodeHTMLEntities($('#content ul li').html() || ""));
+    if (logseq.settings.converterDebug) console.log("After Mldoc.export:", resultContent);
 
     // Bring back inline html content and clozes from hashmap
     for (let key in hashmap) {
-        result = safeReplace(result, key, hashmap[key]);
+        resultContent = safeReplace(resultContent, key, hashmap[key]);
     }
 
-    if (logseq.settings.converterDebug) console.log("After bringing back errorinous terms:", result, "\n---End---");
-    return result;
+    if (logseq.settings.converterDebug) console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
+    return {html: resultContent, assets: resultAssets};
 }
 
-async function processProperties(content: string, format: string = "markdown"): Promise<string> {
-    let result = content;
-    result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
-    result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
-    return result;
+async function processProperties(htmlFile: HTMLFile, format: string = "markdown"): Promise<HTMLFile> {
+    let resultContent = htmlFile.html, resultAssets = htmlFile.assets;
+    resultContent = safeReplace(resultContent, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
+    resultContent = safeReplace(resultContent, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
+    return {html: resultContent, assets: resultAssets};
 }
 
+async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): Promise<HTMLFile> {
+    let resultContent = htmlFile.html, resultAssets = htmlFile.assets;
 
-async function processEmbeds(content: string, format: string = "markdown"): Promise<string> {
-    let result = content;
-
-    result = await safeReplaceAsync(result, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {  // Convert block embed
+    resultContent = await safeReplaceAsync(resultContent, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {  // Convert block embed
         let block_content = "";
         try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block, "content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
         return `<div class="embed-block">
-                <ul class="children-list"><li class="children">${await convertLogseqToHtml(block_content, format)}</li></ul>
+                <ul class="children-list"><li class="children">
+                ${await (async () => {
+                    let blockContentHTMLFile : HTMLFile = await convertToHTMLFile(block_content, format);
+                    blockContentHTMLFile.assets.forEach(element => {
+                        resultAssets.add(element);
+                    });
+                    return blockContentHTMLFile.html;
+                })()}
+                </li></ul>
                 </div>`;
     });
 
-    result = await safeReplaceAsync(result, /\{\{embed \[\[(.*?)\]\] *?\}\}/gm, async (match, g1) => { // Convert page embed
+    resultContent = await safeReplaceAsync(resultContent, /\{\{embed \[\[(.*?)\]\] *?\}\}/gm, async (match, g1) => { // Convert page embed
         let pageTree = [];
-        let getPageContentHTML = async (children: any, level: number = 0) => {
+        let getPageContentHTML = async (children: any, level: number = 0) : Promise<string> => {
             if (level >= 100) return "";
             let result = `\n<ul class="children-list">`;
             for (let child of children) {
                 result += `\n<li class="children">`;
                 let block_content = _.get(child, "content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
                 let format = _.get(child, "format") || "markdown";
-                let html = await convertLogseqToHtml(block_content, format);
-                if (child.children.length > 0) html += await getPageContentHTML(child.children, level + 1);
+                let blockContentHTMLFile = await convertToHTMLFile(block_content, format);
+                blockContentHTMLFile.assets.forEach(element => {
+                    resultAssets.add(element);
+                });
+                if (child.children.length > 0) blockContentHTMLFile.html += await getPageContentHTML(child.children, level + 1);
 
-                result += html;
+                result += blockContentHTMLFile.html;
                 result += `</li>`;
             }
             result += `</ul>`;
@@ -175,16 +184,16 @@ async function processEmbeds(content: string, format: string = "markdown"): Prom
                 </div>`;
     });
 
-    result = safeReplace(result, /\[\[(.*?)\]\]/gm, `<a href="#$1" class="page-reference">$1</a>`); // Convert page refs
-    result = safeReplace(result, /\[(.*?)\]\(\(\((.*?)\)\)\)/gm, `<span class="block-ref">$1</span>`); // Convert block ref link
-    result = await safeReplaceAsync(result, /\(\((.*?)\)\)/gm, async (match, g1) => { // Convert block refs
+    resultContent = safeReplace(resultContent, /\[\[(.*?)\]\]/gm, `<a href="#$1" class="page-reference">$1</a>`); // Convert page refs
+    resultContent = safeReplace(resultContent, /\[(.*?)\]\(\(\((.*?)\)\)\)/gm, `<span class="block-ref">$1</span>`); // Convert block ref link
+    resultContent = await safeReplaceAsync(resultContent, /\(\((.*?)\)\)/gm, async (match, g1) => { // Convert block refs
         let block;
         try { block = await logseq.Editor.getBlock(g1); }
         catch (e) { console.warn(e); }
         if (_.get(block, "properties.lsType") == "annotation" && _.get(block, "properties.hlType") == "area") {  // Pdf area ref
             let page = await logseq.Editor.getPage(block.page.id);
             let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${_.get(block, "properties.hlPage")}_${g1}_${_.get(block, "properties.hlStamp")}.png`;
-            await convertLogseqToHtml(`![](${hls_img_loc})`, "markdown");
+            resultAssets.add(hls_img_loc);
             let img_html = `<img src="${encodeURIComponent(hls_img_loc)}" />`
             return `<span class="block-ref">\ud83d\udccc<strong>P${_.get(block, "properties.hlPage")}</strong> <br/> ${img_html}</span>`;
         }
@@ -208,5 +217,5 @@ async function processEmbeds(content: string, format: string = "markdown"): Prom
         }
     });
 
-    return result;
+    return {html: resultContent, assets: resultAssets};
 }
