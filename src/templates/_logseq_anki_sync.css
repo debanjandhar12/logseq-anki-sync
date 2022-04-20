@@ -164,6 +164,7 @@ a.page-reference:hover {
 a.block-ref {
     border-bottom: .5px solid;
     border-bottom-color: #d8e1e8;
+    text-decoration: none;
     color: black;
     cursor: alias;
     display: inline;
