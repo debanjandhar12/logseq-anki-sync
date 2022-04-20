@@ -155,7 +155,7 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
                 </div>`;
     });
 
-    resultContent = await safeReplaceAsync(resultContent, /\{\{embed \[\[(.*?)\]\] *?\}\}/gm, async (match, g1) => { // Convert page embed
+    resultContent = await safeReplaceAsync(resultContent, /\{\{embed \[\[(.*?)\]\] *?\}\}/gm, async (match, pageName) => { // Convert page embed
         let pageTree = [];
         let getPageContentHTML = async (children: any, level: number = 0) : Promise<string> => {
             if (level >= 100) return "";
@@ -176,32 +176,36 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
             result += `</ul>`;
             return result;
         }
-        try { pageTree = await logseq.Editor.getPageBlocksTree(g1); } catch (e) { console.warn(e); }
+        try { pageTree = await logseq.Editor.getPageBlocksTree(pageName); } catch (e) { console.warn(e); }
 
         return `<div class="embed-page">
-                <a href="#${g1}" class="embed-header">${g1}</a>
+                <a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="embed-header">${pageName}</a>
                 ${await getPageContentHTML(pageTree)}
                 </div>`;
     });
 
-    resultContent = safeReplace(resultContent, /\[\[(.*?)\]\]/gm, `<a href="#$1" class="page-reference">$1</a>`); // Convert page refs
-    resultContent = safeReplace(resultContent, /\[(.*?)\]\(\(\((.*?)\)\)\)/gm, `<span class="block-ref">$1</span>`); // Convert block ref link
-    resultContent = await safeReplaceAsync(resultContent, /\(\((.*?)\)\)/gm, async (match, g1) => { // Convert block refs
+    resultContent = await safeReplaceAsync(resultContent, /\[\[(.*?)\]\]/gm, async (match, pageName) => { // Convert page refs
+        return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="page-reference">${pageName}</a>`
+    }); 
+    resultContent = await safeReplaceAsync(resultContent, /\[(.*?)\]\(\(\((.*?)\)\)\)/gm, async (match, aliasContent, blockUUID) => { // Convert page refs
+        return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${aliasContent}</a>`
+    }); // Convert block ref link
+    resultContent = await safeReplaceAsync(resultContent, /\(\((.*?)\)\)/gm, async (match, blockUUID) => { // Convert block refs
         let block;
-        try { block = await logseq.Editor.getBlock(g1); }
+        try { block = await logseq.Editor.getBlock(blockUUID); }
         catch (e) { console.warn(e); }
         if (_.get(block, "properties.lsType") == "annotation" && _.get(block, "properties.hlType") == "area") {  // Pdf area ref
             let page = await logseq.Editor.getPage(block.page.id);
-            let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${_.get(block, "properties.hlPage")}_${g1}_${_.get(block, "properties.hlStamp")}.png`;
+            let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${_.get(block, "properties.hlPage")}_${blockUUID}_${_.get(block, "properties.hlStamp")}.png`;
             resultAssets.add(hls_img_loc);
             let img_html = `<img src="${encodeURIComponent(hls_img_loc)}" />`
-            return `<span class="block-ref">\ud83d\udccc<strong>P${_.get(block, "properties.hlPage")}</strong> <br/> ${img_html}</span>`;
+            return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">\ud83d\udccc<strong>P${_.get(block, "properties.hlPage")}</strong> <br/> ${img_html}</a>`;
         }
         else if (_.get(block, "properties.lsType") == "annotation") {    // Pdf text ref
             let block_content = _.get(block, "content");
             block_content = safeReplace(block_content, /^\s*(\w|-)*::.*\n?\n?/gm, "");
             block_content = safeReplace(block_content, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, "");
-            return `<span class="block-ref">\ud83d\udccc<strong>P${_.get(block, "properties.hlPage")}</strong> ${block_content}</span>`;
+            return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">\ud83d\udccc<strong>P${_.get(block, "properties.hlPage")}</strong> ${block_content}</a>`;
         }
         // Normal Block ref
         try {
@@ -209,11 +213,11 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
             block_content = safeReplace(block_content, /^\s*(\w|-)*::.*\n?\n?/gm, "");
             block_content = safeReplace(block_content, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, "");
             let block_content_first_line = block_content.split("\n").find(line => line.trim() != "");
-            return `<span class="block-ref">${block_content_first_line}</span>`;
+            return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${block_content_first_line}</a>`;
         }
         catch (e) { // Block not found
             console.warn(e);
-            return `<span class="failed-block-ref">${g1}</span>`;
+            return `<a class="failed-block-ref">${blockUUID}</a>`;
         }
     });
 

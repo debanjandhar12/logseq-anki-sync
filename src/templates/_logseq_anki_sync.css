@@ -161,30 +161,32 @@ a.page-reference:hover {
     background-color: #c8e6fa;
 }
 
-span.block-ref {
+a.block-ref {
     border-bottom: .5px solid;
     border-bottom-color: #d8e1e8;
+    color: black;
     cursor: alias;
     display: inline;
 }
 
-span.block-ref:hover {
+a.block-ref:hover {
     background-color: #c8e6fa;
 }
 
-span.failed-block-ref {
+a.failed-block-ref {
+    color: black;
     background-color: #f56565;
     border-radius: 4px;
     cursor: not-allowed;
 }
 
-span.failed-block-ref:before {
+a.failed-block-ref:before {
     color: rgb(115, 115, 115);
     content: "((";
     opacity: 0.3;
 }
 
-span.failed-block-ref:after {
+a.failed-block-ref:after {
     color: rgb(115, 115, 115);
     content: "))";
     opacity: 0.3;

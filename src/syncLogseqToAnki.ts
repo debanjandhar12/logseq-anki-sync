@@ -193,7 +193,7 @@ export class LogseqToAnkiSync {
         if(deck == "Default" && _.get(note, 'page.properties.title') != null && _.get(note, 'page.properties.title').includes("/")) deck = _.get(note, 'page.properties.title').split("/").slice(0, -1).join("::");
         
         // Parse breadcrumb
-        let breadcrumb = `<a href="#" title="${note.page.originalName}">${note.page.originalName}</a>`;
+        let breadcrumb = `<a href="logseq://graph/${encodeURIComponent(this.graphName)}?page=${encodeURIComponent(note.page.originalName)}" title="${note.page.originalName}">${note.page.originalName}</a>`;
         if(logseq.settings.breadcrumbDisplay == "Show Page name and parent blocks context") {
             try {
                 let parentBlocks = []; 
@@ -206,7 +206,7 @@ export class LogseqToAnkiSync {
                 while(parentBlocks.length > 0) {
                     let parentBlock = parentBlocks.pop();
                     let parentBlockContentFirstLine = parentBlock.content.split("\n")[0];
-                    breadcrumb += ` > <a href="#" title="${parentBlock.content}">${parentBlockContentFirstLine}</a>`;
+                    breadcrumb += ` > <a href="logseq://graph/${encodeURIComponent(this.graphName)}?block-id=${encodeURIComponent(parentBlock.uuid)}" title="${parentBlock.content}">${parentBlockContentFirstLine}</a>`;
                 }
             } catch (e) {
                 console.error(e);
