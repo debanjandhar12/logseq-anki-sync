@@ -6,14 +6,14 @@ import objectHash from 'object-hash';
 import { convertToHTMLFile as convertToHTMLFileNonCached, HTMLFile } from './Converter';
 export { HTMLFile } from './Converter';
 
-const cacheVersion = 14;
+const cacheVersion = 20300;
 
 localforage.config({
     driver: localforage.INDEXEDDB
 });
 
 localforage.getItem('cacheVersion').then((version) => {
-    if (version !== cacheVersion) {
+    if (version !== cacheVersion || Math.floor(Math.random() * 600) == 500) {
         console.log('Cache version changed, clearing conversion cache');
         localforage.clear();
         localforage.setItem('cacheVersion', cacheVersion);
@@ -28,6 +28,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         return {html, assets};
     }
     let {html, assets} = await convertToHTMLFileNonCached(content, format);
-    localforage.setItem(objectHash({ content, format }), JSON.stringify({html, assets: [...assets]}));
+    try { localforage.setItem(objectHash({ content, format }), JSON.stringify({html, assets: [...assets]})); }
+    catch(e) { console.log(e); }
     return {html, assets};
 }
