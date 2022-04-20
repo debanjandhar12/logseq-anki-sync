@@ -154,7 +154,7 @@ export class LazyAnkiNoteManager {
                 try{
                     this.storeAssetActionsQueue = _.uniqBy(this.storeAssetActionsQueue, 'params.filename');
                     result = await AnkiConnect.invoke("multi", { "actions": this.storeAssetActionsQueue });
-                    console.log(result);
+                    console.log("Assets Stored:", result);
                 }
                 catch(e){ console.log(e); }
                 this.storeAssetActionsQueue = [];

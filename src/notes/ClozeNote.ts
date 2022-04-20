@@ -35,7 +35,6 @@ export class ClozeNote extends Note {
                 replaceclozeArr = string_to_arr(this.properties.replacecloze.join(','));
             }
             else replaceclozeArr = [];
-            console.log(`${this.properties.replacecloze}`, replaceclozeArr);
 
             // Add the clozes while ensuring that adding cloze in math mode double braces doesn't break the cloze
             // This is done by adding extra space the braces between two double brace
