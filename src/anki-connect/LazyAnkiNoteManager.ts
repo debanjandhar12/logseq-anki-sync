@@ -152,12 +152,13 @@ export class LazyAnkiNoteManager {
                 break;
             case "storeAssets": // Returns nothing
                 try{
-                    this.storeAssetActionsQueue = _.uniqBy(this.storeAssetActionsQueue, 'params.filename');
-                    result = await AnkiConnect.invoke("multi", { "actions": this.storeAssetActionsQueue });
+                    let uniqueStoreAssetActionsQueue = _.uniqBy(this.storeAssetActionsQueue, 'params.filename');
+                    this.storeAssetActionsQueue = [];
+                    result = await AnkiConnect.invoke("multi", { "actions": uniqueStoreAssetActionsQueue });
                     console.log("Assets Stored:", result);
                 }
                 catch(e){ console.log(e); }
-                this.storeAssetActionsQueue = [];
+                
                 break;
         }
         return result;
