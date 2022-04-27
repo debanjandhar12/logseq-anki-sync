@@ -6,7 +6,7 @@ import objectHash from 'object-hash';
 import { convertToHTMLFile as convertToHTMLFileNonCached, HTMLFile } from './Converter';
 export { HTMLFile } from './Converter';
 
-const cacheVersion = 2030009;
+const cacheVersion = 2050000;
 
 localforage.config({
     driver: localforage.INDEXEDDB
