@@ -126,7 +126,13 @@ export class LogseqToAnkiSync {
             }
         }
 
-        ankiNoteManager.execute("storeAssets");
+        ankiNoteManager.execute("storeAssets").then((subOperationResults) => {
+            for (let subOperationResult of subOperationResults) {
+                if (subOperationResult != null && subOperationResult.error != null) {
+                    console.error(subOperationResult.error);
+                }
+            }
+        });
     }
 
     private async updateNotes(toUpdateNotes: Note[], failedUpdated: Set<any>, ankiNoteManager: LazyAnkiNoteManager): Promise<void> {
@@ -154,7 +160,13 @@ export class LogseqToAnkiSync {
             }
         }
 
-        ankiNoteManager.execute("storeAssets");
+        ankiNoteManager.execute("storeAssets").then((subOperationResults) => {
+            for (let subOperationResult of subOperationResults) {
+                if (subOperationResult != null && subOperationResult.error != null) {
+                    console.error(subOperationResult.error);
+                }
+            }
+        });
     }
 
     private async deleteNotes(toDeleteNotes: number[], ankiNoteManager: LazyAnkiNoteManager, failedDeleted) {

@@ -24,7 +24,6 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     if((await localforage.getItem(objectHash({ content, format })) != null)) {
         let {html, assets} = JSON.parse(await localforage.getItem(objectHash({ content, format })));
         assets = new Set(assets);
-        // console.log(assets); - uncomment to solve a bug with assets not being included
         return {html, assets};
     }
     let {html, assets} = await convertToHTMLFileNonCached(content, format);
