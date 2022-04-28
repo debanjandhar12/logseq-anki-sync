@@ -25,6 +25,13 @@ export const settingsTemplate: SettingSchemaDesc[] = [{
   description: "Shows a 'Preview notes from block in Anki' Context Menu",
   },
   {
+    key: "includeParentContent",
+    type: 'boolean',
+    default: false,
+    title: "Include parent content in cards? (Experimental)",
+    description: "Include parent content in cards NB: This might increase syncing time as well as size of the cards.",
+  },
+  {
     key: "syncDebug",
     type: 'boolean',
     default: false,

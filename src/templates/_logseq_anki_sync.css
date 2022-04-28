@@ -69,18 +69,12 @@ h5 {
 }
 
 /* --- multiline card css --- */
-.left-border {
-    border-left: 2px solid;
-    border-left-color: #e9ecef;
-    padding-left: 30px;
-}
-
 .children-list {
     display: flex;
     flex-direction: column;
     padding-top: 2px;
     list-style: none;
-    padding-left: 30px;
+    padding-left: 20px;
 }
 
 .children {
@@ -95,13 +89,24 @@ h5 {
     color: #d4d5d6;
     cursor: pointer;
     position: absolute;
-    left: -18px;
-    top: 4px;
+    left: -25px;
+    top: -1px;
+    font-size: 22px;
 }
 
 .children:hover::before {
     color: #b7b6b5;
-    text-shadow: 0 0 6px black;
+    text-shadow: 0 0 2px black;
+}
+
+:not(.embed-page):not(.embed-block) > .children-list > .children::after {
+    content: ' ';
+    left: -42px;
+    background-color: #e9ecef;
+    height: 100%;
+    width: 2px;
+    position: absolute;
+    top:0px;
 }
 
 .children p {

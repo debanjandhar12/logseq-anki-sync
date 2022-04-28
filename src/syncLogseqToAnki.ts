@@ -185,6 +185,25 @@ export class LogseqToAnkiSync {
     private async parseNote(note: Note): Promise<[string, Set<string>, string, string, string[], string]> {
         let {html, assets} = await note.addClozes().convertToHtmlFile();
         
+        if(logseq.settings.includeParentContent) {
+            let newHtml = "";
+            let parentBlocks = []; 
+            let parentID = note.parent;
+            let parent;
+            while ((parent = await logseq.App.getBlock(parentID)) != null) {
+                parentBlocks.push({content:parent.content.replaceAll(/^\s*(\w|-)*::.*\n?\n?/gm, ""), uuid:parent.uuid});
+                parentID = parent.parent.id;
+            }
+            parentBlocks.reverse().forEach(parentBlock => {
+                newHtml += `<ul class="children-list"><li class="children">${parentBlock.content}`;
+            });
+            newHtml += `<ul class="children-list"><li class="children">${html}</li></ul>`;
+            parentBlocks.reverse().forEach(parentBlock => {
+                newHtml += `</li></ul>`;
+            });
+            html = newHtml;
+        }
+
         // Parse deck using logic described at https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F
         let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || "Default";
         try {
