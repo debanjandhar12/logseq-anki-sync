@@ -13,21 +13,31 @@ localforage.config({
 });
 
 localforage.getItem('cacheVersion').then((version) => {
-    if (version !== cacheVersion || Math.floor(Math.random() * 600) == 500) {
-        console.log('Cache version changed, clearing conversion cache');
+    if (version !== cacheVersion || Math.floor(Math.random() * 100) == 50) {
+        console.log('Cache version changed, clearing conversion cache. It could be random aswell.');
         localforage.clear();
         localforage.setItem('cacheVersion', cacheVersion);
     }
 });
 
+logseq.onSettingsChanged((newSettings,oldSettings) => {
+    if(newSettings.useCacheForConversion !== oldSettings.useCacheForConversion) {
+        console.log('Cache settings changed, clearing conversion cache');
+        localforage.clear();
+        localforage.setItem('cacheVersion', cacheVersion)
+    }
+});
+
 export async function convertToHTMLFile(content: string, format: string = "markdown"): Promise<HTMLFile> {
-    if((await localforage.getItem(objectHash({ content, format })) != null)) {
+    if(logseq.settings.useCacheForConversion && (await localforage.getItem(objectHash({ content, format })) != null)) {
         let {html, assets} = JSON.parse(await localforage.getItem(objectHash({ content, format })));
         assets = new Set(assets);
         return {html, assets};
     }
     let {html, assets} = await convertToHTMLFileNonCached(content, format);
-    try { localforage.setItem(objectHash({ content, format }), JSON.stringify({html, assets: [...assets]})); }
-    catch(e) { console.log(e); }
+    if(logseq.settings.useCacheForConversion) {
+        try { localforage.setItem(objectHash({ content, format }), JSON.stringify({html, assets: [...assets]})); }
+        catch(e) { console.log(e); }
+    }
     return {html, assets};
 }

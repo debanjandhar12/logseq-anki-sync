@@ -32,17 +32,24 @@ export const settingsTemplate: SettingSchemaDesc[] = [{
     description: "Include parent content in cards NB: This might increase syncing time as well as size of the cards.",
   },
   {
+    key: "useCacheForConversion",
+    type: 'boolean',
+    default: true,
+    title: "Enable Cache for Logseq to HTML Conversion? (Experimental)",
+    description: "Enable Cache for Logseq to HTML Conversion",
+  },
+  {
     key: "syncDebug",
     type: 'boolean',
     default: false,
-    title: "Enable Sync Debugging",
+    title: "Enable Sync Debugging?",
     description: "This enables sync debugging mode. In sync debugging mode, the plugin will output more information to the console.",
   },
   {
     key: "converterDebug",
     type: 'boolean',
     default: false,
-    title: "Enable Converter Debugging",
+    title: "Enable Converter Debugging?",
     description: "This enables converter debugging mode. In converter debugging mode, the plugin will output more information to the console.",
   }
 ] 
