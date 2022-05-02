@@ -190,7 +190,7 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
     resultContent = await safeReplaceAsync(resultContent, /\[(.*?)\]\(\(\((.*?)\)\)\)/gm, async (match, aliasContent, blockUUID) => { // Convert page refs
         return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${aliasContent}</a>`
     }); // Convert block ref link
-    resultContent = await safeReplaceAsync(resultContent, /\(\((.*?)\)\)/gm, async (match, blockUUID) => { // Convert block refs
+    resultContent = await safeReplaceAsync(resultContent, /\(\(([^\)\n]*?)\)\)(?!\))/gm, async (match, blockUUID) => { // Convert block refs
         let block;
         try { block = await logseq.Editor.getBlock(blockUUID); }
         catch (e) { console.warn(e); }

@@ -29,13 +29,14 @@ logseq.onSettingsChanged((newSettings,oldSettings) => {
 });
 
 export async function convertToHTMLFile(content: string, format: string = "markdown"): Promise<HTMLFile> {
-    if(logseq.settings.useCacheForConversion && (await localforage.getItem(objectHash({ content, format })) != null)) {
+    let canCacheBeUsed = !(/\{\{embed \[\[(.*?)\]\] *?\}\}/gm.test(content) || /\(\(([^\)\n]*?)\)\)(?!\))/gm.test(content));
+    if(canCacheBeUsed && logseq.settings.useCacheForConversion && (await localforage.getItem(objectHash({ content, format })) != null)) {
         let {html, assets} = JSON.parse(await localforage.getItem(objectHash({ content, format })));
         assets = new Set(assets);
         return {html, assets};
     }
     let {html, assets} = await convertToHTMLFileNonCached(content, format);
-    if(logseq.settings.useCacheForConversion) {
+    if(canCacheBeUsed && logseq.settings.useCacheForConversion) {
         try { localforage.setItem(objectHash({ content, format }), JSON.stringify({html, assets: [...assets]})); }
         catch(e) { console.log(e); }
     }
