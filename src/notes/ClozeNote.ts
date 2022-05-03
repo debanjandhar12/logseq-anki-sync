@@ -2,6 +2,7 @@ import { Note } from "./Note";
 import '@logseq/libs'
 import { string_to_arr, get_math_inside_md, safeReplace } from '../utils';
 import _ from 'lodash';
+import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 
 export class ClozeNote extends Note {
     public type: string = "cloze";
@@ -22,8 +23,8 @@ export class ClozeNote extends Note {
         let result : string = this.content;
 
         // Remove logseq properties as it might cause problems during cloze creation
-        result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
-        result = safeReplace(result, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
+        result = safeReplace(result, MD_PROPERTIES_REGEXP, ""); //Remove md properties
+        result = safeReplace(result, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
     
         // --- Add anki-cloze array clozes ---
         if(this.properties.replacecloze) {

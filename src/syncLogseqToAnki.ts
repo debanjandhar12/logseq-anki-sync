@@ -8,6 +8,7 @@ import { MultilineCardNote } from './notes/MultilineCardNote';
 import _ from 'lodash';
 import { get_better_error_msg, confirm } from './utils';
 import path from 'path';
+import { MD_PROPERTIES_REGEXP } from './constants';
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -191,7 +192,7 @@ export class LogseqToAnkiSync {
             let parentID = note.parent;
             let parent;
             while ((parent = await logseq.App.getBlock(parentID)) != null) {
-                parentBlocks.push({content:parent.content.replaceAll(/^\s*(\w|-)*::.*\n?\n?/gm, ""), uuid:parent.uuid});
+                parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, ""), uuid:parent.uuid});
                 parentID = parent.parent.id;
             }
             parentBlocks.reverse().forEach(parentBlock => {
@@ -231,7 +232,7 @@ export class LogseqToAnkiSync {
                 let parentID = note.parent;
                 let parent;
                 while ((parent = await logseq.App.getBlock(parentID)) != null) {
-                    parentBlocks.push({content:parent.content.replaceAll(/^\s*(\w|-)*::.*\n?\n?/gm, ""), uuid:parent.uuid});
+                    parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, ""), uuid:parent.uuid});
                     parentID = parent.parent.id;
                 }
                 while(parentBlocks.length > 0) {

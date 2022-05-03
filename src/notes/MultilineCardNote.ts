@@ -3,6 +3,7 @@ import '@logseq/libs';
 import _ from 'lodash';
 import { convertToHTMLFile, HTMLFile } from '../converter/CachedConverter';
 import { safeReplace } from '../utils';
+import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
 
 export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
@@ -56,11 +57,11 @@ export class MultilineCardNote extends Note {
         let direction = this.getCardDirection();
 
         // Remove clozes and double braces one after another
-        result = result.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3");
+        result = result.replace(ANKI_CLOZE_REGEXP, "$3");
         result = result.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ");
         
         // Add cloze to the parent block if direction is <-> or <-
-        result = safeReplace(result, /^\s*(\w|-)*::.*\n?\n?/gm, "");
+        result = safeReplace(result, MD_PROPERTIES_REGEXP, "");
         if (direction == "<->" || direction == "<-")
             result = `{{c2:: ${result} }}`;
 
@@ -97,7 +98,7 @@ export class MultilineCardNote extends Note {
         let output = await Promise.all(_.map(children, 
             async child => {
                 let child_extra = _.get(child,"properties.extra");
-                let child_content = _.get(child,"content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
+                let child_content = _.get(child,"content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
                 if(child_extra) {child_content += `\n<div class="extra">${child_extra}</div>`;}
                 let new_children = await this.augmentChildrenArray(_.get(child,"children") || []);
                 return _.assign(child, {htmlFile: await convertToHTMLFile(child_content, _.get(child,"format") || "markdown"), children: new_children})

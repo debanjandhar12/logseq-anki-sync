@@ -4,6 +4,7 @@ import * as cheerio from 'cheerio';
 import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils';
 import _ from 'lodash';
 import { Mldoc } from 'mldoc';
+import { ANKI_CLOZE_REGEXP, LOGSEQ_BLOCK_REF_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP, LOGSEQ_PAGE_REF_REGEXP, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, MD_MATH_BLOCK_REGEXP, MD_PROPERTIES_REGEXP, ORG_MATH_BLOCK_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 
 let mldocsOptions = {
     "toc": false,
@@ -67,7 +68,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     resultContent = new TextDecoder().decode(resultUTF8);
 
     // Put all anki cloze marcos in hashmap
-    resultContent = resultContent.replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, (match, g1, g2, g3, ...arg) => {
+    resultContent = resultContent.replace(ANKI_CLOZE_REGEXP, (match, g1, g2, g3, ...arg) => {
         let strFront = getRandomUnicodeString();
         let strBack = getRandomUnicodeString();
 
@@ -111,8 +112,8 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     $('.mathblock, .latex-environment').each(function (i, elm) {    // Handle org math and latex-environment blocks
         let math = $(elm).html();
         // Remove all types of math braces in math
-        math = math.replace(/\\\[([\s\S]*?)\\\]/g, "$1");
-        math = math.replace(/\$\$([\s\S]*?)\$\$/g, "$1");
+        math = math.replace(ORG_MATH_BLOCK_REGEXP, "$1");
+        math = math.replace(MD_MATH_BLOCK_REGEXP, "$1");
 
         // Add block math braces in math
         $(elm).html(`\\[ ${math} \\]`);
@@ -131,17 +132,17 @@ export async function convertToHTMLFile(content: string, format: string = "markd
 
 async function processProperties(htmlFile: HTMLFile, format: string = "markdown"): Promise<HTMLFile> {
     let resultContent = htmlFile.html, resultAssets = htmlFile.assets;
-    resultContent = safeReplace(resultContent, /^\s*(\w|-)*::.*\n?\n?/gm, ""); //Remove md properties
-    resultContent = safeReplace(resultContent, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, ""); //Remove org properties
+    resultContent = safeReplace(resultContent, MD_PROPERTIES_REGEXP, ""); //Remove md properties
+    resultContent = safeReplace(resultContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
     return {html: resultContent, assets: resultAssets};
 }
 
 async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): Promise<HTMLFile> {
     let resultContent = htmlFile.html, resultAssets = htmlFile.assets;
 
-    resultContent = await safeReplaceAsync(resultContent, /\{\{embed \(\((.*?)\)\) *?\}\}/gm, async (match, g1) => {  // Convert block embed
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_PAGE_REGEXP, async (match, g1) => {  // Convert block embed
         let block_content = "";
-        try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block, "content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
+        try { let block = await logseq.Editor.getBlock(g1); block_content = _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
         return `<div class="embed-block">
                 <ul class="children-list"><li class="children">
                 ${await (async () => {
@@ -155,14 +156,14 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
                 </div>`;
     });
 
-    resultContent = await safeReplaceAsync(resultContent, /\{\{embed \[\[(.*?)\]\] *?\}\}/gm, async (match, pageName) => { // Convert page embed
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_BLOCK_REGEXP, async (match, pageName) => { // Convert page embed
         let pageTree = [];
         let getPageContentHTML = async (children: any, level: number = 0) : Promise<string> => {
             if (level >= 100) return "";
             let result = `\n<ul class="children-list">`;
             for (let child of children) {
                 result += `\n<li class="children">`;
-                let block_content = _.get(child, "content").replace(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
+                let block_content = _.get(child, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
                 let format = _.get(child, "format") || "markdown";
                 let blockContentHTMLFile = await convertToHTMLFile(block_content, format);
                 blockContentHTMLFile.assets.forEach(element => {
@@ -184,13 +185,13 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
                 </div>`;
     });
 
-    resultContent = await safeReplaceAsync(resultContent, /\[\[(.*?)\]\]/gm, async (match, pageName) => { // Convert page refs
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_PAGE_REF_REGEXP, async (match, pageName) => { // Convert page refs
         return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="page-reference">${pageName}</a>`
     }); 
-    resultContent = await safeReplaceAsync(resultContent, /\[(.*?)\]\(\(\((.*?)\)\)\)/gm, async (match, aliasContent, blockUUID) => { // Convert page refs
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, async (match, aliasContent, blockUUID) => { // Convert page refs
         return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${aliasContent}</a>`
     }); // Convert block ref link
-    resultContent = await safeReplaceAsync(resultContent, /\(\(([^\)\n]*?)\)\)(?!\))/gm, async (match, blockUUID) => { // Convert block refs
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_BLOCK_REF_REGEXP, async (match, blockUUID) => { // Convert block refs
         let block;
         try { block = await logseq.Editor.getBlock(blockUUID); }
         catch (e) { console.warn(e); }
@@ -203,15 +204,15 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
         }
         else if (_.get(block, "properties.lsType") == "annotation") {    // Pdf text ref
             let block_content = _.get(block, "content");
-            block_content = safeReplace(block_content, /^\s*(\w|-)*::.*\n?\n?/gm, "");
-            block_content = safeReplace(block_content, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, "");
+            block_content = safeReplace(block_content, MD_PROPERTIES_REGEXP, "");
+            block_content = safeReplace(block_content, ORG_PROPERTIES_REGEXP, "");
             return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">\ud83d\udccc<strong>P${_.get(block, "properties.hlPage")}</strong> ${block_content}</a>`;
         }
         // Normal Block ref
         try {
             let block_content = block.content;
-            block_content = safeReplace(block_content, /^\s*(\w|-)*::.*\n?\n?/gm, "");
-            block_content = safeReplace(block_content, /:PROPERTIES:\n((.|\n)*?):END:\n?/gm, "");
+            block_content = safeReplace(block_content, MD_PROPERTIES_REGEXP, "");
+            block_content = safeReplace(block_content, ORG_PROPERTIES_REGEXP, "");
             let block_content_first_line = block_content.split("\n").find(line => line.trim() != "");
             return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${block_content_first_line}</a>`;
         }

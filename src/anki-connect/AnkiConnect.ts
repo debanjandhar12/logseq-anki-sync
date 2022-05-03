@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { ANKI_CLOZE_REGEXP } from '../constants';
 
 const ANKI_PORT = 8765;
 
@@ -53,7 +54,7 @@ export async function addNote(deckName: string, modelName: string, fields, tags:
 
     // Some versions of Anki doesnt allow to add notes without cloze
     // The trick below adds an empty note with a cloze block, and then overwites it to overcome the above problem.
-    let cloze_id = _.get(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g.exec(fields["Text"]), 2) || 1;
+    let cloze_id = _.get(ANKI_CLOZE_REGEXP.exec(fields["Text"]), 2) || 1;
     let ankiId = await invoke("addNote", { "note": { "modelName": modelName, "deckName": deckName, "fields": { ...fields, "Text": `{{c${cloze_id}:: placeholder}}` }, "tags": tags, "options": { "allowDuplicate": true } } });
     r = updateNote(ankiId, deckName, modelName, fields, tags);
     return ankiId;

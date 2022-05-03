@@ -1,6 +1,7 @@
 import * as AnkiConnect from './AnkiConnect';
 import _ from 'lodash';
 import '@logseq/libs'
+import { ANKI_CLOZE_REGEXP } from '../constants';
 
 export class LazyAnkiNoteManager {
     public modelName: string;
@@ -35,7 +36,7 @@ export class LazyAnkiNoteManager {
     addNote(deckName: string, modelName: string, fields, tags: string[]): void {
         this.addNoteActionsQueue1.push({"action": "createDeck", "params": { "deck": deckName } });
         this.addNoteUuidTypeQueue1.push(fields["uuid-type"]);
-        let cloze_id = _.get(/(\{\{c(\d+)::)((.|\n)*?)\}\}/g.exec(fields["Text"]), 2) || 1;
+        let cloze_id = _.get(ANKI_CLOZE_REGEXP.exec(fields["Text"]), 2) || 1;
         this.addNoteActionsQueue1.push({"action": "addNote", "params": 
         { "note": { "modelName": modelName, "deckName": deckName, "fields": { ...fields, "Text": `{{c${cloze_id}:: placeholder}}`}, "tags": tags, "options": { "allowDuplicate": true} } } 
         });

@@ -2,6 +2,7 @@ import ohm from 'ohm-js';
 import _ from 'lodash';
 import replaceAsync from "string-replace-async";
 import '@logseq/libs';
+import { MD_MATH_BLOCK_REGEXP } from './constants';
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
@@ -90,7 +91,7 @@ export function decodeHTMLEntities(text, exclude = ["gt", "lt"]) {
 export function get_math_inside_md(res: string): Array<string> {
     let res2 = res;
     let arr = [];
-    res2 = res2.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
+    res2 = res2.replace(MD_MATH_BLOCK_REGEXP, (match) => {
         arr.push(match);
         return "\\( $1 \\)"
     });
@@ -122,7 +123,7 @@ export function getRandomUnicodeString(length?: number): string {
 export function safeReplace(content: string, regex: RegExp | string, replaceArg: any): string {
     let result = content;
     let hashmap = {};
-    result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match) => { // Escape block math
+    result = result.replace(MD_MATH_BLOCK_REGEXP, (match) => { // Escape block math
         let str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$", "$$$$");
         return str;
@@ -147,7 +148,7 @@ export function safeReplace(content: string, regex: RegExp | string, replaceArg:
 export async function safeReplaceAsync(content: string, regex: RegExp | string, replaceArg: any): Promise<string> {
     let result = content;
     let hashmap = {};
-    result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match) => { // Escape block math
+    result = result.replace(MD_MATH_BLOCK_REGEXP, (match) => { // Escape block math
         let str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$", "$$$$");
         return str;

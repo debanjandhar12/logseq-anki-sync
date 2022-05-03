@@ -3,6 +3,7 @@
  */
 import localforage from 'localforage';
 import objectHash from 'object-hash';
+import { LOGSEQ_BLOCK_REF_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP } from '../constants';
 import { convertToHTMLFile as convertToHTMLFileNonCached, HTMLFile } from './Converter';
 export { HTMLFile } from './Converter';
 
@@ -29,7 +30,7 @@ logseq.onSettingsChanged((newSettings,oldSettings) => {
 });
 
 export async function convertToHTMLFile(content: string, format: string = "markdown"): Promise<HTMLFile> {
-    let canCacheBeUsed = !(/\{\{embed \[\[(.*?)\]\] *?\}\}/gm.test(content) || /\(\(([^\)\n]*?)\)\)(?!\))/gm.test(content));
+    let canCacheBeUsed = !(LOGSEQ_EMBDED_BLOCK_REGEXP.test(content) || LOGSEQ_BLOCK_REF_REGEXP.test(content));
     if(canCacheBeUsed && logseq.settings.useCacheForConversion && (await localforage.getItem(objectHash({ content, format })) != null)) {
         let {html, assets} = JSON.parse(await localforage.getItem(objectHash({ content, format })));
         assets = new Set(assets);
