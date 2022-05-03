@@ -10,11 +10,11 @@ import _ from 'lodash';
 import { get_better_error_msg, confirm } from './utils';
 import { LogseqToAnkiSync } from './syncLogseqToAnki';
 import { previewBlockNotesInAnki } from './previewBlockNotesInAnki';
-import { settingsTemplate } from './constants';
+import { addSettingsToLogseq } from './settings';
 
 // --- Register UI Elements Onload ---
-function main(baseInfo: LSPluginBaseInfo) {
-  let syncLogseqToAnki = function() { new LogseqToAnkiSync().sync();  };
+async function main(baseInfo: LSPluginBaseInfo) {
+  let syncLogseqToAnki = async function() { new LogseqToAnkiSync().sync();  };
   logseq.provideModel({
     syncLogseqToAnki: syncLogseqToAnki,
   });
@@ -27,9 +27,8 @@ function main(baseInfo: LSPluginBaseInfo) {
   </svg>`;
   logseq.App.registerUIItem('toolbar', {
     key: 'logseq-anki-sync',
-    template: `
-      <a title="Start Logseq to Anki Sync" data-on-click="syncLogseqToAnki"
-         class="button">
+    template: String.raw`
+      <a title="Start Logseq to Anki Sync" data-on-click="syncLogseqToAnki" class="button">
         <i class="ti">${ANKI_ICON}</i>
       </a>
     `
@@ -41,27 +40,7 @@ function main(baseInfo: LSPluginBaseInfo) {
   ClozeNote.initLogseqOperations();
   MultilineCardNote.initLogseqOperations();
 
-  logseq.useSettingsSchema(settingsTemplate);
-  logseq.onSettingsChanged(() => {
-    if(logseq.settings.hideNativeFlashcard) {
-      logseq.provideStyle({
-        key: 'open-calendar',
-        style: String.raw`
-        .flashcards-nav {
-          display: none;
-        }
-       `});
-    }
-    else {
-      logseq.provideStyle({
-        key: 'open-calendar',
-        style: String.raw`
-        .flashcards-nav {
-          display: block;
-        }
-       `});
-    }
-  }); 
+  addSettingsToLogseq();
 }
 
 // Bootstrap
