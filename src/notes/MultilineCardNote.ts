@@ -128,8 +128,12 @@ export class MultilineCardNote extends Note {
                 let tags = await Promise.all(_.map(block.refs, async page => { return _.get(await logseq.Editor.getPage(page.id), 'name') }));
                 let children = await this.augmentChildrenArray(block.children);
                 return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, children);
-            } else return null;
+            } else {
+                throw new Error(`Block ${uuid} not found! Please report this is github issue. MultilineCardNote size: ${blocks.length}`);
+                // return null;
+            }
         }));
+        console.log("MultilineCardNote Loaded");
         blocks = _.uniqBy(blocks, 'uuid');
         blocks = _.without(blocks, undefined, null);
         blocks = _.filter(blocks, (block) => { // Remove cards that do not have children and are not reversed or bidirectional

@@ -102,8 +102,12 @@ export class ClozeNote extends Note {
             if(!block.content) block = await logseq.Editor.getBlock(uuid);
             if(block)
                 return new ClozeNote(uuid, block.content, block.format, block.properties || {}, page);
-            else return null;
+            else {
+                throw new Error(`Block ${uuid} not found! Please report this is github issue. ClozeNote size: ${blocks.length}`);
+                // return null;
+            }
         }));
+        console.log("ClozeNote Cards Loaded");
         blocks = _.uniqBy(blocks, 'uuid');
         blocks = _.without(blocks, undefined, null);
 
