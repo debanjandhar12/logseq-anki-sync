@@ -33,13 +33,13 @@ async function main(baseInfo: LSPluginBaseInfo) {
     `
   });
 
+  addSettingsToLogseq();
+
   if(logseq.settings.previewNotesInAnki)
     logseq.Editor.registerBlockContextMenuItem("Preview notes from block in Anki", previewBlockNotesInAnki);
 
   ClozeNote.initLogseqOperations();
   MultilineCardNote.initLogseqOperations();
-
-  addSettingsToLogseq();
 }
 
 // Bootstrap
