@@ -7,8 +7,8 @@ import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 export class ClozeNote extends Note {
     public type: string = "cloze";
 
-    public constructor(uuid: string, content: string, format: string, properties: any, page: any, parent: number) {
-        super(uuid, content, format, properties, page, parent);
+    public constructor(uuid: string, content: string, format: string, properties: any, page: any) {
+        super(uuid, content, format, properties, page);
     }
 
     public static initLogseqOperations = (() => { // Init logseq operations at start of the program
@@ -98,9 +98,10 @@ export class ClozeNote extends Note {
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
             let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
-            block = await logseq.Editor.getBlock(uuid);
+            block = block[0];
+            if(!block.content) block = await logseq.Editor.getBlock(uuid);
             if(block)
-                return new ClozeNote(uuid, block.content, block.format, block.properties || {}, page, block.parent.id);
+                return new ClozeNote(uuid, block.content, block.format, block.properties || {}, page);
             else return null;
         }));
         blocks = _.uniqBy(blocks, 'uuid');

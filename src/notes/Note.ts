@@ -9,18 +9,16 @@ export abstract class Note {
     public format: string;
     public properties: any;
     public page: any;
-    public parent: number;
     public type: string;
     public ankiId: number;
     static ankiNoteManager: LazyAnkiNoteManager;
 
-    public constructor(uuid: string, content: string, format: string, properties: any, page: any, parent: number) {
+    public constructor(uuid: string, content: string, format: string, properties: any, page: any) {
         this.uuid = uuid;
         this.content = content;
         this.format = format;
         this.properties = properties;
         this.page = page;
-        this.parent = parent;
     }
 
     public static setAnkiNoteManager(ankiNoteManager: LazyAnkiNoteManager) {

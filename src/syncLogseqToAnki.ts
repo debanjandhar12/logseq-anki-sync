@@ -36,7 +36,7 @@ export class LogseqToAnkiSync {
 
         // -- Request Access --
         await AnkiConnect.requestPermission();
-        
+
         // -- Create models if it doesn't exists --
         await AnkiConnect.createModel(this.modelName, ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"], template_front, template_back, template_files);
 
@@ -74,9 +74,7 @@ export class LogseqToAnkiSync {
         
         // -- Sync --
         let start_time = performance.now();
-        await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager);
-        await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager);
-        await this.deleteNotes(toDeleteNotes, ankiNoteManager, failedDeleted);
+        await Promise.all([this.createNotes(toCreateNotes, failedCreated, ankiNoteManager), this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager), this.deleteNotes(toDeleteNotes, ankiNoteManager, failedDeleted)]);
         await AnkiConnect.invoke("reloadCollection", {});
 
         // -- Show Result / Summery --
@@ -189,9 +187,9 @@ export class LogseqToAnkiSync {
         if(logseq.settings.includeParentContent) {
             let newHtml = "";
             let parentBlocks = []; 
-            let parentID = note.parent;
+            let parentID = (await logseq.Editor.getBlock(note.uuid)).parent.id;
             let parent;
-            while ((parent = await logseq.App.getBlock(parentID)) != null) {
+            while ((parent = await logseq.Editor.getBlock(parentID)) != null) {
                 parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, ""), uuid:parent.uuid});
                 parentID = parent.parent.id;
             }
@@ -229,7 +227,7 @@ export class LogseqToAnkiSync {
         if(logseq.settings.breadcrumbDisplay == "Show Page name and parent blocks context") {
             try {
                 let parentBlocks = []; 
-                let parentID = note.parent;
+                let parentID = (await logseq.App.getBlock(note.uuid)).parent.id;
                 let parent;
                 while ((parent = await logseq.App.getBlock(parentID)) != null) {
                     parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, ""), uuid:parent.uuid});
