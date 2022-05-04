@@ -173,7 +173,7 @@ export async function safeReplaceAsync(content: string, regex: RegExp | string, 
 export async function confirm(msg: string): Promise<boolean> {
     return new Promise(function (resolve, reject) {
         logseq.provideUI({
-            key: 'logseq-anki-sync-confirm',
+            key: `logseq-anki-sync-confirm-${logseq.baseInfo.id}`,
             path: "body",
             // Logseq alike dialog template 
             template: `
@@ -214,14 +214,14 @@ export async function confirm(msg: string): Promise<boolean> {
                     logseq.provideStyle(`
                         .anki_sync_confirm {display: none;}
                     `);
-                    logseq.provideUI({ key: 'logseq-anki-sync-confirm', template: `` });
+                    logseq.provideUI({ key: `logseq-anki-sync-confirm-${logseq.baseInfo.id}`, template: `` });
                     resolve(false);
                 },
                 yes_action(e) {
                     logseq.provideStyle(`
                         .anki_sync_confirm {display: none;}
                     `);
-                    logseq.provideUI({ key: 'logseq-anki-sync-confirm', template: `` });
+                    logseq.provideUI({ key: `logseq-anki-sync-confirm-${logseq.baseInfo.id}`, template: `` });
                     resolve(true);
                 }
             }

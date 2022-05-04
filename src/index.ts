@@ -21,11 +21,11 @@ async function main(baseInfo: LSPluginBaseInfo) {
     syncLogseqToAnki: syncLogseqToAnki,
   });
   logseq.App.registerCommandPalette({
-    key: `logseq-anki-sync-command-palette`,
+    key: `logseq-anki-sync-command-palette-${baseInfo.id}`,
     label: `Start Logseq to Anki Sync`
   }, syncLogseqToAnki);
   logseq.App.registerUIItem('toolbar', {
-    key: 'logseq-anki-sync',
+    key: `logseq-anki-sync-${baseInfo.id}`,
     template: String.raw`
       <a title="Start Logseq to Anki Sync" data-on-click="syncLogseqToAnki" class="button">
         <i class="ti">${ANKI_ICON}</i>
