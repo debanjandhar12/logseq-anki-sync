@@ -9,6 +9,7 @@ import _ from 'lodash';
 import { get_better_error_msg, confirm } from './utils';
 import path from 'path';
 import { MD_PROPERTIES_REGEXP } from './constants';
+import { convertToHTMLFile } from './converter/CachedConverter';
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -190,12 +191,12 @@ export class LogseqToAnkiSync {
             let parentID = (await logseq.Editor.getBlock(note.uuid)).parent.id;
             let parent;
             while ((parent = await logseq.Editor.getBlock(parentID)) != null) {
-                parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, ""), uuid:parent.uuid});
+                parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, ""), format:parent.format, uuid:parent.uuid});
                 parentID = parent.parent.id;
             }
-            parentBlocks.reverse().forEach(parentBlock => {
-                newHtml += `<ul class="children-list"><li class="children">${parentBlock.content}`;
-            });
+            for await (const parentBlock of parentBlocks.reverse()) {
+                newHtml += `<ul class="children-list"><li class="children">${(await convertToHTMLFile(parentBlock.content, parentBlock.format)).html}`;
+            };
             newHtml += `<ul class="children-list"><li class="children">${html}</li></ul>`;
             parentBlocks.reverse().forEach(parentBlock => {
                 newHtml += `</li></ul>`;
