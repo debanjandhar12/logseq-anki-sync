@@ -122,18 +122,19 @@ export class MultilineCardNote extends Note {
         ]`);
         let blocks: any = [...logseqCard_blocks, ...flashCard_blocks];
         let getBlockLock = new AwaitLock();
-        let getPageLock = new AwaitLock();
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
-            let page = block[0].page;
+            getBlockLock.acquireAsync();
+            let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
+            getBlockLock.release();
             getBlockLock.acquireAsync();
             block = await logseq.Editor.getBlock(uuid, { includeChildren: true });
             getBlockLock.release();
             if (block) {
                 let tags = await Promise.all(_.map(block.refs, async page => {
-                        getPageLock.acquireAsync();
+                        getBlockLock.acquireAsync();
                         let tagPage = await logseq.Editor.getPage(page.id);
-                        getPageLock.release();
+                        getBlockLock.release();
                         return _.get(tagPage, 'name') 
                     }));
                 getBlockLock.acquireAsync();

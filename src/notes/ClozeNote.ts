@@ -99,7 +99,9 @@ export class ClozeNote extends Note {
         let getBlockLock = new AwaitLock();
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
-            let page = block[0].page;
+            getBlockLock.acquireAsync();
+            let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
+            getBlockLock.release();
             block = block[0];
             if(!block.content) {
                 getBlockLock.acquireAsync();
