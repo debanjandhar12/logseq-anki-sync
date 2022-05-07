@@ -33,7 +33,7 @@ export class LogseqToAnkiSync {
         this.graphName = _.get(await logseq.App.getCurrentGraph(), 'name') || 'Default';
         this.modelName = `${this.graphName}Model`.replace(/\s/g, "_");
         logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${this.graphName}`);
-        console.log(`%cStarting Logseq to Anki Sync for graph ${this.graphName}`, 'color: green; font-size: 1.5em;');
+        console.log(`%cStarting Logseq to Anki Sync V2.6.2 for graph ${this.graphName}`, 'color: green; font-size: 1.5em;');
 
         // -- Request Access --
         await AnkiConnect.requestPermission();
