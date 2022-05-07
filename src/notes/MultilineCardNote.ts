@@ -4,6 +4,7 @@ import _ from 'lodash';
 import { convertToHTMLFile, HTMLFile } from '../converter/CachedConverter';
 import { safeReplace } from '../utils';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
+import AwaitLock from 'await-lock';
 
 export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
@@ -120,17 +121,27 @@ export class MultilineCardNote extends Note {
         [?b :block/refs ?p]
         ]`);
         let blocks: any = [...logseqCard_blocks, ...flashCard_blocks];
+        let getBlockLock = new AwaitLock();
+        let getPageLock = new AwaitLock();
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
-            let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
+            let page = block[0].page;
+            getBlockLock.acquireAsync();
             block = await logseq.Editor.getBlock(uuid, { includeChildren: true });
+            getBlockLock.release();
             if (block) {
-                let tags = await Promise.all(_.map(block.refs, async page => { return _.get(await logseq.Editor.getPage(page.id), 'name') }));
+                let tags = await Promise.all(_.map(block.refs, async page => {
+                        getPageLock.acquireAsync();
+                        let tagPage = await logseq.Editor.getPage(page.id);
+                        getPageLock.release();
+                        return _.get(tagPage, 'name') 
+                    }));
+                getBlockLock.acquireAsync();
                 let children = await this.augmentChildrenArray(block.children);
+                getBlockLock.release();
                 return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, children);
             } else {
-                throw new Error(`Block ${uuid} not found! Please report this is github issue. MultilineCardNote size: ${blocks.length}`);
-                // return null;
+               return null;
             }
         }));
         console.log("MultilineCardNote Loaded");

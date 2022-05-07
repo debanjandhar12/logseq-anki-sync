@@ -35,10 +35,10 @@
   dependencies:
     "@lezer/common" "^0.15.0"
 
-"@logseq/libs@0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@logseq/libs/-/libs-0.0.2.tgz#5d139e89ccd791276a76a316762df50ede097c77"
-  integrity sha512-cRABnS/UbrT+Pw7LkkYemX1RO5qgG2txNoZqZ3x1uFD8AXdv2hhpkxV7GNF/XHttYi1tcBjaFwW7pMD87Iyp/w==
+"@logseq/libs@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@logseq/libs/-/libs-0.0.6.tgz#a8270d5bd71bccf13455634f9a2aac2572a0b935"
+  integrity sha512-0Fv+Wdno5m0EA9xW6tRRvoKNPAF5nznpi6A1bBjh8aq4XMt7rGvhHbsH+u84/nswCYlce3t2Q/ei8CRK8iWbdw==
   dependencies:
     csstype "3.0.8"
     debug "4.3.1"
@@ -735,6 +735,11 @@ ansi-styles@^4.1.0:
   integrity sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg==
   dependencies:
     color-convert "^2.0.1"
+
+await-lock@^2.2.2:
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/await-lock/-/await-lock-2.2.2.tgz#a95a9b269bfd2f69d22b17a321686f551152bcef"
+  integrity sha512-aDczADvlvTGajTDjcjpJMqRkOF6Qdz3YbPZm/PyW6tKPkx2hlYBzxMhEywM/tU72HrVZjgl5VCdRuMlA7pZ8Gw==
 
 base-x@^3.0.8:
   version "3.0.9"
@@ -1437,10 +1442,10 @@ object-hash@3.0.0:
   resolved "https://registry.yarnpkg.com/object-hash/-/object-hash-3.0.0.tgz#73f97f753e7baffc0e2cc9d6e079079744ac82e9"
   integrity sha512-RSn9F68PjH9HqtltsSnqYC1XXoWe9Bju5+213R98cNGttag9q9yAOTzdbsqvIa7aNm5WffBZFpWYr2aWrklWAw==
 
-ohm-js@16.3.2:
-  version "16.3.2"
-  resolved "https://registry.yarnpkg.com/ohm-js/-/ohm-js-16.3.2.tgz#55407ebf58191f15b7094f7069060778fc505b4b"
-  integrity sha512-Xo7o9oHsWgKYKY5yDCDsXQrOf4Wd2qjSybO3JVRuSH5mrnewdsJzFHGS39qkKv9rPjR0/T1V0UQlP1OTronm6g==
+ohm-js@16.3.4:
+  version "16.3.4"
+  resolved "https://registry.yarnpkg.com/ohm-js/-/ohm-js-16.3.4.tgz#c0aef541785b9a70d4d52fd42e74c0405e84cc6f"
+  integrity sha512-Twk5k+an4HLKH/3QMiItq87svx+2aG6HVYa3jTs5D54GuKIYs2UQUF5NH/+y/pvVmocwWulrBd4VdrNVPQ2zJQ==
 
 once@^1.3.1, once@^1.4.0:
   version "1.4.0"

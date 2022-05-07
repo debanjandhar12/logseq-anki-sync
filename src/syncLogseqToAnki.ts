@@ -75,7 +75,9 @@ export class LogseqToAnkiSync {
         
         // -- Sync --
         let start_time = performance.now();
-        await Promise.all([this.createNotes(toCreateNotes, failedCreated, ankiNoteManager), this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager), this.deleteNotes(toDeleteNotes, ankiNoteManager, failedDeleted)]);
+        await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager);
+        await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager);
+        await this.deleteNotes(toDeleteNotes, ankiNoteManager, failedDeleted);
         await AnkiConnect.invoke("reloadCollection", {});
 
         // -- Show Result / Summery --

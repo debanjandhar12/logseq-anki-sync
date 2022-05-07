@@ -29,7 +29,8 @@
     "ohm-js": "16.3.4",
     "string-replace-async": "^3.0.2",
     "localforage": "^1.10.0",
-    "object-hash": "3.0.0"
+    "object-hash": "3.0.0",
+    "await-lock": "^2.2.2"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.5.0",

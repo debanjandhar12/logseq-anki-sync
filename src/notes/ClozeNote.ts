@@ -3,6 +3,7 @@ import '@logseq/libs'
 import { string_to_arr, get_math_inside_md, safeReplace } from '../utils';
 import _ from 'lodash';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
+import AwaitLock from 'await-lock';
 
 export class ClozeNote extends Note {
     public type: string = "cloze";
@@ -95,16 +96,20 @@ export class ClozeNote extends Note {
         [(re-find ?regex ?content)]
         ]`);
         let blocks: any = [...logseqCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
+        let getBlockLock = new AwaitLock();
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
-            let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
+            let page = block[0].page;
             block = block[0];
-            if(!block.content) block = await logseq.Editor.getBlock(uuid);
+            if(!block.content) {
+                getBlockLock.acquireAsync();
+                block = await logseq.Editor.getBlock(uuid);
+                getBlockLock.release();
+            }
             if(block)
                 return new ClozeNote(uuid, block.content, block.format, block.properties || {}, page);
             else {
-                throw new Error(`Block ${uuid} not found! Please report this is github issue. ClozeNote size: ${blocks.length}`);
-                // return null;
+                return null;
             }
         }));
         console.log("ClozeNote Cards Loaded");
