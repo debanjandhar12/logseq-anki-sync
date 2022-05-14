@@ -193,7 +193,7 @@ export class LogseqToAnkiSync {
             let parentID = (await logseq.Editor.getBlock(note.uuid)).parent.id;
             let parent;
             while ((parent = await logseq.Editor.getBlock(parentID)) != null) {
-                parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, ""), format:parent.format, uuid:parent.uuid});
+                parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, "").replaceAll(ANKI_CLOZE_REGEXP, "$3"), format:parent.format, uuid:parent.uuid});
                 parentID = parent.parent.id;
             }
             for await (const parentBlock of parentBlocks.reverse()) {
@@ -233,7 +233,7 @@ export class LogseqToAnkiSync {
                 let parentID = (await logseq.App.getBlock(note.uuid)).parent.id;
                 let parent;
                 while ((parent = await logseq.App.getBlock(parentID)) != null) {
-                    parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, ""), uuid:parent.uuid});
+                    parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, "").replaceAll(ANKI_CLOZE_REGEXP, "$3"), uuid:parent.uuid});
                     parentID = parent.parent.id;
                 }
                 while(parentBlocks.length > 0) {
