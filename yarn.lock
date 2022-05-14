@@ -23,6 +23,11 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
+"@broxus/await-semaphore@0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@broxus/await-semaphore/-/await-semaphore-0.1.5.tgz#e5fcf641dfa71ffc29210b1138e2157a32b422d9"
+  integrity sha512-g464HtHHKxk6r6bkZc+lET1PuSgcFxlLHVb7EAqfxTlx6DRcYkjPRIQQhRHB3BQ6zRpfMrYkppL0tBtRED+HNA==
+
 "@lezer/common@^0.15.0", "@lezer/common@^0.15.7":
   version "0.15.12"
   resolved "https://registry.yarnpkg.com/@lezer/common/-/common-0.15.12.tgz#2f21aec551dd5fd7d24eb069f90f54d5bc6ee5e9"
@@ -1139,10 +1144,10 @@ has-flag@^4.0.0:
   resolved "https://registry.npmjs.org/has-flag/-/has-flag-4.0.0.tgz"
   integrity sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==
 
-highlight.js@^11.3.1:
-  version "11.3.1"
-  resolved "https://registry.npmjs.org/highlight.js/-/highlight.js-11.3.1.tgz"
-  integrity sha512-PUhCRnPjLtiLHZAQ5A/Dt5F8cWZeMyj9KRsACsWT+OD6OP0x6dp5OmT5jdx0JgEyPxPZZIPQpRN2TciUT7occw==
+highlight.js@11.5.1:
+  version "11.5.1"
+  resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-11.5.1.tgz#027c24e4509e2f4dcd00b4a6dda542ce0a1f7aea"
+  integrity sha512-LKzHqnxr4CrD2YsNoIf/o5nJ09j4yi/GcH5BnYz9UnVpZdS4ucMgvP61TDty5xJcFGRjnH4DpujkS9bHT3hq0Q==
 
 htmlnano@^2.0.0:
   version "2.0.0"
@@ -1353,10 +1358,10 @@ minimist@^1.2.0, minimist@^1.2.5:
   resolved "https://registry.npmjs.org/minimist/-/minimist-1.2.5.tgz"
   integrity sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==
 
-mldoc@1.3.2:
-  version "1.3.2"
-  resolved "https://registry.yarnpkg.com/mldoc/-/mldoc-1.3.2.tgz#d08bb6bd7a6ea6ae27cb02f4d5b4c8f7c95d31ba"
-  integrity sha512-yK/IfRwLpNEyFyU61wISho3ik2en/VVtY4wxZFfyasOX5xBvxcI/FBAqXmO4hV7V6paH8Ko9APgAW3AcX+CiOQ==
+mldoc@1.3.3:
+  version "1.3.3"
+  resolved "https://registry.yarnpkg.com/mldoc/-/mldoc-1.3.3.tgz#b7f39b48eb0ef3558619d3e3522265977bd78fe3"
+  integrity sha512-TzW06GBltdKxwWAxOvflPmIVedu6bzl9T4YoYqnDUyZ3kELFMllEgiYCh65PPW3xsRMA/5OcRQqqGZGiKEJEug==
   dependencies:
     yargs "^12.0.2"
 

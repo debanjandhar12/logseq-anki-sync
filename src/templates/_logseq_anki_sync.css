@@ -74,7 +74,7 @@ h5 {
     flex-direction: column;
     padding-top: 2px;
     list-style: none;
-    padding-left: 20px;
+    padding-left: 1.5rem;
 }
 
 .children {
@@ -89,7 +89,7 @@ h5 {
     color: #d4d5d6;
     cursor: pointer;
     position: absolute;
-    left: -25px;
+    left: -2.1rem;
     top: -1px;
     font-size: 22px;
 }
@@ -101,7 +101,7 @@ h5 {
 
 :not(.embed-page):not(.embed-block) > .children-list > .children::after {
     content: ' ';
-    left: -42px;
+    left: -3.3rem;
     background-color: #e9ecef;
     height: 100%;
     width: 2px;

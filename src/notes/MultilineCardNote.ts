@@ -5,6 +5,7 @@ import { convertToHTMLFile, HTMLFile } from '../converter/CachedConverter';
 import { safeReplace } from '../utils';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
 import AwaitLock from 'await-lock';
+import { SyncronizationSafeLogseq } from "../SyncronizationSafeLogseq";
 
 export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
@@ -121,25 +122,17 @@ export class MultilineCardNote extends Note {
         [?b :block/refs ?p]
         ]`);
         let blocks: any = [...logseqCard_blocks, ...flashCard_blocks];
-        let getBlockLock = new AwaitLock();
+        
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
-            getBlockLock.acquireAsync();
-            let page = (block[0].page) ? await logseq.Editor.getPage(block[0].page.id) : {};
-            getBlockLock.release();
-            getBlockLock.acquireAsync();
-            block = await logseq.Editor.getBlock(uuid, { includeChildren: true });
-            getBlockLock.release();
+            let page = (block[0].page) ? await SyncronizationSafeLogseq.Editor.getPage(block[0].page.id) : {};
+            block = await SyncronizationSafeLogseq.Editor.getBlock(uuid, { includeChildren: true });
             if (block) {
                 let tags = await Promise.all(_.map(block.refs, async page => {
-                        getBlockLock.acquireAsync();
-                        let tagPage = await logseq.Editor.getPage(page.id);
-                        getBlockLock.release();
+                        let tagPage = await SyncronizationSafeLogseq.Editor.getPage(page.id);
                         return _.get(tagPage, 'name') 
                     }));
-                getBlockLock.acquireAsync();
                 let children = await this.augmentChildrenArray(block.children);
-                getBlockLock.release();
                 return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, children);
             } else {
                return null;
