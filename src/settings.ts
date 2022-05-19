@@ -24,6 +24,13 @@ export const addSettingsToLogseq = () => {
         description: "Include parent content in cards NB: This might increase syncing time as well as size of the cards.",
     },
     {
+      key: "defaultDeck",
+      type: 'string',
+      title: "Default Deck:",
+      description: "The default deck to use for cards when page is not inside a namespace and no page or block deck property is specified.",
+      default: "Default"
+    },
+    {
         key: "previewNotesInAnki",
         type: 'boolean',
         default: false,
