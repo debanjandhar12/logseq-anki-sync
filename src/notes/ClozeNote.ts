@@ -113,7 +113,9 @@ export class ClozeNote extends Note {
         console.log("ClozeNote Cards Loaded");
         blocks = _.uniqBy(blocks, 'uuid');
         blocks = _.without(blocks, undefined, null);
-
+        blocks = _.filter(blocks, (block) => { // Remove template cards
+            return _.get(block, 'properties.template') == null || _.get(block, 'properties.template') == undefined;
+        });
         return blocks;
     }
 }

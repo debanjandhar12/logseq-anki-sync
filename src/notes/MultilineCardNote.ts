@@ -141,6 +141,9 @@ export class MultilineCardNote extends Note {
         console.log("MultilineCardNote Loaded");
         blocks = _.uniqBy(blocks, 'uuid');
         blocks = _.without(blocks, undefined, null);
+        blocks = _.filter(blocks, (block) => { // Remove template cards
+            return _.get(block, 'properties.template') == null || _.get(block, 'properties.template') == undefined;
+        });
         blocks = _.filter(blocks, (block) => { // Remove cards that do not have children and are not reversed or bidirectional
             return block.getCardDirection() == "<->" || block.getCardDirection() == "<-" || block.children.length > 0;
         });
