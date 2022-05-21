@@ -7,7 +7,7 @@ import { LOGSEQ_BLOCK_REF_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP } from '../constant
 import { convertToHTMLFile as convertToHTMLFileNonCached, HTMLFile } from './Converter';
 export { HTMLFile } from './Converter';
 
-const cacheVersion = 2064000;
+const cacheVersion = 2070000;
 
 localforage.config({
     driver: localforage.INDEXEDDB
