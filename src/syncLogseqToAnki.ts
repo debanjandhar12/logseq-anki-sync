@@ -24,7 +24,7 @@ export class LogseqToAnkiSync {
           await this.performSync();
         } 
         catch (e) {
-          logseq.App.showMsg(get_better_error_msg(e.toString()), 'warning');
+          logseq.UI.showMsg(get_better_error_msg(e.toString()), 'warning', {timeout: 4000});
           console.error(e);
         } 
         LogseqToAnkiSync.isSyncing = false;
@@ -33,7 +33,7 @@ export class LogseqToAnkiSync {
     private async performSync(): Promise<void> {
         this.graphName = _.get(await logseq.App.getCurrentGraph(), 'name') || 'Default';
         this.modelName = `${this.graphName}Model`.replace(/\s/g, "_");
-        logseq.App.showMsg(`Starting Logseq to Anki Sync for graph ${this.graphName}`);
+        logseq.UI.showMsg(`Starting Logseq to Anki Sync for graph ${this.graphName}`);
         console.log(`%cStarting Logseq to Anki Sync V2.6.4 for graph ${this.graphName}`, 'color: green; font-size: 1.5em;');
 
         // -- Request Access --
@@ -82,13 +82,13 @@ export class LogseqToAnkiSync {
         await AnkiConnect.invoke("reloadCollection", {});
 
         // -- Show Result / Summery --
-        let summery = `Sync Completed! Created Blocks: ${toCreateNotes.length - failedCreated.size} \n Updated Blocks: ${toUpdateNotes.length - failedUpdated.size} \n Deleted Blocks: ${toDeleteNotes.length - failedDeleted.size}`;
+        let summery = `Sync Completed! \n Created Blocks: ${toCreateNotes.length - failedCreated.size} \n Updated Blocks: ${toUpdateNotes.length - failedUpdated.size} \n Deleted Blocks: ${toDeleteNotes.length - failedDeleted.size}`;
         let status = 'success';
         if (failedCreated.size > 0) summery += `\nFailed Created: ${failedCreated.size} `;
         if (failedUpdated.size > 0) summery += `\nFailed Updated: ${failedUpdated.size} `;
         if (failedDeleted.size > 0) summery += `\nFailed Deleted: ${failedDeleted.size} `;
         if (failedCreated.size > 0 || failedUpdated.size > 0 || failedDeleted.size > 0) status = 'warning';
-        logseq.App.showMsg(summery, status);
+        logseq.UI.showMsg(summery, status, {timeout: status == 'success' ? 1200 : 4000});
         console.log(summery);
         if (failedCreated.size > 0) console.log("\nFailed Created:", failedCreated);
         if (failedUpdated.size > 0) console.log("\nFailed Updated:", failedUpdated);

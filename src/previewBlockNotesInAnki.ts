@@ -8,7 +8,7 @@ export async function previewBlockNotesInAnki(...a) {
         await AnkiConnect.guiBrowse("uuid:" + a[0].uuid);
     } 
     catch (e) {
-    logseq.App.showMsg(get_better_error_msg(e.toString()), 'warning');
-    console.error(e);
+        logseq.UI.showMsg(get_better_error_msg(e.toString()), 'warning', {timeout: 4000});
+        console.error(e);
     } 
 }
