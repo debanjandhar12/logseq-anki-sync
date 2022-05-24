@@ -4,7 +4,7 @@ import { string_to_arr, get_math_inside_md, safeReplace } from '../utils';
 import _ from 'lodash';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import AwaitLock from 'await-lock';
-import { SyncronizationSafeLogseq } from "../SyncronizationSafeLogseq";
+import { SyncronizedLogseq } from "../SyncronizedLogseq";
 
 export class ClozeNote extends Note {
     public type: string = "cloze";
@@ -99,10 +99,10 @@ export class ClozeNote extends Note {
         let blocks: any = [...logseqCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
-            let page = (block[0].page) ? await SyncronizationSafeLogseq.Editor.getPage(block[0].page.id) : {};
+            let page = (block[0].page) ? await SyncronizedLogseq.Editor.getPage(block[0].page.id) : {};
             block = block[0];
             if(!block.content) {
-                block = await SyncronizationSafeLogseq.Editor.getBlock(uuid);
+                block = await SyncronizedLogseq.Editor.getBlock(uuid);
             }
             if(block)
                 return new ClozeNote(uuid, block.content, block.format, block.properties || {}, page);

@@ -5,7 +5,7 @@ import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsy
 import _ from 'lodash';
 import { Mldoc } from 'mldoc';
 import { ANKI_CLOZE_REGEXP, LOGSEQ_BLOCK_REF_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP, LOGSEQ_PAGE_REF_REGEXP, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, MD_MATH_BLOCK_REGEXP, MD_PROPERTIES_REGEXP, ORG_MATH_BLOCK_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
-import { SyncronizationSafeLogseq } from "../SyncronizationSafeLogseq";
+import { SyncronizedLogseq } from "../SyncronizedLogseq";
 
 let mldocsOptions = {
     "toc": false,
@@ -143,7 +143,7 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
 
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_PAGE_REGEXP, async (match, g1) => {  // Convert block embed
         let block_content = "";
-        try { let block = await SyncronizationSafeLogseq.Editor.getBlock(g1); block_content = _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
+        try { let block = await SyncronizedLogseq.Editor.getBlock(g1); block_content = _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
         return `<div class="embed-block">
                 <ul class="children-list"><li class="children">
                 ${await (async () => {
@@ -178,7 +178,7 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
             result += `</ul>`;
             return result;
         }
-        try { pageTree = await SyncronizationSafeLogseq.Editor.getPageBlocksTree(pageName); } catch (e) { console.warn(e); }
+        try { pageTree = await SyncronizedLogseq.Editor.getPageBlocksTree(pageName); } catch (e) { console.warn(e); }
 
         return `<div class="embed-page">
                 <a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="embed-header">${pageName}</a>
@@ -194,10 +194,10 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
     }); // Convert block ref link
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_BLOCK_REF_REGEXP, async (match, blockUUID) => { // Convert block refs
         let block;
-        try { block = await SyncronizationSafeLogseq.Editor.getBlock(blockUUID); }
+        try { block = await SyncronizedLogseq.Editor.getBlock(blockUUID); }
         catch (e) { console.warn(e); }
         if (_.get(block, "properties.lsType") == "annotation" && _.get(block, "properties.hlType") == "area") {  // Pdf area ref
-            let page = await SyncronizationSafeLogseq.Editor.getPage(block.page.id);
+            let page = await SyncronizedLogseq.Editor.getPage(block.page.id);
             let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${_.get(block, "properties.hlPage")}_${blockUUID}_${_.get(block, "properties.hlStamp")}.png`;
             resultAssets.add(hls_img_loc);
             let img_html = `<img src="${encodeURIComponent(hls_img_loc)}" />`

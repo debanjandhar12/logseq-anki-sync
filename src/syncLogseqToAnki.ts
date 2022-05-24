@@ -10,7 +10,7 @@ import { get_better_error_msg, confirm } from './utils';
 import path from 'path';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile } from './converter/CachedConverter';
-import { SyncronizationSafeLogseq } from './SyncronizationSafeLogseq';
+import { SyncronizedLogseq } from './SyncronizedLogseq';
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -50,7 +50,7 @@ export class LogseqToAnkiSync {
         // -- Get the notes that are to be synced from logseq --
         let notes : Array<Note> = [...(await ClozeNote.getNotesFromLogseqBlocks()), ...(await MultilineCardNote.getNotesFromLogseqBlocks())];
         for (let note of notes) { // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
-            if (!note.properties["id"]) { try { SyncronizationSafeLogseq.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); } catch (e) { console.error(e); } }
+            if (!note.properties["id"]) { try { SyncronizedLogseq.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); } catch (e) { console.error(e); } }
         }
         console.log("Notes:", notes);
 
@@ -191,9 +191,9 @@ export class LogseqToAnkiSync {
         if(logseq.settings.includeParentContent) {
             let newHtml = "";
             let parentBlocks = []; 
-            let parentID = (await SyncronizationSafeLogseq.Editor.getBlock(note.uuid)).parent.id;
+            let parentID = (await SyncronizedLogseq.Editor.getBlock(note.uuid)).parent.id;
             let parent;
-            while ((parent = await SyncronizationSafeLogseq.Editor.getBlock(parentID)) != null) {
+            while ((parent = await SyncronizedLogseq.Editor.getBlock(parentID)) != null) {
                 parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, "").replaceAll(ANKI_CLOZE_REGEXP, "$3"), format:parent.format, uuid:parent.uuid});
                 parentID = parent.parent.id;
             }
@@ -212,7 +212,7 @@ export class LogseqToAnkiSync {
         try {
             let parentID = note.uuid;
             let parent;
-            while ((parent = await SyncronizationSafeLogseq.Editor.getBlock(parentID)) != null) {
+            while ((parent = await SyncronizedLogseq.Editor.getBlock(parentID)) != null) {
                 if(_.get(parent, 'properties.deck') != null){
                     deck = _.get(parent, 'properties.deck');
                     break;
@@ -231,9 +231,9 @@ export class LogseqToAnkiSync {
         if(logseq.settings.breadcrumbDisplay == "Show Page name and parent blocks context") {
             try {
                 let parentBlocks = []; 
-                let parentID = (await SyncronizationSafeLogseq.Editor.getBlock(note.uuid)).parent.id;
+                let parentID = (await SyncronizedLogseq.Editor.getBlock(note.uuid)).parent.id;
                 let parent;
-                while ((parent = await SyncronizationSafeLogseq.Editor.getBlock(parentID)) != null) {
+                while ((parent = await SyncronizedLogseq.Editor.getBlock(parentID)) != null) {
                     parentBlocks.push({content:parent.content.replaceAll(MD_PROPERTIES_REGEXP, "").replaceAll(ANKI_CLOZE_REGEXP, "$3"), uuid:parent.uuid});
                     parentID = parent.parent.id;
                 }

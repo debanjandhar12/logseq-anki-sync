@@ -5,7 +5,7 @@ import { convertToHTMLFile, HTMLFile } from '../converter/CachedConverter';
 import { safeReplace } from '../utils';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
 import AwaitLock from 'await-lock';
-import { SyncronizationSafeLogseq } from "../SyncronizationSafeLogseq";
+import { SyncronizedLogseq } from "../SyncronizedLogseq";
 
 export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
@@ -125,11 +125,11 @@ export class MultilineCardNote extends Note {
         
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
-            let page = (block[0].page) ? await SyncronizationSafeLogseq.Editor.getPage(block[0].page.id) : {};
-            block = await SyncronizationSafeLogseq.Editor.getBlock(uuid, { includeChildren: true });
+            let page = (block[0].page) ? await SyncronizedLogseq.Editor.getPage(block[0].page.id) : {};
+            block = await SyncronizedLogseq.Editor.getBlock(uuid, { includeChildren: true });
             if (block) {
                 let tags = await Promise.all(_.map(block.refs, async page => {
-                        let tagPage = await SyncronizationSafeLogseq.Editor.getPage(page.id);
+                        let tagPage = await SyncronizedLogseq.Editor.getPage(page.id);
                         return _.get(tagPage, 'name') 
                     }));
                 let children = await this.augmentChildrenArray(block.children);

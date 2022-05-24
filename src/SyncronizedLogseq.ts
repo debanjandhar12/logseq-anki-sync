@@ -1,11 +1,12 @@
 import { BlockEntity, BlockIdentity, EntityID, PageIdentity } from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
 /***
- * Syncronization-safe logseq api wrapper for the Logseq plugin
+ * Syncronization-safe logseq api wrapper for the Logseq plugin.
+ * This is needed to fix #58
  * */
 
 let getLogseqLock = new AwaitLock();
-export namespace SyncronizationSafeLogseq {
+export namespace SyncronizedLogseq {
     export class Editor {
         static async getBlock(srcBlock: BlockIdentity | EntityID, opts?: Partial<{ includeChildren: boolean; }>): Promise<BlockEntity | null> {
             let block = null;
