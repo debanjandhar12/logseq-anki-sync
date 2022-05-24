@@ -24,10 +24,22 @@ async function main(baseInfo: LSPluginBaseInfo) {
     key: `logseq-anki-sync-command-palette-${baseInfo.id}`,
     label: `Start Logseq to Anki Sync`
   }, syncLogseqToAnki);
+  logseq.provideStyle(`
+    .logseq-anki-toolbar-item-${baseInfo.id} {
+      display: flex;
+      align-items: center;
+      position: relative;
+      top: 0px;
+      opacity: 0.8;
+    }
+    .logseq-anki-toolbar-item-${baseInfo.id}:hover {
+      opacity: 1;
+    }
+  `);
   logseq.App.registerUIItem('toolbar', {
     key: `logseq-anki-sync-${baseInfo.id}`,
     template: String.raw`
-      <a title="Start Logseq to Anki Sync" data-on-click="syncLogseqToAnki" class="button">
+      <a title="Start Logseq to Anki Sync" data-on-click="syncLogseqToAnki" class="button logseq-anki-toolbar-item-${baseInfo.id}">
         <i class="ti">${ANKI_ICON}</i>
       </a>
     `
