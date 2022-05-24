@@ -74,14 +74,14 @@ h5 {
     flex-direction: column;
     padding-top: 2px;
     list-style: none;
-    padding-left: 1.5rem;
+    padding-left: 1.4rem;
 }
 
 .children {
     padding-top: 3px;
     padding-bottom: 3px;
     position: relative;
-    min-height: 16px;
+    min-height: 1em;
 }
 
 .children::before {
@@ -89,9 +89,9 @@ h5 {
     color: #d4d5d6;
     cursor: pointer;
     position: absolute;
-    left: -2.1rem;
+    left: -1.8rem;
     top: -1px;
-    font-size: 22px;
+    font-size: 1.8rem;
 }
 
 .children:hover::before {
@@ -99,9 +99,9 @@ h5 {
     text-shadow: 0 0 2px black;
 }
 
-:not(.embed-page):not(.embed-block) > .children-list > .children::after {
+.children-list :not(.embed-page):not(.embed-block) > .children-list > .children::after {
     content: ' ';
-    left: -3.3rem;
+    left: -3.0rem;
     background-color: #e9ecef;
     height: 100%;
     width: 2px;
