@@ -6,18 +6,17 @@ import objectHash from 'object-hash';
 import { LOGSEQ_BLOCK_REF_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP } from '../constants';
 import { convertToHTMLFile as convertToHTMLFileNonCached, HTMLFile } from './Converter';
 export { HTMLFile } from './Converter';
-
-const cacheVersion = 2070000;
+import pkg from '../../package.json';
 
 localforage.config({
     driver: localforage.INDEXEDDB
 });
 
 localforage.getItem('cacheVersion').then((version) => {
-    if (version !== cacheVersion || Math.floor(Math.random() * 100) == 50) {
+    if (version !== pkg.version || Math.floor(Math.random() * 100) == 50) {
         console.log('Cache version changed, clearing conversion cache. It could be random aswell.');
         localforage.clear();
-        localforage.setItem('cacheVersion', cacheVersion);
+        localforage.setItem('cacheVersion', pkg.version);
     }
 });
 
@@ -25,7 +24,7 @@ logseq.onSettingsChanged((newSettings,oldSettings) => {
     if(newSettings.useCacheForConversion !== oldSettings.useCacheForConversion) {
         console.log('Cache settings changed, clearing conversion cache');
         localforage.clear();
-        localforage.setItem('cacheVersion', cacheVersion)
+        localforage.setItem('cacheVersion', pkg.version)
     }
 });
 

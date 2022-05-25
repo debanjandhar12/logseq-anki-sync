@@ -4,6 +4,7 @@
           "ES2021"
         ],
         "esModuleInterop": true,
+        "resolveJsonModule": true,
         "sourceMap": true,
         "removeComments": true,
         "moduleResolution": "node",
