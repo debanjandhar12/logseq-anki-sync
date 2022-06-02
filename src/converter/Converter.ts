@@ -190,11 +190,9 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
         const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
         const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
         if(format == "org" && encodeURI(pageName).match(isImage)) {
-            console.log("Image found in org format:", pageName);
             return `![](${pageName})`;
         }
         else if(format == "org" && encodeURI(pageName).match(isWebURL)) {
-            console.log("Web URL found in org format:", pageName);
             return `${pageName}`;
         }
         return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="page-reference">${pageName}</a>`
