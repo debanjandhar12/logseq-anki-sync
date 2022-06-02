@@ -52,6 +52,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
 
   ClozeNote.initLogseqOperations();
   MultilineCardNote.initLogseqOperations();
+  console.log("Window Parent:", window.parent);
 }
 
 // Bootstrap
