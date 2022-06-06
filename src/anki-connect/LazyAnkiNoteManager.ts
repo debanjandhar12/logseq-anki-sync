@@ -27,8 +27,20 @@ export class LazyAnkiNoteManager {
     async buildNoteInfoMap(modelName: string): Promise<any> {
         let result = await AnkiConnect.query(`note:${modelName}`);
         let notes = await AnkiConnect.invoke("notesInfo", { "notes": result });
+        let cards = [];
         for(let note of notes) {
-            this.noteInfoMap.set(note.noteId, note);
+            if(note.cards[0]) cards.push(note.cards[0]);
+        }
+        let decks = await AnkiConnect.invoke("getDecks", { "cards": cards });
+        for(let note of notes) {    // can be reduced to n log n
+            let deck = "";
+            for (let prop in decks) {
+                if(decks[prop].includes(note.cards[0])) {
+                    deck = prop;
+                    break;
+                }
+            }
+            this.noteInfoMap.set(note.noteId, {...note, deck});
         }
         if(logseq.settings.syncDebug) console.debug(this.noteInfoMap);
     }
@@ -48,8 +60,10 @@ export class LazyAnkiNoteManager {
     updateNote(ankiId: number, deckName: string, modelName: string, fields, tags: string[]): void {
         let noteinfo = this.noteInfoMap.get(ankiId);
         let cards = noteinfo.cards;
-        this.updateNoteActionsQueue.push({"action": "changeDeck", "params": { "cards": cards, "deck": deckName }});
-        this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
+        if(deckName != noteinfo.deck) {
+            this.updateNoteActionsQueue.push({"action": "changeDeck", "params": { "cards": cards, "deck": deckName }});
+            this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
+        }
 
         // Remove all old unneeded tags and add new ones
         tags = tags.map(tag => tag.replace(/\s/g, "_")); // Anki doesn't like spaces in tags
