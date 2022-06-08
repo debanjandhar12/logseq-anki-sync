@@ -1,3 +1,7 @@
+/**
+ * This file is extremely messy - written in less than an hour, never cleaned.
+ * I will clean it up as soon as possible. Promise :')
+ */
 import * as AnkiConnect from './AnkiConnect';
 import _ from 'lodash';
 import '@logseq/libs'
@@ -5,7 +9,7 @@ import { ANKI_CLOZE_REGEXP } from '../constants';
 
 export class LazyAnkiNoteManager {
     public modelName: string;
-    public noteInfoMap: Map<any,any> = new Map();
+    public noteInfoMap: Map<any, any> = new Map();
     private addNoteActionsQueue1: Array<any> = [];
     private addNoteActionsQueue2: Array<any> = [];
     private addNoteUuidTypeQueue1: Array<any> = [];
@@ -28,40 +32,41 @@ export class LazyAnkiNoteManager {
         let result = await AnkiConnect.query(`note:${modelName}`);
         let notes = await AnkiConnect.invoke("notesInfo", { "notes": result });
         let cards = [];
-        for(let note of notes) {
-            if(note.cards[0]) cards.push(note.cards[0]);
+        for (let note of notes) {
+            if (note.cards[0]) cards.push(note.cards[0]);
         }
         let decks = await AnkiConnect.invoke("getDecks", { "cards": cards });
-        for(let note of notes) {    // can be reduced to n log n
+        for (let note of notes) {    // can be reduced to n log n
             let deck = "";
             for (let prop in decks) {
-                if(decks[prop].includes(note.cards[0])) {
+                if (decks[prop].includes(note.cards[0])) {
                     deck = prop;
                     break;
                 }
             }
-            this.noteInfoMap.set(note.noteId, {...note, deck});
+            this.noteInfoMap.set(note.noteId, { ...note, deck });
         }
-        if(logseq.settings.syncDebug) console.debug(this.noteInfoMap);
+        if (logseq.settings.syncDebug) console.debug(this.noteInfoMap);
     }
 
     addNote(deckName: string, modelName: string, fields, tags: string[]): void {
-        this.addNoteActionsQueue1.push({"action": "createDeck", "params": { "deck": deckName } });
+        this.addNoteActionsQueue1.push({ "action": "createDeck", "params": { "deck": deckName } });
         this.addNoteUuidTypeQueue1.push(fields["uuid-type"]);
         let cloze_id = _.get(ANKI_CLOZE_REGEXP.exec(fields["Text"]), 2) || 1;
-        this.addNoteActionsQueue1.push({"action": "addNote", "params": 
-        { "note": { "modelName": modelName, "deckName": deckName, "fields": { ...fields, "Text": `{{c${cloze_id}:: placeholder}}`}, "tags": tags, "options": { "allowDuplicate": true} } } 
+        this.addNoteActionsQueue1.push({
+            "action": "addNote", "params":
+                { "note": { "modelName": modelName, "deckName": deckName, "fields": { ...fields, "Text": `{{c${cloze_id}:: placeholder}}` }, "tags": tags, "options": { "allowDuplicate": true } } }
         });
         this.addNoteUuidTypeQueue1.push(fields["uuid-type"]);
-        this.addNoteActionsQueue2.push({"action": "updateNoteFields", "params": { "note": { "deckName": deckName, "modelName": modelName, "fields": fields } } });
+        this.addNoteActionsQueue2.push({ "action": "updateNoteFields", "params": { "note": { "deckName": deckName, "modelName": modelName, "fields": fields } } });
         this.addNoteUuidTypeQueue2.push(fields["uuid-type"]);
     }
 
     updateNote(ankiId: number, deckName: string, modelName: string, fields, tags: string[]): void {
         let noteinfo = this.noteInfoMap.get(ankiId);
         let cards = noteinfo.cards;
-        if(deckName != noteinfo.deck) {
-            this.updateNoteActionsQueue.push({"action": "changeDeck", "params": { "cards": cards, "deck": deckName }});
+        if (deckName != noteinfo.deck) {
+            this.updateNoteActionsQueue.push({ "action": "changeDeck", "params": { "cards": cards, "deck": deckName } });
             this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
         }
 
@@ -69,8 +74,8 @@ export class LazyAnkiNoteManager {
         tags = tags.map(tag => tag.replace(/\s/g, "_")); // Anki doesn't like spaces in tags
         let to_remove_tags = _.difference(noteinfo.tags, tags);
         let to_add_tags = _.difference(tags, noteinfo.tags);
-        for (let tag of to_remove_tags){
-            this.updateNoteActionsQueue.push({"action": "removeTags", "params": { "notes": [ankiId], "tags": tag } });
+        for (let tag of to_remove_tags) {
+            this.updateNoteActionsQueue.push({ "action": "removeTags", "params": { "notes": [ankiId], "tags": tag } });
             this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
         }
         for (let tag of to_add_tags) {
@@ -81,31 +86,31 @@ export class LazyAnkiNoteManager {
         let needsFieldUpdate = false;
         for (let key in fields) {
             if (noteinfo.fields[key].value != fields[key]) {
-                if(logseq.settings.syncDebug) console.log("Difference found:", key, noteinfo.fields[key].value, fields[key]);
+                if (logseq.settings.syncDebug) console.log("Difference found:", key, noteinfo.fields[key].value, fields[key]);
                 needsFieldUpdate = true;
                 break;
             }
         }
-        if(needsFieldUpdate) {
-            this.updateNoteActionsQueue.push({"action": "updateNoteFields", "params": { "note": { id: ankiId, "deckName": deckName, "modelName": modelName, "fields": fields } } });
+        if (needsFieldUpdate) {
+            this.updateNoteActionsQueue.push({ "action": "updateNoteFields", "params": { "note": { id: ankiId, "deckName": deckName, "modelName": modelName, "fields": fields } } });
             this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
         }
     }
 
     deleteNote(ankiId: number): void {
-        this.deleteNoteActionsQueue.push({"action": "deleteNotes", "params": { "notes": [ankiId] } });
+        this.deleteNoteActionsQueue.push({ "action": "deleteNotes", "params": { "notes": [ankiId] } });
         this.deleteNoteAnkiIdQueue.push(ankiId);
     }
 
     storeAsset(filename: string, path: string): void {
-        this.storeAssetActionsQueue.push({"action": "storeMediaFile", "params": { filename, path } });
+        this.storeAssetActionsQueue.push({ "action": "storeMediaFile", "params": { filename, path } });
     }
 
     async execute(operation: string): Promise<any> {
         let result = [];
         switch (operation) {
             case "addNotes":    // Returns [ankiIdUUIDPairs, resut of sub-operations] pair
-                if(logseq.settings.syncDebug) console.log(this.addNoteUuidTypeQueue2);
+                if (logseq.settings.syncDebug) console.log(this.addNoteUuidTypeQueue2);
                 // Create notes with dummy content to avoid error
                 let result1 = await AnkiConnect.invoke("multi", { "actions": this.addNoteActionsQueue1 });
                 for (let i = 0; i < result1.length; i++) {
@@ -115,10 +120,10 @@ export class LazyAnkiNoteManager {
 
                 // Get anki id of newly added notes
                 let getankiIdActionsQueue = [];
-                for(let uuidType of this.addNoteUuidTypeQueue2) {
+                for (let uuidType of this.addNoteUuidTypeQueue2) {
                     getankiIdActionsQueue.push({ "action": "findNotes", "params": { "query": `uuid-type:${uuidType}` } });
                 }
-                let ankiIdActionsQueueRes = await AnkiConnect.invoke("multi", { "actions":  getankiIdActionsQueue});
+                let ankiIdActionsQueueRes = await AnkiConnect.invoke("multi", { "actions": getankiIdActionsQueue });
                 let ankiId = [];
                 let ankiIdUUIDTypePairs = [];
                 for (let i = 0; i < ankiIdActionsQueueRes.length; i++) {
@@ -128,8 +133,8 @@ export class LazyAnkiNoteManager {
                     ankiIdUUIDTypePairs.push({ "uuid-type": this.addNoteUuidTypeQueue2[i], "ankiId": ankiIdActionsQueueRes[i][0] });
                 }
                 // Update note fields
-                for(let i = 0; i < this.addNoteActionsQueue2.length; i++) {
-                    if(ankiId[i] == null) this.addNoteActionsQueue2[i] = {};
+                for (let i = 0; i < this.addNoteActionsQueue2.length; i++) {
+                    if (ankiId[i] == null) this.addNoteActionsQueue2[i] = {};
                     this.addNoteActionsQueue2[i].params.note.id = ankiId[i];
                 }
                 let result2 = await AnkiConnect.invoke("multi", { "actions": this.addNoteActionsQueue2 });
@@ -146,7 +151,7 @@ export class LazyAnkiNoteManager {
                 this.addNoteUuidTypeQueue2 = [];
                 break;
             case "updateNotes": // Returns resut of sub-operations
-                if(logseq.settings.syncDebug) console.log(this.updateNoteUuidTypeQueue);
+                if (logseq.settings.syncDebug) console.log(this.updateNoteUuidTypeQueue);
                 result = await AnkiConnect.invoke("multi", { "actions": this.updateNoteActionsQueue });
                 for (let i = 0; i < result.length; i++) {
                     if (result[i] == null) result[i] = {};
@@ -156,7 +161,7 @@ export class LazyAnkiNoteManager {
                 this.updateNoteUuidTypeQueue = [];
                 break;
             case "deleteNotes": // Returns resut of sub-operations
-                if(logseq.settings.syncDebug) console.log(this.deleteNoteAnkiIdQueue);
+                if (logseq.settings.syncDebug) console.log(this.deleteNoteAnkiIdQueue);
                 result = await AnkiConnect.invoke("multi", { "actions": this.deleteNoteActionsQueue });
                 for (let i = 0; i < result.length; i++) {
                     if (result[i] == null) result[i] = {};
@@ -166,14 +171,52 @@ export class LazyAnkiNoteManager {
                 this.deleteNoteAnkiIdQueue = [];
                 break;
             case "storeAssets": // Returns nothing
-                try{
+                try {
                     let uniqueStoreAssetActionsQueue = _.uniqBy(this.storeAssetActionsQueue, 'params.filename');
+                    let finalStoreAssetActionsQueue = [];
+                    const maxBatchSize = 100; 
+                    while (uniqueStoreAssetActionsQueue.length > 0) {
+                        let batchStoreAssetActionsQueue = [];
+                        while (batchStoreAssetActionsQueue.length < maxBatchSize && uniqueStoreAssetActionsQueue.length > 0) {
+                                batchStoreAssetActionsQueue.push(uniqueStoreAssetActionsQueue.pop());
+                        }
+                        let retriveAnkiAssetContentActionQueue = batchStoreAssetActionsQueue.map((action) => {
+                            return { "action": "retrieveMediaFile", "params": { "filename": action.params.filename } }
+                        });
+                        let getBase64Image = async (url) => {
+                            const response = await fetch(url);
+                            const blob = await response.blob();
+                            const reader = new FileReader();
+                            await new Promise((resolve, reject) => {
+                                reader.onload = resolve;
+                                reader.onerror = reject;
+                                reader.readAsDataURL(blob);
+                            });
+                            return (reader.result as string).replace(/^data:.+;base64,/, '')
+                        }
+                        let ankiAssetContent = await AnkiConnect.invoke("multi", { "actions": retriveAnkiAssetContentActionQueue });
+                        batchStoreAssetActionsQueue = await Promise.all(batchStoreAssetActionsQueue.map(async (action, idx) => {
+                            if (action.params.path != null) {
+                                let fimg = "";
+                                try { fimg = await getBase64Image(action.params.path) } catch { }
+                                if (fimg != "" && fimg != null) {
+                                    if (ankiAssetContent[idx] != null && ankiAssetContent[idx] != false && ankiAssetContent[idx] == fimg) return null;
+                                    delete action.params.path;
+                                    action.params.data = fimg;
+                                    return action
+                                }
+                                else return action;
+                            }
+                            return action;
+                        }));
+                        batchStoreAssetActionsQueue = batchStoreAssetActionsQueue.filter(action => action != null);
+                        finalStoreAssetActionsQueue = [...finalStoreAssetActionsQueue, ...batchStoreAssetActionsQueue];
+                        result = [...result, ...(await AnkiConnect.invoke("multi", { "actions": batchStoreAssetActionsQueue }))];
+                    }
                     this.storeAssetActionsQueue = [];
-                    result = await AnkiConnect.invoke("multi", { "actions": uniqueStoreAssetActionsQueue });
-                    console.log("Assets Stored:", result);
+                    console.log("Assets Stored:", finalStoreAssetActionsQueue, result);
                 }
-                catch(e){ console.log(e); }
-                
+                catch (e) { console.log(e); }
                 break;
         }
         return result;
