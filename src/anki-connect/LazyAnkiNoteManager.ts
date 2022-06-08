@@ -198,8 +198,7 @@ export class LazyAnkiNoteManager {
                         batchStoreAssetActionsQueue = await Promise.all(batchStoreAssetActionsQueue.map(async (action, idx) => {
                             if (action.params.path != null) {
                                 let fimg = "";
-                                try { fimg = await getBase64Image(action.params.path) } catch (e) { console.log(e) }
-                                console.log(fimg);
+                                try { fimg = await getBase64Image(action.params.path) } catch { }
                                 if (fimg != "" && fimg != null) {
                                     if (ankiAssetContent[idx] != null && ankiAssetContent[idx] != false && ankiAssetContent[idx] == fimg) return null;
                                     delete action.params.path;
