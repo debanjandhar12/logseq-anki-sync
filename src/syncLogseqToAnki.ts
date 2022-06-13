@@ -81,6 +81,7 @@ export class LogseqToAnkiSync {
         await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager);
         await this.deleteNotes(toDeleteNotes, ankiNoteManager, failedDeleted);
         await AnkiConnect.invoke("reloadCollection", {});
+        SyncronizedLogseq.Cache.clear();
 
         // -- Show Result / Summery --
         let summery = `Sync Completed! \n Created Blocks: ${toCreateNotes.length - failedCreated.size} \n Updated Blocks: ${toUpdateNotes.length - failedUpdated.size} \n Deleted Blocks: ${toDeleteNotes.length - failedDeleted.size}`;
