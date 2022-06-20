@@ -3,7 +3,6 @@ import '@logseq/libs'
 import { string_to_arr, get_math_inside_md, safeReplace } from '../utils';
 import _ from 'lodash';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
-import AwaitLock from 'await-lock';
 import { SyncronizedLogseq } from "../SyncronizedLogseq";
 
 export class ClozeNote extends Note {
@@ -82,14 +81,14 @@ export class ClozeNote extends Note {
           [?b :block/properties ?p]
           [(get ?p :replacecloze)]
         ]`);
-        let logseqCloze_blocks = await logseq.DB.datascriptQuery(`
+        let logseqCloze_blocks = await SyncronizedLogseq.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
         [?b :block/content ?content]
         [(re-pattern "{{cloze .*}}") ?regex]
         [(re-find ?regex ?content)]
         ]`);
-        let orgCloze_blocks = await logseq.DB.datascriptQuery(`
+        let orgCloze_blocks = await SyncronizedLogseq.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
         [?b :block/content ?content]

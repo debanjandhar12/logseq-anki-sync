@@ -1,4 +1,4 @@
-import { BlockEntity, BlockIdentity, EntityID, PageIdentity } from "@logseq/libs/dist/LSPlugin";
+import { BlockEntity, BlockIdentity, BlockUUID, EntityID, PageIdentity } from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
 import objectHash from "object-hash";
 /***
@@ -29,11 +29,51 @@ export namespace SyncronizedLogseq {
             await getLogseqLock.acquireAsync();
             try {
                 block = await logseq.Editor.getBlock(srcBlock, opts);
-                cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock, opts } }), block);
+                if(block == null) {
+                    cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock , opts } }), block);
+                    return null;
+                }
+                let uuid : BlockUUID = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
+                let dbid = block.id || null;
+                if (uuid != null) 
+                    cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts } }), block);
+                if (dbid != null)
+                    cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: dbid, opts } }), block);
             }
             catch (e) { console.error(e); }
             finally { getLogseqLock.release(); }
             return block;
+        }
+
+        static async getBlocks(srcBlocks: (BlockIdentity | EntityID)[]): Promise<BlockEntity[] | null[]> {
+            let result = [];
+            let blockToFetch = [];
+            for (let i = 0; i < srcBlocks.length; i++) {
+                if (cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: srcBlocks[i], opts: {} } }))) {
+                    result[i] = cache.get(objectHash({ operation: "getBlock", parameters: { srcBlock: srcBlocks[i], opts: {} } }));
+                    cacheHit++;
+                }
+                else blockToFetch.push(srcBlocks[i]);
+            }
+            blockToFetch = [...new Set(blockToFetch)];
+            let batchFetchResult;
+            if (blockToFetch.length > 0) {
+                batchFetchResult = await SyncronizedLogseq.DB.datascriptQueryBlocks(`
+                [:find (pull ?b [*])
+                :where
+                [?b :block/uuid ?uuid]
+                [(contains? #{${blockToFetch.map((block) => `#uuid "${block}" `)}} ?uuid)]
+                ]`);
+            }
+            
+            for (let i = 0, j = 0; i < srcBlocks.length && j < batchFetchResult.length; i++) {
+                if(batchFetchResult[j][0] == null) continue;
+                if (result[i] == null) {
+                    result[i] = batchFetchResult[j][0];
+                    j++;
+                }
+            }
+            return result;
         }
 
         static async getPage(srcPage: PageIdentity | EntityID): Promise<PageIdentity | null> {
@@ -71,11 +111,34 @@ export namespace SyncronizedLogseq {
             finally { getLogseqLock.release(); }
         }
     }
+    export class DB {
+        static async datascriptQuery<T = any>(query: string, ...inputs: Array<any>):  Promise<T> {
+            return logseq.DB.datascriptQuery(query, ...inputs);
+        }
+
+        static async datascriptQueryBlocks(query: string, ...inputs: Array<any>):  Promise<BlockEntity[]> {
+            let result = await logseq.DB.datascriptQuery(query, ...inputs);
+            for(let block of result) {
+                block = block[0];
+                if(block == null || block == undefined) continue;
+                let uuid : BlockUUID = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
+                let dbid = block.id || null;
+                if (uuid != null && !cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts: {} } })))
+                    cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts: {} } }), block);
+                if (dbid != null && !cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: dbid, opts: {} } })))
+                    cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: dbid, opts: {} } }), block);
+            }
+            return result;
+        }
+    }
     export class Cache {
         static clear(): void {
             console.log("Cache Hit:" ,cacheHit);
             cacheHit = 0;
             cache.clear();
+        }
+        static has(key: LogSeqOperationHash): boolean {
+            return cache.has(key);
         }
     }
 }

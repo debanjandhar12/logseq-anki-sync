@@ -2,6 +2,11 @@ import '@logseq/libs'
 import { LazyAnkiNoteManager } from '../anki-connect/LazyAnkiNoteManager';
 import _ from 'lodash';
 import { convertToHTMLFile, HTMLFile } from '../converter/CachedConverter';
+import { BlockUUID } from '@logseq/libs/dist/LSPlugin.user';
+import getContentDirectDependencies from '../converter/getContentDirectDependencies';
+import { SyncronizedLogseq } from '../SyncronizedLogseq';
+import objectHash from "object-hash";
+import pkg from '../../package.json';
 
 export abstract class Note {
     public uuid: string;
@@ -42,6 +47,37 @@ export abstract class Note {
 
     public async convertToHtmlFile(): Promise<HTMLFile> {
         return await convertToHTMLFile(this.content, this.format);
+    }
+
+    public getDirectDeendencies(): BlockUUID[] {
+        return [this.uuid];
+    }
+
+    public async getAllDependenciesHash(): Promise<string> {
+        let dependencies : Set<BlockUUID> | BlockUUID[] = new Set<BlockUUID>();
+        let queue = this.getDirectDeendencies();
+        let parentID = (await SyncronizedLogseq.Editor.getBlock(this.uuid)).parent.id;
+        let parent;
+        while ((parent = await SyncronizedLogseq.Editor.getBlock(parentID)) != null) {
+            queue.push(parent.uuid["$uuid$"] || parent.uuid.Wd || parent.uuid);
+            parentID = parent.parent.id;
+        }
+        while (queue.length > 0) {
+            let uuid = queue.pop();
+            if (dependencies.has(uuid)) continue;
+            dependencies.add(uuid);
+            let block = await SyncronizedLogseq.Editor.getBlock(uuid);
+            queue.push(...getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format','')));
+        }
+        dependencies = _.sortBy(Array.from(dependencies));
+        let toHash = [];
+        for (let uuid of dependencies) {
+            let block = await SyncronizedLogseq.Editor.getBlock(uuid);
+            toHash.push({content:_.get(block, 'content',''), format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
+        }
+        toHash.push({page:encodeURIComponent(_.get(this, 'page.originalName', '')), deck:encodeURIComponent(_.get(this, 'page.properties.deck', ''))});
+        toHash.push({v:pkg.version});
+        return objectHash(toHash);
     }
 
     // public static async abstract getBlocksFromLogseq(): Block[];
