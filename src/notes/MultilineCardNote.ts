@@ -4,8 +4,8 @@ import _ from 'lodash';
 import { convertToHTMLFile, HTMLFile } from '../converter/CachedConverter';
 import { safeReplace } from '../utils';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
-import AwaitLock from 'await-lock';
 import { SyncronizedLogseq } from "../SyncronizedLogseq";
+import { BlockUUID } from "@logseq/libs/dist/LSPlugin.user";
 
 export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
@@ -109,13 +109,13 @@ export class MultilineCardNote extends Note {
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<MultilineCardNote[]> {
-        let logseqCard_blocks = await logseq.DB.datascriptQuery(`
+        let logseqCard_blocks = await SyncronizedLogseq.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
         [?p :block/name "card"]
         [?b :block/refs ?p]
         ]`);
-        let flashCard_blocks = await logseq.DB.datascriptQuery(`
+        let flashCard_blocks = await SyncronizedLogseq.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
         [?p :block/name "flashcard"]
@@ -154,5 +154,18 @@ export class MultilineCardNote extends Note {
         let {html, assets} = await convertToHTMLFile(this.content, this.format);
         this.childrenAssets.forEach(asset => assets.add(asset));
         return {html, assets};
+    }
+
+    public getDirectDeendencies(): BlockUUID[] {
+        function getChildrenUUID(children: any): BlockUUID[] {
+            let result = [];
+            for (let child of children) {
+                result.push(child.uuid);
+                result = result.concat(getChildrenUUID(child.children));
+            }
+            return result;
+        }
+        console.log("getDirectDeendencies", [this.uuid,...getChildrenUUID(this.children)]);
+        return [this.uuid,...getChildrenUUID(this.children)];
     }
 }

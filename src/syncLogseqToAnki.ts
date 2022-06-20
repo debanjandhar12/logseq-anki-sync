@@ -12,6 +12,9 @@ import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile } from './converter/CachedConverter';
 import { SyncronizedLogseq } from './SyncronizedLogseq';
 import pkg from '../package.json';
+import { BlockIdentity, BlockUUID, EntityID } from '@logseq/libs/dist/LSPlugin.user';
+import objectHash from "object-hash";
+import getContentDirectDependencies from './converter/getContentDirectDependencies';
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -143,15 +146,31 @@ export class LogseqToAnkiSync {
     private async updateNotes(toUpdateNotes: Note[], failedUpdated: Set<any>, ankiNoteManager: LazyAnkiNoteManager): Promise<void> {
         for (let note of toUpdateNotes) {
             try {
-                let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
-                // Add assets
-                const graphPath = (await logseq.App.getCurrentGraph()).path;
-                assets.forEach(asset => {
-                    ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
-                });
-                // Update note
+                let dependencyHash = await note.getAllDependenciesHash();
                 let ankiId = note.getAnkiId();
-                ankiNoteManager.updateNote(ankiId, deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
+                let oldConfig = ((configString) => {
+                    try { return JSON.parse(configString); }
+                    catch (e) { return {}; }
+                })(ankiNoteManager.noteInfoMap.get(ankiId).fields.Config.value);
+                if(oldConfig.dependencyHash != dependencyHash) {
+                    // -- Reparse Note + update assets + update --
+                    // Parse Note
+                    let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
+                    // Add or update assets
+                    const graphPath = (await logseq.App.getCurrentGraph()).path;
+                    assets.forEach(asset => {
+                        ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
+                    });
+                    // Update note
+                    ankiNoteManager.updateNote(ankiId, deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb, "Config": JSON.stringify({dependencyHash,assets:[...assets]}) }, tags);
+                } else {
+                    // Update old assets
+                    const graphPath = (await logseq.App.getCurrentGraph()).path;
+                    oldConfig.assets.forEach(asset => {
+                        ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
+                    });
+                    console.log("Skipping update of note", note.uuid, note.type);
+                }
             } catch (e) {
                 console.error(e); failedUpdated.add(`${note.uuid}-${note.type}`);
             }
