@@ -111,7 +111,7 @@ export class LogseqToAnkiSync {
                     ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
                 });
                 // Create note
-                ankiNoteManager.addNote(deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb }, tags);
+                ankiNoteManager.addNote(deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb, "Config": JSON.stringify({dependencyHash:await note.getAllDependenciesHash(),assets:[...assets]}) }, tags);
             } catch (e) {
                 console.error(e); failedCreated.add(`${note.uuid}-${note.type}`);
             }
