@@ -54,18 +54,18 @@ export class MultilineCardNote extends Note {
         return maxDepth;
     }
 
-    public addClozes(): MultilineCardNote {
-        let result = this.content;
+    public async getClozedContentHTML(): Promise<HTMLFile> {
+        let clozedContent = this.content;
         let direction = this.getCardDirection();
 
         // Remove clozes and double braces one after another
-        result = result.replace(ANKI_CLOZE_REGEXP, "$3");
-        result = result.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ");
+        clozedContent = clozedContent.replace(ANKI_CLOZE_REGEXP, "$3");
+        clozedContent = clozedContent.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ");
         
         // Add cloze to the parent block if direction is <-> or <-
-        result = safeReplace(result, MD_PROPERTIES_REGEXP, "");
+        clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, "");
         if (direction == "<->" || direction == "<-")
-            result = `{{c2:: ${result} }}`;
+            clozedContent = `{{c2:: ${clozedContent} }}`;
 
         // Add the content of children blocks and cloze it if direction is <-> or ->
         let cloze_id = 1;
@@ -90,10 +90,9 @@ export class MultilineCardNote extends Note {
             result += `</ul>`;
             return result;
         }
-        result += addChildrenToResult(this.children);
+        clozedContent += addChildrenToResult(this.children);
         
-        this.content = result;
-        return this;
+        return convertToHTMLFile(clozedContent, this.format);
     }
 
     private static async augmentChildrenArray(children: any): Promise<any> {

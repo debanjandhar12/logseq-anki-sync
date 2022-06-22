@@ -4,6 +4,8 @@ import { string_to_arr, get_math_inside_md, safeReplace } from '../utils';
 import _ from 'lodash';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import { SyncronizedLogseq } from "../SyncronizedLogseq";
+import { HTMLFile } from "../converter/Converter";
+import { convertToHTMLFile } from "../converter/CachedConverter";
 
 export class ClozeNote extends Note {
     public type: string = "cloze";
@@ -19,13 +21,13 @@ export class ClozeNote extends Note {
         ]);
     });
 
-    public addClozes(): ClozeNote {
+    public async getClozedContentHTML(): Promise<HTMLFile> {
         let cloze_id = 1;
-        let result : string = this.content;
+        let clozedContent : string = this.content;
 
         // Remove logseq properties as it might cause problems during cloze creation
-        result = safeReplace(result, MD_PROPERTIES_REGEXP, ""); //Remove md properties
-        result = safeReplace(result, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
+        clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, ""); //Remove md properties
+        clozedContent = safeReplace(clozedContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
     
         // --- Add anki-cloze array clozes ---
         if(this.properties.replacecloze) {
@@ -40,17 +42,17 @@ export class ClozeNote extends Note {
 
             // Add the clozes while ensuring that adding cloze in math mode double braces doesn't break the cloze
             // This is done by adding extra space the braces between two double brace
-            let math = get_math_inside_md(result); // get list of math inside md
+            let math = get_math_inside_md(clozedContent); // get list of math inside md
             for (let [i, reg] of replaceclozeArr.entries()) {
                 if (typeof reg == "string")
-                    result = result.replaceAll(reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(), (match) => {
+                    clozedContent = clozedContent.replaceAll(reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(), (match) => {
                         if (math.find(math => math.includes(match)))
                             return `{{c${cloze_id}::${match.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ")} }}`; // Add extra space between braces
                         else
                             return `{{c${cloze_id}::${match}}}`;
                     });
                 else
-                    result = result.replace(reg, (match) => {
+                    clozedContent = clozedContent.replace(reg, (match) => {
                         if (math.find(math => math.includes(match)))
                             return `{{c${cloze_id}::${match.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ")} }}`; // Add extra space between braces
                         else
@@ -61,17 +63,16 @@ export class ClozeNote extends Note {
         }
 
         // --- Add logseq clozes ---
-        result = safeReplace(result, /\{\{cloze (.*?)\}\}/g, (match, group1) => {
+        clozedContent = safeReplace(clozedContent, /\{\{cloze (.*?)\}\}/g, (match, group1) => {
             return `{{c${cloze_id++}::${group1}}}`;
         });
 
         // --- Add org block clozes ---
-        result = safeReplace(result, /#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { 
+        clozedContent = safeReplace(clozedContent, /#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { 
             return `{{c${cloze_id++}::\n${g3.trim()}\n}}`;
         });
 
-        this.content = result;
-        return this;
+        return convertToHTMLFile(clozedContent, this.format);
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ClozeNote[]> {

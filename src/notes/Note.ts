@@ -30,7 +30,7 @@ export abstract class Note {
         Note.ankiNoteManager = ankiNoteManager;
     }
 
-    public abstract addClozes(): Note;
+    public abstract getClozedContentHTML(): Promise<HTMLFile>;
 
     public getContent(): string {
         return this.content;
@@ -43,10 +43,6 @@ export abstract class Note {
         if(filteredankiNotesArr.length == 0) this.ankiId = null;
         else this.ankiId = parseInt(filteredankiNotesArr[0].noteId);
         return this.ankiId;
-    }
-
-    public async convertToHtmlFile(): Promise<HTMLFile> {
-        return await convertToHTMLFile(this.content, this.format);
     }
 
     public getDirectDeendencies(): BlockUUID[] {
