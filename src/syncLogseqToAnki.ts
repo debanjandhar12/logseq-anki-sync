@@ -207,7 +207,7 @@ export class LogseqToAnkiSync {
     }
 
     private async parseNote(note: Note): Promise<[string, Set<string>, string, string, string[], string]> {
-        let {html, assets} = await note.addClozes().convertToHtmlFile();
+        let {html, assets} = await note.getClozedContentHTML();
         
         if(logseq.settings.includeParentContent) {
             let newHtml = "";
