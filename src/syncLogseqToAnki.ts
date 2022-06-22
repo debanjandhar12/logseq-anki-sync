@@ -219,7 +219,9 @@ export class LogseqToAnkiSync {
                 parentID = parent.parent.id;
             }
             for await (const parentBlock of parentBlocks.reverse()) {
-                newHtml += `<ul class="children-list"><li class="children">${(await convertToHTMLFile(parentBlock.content, parentBlock.format)).html}`;
+                let parentBlockConverted = await convertToHTMLFile(parentBlock.content, parentBlock.format);
+                parentBlockConverted.assets.forEach(asset => assets.add(asset));
+                newHtml += `<ul class="children-list"><li class="children">${parentBlockConverted.html}`;
             };
             newHtml += `<ul class="children-list"><li class="children">${html}</li></ul>`;
             parentBlocks.reverse().forEach(parentBlock => {
