@@ -3,7 +3,7 @@ import { LazyAnkiNoteManager } from '../anki-connect/LazyAnkiNoteManager';
 import _ from 'lodash';
 import { convertToHTMLFile, HTMLFile } from '../converter/CachedConverter';
 import { BlockUUID } from '@logseq/libs/dist/LSPlugin.user';
-import getContentDirectDependencies from '../converter/getContentDirectDependencies';
+import getContentDirectDependencies, { PageEntityName } from '../converter/getContentDirectDependencies';
 import { SyncronizedLogseq } from '../SyncronizedLogseq';
 import objectHash from "object-hash";
 import pkg from '../../package.json';
@@ -50,8 +50,12 @@ export abstract class Note {
     }
 
     public async getAllDependenciesHash(): Promise<string> {
-        let dependencies : Set<BlockUUID> | BlockUUID[] = new Set<BlockUUID>();
-        let queue = this.getDirectDeendencies();
+        let toHash = [];
+        let blockDependencies : Set<BlockUUID> | BlockUUID[] = new Set<BlockUUID>();
+        let pageDependencies : Set<PageEntityName> | PageEntityName[] = new Set<PageEntityName>();
+
+        // BFS to get all dependencies
+        let queue : (BlockUUID | PageEntityName)[] = this.getDirectDeendencies();
         let parentID = (await SyncronizedLogseq.Editor.getBlock(this.uuid)).parent.id;
         let parent;
         while ((parent = await SyncronizedLogseq.Editor.getBlock(parentID)) != null) {
@@ -59,17 +63,23 @@ export abstract class Note {
             parentID = parent.parent.id;
         }
         while (queue.length > 0) {
-            let uuid = queue.pop();
-            if (dependencies.has(uuid)) continue;
-            dependencies.add(uuid);
+            if(queue.at(-1) instanceof PageEntityName) {pageDependencies.add(queue.pop() as PageEntityName); continue;}
+            let uuid = queue.pop() as BlockUUID;
+            if (blockDependencies.has(uuid)) continue;
+            blockDependencies.add(uuid);
             let block = await SyncronizedLogseq.Editor.getBlock(uuid);
             queue.push(...getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format','')));
         }
-        dependencies = _.sortBy(Array.from(dependencies));
-        let toHash = [];
-        for (let uuid of dependencies) {
+        blockDependencies = _.sortBy(Array.from(blockDependencies));
+        
+        for (let uuid of blockDependencies) {
             let block = await SyncronizedLogseq.Editor.getBlock(uuid);
             toHash.push({content:_.get(block, 'content',''), format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
+        }
+        pageDependencies = _.sortBy(Array.from(pageDependencies));
+        for (let PageEntityName of pageDependencies) {
+            let page = await SyncronizedLogseq.Editor.getPage(PageEntityName.name);
+            toHash.push({content:_.get(page, 'updatedAt','')});
         }
         toHash.push({page:encodeURIComponent(_.get(this, 'page.originalName', '')), deck:encodeURIComponent(_.get(this, 'page.properties.deck', ''))});
         toHash.push({v:pkg.version});
