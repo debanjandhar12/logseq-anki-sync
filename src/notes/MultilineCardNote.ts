@@ -71,40 +71,41 @@ export class MultilineCardNote extends Note {
         let cloze_id = 1;
         
         let maxDepth = this.getChildrenMaxDepth();
-        let addChildrenToResult = (children: any, level: number = 0) => {
-            if (level >= maxDepth) return "";
-            let result = `\n<ul class="children-list left-border">`;
-            for (let child of children) {
-                result += `\n<li class="children">`;
-                let sanitized_html_content = child.htmlFile.html.replace(/(\{\{c(\d+)::)((.|\n)*)\}\}/g, "$3");
-                child.htmlFile.assets.forEach(asset => this.childrenAssets.add(asset));
-                if (child.children.length > 0) sanitized_html_content += addChildrenToResult(child.children, level + 1);
+        let getChildrenListHTMLFile = async (childrenList: any, level: number = 0) : Promise<HTMLFile> => {
+            if (level >= maxDepth) return {html: "", assets: new Set<string>()};
+            let childrenListAssets = new Set<string>();
+            let childrenListHTML = `\n<ul class="children-list left-border">`;
+            for (let child of childrenList) {
+                childrenListHTML += `\n<li class="children">`;
+                let childContent = _.get(child,"content", "");
+                let sanitizedChildContent = childContent.replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ");
+                let childExtra = _.get(child,"properties.extra");
+                if(childExtra) {sanitizedChildContent += `\n<div class="extra">${childExtra}</div>`;}    
+                let sanitizedChildHTMLFile = await convertToHTMLFile(sanitizedChildContent, child.format);
+                let sanitizedChildHTML = sanitizedChildHTMLFile.html;
+                let sanitizedChildAssets = sanitizedChildHTMLFile.assets;
+                sanitizedChildAssets.forEach(asset => childrenListAssets.add(asset));
+                if (child.children.length > 0) {
+                    let allChildrenHTMLFile = await getChildrenListHTMLFile(child.children, level + 1);
+                    sanitizedChildHTML += allChildrenHTMLFile.html;
+                    allChildrenHTMLFile.assets.forEach(asset => childrenListAssets.add(asset));
+                }
 
                 if(level == 0 && (direction == "<->" || direction == "->")) {
-                        result += `{{c${cloze_id}:: ${sanitized_html_content} }}`;
+                        childrenListHTML += `{{c${cloze_id}:: ${sanitizedChildHTML} }}`;
                     if(this.tags.includes("incremental")) cloze_id++;
                     if(cloze_id == 2) cloze_id++;
-                } else result += sanitized_html_content;
-                result += `</li>`;
+                } else childrenListHTML += sanitizedChildHTML;
+                childrenListHTML += `</li>`;
             }
-            result += `</ul>`;
-            return result;
+            childrenListHTML += `</ul>`;
+            return {html: childrenListHTML, assets: childrenListAssets};
         }
-        clozedContent += addChildrenToResult(this.children);
+        let childrenHTMLFile = await getChildrenListHTMLFile(this.children);
+        childrenHTMLFile.assets.forEach(asset => this.childrenAssets.add(asset));
+        clozedContent += childrenHTMLFile.html;
         
         return convertToHTMLFile(clozedContent, this.format);
-    }
-
-    private static async augmentChildrenArray(children: any): Promise<any> {
-        let output = await Promise.all(_.map(children, 
-            async child => {
-                let child_extra = _.get(child,"properties.extra");
-                let child_content = _.get(child,"content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
-                if(child_extra) {child_content += `\n<div class="extra">${child_extra}</div>`;}
-                let new_children = await this.augmentChildrenArray(_.get(child,"children") || []);
-                return _.assign(child, {htmlFile: await convertToHTMLFile(child_content, _.get(child,"format") || "markdown"), children: new_children})
-            })) || [];
-        return output;
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<MultilineCardNote[]> {
@@ -131,8 +132,7 @@ export class MultilineCardNote extends Note {
                         let tagPage = await SyncronizedLogseq.Editor.getPage(page.id);
                         return _.get(tagPage, 'name') 
                     }));
-                let children = await this.augmentChildrenArray(block.children);
-                return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, children);
+                return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, block.children);
             } else {
                return null;
             }
@@ -147,12 +147,6 @@ export class MultilineCardNote extends Note {
             return block.getCardDirection() == "<->" || block.getCardDirection() == "<-" || block.children.length > 0;
         });
         return blocks;
-    }
-
-    public async convertToHtmlFile(): Promise<HTMLFile> {
-        let {html, assets} = await convertToHTMLFile(this.content, this.format);
-        this.childrenAssets.forEach(asset => assets.add(asset));
-        return {html, assets};
     }
 
     public getDirectDeendencies(): BlockUUID[] {
