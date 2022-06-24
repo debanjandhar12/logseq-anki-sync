@@ -1,4 +1,4 @@
-import { BlockEntity, BlockIdentity, BlockUUID, EntityID, PageIdentity } from "@logseq/libs/dist/LSPlugin";
+import { BlockEntity, BlockIdentity, BlockUUID, EntityID, PageEntity, PageIdentity } from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
 import objectHash from "object-hash";
 /***
@@ -76,7 +76,7 @@ export namespace SyncronizedLogseq {
             return result;
         }
 
-        static async getPage(srcPage: PageIdentity | EntityID): Promise<PageIdentity | null> {
+        static async getPage(srcPage: PageIdentity | EntityID): Promise<PageEntity | null> {
             if (cache.has(objectHash({ operation: "getPage", parameters: { srcPage } })))
                 return cache.get(objectHash({ operation: "getPage", parameters: { srcPage } }));
             let page = null;
