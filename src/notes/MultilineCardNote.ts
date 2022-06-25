@@ -158,7 +158,6 @@ export class MultilineCardNote extends Note {
             }
             return result;
         }
-        console.log("getDirectDeendencies", [this.uuid,...getChildrenUUID(this.children)]);
         return [this.uuid,...getChildrenUUID(this.children)];
     }
 }

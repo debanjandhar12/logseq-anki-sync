@@ -167,7 +167,7 @@ export class LogseqToAnkiSync {
                         ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
                     });
                     // Update note
-                    console.log("Not skipping update of note", note.uuid, note.type);
+                    if(logseq.settings.syncDebug) console.log("Not skipping update of note", note.uuid);
                     ankiNoteManager.updateNote(ankiId, deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb, "Config": JSON.stringify({dependencyHash,assets:[...assets]}) }, tags);
                 } else { // Just update old assets
                     const graphPath = (await logseq.App.getCurrentGraph()).path;
