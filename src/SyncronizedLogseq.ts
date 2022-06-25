@@ -1,6 +1,7 @@
 import { BlockEntity, BlockIdentity, BlockUUID, EntityID, PageEntity, PageIdentity } from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
 import objectHash from "object-hash";
+import _ from "lodash";
 /***
  * Syncronization-safe logseq api wrapper for the Logseq plugin.
  * This is needed to fix #58
@@ -25,20 +26,37 @@ export namespace SyncronizedLogseq {
         static async getBlock(srcBlock: BlockIdentity | EntityID, opts?: Partial<{ includeChildren: boolean; }>): Promise<BlockEntity | null> {
             if (cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock, opts } })))
                 return cache.get(objectHash({ operation: "getBlock", parameters: { srcBlock, opts } }));
+            if (cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock, opts:_.extend({includeChildren:true},opts) } }))) // Return includeChildren one if available
+                return cache.get(objectHash({ operation: "getBlock", parameters: { srcBlock, opts:_.extend({includeChildren:true},opts) } }));
             let block = null;
             await getLogseqLock.acquireAsync();
             try {
                 block = await logseq.Editor.getBlock(srcBlock, opts);
-                if(block == null) {
-                    cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock , opts } }), block);
-                    return null;
+                cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock , opts } }), block);
+                let uuid : BlockUUID = null, dbid = null;
+                if(block) {
+                    uuid = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
+                    dbid = block.id || null;
                 }
-                let uuid : BlockUUID = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
-                let dbid = block.id || null;
-                if (uuid != null) 
+                if (block && uuid != null) 
                     cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts } }), block);
-                if (dbid != null)
+                if (block && dbid != null)
                     cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: dbid, opts } }), block);
+
+                if(block && opts && opts.includeChildren) {
+                    let stack = [...block.children];
+                    while (stack.length > 0) {
+                        let child = stack.pop();
+                        if (child == null) continue;
+                        let uuid : BlockUUID = child.uuid["$uuid$"] || child.uuid.Wd || child.uuid || null;
+                        let dbid = child.id || null;
+                        if (uuid != null) 
+                            cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts } }), child);
+                        if (dbid != null)
+                            cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: dbid, opts } }), child);
+                        stack.push(...child.children);
+                    }
+                }
             }
             catch (e) { console.error(e); }
             finally { getLogseqLock.release(); }
