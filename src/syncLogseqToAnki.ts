@@ -105,13 +105,14 @@ export class LogseqToAnkiSync {
         for (let note of toCreateNotes) {
             try {
                 let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
+                let dependencyHash = await note.getAllDependenciesHash([html, Array.from(assets), breadcrumb, extra]);;
                 // Add assets
                 const graphPath = (await logseq.App.getCurrentGraph()).path;
                 assets.forEach(asset => {
                     ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
                 });
                 // Create note
-                ankiNoteManager.addNote(deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb, "Config": JSON.stringify({dependencyHash:await note.getAllDependenciesHash(),assets:[...assets]}) }, tags);
+                ankiNoteManager.addNote(deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb, "Config": JSON.stringify({dependencyHash,assets:[...assets]}) }, tags);
             } catch (e) {
                 console.error(e); failedCreated.add(`${note.uuid}-${note.type}`);
             }
