@@ -7,6 +7,7 @@ import getContentDirectDependencies, { PageEntityName } from '../converter/getCo
 import { SyncronizedLogseq } from '../SyncronizedLogseq';
 import objectHash from "object-hash";
 import pkg from '../../package.json';
+import hashSum from 'hash-sum';
 
 export abstract class Note {
     public uuid: string;
@@ -83,7 +84,7 @@ export abstract class Note {
         }
         toHash.push({page:encodeURIComponent(_.get(this, 'page.originalName', '')), deck:encodeURIComponent(_.get(this, 'page.properties.deck', ''))});
         toHash.push({v:pkg.version});
-        return objectHash(toHash);
+        return hashSum(toHash); // hashSum is faster than objectHash but collisions rate is high (here, it suits our case of detecting changes)
     }
 
     // public static async abstract getBlocksFromLogseq(): Block[];

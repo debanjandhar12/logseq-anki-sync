@@ -22,6 +22,7 @@
   "dependencies": {
     "@logseq/libs": "0.0.6",
     "cheerio": "1.0.0-rc.11",
+    "hash-sum": "2.0.0",
     "highlight.js": "11.5.1",
     "lodash": "^4.17.21",
     "mldoc": "1.4.0",
