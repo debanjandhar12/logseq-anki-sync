@@ -49,26 +49,26 @@ export abstract class Note {
         return [this.uuid];
     }
 
-    public async getAllDependenciesHash(): Promise<string> {
-        let toHash = [];
+    public async getAllDependenciesHash(additionalDependencies = []): Promise<string> {
+        let toHash = [...additionalDependencies];
         let blockDependencies : Set<BlockUUID> | BlockUUID[] = new Set<BlockUUID>();
         let pageDependencies : Set<PageEntityName> | PageEntityName[] = new Set<PageEntityName>();
 
-        // BFS to get all dependencies
-        let queue : (BlockUUID | PageEntityName)[] = this.getDirectDeendencies();
+        // DFS to get all dependencies
+        let stack : (BlockUUID | PageEntityName)[] = this.getDirectDeendencies();
         let parentID = (await SyncronizedLogseq.Editor.getBlock(this.uuid)).parent.id;
         let parent;
         while ((parent = await SyncronizedLogseq.Editor.getBlock(parentID)) != null) {
-            queue.push(parent.uuid["$uuid$"] || parent.uuid.Wd || parent.uuid);
+            stack.push(parent.uuid["$uuid$"] || parent.uuid.Wd || parent.uuid);
             parentID = parent.parent.id;
         }
-        while (queue.length > 0) {
-            if(queue.at(-1) instanceof PageEntityName) {pageDependencies.add(queue.pop() as PageEntityName); continue;}
-            let uuid = queue.pop() as BlockUUID;
+        while (stack.length > 0) {
+            if(stack.at(-1) instanceof PageEntityName) {pageDependencies.add(stack.pop() as PageEntityName); continue;}
+            let uuid = stack.pop() as BlockUUID;
             if (blockDependencies.has(uuid)) continue;
             blockDependencies.add(uuid);
             let block = await SyncronizedLogseq.Editor.getBlock(uuid);
-            queue.push(...getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format','')));
+            stack.push(...getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format','')));
         }
         blockDependencies = _.sortBy(Array.from(blockDependencies));
         
