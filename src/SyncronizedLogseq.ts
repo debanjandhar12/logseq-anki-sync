@@ -130,22 +130,33 @@ export namespace SyncronizedLogseq {
         }
     }
     export class DB {
-        static async datascriptQuery<T = any>(query: string, ...inputs: Array<any>):  Promise<T> {
-            return logseq.DB.datascriptQuery(query, ...inputs);
+        static async datascriptQuery<T = any>(query: string, ...inputs: Array<any>): Promise<T> {
+            let result;
+            await getLogseqLock.acquireAsync();
+            try { result = await logseq.DB.datascriptQuery(query, ...inputs); }
+            catch (e) { console.error(e); }
+            finally { getLogseqLock.release(); }
+            return result;
         }
 
         static async datascriptQueryBlocks(query: string, ...inputs: Array<any>):  Promise<BlockEntity[]> {
-            let result = await logseq.DB.datascriptQuery(query, ...inputs);
-            for(let block of result) {
-                block = block[0];
-                if(block == null || block == undefined) continue;
-                let uuid : BlockUUID = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
-                let dbid = block.id || null;
-                if (uuid != null && !cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts: {} } })))
-                    cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts: {} } }), block);
-                if (dbid != null && !cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: dbid, opts: {} } })))
-                    cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: dbid, opts: {} } }), block);
-            }
+            let result = [];
+            await getLogseqLock.acquireAsync();
+            try { 
+                result = await logseq.DB.datascriptQuery(query, ...inputs);
+                for(let block of result) {
+                    block = block[0];
+                    if(block == null || block == undefined) continue;
+                    let uuid : BlockUUID = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
+                    let dbid = block.id || null;
+                    if (uuid != null && !cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts: {} } })))
+                        cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts: {} } }), block);
+                    if (dbid != null && !cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: dbid, opts: {} } })))
+                        cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: dbid, opts: {} } }), block);
+                }    
+             }
+            catch (e) { console.error(e); }
+            finally { getLogseqLock.release(); }
             return result;
         }
     }
