@@ -105,7 +105,7 @@ export class LogseqToAnkiSync {
         for (let note of toCreateNotes) {
             try {
                 let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
-                let dependencyHash = await note.getAllDependenciesHash([html, Array.from(assets), breadcrumb, tags, extra])
+                let dependencyHash = await note.getAllDependenciesHash([html, Array.from(assets), deck, breadcrumb, tags, extra])
                 // Add assets
                 const graphPath = (await logseq.App.getCurrentGraph()).path;
                 assets.forEach(asset => {
@@ -155,12 +155,12 @@ export class LogseqToAnkiSync {
                     try { return JSON.parse(configString); }
                     catch (e) { return {}; }
                 })(ankiNodeInfo.fields.Config.value);
-                let [oldHtml, oldAssets, oldBreadcrumb, oldTags, oldExtra] = [ankiNodeInfo.fields.Text.value, oldConfig.assets, ankiNodeInfo.fields.Breadcrumb.value, ankiNodeInfo.tags, ankiNodeInfo.fields.Extra.value];
-                let dependencyHash = await note.getAllDependenciesHash([oldHtml, oldAssets, oldBreadcrumb, oldTags, oldExtra]);
+                let [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra] = [ankiNodeInfo.fields.Text.value, oldConfig.assets, ankiNodeInfo.deck, ankiNodeInfo.fields.Breadcrumb.value, ankiNodeInfo.tags, ankiNodeInfo.fields.Extra.value];
+                let dependencyHash = await note.getAllDependenciesHash([oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra]);
                 if(oldConfig.dependencyHash != dependencyHash || logseq.settings.ignoreDependencyHash) { // Reparse Note + update assets + update
                     // Parse Note
                     let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
-                    dependencyHash = await note.getAllDependenciesHash([html, Array.from(assets), breadcrumb, tags, extra]);
+                    dependencyHash = await note.getAllDependenciesHash([html, Array.from(assets), deck, breadcrumb, tags, extra]);
                     // Add or update assets
                     const graphPath = (await logseq.App.getCurrentGraph()).path;
                     assets.forEach(asset => {
