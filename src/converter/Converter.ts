@@ -25,7 +25,10 @@ export interface HTMLFile {
     assets: Set<string>;
 }
 
+export let convertToHTMLFileCache = new Map<{content: string, format: string}, HTMLFile>();
+
 export async function convertToHTMLFile(content: string, format: string = "markdown"): Promise<HTMLFile> {
+    if(convertToHTMLFileCache.has({content, format})) return convertToHTMLFileCache.get({content, format});
     let resultContent = content, resultAssets = new Set<string>();
     if (logseq.settings.debug.includes("Converter.ts")) console.log("--Start Converting--\nOriginal:", resultContent);
 
@@ -128,6 +131,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     }
 
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
+    convertToHTMLFileCache.set({content, format}, {html: resultContent, assets: resultAssets});
     return {html: resultContent, assets: resultAssets};
 }
 
