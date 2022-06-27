@@ -1,18 +1,12 @@
 import { SettingSchemaDesc } from '@logseq/libs/dist/LSPlugin';
 export const addSettingsToLogseq = () => {
-    const settingsTemplate: SettingSchemaDesc[] = [{
-        key: "hideNativeFlashcard",
-        type: 'boolean',
-        default: false,
-        title: "Hide Logseq's Native Flashcards",
-        description: "Hide Logseq's native flashcards from the left sidebar.",
-    },
+    const settingsTemplate: SettingSchemaDesc[] = [
     {
         key: "breadcrumbDisplay",
         type: 'enum',
         default: "Show Page name and parent blocks context",
         title: "What to display in the breadcrumb?",
-        description: "Pick what to display in the breadcrumb. NB: Show Page name and parent blocks context might slightly increase syncing time.",
+        description: "Pick what to display in the breadcrumb.",
         enumChoices: ["Show Page name only", "Show Page name and parent blocks context"],
         enumPicker: "select"
     },
@@ -20,8 +14,8 @@ export const addSettingsToLogseq = () => {
         key: "includeParentContent",
         type: 'boolean',
         default: false,
-        title: "Include parent content in cards? (Experimental)",
-        description: "Include parent content in cards NB: This might increase syncing time as well as size of the cards.",
+        title: "Include parent content in cards? If enabled, the parent content will be included in the cards.",
+        description: "Include parent content in cards",
     },
     {
       key: "defaultDeck",
@@ -45,40 +39,21 @@ export const addSettingsToLogseq = () => {
         description: "Enable Cache for Logseq to HTML Conversion. NB: It is recomended to disable this option if cards are not getting updated properly.",
     },
     {
-        key: "syncDebug",
-        type: 'boolean',
-        default: false,
-        title: "Enable Sync Debugging?",
-        description: "This enables sync debugging mode. In sync debugging mode, the plugin will output more information to the console.",
+      key: "skipOnDependencyHashMatch",
+      type: 'boolean',
+      default: true,
+      title: "Enable skip rendering on DependecyHash match? (Experimental)",
+      description: "Enable skip rendering on DependecyHash match. NB: It is recomended to disable this option if cards are not getting updated properly.",
     },
     {
-        key: "converterDebug",
-        type: 'boolean',
-        default: false,
-        title: "Enable Converter Debugging?",
-        description: "This enables converter debugging mode. In converter debugging mode, the plugin will output more information to the console.",
-    }];
+      key: "debug",
+        type: "enum",
+        default: [],
+        title: "Enable debugging?",
+        enumChoices: ["syncLogseqToAnki.ts", "Converter.ts", "LazyAnkiNoteManager.ts"],
+        enumPicker: "checkbox",
+        description: "Select the files to enable debugging for.",
+    },
+  ];
     logseq.useSettingsSchema(settingsTemplate);
-
-    // Add some on settings change handling
-    logseq.onSettingsChanged(() => {
-        if(logseq.settings.hideNativeFlashcard) {
-          logseq.provideStyle({
-            key: 'logseq-anki-sync-hide-native-flashcard',
-            style: String.raw`
-            .flashcards-nav {
-              display: none;
-            }
-           `});
-        }
-        else {
-          logseq.provideStyle({
-            key: 'logseq-anki-sync-hide-native-flashcard',
-            style: String.raw`
-            .flashcards-nav {
-              display: block;
-            }
-           `});
-        }
-      }); 
 };

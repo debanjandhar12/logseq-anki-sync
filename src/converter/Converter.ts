@@ -27,11 +27,11 @@ export interface HTMLFile {
 
 export async function convertToHTMLFile(content: string, format: string = "markdown"): Promise<HTMLFile> {
     let resultContent = content, resultAssets = new Set<string>();
-    if (logseq.settings.converterDebug) console.log("--Start Converting--\nOriginal:", resultContent);
+    if (logseq.settings.debug.includes("Converter.ts")) console.log("--Start Converting--\nOriginal:", resultContent);
 
     ({html: resultContent, assets: resultAssets} = await processProperties({html:  resultContent, assets: resultAssets}, format));
     ({html: resultContent, assets: resultAssets} = await processEmbeds({html:  resultContent, assets: resultAssets}, format));
-    if (logseq.settings.converterDebug) console.log("After processing embeded:", resultContent);
+    if (logseq.settings.debug.includes("Converter.ts")) console.log("After processing embeded:", resultContent);
 
     if (format == "org") {
         mldocsOptions.format = "Org";
@@ -86,7 +86,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         hashmap[strBack] = "}}";
         return `${strFront}${g3}${strBack}`;
     });
-    if (logseq.settings.converterDebug) console.log("After replacing errorinous terms:", resultContent);
+    if (logseq.settings.debug.includes("Converter.ts")) console.log("After replacing errorinous terms:", resultContent);
 
     // Render the markdown
     resultContent = Mldoc.export("html", resultContent,
@@ -120,14 +120,14 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         $(elm).html(`\\[ ${math} \\]`);
     });
     resultContent = decodeHTMLEntities(decodeHTMLEntities($('#content ul li').html() || ""));
-    if (logseq.settings.converterDebug) console.log("After Mldoc.export:", resultContent);
+    if (logseq.settings.debug.includes("Converter.ts")) console.log("After Mldoc.export:", resultContent);
 
     // Bring back inline html content and clozes from hashmap
     for (let key in hashmap) {
         resultContent = safeReplace(resultContent, key, hashmap[key]);
     }
 
-    if (logseq.settings.converterDebug) console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
+    if (logseq.settings.debug.includes("Converter.ts")) console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
     return {html: resultContent, assets: resultAssets};
 }
 

@@ -46,7 +46,7 @@ export class LazyAnkiNoteManager {
             }
             this.noteInfoMap.set(note.noteId, { ...note, deck });
         }
-        if (logseq.settings.syncDebug) console.debug(this.noteInfoMap);
+        if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts")) console.debug(this.noteInfoMap);
     }
 
     addNote(deckName: string, modelName: string, fields, tags: string[]): void {
@@ -86,7 +86,7 @@ export class LazyAnkiNoteManager {
         let needsFieldUpdate = false;
         for (let key in fields) {
             if (noteinfo.fields[key].value != fields[key]) {
-                if (logseq.settings.syncDebug) console.log("Difference found:", key, noteinfo.fields[key].value, fields[key]);
+                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts")) console.log("Difference found:", key, noteinfo.fields[key].value, fields[key]);
                 needsFieldUpdate = true;
                 break;
             }
@@ -110,7 +110,7 @@ export class LazyAnkiNoteManager {
         let result = [];
         switch (operation) {
             case "addNotes":    // Returns [ankiIdUUIDPairs, resut of sub-operations] pair
-                if (logseq.settings.syncDebug) console.log(this.addNoteUuidTypeQueue2);
+                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts")) console.log(this.addNoteUuidTypeQueue2);
                 // Create notes with dummy content to avoid error
                 let result1 = await AnkiConnect.invoke("multi", { "actions": this.addNoteActionsQueue1 });
                 for (let i = 0; i < result1.length; i++) {
@@ -151,7 +151,7 @@ export class LazyAnkiNoteManager {
                 this.addNoteUuidTypeQueue2 = [];
                 break;
             case "updateNotes": // Returns resut of sub-operations
-                if (logseq.settings.syncDebug) console.log(this.updateNoteUuidTypeQueue);
+                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts")) console.log(this.updateNoteUuidTypeQueue);
                 result = await AnkiConnect.invoke("multi", { "actions": this.updateNoteActionsQueue });
                 for (let i = 0; i < result.length; i++) {
                     if (result[i] == null) result[i] = {};
@@ -161,7 +161,7 @@ export class LazyAnkiNoteManager {
                 this.updateNoteUuidTypeQueue = [];
                 break;
             case "deleteNotes": // Returns resut of sub-operations
-                if (logseq.settings.syncDebug) console.log(this.deleteNoteAnkiIdQueue);
+                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts")) console.log(this.deleteNoteAnkiIdQueue);
                 result = await AnkiConnect.invoke("multi", { "actions": this.deleteNoteActionsQueue });
                 for (let i = 0; i < result.length; i++) {
                     if (result[i] == null) result[i] = {};

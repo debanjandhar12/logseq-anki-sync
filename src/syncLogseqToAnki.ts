@@ -157,7 +157,7 @@ export class LogseqToAnkiSync {
                 })(ankiNodeInfo.fields.Config.value);
                 let [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra] = [ankiNodeInfo.fields.Text.value, oldConfig.assets, ankiNodeInfo.deck, ankiNodeInfo.fields.Breadcrumb.value, ankiNodeInfo.tags, ankiNodeInfo.fields.Extra.value];
                 let dependencyHash = await note.getAllDependenciesHash([oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra]);
-                if(oldConfig.dependencyHash != dependencyHash || logseq.settings.ignoreDependencyHash) { // Reparse Note + update assets + update
+                if(logseq.settings.skipOnDependencyHashMatch && oldConfig.dependencyHash != dependencyHash) { // Reparse Note + update assets + update
                     // Parse Note
                     let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
                     dependencyHash = await note.getAllDependenciesHash([html, Array.from(assets), deck, breadcrumb, tags, extra]);
@@ -167,7 +167,7 @@ export class LogseqToAnkiSync {
                         ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
                     });
                     // Update note
-                    if(logseq.settings.syncDebug) console.log("Not skipping update of note", note.uuid);
+                    if(logseq.settings.debug.includes("syncLogseqToAnki.ts")) console.log(`dependencyHash mismatch for note with id ${note.uuid}-${note.type}`);
                     ankiNoteManager.updateNote(ankiId, deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb, "Config": JSON.stringify({dependencyHash,assets:[...assets]}) }, tags);
                 } else { // Just update old assets
                     const graphPath = (await logseq.App.getCurrentGraph()).path;
