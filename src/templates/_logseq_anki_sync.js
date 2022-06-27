@@ -12,6 +12,8 @@ function openBlockInLogseq(uuid) {
     if(uuid == null || uuid == "") return;
     let element = document.getElementsByClassName("breadcrumb2")[0];
     // javascript get first child link element
-    let link = element.getElementsByTagName("a")[0];
-    window.open(`${link.href.match(/logseq:\/\/graph\/.*\?/)}block-id=${uuid}`, '_blank')
+    let page_link = element.getElementsByTagName("a")[0];
+    let block_link = document.createElement("a");
+    block_link.href = `${page_link.href.match(/logseq:\/\/graph\/.*\?/)}block-id=${uuid}`
+    block_link.click()
 }
