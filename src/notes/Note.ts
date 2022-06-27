@@ -5,7 +5,6 @@ import { HTMLFile } from '../converter/Converter';
 import { BlockUUID } from '@logseq/libs/dist/LSPlugin.user';
 import getContentDirectDependencies, { PageEntityName } from '../converter/getContentDirectDependencies';
 import { SyncronizedLogseq } from '../SyncronizedLogseq';
-import objectHash from "object-hash";
 import pkg from '../../package.json';
 import hashSum from 'hash-sum';
 

@@ -1,5 +1,5 @@
 import * as AnkiConnect from './anki-connect/AnkiConnect';
-import { get_better_error_msg, confirm } from './utils';
+import { get_better_error_msg } from './utils';
 
 export async function previewBlockNotesInAnki(...a) {
     console.log(a);

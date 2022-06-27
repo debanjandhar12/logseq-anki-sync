@@ -1,4 +1,4 @@
-import { BlockPageName, BlockUUID, PageEntity } from "@logseq/libs/dist/LSPlugin";
+import { BlockUUID } from "@logseq/libs/dist/LSPlugin";
 import { LOGSEQ_BLOCK_REF_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP } from "../constants";
 
 export default function getContentDirectDependencies(content: string, format: string = "markdown"): (BlockUUID | PageEntityName)[] {
