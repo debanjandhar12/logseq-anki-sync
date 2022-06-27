@@ -9,7 +9,7 @@ import _ from 'lodash';
 import { get_better_error_msg, confirm } from './utils';
 import path from 'path';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
-import { convertToHTMLFile } from './converter/CachedConverter';
+import { convertToHTMLFile } from './converter/Converter';
 import { SyncronizedLogseq } from './SyncronizedLogseq';
 import pkg from '../package.json';
 import { BlockIdentity, BlockUUID, EntityID } from '@logseq/libs/dist/LSPlugin.user';

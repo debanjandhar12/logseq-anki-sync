@@ -1,7 +1,7 @@
 import '@logseq/libs'
 import { LazyAnkiNoteManager } from '../anki-connect/LazyAnkiNoteManager';
 import _ from 'lodash';
-import { convertToHTMLFile, HTMLFile } from '../converter/CachedConverter';
+import { HTMLFile } from '../converter/Converter';
 import { BlockUUID } from '@logseq/libs/dist/LSPlugin.user';
 import getContentDirectDependencies, { PageEntityName } from '../converter/getContentDirectDependencies';
 import { SyncronizedLogseq } from '../SyncronizedLogseq';

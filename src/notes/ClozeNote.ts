@@ -5,7 +5,7 @@ import _ from 'lodash';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import { SyncronizedLogseq } from "../SyncronizedLogseq";
 import { HTMLFile } from "../converter/Converter";
-import { convertToHTMLFile } from "../converter/CachedConverter";
+import { convertToHTMLFile } from "../converter/Converter";
 
 export class ClozeNote extends Note {
     public type: string = "cloze";

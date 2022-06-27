@@ -32,13 +32,6 @@ export const addSettingsToLogseq = () => {
         description: "Shows a 'Preview notes from block in Anki' Context Menu",
     },
     {
-        key: "useCacheForConversion",
-        type: 'boolean',
-        default: true,
-        title: "Enable Cache for Logseq to HTML Conversion? (Experimental)",
-        description: "Enable Cache for Logseq to HTML Conversion. NB: It is recomended to disable this option if cards are not getting updated properly.",
-    },
-    {
       key: "skipOnDependencyHashMatch",
       type: 'boolean',
       default: true,
