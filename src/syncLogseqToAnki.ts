@@ -14,7 +14,7 @@ import { SyncronizedLogseq } from './SyncronizedLogseq';
 import pkg from '../package.json';
 import { BlockIdentity, BlockUUID, EntityID } from '@logseq/libs/dist/LSPlugin.user';
 import objectHash from "object-hash";
-import getContentDirectDependencies from './converter/getContentDirectDependencies';
+import getContentDirectDependencies, { PageEntityName } from './converter/getContentDirectDependencies';
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -80,6 +80,7 @@ export class LogseqToAnkiSync {
         
         // -- Sync --
         let start_time = performance.now();
+        await this.cacheDependencies(notes);
         await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager);
         await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager);
         await this.deleteNotes(toDeleteNotes, ankiNoteManager, failedDeleted);
@@ -279,5 +280,58 @@ export class LogseqToAnkiSync {
         if (Array.isArray(extra)) extra = extra.join(" ");
 
         return [html, assets, deck, breadcrumb, tags, extra];
+    }
+
+    private async cacheDependencies(notes: Note[]) : Promise<void> {
+        let toCacheQueue : (BlockIdentity|number)[] = [...(notes.map(note => note.getDirectDeendencies()).flat())]
+        let toParentCacheQueue : (BlockIdentity|EntityID)[] = [...notes.map(note => note.uuid)];
+        let batchedFetchBlockIds : Set<BlockIdentity|EntityID> = new Set();
+        let toGetDependenciesQueue = [];
+        // Iteratively cache parents. Dont deal with dependencies yet.
+        while(toParentCacheQueue.length > 0) {
+            while (toParentCacheQueue.length > 0 && batchedFetchBlockIds.size < 1000) {
+                let blockId = toParentCacheQueue.pop();
+                if(SyncronizedLogseq.Cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: blockId, opts: {} } }))) {
+                    let block = await SyncronizedLogseq.Editor.getBlock(blockId);
+                    if(block != null) toCacheQueue.push(block.parent.id);
+                } else batchedFetchBlockIds.add(blockId);
+            }
+            toParentCacheQueue.push(...Array.from(batchedFetchBlockIds));
+            if(batchedFetchBlockIds.size > 0) {
+                console.log(batchedFetchBlockIds);
+                await SyncronizedLogseq.Editor.getBlocks(Array.from(batchedFetchBlockIds));
+                batchedFetchBlockIds.clear();
+            }
+        }
+        
+        // Iteratively cache everything (notes+parents+dependencies)
+        let completed = new Set<(BlockIdentity|number)>();
+        while(toCacheQueue.length > 0 || toGetDependenciesQueue.length > 0) {
+            while (toCacheQueue.length > 0 && batchedFetchBlockIds.size < 1000) {
+                let blockId = toCacheQueue.pop();
+                if(completed.has(blockId)) continue;
+                toGetDependenciesQueue.push(blockId);
+                if(SyncronizedLogseq.Cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: blockId, opts: {} } }))) {
+                    continue;
+                }
+                batchedFetchBlockIds.add(blockId);
+            }
+            if(batchedFetchBlockIds.size > 0) {
+                console.log(batchedFetchBlockIds);
+                await SyncronizedLogseq.Editor.getBlocks(Array.from(batchedFetchBlockIds));
+                batchedFetchBlockIds.clear();
+            }
+            while(toGetDependenciesQueue.length > 0) {
+                let blockId = toGetDependenciesQueue.pop();
+                if(completed.has(blockId)) continue;
+                let block = await SyncronizedLogseq.Editor.getBlock(blockId);
+                if(block != null) {
+                    let blockDependencies = getContentDirectDependencies(block.content);
+                    // getContentDirectDependencies returns an array of blockIds.
+                    toCacheQueue.push(...(blockDependencies.filter(dep => dep instanceof PageEntityName) as BlockIdentity[]));
+                }
+                completed.add(blockId);
+            }
+        }
     }
 }
