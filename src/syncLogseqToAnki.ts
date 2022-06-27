@@ -12,9 +12,6 @@ import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile } from './converter/Converter';
 import { SyncronizedLogseq } from './SyncronizedLogseq';
 import pkg from '../package.json';
-import { BlockIdentity, BlockUUID, EntityID } from '@logseq/libs/dist/LSPlugin.user';
-import objectHash from "object-hash";
-import getContentDirectDependencies from './converter/getContentDirectDependencies';
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -157,7 +154,7 @@ export class LogseqToAnkiSync {
                 })(ankiNodeInfo.fields.Config.value);
                 let [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra] = [ankiNodeInfo.fields.Text.value, oldConfig.assets, ankiNodeInfo.deck, ankiNodeInfo.fields.Breadcrumb.value, ankiNodeInfo.tags, ankiNodeInfo.fields.Extra.value];
                 let dependencyHash = await note.getAllDependenciesHash([oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra]);
-                if(logseq.settings.skipOnDependencyHashMatch && oldConfig.dependencyHash != dependencyHash) { // Reparse Note + update assets + update
+                if(logseq.settings.skipOnDependencyHashMatch != true || oldConfig.dependencyHash != dependencyHash) { // Reparse Note + update assets + update
                     // Parse Note
                     let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
                     dependencyHash = await note.getAllDependenciesHash([html, Array.from(assets), deck, breadcrumb, tags, extra]);
