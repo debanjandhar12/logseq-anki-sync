@@ -35,7 +35,7 @@ export const addSettingsToLogseq = () => {
       key: "skipOnDependencyHashMatch",
       type: 'boolean',
       default: true,
-      title: "Enable skip rendering on DependecyHash match? (Experimental)",
+      title: "Enable skip rendering on DependecyHash match for improved syncing speed? (Experimental)",
       description: "Enable skip rendering on DependecyHash match. NB: It is recomended to disable this option if cards are not getting updated properly.",
     },
     {
