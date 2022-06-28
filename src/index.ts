@@ -32,7 +32,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     }
   `);
   logseq.App.registerUIItem('toolbar', {
-    key: `logseq-anki-sync-${baseInfo.id}`,
+    key: `logseq-anki-sync${baseInfo.id == "logseq-anki-sync"? "" : "-"+baseInfo.id}`,
     template: String.raw`
       <a title="Start Logseq to Anki Sync" data-on-click="syncLogseqToAnki" class="button logseq-anki-toolbar-item-${baseInfo.id}">
         <i class="ti">${ANKI_ICON}</i>
