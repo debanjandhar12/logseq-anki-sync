@@ -11,7 +11,6 @@ export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
     public children: any[];
     public tags: any[];
-    private childrenAssets: Set<string> = new Set();
     public constructor(uuid: string, content: string, format: string, properties: any, page: any, tags: any = [], children: any = []) {
         super(uuid, content, format, properties, page);
         this.children = children;
@@ -55,27 +54,24 @@ export class MultilineCardNote extends Note {
     }
 
     public async getClozedContentHTML(): Promise<HTMLFile> {
-        let clozedContent = this.content;
+        let clozedContent = "";
         let clozedContentAssets: Set<string> = new Set();
         let direction = this.getCardDirection();
 
         // Remove clozes and double braces one after another. Also, remove properties.
-        clozedContent = clozedContent.replace(ANKI_CLOZE_REGEXP, "$3");
-        clozedContent = clozedContent.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ");
-        clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, "");        
+        this.content = this.content.replace(ANKI_CLOZE_REGEXP, "$3");
+        this.content = this.content.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ");
+        this.content = safeReplace(this.content, MD_PROPERTIES_REGEXP, "");        
 
-        // Render the parent block
-        let parentBlockHTMLFile = await convertToHTMLFile(clozedContent, this.format);
-        clozedContent = parentBlockHTMLFile.html;
+        // Render the parent block and add to clozedContent
+        let parentBlockHTMLFile = await convertToHTMLFile(this.content, this.format);
         parentBlockHTMLFile.assets.forEach(asset => clozedContentAssets.add(asset));
-
-        // Add cloze to the parent block if direction is <-> or <-
-        if (direction == "<->" || direction == "<-")
-            clozedContent = `{{c2::${clozedContent}}}`;
+        if (direction == "<->" || direction == "<-") // Insert cloze braces depending upon direction else simply add parent block html to clozedContent
+            clozedContent = `{{c2::${parentBlockHTMLFile.html}}}`;
+        else clozedContent = parentBlockHTMLFile.html;
 
         // Add the content of children blocks and cloze it if direction is <-> or ->
         let cloze_id = 1;
-        
         let maxDepth = this.getChildrenMaxDepth();
         let getChildrenListHTMLFile = async (childrenList: any, level: number = 0) : Promise<HTMLFile> => {
             if (level >= maxDepth) return {html: "", assets: new Set<string>()};
