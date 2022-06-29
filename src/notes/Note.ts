@@ -82,6 +82,7 @@ export abstract class Note {
             toHash.push({content:_.get(page, 'updatedAt','')});
         }
         toHash.push({page:encodeURIComponent(_.get(this, 'page.originalName', '')), deck:encodeURIComponent(_.get(this, 'page.properties.deck', ''))});
+        toHash.push({defaultDeck:logseq.settings.defaultDeck, includeParentContent: logseq.settings.includeParentContent, breadcrumbDisplay: logseq.settings.breadcrumbDisplay});
         toHash.push({v:pkg.version});
         return hashSum(toHash); // hashSum is faster than objectHash but collisions rate is high (here, it suits our case of detecting changes)
     }
