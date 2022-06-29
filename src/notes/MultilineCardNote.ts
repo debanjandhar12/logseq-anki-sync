@@ -56,16 +56,22 @@ export class MultilineCardNote extends Note {
 
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let clozedContent = this.content;
+        let clozedContentAssets: Set<string> = new Set();
         let direction = this.getCardDirection();
 
-        // Remove clozes and double braces one after another
+        // Remove clozes and double braces one after another. Also, remove properties.
         clozedContent = clozedContent.replace(ANKI_CLOZE_REGEXP, "$3");
         clozedContent = clozedContent.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ");
-        
+        clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, "");        
+
+        // Render the parent block
+        let parentBlockHTMLFile = await convertToHTMLFile(clozedContent, this.format);
+        clozedContent = parentBlockHTMLFile.html;
+        parentBlockHTMLFile.assets.forEach(asset => clozedContentAssets.add(asset));
+
         // Add cloze to the parent block if direction is <-> or <-
-        clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, "");
         if (direction == "<->" || direction == "<-")
-            clozedContent = `{{c2:: ${clozedContent} }}`;
+            clozedContent = `{{c2::${clozedContent}}}`;
 
         // Add the content of children blocks and cloze it if direction is <-> or ->
         let cloze_id = 1;
@@ -102,10 +108,10 @@ export class MultilineCardNote extends Note {
             return {html: childrenListHTML, assets: childrenListAssets};
         }
         let childrenHTMLFile = await getChildrenListHTMLFile(this.children);
-        childrenHTMLFile.assets.forEach(asset => this.childrenAssets.add(asset));
+        childrenHTMLFile.assets.forEach(asset => clozedContentAssets.add(asset));
         clozedContent += childrenHTMLFile.html;
         
-        return convertToHTMLFile(clozedContent, this.format);
+        return {html: clozedContent, assets: clozedContentAssets};
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<MultilineCardNote[]> {

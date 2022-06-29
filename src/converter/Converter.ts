@@ -81,7 +81,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
             g3 = `${g3}\n`;
         }
 
-        // fix: if there is a newline before cloze, we need to add new line after hash charecters
+        // fix: if there is a newline before cloze, we need to add new line after hash charecters of math block and org blocks
         let charecter_before_match = resultContent.substring(resultContent.indexOf(match) - 1, resultContent.indexOf(match));
         if ((charecter_before_match == "\n" || charecter_before_match == "") && (g3.match(/^\s*?\$\$/g) || g3.match(/^\s*?#\+/g)))
             g3 = `\n${g3}`;
