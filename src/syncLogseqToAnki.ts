@@ -241,7 +241,7 @@ export class LogseqToAnkiSync {
         }
 
         // Parse deck using logic described at https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F
-        let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || logseq.settings.defaultDeck || "Default";
+        let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || (_.get(note, 'page.properties.title', '') || _.get(note, 'page.originalName', '')).split("/").slice(0, -1).join("/") || logseq.settings.defaultDeck || "Default";
         try {
             let parentID = note.uuid;
             let parent;
@@ -257,8 +257,7 @@ export class LogseqToAnkiSync {
         }
         if (typeof deck != "string") deck = deck[0];
         deck = deck.replace(/\//g, "::");
-        if(deck == "Default" && _.get(note, 'page.properties.title') != null && _.get(note, 'page.properties.title').includes("/")) deck = _.get(note, 'page.properties.title').split("/").slice(0, -1).join("::");
-        
+
         // Parse breadcrumb
         let breadcrumb = `<a href="logseq://graph/${encodeURIComponent(this.graphName)}?page=${encodeURIComponent(note.page.originalName)}" title="${note.page.originalName}">${note.page.originalName}</a>`;
         if(logseq.settings.breadcrumbDisplay == "Show Page name and parent blocks context") {
