@@ -4,7 +4,7 @@ import * as cheerio from 'cheerio';
 import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils';
 import _ from 'lodash';
 import { Mldoc } from 'mldoc';
-import { ANKI_CLOZE_REGEXP, LOGSEQ_BLOCK_REF_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP, LOGSEQ_PAGE_REF_REGEXP, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, MD_MATH_BLOCK_REGEXP, MD_PROPERTIES_REGEXP, ORG_MATH_BLOCK_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
+import { ANKI_CLOZE_REGEXP, LOGSEQ_BLOCK_REF_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_PAGE_REF_REGEXP, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, MD_MATH_BLOCK_REGEXP, MD_PROPERTIES_REGEXP, ORG_MATH_BLOCK_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import { SyncronizedLogseq } from "../SyncronizedLogseq";
 
 let mldocsOptions = {
@@ -145,7 +145,7 @@ async function processProperties(htmlFile: HTMLFile, format: string = "markdown"
 async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): Promise<HTMLFile> {
     let resultContent = htmlFile.html, resultAssets = htmlFile.assets;
 
-    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_PAGE_REGEXP, async (match, g1) => {  // Convert block embed
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_BLOCK_REGEXP, async (match, g1) => {  // Convert block embed
         let block_content = "";
         try { let block = await SyncronizedLogseq.Editor.getBlock(g1); block_content = _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
         return `<div class="embed-block">
@@ -161,7 +161,7 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
                 </div>`;
     });
 
-    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_BLOCK_REGEXP, async (match, pageName) => { // Convert page embed
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_PAGE_REGEXP, async (match, pageName) => { // Convert page embed
         let pageTree = [];
         let getPageContentHTML = async (children: any, level: number = 0) : Promise<string> => {
             if (level >= 100) return "";
