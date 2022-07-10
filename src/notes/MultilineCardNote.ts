@@ -6,6 +6,7 @@ import { safeReplace } from '../utils';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
 import { SyncronizedLogseq } from "../SyncronizedLogseq";
 import { BlockUUID } from "@logseq/libs/dist/LSPlugin.user";
+import { ReferenceDependency } from "../converter/getContentDirectDependencies";
 
 export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
@@ -151,7 +152,7 @@ export class MultilineCardNote extends Note {
         return blocks;
     }
 
-    public getDirectDeendencies(): BlockUUID[] {
+    public getDirectDeendencies(): ReferenceDependency[] {
         function getChildrenUUID(children: any): BlockUUID[] {
             let result = [];
             for (let child of children) {
@@ -160,6 +161,6 @@ export class MultilineCardNote extends Note {
             }
             return result;
         }
-        return [this.uuid,...getChildrenUUID(this.children)];
+        return [this.uuid,...getChildrenUUID(this.children)].map(block => ({ type: "Embedded_Block_ref", value: block } as ReferenceDependency));
     }
 }

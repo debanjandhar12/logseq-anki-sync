@@ -1,12 +1,13 @@
 import '@logseq/libs'
 import { LazyAnkiNoteManager } from '../anki-connect/LazyAnkiNoteManager';
-import _ from 'lodash';
+import _, { replace } from 'lodash';
 import { HTMLFile } from '../converter/Converter';
 import { BlockUUID } from '@logseq/libs/dist/LSPlugin.user';
-import getContentDirectDependencies, { PageEntityName } from '../converter/getContentDirectDependencies';
+import getContentDirectDependencies, { PageEntityName, ReferenceDependency } from '../converter/getContentDirectDependencies';
 import { SyncronizedLogseq } from '../SyncronizedLogseq';
 import pkg from '../../package.json';
 import hashSum from 'hash-sum';
+import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from '../constants';
 
 export abstract class Note {
     public uuid: string;
@@ -45,17 +46,18 @@ export abstract class Note {
         return this.ankiId;
     }
 
-    public getDirectDeendencies(): BlockUUID[] {
-        return [this.uuid];
+    public getDirectDeendencies(): ReferenceDependency[] {
+        return [this.uuid].map(block => ({ type: "Embedded_Block_ref", value: block } as ReferenceDependency));
     }
 
     public async getAllDependenciesHash(additionalDependencies = []): Promise<string> {
         let toHash = [...additionalDependencies];
-        let blockDependencies : Set<BlockUUID> | BlockUUID[] = new Set<BlockUUID>();
-        let pageDependencies : Set<PageEntityName> | PageEntityName[] = new Set<PageEntityName>();
+        let blockRefDependencies : Set<BlockUUID> = new Set<BlockUUID>();
+        let blockEmbededDependencies : Set<BlockUUID> = new Set<BlockUUID>();
+        let pageEmbededDependencies : Set<PageEntityName> = new Set<PageEntityName>();
 
         // DFS to get all dependencies
-        let stack : (BlockUUID | PageEntityName)[] = this.getDirectDeendencies();
+        let stack : ReferenceDependency[] = this.getDirectDeendencies();
         let parentID = (await SyncronizedLogseq.Editor.getBlock(this.uuid)).parent.id;
         let parent;
         while ((parent = await SyncronizedLogseq.Editor.getBlock(parentID)) != null) {
@@ -63,21 +65,41 @@ export abstract class Note {
             parentID = parent.parent.id;
         }
         while (stack.length > 0) {
-            if(stack.at(-1) instanceof PageEntityName) {pageDependencies.add(stack.pop() as PageEntityName); continue;}
-            let uuid = stack.pop() as BlockUUID;
-            if (blockDependencies.has(uuid)) continue;
-            blockDependencies.add(uuid);
-            let block = await SyncronizedLogseq.Editor.getBlock(uuid);
-            stack.push(...getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format','')));
+            let dependency = stack.pop();
+            if(dependency.type == "Embedded_Block_ref") {
+                if(blockEmbededDependencies.has(dependency.value as BlockUUID)) continue;
+                blockEmbededDependencies.add(dependency.value as BlockUUID);
+                let block = await SyncronizedLogseq.Editor.getBlock(dependency.value as BlockUUID);
+                stack.push(...getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format','')));
+            }
+            else if(dependency.type == "Block_ref") {
+                if(blockEmbededDependencies.has(dependency.value as BlockUUID) || blockRefDependencies.has(dependency.value as BlockUUID)) continue;
+                blockRefDependencies.add(dependency.value as BlockUUID);
+                let block = await SyncronizedLogseq.Editor.getBlock(dependency.value as BlockUUID);
+                let block_content = _.get(block, 'content','');
+                block_content = replace(block_content, MD_PROPERTIES_REGEXP, "");
+                block_content = replace(block_content, ORG_PROPERTIES_REGEXP, "");
+                let block_content_first_line = block_content.split("\n").find(line => line.trim() != "");
+                stack.push(...getContentDirectDependencies(block_content_first_line, _.get(block, 'format','')));
+            }
+            else if(dependency.type == "Embedded_Page_ref") {
+                pageEmbededDependencies.add(dependency.value as PageEntityName);
+            }
         }
-        blockDependencies = _.sortBy(Array.from(blockDependencies));
-        
-        for (let uuid of blockDependencies) {
+        for (let uuid of blockEmbededDependencies) {
             let block = await SyncronizedLogseq.Editor.getBlock(uuid);
             toHash.push({content:_.get(block, 'content',''), format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
         }
-        pageDependencies = _.sortBy(Array.from(pageDependencies));
-        for (let PageEntityName of pageDependencies) {
+        for (let uuid of blockRefDependencies) {
+            if(blockEmbededDependencies.has(uuid)) continue;
+            let block = await SyncronizedLogseq.Editor.getBlock(uuid);
+            let block_content = _.get(block, 'content','');
+            block_content = replace(block_content, MD_PROPERTIES_REGEXP, "");
+            block_content = replace(block_content, ORG_PROPERTIES_REGEXP, "");
+            let block_content_first_line = block_content.split("\n").find(line => line.trim() != "");
+            toHash.push({content:block_content_first_line, format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
+        }
+        for (let PageEntityName of pageEmbededDependencies) {
             let page = await SyncronizedLogseq.Editor.getPage(PageEntityName.name);
             toHash.push({content:_.get(page, 'updatedAt','')});
         }
