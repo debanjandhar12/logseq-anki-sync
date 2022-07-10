@@ -12,9 +12,10 @@ export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
     public children: any[];
     public tags: any[];
-    public constructor(uuid: string, content: string, format: string, properties: any, page: any, children: any = []) {
+    public constructor(uuid: string, content: string, format: string, properties: any, page: any, tags: any = [], children: any = []) {
         super(uuid, content, format, properties, page);
         this.children = children;
+        this.tags = tags;
     }
 
     public static initLogseqOperations = (() => { // Init logseq operations at start of the program
@@ -65,6 +66,27 @@ export class MultilineCardNote extends Note {
             }
         }
         return maxDepth;
+    }
+
+    private static async getImportantTags(tagIds: any[]): Promise<string[]> {
+        let tags = [], tagIdSet = new Set(tagIds);
+        let tagPage;
+        tagPage = await LogseqProxy.Editor.getPage("forward");
+        if (tagPage && tagPage.id && tagIdSet.has(tagPage.id)) tags.push("forward");
+        tagPage = await LogseqProxy.Editor.getPage("reversed");
+        if (tagPage && tagPage.id && tagIdSet.has(tagPage.id)) tags.push("reversed");
+        tagPage = await LogseqProxy.Editor.getPage("bidirectional");
+        if (tagPage && tagPage.id && tagIdSet.has(tagPage.id)) tags.push("bidirectional");
+        tagPage = await LogseqProxy.Editor.getPage("incremental");
+        if (tagPage && tagPage.id && tagIdSet.has(tagPage.id)) tags.push("incremental");
+        for (let i = 0; i < 10; i++) {
+            tagPage = await LogseqProxy.Editor.getPage("depth-" + i);
+            if (tagPage && tagPage.id && tagIdSet.has(tagPage.id)) {
+                tags.push("depth-" + i);
+                break;
+            }
+        }
+        return tags;
     }
 
     public async getClozedContentHTML(): Promise<HTMLFile> {
@@ -149,7 +171,8 @@ export class MultilineCardNote extends Note {
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = await LogseqProxy.Editor.getBlock(uuid, { includeChildren: true });
             if (block) {
-                return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, block.children);
+                let tags = await MultilineCardNote.getImportantTags(block.refs.map(ref => ref.id));
+                return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, block.children);
             } else {
                return null;
             }
@@ -161,7 +184,7 @@ export class MultilineCardNote extends Note {
             return _.get(block, 'properties.template') == null || _.get(block, 'properties.template') == undefined;
         });
         blocks = _.filter(blocks, (block) => { // Remove cards that do not have children
-            return block.children.length > 0;
+            return block.getCardDirection() == "<->" || block.getCardDirection() == "<-" || block.children.length > 0;
         });
         return blocks;
     }
