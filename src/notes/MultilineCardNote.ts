@@ -31,6 +31,20 @@ export class MultilineCardNote extends Note {
             ["editor/input", `#card #bidirectional`],
             ["editor/clear-current-slash"],
         ]);
+        logseq.provideStyle(`
+            .page-reference[data-ref=forward], a[data-ref=forward] {
+                opacity: .3;
+            }
+            .page-reference[data-ref=reversed], a[data-ref=reversed] {
+                opacity: .3;
+            }
+            .page-reference[data-ref=bidirectional], a[data-ref=bidirectional] {
+                opacity: .3;
+            }
+            .page-reference[data-ref^=depth-], a[data-ref^=depth-] {
+                opacity: .3;
+            }
+        `);
     });
 
     private getCardDirection(): String {
