@@ -12,10 +12,9 @@ export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
     public children: any[];
     public tags: any[];
-    public constructor(uuid: string, content: string, format: string, properties: any, page: any, tags: any = [], children: any = []) {
+    public constructor(uuid: string, content: string, format: string, properties: any, page: any, children: any = []) {
         super(uuid, content, format, properties, page);
         this.children = children;
-        this.tags = tags;
     }
 
     public static initLogseqOperations = (() => { // Init logseq operations at start of the program
@@ -71,6 +70,11 @@ export class MultilineCardNote extends Note {
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let clozedContent = "";
         let clozedContentAssets: Set<string> = new Set();
+        if(this.tags == null)
+            this.tags = await Promise.all(_.map((await LogseqProxy.Editor.getBlock(this.uuid)).refs, async page => {
+                let tagPage = await LogseqProxy.Editor.getPage(page.id);
+                return _.get(tagPage, 'name') 
+            }));
         let direction = this.getCardDirection();
 
         // Remove clozes and double braces one after another. Also, remove properties.
@@ -145,11 +149,7 @@ export class MultilineCardNote extends Note {
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = await LogseqProxy.Editor.getBlock(uuid, { includeChildren: true });
             if (block) {
-                let tags = await Promise.all(_.map(block.refs, async page => {
-                        let tagPage = await LogseqProxy.Editor.getPage(page.id);
-                        return _.get(tagPage, 'name') 
-                    }));
-                return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, block.children);
+                return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, block.children);
             } else {
                return null;
             }
@@ -160,8 +160,8 @@ export class MultilineCardNote extends Note {
         blocks = _.filter(blocks, (block) => { // Remove template cards
             return _.get(block, 'properties.template') == null || _.get(block, 'properties.template') == undefined;
         });
-        blocks = _.filter(blocks, (block) => { // Remove cards that do not have children and are not reversed or bidirectional
-            return block.getCardDirection() == "<->" || block.getCardDirection() == "<-" || block.children.length > 0;
+        blocks = _.filter(blocks, (block) => { // Remove cards that do not have children
+            return block.children.length > 0;
         });
         return blocks;
     }
