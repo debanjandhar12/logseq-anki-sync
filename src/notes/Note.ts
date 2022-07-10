@@ -4,7 +4,7 @@ import _, { replace } from 'lodash';
 import { HTMLFile } from '../converter/Converter';
 import { BlockUUID } from '@logseq/libs/dist/LSPlugin.user';
 import getContentDirectDependencies, { PageEntityName, ReferenceDependency } from '../converter/getContentDirectDependencies';
-import { SyncronizedLogseq } from '../SyncronizedLogseq';
+import { LogseqProxy } from '../LogseqProxy';
 import pkg from '../../package.json';
 import hashSum from 'hash-sum';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from '../constants';
@@ -58,9 +58,9 @@ export abstract class Note {
 
         // DFS to get all dependencies
         let stack : ReferenceDependency[] = this.getDirectDeendencies();
-        let parentID = (await SyncronizedLogseq.Editor.getBlock(this.uuid)).parent.id;
+        let parentID = (await LogseqProxy.Editor.getBlock(this.uuid)).parent.id;
         let parent;
-        while ((parent = await SyncronizedLogseq.Editor.getBlock(parentID)) != null) {
+        while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
             stack.push(parent.uuid["$uuid$"] || parent.uuid.Wd || parent.uuid);
             parentID = parent.parent.id;
         }
@@ -69,13 +69,13 @@ export abstract class Note {
             if(dependency.type == "Embedded_Block_ref") {
                 if(blockEmbededDependencies.has(dependency.value as BlockUUID)) continue;
                 blockEmbededDependencies.add(dependency.value as BlockUUID);
-                let block = await SyncronizedLogseq.Editor.getBlock(dependency.value as BlockUUID);
+                let block = await LogseqProxy.Editor.getBlock(dependency.value as BlockUUID);
                 stack.push(...getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format','')));
             }
             else if(dependency.type == "Block_ref") {
                 if(blockEmbededDependencies.has(dependency.value as BlockUUID) || blockRefDependencies.has(dependency.value as BlockUUID)) continue;
                 blockRefDependencies.add(dependency.value as BlockUUID);
-                let block = await SyncronizedLogseq.Editor.getBlock(dependency.value as BlockUUID);
+                let block = await LogseqProxy.Editor.getBlock(dependency.value as BlockUUID);
                 let block_content = _.get(block, 'content','');
                 block_content = replace(block_content, MD_PROPERTIES_REGEXP, "");
                 block_content = replace(block_content, ORG_PROPERTIES_REGEXP, "");
@@ -87,12 +87,12 @@ export abstract class Note {
             }
         }
         for (let uuid of blockEmbededDependencies) {
-            let block = await SyncronizedLogseq.Editor.getBlock(uuid);
+            let block = await LogseqProxy.Editor.getBlock(uuid);
             toHash.push({content:_.get(block, 'content',''), format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
         }
         for (let uuid of blockRefDependencies) {
             if(blockEmbededDependencies.has(uuid)) continue;
-            let block = await SyncronizedLogseq.Editor.getBlock(uuid);
+            let block = await LogseqProxy.Editor.getBlock(uuid);
             let block_content = _.get(block, 'content','');
             block_content = replace(block_content, MD_PROPERTIES_REGEXP, "");
             block_content = replace(block_content, ORG_PROPERTIES_REGEXP, "");
@@ -100,7 +100,7 @@ export abstract class Note {
             toHash.push({content:block_content_first_line, format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
         }
         for (let PageEntityName of pageEmbededDependencies) {
-            let page = await SyncronizedLogseq.Editor.getPage(PageEntityName.name);
+            let page = await LogseqProxy.Editor.getPage(PageEntityName.name);
             toHash.push({content:_.get(page, 'updatedAt','')});
         }
         toHash.push({page:encodeURIComponent(_.get(this, 'page.originalName', '')), deck:encodeURIComponent(_.get(this, 'page.properties.deck', ''))});

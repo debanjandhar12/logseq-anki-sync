@@ -4,7 +4,7 @@ import _ from 'lodash';
 import { convertToHTMLFile, HTMLFile } from '../converter/Converter';
 import { safeReplace } from '../utils';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
-import { SyncronizedLogseq } from "../SyncronizedLogseq";
+import { LogseqProxy } from "../LogseqProxy";
 import { BlockUUID } from "@logseq/libs/dist/LSPlugin.user";
 import { ReferenceDependency } from "../converter/getContentDirectDependencies";
 
@@ -126,13 +126,13 @@ export class MultilineCardNote extends Note {
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<MultilineCardNote[]> {
-        let logseqCard_blocks = await SyncronizedLogseq.DB.datascriptQueryBlocks(`
+        let logseqCard_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
         [?p :block/name "card"]
         [?b :block/refs ?p]
         ]`);
-        let flashCard_blocks = await SyncronizedLogseq.DB.datascriptQueryBlocks(`
+        let flashCard_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
         [?p :block/name "flashcard"]
@@ -142,11 +142,11 @@ export class MultilineCardNote extends Note {
         
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
-            let page = (block[0].page) ? await SyncronizedLogseq.Editor.getPage(block[0].page.id) : {};
-            block = await SyncronizedLogseq.Editor.getBlock(uuid, { includeChildren: true });
+            let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
+            block = await LogseqProxy.Editor.getBlock(uuid, { includeChildren: true });
             if (block) {
                 let tags = await Promise.all(_.map(block.refs, async page => {
-                        let tagPage = await SyncronizedLogseq.Editor.getPage(page.id);
+                        let tagPage = await LogseqProxy.Editor.getPage(page.id);
                         return _.get(tagPage, 'name') 
                     }));
                 return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, block.children);

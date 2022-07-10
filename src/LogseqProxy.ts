@@ -3,8 +3,8 @@ import AwaitLock from "await-lock";
 import objectHash from "object-hash";
 import _ from "lodash";
 /***
- * Syncronization-safe logseq api wrapper for the Logseq plugin.
- * This is needed to fix #58
+ * This is a Cached + Syncronization-safe logseq api wrapper. 
+ * Fixes the following issues: #58
  * */
 
 type LogSeqOperation = {
@@ -15,13 +15,16 @@ type LogSeqOperationHash = string;
 
 let cache = new Map<LogSeqOperationHash, any>();
 let cacheHit = 0;
-let originalCacheGet = cache.get.bind(cache);
-cache.get = function (key: LogSeqOperationHash) {
-    cacheHit++;
-    return originalCacheGet(key);
+if(logseq.settings.debug.includes("LogseqProxy.ts")) {
+    let originalCacheGet = cache.get.bind(cache);
+    cache.get = function (key: LogSeqOperationHash) {
+        cacheHit++;
+        return originalCacheGet(key);
+    }
 }
 let getLogseqLock = new AwaitLock();
-export namespace SyncronizedLogseq {
+
+export namespace LogseqProxy {
     export class Editor {
         static async getBlock(srcBlock: BlockIdentity | EntityID, opts?: Partial<{ includeChildren: boolean; }>): Promise<BlockEntity | null> {
             if (cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock, opts } })))
@@ -76,7 +79,7 @@ export namespace SyncronizedLogseq {
             blockToFetch = [...new Set(blockToFetch)];
             let batchFetchResult;
             if (blockToFetch.length > 0) {
-                batchFetchResult = await SyncronizedLogseq.DB.datascriptQueryBlocks(`
+                batchFetchResult = await LogseqProxy.DB.datascriptQueryBlocks(`
                 [:find (pull ?b [*])
                 :where
                 [?b :block/uuid ?uuid]
@@ -162,8 +165,6 @@ export namespace SyncronizedLogseq {
     }
     export class Cache {
         static clear(): void {
-            console.log("Cache Hit:" ,cacheHit);
-            cacheHit = 0;
             cache.clear();
         }
         static has(key: LogSeqOperationHash): boolean {

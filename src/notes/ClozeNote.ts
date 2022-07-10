@@ -3,7 +3,7 @@ import '@logseq/libs'
 import { string_to_arr, get_math_inside_md, safeReplace } from '../utils';
 import _ from 'lodash';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
-import { SyncronizedLogseq } from "../SyncronizedLogseq";
+import { LogseqProxy } from "../LogseqProxy";
 import { HTMLFile } from "../converter/Converter";
 import { convertToHTMLFile } from "../converter/Converter";
 
@@ -82,14 +82,14 @@ export class ClozeNote extends Note {
           [?b :block/properties ?p]
           [(get ?p :replacecloze)]
         ]`);
-        let logseqCloze_blocks = await SyncronizedLogseq.DB.datascriptQueryBlocks(`
+        let logseqCloze_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
         [?b :block/content ?content]
         [(re-pattern "{{cloze .*}}") ?regex]
         [(re-find ?regex ?content)]
         ]`);
-        let orgCloze_blocks = await SyncronizedLogseq.DB.datascriptQueryBlocks(`
+        let orgCloze_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
         [?b :block/content ?content]
@@ -99,10 +99,10 @@ export class ClozeNote extends Note {
         let blocks: any = [...logseqCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
-            let page = (block[0].page) ? await SyncronizedLogseq.Editor.getPage(block[0].page.id) : {};
+            let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = block[0];
             if(!block.content) {
-                block = await SyncronizedLogseq.Editor.getBlock(uuid);
+                block = await LogseqProxy.Editor.getBlock(uuid);
             }
             if(block)
                 return new ClozeNote(uuid, block.content, block.format, block.properties || {}, page);
