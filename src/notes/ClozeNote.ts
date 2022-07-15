@@ -29,6 +29,12 @@ export class ClozeNote extends Note {
         clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, ""); //Remove md properties
         clozedContent = safeReplace(clozedContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
     
+        // --- Add anki cloze marco clozes ---
+        clozedContent = safeReplace(clozedContent, /\{\{c(\d) (.*?)\}\}/g, (match, group1, group2) => {
+            cloze_id = Math.max(cloze_id, parseInt(group1) + 1);
+            return `{{c${parseInt(group1)}::${group2}}}`;
+        });
+  
         // --- Add anki-cloze array clozes ---
         if(this.properties.replacecloze) {
             let replaceclozeArr: any;
@@ -76,6 +82,13 @@ export class ClozeNote extends Note {
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ClozeNote[]> {
+        let ankiMacroCloze_blocks = await logseq.DB.datascriptQuery(`
+        [:find (pull ?b [*])
+        :where
+        [?b :block/content ?content]
+        [(re-pattern "{{c[0-9] .*}}") ?regex]
+        [(re-find ?regex ?content)]
+        ]`);
         let replaceCloze_blocks = await logseq.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
@@ -96,7 +109,7 @@ export class ClozeNote extends Note {
         [(re-pattern "#\\\\+BEGIN_(CLOZE)( .*)?\\\\n((.|\\\\n)*?)#\\\\+END_\\\\1") ?regex]
         [(re-find ?regex ?content)]
         ]`);
-        let blocks: any = [...logseqCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
+        let blocks: any = [...ankiMacroCloze_blocks, ...logseqCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
