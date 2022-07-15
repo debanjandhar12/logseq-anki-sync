@@ -30,7 +30,7 @@ export const addSettingsToLogseq = () => {
     {
       key: "addons",
       type: "enum",
-      default: [],
+      default: ["Anki Cloze Macro Display"],
       title: "Addons:",
       enumChoices: AddonRegistry.getAll().map(addon => addon.getName()),
       enumPicker: "checkbox",
@@ -53,7 +53,7 @@ export const addSettingsToLogseq = () => {
     {
       key: "debug",
       type: "enum",
-      default: ["Anki Cloze Macro Display"],
+      default: [],
       title: "Enable debugging?",
       enumChoices: ["syncLogseqToAnki.ts", "Converter.ts", "LazyAnkiNoteManager.ts"],
       enumPicker: "checkbox",
