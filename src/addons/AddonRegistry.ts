@@ -1,0 +1,14 @@
+import { Addon } from "./Addon";
+import { PreviewInAnkiContextMenu } from "./PreviewInAnki";
+
+export class AddonRegistry {
+    public static addons: Addon[] = [];
+    public static add(addon: Addon) {
+        AddonRegistry.addons.push(addon);
+    }
+    public static getAll(): Addon[] {
+        return AddonRegistry.addons;
+    }
+}
+
+AddonRegistry.add(PreviewInAnkiContextMenu.getInstance());

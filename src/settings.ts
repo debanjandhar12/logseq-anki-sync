@@ -1,4 +1,5 @@
 import { SettingSchemaDesc } from '@logseq/libs/dist/LSPlugin';
+import { AddonRegistry } from './addons/AddonRegistry';
 import { LogseqProxy } from './LogseqProxy';
 export const addSettingsToLogseq = () => {
     const settingsTemplate: SettingSchemaDesc[] = [
@@ -26,11 +27,13 @@ export const addSettingsToLogseq = () => {
       default: "Default"
     },
     {
-        key: "previewNotesInAnki",
-        type: 'boolean',
-        default: false,
-        title: "Show Preview notes Context Menu (Experimental)",
-        description: "Shows a 'Preview notes from block in Anki' Context Menu",
+      key: "addons",
+      type: "enum",
+      default: [],
+      title: "Addons:",
+      enumChoices: AddonRegistry.getAll().map(addon => addon.getName()),
+      enumPicker: "checkbox",
+      description: "Select the addons to use. Addons are typically lower in quality than the main plugin features. Also, all addons require a restart to take effect.",
     },
     {
       key: "skipOnDependencyHashMatch",
@@ -48,12 +51,12 @@ export const addSettingsToLogseq = () => {
     },
     {
       key: "debug",
-        type: "enum",
-        default: [],
-        title: "Enable debugging?",
-        enumChoices: ["syncLogseqToAnki.ts", "Converter.ts", "LazyAnkiNoteManager.ts"],
-        enumPicker: "checkbox",
-        description: "Select the files to enable debugging for.",
+      type: "enum",
+      default: [],
+      title: "Enable debugging?",
+      enumChoices: ["syncLogseqToAnki.ts", "Converter.ts", "LazyAnkiNoteManager.ts"],
+      enumPicker: "checkbox",
+      description: "Select the files to enable debugging for.",
     },
   ];
   logseq.useSettingsSchema(settingsTemplate);
