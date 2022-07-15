@@ -1,4 +1,5 @@
-import { BlockEntity, BlockIdentity, BlockUUID, EntityID, PageEntity, PageIdentity } from "@logseq/libs/dist/LSPlugin";
+import '@logseq/libs'
+import { BlockEntity, BlockIdentity, BlockUUID, EntityID,  PageEntity, PageIdentity } from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
 import objectHash from "object-hash";
 import _ from "lodash";
@@ -14,19 +15,12 @@ type LogSeqOperation = {
 type LogSeqOperationHash = string;
 
 let cache = new Map<LogSeqOperationHash, any>();
-let cacheHit = 0;
-if(logseq.settings.debug.includes("LogseqProxy.ts")) {
-    let originalCacheGet = cache.get.bind(cache);
-    cache.get = function (key: LogSeqOperationHash) {
-        cacheHit++;
-        return originalCacheGet(key);
-    }
-}
 let getLogseqLock = new AwaitLock();
+let activeCacheListener = null;
 
 export namespace LogseqProxy {
     export class Editor {
-        static async getBlock(srcBlock: BlockIdentity | EntityID, opts?: Partial<{ includeChildren: boolean; }>): Promise<BlockEntity | null> {
+        static async getBlock(srcBlock: BlockIdentity | EntityID, opts: Partial<{ includeChildren: boolean; }> = {}): Promise<BlockEntity | null> {
             if (cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock, opts } })))
                 return cache.get(objectHash({ operation: "getBlock", parameters: { srcBlock, opts } }));
             if (cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock, opts:_.extend({includeChildren:true},opts) } }))) // Return includeChildren one if available
@@ -72,7 +66,6 @@ export namespace LogseqProxy {
             for (let i = 0; i < srcBlocks.length; i++) {
                 if (cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: srcBlocks[i], opts: {} } }))) {
                     result[i] = cache.get(objectHash({ operation: "getBlock", parameters: { srcBlock: srcBlocks[i], opts: {} } }));
-                    cacheHit++;
                 }
                 else blockToFetch.push(srcBlocks[i]);
             }
@@ -165,8 +158,69 @@ export namespace LogseqProxy {
     }
     export class Cache {
         static clear(): void {
-            cache.clear();
+            if(!logseq.settings.activeCacheForLogseqAPIv0) cache.clear();
         }
+
+        static setUpActiveCacheListeners(): void {
+            if(activeCacheListener != null) return;
+            activeCacheListener = logseq.DB.onChanged(async ({blocks, txData, txMeta}) => {
+                // console.log("activeCacheListener", blocks, txData, txMeta);
+                for(let tx of txData) {
+                    let [txBlockID, txType, ...additionalDetails] = tx;
+                    if(txType != "left" && txType != "parent") continue;
+                    let block = await LogseqProxy.Editor.getBlock(txBlockID);
+                    if(block != null) blocks.push(block);
+                    block = await LogseqProxy.Editor.getBlock(additionalDetails[0]);
+                    if(block != null) blocks.push(block);
+                }
+                let blockVisited = new Set();
+                while (blocks.length > 0) {
+                    let block = blocks.pop();
+                    if(blockVisited.has(block.id)) continue;
+                    blockVisited.add(block.id);
+
+                    block.uuid = block.uuid != null? block.uuid["$uuid$"] || block.uuid : null;
+                    if (block.uuid != null) {
+                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {} } }));
+                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {includeChildren:true} } }));
+                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.uuid } }));
+                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.uuid } }));
+                    }
+                    if (block.page != null && block.page.id != null) {
+                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.page.id } }));
+                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.page.id } }));
+                        let page_originalName = await LogseqProxy.Editor.getPage(block.page.id);
+                        if (page_originalName != null) {
+                            cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: page_originalName } }));
+                            cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: page_originalName } }));
+                        }
+                    }
+                    if(block.originalName != null) {
+                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.originalName } }));
+                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.originalName } }));
+                    }
+                    if (block.id != null) {
+                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {includeChildren:true} } }));
+                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {} } }));
+                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.id } }));
+                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.id } }));
+                    }
+                    if (block.parent != null && block.parent.id != null) {
+                        let block_parent = await LogseqProxy.Editor.getBlock(block.parent.id);
+                        if (block_parent != null) 
+                            blocks.push(block_parent);
+                    }
+                }
+            });
+        }
+
+        static removeActiveCacheListeners(): void {
+            if(activeCacheListener == null) return;
+            LogseqProxy.Cache.clear();
+            activeCacheListener();
+            activeCacheListener = null;
+        }
+
         static has(key: LogSeqOperationHash): boolean {
             return cache.has(key);
         }

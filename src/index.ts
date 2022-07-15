@@ -7,6 +7,7 @@ import { LogseqToAnkiSync } from './syncLogseqToAnki';
 import { previewBlockNotesInAnki } from './previewBlockNotesInAnki';
 import { addSettingsToLogseq } from './settings';
 import { ANKI_ICON } from './constants';
+import { LogseqProxy } from './LogseqProxy';
 
 
 // --- Register UI Elements Onload ---
@@ -45,6 +46,8 @@ async function main(baseInfo: LSPluginBaseInfo) {
   if(logseq.settings.previewNotesInAnki)
     logseq.Editor.registerBlockContextMenuItem("Preview notes from block in Anki", previewBlockNotesInAnki);
 
+  if(logseq.settings.activeCacheForLogseqAPIv0)
+    LogseqProxy.Cache.setUpActiveCacheListeners();
   ClozeNote.initLogseqOperations();
   MultilineCardNote.initLogseqOperations();
   console.log("Window Parent:", window.parent);

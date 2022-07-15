@@ -1,4 +1,5 @@
 import { SettingSchemaDesc } from '@logseq/libs/dist/LSPlugin';
+import { LogseqProxy } from './LogseqProxy';
 export const addSettingsToLogseq = () => {
     const settingsTemplate: SettingSchemaDesc[] = [
     {
@@ -35,8 +36,15 @@ export const addSettingsToLogseq = () => {
       key: "skipOnDependencyHashMatch",
       type: 'boolean',
       default: true,
-      title: "Enable skip rendering on DependecyHash match for improved syncing speed? (Experimental)",
+      title: "Enable skip rendering on DependecyHash match for improved syncing speed?",
       description: "Enable skip rendering on DependecyHash match. NB: It is recomended to disable this option if cards are not getting updated properly.",
+    },
+    {
+      key: "activeCacheForLogseqAPIv0",
+      type: 'boolean',
+      default: false,
+      title: "Enable active cache for Logseq API? (Experimental)",
+      description: "Enable active cache for Logseq API. NB: It is extremely unstable. It is recomended to disable this option if cards are not getting updated properly.",
     },
     {
       key: "debug",
@@ -48,5 +56,9 @@ export const addSettingsToLogseq = () => {
         description: "Select the files to enable debugging for.",
     },
   ];
-    logseq.useSettingsSchema(settingsTemplate);
+  logseq.useSettingsSchema(settingsTemplate);
+  logseq.onSettingsChanged(() => {
+    if(!logseq.settings.activeCacheForLogseqAPIv0) LogseqProxy.Cache.removeActiveCacheListeners();
+    else LogseqProxy.Cache.setUpActiveCacheListeners();
+  });
 };
