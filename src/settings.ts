@@ -1,4 +1,5 @@
 import { SettingSchemaDesc } from '@logseq/libs/dist/LSPlugin';
+import _ from 'lodash';
 import { AddonRegistry } from './addons/AddonRegistry';
 import { LogseqProxy } from './LogseqProxy';
 export const addSettingsToLogseq = () => {
@@ -52,7 +53,7 @@ export const addSettingsToLogseq = () => {
     {
       key: "debug",
       type: "enum",
-      default: [],
+      default: ["Anki Cloze Macro Display"],
       title: "Enable debugging?",
       enumChoices: ["syncLogseqToAnki.ts", "Converter.ts", "LazyAnkiNoteManager.ts"],
       enumPicker: "checkbox",
@@ -60,8 +61,18 @@ export const addSettingsToLogseq = () => {
     },
   ];
   logseq.useSettingsSchema(settingsTemplate);
-  logseq.onSettingsChanged(() => {
-    if(!logseq.settings.activeCacheForLogseqAPIv0) LogseqProxy.Cache.removeActiveCacheListeners();
-    else LogseqProxy.Cache.setUpActiveCacheListeners();
+  logseq.onSettingsChanged((newSettings, oldSettings) => {
+    if(newSettings.activeCacheForLogseqAPIv0 != oldSettings.activeCacheForLogseqAPIv0) {
+      if(!logseq.settings.activeCacheForLogseqAPIv0) LogseqProxy.Cache.removeActiveCacheListeners();
+      else LogseqProxy.Cache.setUpActiveCacheListeners();
+    }
+    if(!_.isEqual(newSettings.addons, oldSettings.addons)) {
+      for(let addon of oldSettings.addons) {
+        AddonRegistry.get(addon).remove();
+      }
+      for(let addon of newSettings.addons) {
+        AddonRegistry.get(addon).init();
+      }
+    }
   });
 };
