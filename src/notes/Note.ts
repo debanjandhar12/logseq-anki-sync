@@ -46,7 +46,7 @@ export abstract class Note {
         return this.ankiId;
     }
 
-    public getDirectDeendencies(): ReferenceDependency[] {
+    public getDirectDependencies(): ReferenceDependency[] {
         return [this.uuid].map(block => ({ type: "Embedded_Block_ref", value: block } as ReferenceDependency));
     }
 
@@ -57,7 +57,7 @@ export abstract class Note {
         let pageEmbededDependencies : Set<PageEntityName> = new Set<PageEntityName>();
 
         // DFS to get all dependencies
-        let stack : ReferenceDependency[] = this.getDirectDeendencies();
+        let stack : ReferenceDependency[] = this.getDirectDependencies();
         let parentID = (await LogseqProxy.Editor.getBlock(this.uuid)).parent.id;
         let parent;
         while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
