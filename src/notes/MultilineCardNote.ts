@@ -147,6 +147,8 @@ export class MultilineCardNote extends Note {
         let childrenHTMLFile = await getChildrenListHTMLFile(this.children);
         childrenHTMLFile.assets.forEach(asset => clozedContentAssets.add(asset));
         clozedContent += childrenHTMLFile.html;
+
+        if (this.children.length == 0 && (direction == "<->" || direction == "->")) clozedContent += `{{c${cloze_id}::}}`; // #16
         
         return {html: clozedContent, assets: clozedContentAssets};
     }
@@ -182,9 +184,6 @@ export class MultilineCardNote extends Note {
         blocks = _.without(blocks, undefined, null);
         blocks = _.filter(blocks, (block) => { // Remove template cards
             return _.get(block, 'properties.template') == null || _.get(block, 'properties.template') == undefined;
-        });
-        blocks = _.filter(blocks, (block) => { // Remove cards that do not have children
-            return block.getCardDirection() == "<->" || block.getCardDirection() == "<-" || block.children.length > 0;
         });
         return blocks;
     }
