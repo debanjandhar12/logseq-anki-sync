@@ -13,29 +13,31 @@ export class AnkiClozeMacroDisplay extends Addon {
     public init(): void {
         if (!this.isEnabled()) return;
         // Set up observer for Anki Cloze Macro Syntax
-        let displayAnkiCloze = () => {
-            // console.log("Display");
-            if (!this.isEnabled())  return;
-            let clozes : Element | NodeListOf<Element> = window.parent.document.getElementById("app-container").querySelector(
+        let displayAnkiCloze = (elem : Element) => {
+            let clozes : Element | NodeListOf<Element> = elem.querySelector(
                 'span[title^="Unsupported macro name: c"]'
             );
             if (!clozes) return;
-            clozes = window.parent.document.getElementById("app-container").querySelectorAll(
+            clozes = elem.querySelectorAll(
                 'span[title^="Unsupported macro name: c"]'
             );
             clozes.forEach((cloze) => {
                 if (/c\d$/.test((cloze as Element & {title}).title))
-                    cloze.outerHTML = `<span style="background-color:rgb(59 130 246 / 0.1);">${cloze.innerHTML.replace(/^{{{c\d (.*?)(::.*)}}}$/,"$1")}</span>`;
+                    cloze.outerHTML = `<span style="background-color:rgb(59 130 246 / 0.1);">${cloze.innerHTML.replace(/^{{{c\d (.*?)(::.*)?}}}$/,"$1")}</span>`;
             });
-        }
+        };
         AnkiClozeMacroDisplay.observer = new MutationObserver((mutations) => {
-            displayAnkiCloze();
+            if(mutations.length <= 8) {
+                for(let mutation of mutations) {
+                    const addedNode = mutation.addedNodes[0];
+                    if (addedNode && addedNode.childNodes.length) {
+                        displayAnkiCloze(addedNode as Element);
+                    }
+                }
+            }
+            else displayAnkiCloze(window.parent.document.body as Element);
         });
-        AnkiClozeMacroDisplay.observer.observe(window.parent.document.getElementById("main-content-container"), {
-            subtree: true,
-            childList: true
-        });
-        AnkiClozeMacroDisplay.observer.observe(window.parent.document.getElementById("right-sidebar"), {
+        AnkiClozeMacroDisplay.observer.observe(window.parent.document, {
             subtree: true,
             childList: true
         });
