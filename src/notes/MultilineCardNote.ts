@@ -31,7 +31,14 @@ export class MultilineCardNote extends Note {
             ["editor/input", `#card #bidirectional`],
             ["editor/clear-current-slash"],
         ]);
+        logseq.Editor.registerSlashCommand("Card (Incremental)", [
+            ["editor/input", `#card #incremental`],
+            ["editor/clear-current-slash"],
+        ]);
         logseq.provideStyle(`
+            .page-reference[data-ref=flashcard], a[data-ref=flashcard] {
+                opacity: .3;
+            }
             .page-reference[data-ref=forward], a[data-ref=forward] {
                 opacity: .3;
             }
@@ -39,6 +46,9 @@ export class MultilineCardNote extends Note {
                 opacity: .3;
             }
             .page-reference[data-ref=bidirectional], a[data-ref=bidirectional] {
+                opacity: .3;
+            }
+            .page-reference[data-ref=incremental], a[data-ref=incremental] {
                 opacity: .3;
             }
             .page-reference[data-ref^=depth-], a[data-ref^=depth-] {
