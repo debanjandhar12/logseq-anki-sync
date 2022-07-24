@@ -6,7 +6,7 @@ import { Note } from './notes/Note';
 import { ClozeNote } from './notes/ClozeNote';
 import { MultilineCardNote } from './notes/MultilineCardNote';
 import _ from 'lodash';
-import { get_better_error_msg, confirm, ProgressNotification } from './utils';
+import { get_better_error_msg, confirm, ProgressNotification, sortAsync } from './utils';
 import path from 'path';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile, convertToHTMLFileCache } from './converter/Converter';
@@ -54,6 +54,9 @@ export class LogseqToAnkiSync {
         for (let note of notes) { // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
             if (!note.properties["id"]) { try { LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); } catch (e) { console.error(e); } }
         }
+        notes = await sortAsync(notes, async (a) => {
+            return (await LogseqProxy.Editor.getBlock(a.uuid)).id; // Sort by db/id 
+        });
         console.log("Notes:", notes);
 
         // -- Declare some variables to keep track of different operations performed --

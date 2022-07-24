@@ -170,6 +170,23 @@ export async function safeReplaceAsync(content: string, regex: RegExp | string, 
     return result;
 }
 
+export async function sortAsync<T>(arr: T[], score: (a: T) => Promise<number>): Promise<T[]> {
+    let toSortPromises = arr.map(
+        async (item) => {
+            return {
+                item: item,
+                score: await score(item)
+            }
+        }
+    );
+    return await Promise.all(toSortPromises).then( toSort => {
+        console.log(toSort);
+        return toSort.sort((a, b) => {
+            return a.score - b.score;
+        }).map(x => x.item);
+    });
+}
+
 export async function confirm(msg: string): Promise<boolean> {
     return new Promise(function (resolve, reject) {
         logseq.provideUI({
