@@ -61,7 +61,8 @@ export abstract class Note {
         let parentID = (await LogseqProxy.Editor.getBlock(this.uuid)).parent.id;
         let parent;
         while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
-            stack.push(parent.uuid["$uuid$"] || parent.uuid.Wd || parent.uuid);
+            let blockUUID = parent.uuid["$uuid$"] || parent.uuid.Wd || parent.uuid || parent.parent.id;
+            stack.push({ type: "Block_ref", value: blockUUID } as ReferenceDependency);
             parentID = parent.parent.id;
         }
         while (stack.length > 0) {
