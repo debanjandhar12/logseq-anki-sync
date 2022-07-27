@@ -1,6 +1,7 @@
 export const ANKI_CLOZE_REGEXP = /(\{\{c(\d+)::)((.|\n)*?)\}\}/g;
 export const MD_MATH_BLOCK_REGEXP = /\$\$([\s\S]*?)\$\$/g;
 export const MD_PROPERTIES_REGEXP = /^\s*(\w|-)*::.*\n?\n?/gm;
+export const MD_IMAGE_EMBEDED_REGEXP = /!\[[^\]]*\]\((.*?)\s*("(?:.*[^"])")?\s*\)/g;
 export const ORG_MATH_BLOCK_REGEXP = /\\\[([\s\S]*?)\\\]/g;
 export const ORG_PROPERTIES_REGEXP = /:PROPERTIES:\n((.|\n)*?):END:\n?/gm;
 export const LOGSEQ_BLOCK_REF_REGEXP = /\(\(([^\)\n]*?)\)\)(?!\))/gm;
@@ -8,6 +9,9 @@ export const LOGSEQ_RENAMED_BLOCK_REF_REGEXP = /\[(.*?)\]\(\(\((.*?)\)\)\)/gm;
 export const LOGSEQ_PAGE_REF_REGEXP = /\[\[(.*?)\]\]/gm;
 export const LOGSEQ_EMBDED_PAGE_REGEXP = /\{\{embed \[\[(.*?)\]\] *?\}\}/gm;
 export const LOGSEQ_EMBDED_BLOCK_REGEXP = /\{\{embed \(\((.*?)\)\) *?\}\}/gm;
+
+export const isImage_REGEXP = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
+export const isWebURL_REGEXP = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
 
 export const ANKI_ICON: string = `<svg height="18px" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" preserveAspectRatio="xMidYMid meet" viewBox="0 0 197.99999 198" id="svg2" version="1.1" inkscape:version="0.91 r13725" sodipodi:docname="application-icon.svg" enable-background="new" inkscape:export-filename="/home/tim/development/Anki-Android/docs/marketing/android_market/logo512-512-alpha.png" inkscape:export-xdpi="90" inkscape:export-ydpi="90">
 <title id="title4207">Anki Flat Design</title>

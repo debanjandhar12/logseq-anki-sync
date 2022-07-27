@@ -4,8 +4,10 @@ import * as cheerio from 'cheerio';
 import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils';
 import _ from 'lodash';
 import { Mldoc } from 'mldoc';
-import { ANKI_CLOZE_REGEXP, LOGSEQ_BLOCK_REF_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_PAGE_REF_REGEXP, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, MD_MATH_BLOCK_REGEXP, MD_PROPERTIES_REGEXP, ORG_MATH_BLOCK_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
+import { ANKI_CLOZE_REGEXP, LOGSEQ_BLOCK_REF_REGEXP, MD_IMAGE_EMBEDED_REGEXP, isImage_REGEXP, isWebURL_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_PAGE_REF_REGEXP, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, MD_MATH_BLOCK_REGEXP, MD_PROPERTIES_REGEXP, ORG_MATH_BLOCK_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import { LogseqProxy } from "../LogseqProxy";
+import * as hiccupConverter from "@thi.ng/hiccup";
+import { edn } from "@yellowdig/cljs-tools";
 
 let mldocsOptions = {
     "toc": false,
@@ -57,16 +59,19 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         if (node[0][0] == null) continue;
 
         let type = node[0][0];
-        let content = node[0][1];
         let start_pos = node[node.length - 1]["start_pos"];
         let end_pos = node[node.length - 1]["end_pos"];
-        if (type == "Raw_Html" || type == "Inline_Html") {
-            if (content != new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos))) {
-                console.error("Error: content mismatch", content, resultContent.substring(start_pos, end_pos));
-            }
-            let str = getRandomUnicodeString();
-            hashmap[str] = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
-            resultUTF8 = new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        console.log(node);
+        switch (type) {
+            case "Raw_Html": case "Inline_Html":
+                resultUTF8 = await processInlineHTML(node, start_pos, end_pos, resultContent, resultAssets, resultUTF8, hashmap);
+            break;
+            case "Raw_Hiccup": case "Inline_Hiccup":
+                resultUTF8 = await processInlineHiccup(node, start_pos, end_pos, resultContent, resultUTF8, hashmap);
+            break;
+            case "Link":
+                resultUTF8 =  await processLink(node, start_pos, end_pos, resultContent, resultAssets, resultUTF8, hashmap, format);
+            break;
         }
     }
     resultContent = new TextDecoder().decode(resultUTF8);
@@ -98,8 +103,6 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     );
     // Render images and and codes
     let $ = cheerio.load(resultContent, { decodeEntities: false });
-    const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
-    const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
     $('pre code').each(function (i, elm) { // Syntax hightlight block code (block codes are preceded by pre)
         $(elm).addClass("hljs");
         if (elm.attribs["data-lang"]) {
@@ -107,7 +110,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, ""));
     });
     $('img').each(function (i, elm) {   // Handle images
-        if ((encodeURI(elm.attribs.src).match(isImage) && !encodeURI(elm.attribs.src).match(isWebURL))) {
+        if ((encodeURI(elm.attribs.src).match(isImage_REGEXP) && !encodeURI(elm.attribs.src).match(isWebURL_REGEXP))) {
             resultAssets.add(elm.attribs.src);
             elm.attribs.src = encodeURIComponent(elm.attribs.src); // Flatten image path
         }
@@ -236,4 +239,52 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
     });
 
     return {html: resultContent, assets: resultAssets};
+}
+
+async function processInlineHTML(node, start_pos, end_pos, resultContent, resultAssets, resultUTF8, hashmap) {
+    let content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
+    if (content != node[0][1]) {
+        console.error("Error: content mismatch html", content, resultContent.substring(start_pos, end_pos));
+    }
+    let str = getRandomUnicodeString();
+    hashmap[str] = content;
+    return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+}
+
+async function processInlineHiccup(node, start_pos, end_pos, resultContent, resultUTF8, hashmap) {
+    let content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
+    if (content != node[0][1]) {
+        console.error("Error: content mismatch hiccup", content, resultContent.substring(start_pos, end_pos));
+    }
+    let str = getRandomUnicodeString();
+    hashmap[str] = hiccupConverter.serialize(edn.decode(content));
+    return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+}
+
+async function processLink(node, start_pos, end_pos, resultContent, resultAssets, resultUTF8, hashmap, format) {
+    let content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
+    let link_type = _.get(node[0][1], "url[0]");
+    let link_url = _.get(node[0][1], "url[1]");
+    let metadata;
+    try { metadata = await edn.decode(node[0][1].metadata); } catch (e) { console.warn(e); }
+    let link_full_text = _.get(node[0][1], "full_text");
+    let blockRefLabel = _.get(node[0][1], "label[0][1]");
+    if (link_type == "Search" && link_url.match(isImage_REGEXP) && !content.match(isWebURL_REGEXP)) {
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<img src="${encodeURIComponent(link_url)}" ${blockRefLabel? `title="${blockRefLabel}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+        resultAssets.add(link_url);
+        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]); 
+    }
+    else if (link_type == "Complex" && link_url.link.match(isImage_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<img src="${link_url.protocol}://${link_url.link}" ${blockRefLabel? `title="${blockRefLabel}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]); 
+    }
+    else if (format == "org" && link_type == "Page_ref" && link_url.match(isImage_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<img src="${encodeURIComponent(link_url)}" />`;
+        resultAssets.add(link_url);
+        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]); 
+    }
+    return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(content), ...resultUTF8.subarray(end_pos)]);;
 }

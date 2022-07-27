@@ -29,7 +29,9 @@
     "ohm-js": "16.3.4",
     "string-replace-async": "^3.0.2",
     "object-hash": "3.0.0",
-    "await-lock": "^2.2.2"
+    "await-lock": "^2.2.2",
+    "@thi.ng/hiccup": "4.2.10",
+    "@yellowdig/cljs-tools": "0.2.0"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.5.0",
