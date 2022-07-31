@@ -81,8 +81,9 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         let strFront = getRandomUnicodeString();
         let strBack = getRandomUnicodeString();
 
-        // temportary fix: cloze end charecters }} getting deleted after code block ends
-        if (g3.trim().endsWith("```")) {
+        // bug fix: cloze end charecters }} getting deleted after code block ends. Hence, add newline after cloze content.
+        let last_line = g3.split("\n").pop();
+        if (last_line.match(/^```/)) {
             g3 = `${g3}\n`;
         }
 
