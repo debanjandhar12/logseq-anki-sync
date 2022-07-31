@@ -46,6 +46,16 @@ export class ClozeNote extends Note {
             }
             else replaceclozeArr = [];
 
+            let replaceclozeHintArr: any;
+            if(typeof this.properties.replaceclozehint == "string" && this.properties.replaceclozehint.trim() != "") {
+                replaceclozeHintArr = this.properties.replaceclozehint.replace(/(^\s*"|\s*"$)/g, '').split(',');
+            }
+            else if (typeof this.properties.replaceclozehint == "object" && this.properties.replaceclozehint.constructor == Array) { 
+                replaceclozeHintArr = this.properties.replaceclozehint;
+            }
+            else replaceclozeHintArr = [];
+            replaceclozeHintArr = replaceclozeHintArr.map(hint => hint.trim());
+
             // Add the clozes while ensuring that adding cloze in math mode double braces doesn't break the cloze
             // This is done by adding extra space the braces between two double brace
             let math = get_math_inside_md(clozedContent); // get list of math inside md
@@ -53,16 +63,16 @@ export class ClozeNote extends Note {
                 if (typeof reg == "string")
                     clozedContent = clozedContent.replaceAll(reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(), (match) => {
                         if (math.find(math => math.includes(match)))
-                            return `{{c${cloze_id}::${match.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ")} }}`; // Add extra space between braces
+                            return `{{c${cloze_id}::${match.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ")}${replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""}\u{2063}}}`; // Add extra space between braces inside math
                         else
-                            return `{{c${cloze_id}::${match}}}`;
+                            return `{{c${cloze_id}::${match}${replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""}\u{2063}}}`;
                     });
                 else
                     clozedContent = clozedContent.replace(reg, (match) => {
                         if (math.find(math => math.includes(match)))
-                            return `{{c${cloze_id}::${match.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ")} }}`; // Add extra space between braces
+                            return `{{c${cloze_id}::${match.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ")}${replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""}\u{2063}}}`; // Add extra space between braces inside math
                         else
-                            return `{{c${cloze_id}::${match}}}`;
+                            return `{{c${cloze_id}::${match}${replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""}\u{2063}}}`;
                     });
                 cloze_id++;
             }
