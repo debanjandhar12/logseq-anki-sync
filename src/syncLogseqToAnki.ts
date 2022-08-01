@@ -13,6 +13,7 @@ import { convertToHTMLFile, convertToHTMLFileCache } from './converter/Converter
 import { LogseqProxy } from './LogseqProxy';
 import pkg from '../package.json';
 import { SwiftArrowNote } from './notes/SwiftArrowNote';
+import { getRecursiveDependenciesHashCache } from './converter/getBlockRecursiveDependenciesHash';
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -92,6 +93,7 @@ export class LogseqToAnkiSync {
         await AnkiConnect.invoke("reloadCollection", {});
         LogseqProxy.Cache.clear();
         convertToHTMLFileCache.clear();
+        getRecursiveDependenciesHashCache.clear();
 
         // -- Show Result / Summery --
         let summery = `Sync Completed! \n Created Blocks: ${toCreateNotes.length - failedCreated.size} \n Updated Blocks: ${toUpdateNotes.length - failedUpdated.size} \n Deleted Blocks: ${toDeleteNotes.length - failedDeleted.size}`;
