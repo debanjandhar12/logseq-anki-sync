@@ -119,6 +119,24 @@ export function getRandomUnicodeString(length?: number): string {
     return _.sampleSize(chars, length || 12).join("");
 }
 
+export function getFirstNonEmptyLine(str: string): string {
+    let start = 0, end;
+    let current_line_empty = true;
+    for(end = 0; end < str.length; end++) {
+        if (str[end] != " " && str[end] != "\t" && str[end] != "\n")
+            current_line_empty = false;
+        if (str[end] == "\n") {
+            if (!current_line_empty) return str.substring(start, end);
+            else {
+                start = end + 1;
+                current_line_empty = true;
+            }
+        }
+    }
+    return str.substring(start);
+}
+
+
 // Replace function that avoids replacing inside math and code blocks
 export function safeReplace(content: string, regex: RegExp | string, replaceArg: any): string {
     let result = content;

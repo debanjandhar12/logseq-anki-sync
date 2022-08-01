@@ -1,7 +1,7 @@
 import hljs from "highlight.js";
 import '@logseq/libs';
 import * as cheerio from 'cheerio';
-import { decodeHTMLEntities, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils';
+import { decodeHTMLEntities, getFirstNonEmptyLine, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils';
 import _ from 'lodash';
 import { Mldoc } from 'mldoc';
 import { ANKI_CLOZE_REGEXP, LOGSEQ_BLOCK_REF_REGEXP, MD_IMAGE_EMBEDED_REGEXP, isImage_REGEXP, isWebURL_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_PAGE_REF_REGEXP, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, MD_MATH_BLOCK_REGEXP, MD_PROPERTIES_REGEXP, ORG_MATH_BLOCK_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
@@ -61,7 +61,6 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         let type = node[0][0];
         let start_pos = node[node.length - 1]["start_pos"];
         let end_pos = node[node.length - 1]["end_pos"];
-        console.log(node);
         switch (type) {
             case "Raw_Html": case "Inline_Html":
                 resultUTF8 = await processInlineHTML(node, start_pos, end_pos, resultContent, resultAssets, resultUTF8, hashmap);
@@ -230,7 +229,7 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
             let block_content = block.content;
             block_content = safeReplace(block_content, MD_PROPERTIES_REGEXP, "");
             block_content = safeReplace(block_content, ORG_PROPERTIES_REGEXP, "");
-            let block_content_first_line = block_content.split("\n").find(line => line.trim() != "");
+            let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
             return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${block_content_first_line}</a>`;
         }
         catch (e) { // Block not found
