@@ -9,6 +9,7 @@ import pkg from '../../package.json';
 import hashSum from 'hash-sum';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from '../constants';
 import { getFirstNonEmptyLine } from '../utils';
+import { getBlockRecursiveDependenciesHash } from '../converter/getBlockRecursiveDependenciesHash';
 
 export abstract class Note {
     public uuid: string;
@@ -53,65 +54,31 @@ export abstract class Note {
 
     public async getAllDependenciesHash(additionalDependencies = []): Promise<string> {
         let toHash = [...additionalDependencies];
-        let blockRefDependencies : Set<BlockUUID> = new Set<BlockUUID>();
-        let blockEmbededDependencies : Set<BlockUUID> = new Set<BlockUUID>();
-        let pageEmbededDependencies : Set<PageEntityName> = new Set<PageEntityName>();
 
-        // DFS to get all dependencies
-        let stack : ReferenceDependency[] = this.getDirectDependencies();
+        // Collect parent And DirectDependencies
+        let parentAndDirectDependencies : ReferenceDependency[] = this.getDirectDependencies();
         let parentID = (await LogseqProxy.Editor.getBlock(this.uuid)).parent.id;
         let parent;
         while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
             let blockUUID = parent.uuid["$uuid$"] || parent.uuid.Wd || parent.uuid || parent.parent.id;
             if(logseq.settings.includeParentContent) 
-                stack.push({ type: "Embedded_Block_ref", value: blockUUID } as ReferenceDependency);
-            else stack.push({ type: "Block_ref", value: blockUUID } as ReferenceDependency);
+                parentAndDirectDependencies.push({ type: "Embedded_Block_ref", value: blockUUID } as ReferenceDependency);
+            else parentAndDirectDependencies.push({ type: "Block_ref", value: blockUUID } as ReferenceDependency);
             parentID = parent.parent.id;
         }
-        while (stack.length > 0) {
-            let dependency = stack.pop();
-            if(dependency.type == "Embedded_Block_ref") {
-                if(blockEmbededDependencies.has(dependency.value as BlockUUID)) continue;
-                blockEmbededDependencies.add(dependency.value as BlockUUID);
-                let block = await LogseqProxy.Editor.getBlock(dependency.value as BlockUUID);
-                stack.push(...getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format','')));
-            }
-            else if(dependency.type == "Block_ref") {
-                if(blockEmbededDependencies.has(dependency.value as BlockUUID) || blockRefDependencies.has(dependency.value as BlockUUID)) continue;
-                blockRefDependencies.add(dependency.value as BlockUUID);
-                // Currently, Block_ref is not rendered by Converter. Hence, we can just ignore getContentDirectDependencies of it.
-                // Please uncomment the following lines when Block Ref Renderer is implemented.
-                /* let block = await LogseqProxy.Editor.getBlock(dependency.value as BlockUUID);
-                let block_content = _.get(block, 'content','');
-                block_content = replace(block_content, MD_PROPERTIES_REGEXP, "");
-                block_content = replace(block_content, ORG_PROPERTIES_REGEXP, "");
-                let block_content_first_line = getFirstNonEmptyLine(block_content);
-                stack.push(...getContentDirectDependencies(block_content_first_line, _.get(block, 'format',''))); */
-            }
-            else if(dependency.type == "Embedded_Page_ref") {
-                pageEmbededDependencies.add(dependency.value as PageEntityName);
-            }
-        }
-        console.log(this.uuid, [blockRefDependencies, blockEmbededDependencies, pageEmbededDependencies]);
-        for (let uuid of blockEmbededDependencies) {
-            let block = await LogseqProxy.Editor.getBlock(uuid);
-            toHash.push({content:_.get(block, 'content',''), format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
-        }
-        for (let uuid of blockRefDependencies) {
-            if(blockEmbededDependencies.has(uuid)) continue;
-            let block = await LogseqProxy.Editor.getBlock(uuid);
-            let block_content = _.get(block, 'content','');
-            toHash.push({content:block_content, format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
-        }
-        for (let PageEntityName of pageEmbededDependencies) {
-            let page = await LogseqProxy.Editor.getPage(PageEntityName.name);
-            toHash.push({content:_.get(page, 'updatedAt','')});
-        }
+
+        // Call getBlockRecursiveDependenciesHash on parentAndDirectDependencies and add them to toHash
+        for(let dep of parentAndDirectDependencies) {
+            toHash.push(await getBlockRecursiveDependenciesHash(dep));
+        };
+
+        // Add additional things to toHash
         toHash.push({page:encodeURIComponent(_.get(this, 'page.originalName', '')), deck:encodeURIComponent(_.get(this, 'page.properties.deck', ''))});
         toHash.push({defaultDeck:logseq.settings.defaultDeck, includeParentContent: logseq.settings.includeParentContent, breadcrumbDisplay: logseq.settings.breadcrumbDisplay});
         toHash.push({v:pkg.version});
-        return hashSum(toHash); // hashSum is faster than objectHash but collisions rate is high (here, it suits our case of detecting changes)
-    }
 
+        // Return hash
+        return hashSum(toHash);
+    }
     // public static async abstract getBlocksFromLogseq(): Block[];
 }

@@ -151,8 +151,9 @@ export class LazyAnkiNoteManager {
                 this.addNoteUuidTypeQueue2 = [];
                 break;
             case "updateNotes": // Returns resut of sub-operations
-                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts")) console.log(this.updateNoteUuidTypeQueue);
+                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts")) console.log(this.updateNoteActionsQueue);
                 result = await AnkiConnect.invoke("multi", { "actions": this.updateNoteActionsQueue });
+                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts")) console.log(result);
                 for (let i = 0; i < result.length; i++) {
                     if (result[i] == null) result[i] = {};
                     _.extend(result[i], { "uuid-type": this.updateNoteUuidTypeQueue[i] });
