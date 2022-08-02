@@ -8,7 +8,7 @@ import { addSettingsToLogseq } from './settings';
 import { ANKI_ICON } from './constants';
 import { LogseqProxy } from './LogseqProxy';
 import { AddonRegistry } from './addons/AddonRegistry';
-import { SwiftNote } from './notes/SwiftNote';
+import { SwiftArrowNote } from './notes/SwiftArrowNote';
 
 
 // --- Register UI Elements Onload ---
@@ -47,7 +47,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     LogseqProxy.Cache.setUpActiveCacheListeners();
   ClozeNote.initLogseqOperations();
   MultilineCardNote.initLogseqOperations();
-  SwiftNote.initLogseqOperations();
+  SwiftArrowNote.initLogseqOperations();
   console.log("Window Parent:", window.parent);
 
   addSettingsToLogseq();

@@ -12,7 +12,7 @@ import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile, convertToHTMLFileCache } from './converter/Converter';
 import { LogseqProxy } from './LogseqProxy';
 import pkg from '../package.json';
-import { SwiftNote } from './notes/SwiftNote';
+import { SwiftArrowNote } from './notes/SwiftArrowNote';
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -51,7 +51,7 @@ export class LogseqToAnkiSync {
         Note.setAnkiNoteManager(ankiNoteManager);
         
         // -- Get the notes that are to be synced from logseq --
-        let notes : Array<Note> = [...(await ClozeNote.getNotesFromLogseqBlocks()), ...(await MultilineCardNote.getNotesFromLogseqBlocks()), ...(await SwiftNote.getNotesFromLogseqBlocks())];
+        let notes : Array<Note> = [...(await ClozeNote.getNotesFromLogseqBlocks()), ...(await MultilineCardNote.getNotesFromLogseqBlocks()), ...(await SwiftArrowNote.getNotesFromLogseqBlocks())];
         for (let note of notes) { // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
             if (!note.properties["id"]) { try { LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); } catch (e) { console.error(e); } }
         }

@@ -6,8 +6,8 @@ import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import { LogseqProxy } from "../LogseqProxy";
 import { convertToHTMLFile, HTMLFile } from "../converter/Converter";
 
-export class SwiftNote extends Note {
-    public type: string = "swift";
+export class SwiftArrowNote extends Note {
+    public type: string = "swift_arrow";
 
     public constructor(uuid: string, content: string, format: string, properties: any, page: any) {
         super(uuid, content, format, properties, page);
@@ -41,15 +41,15 @@ export class SwiftNote extends Note {
         return convertToHTMLFile(clozedContent, this.format);
     }
 
-    public static async getNotesFromLogseqBlocks(): Promise<SwiftNote[]> {
-        let singleSwiftBlocks = await logseq.DB.datascriptQuery(`
+    public static async getNotesFromLogseqBlocks(): Promise<SwiftArrowNote[]> {
+        let singleSwiftArrowBlocks = await logseq.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
         [?b :block/content ?content]
         [(re-pattern "(?s)(.*?)(:<->|:->|:<-)(.+)") ?regex]
         [(re-find ?regex ?content)]
         ]`);
-        let blocks: any = [...singleSwiftBlocks];
+        let blocks: any = [...singleSwiftArrowBlocks];
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
@@ -58,12 +58,12 @@ export class SwiftNote extends Note {
                 block = await LogseqProxy.Editor.getBlock(uuid);
             }
             if(block)
-                return new SwiftNote(uuid, block.content, block.format, block.properties || {}, page);
+                return new SwiftArrowNote(uuid, block.content, block.format, block.properties || {}, page);
             else {
                 return null;
             }
         }));
-        console.log("SwiftNote Cards Loaded");
+        console.log("SwiftArrowNote Blocks Loaded");
         blocks = _.uniqBy(blocks, 'uuid');
         blocks = _.without(blocks, undefined, null);
         blocks = _.filter(blocks, (block) => { // Remove template cards
