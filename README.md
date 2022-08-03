@@ -12,7 +12,6 @@ An logseq to anki sync plugin on steroids. This syncs logseq cards and also prov
 <dt>🖼 Supports rendering of markdown and org mode in anki</dt>
 <dd align="right">images, math, block + page embed, and everything else</dd>
 <dt>♻ Fast syncing through hash based algorithm powered by dp</dt>
-<dd align="right">deletes cards you delete in logseq, updates and adds cards</dd>
 </dl>
 </div>
 <br clear="both"/>
