@@ -4,10 +4,17 @@ import { AddonRegistry } from './addons/AddonRegistry';
 import { LogseqProxy } from './LogseqProxy';
 export const addSettingsToLogseq = () => {
     const settingsTemplate: SettingSchemaDesc[] = [
+      {
+        key: "generalSettingsHeading",
+        title: "⚡ General Settings",
+        description: "",
+        type: "heading",
+        default: null,
+    },
     {
         key: "breadcrumbDisplay",
         type: 'enum',
-        default: "Show Page name and parent blocks context",
+        default: "Show Page name only",
         title: "What to display in the breadcrumb?",
         description: "Pick what to display in the breadcrumb.",
         enumChoices: ["Show Page name only", "Show Page name and parent blocks context"],
@@ -16,7 +23,7 @@ export const addSettingsToLogseq = () => {
     {
         key: "includeParentContent",
         type: 'boolean',
-        default: false,
+        default: true,
         title: "Include parent content in cards? If enabled, the parent content will be included in the cards.",
         description: "Include parent content in cards",
     },
@@ -35,6 +42,13 @@ export const addSettingsToLogseq = () => {
       enumChoices: AddonRegistry.getAll().map(addon => addon.getName()),
       enumPicker: "checkbox",
       description: "Select the addons to use. Addons are typically lower in quality than the main plugin features. Also, all addons require a restart to take effect.",
+    },
+    {
+      key: "advancedSettingsHeading",
+      title: "💻 Advanced Settings",
+      description: "",
+      type: "heading",
+      default: null,
     },
     {
       key: "skipOnDependencyHashMatch",
