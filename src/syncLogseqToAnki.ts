@@ -52,7 +52,8 @@ export class LogseqToAnkiSync {
         Note.setAnkiNoteManager(ankiNoteManager);
         
         // -- Get the notes that are to be synced from logseq --
-        let notes : Array<Note> = [...(await ClozeNote.getNotesFromLogseqBlocks()), ...(await MultilineCardNote.getNotesFromLogseqBlocks()), ...(await SwiftArrowNote.getNotesFromLogseqBlocks())];
+        let notes : Array<Note> = [...(await ClozeNote.getNotesFromLogseqBlocks()), ...(await SwiftArrowNote.getNotesFromLogseqBlocks())];
+        notes = [...notes, ...(await MultilineCardNote.getNotesFromLogseqBlocks(notes))];
         for (let note of notes) { // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
             if (!note.properties["id"]) { try { LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); } catch (e) { console.error(e); } }
         }

@@ -163,7 +163,7 @@ export class MultilineCardNote extends Note {
         return {html: clozedContent, assets: clozedContentAssets};
     }
 
-    public static async getNotesFromLogseqBlocks(): Promise<MultilineCardNote[]> {
+    public static async getNotesFromLogseqBlocks(otherNotes : Array<Note>): Promise<MultilineCardNote[]> {
         let logseqCard_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
@@ -192,9 +192,13 @@ export class MultilineCardNote extends Note {
         console.log("MultilineCardNote Loaded");
         blocks = _.uniqBy(blocks, 'uuid');
         blocks = _.without(blocks, undefined, null);
-        blocks = _.filter(blocks, (block) => { // Remove template cards
+        blocks = _.filter(blocks, (block) => { // Remove template blocks
             return _.get(block, 'properties.template') == null || _.get(block, 'properties.template') == undefined;
         });
+        blocks = _.filter(blocks, (block) => { // Retain only blocks whose children count > 0 or direction is expictly specifed or no other note type is being generated from that block
+            return _.get(block, 'properties.direction') || block.tags.includes("forward") || block.tags.includes("bidirectional") || block.tags.includes("reversed") || block.children.length > 0 || !_.find(otherNotes, {uuid: block.uuid});
+        });
+
         return blocks;
     }
 
