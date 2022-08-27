@@ -1,6 +1,6 @@
 {
   "name": "logseq-anki-sync",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "title": "Logseq Anki Sync",
   "description": "An Logseq to Anki Flashcards integration plugin.",
   "main": "dist/index.html",
