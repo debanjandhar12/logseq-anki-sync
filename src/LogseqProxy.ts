@@ -179,7 +179,7 @@ export namespace LogseqProxy {
                     if(blockVisited.has(block.id)) continue;
                     blockVisited.add(block.id);
 
-                    block.uuid = block.uuid != null? block.uuid["$uuid$"] || block.uuid : null;
+                    block.uuid = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
                     if (block.uuid != null) {
                         cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {} } }));
                         cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {includeChildren:true} } }));

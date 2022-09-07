@@ -178,7 +178,7 @@ export class MultilineCardNote extends Note {
         let blocks: any = [...logseqCard_blocks, ...flashCard_blocks];
         
         blocks = await Promise.all(blocks.map(async (block) => {
-            let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
+            let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd || block[0].uuid;
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = await LogseqProxy.Editor.getBlock(uuid, { includeChildren: true });
             if (block) {

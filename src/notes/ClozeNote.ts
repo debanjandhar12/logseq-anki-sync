@@ -114,7 +114,7 @@ export class ClozeNote extends Note {
         ]`);
         let blocks: any = [...ankiMacroCloze_blocks, ...logseqCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
-            let uuid = block[0].uuid || block[0].uuid["$uuid$"] || block[0].uuid.Wd;
+            let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd || block[0].uuid;
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = block[0];
             if(!block.content) {
