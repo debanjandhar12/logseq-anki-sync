@@ -2,7 +2,7 @@ import ohm from 'ohm-js';
 import _ from 'lodash';
 import replaceAsync from "string-replace-async";
 import '@logseq/libs';
-import { MD_MATH_BLOCK_REGEXP } from './constants';
+import { ANKI_CLOZE_REGEXP, MD_MATH_BLOCK_REGEXP } from './constants';
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
@@ -18,6 +18,10 @@ export function regexPraser(input: string): RegExp {
     }
     // Create the regular expression
     return new RegExp(m[2], m[3]);
+}
+
+export function escapeClozeAndSecoundBrace(input: string): string {
+    return input.replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`).replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`).replace(/(?<!{{embed [^}\n]*?)}}/g, "}\u{2063}}").replace(/(?<!{{embed [^}\n]*?)}}/g, "}\u{2063}}");
 }
 
 export function string_to_arr(str: string): any {

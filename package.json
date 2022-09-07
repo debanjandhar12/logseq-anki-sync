@@ -1,6 +1,6 @@
 {
   "name": "logseq-anki-sync",
-  "version": "3.2.2",
+  "version": "3.2.3",
   "title": "Logseq Anki Sync",
   "description": "An Logseq to Anki Flashcards integration plugin.",
   "main": "dist/index.html",
@@ -20,9 +20,7 @@
     "icon": "/icon.png"
   },
   "dependencies": {
-    "@logseq/libs": "0.0.6",
-    "@logseq/libs": "0.0.7",
-    "@logseq/libs": "0.0.8",
+    "@logseq/libs": "0.0.9",
     "cheerio": "1.0.0-rc.12",
     "hash-sum": "2.0.0",
     "highlight.js": "11.5.1",

@@ -1,6 +1,6 @@
 import { Note } from "./Note";
 import '@logseq/libs'
-import { safeReplace } from '../utils';
+import { escapeClozeAndSecoundBrace, safeReplace } from '../utils';
 import _ from 'lodash';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import { LogseqProxy } from "../LogseqProxy";
@@ -25,14 +25,14 @@ export class SwiftArrowNote extends Note {
         clozedContent = safeReplace(clozedContent, /(.*?)(\s*(:<->|:->|:<-)\s*)(.+)/s, (match, g1, g2, g3, g4) => {
             let replacement = "";
             if(g3 == ":<-" || g3 == ":<->") {
-                replacement += `{{c2::${g1.replace(/(?<!{{embed [^}\n]*?)}}/g, "}\u{2063}}").trim()}}}`;
+                replacement += `{{c2::${escapeClozeAndSecoundBrace(g1).trim()}}}`;
             }
             else replacement += `${g1.trim()}`;
             let beforeArrowSpace = g2.split(/(:<->|:->|:<-)/s)[0];
             let afterArrowSpace = g2.split(/(:<->|:->|:<-)/s)[2];
             replacement += `${beforeArrowSpace}<b>${g3}</b>${afterArrowSpace}`;
             if(g3 == ":->" || g3 == ":<->") {
-                replacement += `{{c1::${g4.replace(/(?<!{{embed [^}\n]*?)}}/g, "}\u{2063}}").trim()}}}`;
+                replacement += `{{c1::${escapeClozeAndSecoundBrace(g4).trim()}}}`;
             }
             else replacement += `${g4.trim()}`;
             return replacement;

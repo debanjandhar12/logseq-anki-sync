@@ -1,7 +1,7 @@
 import hljs from "highlight.js";
 import '@logseq/libs';
 import * as cheerio from 'cheerio';
-import { decodeHTMLEntities, getFirstNonEmptyLine, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils';
+import { decodeHTMLEntities, escapeClozeAndSecoundBrace, getFirstNonEmptyLine, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils';
 import _ from 'lodash';
 import { Mldoc } from 'mldoc';
 import { ANKI_CLOZE_REGEXP, LOGSEQ_BLOCK_REF_REGEXP, MD_IMAGE_EMBEDED_REGEXP, isImage_REGEXP, isWebURL_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_PAGE_REF_REGEXP, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, MD_MATH_BLOCK_REGEXP, MD_PROPERTIES_REGEXP, ORG_MATH_BLOCK_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
@@ -171,7 +171,7 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
             let result = `\n<ul class="children-list">`;
             for (let child of children) {
                 result += `\n<li class="children">`;
-                let block_content = _.get(child, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
+                let block_content = escapeClozeAndSecoundBrace(_.get(child, "content")) || "";
                 let format = _.get(child, "format") || "markdown";
                 let blockContentHTMLFile = await convertToHTMLFile(block_content, format);
                 blockContentHTMLFile.assets.forEach(element => {
@@ -219,17 +219,18 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
             return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">\ud83d\udccc<strong>P${_.get(block, "properties.hlPage")}</strong> <br/> ${img_html}</a>`;
         }
         else if (_.get(block, "properties.lsType") == "annotation") {    // Pdf text ref
-            let block_content = _.get(block, "content");
+            let block_content = escapeClozeAndSecoundBrace(_.get(block, "content"));
             block_content = safeReplace(block_content, MD_PROPERTIES_REGEXP, "");
             block_content = safeReplace(block_content, ORG_PROPERTIES_REGEXP, "");
             return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">\ud83d\udccc<strong>P${_.get(block, "properties.hlPage")}</strong> ${block_content}</a>`;
         }
         // Normal Block ref
         try {
-            let block_content = block.content;
+            let block_content = _.get(block, "content");
             block_content = safeReplace(block_content, MD_PROPERTIES_REGEXP, "");
             block_content = safeReplace(block_content, ORG_PROPERTIES_REGEXP, "");
             let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
+            block_content_first_line = escapeClozeAndSecoundBrace(block_content_first_line);
             return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${block_content_first_line}</a>`;
         }
         catch (e) { // Block not found

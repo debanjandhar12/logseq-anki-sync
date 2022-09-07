@@ -1,6 +1,6 @@
 import { Note } from "./Note";
 import '@logseq/libs'
-import { string_to_arr, get_math_inside_md, safeReplace } from '../utils';
+import { string_to_arr, get_math_inside_md, safeReplace, escapeClozeAndSecoundBrace } from '../utils';
 import _ from 'lodash';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import { LogseqProxy } from "../LogseqProxy";
@@ -58,21 +58,14 @@ export class ClozeNote extends Note {
 
             // Add the clozes while ensuring that adding cloze in math mode double braces doesn't break the cloze
             // This is done by adding extra space the braces between two double brace
-            let math = get_math_inside_md(clozedContent); // get list of math inside md
             for (let [i, reg] of replaceclozeArr.entries()) {
                 if (typeof reg == "string")
                     clozedContent = clozedContent.replaceAll(reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(), (match) => {
-                        if (math.find(math => math.includes(match)))
-                            return `{{c${cloze_id}::${match.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ")}${replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""}\u{2063}}}`; // Add extra space between braces inside math
-                        else
-                            return `{{c${cloze_id}::${match}${replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""}\u{2063}}}`;
+                            return `{{c${cloze_id}::${escapeClozeAndSecoundBrace(match)}${replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""}\u{2063}}}`; // Add extra space between braces inside math
                     });
                 else
                     clozedContent = clozedContent.replace(reg, (match) => {
-                        if (math.find(math => math.includes(match)))
-                            return `{{c${cloze_id}::${match.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ")}${replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""}\u{2063}}}`; // Add extra space between braces inside math
-                        else
-                            return `{{c${cloze_id}::${match}${replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""}\u{2063}}}`;
+                            return `{{c${cloze_id}::${escapeClozeAndSecoundBrace(match)}${replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""}\u{2063}}}`; // Add extra space between braces inside math
                     });
                 cloze_id++;
             }
@@ -92,14 +85,14 @@ export class ClozeNote extends Note {
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ClozeNote[]> {
-        let ankiMacroCloze_blocks = await logseq.DB.datascriptQuery(`
+        let ankiMacroCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
         [?b :block/content ?content]
         [(re-pattern "{{c[0-9] .*}}") ?regex]
         [(re-find ?regex ?content)]
         ]`);
-        let replaceCloze_blocks = await logseq.DB.datascriptQuery(`
+        let replaceCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
           [?b :block/properties ?p]
@@ -121,7 +114,7 @@ export class ClozeNote extends Note {
         ]`);
         let blocks: any = [...ankiMacroCloze_blocks, ...logseqCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
-            let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd;
+            let uuid = block[0].uuid || block[0].uuid["$uuid$"] || block[0].uuid.Wd;
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = block[0];
             if(!block.content) {

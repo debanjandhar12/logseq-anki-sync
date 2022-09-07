@@ -2,7 +2,7 @@ import { Note } from "./Note";
 import '@logseq/libs';
 import _ from 'lodash';
 import { convertToHTMLFile, HTMLFile } from '../converter/Converter';
-import { safeReplace } from '../utils';
+import { escapeClozeAndSecoundBrace, safeReplace } from '../utils';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
 import { LogseqProxy } from "../LogseqProxy";
 import { BlockUUID } from "@logseq/libs/dist/LSPlugin.user";
@@ -110,8 +110,7 @@ export class MultilineCardNote extends Note {
         let direction = this.getCardDirection();
 
         // Remove clozes and double braces one after another. Also, remove properties.
-        this.content = this.content.replace(ANKI_CLOZE_REGEXP, "$3");
-        this.content = this.content.replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ");
+        this.content = escapeClozeAndSecoundBrace(this.content);
         this.content = safeReplace(this.content, MD_PROPERTIES_REGEXP, "");        
 
         // Render the parent block and add to clozedContent
@@ -131,7 +130,7 @@ export class MultilineCardNote extends Note {
             for (let child of childrenList) {
                 childrenListHTML += `\n<li class="children">`;
                 let childContent = _.get(child,"content", "");
-                let sanitizedChildContent = childContent.replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ");
+                let sanitizedChildContent = escapeClozeAndSecoundBrace(childContent);
                 let childExtra = _.get(child,"properties.extra");
                 if(childExtra) {sanitizedChildContent += `\n<div class="extra">${childExtra}</div>`;}    
                 let sanitizedChildHTMLFile = await convertToHTMLFile(sanitizedChildContent, child.format);
