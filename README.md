@@ -1,7 +1,6 @@
+> **Latest Logseq v0.8.5 broke all older versions of plugin. Please upgrade to the latest version of plugin for fix.**
+
 # Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat-square" height="28"/>](https://github.com/debanjandhar12/logseq-anki-sync/) [<img align="right" src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" height="30"/>](https://www.buymeacoffee.com/debanjandhar12)
-
-**Latest Logseq v0.8.5 broke all older versions of plugin. Please upgrade to the latest version of plugin for fix.**
-
 
 An logseq to anki syncing plugin on steroids. This syncs logseq cards and also provides additional syntax for controled flashcard creation ecosystem.
 
