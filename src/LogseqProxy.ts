@@ -178,8 +178,7 @@ export namespace LogseqProxy {
                     let block = blocks.pop();
                     if(blockVisited.has(block.id)) continue;
                     blockVisited.add(block.id);
-
-                    block.uuid = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
+                    block.uuid = _.get(block, "uuid['$uuid$']", null) || _.get(block, "uuid.Wd", null) || _.get(block, "uuid", null) || null;
                     if (block.uuid != null) {
                         cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {} } }));
                         cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {includeChildren:true} } }));
