@@ -45,6 +45,30 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     // --- Hacky fix for inline html support and {{c\d+:: content}} marcos using hashmap ---
     let hashmap = {};
 
+    // Put all anki cloze marcos in hashmap
+    resultContent = resultContent.replace(ANKI_CLOZE_REGEXP, (match, g1, g2, g3, ...arg) => {
+        let strFront = getRandomUnicodeString()+" "; // fix: #104
+        let strBack = getRandomUnicodeString();
+
+        // bug fix: new line if cloze starts with code block
+        let first_line = g3.split("\n").shift();
+        if (first_line.match(/^```/)) g3 = `\n${g3}`;
+
+        // bug fix: cloze end charecters }} getting deleted after code block ends. Hence, add newline after cloze content.
+        let last_line = g3.split("\n").pop();
+        if (last_line.match(/^```/)) g3 = `${g3}\n`;
+
+
+        // fix: if there is a newline before cloze, we need to add new line after hash charecters of math block and org blocks
+        let charecter_before_match = resultContent.substring(resultContent.indexOf(match) - 1, resultContent.indexOf(match));
+        if ((charecter_before_match == "\n" || charecter_before_match == "") && (g3.match(/^\s*?\$\$/g) || g3.match(/^\s*?#\+/g)))
+            g3 = `\n${g3}`;
+        hashmap[strFront] = g1;
+        hashmap[strFront.trim()] = g1; // fix: sometimes the end space of hash gets removed
+        hashmap[strBack] = "}}";
+        return `${strFront}${g3}${strBack}`;
+    });
+
     // Put all html content in hashmap
     let parsedJson = Mldoc.parseInlineJson(resultContent,
         JSON.stringify({...mldocsOptions, "parse_outline_only": true}),
@@ -74,26 +98,6 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         }
     }
     resultContent = new TextDecoder().decode(resultUTF8);
-
-    // Put all anki cloze marcos in hashmap
-    resultContent = resultContent.replace(ANKI_CLOZE_REGEXP, (match, g1, g2, g3, ...arg) => {
-        let strFront = getRandomUnicodeString();
-        let strBack = getRandomUnicodeString();
-
-        // bug fix: cloze end charecters }} getting deleted after code block ends. Hence, add newline after cloze content.
-        let last_line = g3.split("\n").pop();
-        if (last_line.match(/^```/)) {
-            g3 = `${g3}\n`;
-        }
-
-        // fix: if there is a newline before cloze, we need to add new line after hash charecters of math block and org blocks
-        let charecter_before_match = resultContent.substring(resultContent.indexOf(match) - 1, resultContent.indexOf(match));
-        if ((charecter_before_match == "\n" || charecter_before_match == "") && (g3.match(/^\s*?\$\$/g) || g3.match(/^\s*?#\+/g)))
-            g3 = `\n${g3}`;
-        hashmap[strFront] = g1;
-        hashmap[strBack] = "}}";
-        return `${strFront}${g3}${strBack}`;
-    });
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After replacing errorinous terms:", resultContent);
 
     // Render the markdown
@@ -129,9 +133,8 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After Mldoc.export:", resultContent);
 
     // Bring back inline html content and clozes from hashmap
-    for (let key in hashmap) {
-        resultContent = safeReplace(resultContent, key, hashmap[key]);
-    }
+    for (let key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]);
+    for (let key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]); // fix: sometimes the end space of hash gets removed (actual fix require this to be repeated len(keys) times instead of 2)
 
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
     convertToHTMLFileCache.set({content, format}, {html: resultContent, assets: resultAssets});

@@ -78,7 +78,7 @@ export class ClozeNote extends Note {
 
         // --- Add org block clozes ---
         clozedContent = safeReplace(clozedContent, /#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { 
-            return `{{c${cloze_id++}::\n${g3.trim()}\n}}`;
+            return `{{c${cloze_id++}::${g3.trim()}}}`;
         });
 
         return convertToHTMLFile(clozedContent, this.format);
