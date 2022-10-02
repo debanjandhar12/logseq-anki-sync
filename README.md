@@ -1,5 +1,3 @@
-> **Latest Logseq v0.8.5 broke all older versions of plugin. Please upgrade to the latest version of plugin for fix.** Please read [Common Faq](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Common-FAQ) to recover scheduling info incase you were using v3.2.0 of plugin (or bellow) and ended up ignoring the warning pop up. You should be fine incase you were on v3.2.2.
-
 # Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat-square" height="28"/>](https://github.com/debanjandhar12/logseq-anki-sync/) [<img align="right" src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" height="30"/>](https://www.buymeacoffee.com/debanjandhar12)
 
 An logseq to anki syncing plugin on steroids. This syncs logseq cards and also provides additional syntax for controled flashcard creation ecosystem.
