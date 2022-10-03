@@ -2,7 +2,7 @@ import ohm from 'ohm-js';
 import _ from 'lodash';
 import replaceAsync from "string-replace-async";
 import '@logseq/libs';
-import { ANKI_CLOZE_REGEXP, MD_MATH_BLOCK_REGEXP } from './constants';
+import {ANKI_CLOZE_REGEXP, MD_MATH_BLOCK_REGEXP} from './constants';
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
@@ -92,14 +92,14 @@ export function decodeHTMLEntities(text, exclude = ["gt", "lt"]) {
 }
 
 
-export function get_math_inside_md(res: string): Array<string> {
-    let res2 = res;
+export function get_math_inside_md(content: string): Array<string> {
+    let res = content;
     let arr = [];
-    res2 = res2.replace(MD_MATH_BLOCK_REGEXP, (match) => {
+    res = res.replace(MD_MATH_BLOCK_REGEXP, (match) => {
         arr.push(match);
         return "\\( $1 \\)"
     });
-    res2 = res2.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g, (match) => {
+    res = res.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g, (match) => {
         arr.push(match);
         return "\\( $1 \\)"
     });
@@ -209,94 +209,3 @@ export async function sortAsync<T>(arr: T[], score: (a: T) => Promise<number>): 
     });
 }
 
-export async function confirm(msg: string): Promise<boolean> {
-    return new Promise(function (resolve, reject) {
-        logseq.provideUI({
-            key: `logseq-anki-sync-confirm-${logseq.baseInfo.id}`,
-            path: "body",
-            // Logseq alike dialog template 
-            template: `
-            <div class="ui__modal anki_sync_confirm" style="z-index: 9999;">
-            <div class="ui__modal-overlay ease-out duration-300 opacity-100 enter-done">
-               <div class="absolute inset-0 opacity-75"></div>
-            </div>
-            <div class="ui__modal-panel transform transition-all sm:min-w-lg sm ease-out duration-300 opacity-100 translate-y-0 sm:scale-100 enter-done">
-               <div class="absolute top-0 right-0 pt-2 pr-2">
-                  <a aria-label="Close" type="button" class="ui__modal-close opacity-60 hover:opacity-100" data-on-click="cancel_action">
-                     <svg stroke="currentColor" viewBox="0 0 24 24" fill="none" class="h-6 w-6">
-                        <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
-                     </svg>
-                  </a>
-               </div>
-               <div class="panel-content">
-                  <div class="ui__confirm-modal is-">
-                     <div class="sm:flex sm:items-start">
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                           <h2 class="headline text-lg leading-6 font-medium">${msg}</h2>
-                           <label class="sublabel">
-                              <h3 class="subline text-gray-400"></h3>
-                           </label>
-                        </div>
-                     </div>
-                     <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse"><span class="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto"><button type="button" class="inline-flex justify-center w-full rounded-md border border-transparent px-4 py-2 bg-indigo-600 text-base leading-6 font-medium text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo transition ease-in-out duration-150 sm:text-sm sm:leading-5" data-on-click="yes_action">Yes</button></span><span class="mt-3 flex w-full rounded-md shadow-sm sm:mt-0 sm:w-auto"><button type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 px-4 py-2 bg-white text-base leading-6 font-medium text-gray-700 shadow-sm hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue transition ease-in-out duration-150 sm:text-sm sm:leading-5" data-on-click="cancel_action">Cancel</button></span></div>
-                  </div>
-               </div>
-            </div>
-         </div>`,
-        });
-        logseq.provideStyle(`
-            .anki_sync_confirm {display: flex;}
-        `);
-        logseq.provideModel(
-            {
-                cancel_action(e) {
-                    logseq.provideStyle(`
-                        .anki_sync_confirm {display: none;}
-                    `);
-                    logseq.provideUI({ key: `logseq-anki-sync-confirm-${logseq.baseInfo.id}`, template: `` });
-                    resolve(false);
-                },
-                yes_action(e) {
-                    logseq.provideStyle(`
-                        .anki_sync_confirm {display: none;}
-                    `);
-                    logseq.provideUI({ key: `logseq-anki-sync-confirm-${logseq.baseInfo.id}`, template: `` });
-                    resolve(true);
-                }
-            }
-        )
-    });
-}
-
-export class ProgressNotification {
-    max: number;
-    current: number;
-    progressBar: HTMLElement;
-    constructor(msg: string, max: number) {
-        this.max = max;
-        this.current = 0;
-        logseq.provideUI({
-            key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`,
-            path: "div.notifications",
-            template: `
-            <div class="ui__notifications-content enter-done" style=""><div class="max-w-sm w-full shadow-lg rounded-lg pointer-events-auto notification-area transition ease-out duration-300 transform translate-y-0 opacity-100 sm:translate-x-0"><div class="rounded-lg shadow-xs" style="max-height: calc(100vh - 200px); overflow: hidden scroll;"><div class="p-4"><div class="flex items-start"><div class="flex-shrink-0"><svg stroke="currentColor" viewBox="0 0 24 24" fill="none" class="h-6 w-6 text-green-400"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path></svg></div><div class="ml-3 w-0 flex-1">
-            <div class="text-sm leading-5 font-medium whitespace-pre-line text-gray-900 dark:text-gray-300 " style="margin: 0px;">${msg}:
-            <progress id="logseq-anki-sync-progress-bar-${logseq.baseInfo.id}" value="${this.current}" max="${this.max}" />
-            </div>
-            </div><div class="ml-4 flex-shrink-0 flex">
-            </div></div></div></div></div></div>
-            `
-        });
-    }
-    increment() {
-        this.current++;
-        try{
-            if(this.progressBar == null) {
-                this.progressBar = window.parent.document.getElementById(`logseq-anki-sync-progress-bar-${logseq.baseInfo.id}`);
-            }
-            this.progressBar.setAttribute("value", `${this.current}`);
-        } catch (e) { }
-        if(this.current >= this.max)
-            logseq.provideUI({ key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`, template: `` });  // Remove notification
-    }
-}

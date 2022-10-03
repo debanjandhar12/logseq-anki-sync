@@ -6,7 +6,7 @@ import { Note } from './notes/Note';
 import { ClozeNote } from './notes/ClozeNote';
 import { MultilineCardNote } from './notes/MultilineCardNote';
 import _ from 'lodash';
-import { get_better_error_msg, confirm, ProgressNotification, sortAsync } from './utils';
+import { get_better_error_msg, sortAsync } from './utils';
 import path from 'path';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile, convertToHTMLFileCache } from './converter/Converter';
@@ -14,6 +14,8 @@ import { LogseqProxy } from './LogseqProxy';
 import pkg from '../package.json';
 import { SwiftArrowNote } from './notes/SwiftArrowNote';
 import { getRecursiveDependenciesHashCache } from './converter/getBlockRecursiveDependenciesHash';
+import {ProgressNotification} from "./ui/ProgressNotification";
+import {Confirm} from "./ui/Confirm";
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -80,7 +82,7 @@ export class LogseqToAnkiSync {
 
         // -- Prompt the user what actions are going to be performed --
         let confirm_msg = `<b>The logseq to anki sync plugin will attempt to perform the following actions:</b><br/>Create ${toCreateNotes.length} new anki notes<br/>Update ${toUpdateNotes.length} existing anki notes<br/>Delete ${toDeleteNotes.length != 0 ? `<span class="text-red-600">${toDeleteNotes.length}</span>` : toDeleteNotes.length} anki notes<br/><br/>Are you sure you want to coninue?`;
-        if (!(await confirm(confirm_msg))) { console.log("Sync Aborted by user!"); return; }
+        if (!(await Confirm(confirm_msg))) { console.log("Sync Aborted by user!"); return; }
         
         // -- Sync --
         let start_time = performance.now();
