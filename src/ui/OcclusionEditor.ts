@@ -5,16 +5,17 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
     return new Promise(async function (resolve, reject) {
         const editor = window.parent.document.createElement('div');
         editor.innerHTML = `
-            <div class="cloze-editor-toolbar">
+            <div class="occlusion-editor-toolbar">
                <button onclick="addOcclusion()">+</button>
-               <button id="delete-occlusion-btn" onclick="deleteOcclusion(this)">-</button>
+               <button id="delete-occlusion-btn" onclick="deleteOcclusion(this)" disabled>-</button>
+               <select id="select-cid-value" class="mt-1 block text-base leading-6 border-gray-300 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 sm:text-sm sm:leading-5 ml-1 sm:ml-4 w-12 sm:w-20 form-select" style="display: inline-block;margin: 0;" disabled><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
             </div>
             <div class="cloze-editor-image">
             </div>
         `;
         const div = window.parent.document.createElement('div');
         div.innerHTML = `
-            <div class="ui__modal occlusion__editor" style="z-index: 9999;">
+            <div class="ui__modal occlusion__editor settings-modal cp__settings-main" style="z-index: 9999;">
             <div class="ui__modal-overlay ease-out duration-300 opacity-100 enter-done">
                <div class="absolute inset-0 opacity-75"></div>
             </div>
@@ -102,13 +103,26 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
                 obj.left = Math.min(obj.left, obj.canvas.width - obj.getBoundingRect().width + obj.left - obj.getBoundingRect().left);
             }
         });
+        window.parent.document.getElementById('select-cid-value').onchange = function (e) {
+            let cid = e.target.value;
+            let activeObject = canvas.getActiveObject();
+            if (activeObject) {
+                canvas.getActiveObject()._objects[1].set('text',cid);
+                canvas.renderAll();
+                canvas.focus();
+            }
+        }
         // Handle Updating UI depending on selection
-        window.parent.document.getElementById('delete-occlusion-btn').disabled = true;
+        window.parent.document.getElementById('select-cid-value').value = '';
         canvas.on('selection:created', function () {
             window.parent.document.getElementById('delete-occlusion-btn').disabled = false;
+            window.parent.document.getElementById('select-cid-value').disabled = false;
+            window.parent.document.getElementById('select-cid-value').value = canvas.getActiveObject()._objects[1].text;
         });
         canvas.on('selection:cleared', function () {
             window.parent.document.getElementById('delete-occlusion-btn').disabled = true;
+            window.parent.document.getElementById('select-cid-value').disabled = true;
+            window.parent.document.getElementById('select-cid-value').value = '';
         });
 
         // @ts-ignore
@@ -164,10 +178,10 @@ function createOcclusionRectEl(left = 0, top = 0, width = 80, height = 40, cId =
         originY: 'center'
     });
     let text = new window.parent.fabric.Text(`${cId}`, {
-        fontSize: 20,
         originX: 'center',
         originY: 'center'
     });
+    text.scaleToHeight(height);
     let group = new window.parent.fabric.Group([ rect, text ], {
         left: left,
         top: top,
