@@ -80,7 +80,7 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
                 let occlusionArr = JSON.parse(Buffer.from(existingOcclusion, 'base64').toString());
                 console.log(occlusionArr);
                 occlusionArr.forEach((o) => {
-                    let occlusion = createOcclusionRectEl(o.left, o.top, o.width, o.height, o.cId);
+                    let occlusion = createOcclusionRectEl(o.left, o.top, o.width, o.height, o.angle, o.cId);
                     canvas.add(occlusion);
                 });
                 canvas.renderAll();
@@ -148,11 +148,11 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
                     top: obj.top,
                     width: obj.getScaledWidth(),
                     height: obj.getScaledHeight(),
+                    angle: obj.angle,
                     cId: parseInt(obj._objects[1].text)
                 });
             });
             console.log("save occlusions",occlusions);
-            // console.log(canvas.toJSON());
             resolve(Buffer.from(JSON.stringify(occlusions), 'utf8').toString('base64'));
             window.parent.document.body.removeChild(div);
         }
@@ -164,7 +164,7 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
     });
 }
 
-function createOcclusionRectEl(left = 0, top = 0, width = 80, height = 40, cId = 1) {
+function createOcclusionRectEl(left = 0, top = 0, width = 80, height = 40, angle = 0, cId = 1) {
     let rect = new window.parent.fabric.Rect({
         fill: '#FFEBA2',
         stroke: '#000',
@@ -188,8 +188,8 @@ function createOcclusionRectEl(left = 0, top = 0, width = 80, height = 40, cId =
         width: width,
         height: height,
         originX: 'center',
-        originY: 'center'
+        originY: 'center',
+        angle: angle
     });
-    // group.setControlsVisibility({ mtr: false });
     return group;
 }
