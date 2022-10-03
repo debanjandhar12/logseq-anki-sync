@@ -65,20 +65,22 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
             let img = new window.parent.fabric.Image(imgEl);
             let canvasWidth = Math.min(imgEl.width,  window.parent.document.querySelector('.occlusion__editor').clientWidth - 160);
             let canvasHeight = Math.min(imgEl.height, window.parent.document.body.clientHeight - 300);
-            scale = Number(Math.min(canvasWidth / imgEl.width, canvasHeight / imgEl.height));
-
+            scale = Number(Math.min(canvasWidth / imgEl.width, canvasHeight / imgEl.height).toPrecision(1));
+            canvas.setZoom(scale);
             canvas.setWidth(imgEl.width * scale);
             canvas.setHeight(imgEl.height * scale);
             canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
-                scaleX: scale,
-                scaleY: scale
+                scaleX: 1,
+                scaleY: 1
             });
             canvas.renderAll();
 
             if(existingOcclusion) {
                 let occlusionArr = JSON.parse(Buffer.from(existingOcclusion, 'base64').toString());
+                console.log(occlusionArr);
                 occlusionArr.forEach((o) => {
-                    let occlusion = createOcclusionRectEl(o.left * scale, o.top * scale, o.width * scale, o.height * scale, o.cId);
+                    // we add -1 to the width and height to fix a weird scaling issue
+                    let occlusion = createOcclusionRectEl(o.left, o.top, o.width - 1, o.height - 1, o.cId);
                     canvas.add(occlusion);
                 });
                 canvas.renderAll();
@@ -129,13 +131,14 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
             let occlusions = [];
             canvas.getObjects().forEach((obj) => {
                 occlusions.push({
-                    left: obj.left / scale,
-                    top: obj.top / scale,
-                    width: obj.getScaledWidth() / scale,
-                    height: obj.getScaledHeight() / scale,
+                    left: obj.left,
+                    top: obj.top,
+                    width: obj.getScaledWidth(),
+                    height: obj.getScaledHeight(),
                     cId: parseInt(obj._objects[1].text)
                 });
             });
+            console.log("save occlusions",occlusions);
             resolve(Buffer.from(JSON.stringify(occlusions), 'utf8').toString('base64'));
             window.parent.document.body.removeChild(div);
         }
@@ -155,6 +158,7 @@ function createOcclusionRectEl(left = 0, top = 0, width = 80, height = 40, cId =
         stroke: '#000',
         strokeWidth: 1,
         strokeUniform: true,
+        noScaleCache: false,
         opacity: 0.7,
         originX: 'center',
         originY: 'center'
