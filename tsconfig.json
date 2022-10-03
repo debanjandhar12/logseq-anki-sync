@@ -8,6 +8,7 @@
         "sourceMap": true,
         "removeComments": true,
         "moduleResolution": "node",
+        "strict": false,
         "module": "esnext",
         "target": "ES6"
     },

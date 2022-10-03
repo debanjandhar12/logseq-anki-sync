@@ -9,6 +9,7 @@ import { ANKI_ICON } from './constants';
 import { LogseqProxy } from './LogseqProxy';
 import { AddonRegistry } from './addons/AddonRegistry';
 import { SwiftArrowNote } from './notes/SwiftArrowNote';
+import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
 
 
 // --- Register UI Elements Onload ---
@@ -48,6 +49,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
   ClozeNote.initLogseqOperations();
   MultilineCardNote.initLogseqOperations();
   SwiftArrowNote.initLogseqOperations();
+  ImageOcclusionNote.initLogseqOperations();
   console.log("Window Parent:", window.parent);
 
   addSettingsToLogseq();
