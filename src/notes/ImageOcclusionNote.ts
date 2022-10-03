@@ -30,6 +30,7 @@ export class ImageOcclusionNote extends Note {
             let selectedImage = await SelectPrompt("Select Image to add / update occlusion", images);
             if (selectedImage) {
                 let oculsionInfo = await OcclusionEditor(selectedImage, savedOcclusionHashMap[selectedImage] || "");
+                if(oculsionInfo && oculsionInfo != savedOcclusionHashMap[selectedImage]) console.log("oculsionInfo changed" , JSON.parse(Buffer.from(oculsionInfo, 'base64').toString()), JSON.parse(Buffer.from(savedOcclusionHashMap[selectedImage], 'base64').toString()));
                 if (oculsionInfo) {
                     savedOcclusionHashMap[selectedImage] = oculsionInfo;
                     await LogseqProxy.Editor.upsertBlockProperty(uuid, 'occlusion', Buffer.from(JSON.stringify(savedOcclusionHashMap), 'utf8').toString('base64'));
