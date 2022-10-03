@@ -52,7 +52,7 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
         let fabricScript = window.parent.document.createElement('script');
         fabricScript.innerHTML = fabric;
         window.parent.document.body.appendChild(fabricScript);
-        let canvas = new window.parent.fabric.Canvas(canvasEl);
+        let canvas = new window.parent.fabric.Canvas(canvasEl, {imageSmoothingEnabled: false});
         canvas.selection = false; // disable group selection
         canvas.uniformScaling = false; // disable object scaling keeping aspect ratio
         let scale : number = 1;
@@ -80,8 +80,7 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
                 let occlusionArr = JSON.parse(Buffer.from(existingOcclusion, 'base64').toString());
                 console.log(occlusionArr);
                 occlusionArr.forEach((o) => {
-                    // we add -1 to the width and height to fix a weird scaling issue
-                    let occlusion = createOcclusionRectEl(o.left, o.top, o.width - 1, o.height - 1, o.cId);
+                    let occlusion = createOcclusionRectEl(o.left, o.top, o.width, o.height, o.cId);
                     canvas.add(occlusion);
                 });
                 canvas.renderAll();
@@ -153,6 +152,7 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
                 });
             });
             console.log("save occlusions",occlusions);
+            // console.log(canvas.toJSON());
             resolve(Buffer.from(JSON.stringify(occlusions), 'utf8').toString('base64'));
             window.parent.document.body.removeChild(div);
         }
@@ -166,14 +166,14 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
 
 function createOcclusionRectEl(left = 0, top = 0, width = 80, height = 40, cId = 1) {
     let rect = new window.parent.fabric.Rect({
-        width: width,
-        height: height,
         fill: '#FFEBA2',
         stroke: '#000',
         strokeWidth: 1,
         strokeUniform: true,
         noScaleCache: false,
         opacity: 0.7,
+        width: width,
+        height: height,
         originX: 'center',
         originY: 'center'
     });
@@ -185,6 +185,11 @@ function createOcclusionRectEl(left = 0, top = 0, width = 80, height = 40, cId =
     let group = new window.parent.fabric.Group([ rect, text ], {
         left: left,
         top: top,
+        width: width,
+        height: height,
+        originX: 'center',
+        originY: 'center'
     });
+    // group.setControlsVisibility({ mtr: false });
     return group;
 }
