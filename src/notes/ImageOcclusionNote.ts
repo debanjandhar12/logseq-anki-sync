@@ -25,9 +25,11 @@ export class ImageOcclusionNote extends Note {
             });
 
             let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(block.properties?.occlusion || Buffer.from("{}", 'utf8').toString('base64'), 'base64').toString());
+            console.log("imgToOcclusionArrHashMap", imgToOcclusionArrHashMap);
             let selectedImage = await SelectPrompt("Select Image to add / update occlusion", block_images);
             if (selectedImage) {
                 let newOcclusionArr = await OcclusionEditor(selectedImage, imgToOcclusionArrHashMap[selectedImage] || []);
+                console.log("newOcclusionArr", newOcclusionArr);
                 if (newOcclusionArr) {
                     imgToOcclusionArrHashMap[selectedImage] = newOcclusionArr;
                     await LogseqProxy.Editor.upsertBlockProperty(uuid, 'occlusion', Buffer.from(JSON.stringify(imgToOcclusionArrHashMap), 'utf8').toString('base64'));
