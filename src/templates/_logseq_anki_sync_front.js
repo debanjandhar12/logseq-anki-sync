@@ -3,7 +3,6 @@
 */
 import {fabric} from 'fabric';
 import {createOcclusionRectEl} from "../ui/OcclusionEditor";
-
 window.onload = function () {
     if (type == "image_occlusion") {
         // Get current cloze id (only works for image occlusion)
@@ -25,8 +24,8 @@ window.onload = function () {
             imgEl.src = image.src;
             imgEl.onload = function() {
                 let imgFabric = new fabric.Image(imgEl);
-                let zoom = Math.max( canvas.width / imgFabric.width, canvas.height / imgFabric.height );
-                canvas.setZoom(zoom);
+                let scaleX = canvas.width / imgFabric.width,  scaleY = canvas.height / imgFabric.height;
+                canvas.setViewportTransform([scaleX, 0, 0, scaleY, 0, 0]);
                 canvas.setBackgroundImage(imgFabric, canvas.renderAll.bind(canvas), {
                     scaleX: 1,
                     scaleY: 1
