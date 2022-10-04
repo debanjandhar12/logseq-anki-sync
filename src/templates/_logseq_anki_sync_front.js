@@ -34,7 +34,7 @@ window.onload = function () {
                 canvas.renderAll();
             }
             canvasEl.style.position = "relative";
-            image.parentNode.replaceChild(canvasEl, image);
+            image.replaceWith(canvasEl);
             let imgPath = decodeURIComponent(image.src.replace(/^.*[\\\/]/, ''));
             if(canvasHashMap[imgPath] == null) canvasHashMap[imgPath] = [];
             canvasHashMap[imgPath].push(canvas);
