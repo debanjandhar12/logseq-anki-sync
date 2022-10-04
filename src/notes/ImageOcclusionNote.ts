@@ -17,22 +17,20 @@ export class ImageOcclusionNote extends Note {
 
     public static initLogseqOperations = (() => {
         logseq.Editor.registerBlockContextMenuItem("Image Occlusion", async (block) => {
-            console.log("Image Occlusion", block);
             let uuid = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
             block = await LogseqProxy.Editor.getBlock(uuid);
-            let content = block.content;
-            let images = content.match(MD_IMAGE_EMBEDED_REGEXP).map((image) => {
-                return image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
+            let block_content = block.content;
+            let block_images = block_content.match(MD_IMAGE_EMBEDED_REGEXP).map((block_image) => {
+                return block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
             });
 
-            let savedOcclusionHashMap = JSON.parse(Buffer.from(block.properties?.occlusion || Buffer.from("{}", 'utf8').toString('base64'), 'base64').toString());
-            console.log("savedOcclusionHashMap", savedOcclusionHashMap);
-            let selectedImage = await SelectPrompt("Select Image to add / update occlusion", images);
+            let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(block.properties?.occlusion || Buffer.from("{}", 'utf8').toString('base64'), 'base64').toString());
+            let selectedImage = await SelectPrompt("Select Image to add / update occlusion", block_images);
             if (selectedImage) {
-                let oculsionInfo = await OcclusionEditor(selectedImage, savedOcclusionHashMap[selectedImage] || "");
-                if (oculsionInfo) {
-                    savedOcclusionHashMap[selectedImage] = oculsionInfo;
-                    await LogseqProxy.Editor.upsertBlockProperty(uuid, 'occlusion', Buffer.from(JSON.stringify(savedOcclusionHashMap), 'utf8').toString('base64'));
+                let newOcclusionArr = await OcclusionEditor(selectedImage, imgToOcclusionArrHashMap[selectedImage] || []);
+                if (newOcclusionArr) {
+                    imgToOcclusionArrHashMap[selectedImage] = newOcclusionArr;
+                    await LogseqProxy.Editor.upsertBlockProperty(uuid, 'occlusion', Buffer.from(JSON.stringify(imgToOcclusionArrHashMap), 'utf8').toString('base64'));
                 }
             }
         });
@@ -40,26 +38,25 @@ export class ImageOcclusionNote extends Note {
 
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let clozedContent : string = this.content;
+        let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(this.properties?.occlusion, 'base64').toString());
+
         let clozes = new Set();
-        let savedOcclusionHashMap = JSON.parse(Buffer.from(this.properties?.occlusion, 'base64').toString());
-        let nonBase64OcclusionHashMap  = {};
-        // Iterate through all images
-        for(let image in savedOcclusionHashMap) {
-            let occlusions = JSON.parse(Buffer.from(savedOcclusionHashMap[image], 'base64').toString());
-            nonBase64OcclusionHashMap[image] = occlusions;
-            let blockImages = this.content.match(MD_IMAGE_EMBEDED_REGEXP).map((image) => {
+        for(let image in imgToOcclusionArrHashMap) {
+            let occlusionArr = imgToOcclusionArrHashMap[image];
+            let block_images = this.content.match(MD_IMAGE_EMBEDED_REGEXP).map((image) => {
                 return image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
             });
-            if(blockImages.includes(image)) {
-                for (let occlusion of occlusions) {
+            if(block_images.includes(image)) {
+                for (let occlusion of occlusionArr) {
                     clozes.add(occlusion.cId);
                 }
             }
         }
         clozedContent += `\n<div class="hidden">
         ${Array.from(clozes).map((cloze) => `{{c${cloze}:: ::<span id="c${cloze}"></span>}}`).join('')}
-        <div id="occlusionDataHashMap">${JSON.stringify(nonBase64OcclusionHashMap)}</div>
+        <div id="imgToOcclusionArrHashMap">${JSON.stringify(imgToOcclusionArrHashMap)}</div>
         </div>`;
+
         return convertToHTMLFile(clozedContent, this.format);
     }
 
@@ -89,24 +86,20 @@ export class ImageOcclusionNote extends Note {
         blocks = _.filter(blocks, (block) => { // Remove template cards
             return _.get(block, 'properties.template') == null || _.get(block, 'properties.template') == undefined;
         });
-        blocks = _.filter(blocks, (block) => { // Remove blocks with invalid occlusion
-            let valid = false;
+        blocks = _.filter(blocks, (block) => { // Remove blocks that do not have images with occlusion
             try {
-                let savedOcclusionHashMap = JSON.parse(Buffer.from(block.properties?.occlusion, 'base64').toString());
-                // Iterate through all images
-                for(let image in savedOcclusionHashMap) {
-                    let occlusions = JSON.parse(Buffer.from(savedOcclusionHashMap[image], 'base64').toString());
+                let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(block.properties?.occlusion, 'base64').toString());
+                for(let image in imgToOcclusionArrHashMap) {
+                    let occlusionArr = imgToOcclusionArrHashMap[image];
                     let blockImages = block.content.match(MD_IMAGE_EMBEDED_REGEXP).map((image) => {
                         return image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
                     });
-                    if(occlusions && occlusions.length > 0 && blockImages.includes(image)) {
-                        valid = true;
-                        break;
-                    }
+                    if(occlusionArr && occlusionArr.length > 0 && blockImages.includes(image))
+                        return true;    // Found a valid occlusion! Return true.
                 }
             }
-            catch (e) { return false; }
-            return valid;
+            catch (e) { return false; } // Most likely, the occlusion property is not a valid JSON string. Return false.
+            return false; // No valid occlusion found. Return false.
         });
         return blocks;
     }
