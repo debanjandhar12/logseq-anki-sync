@@ -14,7 +14,7 @@ window.onload = function () {
         if(currentClozeId == '-1') return;
 
         // Replace all images with canvas
-        let canvasHashMap = {};
+        let imgToCanvasHashMap = {};
         let images = document.getElementsByTagName("img");
         for (let image of images) {
             let canvasEl = document.createElement("canvas");
@@ -36,18 +36,18 @@ window.onload = function () {
             canvasEl.style.position = "relative";
             image.replaceWith(canvasEl);
             let imgPath = decodeURIComponent(image.src.replace(/^.*[\\\/]/, ''));
-            if(canvasHashMap[imgPath] == null) canvasHashMap[imgPath] = [];
-            canvasHashMap[imgPath].push(canvas);
+            if(imgToCanvasHashMap[imgPath] == null) imgToCanvasHashMap[imgPath] = [];
+            imgToCanvasHashMap[imgPath].push(canvas);
         }
-        // Iterate the occlusionHashMap to draw the occlusion
-        let occlusionDataHashMap = JSON.parse(document.getElementById("occlusionDataHashMap").innerHTML);
-        console.log(occlusionDataHashMap, canvasHashMap);
-        for (let image in occlusionDataHashMap) {
-            let occlusionArr = occlusionDataHashMap[image];
-            occlusionArr.forEach((o) => {
-                if(o.cId == currentClozeId) {
-                    canvasHashMap[encodeURIComponent(image)].forEach((canvas) => {
-                        let occlusion = createOcclusionRectEl(o.left, o.top, o.width, o.height, o.angle, o.cId);
+
+        // Iterate the imgToOcclusionArrHashMap to draw the occlusion
+        let imgToOcclusionArrHashMap = JSON.parse(document.getElementById("imgToOcclusionArrHashMap").innerHTML);
+        for (let image in imgToOcclusionArrHashMap) {
+            let occlusionArr = imgToOcclusionArrHashMap[image];
+            occlusionArr.forEach((obj) => {
+                if(obj.cId == currentClozeId) {
+                    imgToCanvasHashMap[encodeURIComponent(image)].forEach((canvas) => {
+                        let occlusion = createOcclusionRectEl(obj.left, obj.top, obj.width, obj.height, obj.angle, obj.cId);
                         occlusion._objects[0].set('opacity', 1);
                         canvas.add(occlusion);
                         canvas.renderAll();
