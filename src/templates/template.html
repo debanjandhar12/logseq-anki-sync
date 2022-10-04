@@ -11,7 +11,7 @@
     {{cloze:Text}}
 </span>
 <div class="extra">{{Extra}}</div>
-<script> var config = {}; </script>
-<script> try{config = JSON.parse(`{{Config}}`);} catch(e) {console.log(e);} </script>
-<script src="_logseq_anki_sync.js"></script>
+<script> var config = {}; var uuid_type = ""; var type = ""; var load_event; </script>
+<script> try{config = JSON.parse(`{{Config}}`); uuid_type = `{{uuid-type}}`; type = uuid_type.split('-').pop(); } catch(e) {console.log(e);} </script>
+<script src="_logseq_anki_sync.js" charset="UTF-8"></script>
 <link rel="stylesheet" href="_logseq_anki_sync.css">
