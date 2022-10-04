@@ -157,7 +157,7 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
                     cId: parseInt(obj._objects[1].text)
                 });
             });
-            console.log("save occlusions",occlusions);
+            console.log("save occlusions", occlusions);
             resolve(Buffer.from(JSON.stringify(occlusions), 'utf8').toString('base64'));
             window.parent.document.body.removeChild(div);
         }
@@ -169,7 +169,7 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
     });
 }
 
-function createOcclusionRectEl(left = 0, top = 0, width = 80, height = 40, angle = 0, cId = 1) {
+export function createOcclusionRectEl(left = 0, top = 0, width = 80, height = 40, angle = 0, cId = 1) {
     let rect = new window.parent.fabric.Rect({
         fill: '#FFEBA2',
         stroke: '#000',
