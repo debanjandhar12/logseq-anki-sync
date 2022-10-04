@@ -118,6 +118,11 @@ export async function OcclusionEditor(img: string, existingOcclusion: string): P
             window.parent.document.getElementById('select-cid-value').disabled = false;
             window.parent.document.getElementById('select-cid-value').value = canvas.getActiveObject()._objects[1].text;
         });
+        canvas.on('selection:updated', function () {
+            window.parent.document.getElementById('delete-occlusion-btn').disabled = false;
+            window.parent.document.getElementById('select-cid-value').disabled = false;
+            window.parent.document.getElementById('select-cid-value').value = canvas.getActiveObject()._objects[1].text;
+        });
         canvas.on('selection:cleared', function () {
             window.parent.document.getElementById('delete-occlusion-btn').disabled = true;
             window.parent.document.getElementById('select-cid-value').disabled = true;
