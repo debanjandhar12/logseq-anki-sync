@@ -1,5 +1,16 @@
-import fabric from 'bundle-text:../../node_modules/fabric/dist/fabric.min.js';
 import path from "path";
+import fs from "fs";
+
+declare global {
+    interface Window { fabric: any; }
+}
+
+const fabric = fs.readFileSync(__dirname + '/../../node_modules/fabric/dist/fabric.min.js', 'utf8');
+if(!window.parent.fabric) {
+    let fabricScript = window.parent.document.createElement('script');
+    fabricScript.innerHTML = fabric;
+    window.parent.document.body.appendChild(fabricScript);
+}
 
 export async function OcclusionEditor(img: string, occlusionArr: Array<any>): Promise<Array<any> | boolean> {
     return new Promise(async function (resolve, reject) {
@@ -50,9 +61,6 @@ export async function OcclusionEditor(img: string, occlusionArr: Array<any>): Pr
         editor.querySelector('.cloze-editor-image').appendChild(canvasEl);
         div.querySelector('#cloze-editor').appendChild(editor);
         window.parent.document.body.appendChild(div);
-        let fabricScript = window.parent.document.createElement('script');
-        fabricScript.innerHTML = fabric;
-        window.parent.document.body.appendChild(fabricScript);
         let canvas = new window.parent.fabric.Canvas(canvasEl, {imageSmoothingEnabled: false});
         canvas.selection = false; // disable group selection
         canvas.uniformScaling = false; // disable object scaling keeping aspect ratio
@@ -137,6 +145,7 @@ export async function OcclusionEditor(img: string, occlusionArr: Array<any>): Pr
             canvas.add(occlusionEl);
             canvas.renderAll();
         }
+        // @ts-ignore
         window.parent.deleteOcclusion = (e) => {
             canvas.remove(canvas.getActiveObject());
             canvas.renderAll();
