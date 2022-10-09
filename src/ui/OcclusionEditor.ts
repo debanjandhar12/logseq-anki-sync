@@ -138,10 +138,10 @@ export async function OcclusionEditor(img: string, occlusionArr: Array<any>): Pr
         // @ts-ignore
         window.parent.addOcclusion = () => {
             let randomLocation = {
-                x: Math.floor(Math.random() * (canvas.width - 100)),
-                y: Math.floor(Math.random() * (canvas.height - 100))
+                x: Math.floor(Math.random() * (imgEl.width - 0.22 * imgEl.width)) + 0.11 * imgEl.width,
+                y: Math.floor(Math.random() * (imgEl.height - 0.22 * imgEl.height)) + 0.11 * imgEl.height
             }
-            let occlusionEl = createOcclusionRectEl(randomLocation.x, randomLocation.y);
+            let occlusionEl = createOcclusionRectEl(randomLocation.x, randomLocation.y, 0.22 * imgEl.width, 0.22 * imgEl.height);
             canvas.add(occlusionEl);
             canvas.renderAll();
         }
