@@ -3,16 +3,18 @@
         "lib": [
           "ES2021"
         ],
-        "esModuleInterop": true,
+        "esModuleInterop": false,
+        "allowSyntheticDefaultImports": true,
         "resolveJsonModule": true,
-        "sourceMap": true,
+        "sourceMap": false,
         "removeComments": true,
         "moduleResolution": "node",
         "strict": false,
         "module": "esnext",
-        "target": "ES6"
+        "target": "ES6",
+        "isolatedModules": true,
     },
     "exclude": [
-      "dist",
-    ],
+      "dist"
+    ]
 }

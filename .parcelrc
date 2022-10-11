@@ -1,0 +1,10 @@
+{
+  "extends": "@parcel/config-default",
+  "transformers": {
+    "bundle-text:*.js": ["@parcel/transformer-js", "@parcel/transformer-inline-string"],
+    "get-text:*": ["@parcel/transformer-inline-string"]
+  },
+  "optimizers": {
+    "bundle-text:*.js": ["@parcel/optimizer-terser"]
+  }
+}
