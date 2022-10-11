@@ -11,8 +11,9 @@
   "repo": "debanjandhar12/logseq-anki-sync",
   "author": "@debanjandhar12",
   "scripts": {
-    "dev": "parcel serve ./src/index.html --public-url ./",
-    "build": "parcel build ./src/index.html --public-url ./ --no-scope-hoist"
+    "dev": "parcel watch ./src/index.html --public-url ./",
+    "old_build": "parcel build ./src/index.html --public-url ./ --no-scope-hoist",
+    "build": "timeout 30 sleep 30 | parcel watch ./src/index.html --public-url ./ --watch-for-stdin --no-hmr --no-source-maps"
   },
   "license": "AGPL-3.0",
   "logseq": {
@@ -41,6 +42,7 @@
     "buffer": "^6.0.3",
     "constants-browserify": "^1.0.0",
     "parcel": "2.5.0",
-    "path-browserify": "^1.0.1"
+    "path-browserify": "^1.0.1",
+    "vm-browserify": "^1.1.2"
   }
 }

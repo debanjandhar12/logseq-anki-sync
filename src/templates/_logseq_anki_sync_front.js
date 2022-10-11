@@ -3,6 +3,7 @@
 */
 import {fabric} from 'fabric';
 import {createOcclusionRectEl} from "../ui/OcclusionEditor";
+
 window.onload = function () {
     if (type == "image_occlusion") {
         // Get current cloze id (only works for image occlusion)
