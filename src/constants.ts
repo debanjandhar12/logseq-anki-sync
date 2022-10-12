@@ -6,7 +6,9 @@ export const ORG_MATH_BLOCK_REGEXP = /\\\[([\s\S]*?)\\\]/g;
 export const ORG_PROPERTIES_REGEXP = /:PROPERTIES:\n((.|\n)*?):END:\n?/gm;
 export const LOGSEQ_BLOCK_REF_REGEXP = /\(\(([^\)\n]*?)\)\)(?!\))/gm;
 export const LOGSEQ_RENAMED_BLOCK_REF_REGEXP = /\[(.*?)\]\(\(\((.*?)\)\)\)/gm;
-export const LOGSEQ_PAGE_REF_REGEXP = /\[\[(.*?)\]\]/gm;
+export const LOGSEQ_TAG_REF_REGEXP = /#(?<!#)#([^\[# \n][^ \n]*)/gm;
+export const LOGSEQ_TAG_PAGE_REF_REGEXP = /#\[\[(.*)\]\]/gm;
+export const LOGSEQ_PAGE_REF_REGEXP = /(?<!#)\[\[(.*?)\]\]/gm;
 export const LOGSEQ_EMBDED_PAGE_REGEXP = /\{\{embed \[\[(.*?)\]\] *?\}\}/gm;
 export const LOGSEQ_EMBDED_BLOCK_REGEXP = /\{\{embed \(\((.*?)\)\) *?\}\}/gm;
 

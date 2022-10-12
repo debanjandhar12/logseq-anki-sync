@@ -109,9 +109,8 @@ export class MultilineCardNote extends Note {
             }));
         let direction = this.getCardDirection();
 
-        // Remove clozes and double braces one after another. Also, remove properties.
+        // Remove clozes and double braces one after another.
         this.content = escapeClozeAndSecoundBrace(this.content);
-        this.content = safeReplace(this.content, MD_PROPERTIES_REGEXP, "");        
 
         // Render the parent block and add to clozedContent
         let parentBlockHTMLFile = await convertToHTMLFile(this.content, this.format);

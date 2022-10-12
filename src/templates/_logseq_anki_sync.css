@@ -129,6 +129,7 @@ a.tag:before {
 }
 
 a.tag {
+    font-size: 14px;
     cursor: pointer;
     color: #106ba3;
     opacity: 0.8;
@@ -137,6 +138,7 @@ a.tag {
 a.tag:hover {
     opacity: 1;
     transition: 0.3s;
+    color: #004174;
 }
 
 /* Page, Block Refs and Embeds */
@@ -160,33 +162,43 @@ a.page-reference:hover {
     background-color: #c8e6fa;
 }
 
-a.block-ref {
+.block-ref {
     border-bottom: .5px solid;
     border-bottom-color: #d8e1e8;
     text-decoration: none;
     color: black;
     cursor: alias;
-    display: inline;
+    display: inline-block;
 }
 
-a.block-ref:hover {
+.block-ref * {
+    display: inherit;
+}
+
+.block-ref :is(h1, h2, h3, h4, h5, h6) {
+    border-bottom: none;
+    display: inline-block;
+    font-size: 1em;
+}
+
+.block-ref:hover {
     background-color: #c8e6fa;
 }
 
-a.failed-block-ref {
+.failed-block-ref {
     color: black;
     background-color: #f56565;
     border-radius: 4px;
     cursor: not-allowed;
 }
 
-a.failed-block-ref:before {
+.failed-block-ref:before {
     color: rgb(115, 115, 115);
     content: "((";
     opacity: 0.3;
 }
 
-a.failed-block-ref:after {
+.failed-block-ref:after {
     color: rgb(115, 115, 115);
     content: "))";
     opacity: 0.3;

@@ -4,10 +4,26 @@ import * as cheerio from 'cheerio';
 import { decodeHTMLEntities, escapeClozeAndSecoundBrace, getFirstNonEmptyLine, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils';
 import _ from 'lodash';
 import { Mldoc } from 'mldoc';
-import { ANKI_CLOZE_REGEXP, LOGSEQ_BLOCK_REF_REGEXP, MD_IMAGE_EMBEDED_REGEXP, isImage_REGEXP, isWebURL_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_PAGE_REF_REGEXP, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, MD_MATH_BLOCK_REGEXP, MD_PROPERTIES_REGEXP, ORG_MATH_BLOCK_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
+import {
+    ANKI_CLOZE_REGEXP,
+    LOGSEQ_BLOCK_REF_REGEXP,
+    MD_IMAGE_EMBEDED_REGEXP,
+    isImage_REGEXP,
+    isWebURL_REGEXP,
+    LOGSEQ_EMBDED_PAGE_REGEXP,
+    LOGSEQ_EMBDED_BLOCK_REGEXP,
+    LOGSEQ_PAGE_REF_REGEXP,
+    LOGSEQ_RENAMED_BLOCK_REF_REGEXP,
+    MD_MATH_BLOCK_REGEXP,
+    MD_PROPERTIES_REGEXP,
+    ORG_MATH_BLOCK_REGEXP,
+    ORG_PROPERTIES_REGEXP,
+    LOGSEQ_TAG_REF_REGEXP, LOGSEQ_TAG_PAGE_REF_REGEXP
+} from "../constants";
 import { LogseqProxy } from "../LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
 import { edn } from "@yellowdig/cljs-tools";
+import {Session} from "inspector";
 
 let mldocsOptions = {
     "toc": false,
@@ -34,8 +50,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     let resultContent = content, resultAssets = new Set<string>();
     if (logseq.settings.debug.includes("Converter.ts")) console.log("--Start Converting--\nOriginal:", resultContent);
 
-    ({html: resultContent, assets: resultAssets} = await processProperties({html:  resultContent, assets: resultAssets}, format));
-    ({html: resultContent, assets: resultAssets} = await processEmbeds({html:  resultContent, assets: resultAssets}, format));
+    resultContent = await processProperties(resultContent, format);
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After processing embeded:", resultContent);
 
     if (format == "org") {
@@ -100,6 +115,9 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     resultContent = new TextDecoder().decode(resultUTF8);
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After replacing errorinous terms:", resultContent);
 
+    // Process the block & page refs + embeds
+    resultContent = await processRefEmbeds(resultContent, resultAssets, hashmap, format);
+
     // Render the markdown
     resultContent = Mldoc.export("html", resultContent,
         JSON.stringify(mldocsOptions),
@@ -129,6 +147,10 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         // Add block math braces in math
         $(elm).html(`\\[ ${math} \\]`);
     });
+    // Change all p tags to span tags
+    $('p').each(function (i, elm) {
+        $(elm).replaceWith(`<span>${$(elm).html()}</span>`);
+    });
     resultContent = decodeHTMLEntities(decodeHTMLEntities($('#content ul li').html() || ""));
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After Mldoc.export:", resultContent);
 
@@ -141,30 +163,52 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     return {html: resultContent, assets: resultAssets};
 }
 
-async function processProperties(htmlFile: HTMLFile, format: string = "markdown"): Promise<HTMLFile> {
-    let resultContent = htmlFile.html, resultAssets = htmlFile.assets;
-    resultContent = safeReplace(resultContent, MD_PROPERTIES_REGEXP, ""); //Remove md properties
+async function processProperties(resultContent, format = "markdown"): Promise<string> {
+    let o = resultContent;
     resultContent = safeReplace(resultContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
-    return {html: resultContent, assets: resultAssets};
+    let block_props = {};
+    resultContent = safeReplace(resultContent, MD_PROPERTIES_REGEXP, (match) => { //Remove md properties
+        let [key, value] = match.split("::");
+        block_props[key.trim()] = value.trim();
+        return "";
+    });
+    // Add support for pdf annotation
+    if (block_props["ls-type"] == "annotation" && block_props["hl-type"] == "area") { // Image annotation
+        try {
+            let block_uuid = block_props["id"] || block_props["nid"];
+            console.log(block_uuid);
+            let block = await LogseqProxy.Editor.getBlock(block_uuid);
+            let page = await LogseqProxy.Editor.getPage(_.get(block, "page.id"));
+            console.log(block);
+            let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${block_props["hl-page"]}_${block_uuid}_${block_props["hl-stamp"]}.png`;
+            resultContent = `\ud83d\udccc**P${block_props["hl-page"]}** <div></div> ![](${hls_img_loc})\n` + resultContent;
+        } catch (e) { console.log(e); }
+    }
+    else if (block_props["ls-type"] == "annotation") { // Text annotation
+        try {
+            resultContent = `\ud83d\udccc**P${block_props["hl-page"]}** ` + resultContent;
+        } catch (e) { console.log(e); }
+    }
+    return resultContent;
 }
 
-async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): Promise<HTMLFile> {
-    let resultContent = htmlFile.html, resultAssets = htmlFile.assets;
-
+async function processRefEmbeds(resultContent, resultAssets, hashmap, format): Promise<string> {
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_BLOCK_REGEXP, async (match, g1) => {  // Convert block embed
         let block_content = "";
         try { let block = await LogseqProxy.Editor.getBlock(g1); block_content = _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
-        return `<div class="embed-block">
-                <ul class="children-list"><li class="children">
-                ${await (async () => {
-                    let blockContentHTMLFile : HTMLFile = await convertToHTMLFile(block_content, format);
-                    blockContentHTMLFile.assets.forEach(element => {
-                        resultAssets.add(element);
-                    });
-                    return blockContentHTMLFile.html;
-                })()}
-                </li></ul>
-                </div>`;
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<div class="embed-block">
+                        <ul class="children-list"><li class="children">
+                        ${await (async () => {
+                            let blockContentHTMLFile : HTMLFile = await convertToHTMLFile(block_content, format);
+                            blockContentHTMLFile.assets.forEach(element => {
+                                resultAssets.add(element);
+                            });
+                            return blockContentHTMLFile.html;
+                        })()}
+                        </li></ul>
+                        </div>`;
+        return str;
     });
 
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_PAGE_REGEXP, async (match, pageName) => { // Convert page embed
@@ -190,10 +234,24 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
         }
         try { pageTree = await LogseqProxy.Editor.getPageBlocksTree(pageName); } catch (e) { console.warn(e); }
 
-        return `<div class="embed-page">
-                <a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="embed-header">${pageName}</a>
-                ${await getPageContentHTML(pageTree)}
-                </div>`;
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<div class="embed-page">
+                        <a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="embed-header">${pageName}</a>
+                        ${await getPageContentHTML(pageTree)}
+                        </div>`;
+        return str;
+    });
+
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_TAG_PAGE_REF_REGEXP, async (match, tagName) => { // Convert page refs
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<a class="tag" href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(tagName)}" class="block-ref">${tagName}</a>`;
+        return str;
+    });
+
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_TAG_REF_REGEXP, async (match, tagName) => { // Convert page refs
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<a class="tag" href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(tagName)}" class="block-ref">${tagName}</a>`;
+        return str;
     });
 
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_PAGE_REF_REGEXP, async (match, pageName) => { // Convert page refs
@@ -205,44 +263,44 @@ async function processEmbeds(htmlFile: HTMLFile, format: string = "markdown"): P
         else if(format == "org" && encodeURI(pageName).match(isWebURL)) {
             return `${pageName}`;
         }
-        return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="page-reference">${pageName}</a>`
-    }); 
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="page-reference">${pageName}</a>`;
+        return str;
+    });
+
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_RENAMED_BLOCK_REF_REGEXP, async (match, aliasContent, blockUUID) => { // Convert page refs
-        return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${aliasContent}</a>`
-    }); // Convert block ref link
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${aliasContent}</a>`;
+        return str;
+    });
+
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_BLOCK_REF_REGEXP, async (match, blockUUID) => { // Convert block refs
-        let block;
-        try { block = await LogseqProxy.Editor.getBlock(blockUUID); }
-        catch (e) { console.warn(e); }
-        if (_.get(block, "properties.lsType") == "annotation" && _.get(block, "properties.hlType") == "area") {  // Pdf area ref
-            let page = await LogseqProxy.Editor.getPage(block.page.id);
-            let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${_.get(block, "properties.hlPage")}_${blockUUID}_${_.get(block, "properties.hlStamp")}.png`;
-            resultAssets.add(hls_img_loc);
-            let img_html = `<img src="${encodeURIComponent(hls_img_loc)}" />`
-            return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">\ud83d\udccc<strong>P${_.get(block, "properties.hlPage")}</strong> <br/> ${img_html}</a>`;
-        }
-        else if (_.get(block, "properties.lsType") == "annotation") {    // Pdf text ref
-            let block_content = escapeClozeAndSecoundBrace(_.get(block, "content"));
-            block_content = safeReplace(block_content, MD_PROPERTIES_REGEXP, "");
-            block_content = safeReplace(block_content, ORG_PROPERTIES_REGEXP, "");
-            return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">\ud83d\udccc<strong>P${_.get(block, "properties.hlPage")}</strong> ${block_content}</a>`;
-        }
-        // Normal Block ref
+        let str = getRandomUnicodeString();
         try {
+            let block = await LogseqProxy.Editor.getBlock(blockUUID);
             let block_content = _.get(block, "content");
+            let block_props = _.get(block, "properties");
             block_content = safeReplace(block_content, MD_PROPERTIES_REGEXP, "");
             block_content = safeReplace(block_content, ORG_PROPERTIES_REGEXP, "");
             let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
             block_content_first_line = escapeClozeAndSecoundBrace(block_content_first_line);
-            return `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${block_content_first_line}</a>`;
+            let blockRef_content = block_content_first_line;
+            for (const [prop, value] of Object.entries(block_props))
+                blockRef_content += `\n${prop}:: ${value}`;
+            let blockRefHTMLFile = await convertToHTMLFile(blockRef_content, _.get(block, "format"));
+            blockRefHTMLFile.assets.forEach(element => {
+                resultAssets.add(element);
+            });
+            hashmap[str] = `<span onclick="window.open('logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?block-id=${encodeURIComponent(blockUUID)}')" class="block-ref">${blockRefHTMLFile.html}</span>`;
         }
         catch (e) { // Block not found
             console.warn(e);
-            return `<a class="failed-block-ref">${blockUUID}</a>`;
+            hashmap[str] = `<span class="failed-block-ref">${blockUUID}</span>`;
         }
+        return str;
     });
 
-    return {html: resultContent, assets: resultAssets};
+    return resultContent;
 }
 
 async function processInlineHTML(node, start_pos, end_pos, resultContent, resultAssets, resultUTF8, hashmap) {
