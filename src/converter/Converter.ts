@@ -43,10 +43,10 @@ export interface HTMLFile {
     assets: Set<string>;
 }
 
-export let convertToHTMLFileCache = new Map<{content: string, format: string}, HTMLFile>();
+export let convertToHTMLFileCache = new Map<{content: string, format: string, processRefEmbeds: boolean}, HTMLFile>();
 
-export async function convertToHTMLFile(content: string, format: string = "markdown"): Promise<HTMLFile> {
-    if(convertToHTMLFileCache.has({content, format})) return convertToHTMLFileCache.get({content, format});
+export async function convertToHTMLFile(content: string, format: string = "markdown", opts = {processRefEmbeds: true}): Promise<HTMLFile> {
+    if(convertToHTMLFileCache.has({content, format, processRefEmbeds : opts.processRefEmbeds})) return convertToHTMLFileCache.get({content, format, processRefEmbeds : opts.processRefEmbeds});
     let resultContent = content, resultAssets = new Set<string>();
     if (logseq.settings.debug.includes("Converter.ts")) console.log("--Start Converting--\nOriginal:", resultContent);
 
@@ -116,7 +116,10 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After replacing errorinous terms:", resultContent);
 
     // Process the block & page refs + embeds
-    resultContent = await processRefEmbeds(resultContent, resultAssets, hashmap, format);
+    if(opts.processRefEmbeds)
+        resultContent = await processRefEmbeds(resultContent, resultAssets, hashmap, format);
+    else
+        resultContent = await hideRefEmbeds(resultContent, resultAssets, hashmap, format);
 
     // Render the markdown
     resultContent = Mldoc.export("html", resultContent,
@@ -159,12 +162,11 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     for (let key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]); // fix: sometimes the end space of hash gets removed (actual fix require this to be repeated len(keys) times instead of 2)
 
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
-    convertToHTMLFileCache.set({content, format}, {html: resultContent, assets: resultAssets});
+    convertToHTMLFileCache.set({content, format, processRefEmbeds : opts.processRefEmbeds}, {html: resultContent, assets: resultAssets});
     return {html: resultContent, assets: resultAssets};
 }
 
 async function processProperties(resultContent, format = "markdown"): Promise<string> {
-    let o = resultContent;
     resultContent = safeReplace(resultContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
     let block_props = {};
     resultContent = safeReplace(resultContent, MD_PROPERTIES_REGEXP, (match) => { //Remove md properties
@@ -176,10 +178,8 @@ async function processProperties(resultContent, format = "markdown"): Promise<st
     if (block_props["ls-type"] == "annotation" && block_props["hl-type"] == "area") { // Image annotation
         try {
             let block_uuid = block_props["id"] || block_props["nid"];
-            console.log(block_uuid);
             let block = await LogseqProxy.Editor.getBlock(block_uuid);
             let page = await LogseqProxy.Editor.getPage(_.get(block, "page.id"));
-            console.log(block);
             let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${block_props["hl-page"]}_${block_uuid}_${block_props["hl-stamp"]}.png`;
             resultContent = `\ud83d\udccc**P${block_props["hl-page"]}** <div></div> ![](${hls_img_loc})\n` + resultContent;
         } catch (e) { console.log(e); }
@@ -287,7 +287,7 @@ async function processRefEmbeds(resultContent, resultAssets, hashmap, format): P
             let blockRef_content = block_content_first_line;
             for (const [prop, value] of Object.entries(block_props))
                 blockRef_content += `\n${prop}:: ${value}`;
-            let blockRefHTMLFile = await convertToHTMLFile(blockRef_content, _.get(block, "format"));
+            let blockRefHTMLFile = await convertToHTMLFile(blockRef_content, _.get(block, "format"), { processRefEmbeds: false });
             blockRefHTMLFile.assets.forEach(element => {
                 resultAssets.add(element);
             });
@@ -300,6 +300,28 @@ async function processRefEmbeds(resultContent, resultAssets, hashmap, format): P
         return str;
     });
 
+    return resultContent;
+}
+
+async function hideRefEmbeds(resultContent, resultAssets, hashmap, format): Promise<string> {
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_BLOCK_REF_REGEXP, async (match, blockUUID) => { // Convert block refs
+        let str = getRandomUnicodeString();
+        hashmap[str] = match;
+        return str;
+    });
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_PAGE_REF_REGEXP, async (match, pageName) => { // Convert page refs
+        const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
+        const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
+        if(format == "org" && encodeURI(pageName).match(isImage)) {
+            return `![](${pageName})`;
+        }
+        else if(format == "org" && encodeURI(pageName).match(isWebURL)) {
+            return `${pageName}`;
+        }
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<a class="page-reference">${pageName}</a>`;
+        return str;
+    });
     return resultContent;
 }
 
