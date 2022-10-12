@@ -18,7 +18,7 @@ export class ImageOcclusionNote extends Note {
     public static initLogseqOperations = (() => {
         logseq.Editor.registerBlockContextMenuItem("Image Occlusion", async (block) => {
             let uuid = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
-            block = await LogseqProxy.Editor.getBlock(uuid);
+            block = await logseq.Editor.getBlock(uuid); // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug.
             let block_content = block.content;
             let block_images = block_content.match(MD_IMAGE_EMBEDED_REGEXP).map((block_image) => {
                 return block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
