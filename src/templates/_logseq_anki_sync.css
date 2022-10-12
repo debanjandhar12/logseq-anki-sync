@@ -171,10 +171,6 @@ a.page-reference:hover {
     display: inline-block;
 }
 
-.block-ref * {
-    display: inherit;
-}
-
 .block-ref :is(h1, h2, h3, h4, h5, h6) {
     border-bottom: none;
     display: inline-block;
