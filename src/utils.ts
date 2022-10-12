@@ -21,7 +21,7 @@ export function regexPraser(input: string): RegExp {
 }
 
 export function escapeClozeAndSecoundBrace(input: string): string {
-    return input.replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`).replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`).replace(/(?<!{{embed [^}\n]*?)}}/g, "}\u{2063}}").replace(/(?<!{{embed [^}\n]*?)}}/g, "}\u{2063}}");
+    return input.replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`).replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`).replace(/}}/g, "}\u{2063}}").replace(/}}/g, "}\u{2063}}");
 }
 
 export function string_to_arr(str: string): any {

@@ -9,8 +9,9 @@ export const LOGSEQ_RENAMED_BLOCK_REF_REGEXP = /\[(.*?)\]\(\(\((.*?)\)\)\)/gm;
 export const LOGSEQ_TAG_REF_REGEXP = /#(?<!#)#([^\[# \n][^ \n]*)/gm;
 export const LOGSEQ_TAG_PAGE_REF_REGEXP = /#\[\[(.*)\]\]/gm;
 export const LOGSEQ_PAGE_REF_REGEXP = /(?<!#)\[\[(.*?)\]\]/gm;
-export const LOGSEQ_EMBDED_PAGE_REGEXP = /\{\{embed \[\[(.*?)\]\] *?\}\}/gm;
-export const LOGSEQ_EMBDED_BLOCK_REGEXP = /\{\{embed \(\((.*?)\)\) *?\}\}/gm;
+// The \u2063? is to match the zero-width space that the plugin sometimes add to bypass cloze end.
+export const LOGSEQ_EMBDED_PAGE_REGEXP = /\{\{embed \[\[(.*?)\]\] *?\}\u2063?\}/gm;
+export const LOGSEQ_EMBDED_BLOCK_REGEXP = /\{\{embed \(\((.*?)\)\) *?\}\u2063?\}/gm;
 
 export const isImage_REGEXP = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
 export const isWebURL_REGEXP = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
