@@ -46,7 +46,7 @@ export class SwiftArrowNote extends Note {
         [:find (pull ?b [*])
         :where
         [?b :block/content ?content]
-        [(re-pattern "(?s)(.*?)(:<->|:->|:<-)(.+)") ?regex]
+        [(re-pattern ":(<->|->|<-)") ?regex]
         [(re-find ?regex ?content)]
         ]`);
         let blocks: any = [...singleSwiftArrowBlocks];
@@ -72,7 +72,7 @@ export class SwiftArrowNote extends Note {
         blocks = _.filter(blocks, (block) => { // Remove notes that do not genetate any clozes
             let block_content = block.content;
             let cardGenerated = false;
-            safeReplace(block_content, /(.*?)(\s*(:<->|:->|:<-)\s*)(.+)/s, (match, g1, g2, g3, g4) => {
+            safeReplace(block_content, /(.+?)(\s*(:<->|:->|:<-)\s*)(.+)/s, (match, ...groups) => {
                 cardGenerated = true;
                 return match;
             });

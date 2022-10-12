@@ -85,26 +85,22 @@ export class ClozeNote extends Note {
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ClozeNote[]> {
-        let ankiMacroCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
+        // Get blocks with Anki or Logseq cloze macro syntax
+        let macroCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
         [?b :block/content ?content]
-        [(re-pattern "{{c[0-9] .*}}") ?regex]
+        [(re-pattern "{{(c[0-9]|cloze) .*}}") ?regex]
         [(re-find ?regex ?content)]
         ]`);
+        // Get blocks with replacecloze property
         let replaceCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
           [?b :block/properties ?p]
           [(get ?p :replacecloze)]
         ]`);
-        let logseqCloze_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
-        [:find (pull ?b [*])
-        :where
-        [?b :block/content ?content]
-        [(re-pattern "{{cloze .*}}") ?regex]
-        [(re-find ?regex ?content)]
-        ]`);
+        // Get blocks with org cloze
         let orgCloze_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
@@ -112,7 +108,7 @@ export class ClozeNote extends Note {
         [(re-pattern "#\\\\+BEGIN_(CLOZE)( .*)?\\\\n((.|\\\\n)*?)#\\\\+END_\\\\1") ?regex]
         [(re-find ?regex ?content)]
         ]`);
-        let blocks: any = [...ankiMacroCloze_blocks, ...logseqCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
+        let blocks: any = [...macroCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd || block[0].uuid;
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
