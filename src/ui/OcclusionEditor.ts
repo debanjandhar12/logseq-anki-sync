@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import {ANKI_ICON} from "../constants";
 
 declare global {
     interface Window { fabric: any; }
@@ -16,12 +17,18 @@ export async function OcclusionEditor(img: string, occlusionArr: Array<any>): Pr
     return new Promise(async function (resolve, reject) {
         const editor = window.parent.document.createElement('div');
         editor.innerHTML = `
-            <div class="occlusion-editor-toolbar">
-               <button onclick="addOcclusion()">+</button>
-               <button id="delete-occlusion-btn" onclick="deleteOcclusion(this)" disabled>-</button>
-               <select id="select-cid-value" class="mt-1 block text-base leading-6 border-gray-300 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 sm:text-sm sm:leading-5 ml-1 sm:ml-4 w-12 sm:w-20 form-select" style="display: inline-block;margin: 0;" disabled><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+            <div class="flex" style="justify-content: space-between;margin-top: 0.3rem; margin-bottom: 0.3rem;">
+                <div class="flex" style="align-items: center;">
+                    <i class="ti">${ANKI_ICON}</i><h3 class="text-lg">Occlusion Editor</h3>
+                </div>
+                <a href="https://www.buymeacoffee.com/debanjandhar12"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" style="height: 1.8rem;"></img></a>
             </div>
-            <div class="cloze-editor-image">
+            <div class="occlusion-editor-toolbar flex" style="align-items: center; justify-content: end;">
+               <button onclick="addOcclusion()" class="ui__button bg-indigo-600 hover:bg-indigo-700 focus:border-indigo-700 active:bg-indigo-700 text-center text-sm" style="margin: 0.125rem 0.25rem 0.125rem 0; padding: .35rem .35rem;"><i class="ti ti-plus" style="font-size: 1.25rem"></i></button>
+               <button id="delete-occlusion-btn" onclick="deleteOcclusion(this)" disabled class="ui__button bg-indigo-600 hover:bg-indigo-700 focus:border-indigo-700 active:bg-indigo-700 text-center text-sm" style="margin: 0.125rem 0.25rem 0.125rem 0; padding: .35rem .35rem;"><i class="ti ti-trash" style="font-size: 1.25rem"></i></button>
+               <span style="font-size:0.875rem;margin-left: 1rem;">Cloze Id:</span> <select id="select-cid-value" class="form-select is-small" style="margin: 0;width:80px;height: 2.2rem;" disabled><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+            </div>
+            <div class="cloze-editor-image flex" style="justify-content: center;">
             </div>
         `;
         const div = window.parent.document.createElement('div');
@@ -40,17 +47,7 @@ export async function OcclusionEditor(img: string, occlusionArr: Array<any>): Pr
                </div>
                <div class="panel-content">
                   <div class="ui__confirm-modal is-">
-                     <div class="sm:flex sm:items-start">
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                           <h2 class="headline text-lg leading-6 font-medium">
-                            Cloze Editor
-                            <div id="cloze-editor"></div>
-                            </h2>
-                           <label class="sublabel">
-                              <h3 class="subline text-gray-400"></h3>
-                           </label>
-                        </div>
-                     </div>
+                     <div id="cloze-editor"></div>
                      <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse"><span class="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto"><button type="button" class="inline-flex justify-center w-full rounded-md border border-transparent px-4 py-2 bg-indigo-600 text-base leading-6 font-medium text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo transition ease-in-out duration-150 sm:text-sm sm:leading-5" onclick="occlusion_save_action()">Save</button></span><span class="mt-3 flex w-full rounded-md shadow-sm sm:mt-0 sm:w-auto"><button type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 px-4 py-2 bg-white text-base leading-6 font-medium text-gray-700 shadow-sm hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue transition ease-in-out duration-150 sm:text-sm sm:leading-5" onclick="occlusion_cancel_action()">Cancel</button></span></div>
                   </div>
                </div>
@@ -73,7 +70,7 @@ export async function OcclusionEditor(img: string, occlusionArr: Array<any>): Pr
         imgEl.onload = function () {
             let img = new window.parent.fabric.Image(imgEl);
             let canvasWidth = Math.min(imgEl.width,  window.parent.document.querySelector('.occlusion__editor').clientWidth - 160);
-            let canvasHeight = Math.min(imgEl.height, window.parent.document.body.clientHeight - 300);
+            let canvasHeight = Math.min(imgEl.height, window.parent.document.body.clientHeight - 340);
             let scale = Number(Math.min(canvasWidth / imgEl.width, canvasHeight / imgEl.height).toPrecision(1));
             canvas.setZoom(scale);
             canvas.setWidth(imgEl.width * scale);
@@ -108,7 +105,7 @@ export async function OcclusionEditor(img: string, occlusionArr: Array<any>): Pr
             }
         });
         window.parent.document.getElementById('select-cid-value').onchange = function (e) {
-            let cid = e.target.value;
+            let cid = (e.target as HTMLInputElement).value;
             let activeObject = canvas.getActiveObject();
             if (activeObject) {
                 canvas.getActiveObject()._objects[1].set('text',cid);
