@@ -18,12 +18,12 @@ export class ImageOcclusionNote extends Note {
     public static initLogseqOperations = (() => {
         logseq.Editor.registerBlockContextMenuItem("Image Occlusion", async (block) => {
             let uuid = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
-            block = await logseq.Editor.getBlock(uuid); // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug.
+            block = await logseq.Editor.getBlock(uuid); // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
             let block_content = block.content;
-            let block_images = block_content.match(MD_IMAGE_EMBEDED_REGEXP).map((block_image) => {
+            let block_images = (block_content.match(MD_IMAGE_EMBEDED_REGEXP) || []).map((block_image) => {
                 return block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
             });
-            if (block_images.length == 0) {await logseq.UI.showMsg("No images found in this block."); return;}
+            if (block_images.length == 0) {await logseq.UI.showMsg("No images found in this block.", "warning"); return;}
             let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(block.properties?.occlusion || Buffer.from("{}", 'utf8').toString('base64'), 'base64').toString());
             console.log("imgToOcclusionArrHashMap", imgToOcclusionArrHashMap);
             let selectedImage = await SelectPrompt("Select Image to add / update occlusion", block_images);
