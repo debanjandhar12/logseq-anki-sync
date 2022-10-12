@@ -55,14 +55,19 @@ export class LogseqToAnkiSync {
         Note.setAnkiNoteManager(ankiNoteManager);
         
         // -- Get the notes that are to be synced from logseq --
-        let notes : Array<Note> = [...(await ClozeNote.getNotesFromLogseqBlocks()), ...(await SwiftArrowNote.getNotesFromLogseqBlocks()), ...(await ImageOcclusionNote.getNotesFromLogseqBlocks())];
-        notes = [...notes, ...(await MultilineCardNote.getNotesFromLogseqBlocks(notes))];
+        let scanProgress = new ProgressNotification('Scanning Logseq Graph:', 4);
+        let notes : Array<Note> = [];
+        notes = [...notes, ...(await ClozeNote.getNotesFromLogseqBlocks())]; scanProgress.increment();
+        notes = [...notes, ...(await SwiftArrowNote.getNotesFromLogseqBlocks())]; scanProgress.increment();
+        notes = [...notes, ...(await ImageOcclusionNote.getNotesFromLogseqBlocks())]; scanProgress.increment();
+        notes = [...notes, ...(await MultilineCardNote.getNotesFromLogseqBlocks(notes))]; scanProgress.increment();
         for (let note of notes) { // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
             if (!note.properties["id"]) { try { LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); } catch (e) { console.error(e); } }
         }
         notes = await sortAsync(notes, async (a) => {
             return (await LogseqProxy.Editor.getBlock(a.uuid)).id; // Sort by db/id 
         });
+        //scanProgress.increment();
         console.log("Notes:", notes);
 
         // -- Declare some variables to keep track of different operations performed --
@@ -87,13 +92,13 @@ export class LogseqToAnkiSync {
         
         // -- Sync --
         let start_time = performance.now();
-        let progressNotification = new ProgressNotification('Logseq to Anki Sync Progress', 3+toCreateNotes.length+toUpdateNotes.length+toDeleteNotes.length);
-        await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager, progressNotification);
-        progressNotification.increment();
-        await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager, progressNotification);
-        progressNotification.increment();
-        await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, progressNotification);
-        progressNotification.increment();
+        let syncProgress = new ProgressNotification('Syncing Logseq Notes to Anki:', 3+toCreateNotes.length+toUpdateNotes.length+toDeleteNotes.length);
+        await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager, syncProgress);
+        syncProgress.increment();
+        await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager, syncProgress);
+        syncProgress.increment();
+        await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncProgress);
+        syncProgress.increment();
         await AnkiConnect.invoke("reloadCollection", {});
         LogseqProxy.Cache.clear();
         convertToHTMLFileCache.clear();
@@ -114,7 +119,7 @@ export class LogseqToAnkiSync {
         console.log("syncLogseqToAnki() Time Taken:", (performance.now() - start_time).toFixed(2), "ms");
     }
 
-    private async createNotes(toCreateNotes: Note[], failedCreated: Set<any>, ankiNoteManager: LazyAnkiNoteManager, progressNotification: ProgressNotification): Promise<void> {
+    private async createNotes(toCreateNotes: Note[], failedCreated: Set<any>, ankiNoteManager: LazyAnkiNoteManager, syncProgress: ProgressNotification): Promise<void> {
         for (let note of toCreateNotes) {
             try {
                 let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
@@ -129,7 +134,7 @@ export class LogseqToAnkiSync {
             } catch (e) {
                 console.error(e); failedCreated.add(`${note.uuid}-${note.type}`);
             }
-            progressNotification.increment();
+            syncProgress.increment();
         }
 
         let [addedNoteAnkiIdUUIDPairs, subOperationResults] = await ankiNoteManager.execute("addNotes");
@@ -158,7 +163,7 @@ export class LogseqToAnkiSync {
         });
     }
 
-    private async updateNotes(toUpdateNotes: Note[], failedUpdated: Set<any>, ankiNoteManager: LazyAnkiNoteManager, progressNotification: ProgressNotification): Promise<void> {
+    private async updateNotes(toUpdateNotes: Note[], failedUpdated: Set<any>, ankiNoteManager: LazyAnkiNoteManager, syncProgress: ProgressNotification): Promise<void> {
         for (let note of toUpdateNotes) {
             try {
                 let ankiId = note.getAnkiId();
@@ -192,7 +197,7 @@ export class LogseqToAnkiSync {
             } catch (e) {
                 console.error(e); failedUpdated.add(`${note.uuid}-${note.type}`);
             }
-            progressNotification.increment();
+            syncProgress.increment();
         }
 
         let subOperationResults = await ankiNoteManager.execute("updateNotes");
@@ -212,10 +217,10 @@ export class LogseqToAnkiSync {
         });
     }
 
-    private async deleteNotes(toDeleteNotes: number[], failedDeleted, ankiNoteManager: LazyAnkiNoteManager, progressNotification: ProgressNotification) {
+    private async deleteNotes(toDeleteNotes: number[], failedDeleted, ankiNoteManager: LazyAnkiNoteManager, syncProgress: ProgressNotification) {
         for(let ankiId of toDeleteNotes){
             ankiNoteManager.deleteNote(ankiId);
-            progressNotification.increment();
+            syncProgress.increment();
         }
         let subOperationResults = await ankiNoteManager.execute("deleteNotes");
         for (let subOperationResult of subOperationResults) {
