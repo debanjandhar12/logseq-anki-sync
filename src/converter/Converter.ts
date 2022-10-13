@@ -130,9 +130,11 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     let $ = cheerio.load(resultContent, { decodeEntities: false });
     $('pre code').each(function (i, elm) { // Syntax hightlight block code (block codes are preceded by pre)
         $(elm).addClass("hljs");
-        if (elm.attribs["data-lang"]) {
-            $(elm).html(hljs.highlight(elm.attribs["data-lang"], $(elm).html()).value.replace(/\n$/, ""));
-        } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, ""));
+        try {
+            if (elm.attribs["data-lang"]) {
+                $(elm).html(hljs.highlight(elm.attribs["data-lang"], $(elm).html()).value.replace(/\n$/, ""));
+            } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, ""));
+        } catch (e) { console.error(e); }
     });
     $('img').each(function (i, elm) {   // Handle images
         if ((encodeURI(elm.attribs.src).match(isImage_REGEXP) && !encodeURI(elm.attribs.src).match(isWebURL_REGEXP))) {
