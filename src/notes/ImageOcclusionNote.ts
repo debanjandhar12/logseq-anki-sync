@@ -23,6 +23,7 @@ export class ImageOcclusionNote extends Note {
             let block_images = (block_content.match(MD_IMAGE_EMBEDED_REGEXP) || []).map((block_image) => {
                 return block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
             });
+            block_images = _.uniq(block_images);
             if (block_images.length == 0) {await logseq.UI.showMsg("No images found in this block.", "warning"); return;}
             let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(block.properties?.occlusion || Buffer.from("{}", 'utf8').toString('base64'), 'base64').toString());
             console.log("imgToOcclusionArrHashMap", imgToOcclusionArrHashMap);
