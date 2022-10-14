@@ -6,6 +6,7 @@ import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import { LogseqProxy } from "../LogseqProxy";
 import { HTMLFile } from "../converter/Converter";
 import { convertToHTMLFile } from "../converter/Converter";
+import {log} from "util";
 
 export class ClozeNote extends Note {
     public type: string = "cloze";
@@ -29,9 +30,13 @@ export class ClozeNote extends Note {
                 clozes = elem.querySelectorAll(
                     'span[title^="Unsupported macro name: c"]'
                 );
-                clozes.forEach((cloze) => {
-                    if (/c\d$/.test((cloze as Element & {title}).title))
-                        cloze.outerHTML = `<span style="background-color:rgb(59 130 246 / 0.1);">${cloze.innerHTML.replace(/^{{{c\d (.*?)(::.*)?}}}$/,"$1")}</span>`;
+                clozes.forEach(async (cloze) => {
+                    if (/c\d$/.test((cloze as Element & {title}).title)) {
+                        let content = cloze.innerHTML.replace(/^{{{c\d (.*?)(::.*)?}}}$/,"$1");
+                        if(logseq.settings.renderAnkiClozeMarcosInLogseq)
+                            content = (await convertToHTMLFile(content, "markdown")).html;
+                        cloze.outerHTML = `<span style="background-color:rgb(59 130 246 / 0.1);white-space: initial;">${content}</span>`;
+                    }
                 });
             };
             let observer = new MutationObserver((mutations) => {
