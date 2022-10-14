@@ -134,7 +134,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
             if (elm.attribs["data-lang"]) {
                 $(elm).html(hljs.highlight(elm.attribs["data-lang"], $(elm).html()).value.replace(/\n$/, ""));
             } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, ""));
-        } catch (e) { console.error(e); }
+        } catch (e) { console.warn(e); }
     });
     $('img').each(function (i, elm) {   // Handle images
         if ((encodeURI(elm.attribs.src).match(isImage_REGEXP) && !encodeURI(elm.attribs.src).match(isWebURL_REGEXP))) {
