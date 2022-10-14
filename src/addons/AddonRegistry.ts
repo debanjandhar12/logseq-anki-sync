@@ -1,5 +1,4 @@
 import { Addon } from "./Addon";
-import { AnkiClozeMacroDisplay } from "./AnkiClozeMacroDisplay";
 import { PreviewInAnkiContextMenu } from "./PreviewInAnki";
 
 export class AddonRegistry {
@@ -16,4 +15,3 @@ export class AddonRegistry {
 }
 
 AddonRegistry.add(PreviewInAnkiContextMenu.getInstance());
-AddonRegistry.add(AnkiClozeMacroDisplay.getInstance());

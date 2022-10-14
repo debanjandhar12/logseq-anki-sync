@@ -37,8 +37,8 @@ export const addSettingsToLogseq = () => {
     {
       key: "addons",
       type: "enum",
-      default: ["Anki Cloze Macro Display"],
-      title: "Addons: (Default: Anki Cloze Macro Display)",
+      default: [],
+      title: "Addons: (Default: None)",
       enumChoices: AddonRegistry.getAll().map(addon => addon.getName()),
       enumPicker: "checkbox",
       description: "Select the addons to use. Addons are typically lower in quality than the main plugin features. Also, all addons require a restart to take effect.",

@@ -19,7 +19,40 @@ export class ClozeNote extends Note {
             ["editor/input", `replacecloze:: " '' "`, {"backward-pos": 3}],
             ["editor/clear-current-slash"],
         ]);
+        let setupAnkiClozeObserverAndRenderThemInLogseqWhenObserved = (() => {
+            // Set up observer for Anki Cloze Macro Syntax
+            let displayAnkiCloze = (elem : Element) => {
+                let clozes : Element | NodeListOf<Element> = elem.querySelector(
+                    'span[title^="Unsupported macro name: c"]'
+                );
+                if (!clozes) return;
+                clozes = elem.querySelectorAll(
+                    'span[title^="Unsupported macro name: c"]'
+                );
+                clozes.forEach((cloze) => {
+                    if (/c\d$/.test((cloze as Element & {title}).title))
+                        cloze.outerHTML = `<span style="background-color:rgb(59 130 246 / 0.1);">${cloze.innerHTML.replace(/^{{{c\d (.*?)(::.*)?}}}$/,"$1")}</span>`;
+                });
+            };
+            let observer = new MutationObserver((mutations) => {
+                if(mutations.length <= 8) {
+                    for(let mutation of mutations) {
+                        const addedNode = mutation.addedNodes[0];
+                        if (addedNode && addedNode.childNodes.length) {
+                            displayAnkiCloze(addedNode as Element);
+                        }
+                    }
+                }
+                else displayAnkiCloze(window.parent.document.body as Element);
+            });
+            observer.observe(window.parent.document, {
+                subtree: true,
+                childList: true
+            });
+        });
+        setupAnkiClozeObserverAndRenderThemInLogseqWhenObserved();
     });
+
 
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let cloze_id = 1;
