@@ -4,9 +4,9 @@ import _ from 'lodash';
 import { convertToHTMLFile, HTMLFile } from '../converter/Converter';
 import { escapeClozeAndSecoundBrace, safeReplace } from '../utils';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
-import { LogseqProxy } from "../LogseqProxy";
+import { LogseqProxy } from "../logseq/LogseqProxy";
 import { BlockUUID } from "@logseq/libs/dist/LSPlugin.user";
-import { ReferenceDependency } from "../converter/getContentDirectDependencies";
+import { DependencyEntity } from "../converter/getContentDirectDependencies";
 
 export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
@@ -200,7 +200,7 @@ export class MultilineCardNote extends Note {
         return blocks;
     }
 
-    public getDirectDependencies(): ReferenceDependency[] {
+    public getNoteDependencies(): DependencyEntity[] {
         function getChildrenUUID(children: any): BlockUUID[] {
             let result = [];
             for (let child of children) {
@@ -209,6 +209,6 @@ export class MultilineCardNote extends Note {
             }
             return result;
         }
-        return [this.uuid,...getChildrenUUID(this.children)].map(block => ({ type: "Embedded_Block_ref", value: block } as ReferenceDependency));
+        return [this.uuid,...getChildrenUUID(this.children)].map(block => ({ type: "Block", value: block } as DependencyEntity));
     }
 }

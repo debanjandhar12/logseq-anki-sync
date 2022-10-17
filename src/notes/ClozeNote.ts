@@ -3,7 +3,7 @@ import '@logseq/libs'
 import { string_to_arr, get_math_inside_md, safeReplace, escapeClozeAndSecoundBrace } from '../utils';
 import _ from 'lodash';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
-import { LogseqProxy } from "../LogseqProxy";
+import { LogseqProxy } from "../logseq/LogseqProxy";
 import { HTMLFile } from "../converter/Converter";
 import { convertToHTMLFile } from "../converter/Converter";
 import {log} from "util";

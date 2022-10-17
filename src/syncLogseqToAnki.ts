@@ -10,10 +10,9 @@ import { get_better_error_msg, sortAsync } from './utils';
 import path from 'path';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile, convertToHTMLFileCache } from './converter/Converter';
-import { LogseqProxy } from './LogseqProxy';
+import { LogseqProxy } from './logseq/LogseqProxy';
 import pkg from '../package.json';
 import { SwiftArrowNote } from './notes/SwiftArrowNote';
-import { getRecursiveDependenciesHashCache } from './converter/getBlockRecursiveDependenciesHash';
 import {ProgressNotification} from "./ui/ProgressNotification";
 import {Confirm} from "./ui/Confirm";
 import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
@@ -102,7 +101,6 @@ export class LogseqToAnkiSync {
         await AnkiConnect.invoke("reloadCollection", {});
         LogseqProxy.Cache.clear();
         convertToHTMLFileCache.clear();
-        getRecursiveDependenciesHashCache.clear();
 
         // -- Show Result / Summery --
         let summery = `Sync Completed! \n Created Blocks: ${toCreateNotes.length - failedCreated.size} \n Updated Blocks: ${toUpdateNotes.length - failedUpdated.size} \n Deleted Blocks: ${toDeleteNotes.length - failedDeleted.size}`;

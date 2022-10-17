@@ -16,7 +16,6 @@ type LogSeqOperationHash = string;
 
 let cache = new Map<LogSeqOperationHash, any>();
 let getLogseqLock = new AwaitLock();
-let activeCacheListener = null;
 
 export namespace LogseqProxy {
     export class Editor {
@@ -155,73 +154,76 @@ export namespace LogseqProxy {
             finally { getLogseqLock.release(); }
             return result;
         }
+
+        static registeredListeners = [];
+        static registerDBChangeListener(listener: (event: {blocks, txData, txMeta}) => void): void {
+            this.registeredListeners.push(listener);
+        }
     }
     export class Cache {
         static clear(): void {
             if(!logseq.settings.activeCacheForLogseqAPIv0) cache.clear();
         }
 
-        static setUpActiveCacheListeners(): void {
-            if(activeCacheListener != null) return;
-            activeCacheListener = logseq.DB.onChanged(async ({blocks, txData, txMeta}) => {
-                // console.log("activeCacheListener", blocks, txData, txMeta);
-                for(let tx of txData) {
-                    let [txBlockID, txType, ...additionalDetails] = tx;
-                    if(txType != "left" && txType != "parent") continue;
-                    let block = await LogseqProxy.Editor.getBlock(txBlockID);
-                    if(block != null) blocks.push(block);
-                    block = await LogseqProxy.Editor.getBlock(additionalDetails[0]);
-                    if(block != null) blocks.push(block);
-                }
-                let blockVisited = new Set();
-                while (blocks.length > 0) {
-                    let block = blocks.pop();
-                    if(blockVisited.has(block.id)) continue;
-                    blockVisited.add(block.id);
-                    block.uuid = _.get(block, "uuid['$uuid$']", null) || _.get(block, "uuid.Wd", null) || _.get(block, "uuid", null) || null;
-                    if (block.uuid != null) {
-                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {} } }));
-                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {includeChildren:true} } }));
-                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.uuid } }));
-                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.uuid } }));
-                    }
-                    if (block.page != null && block.page.id != null) {
-                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.page.id } }));
-                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.page.id } }));
-                        let page_originalName = await LogseqProxy.Editor.getPage(block.page.id);
-                        if (page_originalName != null) {
-                            cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: page_originalName } }));
-                            cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: page_originalName } }));
-                        }
-                    }
-                    if(block.originalName != null) {
-                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.originalName } }));
-                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.originalName } }));
-                    }
-                    if (block.id != null) {
-                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {includeChildren:true} } }));
-                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {} } }));
-                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.id } }));
-                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.id } }));
-                    }
-                    if (block.parent != null && block.parent.id != null) {
-                        let block_parent = await LogseqProxy.Editor.getBlock(block.parent.id);
-                        if (block_parent != null) 
-                            blocks.push(block_parent);
-                    }
-                }
-            });
-        }
-
-        static removeActiveCacheListeners(): void {
-            if(activeCacheListener == null) return;
-            LogseqProxy.Cache.clear();
-            activeCacheListener();
-            activeCacheListener = null;
-        }
-
         static has(key: LogSeqOperationHash): boolean {
             return cache.has(key);
         }
     }
+    export function init() {
+        logseq.DB.onChanged(async ({blocks, txData, txMeta}) => {
+            console.log(LogseqProxy.DB.registeredListeners);
+            for (let listener of LogseqProxy.DB.registeredListeners) {
+                listener({blocks: [...blocks], txData, txMeta});
+            }
+        });
+        LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
+            console.log("Triggered? 2");
+            for(let tx of txData) {
+                let [txBlockID, txType, ...additionalDetails] = tx;
+                if(txType != "left" && txType != "parent") continue;
+                let block = await LogseqProxy.Editor.getBlock(txBlockID);
+                if(block != null) blocks.push(block);
+                block = await LogseqProxy.Editor.getBlock(additionalDetails[0]);
+                if(block != null) blocks.push(block);
+            }
+            let blockVisited = new Set();
+            while (blocks.length > 0) {
+                let block = blocks.pop();
+                if(blockVisited.has(block.id)) continue;
+                blockVisited.add(block.id);
+                block.uuid = _.get(block, "uuid['$uuid$']", null) || _.get(block, "uuid.Wd", null) || _.get(block, "uuid", null) || null;
+                if (block.uuid != null) {
+                    cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {} } }));
+                    cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {includeChildren:true} } }));
+                    cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.uuid } }));
+                    cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.uuid } }));
+                }
+                if (block.page != null && block.page.id != null) {
+                    cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.page.id } }));
+                    cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.page.id } }));
+                    let page_originalName = await LogseqProxy.Editor.getPage(block.page.id);
+                    if (page_originalName != null) {
+                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: page_originalName } }));
+                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: page_originalName } }));
+                    }
+                }
+                if(block.originalName != null) {
+                    cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.originalName } }));
+                    cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.originalName } }));
+                }
+                if (block.id != null) {
+                    cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {includeChildren:true} } }));
+                    cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {} } }));
+                    cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.id } }));
+                    cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.id } }));
+                }
+                if (block.parent != null && block.parent.id != null) {
+                    let block_parent = await LogseqProxy.Editor.getBlock(block.parent.id);
+                    if (block_parent != null)
+                        blocks.push(block_parent);
+                }
+            }
+        });
+    }
 }
+

@@ -33,7 +33,8 @@
     "mldoc": "1.5.0",
     "object-hash": "3.0.0",
     "ohm-js": "16.3.4",
-    "string-replace-async": "^3.0.2"
+    "string-replace-async": "^3.0.2",
+    "dependency-graph": "^0.11.0"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.5.0",

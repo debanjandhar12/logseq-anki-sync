@@ -20,7 +20,7 @@ import {
     ORG_PROPERTIES_REGEXP,
     LOGSEQ_TAG_REF_REGEXP, LOGSEQ_TAG_PAGE_REF_REGEXP
 } from "../constants";
-import { LogseqProxy } from "../LogseqProxy";
+import { LogseqProxy } from "../logseq/LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
 import { edn } from "@yellowdig/cljs-tools";
 import {Session} from "inspector";

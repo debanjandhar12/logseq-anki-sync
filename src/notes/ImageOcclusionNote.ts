@@ -3,7 +3,7 @@ import '@logseq/libs'
 import { escapeClozeAndSecoundBrace, safeReplace } from '../utils';
 import _ from 'lodash';
 import {MD_IMAGE_EMBEDED_REGEXP, MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
-import { LogseqProxy } from "../LogseqProxy";
+import { LogseqProxy } from "../logseq/LogseqProxy";
 import { convertToHTMLFile, HTMLFile } from "../converter/Converter";
 import {SelectPrompt} from "../ui/SelectPrompt";
 import {OcclusionEditor} from "../ui/OcclusionEditor";

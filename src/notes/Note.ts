@@ -1,15 +1,12 @@
 import '@logseq/libs'
 import { LazyAnkiNoteManager } from '../anki-connect/LazyAnkiNoteManager';
-import _, { replace } from 'lodash';
+import _ from 'lodash';
 import { HTMLFile } from '../converter/Converter';
-import { BlockUUID } from '@logseq/libs/dist/LSPlugin.user';
-import getContentDirectDependencies, { PageEntityName, ReferenceDependency } from '../converter/getContentDirectDependencies';
-import { LogseqProxy } from '../LogseqProxy';
+import { DependencyEntity } from '../converter/getContentDirectDependencies';
+import { LogseqProxy } from '../logseq/LogseqProxy';
 import pkg from '../../package.json';
 import hashSum from 'hash-sum';
-import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from '../constants';
-import { getFirstNonEmptyLine } from '../utils';
-import { getBlockRecursiveDependenciesHash } from '../converter/getBlockRecursiveDependenciesHash';
+import {getBlockHash, getPageHash} from "../logseq/blockAndPageHashCache";
 
 export abstract class Note {
     public uuid: string;
@@ -48,29 +45,29 @@ export abstract class Note {
         return this.ankiId;
     }
 
-    public getDirectDependencies(): ReferenceDependency[] {
-        return [this.uuid].map(block => ({ type: "Embedded_Block_ref", value: block } as ReferenceDependency));
+    public getNoteDependencies(): DependencyEntity[] {
+        return [this.uuid].map(block => ({ type: "Block", value: block } as DependencyEntity));
     }
 
     public async getAllDependenciesHash(additionalDependencies = []): Promise<string> {
-        let toHash = [...additionalDependencies];
+        let toHash = [...additionalDependencies, ];
 
         // Collect parent And DirectDependencies
-        let parentAndDirectDependencies : ReferenceDependency[] = this.getDirectDependencies();
+        let noteDependencies = this.getNoteDependencies();
         let parentID = (await LogseqProxy.Editor.getBlock(this.uuid)).parent.id;
         let parent;
         while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
             let blockUUID = parent.uuid["$uuid$"] || parent.uuid.Wd || parent.uuid || parent.parent.id;
-            if(logseq.settings.includeParentContent) 
-                parentAndDirectDependencies.push({ type: "Embedded_Block_ref", value: blockUUID } as ReferenceDependency);
-            else parentAndDirectDependencies.push({ type: "Block_ref", value: blockUUID } as ReferenceDependency);
+            noteDependencies.push({ type: "Block", value: blockUUID } as DependencyEntity);
             parentID = parent.parent.id;
         }
 
         // Call getBlockRecursiveDependenciesHash on parentAndDirectDependencies and add them to toHash
-        for(let dep of parentAndDirectDependencies) {
-            toHash.push(await getBlockRecursiveDependenciesHash(dep));
-        };
+        for (const dep of noteDependencies) {
+            if(dep.type == "Block")
+                toHash.push(await getBlockHash(dep.value));
+            else if(dep.type == "Page") toHash.push(await getPageHash(dep.value));
+        }
 
         // Add additional things to toHash
         toHash.push({page:encodeURIComponent(_.get(this, 'page.originalName', '')), deck:encodeURIComponent(_.get(this, 'page.properties.deck', ''))});

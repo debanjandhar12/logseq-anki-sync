@@ -6,11 +6,11 @@ import _ from 'lodash';
 import { LogseqToAnkiSync } from './syncLogseqToAnki';
 import { addSettingsToLogseq } from './settings';
 import { ANKI_ICON } from './constants';
-import { LogseqProxy } from './LogseqProxy';
+import { LogseqProxy } from './logseq/LogseqProxy';
 import { AddonRegistry } from './addons/AddonRegistry';
 import { SwiftArrowNote } from './notes/SwiftArrowNote';
 import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
-
+import * as blockAndPageHashCache from './logseq/blockAndPageHashCache';
 
 // --- Register UI Elements Onload ---
 async function main(baseInfo: LSPluginBaseInfo) {
@@ -43,16 +43,15 @@ async function main(baseInfo: LSPluginBaseInfo) {
     `
   });
 
+  addSettingsToLogseq();
+  LogseqProxy.init();
+  blockAndPageHashCache.init();
   AddonRegistry.getAll().forEach(addon => addon.init());
-  if(logseq.settings.activeCacheForLogseqAPIv0)
-    LogseqProxy.Cache.setUpActiveCacheListeners();
   ClozeNote.initLogseqOperations();
   MultilineCardNote.initLogseqOperations();
   SwiftArrowNote.initLogseqOperations();
   ImageOcclusionNote.initLogseqOperations();
   console.log("Window Parent:", window.parent);
-
-  addSettingsToLogseq();
 }
 
 // Bootstrap
