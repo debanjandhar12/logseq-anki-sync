@@ -200,7 +200,7 @@ export namespace LogseqProxy {
             }
         });
         LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
-            if (!logseq.settings.cacheLogseqAPIv1) { LogseqProxy.Cache.clear(); return;}
+            if (!logseq.settings.cacheLogseqAPIv1) return;
             console.log("Maintaining LogseqProxy.ts cache");
             for(let tx of txData) {
                 let [txBlockID, txType, ...additionalDetails] = tx;
@@ -250,6 +250,9 @@ export namespace LogseqProxy {
         });
         LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
             if (!newSettings.cacheLogseqAPIv1) LogseqProxy.Cache.clear();
+        });
+        window.addEventListener('syncLogseqToAnkiComplete', () => {
+            if (!logseq.settings.cacheLogseqAPIv1) LogseqProxy.Cache.clear();
         });
     }
 }

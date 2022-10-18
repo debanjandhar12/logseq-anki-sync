@@ -99,7 +99,7 @@ export class LogseqToAnkiSync {
         await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncProgress);
         syncProgress.increment();
         await AnkiConnect.invoke("reloadCollection", {});
-        convertToHTMLFileCache.clear();
+        window.dispatchEvent(new Event('syncLogseqToAnkiComplete'));
 
         // -- Show Result / Summery --
         let summery = `Sync Completed! \n Created Blocks: ${toCreateNotes.length - failedCreated.size} \n Updated Blocks: ${toUpdateNotes.length - failedUpdated.size} \n Deleted Blocks: ${toDeleteNotes.length - failedDeleted.size}`;

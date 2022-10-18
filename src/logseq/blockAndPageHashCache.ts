@@ -107,7 +107,7 @@ export const getPageHash = async (pageName) => {
 // -- Maintain Cache State by using DB.onChanged --
 export const init = () => {
     LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
-        if (!logseq.settings.cacheLogseqAPIv1) { clearGraph(); return; }
+        if (!logseq.settings.cacheLogseqAPIv1) return;
         console.log("Maintaining blockAndPageHashCache", [...blocks], txData, txMeta);
         for(let tx of txData) {
             let [txBlockID, txType, ...additionalDetails] = tx;
@@ -133,5 +133,8 @@ export const init = () => {
     });
     LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
         if (!newSettings.cacheLogseqAPIv1) clearGraph();
+    });
+    window.addEventListener('syncLogseqToAnkiComplete', () => {
+        if (!logseq.settings.cacheLogseqAPIv1) clearGraph();
     });
 }

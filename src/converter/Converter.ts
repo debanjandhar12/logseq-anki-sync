@@ -23,7 +23,6 @@ import {
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
 import { edn } from "@yellowdig/cljs-tools";
-import {Session} from "inspector";
 
 let mldocsOptions = {
     "toc": false,
@@ -43,7 +42,8 @@ export interface HTMLFile {
     assets: Set<string>;
 }
 
-export let convertToHTMLFileCache = new Map<{content: string, format: string, processRefEmbeds: boolean}, HTMLFile>();
+const convertToHTMLFileCache = new Map<{content: string, format: string, processRefEmbeds: boolean}, HTMLFile>();
+window.addEventListener('syncLogseqToAnkiComplete', () => {convertToHTMLFileCache.clear();});
 
 export async function convertToHTMLFile(content: string, format: string = "markdown", opts = {processRefEmbeds: true}): Promise<HTMLFile> {
     if(convertToHTMLFileCache.has({content, format, processRefEmbeds : opts.processRefEmbeds})) return convertToHTMLFileCache.get({content, format, processRefEmbeds : opts.processRefEmbeds});
