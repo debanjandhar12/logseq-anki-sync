@@ -8,6 +8,8 @@ import getUUIDFromBlock from "./getUUIDFromBlock";
 import getContentDirectDependencies from "../converter/getContentDirectDependencies";
 import hashSum from 'hash-sum';
 import _ from "lodash";
+import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
+import {getFirstNonEmptyLine} from "../utils";
 const graph = new DepGraph();
 
 // -- Hash Dependency Graph --
@@ -20,6 +22,16 @@ const removeBlockNode = (blockUUID) => {
     });
     graph.removeNode(blockUUID+"Block");
     console.log("Removed block node:"+blockUUID+"Block");
+}
+
+const removeFirstLineOfBlockNode = (blockUUID) => {
+    if(!graph.hasNode(blockUUID+"FirstLineOfBlock")) return;
+    graph.dependantsOf(blockUUID+"FirstLineOfBlock").forEach((dependant) => {
+        console.log("Removed node:"+dependant);
+        graph.removeNode(dependant);
+    });
+    graph.removeNode(blockUUID+"FirstLineOfBlock");
+    console.log("Removed block node:"+blockUUID+"FirstLineOfBlock");
 }
 
 const removePageNode = (pageName) => {
@@ -46,8 +58,8 @@ const addBlockNode = async (blockUUID) => {
     const block = await LogseqProxy.Editor.getBlock(blockUUID);
     const directDependencies = getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format',''));
     for (let dependency of directDependencies) {
-        if(dependency.type === "Block")
-            await addBlockNode(dependency.value);
+        if(dependency.type === "Block") await addBlockNode(dependency.value);
+        else if(dependency.type === "FirstLineOfBlock") await addFirstLineOfBlockNode(dependency.value);
         else if(dependency.type === "Page") await addPageNode(dependency.value);
         graph.addDependency(blockUUID+"Block", dependency.value+dependency.type);
     }
@@ -57,6 +69,25 @@ const addBlockNode = async (blockUUID) => {
     });
     toHash.push({content:_.get(block, 'content',''), format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
     graph.setNodeData(blockUUID+"Block", hashSum(toHash));
+}
+
+const addFirstLineOfBlockNode = async (blockUUID) => {
+    if(graph.hasNode(blockUUID+"FirstLineOfBlock")) return;
+    graph.addNode(blockUUID+"FirstLineOfBlock");
+    const block = await LogseqProxy.Editor.getBlock(blockUUID);
+    const directDependencies = getContentDirectDependencies(getFirstNonEmptyLine(_.get(block, 'content','').replaceAll(MD_PROPERTIES_REGEXP, '').replaceAll(ORG_PROPERTIES_REGEXP, '')), _.get(block, 'format',''));
+    for (let dependency of directDependencies) {
+        if(dependency.type === "Block") await addBlockNode(dependency.value);
+        else if(dependency.type === "FirstLineOfBlock") await addFirstLineOfBlockNode(dependency.value);
+        else if(dependency.type === "Page") await addPageNode(dependency.value);
+        graph.addDependency(blockUUID+"FirstLineOfBlock", dependency.value+dependency.type);
+    }
+    const toHash = [];
+    graph.dependenciesOf(blockUUID+"FirstLineOfBlock").forEach((dependency) => {
+        toHash.push(graph.getNodeData(dependency));
+    });
+    toHash.push({content:_.get(block, 'content',''), format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
+    graph.setNodeData(blockUUID+"FirstLineOfBlock", hashSum(toHash));
 }
 
 export const getBlockHash = async (blockUUID) => {
@@ -87,6 +118,7 @@ export const init = () => {
             if (block.uuid != null) {
                 console.log("Asked to Removed block node: "+block.uuid);
                 removeBlockNode(block.uuid);
+                removeFirstLineOfBlockNode(block.uuid);
             }
             if(block.originalName != null) {
                 console.log("Asked to Removed page node: "+block.originalName);
