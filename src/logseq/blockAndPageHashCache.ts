@@ -10,9 +10,13 @@ import hashSum from 'hash-sum';
 import _ from "lodash";
 import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {getFirstNonEmptyLine} from "../utils";
-const graph = new DepGraph();
+let graph = new DepGraph();
 
 // -- Hash Dependency Graph --
+const clearGraph = () => {
+    graph = new DepGraph();
+}
+
 const removeBlockNode = (blockUUID) => {
     console.log(graph.hasNode(blockUUID+"Block"), blockUUID+"Block");
     if(!graph.hasNode(blockUUID+"Block")) return;
@@ -103,7 +107,8 @@ export const getPageHash = async (pageName) => {
 // -- Maintain Cache State by using DB.onChanged --
 export const init = () => {
     LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
-        console.log("Triggered?", blocks, txData, txMeta);
+        if (!logseq.settings.cacheLogseqAPIv1) { clearGraph(); return; }
+        console.log("Maintaining blockAndPageHashCache", [...blocks], txData, txMeta);
         for(let tx of txData) {
             let [txBlockID, txType, ...additionalDetails] = tx;
             if(txType != "left" && txType != "parent") continue;
@@ -125,5 +130,8 @@ export const init = () => {
                 removePageNode(block.originalName);
             }
         }
+    });
+    LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
+        if (!newSettings.cacheLogseqAPIv1) clearGraph();
     });
 }

@@ -1,8 +1,17 @@
 import '@logseq/libs'
-import { BlockEntity, BlockIdentity, BlockUUID, EntityID,  PageEntity, PageIdentity } from "@logseq/libs/dist/LSPlugin";
+import {
+    BlockEntity,
+    BlockIdentity,
+    BlockUUID,
+    EntityID,
+    PageEntity,
+    PageIdentity,
+    SettingSchemaDesc
+} from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
 import objectHash from "object-hash";
 import _ from "lodash";
+import {AddonRegistry} from "../addons/AddonRegistry";
 /***
  * This is a Cached + Syncronization-safe logseq api wrapper. 
  * Fixes the following issues: #58
@@ -155,9 +164,19 @@ export namespace LogseqProxy {
             return result;
         }
 
-        static registeredListeners = [];
+        static registeredDBListeners = [];
         static registerDBChangeListener(listener: (event: {blocks, txData, txMeta}) => void): void {
-            this.registeredListeners.push(listener);
+            this.registeredDBListeners.push(listener);
+        }
+    }
+    export class Settings {
+        static useSettingsSchema(schemas: Array<SettingSchemaDesc>): void {
+            logseq.useSettingsSchema(schemas);
+        }
+
+        static registeredSettingsChangeListeners = [];
+        static registerSettingsChangeListener(listener: (newSettings, oldSettings) => void): void {
+            this.registeredSettingsChangeListeners.push(listener);
         }
     }
     export class Cache {
@@ -171,13 +190,18 @@ export namespace LogseqProxy {
     }
     export function init() {
         logseq.DB.onChanged(async ({blocks, txData, txMeta}) => {
-            console.log(LogseqProxy.DB.registeredListeners);
-            for (let listener of LogseqProxy.DB.registeredListeners) {
+            for (let listener of LogseqProxy.DB.registeredDBListeners) {
                 listener({blocks: [...blocks], txData, txMeta});
             }
         });
+        logseq.onSettingsChanged((newSettings, oldSettings) => {
+            for (let listener of LogseqProxy.Settings.registeredSettingsChangeListeners) {
+                listener(newSettings, oldSettings);
+            }
+        });
         LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
-            console.log("Triggered? 2");
+            if (!logseq.settings.cacheLogseqAPIv1) { LogseqProxy.Cache.clear(); return;}
+            console.log("Maintaining LogseqProxy.ts cache");
             for(let tx of txData) {
                 let [txBlockID, txType, ...additionalDetails] = tx;
                 if(txType != "left" && txType != "parent") continue;
@@ -223,6 +247,9 @@ export namespace LogseqProxy {
                         blocks.push(block_parent);
                 }
             }
+        });
+        LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
+            if (!newSettings.cacheLogseqAPIv1) LogseqProxy.Cache.clear();
         });
     }
 }

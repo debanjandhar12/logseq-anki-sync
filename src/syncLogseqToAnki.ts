@@ -99,7 +99,6 @@ export class LogseqToAnkiSync {
         await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncProgress);
         syncProgress.increment();
         await AnkiConnect.invoke("reloadCollection", {});
-        LogseqProxy.Cache.clear();
         convertToHTMLFileCache.clear();
 
         // -- Show Result / Summery --
