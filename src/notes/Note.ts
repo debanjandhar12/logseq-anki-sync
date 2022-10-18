@@ -7,6 +7,7 @@ import { LogseqProxy } from '../logseq/LogseqProxy';
 import pkg from '../../package.json';
 import hashSum from 'hash-sum';
 import {getBlockHash, getPageHash} from "../logseq/blockAndPageHashCache";
+import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 export abstract class Note {
     public uuid: string;
@@ -57,7 +58,7 @@ export abstract class Note {
         let parentID = (await LogseqProxy.Editor.getBlock(this.uuid)).parent.id;
         let parent;
         while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
-            let blockUUID = parent.uuid["$uuid$"] || parent.uuid.Wd || parent.uuid || parent.parent.id;
+            let blockUUID = getUUIDFromBlock(parent) || parent.parent.id;
             noteDependencies.push({ type: "Block", value: blockUUID } as DependencyEntity);
             parentID = parent.parent.id;
         }

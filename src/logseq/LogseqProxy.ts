@@ -12,6 +12,7 @@ import AwaitLock from "await-lock";
 import objectHash from "object-hash";
 import _ from "lodash";
 import {AddonRegistry} from "../addons/AddonRegistry";
+import getUUIDFromBlock from "./getUUIDFromBlock";
 /***
  * This is a Cached + Syncronization-safe logseq api wrapper. 
  * Fixes the following issues: #58
@@ -40,7 +41,7 @@ export namespace LogseqProxy {
                 cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock , opts } }), block);
                 let uuid : BlockUUID = null, dbid = null;
                 if(block) {
-                    uuid = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
+                    uuid = getUUIDFromBlock(block);
                     dbid = block.id || null;
                 }
                 if (block && uuid != null) 
@@ -53,7 +54,7 @@ export namespace LogseqProxy {
                     while (stack.length > 0) {
                         let child = stack.pop();
                         if (child == null) continue;
-                        let uuid : BlockUUID = child.uuid["$uuid$"] || child.uuid.Wd || child.uuid || null;
+                        let uuid : BlockUUID = getUUIDFromBlock(child);
                         let dbid = child.id || null;
                         if (uuid != null) 
                             cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts } }), child);
@@ -151,7 +152,7 @@ export namespace LogseqProxy {
                 for(let block of result) {
                     block = block[0];
                     if(block == null || block == undefined) continue;
-                    let uuid : BlockUUID = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
+                    let uuid : BlockUUID = getUUIDFromBlock(block);
                     let dbid = block.id || null;
                     if (uuid != null && !cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts: {} } })))
                         cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts: {} } }), block);

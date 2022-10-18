@@ -7,6 +7,7 @@ import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import { BlockUUID } from "@logseq/libs/dist/LSPlugin.user";
 import { DependencyEntity } from "../converter/getContentDirectDependencies";
+import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
@@ -177,7 +178,7 @@ export class MultilineCardNote extends Note {
         let blocks: any = [...logseqCard_blocks, ...flashCard_blocks];
         
         blocks = await Promise.all(blocks.map(async (block) => {
-            let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd || block[0].uuid;
+            let uuid = getUUIDFromBlock(block[0]);
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = await LogseqProxy.Editor.getBlock(uuid, { includeChildren: true });
             if (block) {

@@ -7,6 +7,7 @@ import { LogseqProxy } from "../logseq/LogseqProxy";
 import { HTMLFile } from "../converter/Converter";
 import { convertToHTMLFile } from "../converter/Converter";
 import {log} from "util";
+import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 export class ClozeNote extends Note {
     public type: string = "cloze";
@@ -148,7 +149,7 @@ export class ClozeNote extends Note {
         ]`);
         let blocks: any = [...macroCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
-            let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd || block[0].uuid;
+            let uuid = getUUIDFromBlock(block[0]);
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = block[0];
             if(!block.content) {
