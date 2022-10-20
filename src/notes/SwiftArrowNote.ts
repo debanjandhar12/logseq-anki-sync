@@ -3,8 +3,9 @@ import '@logseq/libs'
 import { escapeClozeAndSecoundBrace, safeReplace } from '../utils';
 import _ from 'lodash';
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
-import { LogseqProxy } from "../LogseqProxy";
+import { LogseqProxy } from "../logseq/LogseqProxy";
 import { convertToHTMLFile, HTMLFile } from "../converter/Converter";
+import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 export class SwiftArrowNote extends Note {
     public type: string = "swift_arrow";
@@ -51,7 +52,7 @@ export class SwiftArrowNote extends Note {
         ]`);
         let blocks: any = [...singleSwiftArrowBlocks];
         blocks = await Promise.all(blocks.map(async (block) => {
-            let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd || block[0].uuid;
+            let uuid = getUUIDFromBlock(block[0]);
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = block[0];
             if(!block.content) {

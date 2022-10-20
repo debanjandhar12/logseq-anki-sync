@@ -1,7 +1,7 @@
 import {SettingSchemaDesc} from '@logseq/libs/dist/LSPlugin';
 import _ from 'lodash';
 import {AddonRegistry} from './addons/AddonRegistry';
-import {LogseqProxy} from './LogseqProxy';
+import {LogseqProxy} from './logseq/LogseqProxy';
 
 export const addSettingsToLogseq = () => {
     const settingsTemplate: SettingSchemaDesc[] = [
@@ -69,15 +69,15 @@ export const addSettingsToLogseq = () => {
             key: "skipOnDependencyHashMatch",
             type: 'boolean',
             default: true,
-            title: "Enable skip rendering on DependecyHash match for improved syncing speed? (Default: Enabled)",
+            title: "Enable skip on DependecyHash match for improved syncing speed? (Default: Enabled)",
             description: "Enable skip rendering on DependecyHash match.",
         },
         {
-            key: "activeCacheForLogseqAPIv0",
+            key: "cacheLogseqAPIv1",
             type: 'boolean',
-            default: false,
-            title: "Enable active cache for Logseq API? (Default: Disabled) [Experimental]",
-            description: "Enable active cache for Logseq API. NB: It is extremely unstable. It is recommended to disable this option if cards are not getting updated properly.",
+            default: true,
+            title: "Enable caching Logseq API for improved syncing speed? (Default: Enabled) [Experimental]",
+            description: "Enable active cache for Logseq API. When enabled, the Logseq API and hashes of blocks will be cached and maintained in memory. NB: It is recommended to disable this option if notes are not getting updated properly."
         },
         {
             key: "debug",
@@ -89,12 +89,8 @@ export const addSettingsToLogseq = () => {
             description: "Select the files to enable debugging for.",
         },
     ];
-    logseq.useSettingsSchema(settingsTemplate);
-    logseq.onSettingsChanged((newSettings, oldSettings) => {
-        if (newSettings.activeCacheForLogseqAPIv0 != oldSettings.activeCacheForLogseqAPIv0) {
-            if (!logseq.settings.activeCacheForLogseqAPIv0) LogseqProxy.Cache.removeActiveCacheListeners();
-            else LogseqProxy.Cache.setUpActiveCacheListeners();
-        }
+    LogseqProxy.Settings.useSettingsSchema(settingsTemplate);
+    LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
         if (!_.isEqual(newSettings.addons, oldSettings.addons)) {
             for (let addon of oldSettings.addons) {
                 AddonRegistry.get(addon).remove();

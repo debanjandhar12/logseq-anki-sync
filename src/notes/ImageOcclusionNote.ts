@@ -3,10 +3,12 @@ import '@logseq/libs'
 import { escapeClozeAndSecoundBrace, safeReplace } from '../utils';
 import _ from 'lodash';
 import {MD_IMAGE_EMBEDED_REGEXP, MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
-import { LogseqProxy } from "../LogseqProxy";
+import { LogseqProxy } from "../logseq/LogseqProxy";
 import { convertToHTMLFile, HTMLFile } from "../converter/Converter";
 import {SelectPrompt} from "../ui/SelectPrompt";
 import {OcclusionEditor} from "../ui/OcclusionEditor";
+import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
+import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 
 export class ImageOcclusionNote extends Note {
     public type: string = "image_occlusion";
@@ -17,7 +19,7 @@ export class ImageOcclusionNote extends Note {
 
     public static initLogseqOperations = (() => {
         logseq.Editor.registerBlockContextMenuItem("Image Occlusion", async (block) => {
-            let uuid = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
+            let uuid = getUUIDFromBlock(block as BlockEntity);
             block = await logseq.Editor.getBlock(uuid); // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
             let block_content = block.content;
             let block_images = (block_content.match(MD_IMAGE_EMBEDED_REGEXP) || []).map((block_image) => {
@@ -71,7 +73,7 @@ export class ImageOcclusionNote extends Note {
           [(get ?p :occlusion)]
         ]`);
         blocks = await Promise.all(blocks.map(async (block) => {
-            let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd || block[0].uuid;
+            let uuid = getUUIDFromBlock(block[0]);
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = block[0];
             if(!block.content) {

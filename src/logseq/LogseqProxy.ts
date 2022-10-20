@@ -1,8 +1,18 @@
 import '@logseq/libs'
-import { BlockEntity, BlockIdentity, BlockUUID, EntityID,  PageEntity, PageIdentity } from "@logseq/libs/dist/LSPlugin";
+import {
+    BlockEntity,
+    BlockIdentity,
+    BlockUUID,
+    EntityID,
+    PageEntity,
+    PageIdentity,
+    SettingSchemaDesc
+} from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
 import objectHash from "object-hash";
 import _ from "lodash";
+import {AddonRegistry} from "../addons/AddonRegistry";
+import getUUIDFromBlock from "./getUUIDFromBlock";
 /***
  * This is a Cached + Syncronization-safe logseq api wrapper. 
  * Fixes the following issues: #58
@@ -16,7 +26,6 @@ type LogSeqOperationHash = string;
 
 let cache = new Map<LogSeqOperationHash, any>();
 let getLogseqLock = new AwaitLock();
-let activeCacheListener = null;
 
 export namespace LogseqProxy {
     export class Editor {
@@ -32,7 +41,7 @@ export namespace LogseqProxy {
                 cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock , opts } }), block);
                 let uuid : BlockUUID = null, dbid = null;
                 if(block) {
-                    uuid = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
+                    uuid = getUUIDFromBlock(block);
                     dbid = block.id || null;
                 }
                 if (block && uuid != null) 
@@ -45,7 +54,7 @@ export namespace LogseqProxy {
                     while (stack.length > 0) {
                         let child = stack.pop();
                         if (child == null) continue;
-                        let uuid : BlockUUID = child.uuid["$uuid$"] || child.uuid.Wd || child.uuid || null;
+                        let uuid : BlockUUID = getUUIDFromBlock(child);
                         let dbid = child.id || null;
                         if (uuid != null) 
                             cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts } }), child);
@@ -143,7 +152,7 @@ export namespace LogseqProxy {
                 for(let block of result) {
                     block = block[0];
                     if(block == null || block == undefined) continue;
-                    let uuid : BlockUUID = block.uuid["$uuid$"] || block.uuid.Wd || block.uuid || null;
+                    let uuid : BlockUUID = getUUIDFromBlock(block);
                     let dbid = block.id || null;
                     if (uuid != null && !cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts: {} } })))
                         cache.set(objectHash({ operation: "getBlock", parameters: { srcBlock: uuid, opts: {} } }), block);
@@ -155,73 +164,97 @@ export namespace LogseqProxy {
             finally { getLogseqLock.release(); }
             return result;
         }
+
+        static registeredDBListeners = [];
+        static registerDBChangeListener(listener: (event: {blocks, txData, txMeta}) => void): void {
+            this.registeredDBListeners.push(listener);
+        }
+    }
+    export class Settings {
+        static useSettingsSchema(schemas: Array<SettingSchemaDesc>): void {
+            logseq.useSettingsSchema(schemas);
+        }
+
+        static registeredSettingsChangeListeners = [];
+        static registerSettingsChangeListener(listener: (newSettings, oldSettings) => void): void {
+            this.registeredSettingsChangeListeners.push(listener);
+        }
     }
     export class Cache {
         static clear(): void {
             if(!logseq.settings.activeCacheForLogseqAPIv0) cache.clear();
         }
 
-        static setUpActiveCacheListeners(): void {
-            if(activeCacheListener != null) return;
-            activeCacheListener = logseq.DB.onChanged(async ({blocks, txData, txMeta}) => {
-                // console.log("activeCacheListener", blocks, txData, txMeta);
-                for(let tx of txData) {
-                    let [txBlockID, txType, ...additionalDetails] = tx;
-                    if(txType != "left" && txType != "parent") continue;
-                    let block = await LogseqProxy.Editor.getBlock(txBlockID);
-                    if(block != null) blocks.push(block);
-                    block = await LogseqProxy.Editor.getBlock(additionalDetails[0]);
-                    if(block != null) blocks.push(block);
-                }
-                let blockVisited = new Set();
-                while (blocks.length > 0) {
-                    let block = blocks.pop();
-                    if(blockVisited.has(block.id)) continue;
-                    blockVisited.add(block.id);
-                    block.uuid = _.get(block, "uuid['$uuid$']", null) || _.get(block, "uuid.Wd", null) || _.get(block, "uuid", null) || null;
-                    if (block.uuid != null) {
-                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {} } }));
-                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {includeChildren:true} } }));
-                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.uuid } }));
-                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.uuid } }));
-                    }
-                    if (block.page != null && block.page.id != null) {
-                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.page.id } }));
-                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.page.id } }));
-                        let page_originalName = await LogseqProxy.Editor.getPage(block.page.id);
-                        if (page_originalName != null) {
-                            cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: page_originalName } }));
-                            cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: page_originalName } }));
-                        }
-                    }
-                    if(block.originalName != null) {
-                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.originalName } }));
-                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.originalName } }));
-                    }
-                    if (block.id != null) {
-                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {includeChildren:true} } }));
-                        cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {} } }));
-                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.id } }));
-                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.id } }));
-                    }
-                    if (block.parent != null && block.parent.id != null) {
-                        let block_parent = await LogseqProxy.Editor.getBlock(block.parent.id);
-                        if (block_parent != null) 
-                            blocks.push(block_parent);
-                    }
-                }
-            });
-        }
-
-        static removeActiveCacheListeners(): void {
-            if(activeCacheListener == null) return;
-            LogseqProxy.Cache.clear();
-            activeCacheListener();
-            activeCacheListener = null;
-        }
-
         static has(key: LogSeqOperationHash): boolean {
             return cache.has(key);
         }
     }
+    export function init() {
+        logseq.DB.onChanged(async ({blocks, txData, txMeta}) => {
+            for (let listener of LogseqProxy.DB.registeredDBListeners) {
+                listener({blocks: [...blocks], txData, txMeta});
+            }
+        });
+        logseq.onSettingsChanged((newSettings, oldSettings) => {
+            for (let listener of LogseqProxy.Settings.registeredSettingsChangeListeners) {
+                listener(newSettings, oldSettings);
+            }
+        });
+        LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
+            if (!logseq.settings.cacheLogseqAPIv1) return;
+            console.log("Maintaining LogseqProxy.ts cache");
+            for(let tx of txData) {
+                let [txBlockID, txType, ...additionalDetails] = tx;
+                if(txType != "left" && txType != "parent") continue;
+                let block = await LogseqProxy.Editor.getBlock(txBlockID);
+                if(block != null) blocks.push(block);
+                block = await LogseqProxy.Editor.getBlock(additionalDetails[0]);
+                if(block != null) blocks.push(block);
+            }
+            let blockVisited = new Set();
+            while (blocks.length > 0) {
+                let block = blocks.pop();
+                if(blockVisited.has(block.id)) continue;
+                blockVisited.add(block.id);
+                block.uuid = _.get(block, "uuid['$uuid$']", null) || _.get(block, "uuid.Wd", null) || _.get(block, "uuid", null) || null;
+                if (block.uuid != null) {
+                    cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {} } }));
+                    cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {includeChildren:true} } }));
+                    cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.uuid } }));
+                    cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.uuid } }));
+                }
+                if (block.page != null && block.page.id != null) {
+                    cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.page.id } }));
+                    cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.page.id } }));
+                    let page_originalName = await LogseqProxy.Editor.getPage(block.page.id);
+                    if (page_originalName != null) {
+                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: page_originalName } }));
+                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: page_originalName } }));
+                    }
+                }
+                if(block.originalName != null) {
+                    cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.originalName } }));
+                    cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.originalName } }));
+                }
+                if (block.id != null) {
+                    cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {includeChildren:true} } }));
+                    cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {} } }));
+                    cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.id } }));
+                    cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.id } }));
+                }
+                if (block.parent != null && block.parent.id != null) {
+                    let block_parent = await LogseqProxy.Editor.getBlock(block.parent.id);
+                    if (block_parent != null)
+                        blocks.push(block_parent);
+                }
+            }
+        });
+        LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
+            if (!newSettings.cacheLogseqAPIv1) LogseqProxy.Cache.clear();
+        });
+        window.addEventListener('syncLogseqToAnkiComplete', () => {
+            if (!logseq.settings.cacheLogseqAPIv1) LogseqProxy.Cache.clear();
+        });
+    }
 }
+

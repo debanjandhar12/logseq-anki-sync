@@ -4,9 +4,10 @@ import _ from 'lodash';
 import { convertToHTMLFile, HTMLFile } from '../converter/Converter';
 import { escapeClozeAndSecoundBrace, safeReplace } from '../utils';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
-import { LogseqProxy } from "../LogseqProxy";
+import { LogseqProxy } from "../logseq/LogseqProxy";
 import { BlockUUID } from "@logseq/libs/dist/LSPlugin.user";
-import { ReferenceDependency } from "../converter/getContentDirectDependencies";
+import { DependencyEntity } from "../converter/getContentDirectDependencies";
+import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 export class MultilineCardNote extends Note {
     public type: string = "multiline_card";
@@ -177,7 +178,7 @@ export class MultilineCardNote extends Note {
         let blocks: any = [...logseqCard_blocks, ...flashCard_blocks];
         
         blocks = await Promise.all(blocks.map(async (block) => {
-            let uuid = block[0].uuid["$uuid$"] || block[0].uuid.Wd || block[0].uuid;
+            let uuid = getUUIDFromBlock(block[0]);
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = await LogseqProxy.Editor.getBlock(uuid, { includeChildren: true });
             if (block) {
@@ -200,7 +201,7 @@ export class MultilineCardNote extends Note {
         return blocks;
     }
 
-    public getDirectDependencies(): ReferenceDependency[] {
+    public getBlockDependencies(): DependencyEntity[] {
         function getChildrenUUID(children: any): BlockUUID[] {
             let result = [];
             for (let child of children) {
@@ -209,6 +210,6 @@ export class MultilineCardNote extends Note {
             }
             return result;
         }
-        return [this.uuid,...getChildrenUUID(this.children)].map(block => ({ type: "Embedded_Block_ref", value: block } as ReferenceDependency));
+        return [this.uuid,...getChildrenUUID(this.children)].map(block => ({ type: "Block", value: block } as DependencyEntity));
     }
 }

@@ -9,14 +9,14 @@ import _ from 'lodash';
 import { get_better_error_msg, sortAsync } from './utils';
 import path from 'path';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
-import { convertToHTMLFile, convertToHTMLFileCache } from './converter/Converter';
-import { LogseqProxy } from './LogseqProxy';
+import { convertToHTMLFile } from './converter/Converter';
+import { LogseqProxy } from './logseq/LogseqProxy';
 import pkg from '../package.json';
 import { SwiftArrowNote } from './notes/SwiftArrowNote';
-import { getRecursiveDependenciesHashCache } from './converter/getBlockRecursiveDependenciesHash';
 import {ProgressNotification} from "./ui/ProgressNotification";
 import {Confirm} from "./ui/Confirm";
 import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
+import NoteHashCalculator from "./notes/NoteHashCalculator";
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -100,9 +100,7 @@ export class LogseqToAnkiSync {
         await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncProgress);
         syncProgress.increment();
         await AnkiConnect.invoke("reloadCollection", {});
-        LogseqProxy.Cache.clear();
-        convertToHTMLFileCache.clear();
-        getRecursiveDependenciesHashCache.clear();
+        window.dispatchEvent(new Event('syncLogseqToAnkiComplete'));
 
         // -- Show Result / Summery --
         let summery = `Sync Completed! \n Created Blocks: ${toCreateNotes.length - failedCreated.size} \n Updated Blocks: ${toUpdateNotes.length - failedUpdated.size} \n Deleted Blocks: ${toDeleteNotes.length - failedDeleted.size}`;
@@ -123,7 +121,7 @@ export class LogseqToAnkiSync {
         for (let note of toCreateNotes) {
             try {
                 let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
-                let dependencyHash = await note.getAllDependenciesHash([html, Array.from(assets), deck, breadcrumb, tags, extra])
+                let dependencyHash = await NoteHashCalculator.getHash(note, [html, Array.from(assets), deck, breadcrumb, tags, extra]);
                 // Add assets
                 const graphPath = (await logseq.App.getCurrentGraph()).path;
                 assets.forEach(asset => {
@@ -175,11 +173,11 @@ export class LogseqToAnkiSync {
                     catch (e) { return {}; }
                 })(ankiNodeInfo.fields.Config.value);
                 let [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra] = [ankiNodeInfo.fields.Text.value, oldConfig.assets, ankiNodeInfo.deck, ankiNodeInfo.fields.Breadcrumb.value, ankiNodeInfo.tags, ankiNodeInfo.fields.Extra.value];
-                let dependencyHash = await note.getAllDependenciesHash([oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra]);
+                let dependencyHash = await NoteHashCalculator.getHash(note, [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra]);
                 if(logseq.settings.skipOnDependencyHashMatch != true || oldConfig.dependencyHash != dependencyHash) { // Reparse Note + update assets + update
                     // Parse Note
                     let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
-                    dependencyHash = await note.getAllDependenciesHash([html, Array.from(assets), deck, breadcrumb, tags, extra]);
+                    dependencyHash = await NoteHashCalculator.getHash(note, [html, Array.from(assets), deck, breadcrumb, tags, extra]);
                     // Add or update assets
                     const graphPath = (await logseq.App.getCurrentGraph()).path;
                     assets.forEach(asset => {
