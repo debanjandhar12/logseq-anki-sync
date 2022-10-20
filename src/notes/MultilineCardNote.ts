@@ -201,7 +201,7 @@ export class MultilineCardNote extends Note {
         return blocks;
     }
 
-    public getNoteDependencies(): DependencyEntity[] {
+    public getBlockDependencies(): DependencyEntity[] {
         function getChildrenUUID(children: any): BlockUUID[] {
             let result = [];
             for (let child of children) {

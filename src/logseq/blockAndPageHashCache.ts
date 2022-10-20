@@ -99,6 +99,11 @@ export const getBlockHash = async (blockUUID) => {
     return graph.getNodeData(blockUUID+"Block");
 };
 
+export const getFirstLineOfBlockHash = async (blockUUID) => {
+    await addFirstLineOfBlockNode(blockUUID);
+    return graph.getNodeData(blockUUID+"FirstLineOfBlock");
+};
+
 export const getPageHash = async (pageName) => {
     await addPageNode(pageName);
     return graph.getNodeData(pageName+"Page");
