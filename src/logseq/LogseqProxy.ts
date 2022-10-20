@@ -202,7 +202,7 @@ export namespace LogseqProxy {
         });
         LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
             if (!logseq.settings.cacheLogseqAPIv1) return;
-            console.log("Maintaining LogseqProxy.ts cache");
+            if(logseq.settings.debug.includes("blockAndPageHashCache.ts")) console.log("Maintaining LogseqProxy Cache", [...blocks], txData, txMeta);
             for(let tx of txData) {
                 let [txBlockID, txType, ...additionalDetails] = tx;
                 if(txType != "left" && txType != "parent") continue;

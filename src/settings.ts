@@ -84,7 +84,7 @@ export const addSettingsToLogseq = () => {
             type: "enum",
             default: [],
             title: "Enable debugging? (Default: None)",
-            enumChoices: ["syncLogseqToAnki.ts", "Converter.ts", "LazyAnkiNoteManager.ts"],
+            enumChoices: ["syncLogseqToAnki.ts", "LogseqProxy.ts", "Converter.ts", "LazyAnkiNoteManager.ts"],
             enumPicker: "checkbox",
             description: "Select the files to enable debugging for.",
         },

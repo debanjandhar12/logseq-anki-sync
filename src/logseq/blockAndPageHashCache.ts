@@ -18,34 +18,27 @@ const clearGraph = () => {
 }
 
 const removeBlockNode = (blockUUID) => {
-    console.log(graph.hasNode(blockUUID+"Block"), blockUUID+"Block");
     if(!graph.hasNode(blockUUID+"Block")) return;
     graph.dependantsOf(blockUUID+"Block").forEach((dependant) => {
-        console.log("Removed node:"+dependant);
         graph.removeNode(dependant);
     });
     graph.removeNode(blockUUID+"Block");
-    console.log("Removed block node:"+blockUUID+"Block");
 }
 
 const removeFirstLineOfBlockNode = (blockUUID) => {
     if(!graph.hasNode(blockUUID+"FirstLineOfBlock")) return;
     graph.dependantsOf(blockUUID+"FirstLineOfBlock").forEach((dependant) => {
-        console.log("Removed node:"+dependant);
         graph.removeNode(dependant);
     });
     graph.removeNode(blockUUID+"FirstLineOfBlock");
-    console.log("Removed block node:"+blockUUID+"FirstLineOfBlock");
 }
 
 const removePageNode = (pageName) => {
     if(!graph.hasNode(pageName+"Page")) return;
     graph.dependantsOf(pageName+"Page").forEach((dependant) => {
         graph.removeNode(dependant);
-        console.log("Removed node: "+dependant);
     });
     graph.removeNode(pageName+"Page");
-    console.log("Removed page node: "+pageName+"Page");
 }
 
 const addPageNode = async (pageName) => {
@@ -113,7 +106,6 @@ export const getPageHash = async (pageName) => {
 export const init = () => {
     LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
         if (!logseq.settings.cacheLogseqAPIv1) return;
-        console.log("Maintaining blockAndPageHashCache", [...blocks], txData, txMeta);
         for(let tx of txData) {
             let [txBlockID, txType, ...additionalDetails] = tx;
             if(txType != "left" && txType != "parent") continue;
@@ -126,12 +118,10 @@ export const init = () => {
             let block = blocks.pop();
             block.uuid = getUUIDFromBlock(block);
             if (block.uuid != null) {
-                console.log("Asked to Removed block node: "+block.uuid);
                 removeBlockNode(block.uuid);
                 removeFirstLineOfBlockNode(block.uuid);
             }
             if(block.originalName != null) {
-                console.log("Asked to Removed page node: "+block.originalName);
                 removePageNode(block.originalName);
             }
         }
