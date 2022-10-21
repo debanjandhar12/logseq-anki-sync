@@ -180,6 +180,17 @@ export namespace LogseqProxy {
             this.registeredSettingsChangeListeners.push(listener);
         }
     }
+    export class App {
+        static registeredGraphChangeListeners = [];
+        static registerGraphChangeListener(listener: (e) => void): void {
+            this.registeredGraphChangeListeners.push(listener);
+        }
+
+        static registeredGraphIndexedListeners = [];
+        static registerGraphIndexedListener(listener: (e) => void): void {
+            this.registeredGraphIndexedListeners.push(listener);
+        }
+    }
     export class Cache {
         static clear(): void {
             cache.clear();
@@ -198,6 +209,16 @@ export namespace LogseqProxy {
         logseq.onSettingsChanged((newSettings, oldSettings) => {
             for (let listener of LogseqProxy.Settings.registeredSettingsChangeListeners) {
                 listener(newSettings, oldSettings);
+            }
+        });
+        logseq.App.onCurrentGraphChanged((e) => {
+            for (let listener of LogseqProxy.App.registeredGraphChangeListeners) {
+                listener(e);
+            }
+        });
+        logseq.App.onCurrentGraphIndexed((e) => {
+            for (let listener of LogseqProxy.App.registeredGraphIndexedListeners) {
+                listener(e);
             }
         });
         LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
@@ -251,6 +272,12 @@ export namespace LogseqProxy {
         });
         LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
             if (!newSettings.cacheLogseqAPIv1) LogseqProxy.Cache.clear();
+        });
+        LogseqProxy.App.registerGraphChangeListener((e) => {
+            LogseqProxy.Cache.clear();
+        });
+        LogseqProxy.App.registerGraphIndexedListener((e) => {
+            LogseqProxy.Cache.clear();
         });
         window.addEventListener('syncLogseqToAnkiComplete', () => {
             if (!logseq.settings.cacheLogseqAPIv1) LogseqProxy.Cache.clear();

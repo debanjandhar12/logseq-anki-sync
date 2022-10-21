@@ -129,6 +129,13 @@ export const init = () => {
     LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
         if (!newSettings.cacheLogseqAPIv1) clearGraph();
     });
+    LogseqProxy.App.registerGraphChangeListener((e) => {
+        console.log("Working");
+        clearGraph();
+    });
+    LogseqProxy.App.registerGraphIndexedListener((e) => {
+        clearGraph();
+    });
     window.addEventListener('syncLogseqToAnkiComplete', () => {
         if (!logseq.settings.cacheLogseqAPIv1) clearGraph();
     });
