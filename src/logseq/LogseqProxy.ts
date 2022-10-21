@@ -182,7 +182,7 @@ export namespace LogseqProxy {
     }
     export class Cache {
         static clear(): void {
-            if(!logseq.settings.activeCacheForLogseqAPIv0) cache.clear();
+            cache.clear();
         }
 
         static has(key: LogSeqOperationHash): boolean {
