@@ -4,7 +4,7 @@
 import {fabric} from 'fabric';
 import {createOcclusionRectEl} from "../ui/OcclusionEditor";
 
-window.onload = function () {
+window.onload = () => {
     if (type == "image_occlusion") {
         // Get current cloze id (only works for image occlusion)
         let currentClozeId = '-1';
@@ -17,6 +17,7 @@ window.onload = function () {
         let imgToCanvasHashMap = {};
         let images = document.getElementsByTagName("img");
         for (let image of images) {
+            image.style.visibility= 'hidden';
             let canvasEl = document.createElement("canvas");
             canvasEl.width = image.width;
             canvasEl.height = image.height;
@@ -31,13 +32,11 @@ window.onload = function () {
                     scaleX: 1,
                     scaleY: 1
                 });
-                canvas.renderAll();
             }
             canvasEl.style.position = "relative";
             image.replaceWith(canvasEl);
-            let imgPath = decodeURIComponent(image.src.replace(/^.*[\\\/]/, ''));
-            if(imgToCanvasHashMap[imgPath] == null) imgToCanvasHashMap[imgPath] = [];
-            imgToCanvasHashMap[imgPath].push(canvas);
+            if(imgToCanvasHashMap[image.src] == null) imgToCanvasHashMap[image.src] = [];
+            imgToCanvasHashMap[image.src].push(canvas);
         }
 
         // Iterate the imgToOcclusionArrHashMap to draw the occlusion
@@ -46,7 +45,9 @@ window.onload = function () {
             let occlusionArr = imgToOcclusionArrHashMap[image];
             occlusionArr.forEach((obj) => {
                 if(obj.cId == currentClozeId) {
-                    imgToCanvasHashMap[encodeURIComponent(image)].forEach((canvas) => {
+                    console.log(imgToCanvasHashMap, (image), window.location.origin + '/' + encodeURIComponent(encodeURIComponent(image)));
+
+                    (imgToCanvasHashMap[window.location.origin + '/' + encodeURIComponent(encodeURIComponent(image))] || imgToCanvasHashMap[decodeURIComponent(image)]).forEach((canvas) => {
                         let occlusion = createOcclusionRectEl(obj.left, obj.top, obj.width, obj.height, obj.angle, obj.cId);
                         occlusion._objects[0].set('opacity', 1);
                         canvas.add(occlusion);
