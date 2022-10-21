@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import {ANKI_ICON} from "../constants";
+import {ANKI_ICON, isWebURL_REGEXP} from "../constants";
 
 declare global {
     interface Window { fabric: any; }
@@ -66,7 +66,7 @@ export async function OcclusionEditor(img: string, occlusionArr: Array<any>): Pr
         let imgEl = new Image();
         imgEl.setAttribute('crossOrigin', 'anonymous');
         const graphPath = (await logseq.App.getCurrentGraph()).path;
-        imgEl.src = encodeURI(path.join(graphPath, path.resolve(img)));
+        imgEl.src = isWebURL_REGEXP.test(img) ? img : encodeURI(path.join(graphPath, path.resolve(img)));
         imgEl.onload = function () {
             let img = new window.parent.fabric.Image(imgEl);
             let canvasWidth = Math.min(imgEl.width,  window.parent.document.querySelector('.occlusion__editor').clientWidth - 160);
