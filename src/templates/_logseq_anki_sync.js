@@ -17,3 +17,7 @@ window.openBlockInLogseq = (uuid) => {
     block_link.href = `${page_link.href.match(/logseq:\/\/graph\/.*\?/)}block-id=${uuid}`;
     block_link.click();
 }
+
+window.addEventListener("load", () => {
+    document.getElementById("main-content").style.visibility = "visible";
+});

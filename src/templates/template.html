@@ -1,3 +1,4 @@
+<script src="_logseq_anki_sync.js" async=false defer=false></script>
 <div style="display: flex; justify-content: space-between;">
     <div class="bubble breadcrumb2">
         {{Breadcrumb}}
@@ -7,12 +8,13 @@
         <span class="note-action bubble" onclick="scrollToClozeElement()" title="Scroll to cloze">⏬</span>
     </div>
 </div>
-<span class="text">
-{{cloze:Text}}
+<span id="main-content" style="visibility: hidden">
+    <span class="text">
+    {{cloze:Text}}
+    </span>
+    <div class="extra">{{Extra}}</div>
 </span>
-<div class="extra">{{Extra}}</div>
-<script> var config = {}; var uuid_type = ""; var type = ""; var load_event; </script>
-<script> try{config = JSON.parse(`{{Config}}`); uuid_type = `{{uuid-type}}`; type = uuid_type.split('-').pop(); } catch(e) {console.log(e);} </script>
-<script>load_event = new Event("load"); window.dispatchEvent(load_event);</script>
-<script src="_logseq_anki_sync.js"></script>
-<link rel="stylesheet" href="_logseq_anki_sync.css">
+<script async=false defer=false> var config = {}; var uuid_type = ""; var type = ""; var load_event; </script>
+<script async=false defer=false> try{config = JSON.parse(`{{Config}}`); uuid_type = `{{uuid-type}}`; type = uuid_type.split('-').pop(); } catch(e) {console.log(e);} </script>
+<script async=false defer=false>load_event = new Event("load"); window.dispatchEvent(load_event);</script>
+<link rel="stylesheet" href="_logseq_anki_sync.css" as

@@ -3,8 +3,7 @@
 */
 import {fabric} from 'fabric';
 import {createOcclusionRectEl} from "../ui/OcclusionEditor";
-
-window.onload = () => {
+window.addEventListener("load", () => {
     if (type == "image_occlusion") {
         // Get current cloze id (only works for image occlusion)
         let currentClozeId = '-1';
@@ -57,4 +56,4 @@ window.onload = () => {
             });
         }
     }
-}
+});

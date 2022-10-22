@@ -14,13 +14,14 @@ import logseq_anki_sync_back_js from "bundle-text:./_logseq_anki_sync_back.js";
 
 let template = fs.readFileSync(__dirname + '/template.html', 'utf8');
 
-export let template_front = template + `
-    <script src="_logseq_anki_sync_front.js" charset="UTF-8"></script>
-    <link rel="stylesheet" href="_logseq_anki_sync_front.css">`;
-export let template_back = template + `
-    <script src="_logseq_anki_sync_back.js" charset="UTF-8"></script>
-    <link rel="stylesheet" href="_logseq_anki_sync_back.css">`;
-
+export let template_front =
+    `<script src="_logseq_anki_sync_front.js" type='text/javascript' async=false defer=false></script>
+     ${template}
+     <link rel="stylesheet" href="_logseq_anki_sync_front.css">`;
+export let template_back =
+    `<script src="_logseq_anki_sync_back.js" type='text/javascript' async=false defer=false></script>
+     ${template}
+     <link rel="stylesheet" href="_logseq_anki_sync_back.css">`;
 export let template_files = {
                     "_logseq_anki_sync.css": logseq_anki_sync_css,
                     "_logseq_anki_sync_front.css": logseq_anki_sync_front_css,
