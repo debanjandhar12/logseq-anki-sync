@@ -293,6 +293,7 @@ export class LogseqToAnkiSync {
         }
 
         let tags = [...(_.get(note, 'properties.tags') || []), ...(_.get(note, 'page.properties.tags') || [])];
+        tags = tags.map(tag => tag.replace(/\//g, "::"));
         let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
         if (Array.isArray(extra)) extra = extra.join(" ");
 
