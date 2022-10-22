@@ -89,7 +89,11 @@ export class LogseqToAnkiSync {
         // -- Prompt the user what actions are going to be performed --
         let confirm_msg = `<b>The logseq to anki sync plugin will attempt to perform the following actions:</b><br/>Create ${toCreateNotes.length} new anki notes<br/>Update ${toUpdateNotes.length} existing anki notes<br/>Delete ${toDeleteNotes.length != 0 ? `<span class="text-red-600">${toDeleteNotes.length}</span>` : toDeleteNotes.length} anki notes<br/><br/>Are you sure you want to coninue?`;
         if (!(await Confirm(confirm_msg))) { console.log("Sync Aborted by user!"); return; }
-        
+        if (toCreateNotes.length == 0 && toUpdateNotes.length == 0 && toDeleteNotes.length >= 10) {
+            let confirm_msg = `<b class="text-red-600">This will delete all your notes in anki that are generated from this graph.</b><br/>Are you sure you want to coninue?`;
+            if (!(await Confirm(confirm_msg))) { console.log("Sync Aborted by user!"); return;}
+        }
+
         // -- Sync --
         let start_time = performance.now();
         let syncProgress = new ProgressNotification('Syncing Logseq Notes to Anki:', 3+toCreateNotes.length+toUpdateNotes.length+toDeleteNotes.length);
