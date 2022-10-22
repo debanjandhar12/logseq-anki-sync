@@ -12,10 +12,12 @@ window.onload = () => {
             if (document.getElementById(`c${i}`)) currentClozeId = `${i}`;
         console.log(`Current cloze id: ${currentClozeId}`);
         if(currentClozeId == '-1') return;
-
+        // Get localImgBasePath
+        let localImgBasePath = document.getElementById("localImgBasePath").src;
+        localImgBasePath = localImgBasePath.substring(0, localImgBasePath.lastIndexOf("/"));
         // Replace all images with canvas
         let imgToCanvasHashMap = {};
-        let images = document.getElementsByTagName("img");
+        let images = Array.from(document.getElementsByTagName("img"));
         for (let image of images) {
             image.style.visibility= 'hidden';
             let canvasEl = document.createElement("canvas");
@@ -45,9 +47,7 @@ window.onload = () => {
             let occlusionArr = imgToOcclusionArrHashMap[image];
             occlusionArr.forEach((obj) => {
                 if(obj.cId == currentClozeId) {
-                    console.log(imgToCanvasHashMap, (image), window.location.origin + '/' + encodeURIComponent(encodeURIComponent(image)));
-
-                    (imgToCanvasHashMap[window.location.origin + '/' + encodeURIComponent(encodeURIComponent(image))] || imgToCanvasHashMap[decodeURIComponent(image)]).forEach((canvas) => {
+                    (imgToCanvasHashMap[localImgBasePath + '/' + encodeURIComponent(encodeURIComponent(image))] || imgToCanvasHashMap[decodeURIComponent(image)]).forEach((canvas) => {
                         let occlusion = createOcclusionRectEl(obj.left, obj.top, obj.width, obj.height, obj.angle, obj.cId);
                         occlusion._objects[0].set('opacity', 1);
                         canvas.add(occlusion);

@@ -60,6 +60,7 @@ export class ImageOcclusionNote extends Note {
         clozedContent += `\n<div class="hidden">
         ${Array.from(clozes).map((cloze) => `{{c${cloze}:: ::<span id="c${cloze}"></span>}}`).join('')}
         <div id="imgToOcclusionArrHashMap">${JSON.stringify(imgToOcclusionArrHashMap)}</div>
+        <img id="localImgBasePath" src="_logseq_anki_sync.css"></img>
         </div>`;
 
         return convertToHTMLFile(clozedContent, this.format);
