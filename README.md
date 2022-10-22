@@ -24,7 +24,7 @@ Several knowledge management software like Obsidian Polar sync to anki for space
 
 ## 🛠️ Installation
 1. Install Logseq Anki Sync from Marketplace.
-   * Go to `⋯` > `Settings` > `Advanced` and enable `Plugin System`.
+   * Go to `⋯` > `Settings` > `Features` and enable `Plugins`.
    * Now, go to `⋯` > `Plugin` > `Marketplace` and find Logseq Anki Sync and click install.
 2. Download and install [Anki](https://apps.ankiweb.net/) if not done already. 
 3. Install AnkiConnect on Anki.
