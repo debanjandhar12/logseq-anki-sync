@@ -168,7 +168,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     return {html: resultContent, assets: resultAssets};
 }
 
-async function processProperties(resultContent, format = "markdown"): Promise<string> {
+export async function processProperties(resultContent, format = "markdown"): Promise<string> {
     resultContent = safeReplace(resultContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
     let block_props = {};
     resultContent = safeReplace(resultContent, MD_PROPERTIES_REGEXP, (match) => { //Remove md properties
