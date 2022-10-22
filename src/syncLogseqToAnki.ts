@@ -186,12 +186,15 @@ export class LogseqToAnkiSync {
                     // Update note
                     if(logseq.settings.debug.includes("syncLogseqToAnki.ts")) console.log(`dependencyHash mismatch for note with id ${note.uuid}-${note.type}`);
                     ankiNoteManager.updateNote(ankiId, deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb, "Config": JSON.stringify({dependencyHash,assets:[...assets]}) }, tags);
-                } else { // Just update old assets
+                }
+                /*
+                else { // Just update old assets
                     const graphPath = (await logseq.App.getCurrentGraph()).path;
                     oldConfig.assets.forEach(asset => {
                         ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
                     });
                 }
+                */
             } catch (e) {
                 console.error(e); failedUpdated.add(`${note.uuid}-${note.type}`);
             }
