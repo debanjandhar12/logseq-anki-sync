@@ -1,4 +1,22 @@
 <script src="_logseq_anki_sync.js" async=false defer=false></script>
+<script async=false defer=false> var config = {}; var uuid_type = ""; var type = ""; var style, load_event; </script>
+<script async=false defer=false> try{config = JSON.parse(`{{Config}}`); uuid_type = `{{uuid-type}}`; type = uuid_type.split('-').pop(); } catch(e) {console.log(e);} </script>
+<script async=false defer=false>
+    style = document.createElement('style');
+    if (type == "image_occlusion")
+        style.textContent = `
+            #main-content {
+                visibility: hidden;
+            }
+        `;
+    else
+        style.textContent = `
+            #main-content {
+                visibility: visible;
+            }
+        `;
+    document.body.appendChild(style);
+</script>
 <div style="display: flex; justify-content: space-between;">
     <div class="bubble breadcrumb2">
         {{Breadcrumb}}
@@ -8,13 +26,11 @@
         <span class="note-action bubble" onclick="scrollToClozeElement()" title="Scroll to cloze">⏬</span>
     </div>
 </div>
-<span id="main-content" style="visibility: hidden">
+<span id="main-content">
     <span class="text">
     {{cloze:Text}}
     </span>
     <div class="extra">{{Extra}}</div>
 </span>
-<script async=false defer=false> var config = {}; var uuid_type = ""; var type = ""; var load_event; </script>
-<script async=false defer=false> try{config = JSON.parse(`{{Config}}`); uuid_type = `{{uuid-type}}`; type = uuid_type.split('-').pop(); } catch(e) {console.log(e);} </script>
 <script async=false defer=false>load_event = new Event("load"); window.dispatchEvent(load_event);</script>
-<link rel="stylesheet" href="_logseq_anki_sync.css" as
+<link rel="stylesheet" href="_logseq_anki_sync.css" />

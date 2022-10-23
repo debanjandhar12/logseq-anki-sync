@@ -40,7 +40,10 @@ window.addEventListener("load", () => {
             imgToCanvasHashMap[image.src].push(canvas);
         }
 
-        // Iterate the imgToOcclusionArrHashMap to draw the occlusion
+        // Show the main content (without images)
+        document.getElementById("main-content").style.visibility = "visible";
+
+        // Iterate the imgToOcclusionArrHashMap to draw the occlusion and inject the canvas into dom instead of images
         let imgToOcclusionArrHashMap = JSON.parse(document.getElementById("imgToOcclusionArrHashMap").innerHTML);
         for (let image in imgToOcclusionArrHashMap) {
             let occlusionArr = imgToOcclusionArrHashMap[image];
