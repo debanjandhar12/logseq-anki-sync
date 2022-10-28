@@ -237,7 +237,7 @@ export class LogseqToAnkiSync {
     }
 
     private async parseNote(note: Note): Promise<[string, Set<string>, string, string, string[], string]> {
-        let {html, assets} = await note.getClozedContentHTML();
+        let {html, assets, tags } = await note.getClozedContentHTML();
         
         if(logseq.settings.includeParentContent) {
             let newHtml = "";
@@ -299,7 +299,7 @@ export class LogseqToAnkiSync {
             }
         }
 
-        let tags = [...(_.get(note, 'properties.tags') || []), ...(_.get(note, 'page.properties.tags') || [])];
+        tags = [...Array.from(tags), ..._.get(note, 'properties.tags', []), ..._.get(note, 'page.properties.tags', [])];
         tags = tags.map(tag => tag.replace(/\//g, "::"));
         let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
         if (Array.isArray(extra)) extra = extra.join(" ");
