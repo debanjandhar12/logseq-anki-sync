@@ -17,8 +17,7 @@ import {
     MD_MATH_BLOCK_REGEXP,
     MD_PROPERTIES_REGEXP,
     ORG_MATH_BLOCK_REGEXP,
-    ORG_PROPERTIES_REGEXP,
-    LOGSEQ_TAG_REF_REGEXP, LOGSEQ_TAG_PAGE_REF_REGEXP
+    ORG_PROPERTIES_REGEXP, specialChars,
 } from "../constants";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
@@ -41,6 +40,7 @@ let mldocsOptions = {
 export interface HTMLFile {
     html: string;
     assets: Set<string>;
+    tags: Set<string> | Array<string>;
 }
 
 const convertToHTMLFileCache = new Map<{content: string, format: string, processRefEmbeds: boolean}, HTMLFile>();
@@ -48,7 +48,7 @@ window.addEventListener('syncLogseqToAnkiComplete', () => {convertToHTMLFileCach
 
 export async function convertToHTMLFile(content: string, format: string = "markdown", opts = {processRefEmbeds: true}): Promise<HTMLFile> {
     if(convertToHTMLFileCache.has({content, format, processRefEmbeds : opts.processRefEmbeds})) return convertToHTMLFileCache.get({content, format, processRefEmbeds : opts.processRefEmbeds});
-    let resultContent = content, resultAssets = new Set<string>();
+    let resultContent = content, resultAssets = new Set<string>(), resultTags = new Set<string>()
     if (logseq.settings.debug.includes("Converter.ts")) console.log("--Start Converting--\nOriginal:", resultContent);
 
     resultContent = await processProperties(resultContent, format);
@@ -118,7 +118,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
 
     // Process the block & page refs + embeds
     if(opts.processRefEmbeds)
-        resultContent = await processRefEmbeds(resultContent, resultAssets, hashmap, format);
+        resultContent = await processRefEmbeds(resultContent, resultAssets, resultTags, hashmap, format);
     else
         resultContent = await hideRefEmbeds(resultContent, resultAssets, hashmap, format);
 
@@ -139,6 +139,20 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     });
     $('img').each(function (i, elm) {   // Handle images
         console.warn("Error: Image Found! Image should have been processed by processLink already and be hidden from cheerio.");
+    });
+    let graphName = _.get(await logseq.App.getCurrentGraph(), 'name');
+    $('a.tag').each(function (i, elm) {   // Handle tags
+        let tagName = $(elm).text(), afterText = "";
+        // Handle tags with [[ at start and ]] at end
+        if(tagName.match(/\[\[(.*?)\]\]/)) tagName = tagName.match(/\[\[(.*?)\]\]/)[1];
+        // Sometimes special characters get appended to tag name. Hence, we need to put them after tag.
+        if(tagName.match(new RegExp(`.*?([${specialChars}]+)`, ''))) {
+            afterText = tagName.match(new RegExp(`.*?([${specialChars}]+)`, ''))[1];
+            tagName = tagName.replace(new RegExp(`([${specialChars}]+)$`, ''), '');
+        }
+        // Add tags to resultTags and add logseq page link to the tag
+        resultTags.add(tagName);
+        $(elm).replaceWith(`<a class="tag" href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(tagName)}">${tagName}</a>${afterText}`);
     });
     $('.mathblock, .latex-environment').each(function (i, elm) {    // Handle org math and latex-environment blocks
         let math = $(elm).html();
@@ -161,8 +175,8 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     for (let key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]); // fix: sometimes the end space of hash gets removed (actual fix require this to be repeated len(keys) times instead of 2)
 
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
-    convertToHTMLFileCache.set({content, format, processRefEmbeds : opts.processRefEmbeds}, {html: resultContent, assets: resultAssets});
-    return {html: resultContent, assets: resultAssets};
+    convertToHTMLFileCache.set({content, format, processRefEmbeds : opts.processRefEmbeds}, {html: resultContent, assets: resultAssets, tags: resultTags});
+    return {html: resultContent, assets: resultAssets, tags: resultTags};
 }
 
 export async function processProperties(resultContent, format = "markdown"): Promise<string> {
@@ -191,7 +205,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     return resultContent;
 }
 
-async function processRefEmbeds(resultContent, resultAssets, hashmap, format): Promise<string> {
+async function processRefEmbeds(resultContent, resultAssets, resultTags, hashmap, format): Promise<string> {
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_BLOCK_REGEXP, async (match, g1) => {  // Convert block embed
         let block_content = "";
         try { let block = await LogseqProxy.Editor.getBlock(g1); block_content = _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
@@ -238,18 +252,6 @@ async function processRefEmbeds(resultContent, resultAssets, hashmap, format): P
                         <a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="embed-header">${pageName}</a>
                         ${await getPageContentHTML(pageTree)}
                         </div>`;
-        return str;
-    });
-
-    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_TAG_PAGE_REF_REGEXP, async (match, tagName) => { // Convert page refs
-        let str = getRandomUnicodeString();
-        hashmap[str] = `<a class="tag" href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(tagName)}" class="block-ref">${tagName}</a>`;
-        return str;
-    });
-
-    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_TAG_REF_REGEXP, async (match, tagName) => { // Convert page refs
-        let str = getRandomUnicodeString();
-        hashmap[str] = `<a class="tag" href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(tagName)}" class="block-ref">${tagName}</a>`;
         return str;
     });
 

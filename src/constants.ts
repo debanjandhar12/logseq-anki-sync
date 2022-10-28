@@ -1,3 +1,4 @@
+export const specialChars = "\u2ddf\u22b3\u22b0\u278c\u23a1\u230f\u245d\u25da\u2efa\u2b79\u2b4d\u24e8\u2b8e\u2be4\u22cb\u2fed\u2063\u27c9\u24cf\u2904\u24a3\u24d0\u25e7\u22b5\u21da\u20ce\u2435\u2686\u2ba6\u27af\u244e\u23be\u298a\u26b0\u29ec\u2351\u234c\u2e7c\u2236\u243c\u2756\u21bf\u232b\u2936\u2b11\u2798\u20fe";
 export const ANKI_CLOZE_REGEXP = /(\{\{c(\d+)::)((.|\n)*?)\}\}/g;
 export const MD_MATH_BLOCK_REGEXP = /\$\$([\s\S]*?)\$\$/g;
 export const MD_PROPERTIES_REGEXP = /^\s*(\w|-)*::.*\n?\n?/gm;
@@ -6,8 +7,6 @@ export const ORG_MATH_BLOCK_REGEXP = /\\\[([\s\S]*?)\\\]/g;
 export const ORG_PROPERTIES_REGEXP = /:PROPERTIES:\n((.|\n)*?):END:\n?/gm;
 export const LOGSEQ_BLOCK_REF_REGEXP = /\(\(([^\)\n]*?)\)\)(?!\))/gm;
 export const LOGSEQ_RENAMED_BLOCK_REF_REGEXP = /\[(.*?)\]\(\(\((.*?)\)\)\)/gm;
-export const LOGSEQ_TAG_REF_REGEXP = /#(?<!#)#([^\[# \n][^ \n]*)/gm;
-export const LOGSEQ_TAG_PAGE_REF_REGEXP = /#\[\[(.*)\]\]/gm;
 export const LOGSEQ_PAGE_REF_REGEXP = /(?<!#)\[\[(.*?)\]\]/gm;
 // The \u2063? is to match the zero-width space that the plugin sometimes add to bypass cloze end.
 export const LOGSEQ_EMBDED_PAGE_REGEXP = /\{\{embed \[\[(.*?)\]\] *?\}\u2063?\}/gm;

@@ -124,7 +124,7 @@ export class MultilineCardNote extends Note {
         let cloze_id = 1;
         let maxDepth = this.getChildrenMaxDepth();
         let getChildrenListHTMLFile = async (childrenList: any, level: number = 0) : Promise<HTMLFile> => {
-            if (level >= maxDepth) return {html: "", assets: new Set<string>()};
+            if (level >= maxDepth) return {html: "", assets: new Set<string>(), tags: []};
             let childrenListAssets = new Set<string>();
             let childrenListHTML = `\n<ul class="children-list left-border">`;
             for (let child of childrenList) {
@@ -151,7 +151,7 @@ export class MultilineCardNote extends Note {
                 childrenListHTML += `</li>`;
             }
             childrenListHTML += `</ul>`;
-            return {html: childrenListHTML, assets: childrenListAssets};
+            return {html: childrenListHTML, assets: childrenListAssets, tags: []};
         }
         let childrenHTMLFile = await getChildrenListHTMLFile(this.children);
         childrenHTMLFile.assets.forEach(asset => clozedContentAssets.add(asset));
@@ -159,7 +159,7 @@ export class MultilineCardNote extends Note {
 
         if (this.children.length == 0 && (direction == "<->" || direction == "->")) clozedContent += `{{c${cloze_id}::}}`; // #16
         
-        return {html: clozedContent, assets: clozedContentAssets};
+        return {html: clozedContent, assets: clozedContentAssets, tags: parentBlockHTMLFile.tags};
     }
 
     public static async getNotesFromLogseqBlocks(otherNotes : Array<Note>): Promise<MultilineCardNote[]> {
