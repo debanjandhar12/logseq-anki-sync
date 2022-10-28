@@ -17,8 +17,7 @@ import {
     MD_MATH_BLOCK_REGEXP,
     MD_PROPERTIES_REGEXP,
     ORG_MATH_BLOCK_REGEXP,
-    ORG_PROPERTIES_REGEXP,
-    LOGSEQ_TAG_REF_REGEXP, LOGSEQ_TAG_PAGE_REF_REGEXP
+    ORG_PROPERTIES_REGEXP, specialChars,
 } from "../constants";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
@@ -141,6 +140,20 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     $('img').each(function (i, elm) {   // Handle images
         console.warn("Error: Image Found! Image should have been processed by processLink already and be hidden from cheerio.");
     });
+    let graphName = _.get(await logseq.App.getCurrentGraph(), 'name');
+    $('a.tag').each(function (i, elm) {   // Handle tags
+        let tagName = $(elm).text(), afterText = "";
+        // Handle tags with [[ at start and ]] at end
+        if(tagName.match(/\[\[(.*?)\]\]/)) tagName = tagName.match(/\[\[(.*?)\]\]/)[1];
+        // Sometimes special characters get appended to tag name. Hence, we need to put them after tag.
+        if(tagName.match(new RegExp(`.*?([${specialChars}]+)`, ''))) {
+            afterText = tagName.match(new RegExp(`.*?([${specialChars}]+)`, ''))[1];
+            tagName = tagName.replace(new RegExp(`([${specialChars}]+)$`, ''), '');
+        }
+        // Add tags to resultTags and add logseq page link to the tag
+        resultTags.add(tagName);
+        $(elm).replaceWith(`<a class="tag" href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(tagName)}">${tagName}</a>${afterText}`);
+    });
     $('.mathblock, .latex-environment').each(function (i, elm) {    // Handle org math and latex-environment blocks
         let math = $(elm).html();
         // Remove all types of math braces in math
@@ -239,20 +252,6 @@ async function processRefEmbeds(resultContent, resultAssets, resultTags, hashmap
                         <a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="embed-header">${pageName}</a>
                         ${await getPageContentHTML(pageTree)}
                         </div>`;
-        return str;
-    });
-
-    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_TAG_PAGE_REF_REGEXP, async (match, tagName) => { // Convert page refs
-        resultTags.add(tagName);
-        let str = getRandomUnicodeString();
-        hashmap[str] = `<a class="tag" href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(tagName)}">${tagName}</a>`;
-        return str;
-    });
-
-    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_TAG_REF_REGEXP, async (match, tagName) => { // Convert page refs
-        resultTags.add(tagName);
-        let str = getRandomUnicodeString();
-        hashmap[str] = `<a class="tag" href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(tagName)}">${tagName}</a>`;
         return str;
     });
 
