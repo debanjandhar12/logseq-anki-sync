@@ -23,6 +23,7 @@ import {
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
 import { edn } from "@yellowdig/cljs-tools";
+import path from "path";
 
 let mldocsOptions = {
     "toc": false,
@@ -137,11 +138,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         } catch (e) { console.warn(e); }
     });
     $('img').each(function (i, elm) {   // Handle images
-        if ((encodeURI(elm.attribs.src).match(isImage_REGEXP) && !encodeURI(elm.attribs.src).match(isWebURL_REGEXP))) {
-            resultAssets.add(elm.attribs.src);
-            elm.attribs.src = encodeURIComponent(elm.attribs.src); // Flatten image path
-        }
-        else elm.attribs.src = elm.attribs.src.replace(/^http(s?):\/?\/?/i, "http$1://"); // Fix web image path
+        console.warn("Error: Image Found! Image should have been processed by processLink already and be hidden from cheerio.");
     });
     $('.mathblock, .latex-environment').each(function (i, elm) {    // Handle org math and latex-environment blocks
         let math = $(elm).html();
@@ -357,7 +354,7 @@ async function processLink(node, start_pos, end_pos, resultContent, resultAssets
     let blockRefLabel = _.get(node[0][1], "label[0][1]");
     if (link_type == "Search" && link_url.match(isImage_REGEXP) && !content.match(isWebURL_REGEXP)) {
         let str = getRandomUnicodeString();
-        hashmap[str] = `<img src="${encodeURIComponent(link_url)}" ${blockRefLabel? `title="${blockRefLabel}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+        hashmap[str] = `<img src="${path.basename(link_url)}" ${blockRefLabel? `title="${blockRefLabel}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
         resultAssets.add(link_url);
         return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]); 
     }
@@ -368,7 +365,7 @@ async function processLink(node, start_pos, end_pos, resultContent, resultAssets
     }
     else if (format == "org" && link_type == "Page_ref" && link_url.match(isImage_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
         let str = getRandomUnicodeString();
-        hashmap[str] = `<img src="${encodeURIComponent(link_url)}" />`;
+        hashmap[str] = `<img src="${path.basename(link_url)}" />`;
         resultAssets.add(link_url);
         return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]); 
     }

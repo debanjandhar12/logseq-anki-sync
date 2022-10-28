@@ -129,7 +129,7 @@ export class LogseqToAnkiSync {
                 // Add assets
                 const graphPath = (await logseq.App.getCurrentGraph()).path;
                 assets.forEach(asset => {
-                    ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
+                    ankiNoteManager.storeAsset(path.basename(asset), path.join(graphPath, path.resolve(asset)))
                 });
                 // Create note
                 ankiNoteManager.addNote(deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb, "Config": JSON.stringify({dependencyHash,assets:[...assets]}) }, tags);
@@ -185,7 +185,7 @@ export class LogseqToAnkiSync {
                     // Add or update assets
                     const graphPath = (await logseq.App.getCurrentGraph()).path;
                     assets.forEach(asset => {
-                        ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
+                        ankiNoteManager.storeAsset(path.basename(asset), path.join(graphPath, path.resolve(asset)))
                     });
                     // Update note
                     if(logseq.settings.debug.includes("syncLogseqToAnki.ts")) console.log(`dependencyHash mismatch for note with id ${note.uuid}-${note.type}`);

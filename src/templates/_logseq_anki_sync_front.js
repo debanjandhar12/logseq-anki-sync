@@ -3,6 +3,7 @@
 */
 import {fabric} from 'fabric';
 import {createOcclusionRectEl} from "../ui/OcclusionEditor";
+import path from "path";
 window.addEventListener("load", () => {
     if (type == "image_occlusion") {
         // Get current cloze id (only works for image occlusion)
@@ -49,7 +50,7 @@ window.addEventListener("load", () => {
             let occlusionArr = imgToOcclusionArrHashMap[image];
             occlusionArr.forEach((obj) => {
                 if(obj.cId == currentClozeId) {
-                    (imgToCanvasHashMap[localImgBasePath + '/' + encodeURIComponent(encodeURIComponent(image))] || imgToCanvasHashMap[decodeURIComponent(image)]).forEach((canvas) => {
+                    (imgToCanvasHashMap[localImgBasePath + '/' + path.basename(image)] || imgToCanvasHashMap[image]).forEach((canvas) => {
                         let occlusion = createOcclusionRectEl(obj.left, obj.top, obj.width, obj.height, obj.angle, obj.cId);
                         occlusion._objects[0].set('opacity', 1);
                         canvas.add(occlusion);
