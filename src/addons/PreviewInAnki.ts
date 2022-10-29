@@ -1,5 +1,5 @@
 import * as AnkiConnect from '../anki-connect/AnkiConnect';
-import { get_better_error_msg } from '../utils';
+import { get_better_error_msg } from '../utils/utils';
 import { Addon } from './Addon';
 
 export class PreviewInAnkiContextMenu extends Addon {

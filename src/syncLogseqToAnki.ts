@@ -6,7 +6,7 @@ import { Note } from './notes/Note';
 import { ClozeNote } from './notes/ClozeNote';
 import { MultilineCardNote } from './notes/MultilineCardNote';
 import _ from 'lodash';
-import { get_better_error_msg, sortAsync } from './utils';
+import { get_better_error_msg, sortAsync } from './utils/utils';
 import path from 'path';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile } from './converter/Converter';
