@@ -9,7 +9,7 @@ import getContentDirectDependencies from "../converter/getContentDirectDependenc
 import hashSum from 'hash-sum';
 import _ from "lodash";
 import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
-import {getFirstNonEmptyLine} from "../utils";
+import {getFirstNonEmptyLine} from "../utils/utils";
 let graph = new DepGraph();
 
 // -- Hash Dependency Graph --

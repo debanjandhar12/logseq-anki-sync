@@ -2,7 +2,7 @@ import ohm from 'ohm-js';
 import _ from 'lodash';
 import replaceAsync from "string-replace-async";
 import '@logseq/libs';
-import {ANKI_CLOZE_REGEXP, MD_MATH_BLOCK_REGEXP, specialChars} from './constants';
+import {ANKI_CLOZE_REGEXP, MD_MATH_BLOCK_REGEXP, specialChars} from '../constants';
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
