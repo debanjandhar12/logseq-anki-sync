@@ -82,8 +82,8 @@ const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabri
 
     React.useEffect(() => {
         const initFabric = async () => {
-            fabricRef.current = new window.parent.fabric.Canvas(canvasRef.current);
-            fabricRef.current.selection = false; // disable group selection
+            fabricRef.current = new window.parent.fabric.Canvas(canvasRef.current, {stateful: true});
+                fabricRef.current.selection = false; // disable group selection
             fabricRef.current.uniformScaling = false; // disable object scaling keeping aspect ratio
 
             // Load the image and then add the occlusion rectangles
@@ -132,12 +132,34 @@ const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabri
         fabricRef.current.on('selection:cleared', function () {
             setFabricSelection(null)
         });
-    }, []);
+    }, [fabricRef]);
     React.useEffect(() => {
         if (fabricSelection) {
             cidSelectorRef.current.value = fabricSelection._objects[1].text;
         }
     }, [fabricSelection]);
+
+    // Prevent out of bounds - https://stackoverflow.com/a/42915768
+    React.useEffect(() => {
+        let preventOutOfBounds = (e: any) => {
+            let obj = e.target;
+            let top = obj.top;
+            let bottom = top + (obj.height * obj.scaleY);
+            let left = obj.left;
+            let right = left + (obj.width * obj.scaleX);
+
+            let topBound = (obj.height * obj.scaleY) / 2;
+            let bottomBound = topBound + imgEl.height;
+            let leftBound = (obj.width * obj.scaleX) / 2;
+            let rightBound = leftBound + imgEl.width;
+
+            // capping logic here
+            obj.left = Math.min(Math.max(left, leftBound), rightBound - (obj.width * obj.scaleX));
+            obj.top = Math.min(Math.max(top, topBound), bottomBound - (obj.height * obj.scaleY));
+        }
+        fabricRef.current.on('object:moving', preventOutOfBounds);
+        fabricRef.current.on('object:modified', preventOutOfBounds);
+    }, [fabricRef]);
 
     // Create the UI
     const addOcclusion = () => {
