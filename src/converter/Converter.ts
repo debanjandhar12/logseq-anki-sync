@@ -1,7 +1,7 @@
 import hljs from "highlight.js";
 import '@logseq/libs';
 import * as cheerio from 'cheerio';
-import { decodeHTMLEntities, escapeClozeAndSecoundBrace, getFirstNonEmptyLine, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils';
+import { decodeHTMLEntities, escapeClozeAndSecoundBrace, getFirstNonEmptyLine, getRandomUnicodeString, safeReplace, safeReplaceAsync } from '../utils/utils';
 import _ from 'lodash';
 import { Mldoc } from 'mldoc';
 import {
@@ -66,14 +66,14 @@ export async function convertToHTMLFile(content: string, format: string = "markd
         let strFront = getRandomUnicodeString()+" "; // fix: #104
         let strBack = getRandomUnicodeString();
 
+        // TODO: fix the 3 hacks! First, find whether the cloze starts from the beginning of the line using index of and iterating backwards until '\n'. Then, apply these hacks accordingly.
         // bug fix: new line if cloze starts with code block
         let first_line = g3.split("\n").shift();
         if (first_line.match(/^```/)) g3 = `\n${g3}`;
 
-        // bug fix: cloze end charecters }} getting deleted after code block ends. Hence, add newline after cloze content.
+        // bug fix: cloze end charecters }} getting deleted after code / org block ends. Hence, add newline after them.
         let last_line = g3.split("\n").pop();
-        if (last_line.match(/^```/)) g3 = `${g3}\n`;
-
+        if (last_line.match(/^```/) || last_line.match(/^#\+/)) g3 = `${g3}\n`;
 
         // fix: if there is a newline before cloze, we need to add new line after hash charecters of math block and org blocks
         let charecter_before_match = resultContent.substring(resultContent.indexOf(match) - 1, resultContent.indexOf(match));

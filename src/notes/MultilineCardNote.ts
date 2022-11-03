@@ -2,7 +2,7 @@ import { Note } from "./Note";
 import '@logseq/libs';
 import _ from 'lodash';
 import { convertToHTMLFile, HTMLFile } from '../converter/Converter';
-import { escapeClozeAndSecoundBrace, safeReplace } from '../utils';
+import { escapeClozeAndSecoundBrace, safeReplace } from '../utils/utils';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import { BlockUUID } from "@logseq/libs/dist/LSPlugin.user";

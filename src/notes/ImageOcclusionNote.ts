@@ -1,6 +1,6 @@
 import { Note } from "./Note";
 import '@logseq/libs'
-import { escapeClozeAndSecoundBrace, safeReplace } from '../utils';
+import { escapeClozeAndSecoundBrace, safeReplace } from '../utils/utils';
 import _ from 'lodash';
 import {MD_IMAGE_EMBEDED_REGEXP, MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import { LogseqProxy } from "../logseq/LogseqProxy";
