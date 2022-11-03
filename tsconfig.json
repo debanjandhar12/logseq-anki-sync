@@ -13,6 +13,7 @@
         "module": "esnext",
         "target": "ES6",
         "isolatedModules": true,
+        "jsx": "react"
     },
     "exclude": [
       "dist"

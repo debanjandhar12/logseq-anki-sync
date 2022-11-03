@@ -35,6 +35,7 @@ export class ImageOcclusionNote extends Note {
                 console.log("newOcclusionArr", newOcclusionArr);
                 if (newOcclusionArr) {
                     imgToOcclusionArrHashMap[selectedImage] = newOcclusionArr;
+                    if(Buffer.from(JSON.stringify(imgToOcclusionArrHashMap), 'utf8').toString('base64') == block.properties?.occlusion) console.log("No change");
                     await LogseqProxy.Editor.upsertBlockProperty(uuid, 'occlusion', Buffer.from(JSON.stringify(imgToOcclusionArrHashMap), 'utf8').toString('base64'));
                 }
             }
