@@ -55,7 +55,7 @@ export const addSettingsToLogseq = () => {
             key: "renderAnkiClozeMarcosInLogseq",
             type: 'boolean',
             default: false,
-            title: "Render Anki Cloze Macros in Logseq? (Default: Disabled) [Experimental]",
+            title: "Render Anki Cloze Macros in Logseq? (Default: Disabled) [Experimental] [In Development]",
             description: "Render Anki Cloze Macros in Logseq. When enabled, the Anki Cloze Macros ({{c1 Pikachu}}, {{c2 Mew}}, ...) will be rendered in Logseq.",
         },
         {
