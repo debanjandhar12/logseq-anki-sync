@@ -188,7 +188,12 @@ export async function processProperties(resultContent, format = "markdown"): Pro
         return "";
     });
     // Add support for pdf annotation
+    block_props["ls-type"] = block_props["ls-type"] || block_props["lsType"];
+    block_props["hl-type"] = block_props["hl-type"] || block_props["hlType"];
+    block_props["hl-page"] = block_props["hl-page"] || block_props["hlPage"];
+    block_props["hl-stamp"] = block_props["hl-stamp"] || block_props["hlStamp"];
     if (block_props["ls-type"] == "annotation" && block_props["hl-type"] == "area") { // Image annotation
+        console.log("Image annotation found!");
         try {
             let block_uuid = block_props["id"] || block_props["nid"];
             let block = await LogseqProxy.Editor.getBlock(block_uuid);
