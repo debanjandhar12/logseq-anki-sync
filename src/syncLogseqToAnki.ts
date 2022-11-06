@@ -156,13 +156,12 @@ export class LogseqToAnkiSync {
             }
         }
 
-        ankiNoteManager.execute("storeAssets").then((subOperationResults) => {
-            for (let subOperationResult of subOperationResults) {
-                if (subOperationResult != null && subOperationResult.error != null) {
-                    console.error(subOperationResult.error);
-                }
+        subOperationResults = await ankiNoteManager.execute("addNotes");
+        for (let subOperationResult of subOperationResults) {
+            if (subOperationResult != null && subOperationResult.error != null) {
+                console.error(subOperationResult.error);
             }
-        });
+        }
     }
 
     private async updateNotes(toUpdateNotes: Note[], failedUpdated: Set<any>, ankiNoteManager: LazyAnkiNoteManager, syncProgress: ProgressNotification): Promise<void> {
@@ -213,13 +212,12 @@ export class LogseqToAnkiSync {
             }
         }
 
-        ankiNoteManager.execute("storeAssets").then((subOperationResults) => {
-            for (let subOperationResult of subOperationResults) {
-                if (subOperationResult != null && subOperationResult.error != null) {
-                    console.error(subOperationResult.error);
-                }
+        subOperationResults = await ankiNoteManager.execute("storeAssets");
+        for (let subOperationResult of subOperationResults) {
+            if (subOperationResult != null && subOperationResult.error != null) {
+                console.error(subOperationResult.error);
             }
-        });
+        }
     }
 
     private async deleteNotes(toDeleteNotes: number[], failedDeleted, ankiNoteManager: LazyAnkiNoteManager, syncProgress: ProgressNotification) {
