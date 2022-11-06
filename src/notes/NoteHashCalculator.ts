@@ -17,7 +17,7 @@ import _ from 'lodash';
 
 export default class NoteHashCalculator {
     public static async getHash(note: Note, ankiFields : any[]): Promise<string> {
-        let toHash = [...ankiFields];
+        let toHash = [];
 
         // Collect parent And DirectDependencies (TODO: refactor parents out)
         let dependencies = note.getBlockDependencies();
@@ -38,10 +38,17 @@ export default class NoteHashCalculator {
             else if(dep.type == "Page") toHash.push(await getPageHash(dep.value));
         }
 
-        // Add additional things to toHash
+        // Add additional things from block to toHash
         toHash.push({page:encodeURIComponent(_.get(note, 'page.originalName', '')), deck:encodeURIComponent(_.get(note, 'page.properties.deck', ''))});
         toHash.push({defaultDeck:logseq.settings.defaultDeck, includeParentContent: logseq.settings.includeParentContent, breadcrumbDisplay: logseq.settings.breadcrumbDisplay});
         toHash.push({v:pkg.version});
+
+        // Add additional things from ankiFields to toHash
+        let [html, assets, deck, breadcrumb, tags, extra] = ankiFields;
+        tags = tags.filter((tag: string) => tag != "leech"); // Remove leech from tags arr
+        assets.sort();
+        tags.sort();
+        toHash.push({html: html.trim(), assets, deck, breadcrumb: breadcrumb.trim(), tags, extra: extra.trim()});
 
         // Return hash
         return hashSum(toHash);

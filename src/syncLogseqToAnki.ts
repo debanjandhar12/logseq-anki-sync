@@ -301,6 +301,7 @@ export class LogseqToAnkiSync {
 
         tags = [...Array.from(tags), ..._.get(note, 'properties.tags', []), ..._.get(note, 'page.properties.tags', [])];
         tags = tags.map(tag => tag.replace(/\//g, "::"));
+        tags = tags.map(tag => tag.replace(/\s/g, "_")); // Anki doesn't like spaces in tags
         let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
         if (Array.isArray(extra)) extra = extra.join(" ");
 
