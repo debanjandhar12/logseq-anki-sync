@@ -6,7 +6,6 @@ import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import { HTMLFile } from "../converter/Converter";
 import { convertToHTMLFile } from "../converter/Converter";
-import {log} from "util";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 export class ClozeNote extends Note {
@@ -64,10 +63,12 @@ export class ClozeNote extends Note {
         let cloze_id = 1;
         let clozedContent : string = this.content;
 
-        // Remove logseq properties as it might cause problems during cloze creation
-        clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, ""); //Remove md properties
-        clozedContent = safeReplace(clozedContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
-    
+        // --- Remove logseq properties and store it in removedLogseqProperties as it might cause problems during cloze creation ---
+        let removedLogseqProperties = "";
+        clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, (match) => { removedLogseqProperties += match; return ""; }); //Remove md properties
+        clozedContent = safeReplace(clozedContent, ORG_PROPERTIES_REGEXP, (match) => { removedLogseqProperties += match; return ""; }); //Remove org properties
+        if (!removedLogseqProperties.trim().endsWith("\n")) removedLogseqProperties += "\n";
+
         // --- Add anki cloze marco clozes ---
         clozedContent = safeReplace(clozedContent, /\{\{c(\d) (.*?)\}\}/g, (match, group1, group2) => {
             cloze_id = Math.max(cloze_id, parseInt(group1) + 1);
@@ -119,6 +120,9 @@ export class ClozeNote extends Note {
         clozedContent = safeReplace(clozedContent, /#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi, function (match, g1, g2, g3) { 
             return `{{c${cloze_id++}::${g3.trim()}}}`;
         });
+
+        // --- Add back the removed logseq properties ---
+        clozedContent = removedLogseqProperties + clozedContent;
 
         return convertToHTMLFile(clozedContent, this.format);
     }
