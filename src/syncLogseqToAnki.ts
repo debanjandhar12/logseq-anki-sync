@@ -165,6 +165,7 @@ export class LogseqToAnkiSync {
     }
 
     private async updateNotes(toUpdateNotes: Note[], failedUpdated: Set<any>, ankiNoteManager: LazyAnkiNoteManager, syncProgress: ProgressNotification): Promise<void> {
+        const graphPath = (await logseq.App.getCurrentGraph()).path;
         for (let note of toUpdateNotes) {
             try {
                 let ankiId = note.getAnkiId();
@@ -190,14 +191,12 @@ export class LogseqToAnkiSync {
                     if(logseq.settings.debug.includes("syncLogseqToAnki.ts")) console.log(`dependencyHash mismatch for note with id ${note.uuid}-${note.type}`);
                     ankiNoteManager.updateNote(ankiId, deck, this.modelName, { "uuid-type": `${note.uuid}-${note.type}`, "uuid": note.uuid, "Text": html, "Extra": extra, "Breadcrumb": breadcrumb, "Config": JSON.stringify({dependencyHash,assets:[...assets]}) }, tags);
                 }
-                /*
                 else { // Just update old assets
-                    const graphPath = (await logseq.App.getCurrentGraph()).path;
                     oldConfig.assets.forEach(asset => {
-                        ankiNoteManager.storeAsset(encodeURIComponent(asset), path.join(graphPath, path.resolve(asset)))
+                        if(ankiNoteManager.mediaInfo.has(path.basename(asset))) return;
+                        ankiNoteManager.storeAsset(path.basename(asset), path.join(graphPath, path.resolve(asset)))
                     });
                 }
-                */
             } catch (e) {
                 console.error(e); failedUpdated.add(`${note.uuid}-${note.type}`);
             }

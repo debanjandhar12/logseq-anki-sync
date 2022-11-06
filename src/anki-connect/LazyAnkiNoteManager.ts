@@ -10,6 +10,7 @@ import { ANKI_CLOZE_REGEXP } from '../constants';
 export class LazyAnkiNoteManager {
     public modelName: string;
     public noteInfoMap: Map<any, any> = new Map();
+    public mediaInfo: Set<string> = new Set();
     private addNoteActionsQueue1: Array<any> = [];
     private addNoteActionsQueue2: Array<any> = [];
     private addNoteUuidTypeQueue1: Array<any> = [];
@@ -26,6 +27,7 @@ export class LazyAnkiNoteManager {
 
     async init() {
         await this.buildNoteInfoMap(this.modelName);
+        await this.buildMediaInfo();
     }
 
     async buildNoteInfoMap(modelName: string): Promise<any> {
@@ -47,6 +49,12 @@ export class LazyAnkiNoteManager {
             this.noteInfoMap.set(note.noteId, { ...note, deck });
         }
         if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts")) console.debug(this.noteInfoMap);
+    }
+
+    async buildMediaInfo(): Promise<void> {
+        let mediaFileNames = await AnkiConnect.invoke("getMediaFilesNames", {});
+        this.mediaInfo = new Set(mediaFileNames);
+        if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts")) console.debug(this.mediaInfo);
     }
 
     addNote(deckName: string, modelName: string, fields, tags: string[]): void {
