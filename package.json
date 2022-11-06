@@ -1,6 +1,6 @@
 {
   "name": "logseq-anki-sync",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "title": "Logseq Anki Sync",
   "description": "An Logseq to Anki Flashcards integration plugin.",
   "main": "dist/index.js",
@@ -20,7 +20,7 @@
     "icon": "/icon.png"
   },
   "dependencies": {
-    "@logseq/libs": "0.0.9",
+    "@logseq/libs": "0.0.10",
     "@thi.ng/hiccup": "4.2.10",
     "@yellowdig/cljs-tools": "0.2.0",
     "await-lock": "^2.2.2",
