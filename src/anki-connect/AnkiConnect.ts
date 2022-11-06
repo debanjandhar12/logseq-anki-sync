@@ -134,10 +134,22 @@ export async function createModel(modelName: string, fields: string[], template_
     // Solves #1 by failing silenty, #1 was caused by AnkiConnect calling old Anki API but apprarenty even if it gives error, it works correctly.
     catch (e) { if (e == "save() takes from 1 to 2 positional arguments but 3 were given") console.error(e); else throw e; };
 
-    // Iterate over files obj and add them to anki
-    for (var filename in template_files){
-        try {await storeMediaFileByContent(filename, template_files[filename]);} catch(e) { console.error(filename); console.error(e); }
+    // Iterate over files obj and update them in anki if the current file is different from the one in anki
+    let storeTemplateFilesActions = [];
+    let currentTemplateFiles = {};
+    let getcurrentTemplateFilesActions = [];
+    for (let filename in template_files)
+        getcurrentTemplateFilesActions.push({ "action": "retrieveMediaFile", "params": { filename } });
+    (await invoke("multi", { "actions": getcurrentTemplateFilesActions })).forEach((data, i) => {
+        currentTemplateFiles[Object.keys(template_files)[i]] = data;
+    });
+    for (let filename in template_files) {
+        let data = Buffer.from(template_files[filename]).toString('base64');
+        if (data != currentTemplateFiles[filename])
+            storeTemplateFilesActions.push({ "action": "storeMediaFile", "params": { filename, data }});
     }
+    let updateTemplateFiles = await invoke("multi", { "actions": storeTemplateFilesActions });
+    console.log("Updated Template Files:", updateTemplateFiles);
 }
 
 export async function storeMediaFileByContent(filename: string, content: string): Promise<any> {
