@@ -3,7 +3,7 @@
   "version": "4.0.2",
   "title": "Logseq Anki Sync",
   "description": "An Logseq to Anki Flashcards integration plugin.",
-  "main": "dist/index.js",
+  "main": "dist/index.html",
   "targets": {
     "main": false
   },
@@ -11,8 +11,8 @@
   "repo": "debanjandhar12/logseq-anki-sync",
   "author": "@debanjandhar12",
   "scripts": {
-    "dev": "parcel watch ./src/index.ts --public-url ./",
-    "build": "parcel build ./src/index.ts --public-url ./"
+    "dev": "parcel watch ./src/index.ts --public-url ./ && cp ./src/index.html ./dist/index.html",
+    "build": "parcel build ./src/index.ts --public-url ./ && cp ./src/index.html ./dist/index.html"
   },
   "license": "AGPL-3.0",
   "logseq": {
