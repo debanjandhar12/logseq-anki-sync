@@ -17,9 +17,6 @@ An logseq to anki syncing plugin with superpowers - **image occlusion, card dire
 <dt>🖼 Supports rendering of logseq markdown and org mode in anki</dt>
 <div align="right"><dd align="right">images, math, block + page embed,<br> and everything else</dd></div>
 </div>
-<div align="left">
-<dt>♻ Fast syncing through hash based algorithm</dt>
-</div>
 </dl>
 </div>
 <br clear="both"/>
