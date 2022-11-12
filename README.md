@@ -46,6 +46,7 @@ Anki is a specialized spaced repetition software. It has less bugs and is more f
 * [Making multiline cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/88)
 * [Making cloze cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/89)
 * [Making Swift Arrow cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/91)
+* [Making Image Occlusion cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/125)
 * [Specifying Extra Details and Hints](https://github.com/debanjandhar12/logseq-anki-sync/discussions/92)
 * [Terminology & Specifying Deck](https://github.com/debanjandhar12/logseq-anki-sync/discussions/117)
 * [[Advanced] Adding custom css for anki cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/118)
