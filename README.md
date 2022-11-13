@@ -1,28 +1,32 @@
 # Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat-square" height="28"/>](https://github.com/debanjandhar12/logseq-anki-sync/) [<img align="right" src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" height="30"/>](https://www.buymeacoffee.com/debanjandhar12)
 
-An logseq to anki syncing plugin on steroids. This syncs logseq cards and also provides additional syntax for controled flashcard creation ecosystem.
+An logseq to anki syncing plugin with superpowers - **image occlusion, card direction, incremental cards, and a lot more**.
 
 <img align="left" height="400" src="https://raw.githubusercontent.com/debanjandhar12/logseq-anki-sync/main/imgs/Demo_main.gif">
-<div><h3 align="center">Why use this?</h3>
-<dl align="center">
+<div align="left"><h3 align="center">Why use this?</h3>
+<dl align="left">
+<div align="left">
 <dt>🐾 Supports logseq's original srs clozes and card syntax</dt>
-<dd align="right">and several alternative syntax</dd>
-<dt>🚀 Several additional features like incremental cards, card direction</dt>
-<dd align="right">extra field, deck control, and more</dd>
-<dt>🖼 Supports rendering of markdown and org mode in anki</dt>
-<dd align="right">images, math, block + page embed, and everything else</dd>
-<dt>♻ Fast syncing through hash based algorithm powered by dp</dt>
+<div align="right"><div align="right">and several alternative syntax</dd></div>
+</div>
+<div align="left">
+<dt>🚀 Several additional features like image occlusion, card direction</dt>
+<div align="right"><dd align="right">incremental cards, extra field, pdf support,<br> deck control, and more</dd></div>
+</div>
+<div align="left">
+<dt>🖼 Supports rendering of logseq markdown and org mode in anki</dt>
+<div align="right"><dd align="right">images, math, block + page embed,<br> and everything else</dd></div>
+</div>
 </dl>
 </div>
 <br clear="both"/>
 
 <details>
 <summary>What is Anki?</summary>
-Anki is a specialized spaced repetition software. It has less bugs and is more feature rich than most otherspaced repetition software. For example, anki has heatmaps, filtered decks to study a collection of cards for exams irrespective of card scheduling etc.
-Several knowledge management software like Obsidian Polar sync to anki for spaced repetition too.
+Anki is a specialized spaced repetition software. It has less bugs and is more feature rich than most others paced repetition software. For example, anki has heatmaps, filtered decks to study a collection of cards for exams irrespective of card scheduling etc.
 </details>
 
-## 🛠️ Installation
+## 🛠️ Installation ([Video](https://www.youtube.com/watch?v=XOkJmncK-o0))
 1. Install Logseq Anki Sync from Marketplace.
    * Go to `⋯` > `Settings` > `Features` and enable `Plugins`.
    * Now, go to `⋯` > `Plugin` > `Marketplace` and find Logseq Anki Sync and click install.
@@ -36,16 +40,16 @@ Several knowledge management software like Obsidian Polar sync to anki for space
    NB: Make sure the anki is running in background before clicking the Sync to Anki button.
 6. If you receive a [logseq wants to access anki message](https://raw.githubusercontent.com/debanjandhar12/Obsidian-Anki-Sync/main/docs/images/permission.png), click `Yes`.
 
-Video Tutorials: [Flashcards en Logseq + Anki | En español](https://www.youtube.com/watch?v=t_I9EYZkwbM)
 
 # 🗎 Documentation
 <b>User Documentation</b>
 * [Making multiline cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/88)
 * [Making cloze cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/89)
 * [Making Swift Arrow cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/91)
+* [Making Image Occlusion cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/125)
 * [Specifying Extra Details and Hints](https://github.com/debanjandhar12/logseq-anki-sync/discussions/92)
-* [How to set or change the deck for cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F)
-* [How to add custom css for cards?](https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-add-custom-css-for-cards%3F)
+* [Terminology & Specifying Deck](https://github.com/debanjandhar12/logseq-anki-sync/discussions/117)
+* [[Advanced] Adding custom css for anki cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/118)
 * [Common FAQ](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Common-FAQ)
 * Developer Documentation: [Compiling Instructions](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Compiling-Instructions), [Structure of this Plugin](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Structure-of-this-Plugin)
 > Please create a [github issue](https://github.com/debanjandhar12/logseq-anki-sync/issues) for any feature request and reporting bugs.
