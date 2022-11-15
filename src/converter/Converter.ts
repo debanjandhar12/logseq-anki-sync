@@ -167,6 +167,10 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     $('p').each(function (i, elm) {
         $(elm).replaceWith(`<span>${$(elm).html()}</span>`);
     });
+    // Fix #126 - Revert the `display: flex` for some org blocks which are made flex in _logseq_anki_sync.css by adding a new child div with `display: revert`
+    $('div.important, div.caution, div.pinned, div.tip, div.note, div.warning').each(function (i, elm) {
+        $(elm).html(`<div style="display: revert">${$(elm).html()}</div>`);
+    });
     resultContent = decodeHTMLEntities(decodeHTMLEntities($('#content ul li').html() || ""));
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After Mldoc.export:", resultContent);
 
