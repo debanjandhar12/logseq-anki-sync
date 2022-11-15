@@ -293,7 +293,7 @@ async function processRefEmbeds(resultContent, resultAssets, resultTags, hashmap
             let blockRef_content = block_content_first_line;
             for (const [prop, value] of Object.entries(block_props))
                 blockRef_content += `\n${prop}:: ${value}`;
-            let blockRefHTMLFile = await convertToHTMLFile(blockRef_content, _.get(block, "format"), { processRefEmbeds: false });
+            let blockRefHTMLFile = await convertToHTMLFile(blockRef_content, _.get(block, "format"));
             blockRefHTMLFile.assets.forEach(element => {
                 resultAssets.add(element);
             });
