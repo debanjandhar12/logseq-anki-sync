@@ -23,6 +23,7 @@ import { LogseqProxy } from "../logseq/LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
 import { edn } from "@yellowdig/cljs-tools";
 import path from "path";
+import objectHash from "object-hash";
 
 let mldocsOptions = {
     "toc": false,
@@ -43,11 +44,13 @@ export interface HTMLFile {
     tags: Set<string> | Array<string>;
 }
 
-const convertToHTMLFileCache = new Map<{content: string, format: string, processRefEmbeds: boolean}, HTMLFile>();
+const convertToHTMLFileCache = new Map<string, HTMLFile>();
 window.addEventListener('syncLogseqToAnkiComplete', () => {convertToHTMLFileCache.clear();});
 
 export async function convertToHTMLFile(content: string, format: string = "markdown", opts = {processRefEmbeds: true}): Promise<HTMLFile> {
-    if(convertToHTMLFileCache.has({content, format, processRefEmbeds : opts.processRefEmbeds})) return convertToHTMLFileCache.get({content, format, processRefEmbeds : opts.processRefEmbeds});
+    if(convertToHTMLFileCache.has(objectHash({content, format, processRefEmbeds : opts.processRefEmbeds})))
+        return convertToHTMLFileCache.get(objectHash({content, format, processRefEmbeds : opts.processRefEmbeds}));
+
     let resultContent = content, resultAssets = new Set<string>(), resultTags = new Set<string>()
     if (logseq.settings.debug.includes("Converter.ts")) console.log("--Start Converting--\nOriginal:", resultContent);
 
@@ -179,7 +182,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     for (let key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]); // fix: sometimes the end space of hash gets removed (actual fix require this to be repeated len(keys) times instead of 2)
 
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
-    convertToHTMLFileCache.set({content, format, processRefEmbeds : opts.processRefEmbeds}, {html: resultContent, assets: resultAssets, tags: resultTags});
+    convertToHTMLFileCache.set(objectHash({content, format, processRefEmbeds : opts.processRefEmbeds}), {html: resultContent, assets: resultAssets, tags: resultTags});
     return {html: resultContent, assets: resultAssets, tags: resultTags};
 }
 
