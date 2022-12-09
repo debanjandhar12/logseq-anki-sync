@@ -169,6 +169,7 @@ const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabri
         }
         let occlusionEl = createOcclusionRectEl(randomLocation.x, randomLocation.y, 0.22 * imgEl.width, 0.22 * imgEl.height);
         fabricRef.current.add(occlusionEl);
+        fabricRef.current.setActiveObject(occlusionEl);
         fabricRef.current.renderAll();
     }
     const deleteOcclusion = () => {
