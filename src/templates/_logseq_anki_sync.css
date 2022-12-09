@@ -323,6 +323,10 @@ li:not(.children) {
     margin-bottom: 4px;
 }
 
+.bubble:empty {
+    visibility: hidden;
+}
+
 .note-action {
     padding: 4px;
 }

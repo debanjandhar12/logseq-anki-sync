@@ -18,7 +18,7 @@ export const addSettingsToLogseq = () => {
             default: "Show Page name only",
             title: "What to display in the breadcrumb? (Default: Show Page name only)",
             description: "Pick what to display in the breadcrumb.",
-            enumChoices: ["Show Page name only", "Show Page name and parent blocks context"],
+            enumChoices: ["Dont show breadcrumb", "Show Page name only", "Show Page name and parent blocks context"],
             enumPicker: "select"
         },
         {

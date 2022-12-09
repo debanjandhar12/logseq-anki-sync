@@ -276,7 +276,8 @@ export class LogseqToAnkiSync {
         deck = deck.replace(/\//g, "::");
 
         // Parse breadcrumb
-        let breadcrumb = `<a href="logseq://graph/${encodeURIComponent(this.graphName)}?page=${encodeURIComponent(note.page.originalName)}" title="${note.page.originalName}">${note.page.originalName}</a>`;
+        let breadcrumb = ``;
+        if (logseq.settings.breadcrumbDisplay.includes("Show Page name")) breadcrumb = `<a href="logseq://graph/${encodeURIComponent(this.graphName)}?page=${encodeURIComponent(note.page.originalName)}" title="${note.page.originalName}">${note.page.originalName}</a>`;
         if(logseq.settings.breadcrumbDisplay == "Show Page name and parent blocks context") {
             try {
                 let parentBlocks = []; 
