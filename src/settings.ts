@@ -77,7 +77,7 @@ export const addSettingsToLogseq = () => {
             type: 'boolean',
             default: true,
             title: "Enable caching Logseq API for improved syncing speed? (Default: Enabled) [Experimental]",
-            description: "Enable active cache for Logseq API. When enabled, the Logseq API and hashes of blocks will be cached and maintained in memory. NB: It is recommended to disable this option if notes are not getting updated properly."
+            description: "Enable active cache for Logseq API. When enabled, the Logseq API and hashes of blocks will be cached and actively maintained in memory. NB: It is recommended to disable this option if notes are not getting updated properly."
         },
         {
             key: "debug",

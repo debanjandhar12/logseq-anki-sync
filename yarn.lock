@@ -987,6 +987,11 @@ camelcase@^5.0.0:
   resolved "https://registry.npmjs.org/camelcase/-/camelcase-5.3.1.tgz"
   integrity sha512-L28STB170nwWS63UjtlEOE3dldQApaJXZkOI1uMFfzf3rRuPegHaHesyee+YxQ+W6SvRDQV6UrdOdRiR153wJg==
 
+cancelable-promise@4.3.1:
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/cancelable-promise/-/cancelable-promise-4.3.1.tgz#957b62382435e74dfb2a038517f53205e0c631c6"
+  integrity sha512-A/8PwLk/T7IJDfUdQ68NR24QHa8rIlnN/stiJEBo6dmVUkD4K14LswG0w3VwdeK/o7qOwRUR1k2MhK5Rpy2m7A==
+
 caniuse-lite@^1.0.30001400:
   version "1.0.30001418"
   resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001418.tgz"
@@ -2435,6 +2440,11 @@ process@^0.11.1:
   version "0.11.10"
   resolved "https://registry.npmjs.org/process/-/process-0.11.10.tgz"
   integrity sha1-czIwDoQBYb2j5podHZGn1LwW8YI=
+
+promise-abortable@^1.2.6:
+  version "1.2.6"
+  resolved "https://registry.yarnpkg.com/promise-abortable/-/promise-abortable-1.2.6.tgz#69b9f4cae39ffad6dfa01d450323ad240a30a4f9"
+  integrity sha512-H8rMbU9rSohpqHNrgR0DMAE9XRzMNMyhCdpdhkxdqU5sqqzwqvN24+OCQZ5VZTBVw+Qc8DSX40RFivyBbH7GTw==
 
 psl@^1.1.33:
   version "1.9.0"

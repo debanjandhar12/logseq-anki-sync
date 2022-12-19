@@ -35,7 +35,8 @@
     "ohm-js": "16.3.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "string-replace-async": "^3.0.2"
+    "string-replace-async": "^3.0.2",
+    "cancelable-promise": "4.3.1"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.5.0",
