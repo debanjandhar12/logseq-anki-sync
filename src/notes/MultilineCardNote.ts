@@ -163,6 +163,13 @@ export class MultilineCardNote extends Note {
     }
 
     public static async getNotesFromLogseqBlocks(otherNotes : Array<Note>): Promise<MultilineCardNote[]> {
+        let logseqCardGroup_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
+        [:find (pull ?b [*])
+        :where
+        [?r :block/name "card-group"]
+        [?p :block/refs ?r]
+        [?b :block/parent ?p]
+        ]`);
         let logseqCard_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
@@ -175,14 +182,13 @@ export class MultilineCardNote extends Note {
         [?p :block/name "flashcard"]
         [?b :block/refs ?p]
         ]`);
-        let blocks: any = [...logseqCard_blocks, ...flashCard_blocks];
-        
+        let blocks: any = [...logseqCard_blocks, ...flashCard_blocks, ...logseqCardGroup_blocks];
         blocks = await Promise.all(blocks.map(async (block) => {
             let uuid = getUUIDFromBlock(block[0]);
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = await LogseqProxy.Editor.getBlock(uuid, { includeChildren: true });
             if (block) {
-                let tags = await MultilineCardNote.getImportantTags(block.refs.map(ref => ref.id));
+                let tags = await MultilineCardNote.getImportantTags(_.get(block,"refs", []).map(ref => ref.id));
                 return new MultilineCardNote(uuid, block.content, block.format, block.properties || {}, page, tags, block.children);
             } else {
                return null;
