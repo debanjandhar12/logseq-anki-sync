@@ -51,7 +51,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     if(convertToHTMLFileCache.has(objectHash({content, format, processRefEmbeds : opts.processRefEmbeds})))
         return convertToHTMLFileCache.get(objectHash({content, format, processRefEmbeds : opts.processRefEmbeds}));
 
-    let resultContent = content, resultAssets = new Set<string>(), resultTags = new Set<string>()
+    let resultContent = content.trim(), resultAssets = new Set<string>(), resultTags = new Set<string>()
     if (logseq.settings.debug.includes("Converter.ts")) console.log("--Start Converting--\nOriginal:", resultContent);
 
     resultContent = await processProperties(resultContent, format);

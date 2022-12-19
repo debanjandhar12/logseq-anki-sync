@@ -6,7 +6,7 @@ import { Note } from './notes/Note';
 import { ClozeNote } from './notes/ClozeNote';
 import { MultilineCardNote } from './notes/MultilineCardNote';
 import _ from 'lodash';
-import { get_better_error_msg, sortAsync } from './utils/utils';
+import {escapeClozeAndSecoundBrace, get_better_error_msg, sortAsync} from './utils/utils';
 import path from 'path';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile } from './converter/Converter';
@@ -242,7 +242,7 @@ export class LogseqToAnkiSync {
             let parentID = (await LogseqProxy.Editor.getBlock(note.uuid)).parent.id;
             let parent;
             while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
-                parentBlocks.push({content:parent.content.replaceAll(ANKI_CLOZE_REGEXP, "$3"), format:parent.format, uuid:parent.uuid});
+                parentBlocks.push({content:escapeClozeAndSecoundBrace(parent.content), format:parent.format, uuid:parent.uuid});
                 parentID = parent.parent.id;
             }
             for await (const parentBlock of parentBlocks.reverse()) {
