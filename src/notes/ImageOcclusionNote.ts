@@ -109,7 +109,7 @@ export class ImageOcclusionNote extends Note {
             return false; // No valid occlusion found. Return false.
         }));
         blocks = _.without(blocks, false);
-        console.log(blocks);
+        // console.log(blocks);
         return blocks;
     }
 }
