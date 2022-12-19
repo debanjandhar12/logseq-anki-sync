@@ -49,7 +49,7 @@ export const addSettingsToLogseq = () => {
             title: "Addons: (Default: None)",
             enumChoices: AddonRegistry.getAll().map(addon => addon.getName()),
             enumPicker: "checkbox",
-            description: "Select the addons to use. Addons are typically lower in quality than the main plugin features. Also, all addons require a restart to take effect.",
+            description: "Select the addons to use. Note: All addons activate / deactivate only after restart.",
         },
         {
             key: "renderAnkiClozeMarcosInLogseq",

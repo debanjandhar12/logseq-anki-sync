@@ -46,11 +46,11 @@ async function main(baseInfo: LSPluginBaseInfo) {
   addSettingsToLogseq();
   LogseqProxy.init();
   blockAndPageHashCache.init();
-  AddonRegistry.getAll().forEach(addon => addon.init());
   ClozeNote.initLogseqOperations();
   MultilineCardNote.initLogseqOperations();
   SwiftArrowNote.initLogseqOperations();
   ImageOcclusionNote.initLogseqOperations();
+  AddonRegistry.getAll().forEach(addon => addon.init());
   console.log("Window Parent:", window.parent);
 }
 
