@@ -302,6 +302,9 @@ export class LogseqToAnkiSync {
         tags = tags.map(tag => tag.replace(/\s/g, "_")); // Anki doesn't like spaces in tags
         let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
         if (Array.isArray(extra)) extra = extra.join(" ");
+        extra = await convertToHTMLFile(extra, (await LogseqProxy.Editor.getBlock(note.uuid)).format);
+        assets = new Set([...assets, ...extra.assets]);
+        extra = extra.html;
 
         return [html, assets, deck, breadcrumb, tags, extra];
     }
