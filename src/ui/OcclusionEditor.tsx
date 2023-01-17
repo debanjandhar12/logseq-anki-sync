@@ -3,6 +3,7 @@ import fs from "fs";
 import {ANKI_ICON, isWebURL_REGEXP} from "../constants";
 import React, {useState} from "react";
 import * as ReactDOM from 'react-dom/client';
+import _ from "lodash";
 
 declare global {
     interface Window {
@@ -193,7 +194,7 @@ const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabri
             <div className="occlusion-editor-toolbar flex" style={{justifyContent: 'end', alignItems: 'center'}}>
                 <button onClick={addOcclusion} className="ui__button bg-indigo-600 hover:bg-indigo-700 focus:border-indigo-700 active:bg-indigo-700 text-center text-sm" style={{margin: '0.125rem 0.25rem 0.125rem 0',padding: '.35rem .35rem'}}><i className="ti ti-plus"  style={{fontSize: '1.25rem'}}></i></button>
                 <button onClick={deleteOcclusion} className="ui__button bg-indigo-600 hover:bg-indigo-700 focus:border-indigo-700 active:bg-indigo-700 text-center text-sm" style={{margin: '0.125rem 0.25rem 0.125rem 0',padding: '.35rem .35rem'}} disabled={fabricSelection == null}><i className="ti ti-trash"  style={{fontSize: '1.25rem'}}></i></button>
-                <span style={{fontSize: '0.875rem',marginLeft: '1rem'}}>Cloze Id:</span> <select ref={cidSelectorRef} onChange={onCIdChange} className="form-select is-small" style={{margin: '0',width: '80px',height: '2.2rem',}} disabled={fabricSelection == null}><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+                <span style={{fontSize: '0.875rem',marginLeft: '1rem'}}>Cloze Id:</span> <select ref={cidSelectorRef} onChange={onCIdChange} className="form-select is-small" style={{margin: '0',width: '80px',height: '2.2rem',}} disabled={fabricSelection == null}>{_.range(1, 10).map((i) => <option key={i} value={i}>{i}</option>)}</select>
             </div>
             <div className="cloze-editor-canvas-container flex" style={{"justifyContent": "center"}}>
                 <canvas ref={canvasRef} />

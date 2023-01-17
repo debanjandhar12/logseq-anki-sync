@@ -24,6 +24,7 @@
     "@thi.ng/hiccup": "4.2.26",
     "@yellowdig/cljs-tools": "0.2.0",
     "await-lock": "^2.2.2",
+    "cancelable-promise": "4.3.1",
     "cheerio": "1.0.0-rc.12",
     "dependency-graph": "^0.11.0",
     "fabric": "5.2.4",
@@ -31,12 +32,12 @@
     "highlight.js": "11.7.0",
     "lodash": "^4.17.21",
     "mldoc": "1.5.1",
+    "node-gyp": "^9.3.1",
     "object-hash": "3.0.0",
     "ohm-js": "16.3.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "string-replace-async": "^3.0.2",
-    "cancelable-promise": "4.3.1"
+    "string-replace-async": "^3.0.2"
   },
   "devDependencies": {
     "@parcel/transformer-inline-string": "2.5.0",
