@@ -55,6 +55,7 @@ export async function convertToHTMLFile(content: string, format: string = "markd
     if (logseq.settings.debug.includes("Converter.ts")) console.log("--Start Converting--\nOriginal:", resultContent);
 
     resultContent = await processProperties(resultContent, format);
+    if (resultContent[0] === '\n') resultContent = resultContent.substring(1);
     if (logseq.settings.debug.includes("Converter.ts")) console.log("After processing embeded:", resultContent);
 
     if (format == "org") {
