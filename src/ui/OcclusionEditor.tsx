@@ -51,6 +51,18 @@ export async function OcclusionEditor(imgURL: string, occlusionArr: Array<any>):
             root.render(<OcclusionEditorComponent imgURL={imgURL} occlusionArr={occlusionArr} ref={fabricRef} />);
         } catch (e) { resolve(false); window.parent.document.body.removeChild(div); logseq.App.showMsg("Failed to mount OcclusionEditor! Error Message: " + e); console.error(e); }
 
+        const onKeydown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                window.parent.occlusion_cancel_action();
+            }
+            else if (e.key === 'Enter') {
+                window.parent.occlusion_save_action();
+            }
+            else if (e.key === 's' && e.ctrlKey) {
+                window.parent.occlusion_save_action();
+            }
+        };
+        window.parent.document.addEventListener('keydown', onKeydown);
         // @ts-ignore
         window.parent.occlusion_save_action = () => {
             // Iterate over all objects and save them
@@ -67,11 +79,13 @@ export async function OcclusionEditor(imgURL: string, occlusionArr: Array<any>):
             });
             resolve(occlusionArr);
             window.parent.document.body.removeChild(div);
+            window.parent.document.removeEventListener('keydown', onKeydown);
         }
         // @ts-ignore
         window.parent.occlusion_cancel_action = () => {
             resolve(false);
             window.parent.document.body.removeChild(div);
+            window.parent.document.removeEventListener('keydown', onKeydown);
         }
     });
 }
@@ -162,6 +176,44 @@ const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabri
         fabricRef.current.on('object:modified', preventOutOfBounds);
     }, [fabricRef]);
 
+    // Handle some key events
+    React.useEffect(() => {
+        const onKeydown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                fabricRef.current.discardActiveObject();
+            }
+            else if (e.key === 'ArrowUp') {
+                if (fabricSelection) {
+                    fabricSelection.top -= 1;
+                    fabricRef.current.renderAll();
+                    e.preventDefault();
+                }
+            }
+            else if (e.key === 'ArrowDown') {
+                if (fabricSelection) {
+                    fabricSelection.top += 1;
+                    fabricRef.current.renderAll();
+                    e.preventDefault();
+                }
+            }
+            else if (e.key === 'ArrowLeft') {
+                if (fabricSelection) {
+                    fabricSelection.left -= 1;
+                    fabricRef.current.renderAll();
+                }
+            }
+            else if (e.key === 'ArrowRight') {
+                if (fabricSelection) {
+                    fabricSelection.left += 1;
+                    fabricRef.current.renderAll();
+                }
+            }
+        };
+        window.parent.document.addEventListener('keydown', onKeydown);
+        return () => {
+            window.parent.document.removeEventListener('keydown', onKeydown);
+        };
+    });
     // Create the UI
     const addOcclusion = () => {
         let randomLocation = {

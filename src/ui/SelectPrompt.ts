@@ -25,6 +25,12 @@ export async function SelectPrompt(msg: string, options: string[]): Promise<stri
             </div>
           </div>
         </div>`;
+        const onKeydown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                window.parent.select_cancel_action();
+            }
+        };
+        window.parent.document.addEventListener('keydown', onKeydown);
         // @ts-ignore
         window.parent.handle_select_action = () => {
             const select = div.querySelector('#select-prompt-selector');
@@ -40,5 +46,6 @@ export async function SelectPrompt(msg: string, options: string[]): Promise<stri
             window.parent.document.body.removeChild(div);
         }
         window.parent.document.body.appendChild(div);
+        (div.querySelector('#select-prompt-selector') as HTMLSelectElement).focus();
     });
 }

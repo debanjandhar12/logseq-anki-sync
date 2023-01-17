@@ -29,15 +29,28 @@ export async function Confirm(msg: string): Promise<boolean> {
                </div>
             </div>
          </div>`;
+        const onKeydown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                // @ts-ignore
+                window.parent.sync_cancel_action();
+            }
+            else if (e.key === 'Enter') {
+                // @ts-ignore
+                window.parent.sync_yes_action();
+            }
+        }
+        window.parent.document.addEventListener('keydown', onKeydown);
         // @ts-ignore
         window.parent.sync_yes_action = () => {
             resolve(true);
             window.parent.document.body.removeChild(div);
+            window.parent.document.removeEventListener('keydown', onKeydown);
         }
         // @ts-ignore
         window.parent.sync_cancel_action = () => {
             resolve(false);
             window.parent.document.body.removeChild(div);
+            window.parent.document.removeEventListener('keydown', onKeydown);
         }
         window.parent.document.body.appendChild(div);
     });
