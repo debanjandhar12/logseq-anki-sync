@@ -58,10 +58,33 @@ export class LogseqToAnkiSync {
         // -- Get the notes that are to be synced from logseq --
         let scanProgress = new ProgressNotification('Scanning Logseq Graph:', 4);
         let notes : Array<Note> = [];
-        notes = [...notes, ...(await ClozeNote.getNotesFromLogseqBlocks())]; scanProgress.increment();
-        notes = [...notes, ...(await SwiftArrowNote.getNotesFromLogseqBlocks())]; scanProgress.increment();
+        notes = await ClozeNote.getNotesFromLogseqBlocks();
+        scanProgress.increment();
+
+        const swiftArrowNotes = await SwiftArrowNote.getNotesFromLogseqBlocks();
+        const swiftArrowNoteMap: Record<string, SwiftArrowNote> = swiftArrowNotes.reduce((acc, note) => ({ ...acc, [note.uuid]: note }), {});
+        notes = notes.map((note) => swiftArrowNoteMap[note.uuid] ? swiftArrowNoteMap[note.uuid] : note);
+        scanProgress.increment();
+
         notes = [...notes, ...(await ImageOcclusionNote.getNotesFromLogseqBlocks())]; scanProgress.increment();
-        notes = [...notes, ...(await MultilineCardNote.getNotesFromLogseqBlocks(notes))]; scanProgress.increment();
+
+        const multilineCardNotes = await MultilineCardNote.getNotesFromLogseqBlocks(notes);
+        const flatChildren = (father: any) => {
+            if (father.children?.length <= 0) {
+                return [father];
+            }
+            let allChildren = [];
+            for (const child of father.children) {
+                allChildren = [...allChildren, ...flatChildren(child)];
+            }
+            return allChildren;
+        };
+        const flatChildrenList =  multilineCardNotes.map(note => flatChildren(note)).reduce((acc, cur) => ([...acc, ...cur]), []);
+        const flatChildrenSet = new Set(flatChildrenList.map(child => child.uuid));
+        notes = notes.filter(note => !flatChildrenSet.has(note.uuid));
+        notes = [...notes, ...multilineCardNotes];
+        scanProgress.increment();
+
         for (let note of notes) { // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
             if (!note.properties["id"]) { try { LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); } catch (e) { console.error(e); } }
         }
@@ -69,7 +92,7 @@ export class LogseqToAnkiSync {
             return (await LogseqProxy.Editor.getBlock(a.uuid)).id; // Sort by db/id 
         });
         //scanProgress.increment();
-        console.log("Notes:", notes);
+        console.log("Notes:", notes.length);
 
         // -- Declare some variables to keep track of different operations performed --
         let failedCreated: Set<string> = new Set(), failedUpdated: Set<string> = new Set(), failedDeleted: Set<string> = new Set();
