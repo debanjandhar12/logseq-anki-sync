@@ -39,11 +39,13 @@ export async function SelectPrompt(msg: string, options: string[]): Promise<stri
                 resolve(select.value);
             }
             window.parent.document.body.removeChild(div);
+            window.parent.document.removeEventListener('keydown', onKeydown);
         }
         // @ts-ignore
         window.parent.select_cancel_action = () => {
             resolve(false);
             window.parent.document.body.removeChild(div);
+            window.parent.document.removeEventListener('keydown', onKeydown);
         }
         window.parent.document.body.appendChild(div);
         (div.querySelector('#select-prompt-selector') as HTMLSelectElement).focus();

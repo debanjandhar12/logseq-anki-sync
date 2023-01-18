@@ -45,20 +45,28 @@ export async function OcclusionEditor(imgURL: string, occlusionArr: Array<any>):
          </div>`;
         const fabricRef = React.createRef();
         let clozeEditorContainer = div.getElementsByClassName('cloze-editor')[0];
+        const root = ReactDOM.createRoot(clozeEditorContainer);
         try {
             window.parent.document.body.appendChild(div);
-            const root = ReactDOM.createRoot(clozeEditorContainer);
             root.render(<OcclusionEditorComponent imgURL={imgURL} occlusionArr={occlusionArr} ref={fabricRef} />);
-        } catch (e) { resolve(false); window.parent.document.body.removeChild(div); logseq.App.showMsg("Failed to mount OcclusionEditor! Error Message: " + e); console.error(e); }
+        } catch (e) {
+            // @ts-ignore
+            window.parent.occlusion_cancel_action();
+            logseq.App.showMsg("Failed to mount OcclusionEditor! Error Message: " + e);
+            console.error(e);
+        }
 
         const onKeydown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
+                // @ts-ignore
                 window.parent.occlusion_cancel_action();
             }
             else if (e.key === 'Enter') {
+                // @ts-ignore
                 window.parent.occlusion_save_action();
             }
             else if (e.key === 's' && e.ctrlKey) {
+                // @ts-ignore
                 window.parent.occlusion_save_action();
             }
         };
@@ -84,6 +92,7 @@ export async function OcclusionEditor(imgURL: string, occlusionArr: Array<any>):
         // @ts-ignore
         window.parent.occlusion_cancel_action = () => {
             resolve(false);
+            root.unmount();
             window.parent.document.body.removeChild(div);
             window.parent.document.removeEventListener('keydown', onKeydown);
         }
@@ -179,41 +188,54 @@ const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabri
     // Handle some key events
     React.useEffect(() => {
         const onKeydown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && fabricRef.current.getActiveObject()) {
                 fabricRef.current.discardActiveObject();
+                fabricRef.current.renderAll();
+                e.stopImmediatePropagation();
             }
-            else if (e.key === 'ArrowUp') {
-                if (fabricSelection) {
-                    fabricSelection.top -= 1;
-                    fabricRef.current.renderAll();
-                    e.preventDefault();
-                }
+            if (e.key === 'Delete') {
+                deleteOcclusion();
+                e.stopImmediatePropagation();
             }
-            else if (e.key === 'ArrowDown') {
-                if (fabricSelection) {
-                    fabricSelection.top += 1;
-                    fabricRef.current.renderAll();
-                    e.preventDefault();
-                }
+            if (e.key === 'Insert') {
+                addOcclusion();
+                e.stopImmediatePropagation();
             }
-            else if (e.key === 'ArrowLeft') {
-                if (fabricSelection) {
-                    fabricSelection.left -= 1;
+            if (e.key === 'ArrowUp') {
+                if (fabricRef.current.getActiveObject()) {
+                    fabricRef.current.getActiveObject().top -= 1;
                     fabricRef.current.renderAll();
                 }
+                e.stopImmediatePropagation();
             }
-            else if (e.key === 'ArrowRight') {
-                if (fabricSelection) {
-                    fabricSelection.left += 1;
+            if (e.key === 'ArrowDown') {
+                if (fabricRef.current.getActiveObject()) {
+                    fabricRef.current.getActiveObject().top += 1;
                     fabricRef.current.renderAll();
                 }
+                e.stopImmediatePropagation();
+            }
+            if (e.key === 'ArrowLeft') {
+                if (fabricRef.current.getActiveObject()) {
+                    fabricRef.current.getActiveObject().left -= 1;
+                    fabricRef.current.renderAll();
+                }
+                e.stopImmediatePropagation();
+            }
+            if (e.key === 'ArrowRight') {
+                if (fabricRef.current.getActiveObject()) {
+                    fabricRef.current.getActiveObject().left += 1;
+                    fabricRef.current.renderAll();
+                }
+                e.stopImmediatePropagation();
             }
         };
-        window.parent.document.addEventListener('keydown', onKeydown);
+        window.parent.document.addEventListener('keydown', onKeydown, {capture: true});
         return () => {
-            window.parent.document.removeEventListener('keydown', onKeydown);
+            window.parent.document.removeEventListener('keydown', onKeydown, {capture: true});
         };
-    });
+    }, []);
+
     // Create the UI
     const addOcclusion = () => {
         let randomLocation = {
@@ -226,7 +248,7 @@ const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabri
         fabricRef.current.renderAll();
     }
     const deleteOcclusion = () => {
-        fabricRef.current.remove(fabricSelection);
+        fabricRef.current.remove(fabricRef.current.getActiveObject());
         fabricRef.current.renderAll();
     }
     const onCIdChange = () => {
