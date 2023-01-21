@@ -29,6 +29,13 @@ export const addSettingsToLogseq = () => {
             description: "Include parent content in cards. When enabled, the parent content will be included in the card.",
         },
         {
+            key: "deckFromLogseqNamespace",
+            type: 'boolean',
+            default: true,
+            title: "Create namespace in anki (Default: Enabled)",
+            description: "You can turn this off to avoid journal like \"yyyy/MM/dd\" being processed as nested decks, but the namespace will still be parsed when the root page has the property parsens is true.",
+        },
+        {
             key: "defaultDeck",
             type: 'string',
             title: "Default Deck:",
