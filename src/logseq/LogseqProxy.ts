@@ -1,3 +1,7 @@
+/***
+ * This is a Cached + Syncronization-safe logseq api wrapper.
+ * Fixes the following issues: #58
+ * */
 import '@logseq/libs'
 import {
     BlockEntity,
@@ -13,10 +17,7 @@ import objectHash from "object-hash";
 import _ from "lodash";
 import {AddonRegistry} from "../addons/AddonRegistry";
 import getUUIDFromBlock from "./getUUIDFromBlock";
-/***
- * This is a Cached + Syncronization-safe logseq api wrapper. 
- * Fixes the following issues: #58
- * */
+
 
 type LogSeqOperation = {
     operation: String,
@@ -30,10 +31,13 @@ let getLogseqLock = new AwaitLock();
 export namespace LogseqProxy {
     export class Editor {
         static async getBlock(srcBlock: BlockIdentity | EntityID, opts: Partial<{ includeChildren: boolean; }> = {}): Promise<BlockEntity | null> {
+            srcBlock = (typeof srcBlock === "string") ? srcBlock.toLowerCase() : srcBlock; // Convert to lowercase to avoid case sensitivity issues
+
             if (cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock, opts } })))
                 return cache.get(objectHash({ operation: "getBlock", parameters: { srcBlock, opts } }));
             if (cache.has(objectHash({ operation: "getBlock", parameters: { srcBlock, opts:_.extend({includeChildren:true},opts) } }))) // Return includeChildren one if available
                 return cache.get(objectHash({ operation: "getBlock", parameters: { srcBlock, opts:_.extend({includeChildren:true},opts) } }));
+
             let block = null;
             await getLogseqLock.acquireAsync();
             try {
@@ -70,6 +74,8 @@ export namespace LogseqProxy {
         }
 
         static async getBlocks(srcBlocks: (BlockIdentity | EntityID)[]): Promise<BlockEntity[] | null[]> {
+            srcBlocks = srcBlocks.map((block) => (typeof block === "string") ? block.toLowerCase() : block); // Convert to lowercase to avoid case sensitivity issues
+
             let result = [];
             let blockToFetch = [];
             for (let i = 0; i < srcBlocks.length; i++) {
@@ -100,6 +106,8 @@ export namespace LogseqProxy {
         }
 
         static async getPage(srcPage: PageIdentity | EntityID): Promise<PageEntity | null> {
+            srcPage = (typeof srcPage === "string") ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
+
             if (cache.has(objectHash({ operation: "getPage", parameters: { srcPage } })))
                 return cache.get(objectHash({ operation: "getPage", parameters: { srcPage } }));
             let page = null;
@@ -109,13 +117,16 @@ export namespace LogseqProxy {
                 cache.set(objectHash({ operation: "getPage", parameters: { srcPage } }), page);
             }
             catch (e) { console.error(e); }
-            finally { getLogseqLock.release(); }
+            finally { getLogseqLock.release(); console.log(page); }
             return page;
         }
 
         static async getPageBlocksTree(srcPage: PageIdentity): Promise<Array<BlockEntity>> {
+            srcPage = (typeof srcPage === "string") ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
+
             if (cache.has(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage } })))
                 return cache.get(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage } }));
+
             let pageBlockTree = null;
             await getLogseqLock.acquireAsync();
             try {
@@ -227,9 +238,9 @@ export namespace LogseqProxy {
             for(let tx of txData) {
                 let [txBlockID, txType, ...additionalDetails] = tx;
                 if(txType != "left" && txType != "parent") continue;
-                let block = await LogseqProxy.Editor.getBlock(txBlockID);
+                let block = await logseq.Editor.getBlock(txBlockID);
                 if(block != null) blocks.push(block);
-                block = await LogseqProxy.Editor.getBlock(additionalDetails[0]);
+                block = await logseq.Editor.getBlock(additionalDetails[0]);
                 if(block != null) blocks.push(block);
             }
             let blockVisited = new Set();
@@ -237,8 +248,9 @@ export namespace LogseqProxy {
                 let block = blocks.pop();
                 if(blockVisited.has(block.id)) continue;
                 blockVisited.add(block.id);
-                block.uuid = _.get(block, "uuid['$uuid$']", null) || _.get(block, "uuid.Wd", null) || _.get(block, "uuid", null) || null;
+                block.uuid = getUUIDFromBlock(block);
                 if (block.uuid != null) {
+                    block.uuid = block.uuid.toString().toLowerCase(); // Convert to lowercase to match the lowercase UUIDs in the cache
                     cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {} } }));
                     cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.uuid, opts: {includeChildren:true} } }));
                     cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.uuid } }));
@@ -247,15 +259,27 @@ export namespace LogseqProxy {
                 if (block.page != null && block.page.id != null) {
                     cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.page.id } }));
                     cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.page.id } }));
-                    let page_originalName = await LogseqProxy.Editor.getPage(block.page.id);
-                    if (page_originalName != null) {
-                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: page_originalName } }));
-                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: page_originalName } }));
+                    let page = await logseq.Editor.getPage(block.page.id);
+                    if (page.originalName != null) {
+                        page.originalName = page.originalName.toLowerCase(); // Convert to lowercase to match the lowercase names in the cache
+                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: page.originalName } }));
+                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: page.originalName } }));
+                    }
+                    if (page.name != null) {
+                        page.name = page.name.toLowerCase(); // Convert to lowercase to match the lowercase names in the cache
+                        cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: page.name } }));
+                        cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: page.name } }));
                     }
                 }
                 if(block.originalName != null) {
+                    block.originalName = block.originalName.toLowerCase(); // Convert to lowercase to match the lowercase names in the cache
                     cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.originalName } }));
                     cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.originalName } }));
+                }
+                if(block.name != null) {
+                    block.name = block.name.toLowerCase(); // Convert to lowercase to match the lowercase names
+                    cache.delete(objectHash({ operation: "getPage", parameters: { srcPage: block.name } }));
+                    cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.name } }));
                 }
                 if (block.id != null) {
                     cache.delete(objectHash({ operation: "getBlock", parameters: { srcBlock: block.id, opts: {includeChildren:true} } }));
@@ -264,7 +288,7 @@ export namespace LogseqProxy {
                     cache.delete(objectHash({ operation: "getPageBlocksTree", parameters: { srcPage: block.id } }));
                 }
                 if (block.parent != null && block.parent.id != null) {
-                    let block_parent = await LogseqProxy.Editor.getBlock(block.parent.id);
+                    let block_parent = await logseq.Editor.getBlock(block.parent.id);
                     if (block_parent != null)
                         blocks.push(block_parent);
                 }

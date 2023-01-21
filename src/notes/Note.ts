@@ -2,6 +2,7 @@ import '@logseq/libs'
 import { LazyAnkiNoteManager } from '../anki-connect/LazyAnkiNoteManager';
 import { HTMLFile } from '../converter/Converter';
 import { DependencyEntity } from '../converter/getContentDirectDependencies';
+import _ from "lodash";
 
 export abstract class Note {
     public uuid: string;
@@ -19,6 +20,7 @@ export abstract class Note {
         this.format = format;
         this.properties = properties;
         this.page = page;
+        this.page.originalName = _.get(this, 'page.originalName', null) || _.get(this, 'page.name', null); // Just in case the page doesn't have an originalName
     }
 
     public static setAnkiNoteManager(ankiNoteManager: LazyAnkiNoteManager) {

@@ -1,6 +1,7 @@
 /**
  * This service maintains a cache of block hashes to detect changes in the block content.
  * The idea of this is to actively maintaining a dependency graph.
+ * NB: Please pass only block UUIDs and page names to the functions of this service. Do not pass datalog ids.
  */
 import { DepGraph } from 'dependency-graph';
 import {LogseqProxy} from "./LogseqProxy";
@@ -18,6 +19,8 @@ const clearGraph = () => {
 }
 
 const removeBlockNode = (blockUUID) => {
+    blockUUID = blockUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+
     if(!graph.hasNode(blockUUID+"Block")) return;
     graph.dependantsOf(blockUUID+"Block").forEach((dependant) => {
         graph.removeNode(dependant);
@@ -26,6 +29,8 @@ const removeBlockNode = (blockUUID) => {
 }
 
 const removeFirstLineOfBlockNode = (blockUUID) => {
+    blockUUID = blockUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+
     if(!graph.hasNode(blockUUID+"FirstLineOfBlock")) return;
     graph.dependantsOf(blockUUID+"FirstLineOfBlock").forEach((dependant) => {
         graph.removeNode(dependant);
@@ -34,6 +39,8 @@ const removeFirstLineOfBlockNode = (blockUUID) => {
 }
 
 const removePageNode = (pageName) => {
+    pageName = pageName.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+
     if(!graph.hasNode(pageName+"Page")) return;
     graph.dependantsOf(pageName+"Page").forEach((dependant) => {
         graph.removeNode(dependant);
@@ -42,6 +49,8 @@ const removePageNode = (pageName) => {
 }
 
 const addPageNode = async (pageName) => {
+    pageName = pageName.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+
     if(graph.hasNode(pageName+"Page")) return;
     const page = await LogseqProxy.Editor.getPage(pageName);
     const toHash = [];
@@ -50,6 +59,8 @@ const addPageNode = async (pageName) => {
 }
 
 const addBlockNode = async (blockUUID) => {
+    blockUUID = blockUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+
     if(graph.hasNode(blockUUID+"Block")) return;
     graph.addNode(blockUUID+"Block");
     const block = await LogseqProxy.Editor.getBlock(blockUUID);
@@ -69,6 +80,8 @@ const addBlockNode = async (blockUUID) => {
 }
 
 const addFirstLineOfBlockNode = async (blockUUID) => {
+    blockUUID = blockUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+
     if(graph.hasNode(blockUUID+"FirstLineOfBlock")) return;
     graph.addNode(blockUUID+"FirstLineOfBlock");
     const block = await LogseqProxy.Editor.getBlock(blockUUID);
@@ -88,16 +101,22 @@ const addFirstLineOfBlockNode = async (blockUUID) => {
 }
 
 export const getBlockHash = async (blockUUID) => {
+    blockUUID = blockUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+
     await addBlockNode(blockUUID);
     return graph.getNodeData(blockUUID+"Block");
 };
 
 export const getFirstLineOfBlockHash = async (blockUUID) => {
+    blockUUID = blockUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+
     await addFirstLineOfBlockNode(blockUUID);
     return graph.getNodeData(blockUUID+"FirstLineOfBlock");
 };
 
 export const getPageHash = async (pageName) => {
+    pageName = pageName.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+
     await addPageNode(pageName);
     return graph.getNodeData(pageName+"Page");
 }
@@ -109,9 +128,9 @@ export const init = () => {
         for(let tx of txData) {
             let [txBlockID, txType, ...additionalDetails] = tx;
             if(txType != "left" && txType != "parent") continue;
-            let block = await LogseqProxy.Editor.getBlock(txBlockID);
+            let block = await logseq.Editor.getBlock(txBlockID);
             if(block != null) blocks.push(block);
-            block = await LogseqProxy.Editor.getBlock(additionalDetails[0]);
+            block = await logseq.Editor.getBlock(additionalDetails[0]);
             if(block != null) blocks.push(block);
         }
         while (blocks.length > 0) {
@@ -121,9 +140,8 @@ export const init = () => {
                 removeBlockNode(block.uuid);
                 removeFirstLineOfBlockNode(block.uuid);
             }
-            if(block.originalName != null) {
-                removePageNode(block.originalName);
-            }
+            if(block.originalName != null) removePageNode(block.originalName);
+            if(block.name != null) removePageNode(block.name);
         }
     });
     LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
