@@ -117,7 +117,7 @@ export namespace LogseqProxy {
                 cache.set(objectHash({ operation: "getPage", parameters: { srcPage } }), page);
             }
             catch (e) { console.error(e); }
-            finally { getLogseqLock.release(); console.log(page); }
+            finally { getLogseqLock.release(); }
             return page;
         }
 

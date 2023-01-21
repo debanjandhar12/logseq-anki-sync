@@ -27,6 +27,7 @@ export async function SelectPrompt(msg: string, options: string[]): Promise<stri
         </div>`;
         const onKeydown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
+                // @ts-ignore
                 window.parent.select_cancel_action();
             }
         };
@@ -36,6 +37,7 @@ export async function SelectPrompt(msg: string, options: string[]): Promise<stri
             const select = div.querySelector('#select-prompt-selector');
             console.log(select);
             if (select) {
+                // @ts-ignore
                 resolve(select.value);
             }
             window.parent.document.body.removeChild(div);
