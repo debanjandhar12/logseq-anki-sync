@@ -54,7 +54,25 @@ export class LogseqToAnkiSync {
         let ankiNoteManager = new LazyAnkiNoteManager(this.modelName);
         await ankiNoteManager.init();
         Note.setAnkiNoteManager(ankiNoteManager);
-        
+
+        // -- Namespace Filter --
+        let parseNamespaceHelper = async (note:Note) =>{
+            let rootPageID:any;
+            if (logseq.settings.deckFromLogseqNamespace){ //processing when enable
+                note.parseNamespace = true
+                return
+            }
+            if ((rootPageID = _.get(note,'page.namespace.id')) == null) return
+            let currentPage;
+            // If the root page's parsens property is true,set parseNamespace is true, when disabled.
+            while (_.get((currentPage = await LogseqProxy.Editor.getPage(rootPageID)),'namespace')){
+                rootPageID = _.get(currentPage,'namespace.id')
+            }
+            if (_.get((currentPage = await LogseqProxy.Editor.getPage(rootPageID)),"properties.parsens") == true){
+                note.parseNamespace = true
+            }
+        }
+
         // -- Get the notes that are to be synced from logseq --
         let scanProgress = new ProgressNotification('Scanning Logseq Graph:', 4);
         let notes : Array<Note> = [];
@@ -64,6 +82,7 @@ export class LogseqToAnkiSync {
         notes = [...notes, ...(await MultilineCardNote.getNotesFromLogseqBlocks(notes))]; scanProgress.increment();
         for (let note of notes) { // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
             if (!note.properties["id"]) { try { LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); } catch (e) { console.error(e); } }
+            parseNamespaceHelper(note);
         }
         notes = await sortAsync(notes, async (a) => {
             return (await LogseqProxy.Editor.getBlock(a.uuid)).id; // Sort by db/id 
@@ -188,7 +207,7 @@ export class LogseqToAnkiSync {
                 })(ankiNodeInfo.fields.Config.value);
                 let [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra] = [ankiNodeInfo.fields.Text.value, oldConfig.assets, ankiNodeInfo.deck, ankiNodeInfo.fields.Breadcrumb.value, ankiNodeInfo.tags, ankiNodeInfo.fields.Extra.value];
                 let dependencyHash = await NoteHashCalculator.getHash(note, [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra]);
-                if(logseq.settings.skipOnDependencyHashMatch != true || oldConfig.dependencyHash != dependencyHash) { // Reparse Note + update assets + update
+                if(logseq.settings.skipOnDependencyHashMatch != true ||  (oldDeck.includes("::") || note.parseNamespace) || oldConfig.dependencyHash != dependencyHash) { // Reparse Note + update assets + update
                     // Parse Note
                     let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
                     dependencyHash = await NoteHashCalculator.getHash(note, [html, Array.from(assets), deck, breadcrumb, tags, extra]);
@@ -268,7 +287,8 @@ export class LogseqToAnkiSync {
         }
 
         // Parse deck using logic described at https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F
-        let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || (_.get(note, 'page.originalName', '') || _.get(note, 'page.properties.title', '')).split("/").slice(0, -1).join("/") || logseq.settings.defaultDeck || "Default";
+        // Parse namespace when note attribute parseNamespace is true
+        let deck: any = _.get(note, 'properties.deck') || _.get(note, 'page.properties.deck') || (_.get(note,'parseNamespace') ? (_.get(note, 'page.originalName', '') || _.get(note, 'page.properties.title', '')).split("/").slice(0, -1).join("/") : false) || logseq.settings.defaultDeck || "Default";
         try {
             let parentID = note.uuid;
             let parent;
