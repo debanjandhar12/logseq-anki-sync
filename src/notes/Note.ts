@@ -13,7 +13,6 @@ export abstract class Note {
     public type: string;
     public ankiId: number;
     static ankiNoteManager: LazyAnkiNoteManager;
-    public parseNamespace:boolean;
 
 
     public constructor(uuid: string, content: string, format: string, properties: any, page: any) {
@@ -23,7 +22,6 @@ export abstract class Note {
         this.properties = properties;
         this.page = page;
         this.page.originalName = _.get(this, 'page.originalName', null) || _.get(this, 'page.name', null); // Just in case the page doesn't have an originalName
-        this.parseNamespace = false;
     }
 
     public static setAnkiNoteManager(ankiNoteManager: LazyAnkiNoteManager) {
