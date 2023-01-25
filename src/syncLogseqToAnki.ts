@@ -207,8 +207,7 @@ export class LogseqToAnkiSync {
                 })(ankiNodeInfo.fields.Config.value);
                 let [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra] = [ankiNodeInfo.fields.Text.value, oldConfig.assets, ankiNodeInfo.deck, ankiNodeInfo.fields.Breadcrumb.value, ankiNodeInfo.tags, ankiNodeInfo.fields.Extra.value];
                 let dependencyHash = await NoteHashCalculator.getHash(note, [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra]);
-                if(logseq.settings.skipOnDependencyHashMatch != true ||  (oldDeck.includes("::") || note.parseNamespace) || oldConfig.dependencyHash != dependencyHash) { // Reparse Note + update assets + update
-                    // Parse Note
+                if(logseq.settings.skipOnDependencyHashMatch != true || oldConfig.dependencyHash != dependencyHash) { // Reparse Note + update assets + update                    // Parse Note
                     let [html, assets, deck, breadcrumb, tags, extra] = await this.parseNote(note);
                     dependencyHash = await NoteHashCalculator.getHash(note, [html, Array.from(assets), deck, breadcrumb, tags, extra]);
                     // Add or update assets

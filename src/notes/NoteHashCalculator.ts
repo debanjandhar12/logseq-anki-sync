@@ -40,7 +40,7 @@ export default class NoteHashCalculator {
 
         // Add additional things from block to toHash
         toHash.push({page:encodeURIComponent(_.get(note, 'page.originalName', '')), deck:encodeURIComponent(_.get(note, 'page.properties.deck', ''))});
-        toHash.push({defaultDeck:logseq.settings.defaultDeck, includeParentContent: logseq.settings.includeParentContent, breadcrumbDisplay: logseq.settings.breadcrumbDisplay});
+        toHash.push(_.omit(logseq.settings, ['addons', 'renderAnkiClozeMarcosInLogseq', 'skipOnDependencyHashMatch', 'cacheLogseqAPIv1', 'debug']));
         toHash.push({v:pkg.version});
 
         // Add additional things from ankiFields to toHash
