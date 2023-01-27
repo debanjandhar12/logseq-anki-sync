@@ -40,6 +40,10 @@ export default class NoteHashCalculator {
 
         // Add additional things from block to toHash
         toHash.push({page:encodeURIComponent(_.get(note, 'page.originalName', '')), deck:encodeURIComponent(_.get(note, 'page.properties.deck', ''))});
+        if (_.get(note,'page.namespace.id') != null) {  // Include properties of root namespace, fixes https://github.com/debanjandhar12/logseq-anki-sync/pull/143#issuecomment-1403965977
+            let rootPageName = _.get(note, 'page.name').split("/")[0];
+            toHash.push({rootPageProps: _.get((await LogseqProxy.Editor.getPage(rootPageName)),"properties", {})});
+        }
         toHash.push(_.omit(logseq.settings, ['addons', 'renderAnkiClozeMarcosInLogseq', 'skipOnDependencyHashMatch', 'cacheLogseqAPIv1', 'debug']));
         toHash.push({v:pkg.version});
 
