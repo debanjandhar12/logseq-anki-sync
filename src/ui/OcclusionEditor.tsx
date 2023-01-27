@@ -229,6 +229,14 @@ const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabri
                 }
                 e.stopImmediatePropagation();
             }
+            if (e.key >= '1' && e.key <= '9') {
+                if (fabricRef.current.getActiveObject()) {
+                    cidSelectorRef.current.value = e.key;
+                    let event = new Event('change', {bubbles: true});
+                    cidSelectorRef.current.dispatchEvent(event);
+                }
+                e.stopImmediatePropagation();
+            }
         };
         window.parent.document.addEventListener('keydown', onKeydown, {capture: true});
         return () => {
