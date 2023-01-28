@@ -154,7 +154,7 @@ export function safeReplace(content: string, regex: RegExp | string, replaceArg:
         hashmap[str] = match.replaceAll("$", "$$$$");
         return str;
     });
-    result = result.replace(/```(.*)\n(.|\n)*?\n```/g, (match) => { // Escape code
+    result = result.replace(/(```|~~~)(.*)\n(.|\n)*?\n\1/g, (match) => { // Escape code
         let str = getRandomUnicodeString();
         hashmap[str] = match;
         return str;
@@ -179,7 +179,7 @@ export async function safeReplaceAsync(content: string, regex: RegExp | string, 
         hashmap[str] = match.replaceAll("$", "$$$$");
         return str;
     });
-    result = result.replace(/```(.*)\n(.|\n)*?\n```/g, (match) => { // Escape code
+    result = result.replace(/(```|~~~)(.*)\n(.|\n)*?\n\1/g, (match) => { // Escape code
         let str = getRandomUnicodeString();
         hashmap[str] = match;
         return str;
