@@ -141,6 +141,7 @@ export class ImageOcclusionNote extends Note {
             return block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
         });
         block_images = _.uniq(block_images);
+        block_images = _.filter(block_images, block_images.trim() != "");
         return block_images;
     }
 }
