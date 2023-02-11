@@ -17,7 +17,7 @@ import {
     MD_MATH_BLOCK_REGEXP,
     MD_PROPERTIES_REGEXP,
     ORG_MATH_BLOCK_REGEXP,
-    ORG_PROPERTIES_REGEXP, specialChars,
+    ORG_PROPERTIES_REGEXP, specialChars, LOGSEQ_RENAMED_PAGE_REF_REGEXP,
 } from "../constants";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
@@ -264,6 +264,12 @@ async function processRefEmbeds(resultContent, resultAssets, resultTags, hashmap
                         <a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="embed-header">${pageName}</a>
                         ${await getPageContentHTML(pageTree)}
                         </div>`;
+        return str;
+    });
+
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_RENAMED_PAGE_REF_REGEXP, async (match, aliasContent, pageName) => { // Convert page refs
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(_.get(await logseq.App.getCurrentGraph(), 'name'))}?page=${encodeURIComponent(pageName)}" class="page-reference">${aliasContent}</a>`;
         return str;
     });
 

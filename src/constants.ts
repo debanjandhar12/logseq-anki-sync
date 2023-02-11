@@ -7,6 +7,7 @@ export const ORG_MATH_BLOCK_REGEXP = /\\\[([\s\S]*?)\\\]/g;
 export const ORG_PROPERTIES_REGEXP = /:PROPERTIES:\n((.|\n)*?):END:\n?/gm;
 export const LOGSEQ_BLOCK_REF_REGEXP = /\(\(([^\)\n]*?)\)\)(?!\))/gm;
 export const LOGSEQ_RENAMED_BLOCK_REF_REGEXP = /\[(.*?)\]\(\(\((.*?)\)\)\)/gm;
+export const LOGSEQ_RENAMED_PAGE_REF_REGEXP = /\[(.*?)\]\(\[\[(.*?)\]\]\)/gm;
 export const LOGSEQ_PAGE_REF_REGEXP = /(?<!#)\[\[(.*?)\]\]/gm;
 // The \u2063? is to match the zero-width space that the plugin sometimes add to bypass cloze end.
 export const LOGSEQ_EMBDED_PAGE_REGEXP = /\{\{embed \[\[(.*?)\]\] *?\}\u2063?\}/gm;
