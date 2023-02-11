@@ -35,6 +35,7 @@ export class ClozeNote extends Note {
                         let content = cloze.innerHTML.replace(/^{{{c\d (.*?)(::.*)?}}}$/,"$1");
                         if(logseq.settings.renderAnkiClozeMarcosInLogseq)
                             content = (await convertToHTMLFile(content, "markdown")).html;
+                        cloze.parentElement.style.display = "inherit";
                         cloze.outerHTML = `<span style="background-color:rgb(59 130 246 / 0.1);white-space: initial;">${content}</span>`;
                     }
                 });
