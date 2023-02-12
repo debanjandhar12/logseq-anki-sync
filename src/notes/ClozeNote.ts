@@ -32,10 +32,12 @@ export class ClozeNote extends Note {
                 );
                 clozes.forEach(async (cloze) => {
                     if (/c\d$/.test((cloze as Element & {title}).title)) {
-                        let content = cloze.innerHTML.replace(/^{{{c\d (.*?)(::.*)?}}}$/,"$1");
+                        let content = cloze.innerHTML.replace(/^{?{{c\d (.*?)(::.*)?}}}?$/,"$1");
                         if(logseq.settings.renderAnkiClozeMarcosInLogseq)
                             content = (await convertToHTMLFile(content, "markdown")).html;
-                        cloze.parentElement.style.display = "inherit";
+                        // if parent element has class macro
+                        if(cloze.parentElement.classList.contains("macro"))
+                            cloze.parentElement.style.display = "initial";
                         cloze.outerHTML = `<span style="background-color:rgb(59 130 246 / 0.1);white-space: initial;">${content}</span>`;
                     }
                 });
