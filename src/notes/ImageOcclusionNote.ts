@@ -131,12 +131,13 @@ export class ImageOcclusionNote extends Note {
                 let block_ref_props_str = block_ref_props ? Object.keys(block_ref_props).map((key) => {
                     return `${key}::${block_ref_props[key]}`;
                 }).join('\n') : "";
-                return block_ref_props_str + "\n" + block_ref_content_first_line;
+                block_ref_content_first_line = block_ref_props_str + "\n" + block_ref_content_first_line;
+                block_ref_content_first_line = await processProperties(block_ref_content_first_line); // Process pdf properties
+                return block_ref_content_first_line;
             }
             catch (e) { console.warn(e); }
             return match;
         });
-        block_content = await processProperties(block_content); // Process pdf properties
         let block_images = (block_content.match(MD_IMAGE_EMBEDED_REGEXP) || []).map((block_image) => {
             return block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
         });
