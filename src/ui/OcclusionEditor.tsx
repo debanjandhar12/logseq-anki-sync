@@ -193,7 +193,7 @@ const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabri
                 fabricRef.current.renderAll();
                 e.stopImmediatePropagation();
             }
-            if (e.key === 'Delete') {
+            if (e.key === 'Delete' && fabricRef.current.getActiveObject()) {
                 deleteOcclusion();
                 e.stopImmediatePropagation();
             }
@@ -205,44 +205,44 @@ const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabri
                 if (fabricRef.current.getActiveObject()) {
                     fabricRef.current.getActiveObject().top -= 1;
                     fabricRef.current.renderAll();
+                    e.stopImmediatePropagation();
                 }
-                e.stopImmediatePropagation();
             }
             if (e.key === 'ArrowDown') {
                 if (fabricRef.current.getActiveObject()) {
                     fabricRef.current.getActiveObject().top += 1;
                     fabricRef.current.renderAll();
+                    e.stopImmediatePropagation();
                 }
-                e.stopImmediatePropagation();
             }
             if (e.key === 'ArrowLeft') {
                 if (fabricRef.current.getActiveObject()) {
                     fabricRef.current.getActiveObject().left -= 1;
                     fabricRef.current.renderAll();
+                    e.stopImmediatePropagation();
                 }
-                e.stopImmediatePropagation();
             }
             if (e.key === 'ArrowRight') {
                 if (fabricRef.current.getActiveObject()) {
                     fabricRef.current.getActiveObject().left += 1;
                     fabricRef.current.renderAll();
+                    e.stopImmediatePropagation();
                 }
-                e.stopImmediatePropagation();
             }
             if (e.key >= '1' && e.key <= '9') {
                 if (fabricRef.current.getActiveObject()) {
                     cidSelectorRef.current.value = e.key;
                     let event = new Event('change', {bubbles: true});
                     cidSelectorRef.current.dispatchEvent(event);
+                    e.stopImmediatePropagation();
                 }
-                e.stopImmediatePropagation();
             }
         };
         window.parent.document.addEventListener('keydown', onKeydown, {capture: true});
         return () => {
             window.parent.document.removeEventListener('keydown', onKeydown, {capture: true});
         };
-    }, []);
+    }, [fabricRef]);
 
     // Create the UI
     const addOcclusion = () => {
