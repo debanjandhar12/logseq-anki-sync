@@ -18,7 +18,6 @@ import {Confirm} from "./ui/Confirm";
 import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
 import NoteHashCalculator from "./notes/NoteHashCalculator";
 import {cancelable, CancelablePromise} from 'cancelable-promise';
-
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
     graphName: string;
@@ -29,7 +28,7 @@ export class LogseqToAnkiSync {
         LogseqToAnkiSync.isSyncing = true;
         try {
           await this.performSync();
-        } 
+        }
         catch (e) {
           logseq.UI.showMsg(get_better_error_msg(e.toString()), 'warning', {timeout: 4000});
           logseq.provideUI({ key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`, template: `` });
@@ -66,7 +65,7 @@ export class LogseqToAnkiSync {
             if (!note.properties["id"]) { try { LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid); } catch (e) { console.error(e); } }
         }
         notes = await sortAsync(notes, async (a) => {
-            return (await LogseqProxy.Editor.getBlock(a.uuid)).id; // Sort by db/id 
+            return (await LogseqProxy.Editor.getBlock(a.uuid)).id; // Sort by db/id
         });
         //scanProgress.increment();
         console.log("Notes:", notes);
@@ -80,7 +79,7 @@ export class LogseqToAnkiSync {
             else toUpdateNotes.push(note);
         }
         let noteAnkiIds: Array<number> = await Promise.all(notes.map(async block => await block.getAnkiId()));  // Flatten current logseq block's anki ids
-        let AnkiIds: Array<number> = [...ankiNoteManager.noteInfoMap.keys()]; 
+        let AnkiIds: Array<number> = [...ankiNoteManager.noteInfoMap.keys()];
         for(let ankiId of AnkiIds) {
             if(!noteAnkiIds.includes(ankiId)) {
                toDeleteNotes.push(ankiId);
@@ -96,9 +95,18 @@ export class LogseqToAnkiSync {
             }
         });
         // Prompt the user
-        let confirm_msg = `<b>The logseq to anki sync plugin will attempt to perform the following actions:</b><br/>Create ${toCreateNotes.length} new anki notes<br/>Update ${toUpdateNotes.length} existing anki notes<br/>Delete ${toDeleteNotes.length != 0 ? `<span class="text-red-600">${toDeleteNotes.length}</span>` : toDeleteNotes.length} anki notes<br/><br/>Are you sure you want to continue?`;
-        if (!(await Confirm(confirm_msg))) { buildNoteHashes.cancel(); window.dispatchEvent(new Event('syncLogseqToAnkiComplete')); console.log("Sync Aborted by user!"); return; }
-        if (toCreateNotes.length == 0 && toUpdateNotes.length == 0 && toDeleteNotes.length >= 10) {
+        // @ts-ignore
+        window.parent.AnkiConnect = AnkiConnect;    // Make AnkiConnect available to the confirm dialog
+        let confirm_msg = `<b>The logseq to anki sync plugin will attempt to perform the following actions:</b><br/>
+                            Create ${toCreateNotes.length} new anki notes<br/>
+                            Update ${toUpdateNotes.length} existing anki notes<br/>
+                            Delete ${toDeleteNotes.length != 0 ? `<span class="text-red-600">${toDeleteNotes.length}</span>` : toDeleteNotes.length} anki notes ${toDeleteNotes.length != 0 ? `<a style="color:red;" onMouseOver="this.style.color='darkred'" onMouseOut="this.style.color='red'" onclick="AnkiConnect.guiBrowse('nid:${toDeleteNotes.join(",")}')">(view notes in anki)</a>` : ``}<br/><br/>
+                            Are you sure you want to continue?`;
+        let confirm_result = await Confirm(confirm_msg);
+        // @ts-ignore
+        window.parent.AnkiConnect = null; // Remove AnkiConnect from the global scope
+        if (!confirm_result) { buildNoteHashes.cancel(); window.dispatchEvent(new Event('syncLogseqToAnkiComplete')); console.log("Sync Aborted by user!"); return; }
+        if (toCreateNotes.length == 0 && toUpdateNotes.length == 0 && toDeleteNotes.length >= 10) { // Prompt the user again if they are about to delete a lot of notes
             let confirm_msg = `<b class="text-red-600">This will delete all your notes in anki that are generated from this graph.</b><br/>Are you sure you want to continue?`;
             if (!(await Confirm(confirm_msg))) { buildNoteHashes.cancel(); window.dispatchEvent(new Event('syncLogseqToAnkiComplete')); console.log("Sync Aborted by user!"); return;}
         }
@@ -244,10 +252,10 @@ export class LogseqToAnkiSync {
 
     private async parseNote(note: Note): Promise<[string, Set<string>, string, string, string[], string]> {
         let {html, assets, tags } = await note.getClozedContentHTML();
-        
+
         if(logseq.settings.includeParentContent) {
             let newHtml = "";
-            let parentBlocks = []; 
+            let parentBlocks = [];
             let parentID = (await LogseqProxy.Editor.getBlock(note.uuid)).parent.id;
             let parent;
             while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
@@ -299,7 +307,7 @@ export class LogseqToAnkiSync {
         if (logseq.settings.breadcrumbDisplay.includes("Show Page name")) breadcrumb = `<a href="logseq://graph/${encodeURIComponent(this.graphName)}?page=${encodeURIComponent(note.page.originalName)}" title="${note.page.originalName}">${note.page.originalName}</a>`;
         if(logseq.settings.breadcrumbDisplay == "Show Page name and parent blocks context") {
             try {
-                let parentBlocks = []; 
+                let parentBlocks = [];
                 let parentID = (await LogseqProxy.Editor.getBlock(note.uuid)).parent.id;
                 let parent;
                 while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
