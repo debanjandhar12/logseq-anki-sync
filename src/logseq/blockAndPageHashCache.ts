@@ -64,7 +64,8 @@ const addBlockNode = async (blockUUID) => {
     if(graph.hasNode(blockUUID+"Block")) return;
     graph.addNode(blockUUID+"Block");
     const block = await LogseqProxy.Editor.getBlock(blockUUID);
-    const directDependencies = getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format',''));
+    const blockPage = await LogseqProxy.Editor.getPage(_.get(block, 'page.id',''));
+    const directDependencies = await getContentDirectDependencies(_.get(block, 'content',''), _.get(block, 'format',''));
     for (let dependency of directDependencies) {
         if(dependency.type === "Block") await addBlockNode(dependency.value);
         else if(dependency.type === "FirstLineOfBlock") await addFirstLineOfBlockNode(dependency.value);
@@ -75,7 +76,7 @@ const addBlockNode = async (blockUUID) => {
     graph.dependenciesOf(blockUUID+"Block").forEach((dependency) => {
         toHash.push(graph.getNodeData(dependency));
     });
-    toHash.push({content:_.get(block, 'content',''), format:_.get(block, 'format','markdown'), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
+    toHash.push(_.get(blockPage, 'updatedAt',''));
     graph.setNodeData(blockUUID+"Block", hashSum(toHash));
 }
 
@@ -85,7 +86,7 @@ const addFirstLineOfBlockNode = async (blockUUID) => {
     if(graph.hasNode(blockUUID+"FirstLineOfBlock")) return;
     graph.addNode(blockUUID+"FirstLineOfBlock");
     const block = await LogseqProxy.Editor.getBlock(blockUUID);
-    const directDependencies = getContentDirectDependencies(getFirstNonEmptyLine(_.get(block, 'content','').replaceAll(MD_PROPERTIES_REGEXP, '').replaceAll(ORG_PROPERTIES_REGEXP, '')), _.get(block, 'format',''));
+    const directDependencies = await getContentDirectDependencies(getFirstNonEmptyLine(_.get(block, 'content','').replaceAll(MD_PROPERTIES_REGEXP, '').replaceAll(ORG_PROPERTIES_REGEXP, '')), _.get(block, 'format',''));
     for (let dependency of directDependencies) {
         if(dependency.type === "Block") await addBlockNode(dependency.value);
         else if(dependency.type === "FirstLineOfBlock") await addFirstLineOfBlockNode(dependency.value);

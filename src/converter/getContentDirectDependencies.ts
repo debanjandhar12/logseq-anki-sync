@@ -1,10 +1,11 @@
-import {BlockUUID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {BlockEntity, BlockUUID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import { LOGSEQ_BLOCK_REF_REGEXP, LOGSEQ_EMBDED_PAGE_REGEXP, LOGSEQ_EMBDED_BLOCK_REGEXP } from "../constants";
+import {LogseqProxy} from "../logseq/LogseqProxy";
 export type DependencyEntity = {
     type: "FirstLineOfBlock" | "Block" | "Page",
     value: BlockUUID | PageEntityName
 }
-export default function getContentDirectDependencies(content: string, format: string = "markdown"): DependencyEntity[] {
+export default async function getContentDirectDependencies(content: string, format: string = "markdown"): Promise<DependencyEntity[]> {
     if(content == null || content == undefined) return [];
     let blockDependency: Set<BlockUUID> = new Set();
     let firstLineOfBlockDependency: Set<BlockUUID> = new Set();
@@ -12,7 +13,21 @@ export default function getContentDirectDependencies(content: string, format: st
     //  Add dependencies due to LOGSEQ_EMBDED_BLOCK_REGEXP
     let match;
     while (match = LOGSEQ_EMBDED_BLOCK_REGEXP.exec(content)) {
-        blockDependency.add(match[1]);
+        let block = await LogseqProxy.Editor.getBlock(match[1], {includeChildren: true});
+        // Add all children of block as dependencies
+        if (block) {
+            const queue = [block];
+            while (queue.length > 0) {
+                let block = queue.pop();
+                blockDependency.add(block.uuid);
+                if (block.children) {
+                    for (let child of block.children) {
+                        if(queue.length > 30) break;
+                        queue.push(child as BlockEntity);
+                    }
+                }
+            }
+        }
     }
     // Add dependencies due to LOGSEQ_BLOCK_REF_REGEXP
     while (match = LOGSEQ_BLOCK_REF_REGEXP.exec(content)) {

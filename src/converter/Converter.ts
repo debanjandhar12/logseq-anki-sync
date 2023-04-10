@@ -218,20 +218,33 @@ export async function processProperties(resultContent, format = "markdown"): Pro
 }
 
 async function processRefEmbeds(resultContent, resultAssets, resultTags, hashmap, format): Promise<string> {
+    let block;
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_BLOCK_REGEXP, async (match, g1) => {  // Convert block embed
-        let block_content = "";
-        try { let block = await LogseqProxy.Editor.getBlock(g1); block_content = _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || ""; } catch (e) { console.warn(e); }
+        let getBlockEmbedContentHTML = async (children: any, level: number = 0) : Promise<string> => {
+            if (level >= 100) return "";
+            let result = `\n<ul class="children-list">`;
+            for (let child of children) {
+                result += `\n<li class="children">`;
+                // _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
+                let block_content = escapeClozeAndSecoundBrace(_.get(child, "content")) || "";
+                let format = _.get(child, "format") || "markdown";
+                let blockContentHTMLFile = await convertToHTMLFile(block_content, format);
+                blockContentHTMLFile.assets.forEach(element => {
+                    resultAssets.add(element);
+                });
+                if (child.children.length > 0) blockContentHTMLFile.html += await getBlockEmbedContentHTML(child.children, level + 1);
+
+                result += blockContentHTMLFile.html;
+                result += `</li>`;
+            }
+            result += `</ul>`;
+            return result;
+        }
+
+        try { block = await LogseqProxy.Editor.getBlock(g1, {includeChildren: true}); } catch (e) { console.warn(e); }
         let str = getRandomUnicodeString();
         hashmap[str] = `<div class="embed-block">
-                        <ul class="children-list"><li class="children">
-                        ${await (async () => {
-                            let blockContentHTMLFile : HTMLFile = await convertToHTMLFile(block_content, format);
-                            blockContentHTMLFile.assets.forEach(element => {
-                                resultAssets.add(element);
-                            });
-                            return blockContentHTMLFile.html;
-                        })()}
-                        </li></ul>
+                        ${block ? await getBlockEmbedContentHTML([block]) : ''}
                         </div>`;
         return str;
     });
@@ -376,18 +389,18 @@ async function processLink(node, start_pos, end_pos, resultContent, resultAssets
         let str = getRandomUnicodeString();
         hashmap[str] = `<img src="${path.basename(link_url)}" ${blockRefLabel? `title="${blockRefLabel}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
         resultAssets.add(link_url);
-        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]); 
+        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
     }
     else if (link_type == "Complex" && link_url.link.match(isImage_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
         let str = getRandomUnicodeString();
         hashmap[str] = `<img src="${link_url.protocol}://${link_url.link}" ${blockRefLabel? `title="${blockRefLabel}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
-        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]); 
+        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
     }
     else if (format == "org" && link_type == "Page_ref" && link_url.match(isImage_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
         let str = getRandomUnicodeString();
         hashmap[str] = `<img src="${path.basename(link_url)}" />`;
         resultAssets.add(link_url);
-        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]); 
+        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
     }
     return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(content), ...resultUTF8.subarray(end_pos)]);;
 }
