@@ -1,10 +1,10 @@
 /***
-* This files contains the css for the both sides of anki cards. 
+* This files contains the css for the both sides of anki cards.
 */
 /* import highlightjs css */
 @import "/node_modules/highlight.js/styles/default.css";
 
-.card {
+body {
     background-color: white;
 }
 
@@ -13,6 +13,7 @@
     font-size: 16px;
     color: black;
 }
+
 .hidden {
     display: none;
 }
@@ -166,7 +167,7 @@ a.page-reference:hover {
     border-bottom: .5px solid;
     border-bottom-color: #d8e1e8;
     text-decoration: none;
-    color: black;
+    color: inherit;
     cursor: alias;
     display: inline-block;
 }
@@ -182,7 +183,7 @@ a.page-reference:hover {
 }
 
 .failed-block-ref {
-    color: black;
+    color: inherit;
     background-color: #f56565;
     border-radius: 4px;
     cursor: not-allowed;
@@ -234,6 +235,7 @@ div.warning {
     margin-bottom: 12px;
     align-items: stretch;
     min-height: 32px;
+    color: inherit;
 }
 
 div.important::before,
@@ -335,17 +337,89 @@ li:not(.children) {
     cursor: pointer;
 }
 
-/* --- Night Mode support css --- */
-.nightMode .cloze {
-    color: lightblue;
+/* --- Night Mode colors css --- */
+body.nightMode {
+    background-color: #2c2c2c;
+    color: #fcfcfc;
 }
 
-.nightMode .text {
-    color: white;
+body.nightMode .text {
+    color: #bfbfbf;
 }
 
-.nightMode .quote,
-.embed-block,
-blockquote {
-    color: black;
+body.nightMode .bubble {
+    color: #bfbfbf;
+    background-color: #4d4d4d;
+}
+body.nightMode code:not(.hljs) {
+    background-color: #474848;
+}
+
+body.nightMode a.tag {
+    color: #8db6d1;
+}
+
+body.nightMode a.tag:hover {
+    color: #c8e0f4;
+}
+
+body.nightMode .block-ref {
+    border-bottom-color: #bfbfbf;
+}
+
+body.nightMode .block-ref:hover {
+    background-color: #4d4d4d;
+}
+
+body.nightMode blockquote,
+.quote {
+    border-left-color: #bfbfbf;
+    background-color: #4d4d4d;
+    color: #bfbfbf;
+}
+
+body.nightMode ul:not(.children-list) {
+    color: #bfbfbf;
+}
+
+body.nightMode ol:not(.children-list) {
+    color: #bfbfbf;
+}
+
+body.nightMode li:not(.children) {
+    color: #bfbfbf;
+}
+
+body.nightMode .extra {
+    background-color: #6f6860;
+}
+
+body.nightMode table,
+body.nightMode th,
+body.nightMode td {
+    border-color: #bfbfbf;
+}
+
+body.nightMode div.important::before,
+body.nightMode div.caution::before,
+body.nightMode div.pinned::before,
+body.nightMode div.tip::before,
+body.nightMode div.note::before,
+body.nightMode div.warning::before {
+    border-color: #bfbfbf;
+}
+
+body.nightMode .embed-page,
+body.nightMode .embed-block {
+    border: 2px solid #bfbfbf;
+    box-shadow: 0 0 0 2px #2c2c2c;
+    background: #424242;
+}
+
+body.nightMode a.embed-header {
+    color: #8db6d1;
+}
+
+body.nightMode a.embed-header:hover {
+    color: #c8e0f4;
 }
