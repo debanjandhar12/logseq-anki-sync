@@ -76,7 +76,7 @@ const addBlockNode = async (blockUUID) => {
     graph.dependenciesOf(blockUUID+"Block").forEach((dependency) => {
         toHash.push(graph.getNodeData(dependency));
     });
-    toHash.push(_.get(blockPage, 'updatedAt',''));
+    toHash.push({updatedAt: _.get(blockPage, 'updatedAt',''), parent:_.get(block, 'parent.id',''), left:_.get(block, 'left.id','')});
     graph.setNodeData(blockUUID+"Block", hashSum(toHash));
 }
 
