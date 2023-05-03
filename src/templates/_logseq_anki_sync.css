@@ -3,6 +3,7 @@
 */
 /* import highlightjs css */
 @import "/node_modules/highlight.js/styles/default.css";
+@import "/node_modules/highlight.js/styles/dark.css" screen and (prefers-color-scheme: dark);
 
 body {
     background-color: white;
@@ -347,10 +348,15 @@ body.nightMode .text {
     color: #bfbfbf;
 }
 
+body.nightMode .cloze {
+    color: lightblue;
+}
+
 body.nightMode .bubble {
     color: #bfbfbf;
     background-color: #4d4d4d;
 }
+
 body.nightMode code:not(.hljs) {
     background-color: #474848;
 }
