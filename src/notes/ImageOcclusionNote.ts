@@ -120,6 +120,7 @@ export class ImageOcclusionNote extends Note {
     // -- Helper functions --
     public static async getImagesInBlock(block: any): Promise<string[]> {
         let block_content = block.content;
+        block_content = await processProperties(block_content); // Process pdf properties
         block_content = await safeReplaceAsync(block_content, LOGSEQ_BLOCK_REF_REGEXP, async (match, blockUUID) => { // Add contents of direct block refs (1-level)
             try {
                 let block_ref = await logseq.Editor.getBlock(blockUUID); // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
@@ -139,6 +140,11 @@ export class ImageOcclusionNote extends Note {
             return match;
         });
         let block_images = (block_content.match(MD_IMAGE_EMBEDED_REGEXP) || []).map((block_image) => {
+            // We don't want to include pdfs
+            if(block_image.match(/\.pdf\)/)) return "";
+            // We don't want to include audio and video files
+            if(block_image.match(/\.mp4\)/) || block_image.match(/\.mp3\)/) || block_image.match(/\.wav\)/)) return "";
+
             return block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
         });
         block_images = _.uniq(block_images);
