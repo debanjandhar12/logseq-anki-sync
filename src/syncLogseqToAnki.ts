@@ -97,11 +97,11 @@ export class LogseqToAnkiSync {
         // Prompt the user
         // @ts-ignore
         window.parent.AnkiConnect = AnkiConnect;    // Make AnkiConnect available to the confirm dialog
-        let confirm_msg = `<b>The logseq to anki sync plugin will attempt to perform the following actions:</b><br/>
-                            Create ${toCreateNotes.length} new anki notes<br/>
-                            Update ${toUpdateNotes.length} existing anki notes<br/>
-                            Delete ${toDeleteNotes.length != 0 ? `<span class="text-red-600">${toDeleteNotes.length}</span>` : toDeleteNotes.length} anki notes ${toDeleteNotes.length != 0 ? `<a style="color:red;" onMouseOver="this.style.color='darkred'" onMouseOut="this.style.color='red'" onclick="AnkiConnect.guiBrowse('nid:${toDeleteNotes.join(",")}')">(view notes in anki)</a>` : ``}<br/><br/>
-                            Are you sure you want to continue?`;
+        let confirm_msg = `<div><b>The logseq to anki sync plugin will attempt to perform the following actions:</b></div>
+                            <div>Create ${toCreateNotes.length} new anki notes</div>
+                            <div>Update ${toUpdateNotes.length} existing anki notes</div>
+                            <div>Delete ${toDeleteNotes.length != 0 ? `<span class="text-red-600">${toDeleteNotes.length}</span>` : toDeleteNotes.length} anki notes ${toDeleteNotes.length != 0 ? `<a style="color:red;" onMouseOver="this.style.color='darkred'" onMouseOut="this.style.color='red'" onclick="AnkiConnect.guiBrowse('nid:${toDeleteNotes.join(",")}')">(view notes in anki)</a>` : ``}<div><br/>
+                            <div>Are you sure you want to continue?<div>`;
         let confirm_result = await Confirm(confirm_msg);
         // @ts-ignore
         window.parent.AnkiConnect = null; // Remove AnkiConnect from the global scope

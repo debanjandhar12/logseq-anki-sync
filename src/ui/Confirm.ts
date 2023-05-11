@@ -1,7 +1,8 @@
 export async function Confirm(msg: string): Promise<boolean> {
-    return new Promise(function (resolve, reject) {
-        const div = window.parent.document.createElement('div');
-        div.innerHTML = `
+   return new Promise(function (resolve, reject) {
+      const root = window.parent.document.getElementById('root')
+      const div = window.parent.document.createElement('div')
+      div.innerHTML = `
             <div class="ui__modal anki_sync_confirm" style="z-index: 9999;">
             <div class="ui__modal-overlay ease-out duration-300 opacity-100 enter-done">
                <div class="absolute inset-0 opacity-75"></div>
@@ -29,29 +30,30 @@ export async function Confirm(msg: string): Promise<boolean> {
                </div>
             </div>
          </div>`;
-        const onKeydown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                // @ts-ignore
-                window.parent.sync_cancel_action();
-            }
-            else if (e.key === 'Enter') {
-                // @ts-ignore
-                window.parent.sync_yes_action();
-            }
-        }
-        window.parent.document.addEventListener('keydown', onKeydown);
-        // @ts-ignore
-        window.parent.sync_yes_action = () => {
-            resolve(true);
-            window.parent.document.body.removeChild(div);
-            window.parent.document.removeEventListener('keydown', onKeydown);
-        }
-        // @ts-ignore
-        window.parent.sync_cancel_action = () => {
-            resolve(false);
-            window.parent.document.body.removeChild(div);
-            window.parent.document.removeEventListener('keydown', onKeydown);
-        }
-        window.parent.document.body.appendChild(div);
-    });
+      root?.appendChild(div)
+      const onKeydown = (e: KeyboardEvent) => {
+         if (e.key === 'Escape') {
+            // @ts-ignore
+            window.parent.sync_cancel_action();
+         }
+         else if (e.key === 'Enter') {
+            // @ts-ignore
+            window.parent.sync_yes_action();
+         }
+      }
+      window.parent.document.addEventListener('keydown', onKeydown);
+      // @ts-ignore
+      window.parent.sync_yes_action = () => {
+         resolve(true);
+         root.removeChild(div);
+         window.parent.document.removeEventListener('keydown', onKeydown);
+      }
+      // @ts-ignore
+      window.parent.sync_cancel_action = () => {
+         resolve(false);
+         root.removeChild(div);
+         window.parent.document.removeEventListener('keydown', onKeydown);
+      }
+
+   });
 }
