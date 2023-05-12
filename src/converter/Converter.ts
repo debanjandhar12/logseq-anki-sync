@@ -379,21 +379,23 @@ async function processInlineHiccup(node, start_pos, end_pos, resultContent, resu
 
 async function processLink(node, start_pos, end_pos, resultContent, resultAssets, resultUTF8, hashmap, format) {
     let content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
+    console.log('link node', node)
     let link_type = _.get(node[0][1], "url[0]");
     let link_url = _.get(node[0][1], "url[1]");
     let metadata;
     try { metadata = await edn.decode(node[0][1].metadata); } catch (e) { console.warn(e); }
     let link_full_text = _.get(node[0][1], "full_text");
-    let blockRefLabel = _.get(node[0][1], "label[0][1]");
+    let link_label_type = _.get(node[0][1], "label[0][0]");
+    let link_label_text = _.get(node[0][1], "label[0][1]");
     if (link_type == "Search" && link_url.match(isImage_REGEXP) && !content.match(isWebURL_REGEXP)) {
         let str = getRandomUnicodeString();
-        hashmap[str] = `<img src="${path.basename(link_url)}" ${blockRefLabel? `title="${blockRefLabel}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+        hashmap[str] = `<img src="${path.basename(link_url)}" ${link_label_text? `title="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
         resultAssets.add(link_url);
         return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
     }
     else if (link_type == "Complex" && link_url.link.match(isImage_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
         let str = getRandomUnicodeString();
-        hashmap[str] = `<img src="${link_url.protocol}://${link_url.link}" ${blockRefLabel? `title="${blockRefLabel}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+        hashmap[str] = `<img src="${link_url.protocol}://${link_url.link}" ${link_label_text? `title="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
         return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
     }
     else if (format == "org" && link_type == "Page_ref" && link_url.match(isImage_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
@@ -402,5 +404,11 @@ async function processLink(node, start_pos, end_pos, resultContent, resultAssets
         resultAssets.add(link_url);
         return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
     }
+    else if (link_type == "Complex" && link_url.protocol && link_label_type == "Plain") { // Fix #74
+        let str = getRandomUnicodeString();
+        hashmap[str] = `<a href="${link_url.protocol}://${link_url.link}">${link_label_text}</a>`;
+        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+    }
+
     return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(content), ...resultUTF8.subarray(end_pos)]);;
 }
