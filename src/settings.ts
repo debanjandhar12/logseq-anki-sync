@@ -98,6 +98,7 @@ export const addSettingsToLogseq = () => {
     ];
     LogseqProxy.Settings.useSettingsSchema(settingsTemplate);
     LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
+        if(oldSettings.addons === undefined) oldSettings.addons = [];
         if (!_.isEqual(newSettings.addons, oldSettings.addons)) {
             for (let addon of oldSettings.addons) {
                 AddonRegistry.get(addon).remove();
