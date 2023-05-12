@@ -324,9 +324,23 @@ export class LogseqToAnkiSync {
             }
         }
 
+        // Parse tags
         tags = [...Array.from(tags), ..._.get(note, 'properties.tags', []), ..._.get(note, 'page.properties.tags', [])];
+        try {
+            let parentID = note.uuid;
+            let parent;
+            while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
+                if(_.get(parent, 'properties.tags') != null) {
+                    tags = [...tags, ..._.get(parent, 'properties.tags', [])];
+                }
+                parentID = parent.parent.id;
+            }
+        } catch (e) {
+            console.error(e);
+        }
         tags = tags.map(tag => tag.replace(/\//g, "::"));
         tags = tags.map(tag => tag.replace(/\s/g, "_")); // Anki doesn't like spaces in tags
+
         let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
         if (Array.isArray(extra)) extra = extra.join(" ");
         extra = await convertToHTMLFile(extra, (await LogseqProxy.Editor.getBlock(note.uuid)).format);
