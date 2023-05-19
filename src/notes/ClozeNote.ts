@@ -91,7 +91,7 @@ export class ClozeNote extends Note {
             }
             else replaceclozeArr = [];
 
-            let replaceclozehintProp = this.properties.replaceclozehint ? this.properties.replaceclozehint : this.properties["replaceclozehint"];
+            let replaceclozehintProp = this.properties.replaceclozehint ? this.properties.replaceclozehint : this.properties[".replaceclozehint"];
             let replaceclozeHintArr: any;
             if(typeof replaceclozehintProp == "string" && replaceclozehintProp.trim() != "") {
                 replaceclozeHintArr = replaceclozehintProp.replace(/(^\s*"|\s*"$)/g, '').split(',');
