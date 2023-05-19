@@ -80,22 +80,24 @@ export class ClozeNote extends Note {
         });
   
         // --- Add anki-cloze array clozes ---
-        if(this.properties.replacecloze) {
+        let replaceclozeProp = this.properties.replacecloze ? this.properties.replacecloze : this.properties[".replacecloze"];
+        if(replaceclozeProp) {
             let replaceclozeArr: any;
-            if(typeof this.properties.replacecloze == "string" && this.properties.replacecloze.trim() != "") {
-                replaceclozeArr = string_to_arr(this.properties.replacecloze.replace(/(^\s*"|\s*"$)/g, ''));
+            if(typeof replaceclozeProp == "string" && replaceclozeProp.trim() != "") {
+                replaceclozeArr = string_to_arr(replaceclozeProp.replace(/(^\s*"|\s*"$)/g, ''));
             }
-            else if (typeof this.properties.replacecloze == "object" && this.properties.replacecloze.constructor == Array) { 
-                replaceclozeArr = string_to_arr(this.properties.replacecloze.join(','));
+            else if (typeof replaceclozeProp == "object" && replaceclozeProp.constructor == Array) { 
+                replaceclozeArr = string_to_arr(replaceclozeProp.join(','));
             }
             else replaceclozeArr = [];
 
+            let replaceclozehintProp = this.properties.replaceclozehint ? this.properties.replaceclozehint : this.properties["replaceclozehint"];
             let replaceclozeHintArr: any;
-            if(typeof this.properties.replaceclozehint == "string" && this.properties.replaceclozehint.trim() != "") {
-                replaceclozeHintArr = this.properties.replaceclozehint.replace(/(^\s*"|\s*"$)/g, '').split(',');
+            if(typeof replaceclozehintProp == "string" && replaceclozehintProp.trim() != "") {
+                replaceclozeHintArr = replaceclozehintProp.replace(/(^\s*"|\s*"$)/g, '').split(',');
             }
-            else if (typeof this.properties.replaceclozehint == "object" && this.properties.replaceclozehint.constructor == Array) { 
-                replaceclozeHintArr = this.properties.replaceclozehint;
+            else if (typeof replaceclozehintProp == "object" && replaceclozehintProp.constructor == Array) { 
+                replaceclozeHintArr = replaceclozehintProp;
             }
             else replaceclozeHintArr = [];
             replaceclozeHintArr = replaceclozeHintArr.map(hint => hint.trim());
