@@ -81,6 +81,7 @@ export class LazyAnkiNoteManager {
         // Remove all old unneeded tags and add new ones
         let to_remove_tags = _.difference(noteinfo.tags, tags);
         to_remove_tags = to_remove_tags.filter(tag => tag != "leech"); // Don't remove leech tag. It has a special meaning in Anki.
+        to_remove_tags = to_remove_tags.filter(tag => tag != "marked"); // Same for 'marked' tag
         let to_add_tags = _.difference(tags, noteinfo.tags);
         for (let tag of to_remove_tags) {
             this.updateNoteActionsQueue.push({ "action": "removeTags", "params": { "notes": [ankiId], "tags": tag } });

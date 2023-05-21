@@ -50,6 +50,7 @@ export default class NoteHashCalculator {
         // Add additional things from ankiFields to toHash
         let [html, assets, deck, breadcrumb, tags, extra] = ankiFields;
         tags = tags.filter((tag: string) => tag != "leech"); // Remove leech from tags arr
+        tags = tags.filter((tag: string) => tag != "marked"); // Also remove marked
         assets.sort();
         tags.sort();
         toHash.push({html: html.trim(), assets, deck, breadcrumb: breadcrumb.trim(), tags, extra: extra.trim()});
