@@ -208,3 +208,18 @@ export async function sortAsync<T>(arr: T[], score: (a: T) => Promise<number>): 
     });
 }
 
+export function getCaseInsensitive(obj, path, defaultValue) {
+    if (!obj) {
+        return defaultValue;
+    }
+    const pathParts = Array.isArray(path) ? path : path.split('.');
+    let target = obj;
+    for (const part of pathParts) {
+        const key = Object.keys(target).find(k => k.toLowerCase() === part.toLowerCase());
+        if (!key) {
+            return defaultValue;
+        }
+        target = target[key];
+    }
+    return target;
+}

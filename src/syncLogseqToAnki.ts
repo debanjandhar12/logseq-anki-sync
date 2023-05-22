@@ -6,7 +6,7 @@ import { Note } from './notes/Note';
 import { ClozeNote } from './notes/ClozeNote';
 import { MultilineCardNote } from './notes/MultilineCardNote';
 import _ from 'lodash';
-import {escapeClozeAndSecoundBrace, get_better_error_msg, sortAsync} from './utils/utils';
+import {escapeClozeAndSecoundBrace, get_better_error_msg, getCaseInsensitive, sortAsync} from './utils/utils';
 import path from 'path';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile } from './converter/Converter';
@@ -18,6 +18,7 @@ import {Confirm} from "./ui/Confirm";
 import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
 import NoteHashCalculator from "./notes/NoteHashCalculator";
 import {cancelable, CancelablePromise} from 'cancelable-promise';
+import {DepGraph} from "dependency-graph";
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
     graphName: string;
@@ -325,14 +326,12 @@ export class LogseqToAnkiSync {
         }
 
         // Parse tags
-        tags = [...Array.from(tags), ..._.get(note, 'properties.tags', []), ..._.get(note, 'page.properties.tags', [])];
+        tags = [...Array.from(tags), ...getCaseInsensitive(note, 'properties.tags', []), ...getCaseInsensitive(note, 'page.properties.tags', [])];
         try {
             let parentID = note.uuid;
             let parent;
             while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
-                if(_.get(parent, 'properties.tags') != null) {
-                    tags = [...tags, ..._.get(parent, 'properties.tags', [])];
-                }
+                tags = [...tags, ...getCaseInsensitive(parent, 'properties.tags', [])];
                 parentID = parent.parent.id;
             }
         } catch (e) {
