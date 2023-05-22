@@ -340,6 +340,12 @@ export class LogseqToAnkiSync {
         }
         tags = tags.map(tag => tag.replace(/\//g, "::"));
         tags = tags.map(tag => tag.replace(/\s/g, "_")); // Anki doesn't like spaces in tags
+        tags = _.uniq(tags);
+        tags = tags.filter(tag => {
+            let otherTags = tags.filter(otherTag => otherTag != tag);
+            let otherTagsStartingWithThisName = otherTags.filter(otherTag => otherTag.startsWith(tag+"::"));
+            return otherTagsStartingWithThisName.length == 0;
+        });
 
         let extra = _.get(note, 'properties.extra') || _.get(note, 'page.properties.extra') || "";
         if (Array.isArray(extra)) extra = extra.join(" ");
