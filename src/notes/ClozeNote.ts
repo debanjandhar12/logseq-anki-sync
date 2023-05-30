@@ -143,12 +143,15 @@ export class ClozeNote extends Note {
         [(re-pattern "{{(c[0-9]|cloze) .*}}") ?regex]
         [(re-find ?regex ?content)]
         ]`);
-        // Get blocks with replacecloze property
+        // Get blocks with .replacecloze or replacecloze property
         let replaceCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
           [?b :block/properties ?p]
-          [(get ?p :replacecloze)]
+          (or
+            [(get ?p :replacecloze)]
+            [(get ?p :.replacecloze)]
+          )
         ]`);
         // Get blocks with org cloze
         let orgCloze_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
