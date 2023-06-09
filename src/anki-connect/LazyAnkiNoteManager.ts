@@ -184,7 +184,7 @@ export class LazyAnkiNoteManager {
                 try {
                     let uniqueStoreAssetActionsQueue = _.uniqBy(this.storeAssetActionsQueue, 'params.filename');
                     let finalStoreAssetActionsQueue = [];
-                    const maxBatchSize = 100; 
+                    const maxBatchSize = 10;
                     while (uniqueStoreAssetActionsQueue.length > 0) {
                         let batchStoreAssetActionsQueue = [];
                         while (batchStoreAssetActionsQueue.length < maxBatchSize && uniqueStoreAssetActionsQueue.length > 0) {
