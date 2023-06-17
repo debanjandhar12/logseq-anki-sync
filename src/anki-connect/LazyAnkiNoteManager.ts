@@ -194,7 +194,7 @@ export class LazyAnkiNoteManager {
                             return { "action": "retrieveMediaFile", "params": { "filename": action.params.filename } }
                         });
                         let getBase64Image = async (url) => {
-                            const response = await fetch(url);
+                            const response = await window.parent.fetch(url);
                             const blob = await response.blob();
                             const reader = new FileReader();
                             await new Promise((resolve, reject) => {
@@ -209,7 +209,7 @@ export class LazyAnkiNoteManager {
                             if (action.params.path != null) {
                                 let fimg = "";
                                 try { fimg = await getBase64Image(action.params.path) } catch { }
-                                if (fimg != "" && fimg != null) {
+                                if (fimg != "" && fimg != "data:" &&fimg != null) {
                                     if (ankiAssetContent[idx] != null && ankiAssetContent[idx] != false && ankiAssetContent[idx] == fimg) return null;
                                     delete action.params.path;
                                     action.params.data = fimg;

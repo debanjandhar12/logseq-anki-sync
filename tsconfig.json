@@ -1,26 +1,20 @@
 {
     "compilerOptions": {
-        "lib": [
-            "ES2021",
-            "dom"
-        ],
+        "target": "ES2020",
+        "lib": ["DOM", "DOM.Iterable", "ESNext"],
+        "types": ["vite/client"],
+        "allowJs": false,
+        "skipLibCheck": true,
         "esModuleInterop": false,
         "allowSyntheticDefaultImports": true,
-        "resolveJsonModule": true,
-        "sourceMap": false,
-        "removeComments": true,
-        "moduleResolution": "node",
         "strict": false,
-        "module": "esnext",
-        "target": "ES6",
+        "forceConsistentCasingInFileNames": true,
+        "module": "ES2020",
+        "moduleResolution": "Node",
+        "resolveJsonModule": true,
         "isolatedModules": true,
+        "noEmit": true,
         "jsx": "react"
     },
-    "exclude": [
-        "dist"
-    ],
-    "include": [
-        "src",
-        "type.ts"
-    ]
+    "include": ["./src"]
 }

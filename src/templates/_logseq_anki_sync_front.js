@@ -3,7 +3,8 @@
 */
 import {fabric} from 'fabric';
 import {createOcclusionRectEl} from "../ui/OcclusionEditor";
-import path from "path";
+import path from "path-browserify";
+
 window.addEventListener("load", () => {
     if (type == "image_occlusion") {
         // Get current cloze id (only works for image occlusion)

@@ -11,9 +11,11 @@ import { AddonRegistry } from './addons/AddonRegistry';
 import { SwiftArrowNote } from './notes/SwiftArrowNote';
 import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
 import * as blockAndPageHashCache from './logseq/blockAndPageHashCache';
+import { Buffer } from "buffer/";
+import process from "process";
 
-// --- Register UI Elements Onload ---
 async function main(baseInfo: LSPluginBaseInfo) {
+  // Register UI and Commands
   let syncLogseqToAnki = async function() { new LogseqToAnkiSync().sync();  };
   logseq.provideModel({
     syncLogseqToAnki: syncLogseqToAnki,
@@ -42,8 +44,9 @@ async function main(baseInfo: LSPluginBaseInfo) {
       </a>
     `
   });
-
   addSettingsToLogseq();
+
+  // Init various modules
   LogseqProxy.init();
   blockAndPageHashCache.init();
   ClozeNote.initLogseqOperations();
@@ -52,6 +55,11 @@ async function main(baseInfo: LSPluginBaseInfo) {
   ImageOcclusionNote.initLogseqOperations();
   AddonRegistry.getAll().forEach(addon => addon.init());
   console.log("Window Parent:", window.parent);
+
+  // The line below is needed for vite build and dev to work properly.
+  // @ts-ignore
+  window.Buffer = Buffer;
+  window.process = process;
 }
 
 // Bootstrap

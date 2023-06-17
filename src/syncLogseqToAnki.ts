@@ -7,7 +7,7 @@ import { ClozeNote } from './notes/ClozeNote';
 import { MultilineCardNote } from './notes/MultilineCardNote';
 import _ from 'lodash';
 import {escapeClozeAndSecoundBrace, get_better_error_msg, getCaseInsensitive, sortAsync} from './utils/utils';
-import path from 'path';
+import path from 'path-browserify';
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from './constants';
 import { convertToHTMLFile } from './converter/Converter';
 import { LogseqProxy } from './logseq/LogseqProxy';

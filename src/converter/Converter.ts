@@ -22,7 +22,7 @@ import {
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
 import { edn } from "@yellowdig/cljs-tools";
-import path from "path";
+import path from "path-browserify";
 import objectHash from "object-hash";
 
 let mldocsOptions = {

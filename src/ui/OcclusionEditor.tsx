@@ -1,18 +1,10 @@
-import path from "path";
-import fs from "fs";
 import {ANKI_ICON, isWebURL_REGEXP} from "../constants";
 import React, {useState} from "react";
-import * as ReactDOM from 'react-dom/client';
+import ReactDOM from 'react-dom';
 import _ from "lodash";
+import fabric from '../../node_modules/fabric/dist/fabric.js?string';
+import path from "path-browserify";
 
-declare global {
-    interface Window {
-        fabric: any;
-        ReactDOM: any;
-    }
-}
-
-const fabric = fs.readFileSync(__dirname + '/../../node_modules/fabric/dist/fabric.min.js', 'utf8');
 if(!window.parent.fabric) {
     let fabricScript = window.parent.document.createElement('script');
     fabricScript.innerHTML = fabric;
@@ -43,12 +35,11 @@ export async function OcclusionEditor(imgURL: string, occlusionArr: Array<any>):
                </div>
             </div>
          </div>`;
-        const fabricRef = React.createRef();
+        const fabricRef = React.createRef<any>();
         let clozeEditorContainer = div.getElementsByClassName('cloze-editor')[0];
-        const root = ReactDOM.createRoot(clozeEditorContainer);
         try {
             window.parent.document.body.appendChild(div);
-            root.render(<OcclusionEditorComponent imgURL={imgURL} occlusionArr={occlusionArr} ref={fabricRef} />);
+            ReactDOM.render(<OcclusionEditorComponent imgURL={imgURL} occlusionArr={occlusionArr} ref={fabricRef} />, clozeEditorContainer);
         } catch (e) {
             // @ts-ignore
             window.parent.occlusion_cancel_action();
@@ -85,24 +76,25 @@ export async function OcclusionEditor(imgURL: string, occlusionArr: Array<any>):
                     cId: parseInt(obj._objects[1].text)
                 });
             });
-            resolve(occlusionArr);
+            ReactDOM.unmountComponentAtNode(div);
             window.parent.document.body.removeChild(div);
             window.parent.document.removeEventListener('keydown', onKeydown);
+            resolve(occlusionArr);
         }
         // @ts-ignore
         window.parent.occlusion_cancel_action = () => {
-            resolve(false);
-            root.unmount();
+            ReactDOM.unmountComponentAtNode(div);
             window.parent.document.body.removeChild(div);
             window.parent.document.removeEventListener('keydown', onKeydown);
+            resolve(false);
         }
     });
 }
 
-const OcclusionEditorComponent = React.forwardRef(({imgURL, occlusionArr}, fabricRef) => {
+const OcclusionEditorComponent = React.forwardRef<any, any>(({imgURL, occlusionArr}, fabricRef : any) => {
     const canvasRef = React.useRef(null);
     const cidSelectorRef = React.useRef(null);
-    const [imgEl, setImgEl] = React.useState(new Image());
+    const [imgEl, setImgEl] = React.useState(new window.parent.Image());
 
     React.useEffect(() => {
         const initFabric = async () => {
