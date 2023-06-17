@@ -17,7 +17,7 @@ import {
     MD_MATH_BLOCK_REGEXP,
     MD_PROPERTIES_REGEXP,
     ORG_MATH_BLOCK_REGEXP,
-    ORG_PROPERTIES_REGEXP, specialChars, LOGSEQ_RENAMED_PAGE_REF_REGEXP,
+    ORG_PROPERTIES_REGEXP, specialChars, LOGSEQ_RENAMED_PAGE_REF_REGEXP, isAudio_REGEXP,
 } from "../constants";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
@@ -287,12 +287,10 @@ async function processRefEmbeds(resultContent, resultAssets, resultTags, hashmap
     });
 
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_PAGE_REF_REGEXP, async (match, pageName) => { // Convert page refs
-        const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
-        const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
-        if(format == "org" && encodeURI(pageName).match(isImage)) {
+        if(format == "org" && encodeURI(pageName).match(isImage_REGEXP)) {
             return `![](${pageName})`;
         }
-        else if(format == "org" && encodeURI(pageName).match(isWebURL)) {
+        else if(format == "org" && encodeURI(pageName).match(isWebURL_REGEXP)) {
             return `${pageName}`;
         }
         let str = getRandomUnicodeString();
@@ -342,12 +340,10 @@ async function hideRefEmbeds(resultContent, resultAssets, hashmap, format): Prom
         return str;
     });
     resultContent = await safeReplaceAsync(resultContent, LOGSEQ_PAGE_REF_REGEXP, async (match, pageName) => { // Convert page refs
-        const isImage = /^.*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)$/i;
-        const isWebURL = /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
-        if(format == "org" && encodeURI(pageName).match(isImage)) {
+        if(format == "org" && encodeURI(pageName).match(isImage_REGEXP)) {
             return `![](${pageName})`;
         }
-        else if(format == "org" && encodeURI(pageName).match(isWebURL)) {
+        else if(format == "org" && encodeURI(pageName).match(isWebURL_REGEXP)) {
             return `${pageName}`;
         }
         let str = getRandomUnicodeString();
@@ -387,24 +383,46 @@ async function processLink(node, start_pos, end_pos, resultContent, resultAssets
     let link_full_text = _.get(node[0][1], "full_text");
     let link_label_type = _.get(node[0][1], "label[0][0]");
     let link_label_text = _.get(node[0][1], "label[0][1]");
-    if (link_type == "Search" && link_url.match(isImage_REGEXP) && !content.match(isWebURL_REGEXP)) {
-        let str = getRandomUnicodeString();
-        hashmap[str] = `<img src="${path.basename(link_url)}" ${link_label_text? `title="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
-        resultAssets.add(link_url);
-        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+    if (link_full_text.startsWith('!')) {
+        // Image Display
+        if (link_type == "Search" && link_url.match(isImage_REGEXP) && !content.match(isWebURL_REGEXP)) {
+            let str = getRandomUnicodeString();
+            hashmap[str] = `<img src="${path.basename(link_url)}" ${link_label_text? `title="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+            resultAssets.add(link_url);
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+        if (link_type == "Complex" && link_url.link.match(isImage_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
+            let str = getRandomUnicodeString();
+            hashmap[str] = `<img src="${link_url.protocol}://${link_url.link}" ${link_label_text? `title="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+        if (format == "org" && link_type == "Page_ref" && link_url.match(isImage_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
+            let str = getRandomUnicodeString();
+            hashmap[str] = `<img src="${path.basename(link_url)}" />`;
+            resultAssets.add(link_url);
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+
+        // Audio Display
+        if (link_type == "Search" && link_url.match(isAudio_REGEXP) && !content.match(isWebURL_REGEXP)) {
+            let str = getRandomUnicodeString();
+            hashmap[str] = `[sound:${path.basename(link_url)}]`;
+            resultAssets.add(link_url);
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+        if (link_type == "Complex" && link_url.link.match(isAudio_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
+            let str = getRandomUnicodeString();
+            hashmap[str] = `[sound:${link_url.protocol}://${link_url.link}]`;
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+        if (format == "org" && link_type == "Page_ref" && link_url.match(isAudio_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
+            let str = getRandomUnicodeString();
+            hashmap[str] = `[sound:${path.basename(link_url)}]`;
+            resultAssets.add(link_url);
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
     }
-    else if (link_type == "Complex" && link_url.link.match(isImage_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
-        let str = getRandomUnicodeString();
-        hashmap[str] = `<img src="${link_url.protocol}://${link_url.link}" ${link_label_text? `title="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
-        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
-    }
-    else if (format == "org" && link_type == "Page_ref" && link_url.match(isImage_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
-        let str = getRandomUnicodeString();
-        hashmap[str] = `<img src="${path.basename(link_url)}" />`;
-        resultAssets.add(link_url);
-        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
-    }
-    else if (link_type == "Complex" && link_url.protocol && link_label_type == "Plain") { // Fix #74
+    if (link_type == "Complex" && link_url.protocol && link_label_type == "Plain") { // Fix #74
         let str = getRandomUnicodeString();
         hashmap[str] = `<a href="${link_url.protocol}://${link_url.link}">${link_label_text}</a>`;
         return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
