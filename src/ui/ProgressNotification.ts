@@ -24,6 +24,7 @@ export class ProgressNotification {
         }
         #logseq-anki-sync-progress-bar-${logseq.baseInfo.id}::-webkit-progress-value {
           border-radius: 7px; 
+          background-color: var(--ls-link-text-color,#045591);
         }
         `);
     }
