@@ -92,7 +92,7 @@ export class LogseqToAnkiSync {
             return (await LogseqProxy.Editor.getBlock(a.uuid)).id; // Sort by db/id 
         });
         //scanProgress.increment();
-        console.log("Notes:", notes.length);
+        console.log("Notes:", notes);
 
         // -- Declare some variables to keep track of different operations performed --
         let failedCreated: Set<string> = new Set(), failedUpdated: Set<string> = new Set(), failedDeleted: Set<string> = new Set();
