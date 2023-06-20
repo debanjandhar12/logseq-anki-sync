@@ -1,4 +1,4 @@
-import { Note } from "./Note";
+import {Note} from "./Note";
 import '@logseq/libs'
 import {
     escapeClozeAndSecoundBrace,
@@ -9,12 +9,13 @@ import {
 } from '../utils/utils';
 import _ from 'lodash';
 import {
+    isImage_REGEXP,
     LOGSEQ_BLOCK_REF_REGEXP,
     MD_IMAGE_EMBEDED_REGEXP,
     MD_PROPERTIES_REGEXP,
     ORG_PROPERTIES_REGEXP
 } from "../constants";
-import { LogseqProxy } from "../logseq/LogseqProxy";
+import {LogseqProxy} from "../logseq/LogseqProxy";
 import {convertToHTMLFile, HTMLFile, processProperties} from "../converter/Converter";
 import {SelectPrompt} from "../ui/SelectPrompt";
 import {OcclusionEditor} from "../ui/OcclusionEditor";
@@ -33,16 +34,28 @@ export class ImageOcclusionNote extends Note {
             let uuid = getUUIDFromBlock(block as BlockEntity);
             block = await logseq.Editor.getBlock(uuid); // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
             let block_images = await ImageOcclusionNote.getImagesInBlock(block);
-            if (block_images.length == 0) {await logseq.UI.showMsg("No images found in this block.", "warning"); return;}
+            if (block_images.length == 0) {
+                await logseq.UI.showMsg("No images found in this block.", "warning");
+                return;
+            }
             let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(block.properties?.occlusion || Buffer.from("{}", 'utf8').toString('base64'), 'base64').toString());
             console.log("imgToOcclusionArrHashMap", imgToOcclusionArrHashMap);
             let selectedImage = await SelectPrompt("Select Image to add / update occlusion", block_images);
             if (selectedImage) {
-                let newOcclusionArr = await OcclusionEditor(selectedImage, imgToOcclusionArrHashMap[selectedImage] || []);
+                let newOcclusionArr = await OcclusionEditor(selectedImage, imgToOcclusionArrHashMap[Object.keys(imgToOcclusionArrHashMap).find((key) => {
+                    if (imgToOcclusionArrHashMap[key]) {
+                        return true;
+                    }
+                    const selectedImageURLParams = new URLSearchParams(new URL(selectedImage as string).search);
+                    if (selectedImageURLParams.get('imageAnnotationBlockUUID') && key.includes(selectedImageURLParams.get('imageAnnotationBlockUUID'))) {
+                        return true;
+                    }
+                    return false;
+                })] || []);
                 console.log("newOcclusionArr", newOcclusionArr);
                 if (newOcclusionArr) {
                     imgToOcclusionArrHashMap[selectedImage] = newOcclusionArr;
-                    if(Buffer.from(JSON.stringify(imgToOcclusionArrHashMap), 'utf8').toString('base64') == block.properties?.occlusion) console.log("No change");
+                    if (Buffer.from(JSON.stringify(imgToOcclusionArrHashMap), 'utf8').toString('base64') == block.properties?.occlusion) console.log("No change");
                     await LogseqProxy.Editor.upsertBlockProperty(uuid, 'occlusion', Buffer.from(JSON.stringify(imgToOcclusionArrHashMap), 'utf8').toString('base64'));
                 }
             }
@@ -50,15 +63,15 @@ export class ImageOcclusionNote extends Note {
     });
 
     public async getClozedContentHTML(): Promise<HTMLFile> {
-        let clozedContent : string = this.content;
+        let clozedContent: string = this.content;
         let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(this.properties?.occlusion, 'base64').toString());
 
         let clozes = new Set();
-        for(let image in imgToOcclusionArrHashMap) {
+        for (let image in imgToOcclusionArrHashMap) {
             let occlusionArr = imgToOcclusionArrHashMap[image];
             let block = await LogseqProxy.Editor.getBlock(this.uuid);
             let block_images = await ImageOcclusionNote.getImagesInBlock(block);
-            if(block_images.includes(image)) {
+            if (block_images.includes(image)) {
                 for (let occlusion of occlusionArr) {
                     clozes.add(occlusion.cId);
                 }
@@ -84,10 +97,10 @@ export class ImageOcclusionNote extends Note {
             let uuid = getUUIDFromBlock(block[0]);
             let page = (block[0].page) ? await LogseqProxy.Editor.getPage(block[0].page.id) : {};
             block = block[0];
-            if(!block.content) {
+            if (!block.content) {
                 block = await LogseqProxy.Editor.getBlock(uuid);
             }
-            if(block)
+            if (block)
                 return new ImageOcclusionNote(uuid, block.content, block.format, block.properties || {}, page);
             else {
                 return null;
@@ -102,14 +115,15 @@ export class ImageOcclusionNote extends Note {
         blocks = await Promise.all(_.map(blocks, async (block) => { // Remove blocks that do not have images with occlusion
             try {
                 let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(block.properties?.occlusion, 'base64').toString());
-                for(let image in imgToOcclusionArrHashMap) {
+                for (let image in imgToOcclusionArrHashMap) {
                     let occlusionArr = imgToOcclusionArrHashMap[image];
                     let blockImages = await ImageOcclusionNote.getImagesInBlock(block);
-                    if(occlusionArr && occlusionArr.length > 0 && blockImages.includes(image))
+                    if (occlusionArr && occlusionArr.length > 0 && blockImages.includes(image))
                         return block;    // Found a valid occlusion! Return true.
                 }
-            }
-            catch (e) { return false; } // Most likely, the occlusion property is not a valid JSON string. Return false.
+            } catch (e) {
+                return false;
+            } // Most likely, the occlusion property is not a valid JSON string. Return false.
             return false; // No valid occlusion found. Return false.
         }));
         blocks = _.without(blocks, false);
@@ -135,17 +149,16 @@ export class ImageOcclusionNote extends Note {
                 block_ref_content_first_line = block_ref_props_str + "\n" + block_ref_content_first_line;
                 block_ref_content_first_line = await processProperties(block_ref_content_first_line); // Process pdf properties
                 return block_ref_content_first_line;
+            } catch (e) {
+                console.warn(e);
             }
-            catch (e) { console.warn(e); }
             return match;
         });
         let block_images = (block_content.match(MD_IMAGE_EMBEDED_REGEXP) || []).map((block_image) => {
-            // We don't want to include pdfs
-            if(block_image.match(/\.pdf\)/)) return "";
-            // We don't want to include audio and video files
-            if(block_image.match(/\.mp4\)/) || block_image.match(/\.mp3\)/) || block_image.match(/\.wav\)/)) return "";
-
-            return block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
+            block_image = block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
+            block_image = block_image.split('?')[0];
+            if (!block_image.match(isImage_REGEXP)) return ""; // Ignore non-images
+            return block_image;
         });
         block_images = _.uniq(block_images);
         block_images = _.filter(block_images, (image) => image.trim() != "");

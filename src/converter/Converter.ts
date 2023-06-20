@@ -204,7 +204,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
             let block_uuid = block_props["id"] || block_props["nid"];
             let block = await LogseqProxy.Editor.getBlock(block_uuid);
             let page = await LogseqProxy.Editor.getPage(_.get(block, "page.id"));
-            let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${block_props["hl-page"]}_${block_uuid}_${block_props["hl-stamp"]}.png`;
+            let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${block_props["hl-page"]}_${block_uuid}_${block_props["hl-stamp"]}.png?imageAnnotationBlockUUID=${block_uuid}`;
             resultContent = `\ud83d\udccc**P${block_props["hl-page"]}** <div></div> ![](${hls_img_loc})\n` + resultContent;
         } catch (e) { console.log(e); }
     }
