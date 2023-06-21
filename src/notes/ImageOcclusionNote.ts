@@ -39,19 +39,11 @@ export class ImageOcclusionNote extends Note {
                 return;
             }
             let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(block.properties?.occlusion || Buffer.from("{}", 'utf8').toString('base64'), 'base64').toString());
-            console.log("imgToOcclusionArrHashMap", imgToOcclusionArrHashMap);
+            imgToOcclusionArrHashMap = ImageOcclusionNote.migrateOutdatedImages(imgToOcclusionArrHashMap, block_images);
             let selectedImage = await SelectPrompt("Select Image to add / update occlusion", block_images);
             if (selectedImage) {
-                let newOcclusionArr = await OcclusionEditor(selectedImage, imgToOcclusionArrHashMap[Object.keys(imgToOcclusionArrHashMap).find((key) => {
-                    if (imgToOcclusionArrHashMap[key]) {
-                        return true;
-                    }
-                    const selectedImageURLParams = new URLSearchParams(new URL(selectedImage as string).search);
-                    if (selectedImageURLParams.get('imageAnnotationBlockUUID') && key.includes(selectedImageURLParams.get('imageAnnotationBlockUUID'))) {
-                        return true;
-                    }
-                    return false;
-                })] || []);
+                selectedImage = (selectedImage as string).split('?')[0];
+                let newOcclusionArr = await OcclusionEditor(selectedImage, imgToOcclusionArrHashMap[selectedImage] || []);
                 console.log("newOcclusionArr", newOcclusionArr);
                 if (newOcclusionArr) {
                     imgToOcclusionArrHashMap[selectedImage] = newOcclusionArr;
@@ -115,9 +107,10 @@ export class ImageOcclusionNote extends Note {
         blocks = await Promise.all(_.map(blocks, async (block) => { // Remove blocks that do not have images with occlusion
             try {
                 let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(block.properties?.occlusion, 'base64').toString());
+                let blockImages = await ImageOcclusionNote.getImagesInBlock(block);
+                imgToOcclusionArrHashMap = ImageOcclusionNote.migrateOutdatedImages(imgToOcclusionArrHashMap, blockImages);
                 for (let image in imgToOcclusionArrHashMap) {
                     let occlusionArr = imgToOcclusionArrHashMap[image];
-                    let blockImages = await ImageOcclusionNote.getImagesInBlock(block);
                     if (occlusionArr && occlusionArr.length > 0 && blockImages.includes(image))
                         return block;    // Found a valid occlusion! Return true.
                 }
@@ -163,5 +156,29 @@ export class ImageOcclusionNote extends Note {
         block_images = _.uniq(block_images);
         block_images = _.filter(block_images, (image) => image.trim() != "");
         return block_images;
+    }
+
+    // This migrates the occlusions associated with older image annotation links with newer ones
+    private static migrateOutdatedImages(imgToOcclusionArrHashMap, block_images) {
+        let newImgToOcclusionArrHashMap = {};
+        block_images.forEach( (image) => {
+               let k = Object.keys(imgToOcclusionArrHashMap).sort().reverse().find((key) => {
+                    if (imgToOcclusionArrHashMap[image]) {
+                        return true;
+                    }
+                    console.log(image);
+                    let imageURLParams : any = new Map();
+                    try { imageURLParams = new URLSearchParams(new URL(image as string).search); } catch(e) {};
+                    if (imageURLParams.get('imageAnnotationBlockUUID') && key.includes(imageURLParams.get('imageAnnotationBlockUUID'))) {
+                        return true;
+                    }
+                    return false;
+               });
+               if (k) {
+                   newImgToOcclusionArrHashMap[image] = imgToOcclusionArrHashMap[k];
+               }
+        });
+        console.log('migrateOutdatedImages', imgToOcclusionArrHashMap, newImgToOcclusionArrHashMap);
+        return newImgToOcclusionArrHashMap;
     }
 }
