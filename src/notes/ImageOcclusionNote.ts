@@ -57,12 +57,13 @@ export class ImageOcclusionNote extends Note {
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let clozedContent: string = this.content;
         let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(this.properties?.occlusion, 'base64').toString());
-
+        let block = await LogseqProxy.Editor.getBlock(this.uuid);
+        let block_images = await ImageOcclusionNote.getImagesInBlock(block);
+        imgToOcclusionArrHashMap = ImageOcclusionNote.migrateOutdatedImages(imgToOcclusionArrHashMap, block_images);
         let clozes = new Set();
         for (let image in imgToOcclusionArrHashMap) {
             let occlusionArr = imgToOcclusionArrHashMap[image];
-            let block = await LogseqProxy.Editor.getBlock(this.uuid);
-            let block_images = await ImageOcclusionNote.getImagesInBlock(block);
+            block_images = block_images.map((image) => image.split('?')[0]);
             if (block_images.includes(image)) {
                 for (let occlusion of occlusionArr) {
                     clozes.add(occlusion.cId);
@@ -109,6 +110,7 @@ export class ImageOcclusionNote extends Note {
                 let imgToOcclusionArrHashMap = JSON.parse(Buffer.from(block.properties?.occlusion, 'base64').toString());
                 let blockImages = await ImageOcclusionNote.getImagesInBlock(block);
                 imgToOcclusionArrHashMap = ImageOcclusionNote.migrateOutdatedImages(imgToOcclusionArrHashMap, blockImages);
+                blockImages = blockImages.map((image) => image.split('?')[0]);
                 for (let image in imgToOcclusionArrHashMap) {
                     let occlusionArr = imgToOcclusionArrHashMap[image];
                     if (occlusionArr && occlusionArr.length > 0 && blockImages.includes(image))
@@ -149,8 +151,7 @@ export class ImageOcclusionNote extends Note {
         });
         let block_images = (block_content.match(MD_IMAGE_EMBEDED_REGEXP) || []).map((block_image) => {
             block_image = block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
-            block_image = block_image.split('?')[0];
-            if (!block_image.match(isImage_REGEXP)) return ""; // Ignore non-images
+            if (!block_image.split('?')[0].match(isImage_REGEXP)) return ""; // Ignore non-images
             return block_image;
         });
         block_images = _.uniq(block_images);
@@ -166,16 +167,16 @@ export class ImageOcclusionNote extends Note {
                     if (imgToOcclusionArrHashMap[image]) {
                         return true;
                     }
-                    console.log(image);
                     let imageURLParams : any = new Map();
-                    try { imageURLParams = new URLSearchParams(new URL(image as string).search); } catch(e) {};
-                    if (imageURLParams.get('imageAnnotationBlockUUID') && key.includes(imageURLParams.get('imageAnnotationBlockUUID'))) {
+                    try { imageURLParams = new URLSearchParams(image.split('?')[1]); } catch(e) {};
+                   console.log(image, imageURLParams.get('imageAnnotationBlockUUID'));
+                   if (imageURLParams.get('imageAnnotationBlockUUID') && key.includes(imageURLParams.get('imageAnnotationBlockUUID'))) {
                         return true;
                     }
                     return false;
                });
                if (k) {
-                   newImgToOcclusionArrHashMap[image] = imgToOcclusionArrHashMap[k];
+                   newImgToOcclusionArrHashMap[image.split('?')[0]] = imgToOcclusionArrHashMap[k];
                }
         });
         console.log('migrateOutdatedImages', imgToOcclusionArrHashMap, newImgToOcclusionArrHashMap);
