@@ -16,7 +16,7 @@ import process from "process";
 
 async function main(baseInfo: LSPluginBaseInfo) {
   // Register UI and Commands
-  let syncLogseqToAnki = async function() { new LogseqToAnkiSync().sync();  };
+  let syncLogseqToAnki = async function() { await new LogseqToAnkiSync().sync()  };
   logseq.provideModel({
     syncLogseqToAnki: syncLogseqToAnki,
   });

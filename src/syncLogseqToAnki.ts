@@ -115,11 +115,12 @@ export class LogseqToAnkiSync {
 
         // -- Sync --
         let start_time = performance.now();
-        let syncProgress = new ProgressNotification('Syncing Logseq Notes to Anki:', 3+toCreateNotes.length+toUpdateNotes.length+toDeleteNotes.length);
+        const tenPercent = Math.ceil((toCreateNotes.length + toUpdateNotes.length + toDeleteNotes.length) / 10);
+        let syncProgress = new ProgressNotification('Syncing Logseq Notes to Anki:', toCreateNotes.length + toUpdateNotes.length + toDeleteNotes.length + (2 * (tenPercent)) + 1);
         await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager, syncProgress);
-        syncProgress.increment();
+        syncProgress.increment(tenPercent);
         await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager, syncProgress);
-        syncProgress.increment();
+        syncProgress.increment(tenPercent);
         await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncProgress);
         syncProgress.increment();
         await AnkiConnect.invoke("reloadCollection", {});
@@ -341,7 +342,7 @@ export class LogseqToAnkiSync {
         tags = tags.map(tag => tag.replace(/\s/g, "_")); // Anki doesn't like spaces in tags
         tags = _.uniq(tags);
         tags = tags.filter(tag => {
-            let otherTags = tags.filter(otherTag => otherTag != tag);
+            let otherTags = (tags as string[]).filter(otherTag => otherTag != tag);
             let otherTagsStartingWithThisName = otherTags.filter(otherTag => otherTag.startsWith(tag+"::"));
             return otherTagsStartingWithThisName.length == 0;
         });
