@@ -16,7 +16,7 @@ export class ProgressNotification {
             </div>
             </div><div class="ml-4 flex-shrink-0 flex">
             </div></div></div></div></div></div>
-            `
+            `,
         });
         logseq.provideStyle(`
         #logseq-anki-sync-progress-bar-${logseq.baseInfo.id}::-webkit-progress-bar {
@@ -30,15 +30,19 @@ export class ProgressNotification {
     }
 
     increment(amount = 1) {
-        this.current+= amount;
+        this.current += amount;
         try {
             if (this.progressBar == null) {
-                this.progressBar = window.parent.document.getElementById(`logseq-anki-sync-progress-bar-${logseq.baseInfo.id}`);
+                this.progressBar = window.parent.document.getElementById(
+                    `logseq-anki-sync-progress-bar-${logseq.baseInfo.id}`,
+                );
             }
             this.progressBar.setAttribute("value", `${this.current}`);
-        } catch (e) {
-        }
+        } catch (e) {}
         if (this.current >= this.max)
-            logseq.provideUI({key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`, template: ``});  // Remove notification
+            logseq.provideUI({
+                key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`,
+                template: ``,
+            }); // Remove notification
     }
 }
