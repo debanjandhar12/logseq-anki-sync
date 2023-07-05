@@ -200,12 +200,11 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     block_props["hl-page"] = block_props["hl-page"] || block_props["hlPage"];
     block_props["hl-stamp"] = block_props["hl-stamp"] || block_props["hlStamp"];
     if (block_props["ls-type"] == "annotation" && block_props["hl-type"] == "area") { // Image annotation
-        console.log("Image annotation found!");
         try {
             let block_uuid = block_props["id"] || block_props["nid"];
             let block = await LogseqProxy.Editor.getBlock(block_uuid);
             let page = await LogseqProxy.Editor.getPage(_.get(block, "page.id"));
-            let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${block_props["hl-page"]}_${block_uuid}_${block_props["hl-stamp"]}.png`;
+            let hls_img_loc = `../assets/${_.get(page, "originalName", "").replace("hls__", "")}/${block_props["hl-page"]}_${block_uuid}_${block_props["hl-stamp"]}.png?imageAnnotationBlockUUID=${block_uuid}`;
             resultContent = `\ud83d\udccc**P${block_props["hl-page"]}** <div></div> ![](${hls_img_loc})\n` + resultContent;
         } catch (e) { console.log(e); }
     }
@@ -387,38 +386,38 @@ async function processLink(node, start_pos, end_pos, resultContent, resultAssets
         // Image Display
         if (link_type == "Search" && link_url.match(isImage_REGEXP) && !content.match(isWebURL_REGEXP)) {
             let str = getRandomUnicodeString();
-            hashmap[str] = `<img src="${path.basename(link_url)}" ${link_label_text? `title="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
-            resultAssets.add(link_url);
+            hashmap[str] = `<img src="${path.basename(link_url).split('?')[0]}" ${link_label_text? `title="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+            resultAssets.add(link_url.split('?')[0]);
             return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
         }
         if (link_type == "Complex" && link_url.link.match(isImage_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
             let str = getRandomUnicodeString();
-            hashmap[str] = `<img src="${link_url.protocol}://${link_url.link}" ${link_label_text? `title="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+            hashmap[str] = `<img src="${link_url.protocol}://${link_url.link.split('?')[0]}" ${link_label_text? `title="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
             return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
         }
         if (format == "org" && link_type == "Page_ref" && link_url.match(isImage_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
             let str = getRandomUnicodeString();
-            hashmap[str] = `<img src="${path.basename(link_url)}" />`;
-            resultAssets.add(link_url);
+            hashmap[str] = `<img src="${path.basename(link_url).split('?')[0]}" />`;
+            resultAssets.add(link_url.split('?')[0]);
             return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
         }
 
         // Audio Display
         if (link_type == "Search" && link_url.match(isAudio_REGEXP) && !content.match(isWebURL_REGEXP)) {
             let str = getRandomUnicodeString();
-            hashmap[str] = `[sound:${path.basename(link_url)}]`;
-            resultAssets.add(link_url);
+            hashmap[str] = `[sound:${path.basename(link_url).split('?')[0]}]`;
+            resultAssets.add(link_url.split('?')[0]);
             return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
         }
         if (link_type == "Complex" && link_url.link.match(isAudio_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
             let str = getRandomUnicodeString();
-            hashmap[str] = `[sound:${link_url.protocol}://${link_url.link}]`;
+            hashmap[str] = `[sound:${link_url.protocol}://${link_url.link.split('?')[0]}]`;
             return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
         }
         if (format == "org" && link_type == "Page_ref" && link_url.match(isAudio_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
             let str = getRandomUnicodeString();
-            hashmap[str] = `[sound:${path.basename(link_url)}]`;
-            resultAssets.add(link_url);
+            hashmap[str] = `[sound:${path.basename(link_url).split('?')[0]}]`;
+            resultAssets.add(link_url.split('?')[0]);
             return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
         }
     }
