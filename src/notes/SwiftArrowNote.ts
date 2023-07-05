@@ -1,6 +1,10 @@
 import { Note } from "./Note";
 import "@logseq/libs";
-import { escapeClozeAndSecoundBrace, safeReplace } from "../utils/utils";
+import {
+    escapeClozeAndSecoundBrace,
+    getRandomUnicodeString,
+    safeReplace,
+} from "../utils/utils";
 import _ from "lodash";
 import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
 import { LogseqProxy } from "../logseq/LogseqProxy";
@@ -28,29 +32,33 @@ export class SwiftArrowNote extends Note {
         // Remove logseq properties as it might cause problems during cloze creation
         clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, ""); //Remove md properties
         clozedContent = safeReplace(clozedContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
+        console.log(clozedContent);
+
         // --- Add clozes ---
+        const endDoubleBracket = getRandomUnicodeString();
+        const startDoubleBracket = getRandomUnicodeString();
+        const doubleSemicolon = getRandomUnicodeString();
         clozedContent = safeReplace(
             clozedContent,
             /(.*?)(\s*(:<->|:->|:<-)\s*)(.+)/s,
             (match, g1, g2, g3, g4) => {
                 let replacement = "";
                 if (g3 == ":<-" || g3 == ":<->") {
-                    replacement += `{{c2::${escapeClozeAndSecoundBrace(
-                        g1,
-                    ).trim()}}}`;
+                    replacement += `${startDoubleBracket}2${doubleSemicolon}${g1.trim()}${endDoubleBracket}`;
                 } else replacement += `${g1.trim()}`;
                 const beforeArrowSpace = g2.split(/(:<->|:->|:<-)/s)[0];
                 const afterArrowSpace = g2.split(/(:<->|:->|:<-)/s)[2];
                 replacement += `${beforeArrowSpace}<b>${g3}</b>${afterArrowSpace}`;
                 if (g3 == ":->" || g3 == ":<->") {
-                    replacement += `{{c1::${escapeClozeAndSecoundBrace(
-                        g4,
-                    ).trim()}}}`;
+                    replacement += `${startDoubleBracket}1${doubleSemicolon}${g4.trim()}${endDoubleBracket}`;
                 } else replacement += `${g4.trim()}`;
                 return replacement;
             },
         );
-
+        clozedContent = escapeClozeAndSecoundBrace(clozedContent);
+        clozedContent = clozedContent.replaceAll(startDoubleBracket, "{{c");
+        clozedContent = clozedContent.replaceAll(doubleSemicolon, "::");
+        clozedContent = clozedContent.replaceAll(endDoubleBracket, "}}");
         return convertToHTMLFile(clozedContent, this.format);
     }
 
