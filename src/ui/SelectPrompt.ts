@@ -1,6 +1,9 @@
-export async function SelectPrompt(msg: string, options: string[]): Promise<string | false> {
+export async function SelectPrompt(
+    msg: string,
+    options: string[],
+): Promise<string | false> {
     return new Promise(function (resolve, reject) {
-        const div = window.parent.document.createElement('div');
+        const div = window.parent.document.createElement("div");
         div.innerHTML = `
         <div label="" class="ui__modal" style="z-index: 999;">
           <div class="ui__modal-overlay ease-out duration-300 opacity-100 enter-done">
@@ -19,37 +22,44 @@ export async function SelectPrompt(msg: string, options: string[]): Promise<stri
                 <h1 class="mb-4 text-2xl p-1">${msg}</h1>
                 <select id="select-prompt-selector" onchange="handle_select_action()" class="mt-1 block text-base leading-6 border-gray-300 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 form-select" style="padding: 0px 0px 0px 6px;">
                 <option value="none" selected disabled hidden>Select an option</option>
-                ${options.map((option) => `<option value="${option}">${option}</option>`).join('')}
+                ${options
+                    .map(
+                        (option) =>
+                            `<option value="${option}">${option}</option>`,
+                    )
+                    .join("")}
                 </select>
               </div>
             </div>
           </div>
         </div>`;
         const onKeydown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
+            if (e.key === "Escape") {
                 // @ts-ignore
                 window.parent.select_cancel_action();
             }
         };
-        window.parent.document.addEventListener('keydown', onKeydown);
+        window.parent.document.addEventListener("keydown", onKeydown);
         // @ts-ignore
         window.parent.handle_select_action = () => {
-            const select = div.querySelector('#select-prompt-selector');
+            const select = div.querySelector("#select-prompt-selector");
             console.log(select);
             if (select) {
                 // @ts-ignore
                 resolve(select.value);
             }
             window.parent.document.body.removeChild(div);
-            window.parent.document.removeEventListener('keydown', onKeydown);
-        }
+            window.parent.document.removeEventListener("keydown", onKeydown);
+        };
         // @ts-ignore
         window.parent.select_cancel_action = () => {
             resolve(false);
             window.parent.document.body.removeChild(div);
-            window.parent.document.removeEventListener('keydown', onKeydown);
-        }
+            window.parent.document.removeEventListener("keydown", onKeydown);
+        };
         window.parent.document.body.appendChild(div);
-        (div.querySelector('#select-prompt-selector') as HTMLSelectElement).focus();
+        (
+            div.querySelector("#select-prompt-selector") as HTMLSelectElement
+        ).focus();
     });
 }

@@ -1,6 +1,6 @@
 /***
-* This files contains the js for the back side of anki cards. 
-*/
+ * This files contains the js for the back side of anki cards.
+ */
 
 window.addEventListener("load", () => {
     if (type == "image_occlusion") {

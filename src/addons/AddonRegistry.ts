@@ -7,7 +7,7 @@ export class AddonRegistry {
         AddonRegistry.addons.push(addon);
     }
     public static get(name: string): Addon {
-        return AddonRegistry.addons.find(addon => addon.getName() === name);
+        return AddonRegistry.addons.find((addon) => addon.getName() === name);
     }
     public static getAll(): Addon[] {
         return AddonRegistry.addons;
