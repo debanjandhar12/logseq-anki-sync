@@ -722,117 +722,114 @@ async function processLink(
     const link_full_text = _.get(node[0][1], "full_text");
     const link_label_type = _.get(node[0][1], "label[0][0]");
     const link_label_text = _.get(node[0][1], "label[0][1]");
-    if (link_full_text.startsWith("!")) {
-        // Image Display
-        if (
-            link_type == "Search" &&
-            link_url.match(isImage_REGEXP) &&
-            !content.match(isWebURL_REGEXP)
-        ) {
-            const str = getRandomUnicodeString();
-            hashmap[str] = `<img src="${
-                path.basename(link_url).split("?")[0]
-            }" ${link_label_text ? `title="${link_label_text}"` : ``} ${
-                metadata && metadata.width ? `width="${metadata.width}"` : ``
-            } ${
-                metadata && metadata.height ? `height="${metadata.height}"` : ``
-            }/>`;
-            resultAssets.add(link_url.split("?")[0]);
-            return new Uint8Array([
-                ...resultUTF8.subarray(0, start_pos),
-                ...new TextEncoder().encode(str),
-                ...resultUTF8.subarray(end_pos),
-            ]);
-        }
-        if (
-            link_type == "Complex" &&
-            link_url.link.match(isImage_REGEXP) &&
-            (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))
-        ) {
-            const str = getRandomUnicodeString();
-            hashmap[str] = `<img src="${link_url.protocol}://${
-                link_url.link.split("?")[0]
-            }" ${link_label_text ? `title="${link_label_text}"` : ``} ${
-                metadata && metadata.width ? `width="${metadata.width}"` : ``
-            } ${
-                metadata && metadata.height ? `height="${metadata.height}"` : ``
-            }/>`;
-            return new Uint8Array([
-                ...resultUTF8.subarray(0, start_pos),
-                ...new TextEncoder().encode(str),
-                ...resultUTF8.subarray(end_pos),
-            ]);
-        }
-        if (
-            format == "org" &&
-            link_type == "Page_ref" &&
-            link_url.match(isImage_REGEXP) &&
-            !link_url.match(isWebURL_REGEXP)
-        ) {
-            const str = getRandomUnicodeString();
-            hashmap[str] = `<img src="${
-                path.basename(link_url).split("?")[0]
-            }" />`;
-            resultAssets.add(link_url.split("?")[0]);
-            return new Uint8Array([
-                ...resultUTF8.subarray(0, start_pos),
-                ...new TextEncoder().encode(str),
-                ...resultUTF8.subarray(end_pos),
-            ]);
-        }
-
-        // Audio Display
-        if (
-            link_type == "Search" &&
-            link_url.match(isAudio_REGEXP) &&
-            !content.match(isWebURL_REGEXP)
-        ) {
-            const str = getRandomUnicodeString();
-            hashmap[str] = `[sound:${path.basename(link_url).split("?")[0]}]`;
-            resultAssets.add(link_url.split("?")[0]);
-            return new Uint8Array([
-                ...resultUTF8.subarray(0, start_pos),
-                ...new TextEncoder().encode(str),
-                ...resultUTF8.subarray(end_pos),
-            ]);
-        }
-        if (
-            link_type == "Complex" &&
-            link_url.link.match(isAudio_REGEXP) &&
-            (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))
-        ) {
-            const str = getRandomUnicodeString();
-            hashmap[str] = `[sound:${link_url.protocol}://${
-                link_url.link.split("?")[0]
-            }]`;
-            return new Uint8Array([
-                ...resultUTF8.subarray(0, start_pos),
-                ...new TextEncoder().encode(str),
-                ...resultUTF8.subarray(end_pos),
-            ]);
-        }
-        if (
-            format == "org" &&
-            link_type == "Page_ref" &&
-            link_url.match(isAudio_REGEXP) &&
-            !link_url.match(isWebURL_REGEXP)
-        ) {
-            const str = getRandomUnicodeString();
-            hashmap[str] = `[sound:${path.basename(link_url).split("?")[0]}]`;
-            resultAssets.add(link_url.split("?")[0]);
-            return new Uint8Array([
-                ...resultUTF8.subarray(0, start_pos),
-                ...new TextEncoder().encode(str),
-                ...resultUTF8.subarray(end_pos),
-            ]);
-        }
+    // Image Display
+    if (
+        link_type == "Search" &&
+        link_url.match(isImage_REGEXP) &&
+        !content.match(isWebURL_REGEXP) &&
+        link_full_text.startsWith("!")
+    ) {
+        const str = getRandomUnicodeString();
+        hashmap[str] = `<img src="${path.basename(link_url).split("?")[0]}" ${
+            link_label_text ? `title="${link_label_text}"` : ``
+        } ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${
+            metadata && metadata.height ? `height="${metadata.height}"` : ``
+        }/>`;
+        resultAssets.add(link_url.split("?")[0]);
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
     }
+    if (
+        link_type == "Complex" &&
+        link_url.link.match(isImage_REGEXP) &&
+        (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))
+    ) {
+        const str = getRandomUnicodeString();
+        hashmap[str] = `<img src="${link_url.protocol}://${
+            link_url.link.split("?")[0]
+        }" ${link_label_text ? `title="${link_label_text}"` : ``} ${
+            metadata && metadata.width ? `width="${metadata.width}"` : ``
+        } ${
+            metadata && metadata.height ? `height="${metadata.height}"` : ``
+        }/>`;
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
+    }
+    if (
+        format == "org" &&
+        link_type == "Page_ref" &&
+        link_url.match(isImage_REGEXP) &&
+        !link_url.match(isWebURL_REGEXP)
+    ) {
+        const str = getRandomUnicodeString();
+        hashmap[str] = `<img src="${path.basename(link_url).split("?")[0]}" />`;
+        resultAssets.add(link_url.split("?")[0]);
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
+    }
+
+    // Audio Display
+    if (
+        link_type == "Search" &&
+        link_url.match(isAudio_REGEXP) &&
+        !content.match(isWebURL_REGEXP) &&
+        link_full_text.startsWith("!")
+    ) {
+        const str = getRandomUnicodeString();
+        hashmap[str] = `[sound:${path.basename(link_url).split("?")[0]}]`;
+        resultAssets.add(link_url.split("?")[0]);
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
+    }
+    if (
+        link_type == "Complex" &&
+        link_url.link.match(isAudio_REGEXP) &&
+        (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))
+    ) {
+        const str = getRandomUnicodeString();
+        hashmap[str] = `[sound:${link_url.protocol}://${
+            link_url.link.split("?")[0]
+        }]`;
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
+    }
+    if (
+        format == "org" &&
+        link_type == "Page_ref" &&
+        link_url.match(isAudio_REGEXP) &&
+        !link_url.match(isWebURL_REGEXP)
+    ) {
+        const str = getRandomUnicodeString();
+        hashmap[str] = `[sound:${path.basename(link_url).split("?")[0]}]`;
+        resultAssets.add(link_url.split("?")[0]);
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
+    }
+
+    // Fix #74
     if (
         link_type == "Complex" &&
         link_url.protocol &&
         link_label_type == "Plain"
     ) {
-        // Fix #74
         const str = getRandomUnicodeString();
         hashmap[
             str
