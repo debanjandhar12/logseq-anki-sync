@@ -326,7 +326,7 @@ li:not(.children) {
     margin-bottom: 4px;
 }
 
-.bubble:empty {
+.bubble:empty, .bubble:has(a.hidden) {
     visibility: hidden;
 }
 

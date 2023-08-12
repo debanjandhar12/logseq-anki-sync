@@ -610,7 +610,11 @@ export class LogseqToAnkiSync {
         deck = deck.replace(/\//g, "::");
 
         // Parse breadcrumb
-        let breadcrumb = ``;
+        let breadcrumb = `<a href="logseq://graph/${encodeURIComponent(
+            this.graphName,
+        )}?page=${encodeURIComponent(note.page.originalName)}" class="hidden">${
+            note.page.originalName
+        }</a>`;
         if (logseq.settings.breadcrumbDisplay.includes("Show Page name"))
             breadcrumb = `<a href="logseq://graph/${encodeURIComponent(
                 this.graphName,
