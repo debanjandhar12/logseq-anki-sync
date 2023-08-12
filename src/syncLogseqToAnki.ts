@@ -82,7 +82,7 @@ export class LogseqToAnkiSync {
 
         // -- Get the notes that are to be synced from logseq --
         const scanProgress = new ProgressNotification(
-            `Scanning Logseq Graph (${this.graphName}):`,
+            `Scanning Logseq Graph <span style="opacity: 0.8">[${this.graphName}]</span>:`,
             5,
             "graph",
         );
