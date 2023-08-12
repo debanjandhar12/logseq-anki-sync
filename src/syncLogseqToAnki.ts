@@ -58,9 +58,6 @@ export class LogseqToAnkiSync {
         this.graphName =
             _.get(await logseq.App.getCurrentGraph(), "name") || "Default";
         this.modelName = `${this.graphName}Model`.replace(/\s/g, "_");
-        logseq.UI.showMsg(
-            `Starting Logseq to Anki Sync for graph ${this.graphName}`,
-        );
         console.log(
             `%cStarting Logseq to Anki Sync V${pkg.version} for graph ${this.graphName}`,
             "color: green; font-size: 1.5em;",
@@ -85,8 +82,9 @@ export class LogseqToAnkiSync {
 
         // -- Get the notes that are to be synced from logseq --
         const scanProgress = new ProgressNotification(
-            "Scanning Logseq Graph:",
-            4,
+            `Scanning Logseq Graph (${this.graphName}):`,
+            5,
+            "graph",
         );
         let notes: Array<Note> = [];
         notes = [...notes, ...(await ClozeNote.getNotesFromLogseqBlocks())];
@@ -106,6 +104,9 @@ export class LogseqToAnkiSync {
             ...(await MultilineCardNote.getNotesFromLogseqBlocks(notes)),
         ];
         scanProgress.increment();
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 1 sec
+        scanProgress.increment();
+
         for (const note of notes) {
             // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
             if (!note.properties["id"]) {
@@ -227,6 +228,7 @@ export class LogseqToAnkiSync {
                 toDeleteNotes.length +
                 2 * tenPercent +
                 1,
+            "anki",
         );
         await this.createNotes(
             toCreateNotes,
