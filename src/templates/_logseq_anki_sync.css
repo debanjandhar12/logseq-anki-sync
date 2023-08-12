@@ -236,7 +236,7 @@ div.warning {
     margin-bottom: 12px;
     align-items: stretch;
     min-height: 32px;
-    color: inherit;
+    color: initial;
 }
 
 div.important::before,
