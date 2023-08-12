@@ -580,10 +580,12 @@ export class LogseqToAnkiSync {
         }
         deck = deck || _.get(note, "page.properties.deck");
         const shouldParseDeckFromNamespace = async () => {
+            if (_.get(note, "page.namespace.id") == null) return false;
             if (logseq.settings.deckFromLogseqNamespace) return true;
+
+            // Logic based on discussion at https://github.com/debanjandhar12/logseq-anki-sync/pull/143
             const rootPageName = _.get(note, "page.name").split("/")[0];
             if (
-                _.get(note, "page.namespace.id") != null &&
                 _.get(
                     await LogseqProxy.Editor.getPage(rootPageName),
                     "properties.parsens",

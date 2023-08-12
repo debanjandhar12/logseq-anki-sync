@@ -6,8 +6,9 @@ export class PreviewInAnkiContextMenu extends Addon {
     static _instance: PreviewInAnkiContextMenu;
 
     public getName(): string {
-        return "Preview In Anki Context Menu";
+        return "Preview Cards in Anki";
     }
+
     public init(): void {
         if (this.isEnabled()) {
             logseq.Editor.registerBlockContextMenuItem(
@@ -21,10 +22,9 @@ export class PreviewInAnkiContextMenu extends Addon {
             await AnkiConnect.requestPermission();
             await AnkiConnect.guiBrowse("uuid:" + blocks[0].uuid);
         } catch (e) {
-            logseq.UI.showMsg(get_better_error_msg(e.toString()), "warning", {
+            logseq.UI.showMsg(get_better_error_msg(e.toString()), "error", {
                 timeout: 4000,
             });
-            console.error(e);
         }
     }
 
