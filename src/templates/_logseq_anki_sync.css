@@ -236,7 +236,7 @@ div.warning {
     margin-bottom: 12px;
     align-items: stretch;
     min-height: 32px;
-    color: initial;
+    color: inherit;
 }
 
 div.important::before,
@@ -355,6 +355,10 @@ body.nightMode .cloze {
 body.nightMode .bubble {
     color: #bfbfbf;
     background-color: #4d4d4d;
+}
+
+body.nightMode .bubble a {
+    color: #bfbfbf;
 }
 
 body.nightMode code:not(.hljs) {
