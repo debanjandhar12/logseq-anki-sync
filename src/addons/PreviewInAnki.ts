@@ -40,9 +40,9 @@ export class PreviewInAnkiContextMenu extends Addon {
                 _.get(await logseq.App.getCurrentGraph(), "name") || "Default";
             let modelName = `${graphName}Model`.replace(/\s/g, "_");
             await AnkiConnect.guiBrowse(
-                `note:${modelName} Breadcrumb:re:^<a.*>${_.escapeRegExp(
+                `note:${modelName} "Breadcrumb:re:^<a.*>${_.escapeRegExp(
                     page,
-                ).replaceAll('"', '\\"')}</a>.*$`,
+                ).replaceAll('"', '\\"')}</a>.*$"`,
             );
         } catch (e) {
             logseq.UI.showMsg(get_better_error_msg(e.toString()), "error", {
