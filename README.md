@@ -1,4 +1,4 @@
-# Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat-square" height="28"/>](https://github.com/debanjandhar12/logseq-anki-sync/) [<img align="right" src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" height="30"/>](https://www.buymeacoffee.com/debanjandhar12)
+# Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat" height="30"/>](https://github.com/debanjandhar12/logseq-anki-sync/)[<img align="right" src="https://img.shields.io/github/sponsors/debanjandhar12.svg?logo=github&style=flat&height=60&label=Donate&cacheSeconds=28800&color=orange" height="30"/>](https://github.com/sponsors/debanjandhar12)
 
 An logseq to anki syncing plugin with superpowers - **image occlusion, card direction, incremental cards, and a lot more**.
 
@@ -57,9 +57,9 @@ Anki is a specialized spaced repetition software. It has less bugs and is more f
 # 🙏 Support
 Loved the tool? Please consider donating 💸 to help continue development!<br/>
 <p align="center">
-<a href="https://www.buymeacoffee.com/debanjandhar12" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" alt="Buy Me A Coffee" height="55" style="border-radius:1px" />
+<a href="https://github.com/sponsors/debanjandhar12" target="_blank"><img src="https://img.shields.io/github/sponsors/debanjandhar12.svg?logo=github&style=flat&height=60&label=Donate&cacheSeconds=28800&color=orange" alt="Sponsors" height="50" style="border-radius:1px" />
 </p>
 
 #### Sponsors:
  
-[Tubo](https://github.com/Tubo) [ryanbl](https://github.com/rtblair) [chs33](https://github.com/chs33) [Mihai](../../) 
+[@Tubo](https://github.com/Tubo) [@ryanbl](https://github.com/rtblair) [@chs33](https://github.com/chs33) [@thiswillbeyourgithub](https://github.com/thiswillbeyourgithub)
