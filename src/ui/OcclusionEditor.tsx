@@ -1,4 +1,4 @@
-import { ANKI_ICON, isWebURL_REGEXP } from "../constants";
+import { ANKI_ICON, DONATE_ICON, isWebURL_REGEXP } from "../constants";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import _ from "lodash";
@@ -332,7 +332,7 @@ const OcclusionEditorComponent = React.forwardRef<any, any>(
                     style={{
                         justifyContent: "space-between",
                         marginTop: "0.3rem",
-                        marginBottom: "0.3rem",
+                        marginBottom: "0.6rem",
                     }}
                 >
                     <div className="flex" style={{ alignItems: "center" }}>
@@ -340,18 +340,25 @@ const OcclusionEditorComponent = React.forwardRef<any, any>(
                             className="ti"
                             dangerouslySetInnerHTML={{ __html: ANKI_ICON }}
                         ></i>
-                        <h3 className="text-lg">Occlusion Editor</h3>
+                        <h3 className="text-lg" style={{ marginLeft: "4px" }}>
+                            Occlusion Editor
+                        </h3>
                     </div>
-                    <a href="https://www.buymeacoffee.com/debanjandhar12">
+                    <a href="https://github.com/sponsors/debanjandhar12">
                         <img
-                            src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png"
-                            style={{ height: "1.8rem" }}
-                        ></img>
+                            alt="Donate"
+                            style={{ height: "1.6rem" }}
+                            src={DONATE_ICON}
+                        />
                     </a>
                 </div>
                 <div
                     className="occlusion-editor-toolbar flex"
-                    style={{ justifyContent: "end", alignItems: "center" }}
+                    style={{
+                        justifyContent: "end",
+                        alignItems: "center",
+                        marginBottom: "0.3rem",
+                    }}
                 >
                     <button
                         onClick={addOcclusion}

@@ -2,9 +2,17 @@ import { SettingSchemaDesc } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import { AddonRegistry } from "./addons/AddonRegistry";
 import { LogseqProxy } from "./logseq/LogseqProxy";
+import { DONATE_ICON } from "./constants";
 
 export const addSettingsToLogseq = () => {
     const settingsTemplate: SettingSchemaDesc[] = [
+        {
+            key: "donationHeading",
+            title: "",
+            description: `<a href="https://github.com/sponsors/debanjandhar12"><img alt="Donate" style="margin-top:-20px; height: 28px;" src="${DONATE_ICON}" /></a>`,
+            type: "heading",
+            default: null,
+        },
         {
             key: "generalSettingsHeading",
             title: "🐱 General Settings",
@@ -70,7 +78,7 @@ export const addSettingsToLogseq = () => {
             key: "renderAnkiClozeMarcosInLogseq",
             type: "boolean",
             default: false,
-            title: "Render Anki Cloze Macros in Logseq? (Default: Disabled) [Experimental] [In Development]",
+            title: "Render Anki Cloze Macros in Logseq? (Recommended: Disabled) [Experimental] [In Development]",
             description:
                 "Render Anki Cloze Macros in Logseq. <br/> When enabled, the Anki Cloze Macros ({{c1 Pikachu}}, {{c2 Mew}}, ...) will be rendered in Logseq.",
         },
