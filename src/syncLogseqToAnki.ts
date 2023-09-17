@@ -122,7 +122,7 @@ export class LogseqToAnkiSync {
             }
         }
         notes = await sortAsync(notes, async (a) => {
-            return (await LogseqProxy.Editor.getBlock(a.uuid)).id; // Sort by db/id
+            return _.get(await LogseqProxy.Editor.getBlock(a.uuid), "id", 0); // Sort by db/id
         });
         //scanProgress.increment();
         console.log("Notes:", notes);

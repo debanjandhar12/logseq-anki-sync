@@ -98,10 +98,11 @@ export class SwiftArrowNote extends Note {
         blocks = _.uniqBy(blocks, "uuid");
         blocks = _.without(blocks, undefined, null);
         blocks = _.filter(blocks, (block) => {
-            // Remove template cards
+            // Remove template blocks and blocks without uuid
             return (
                 _.get(block, "properties.template") == null ||
-                _.get(block, "properties.template") == undefined
+                _.get(block, "properties.template") == undefined ||
+                _.get(block, "uuid") == null
             );
         });
         blocks = _.filter(blocks, (block) => {
