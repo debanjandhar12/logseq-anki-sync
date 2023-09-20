@@ -13,6 +13,7 @@ import { ImageOcclusionNote } from "./notes/ImageOcclusionNote";
 import * as blockAndPageHashCache from "./logseq/blockAndPageHashCache";
 import { Buffer } from "buffer/";
 import process from "process";
+import {SelectionPrompt} from "./ui/SelectionPrompt";
 
 async function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
@@ -54,6 +55,10 @@ async function main(baseInfo: LSPluginBaseInfo) {
     addSettingsToLogseq();
 
     // Init various modules
+    window.parent.LogseqAnkiSync = {};
+    window.parent.LogseqAnkiSync.dispatchEvent = (event: string) => {
+        window.dispatchEvent(new Event(event));
+    }
     LogseqProxy.init();
     blockAndPageHashCache.init();
     ClozeNote.initLogseqOperations();
@@ -63,9 +68,10 @@ async function main(baseInfo: LSPluginBaseInfo) {
     AddonRegistry.getAll().forEach((addon) => addon.init());
     console.log("Window Parent:", window.parent);
 
-    // The line below is needed for vite build and dev to work properly.
+    // The lines below are needed for vite build and dev to work properly.
     // @ts-ignore
     window.Buffer = Buffer;
+    // @ts-ignore
     window.process = process;
 }
 

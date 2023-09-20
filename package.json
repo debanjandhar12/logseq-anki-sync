@@ -18,7 +18,7 @@
     "icon": "/icon.png"
   },
   "dependencies": {
-    "@logseq/libs": "^0.0.14",
+    "@logseq/libs": "^0.0.15",
     "@thi.ng/hiccup": "^4.2.29",
     "@yellowdig/cljs-tools": "0.2.0",
     "await-lock": "^2.2.2",

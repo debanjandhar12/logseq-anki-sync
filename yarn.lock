@@ -1288,10 +1288,10 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@logseq/libs@^0.0.14":
-  version "0.0.14"
-  resolved "https://registry.yarnpkg.com/@logseq/libs/-/libs-0.0.14.tgz#2fbce790d61c28e124063a20153f748f90ffa352"
-  integrity sha512-QcNeVxb4LIvV4Tid0ABZXV7fxYdZHynzLlukSk6Ydkuus+hBzLcjfK15nzybIRbiV7ANqSgTooDZkV/E4WP57Q==
+"@logseq/libs@^0.0.15":
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/@logseq/libs/-/libs-0.0.15.tgz#03b8b81a0a1557e3f022d68c978ddcb501cd4421"
+  integrity sha512-Z4YrYGfu8Y3s9LTqVnPGkxlO+KZtP1YalH/A63zYgxP61cV5QtKlnHWNcjsKxsD5CkaSL4MlSN4mf7wNx/Fm0A==
   dependencies:
     csstype "3.1.0"
     debug "4.3.4"

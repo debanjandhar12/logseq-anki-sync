@@ -193,7 +193,7 @@ export class LogseqToAnkiSync {
         window.parent.AnkiConnect = null; // Remove AnkiConnect from the global scope
         if (!confirm_result) {
             buildNoteHashes.cancel();
-            window.dispatchEvent(new Event("syncLogseqToAnkiComplete"));
+            window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
             console.log("Sync Aborted by user!");
             return;
         }
@@ -206,7 +206,7 @@ export class LogseqToAnkiSync {
             const confirm_msg = `<b class="text-red-600">This will delete all your notes in anki that are generated from this graph.</b><br/>Are you sure you want to continue?`;
             if (!(await Confirm(confirm_msg))) {
                 buildNoteHashes.cancel();
-                window.dispatchEvent(new Event("syncLogseqToAnkiComplete"));
+                window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
                 console.log("Sync Aborted by user!");
                 return;
             }
@@ -252,7 +252,7 @@ export class LogseqToAnkiSync {
         );
         syncProgress.increment();
         await AnkiConnect.invoke("reloadCollection", {});
-        window.dispatchEvent(new Event("syncLogseqToAnkiComplete"));
+        window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
 
         // -- Show Result / Summery --
         let summery = `Sync Completed! \n Created Blocks: ${

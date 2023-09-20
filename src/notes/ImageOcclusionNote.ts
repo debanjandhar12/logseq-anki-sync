@@ -25,6 +25,7 @@ import { SelectPrompt } from "../ui/SelectPrompt";
 import { OcclusionEditor } from "../ui/OcclusionEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
+import {SelectionPrompt} from "../ui/SelectionPrompt";
 
 export class ImageOcclusionNote extends Note {
     public type = "image_occlusion";
@@ -67,10 +68,14 @@ export class ImageOcclusionNote extends Note {
                         imgToOcclusionArrHashMap,
                         block_images,
                     );
-                let selectedImage = await SelectPrompt(
-                    "Select Image to add / update occlusion",
-                    block_images,
-                );
+                let selectedImage = null;
+                let selectedImageIdx = await SelectionPrompt(block_images.map((image) => {
+                    return {
+                        name: image,
+                        icon: `<img class="px-4" height="48" width="64" src="${image}"/>`
+                    };
+                }), 'Select Image for occlusion', true);
+                if (selectedImageIdx != null) selectedImage = block_images[selectedImageIdx];
                 if (selectedImage) {
                     selectedImage = (selectedImage as string).split("?")[0];
                     const newOcclusionArr = await OcclusionEditor(
