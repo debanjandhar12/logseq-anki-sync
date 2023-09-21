@@ -1,7 +1,8 @@
 import * as AnkiConnect from "../anki-connect/AnkiConnect";
-import { get_better_error_msg } from "../utils/utils";
-import { Addon } from "./Addon";
+import {get_better_error_msg} from "../utils/utils";
+import {Addon} from "./Addon";
 import _ from "lodash";
+import {SelectionPrompt} from "../ui/SelectionPrompt";
 
 export class PreviewInAnkiContextMenu extends Addon {
     static _instance: PreviewInAnkiContextMenu;
@@ -22,6 +23,7 @@ export class PreviewInAnkiContextMenu extends Addon {
             );
         }
     }
+
     private async previewBlockNotesInAnki(...blocks) {
         try {
             await AnkiConnect.requestPermission();
@@ -33,17 +35,24 @@ export class PreviewInAnkiContextMenu extends Addon {
         }
     }
 
-    private async previewPageNotesInAnki({ page }) {
+    private async previewPageNotesInAnki({page}) {
         try {
+            const namespacePages = await logseq.Editor.getPagesFromNamespace(page);
+            let pagesToView = [page];
             await AnkiConnect.requestPermission();
             let graphName =
                 _.get(await logseq.App.getCurrentGraph(), "name") || "Default";
             let modelName = `${graphName}Model`.replace(/\s/g, "_");
+            if (namespacePages.length > 0) {
+                let selection = await SelectionPrompt([{name: "Preview cards from this namespace in anki"}, {name: "Preview cards from this page in anki"}]);
+                if (selection == null)
+                    return;
+                if (selection == '0')
+                    pagesToView = [pagesToView, ...namespacePages.map((page) => page.name)];
+            }
             await AnkiConnect.guiBrowse(
-                `note:${modelName} "Breadcrumb:re:^<a.*>${_.escapeRegExp(
-                    page,
-                ).replaceAll('"', '\\"')}</a>.*$"`,
-            );
+                `note:${modelName} "Breadcrumb:re:^<a.*>(${pagesToView.map((page) =>
+                    _.escapeRegExp(page).replaceAll('"', '\\"')).join("|")})</a>.*$"`);
         } catch (e) {
             logseq.UI.showMsg(get_better_error_msg(e.toString()), "error", {
                 timeout: 4000,
