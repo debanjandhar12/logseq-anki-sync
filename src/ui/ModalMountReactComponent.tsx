@@ -2,7 +2,7 @@ import React, {PropsWithChildren} from "react";
 import ReactDOM from "react-dom";
 
 // This function is used to mount a React component as a modal in Logseq.
-export async function Modal(Contents: React.FC<any>) : Promise<true | null> {
+export async function ModalMountReactComponent(Contents: React.FC<any>) : Promise<true | null> {
     return new Promise<true | null>(async (resolve, reject) => {
         try {
                 const uid = `logseq-anki-sync-modal-${Date.now()}`;

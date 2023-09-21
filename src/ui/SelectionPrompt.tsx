@@ -1,11 +1,11 @@
-import {Modal} from "./Modal";
+import {ModalMountReactComponent} from "./ModalMountReactComponent";
 import React from "react";
 import {LogseqButton} from "./basic/LogseqButton";
 import ReactDOM from "react-dom";
 
 export async function SelectionPrompt(arr: {name : string, icon? : string}[], msg? : string, enableKeySelect? : boolean): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
-        const modal = await Modal(({uid}) => {
+        const modal = await ModalMountReactComponent(({uid}) => {
             let handleSelection = (selection: number | null) => {
                    resolve(selection);
                    window.parent.LogseqAnkiSync.dispatchEvent(`close${uid}`);
