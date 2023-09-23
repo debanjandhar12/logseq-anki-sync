@@ -2,7 +2,7 @@ import * as AnkiConnect from "../anki-connect/AnkiConnect";
 import {get_better_error_msg} from "../utils/utils";
 import {Addon} from "./Addon";
 import _ from "lodash";
-import {SelectionPrompt} from "../ui/SelectionPrompt";
+import {SelectionModal} from "../ui/SelectionModal";
 
 export class PreviewInAnkiContextMenu extends Addon {
     static _instance: PreviewInAnkiContextMenu;
@@ -44,7 +44,7 @@ export class PreviewInAnkiContextMenu extends Addon {
                 _.get(await logseq.App.getCurrentGraph(), "name") || "Default";
             let modelName = `${graphName}Model`.replace(/\s/g, "_");
             if (namespacePages.length > 0) {
-                let selection = await SelectionPrompt([{name: "Preview cards from this namespace in anki"}, {name: "Preview cards from this page in anki"}]);
+                let selection = await SelectionModal([{name: "Preview cards from this namespace in anki"}, {name: "Preview cards from this page in anki"}]);
                 if (selection == null)
                     return;
                 if (selection == '0')

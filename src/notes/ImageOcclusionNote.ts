@@ -25,7 +25,7 @@ import { SelectPrompt } from "../ui/SelectPrompt";
 import { OcclusionEditor } from "../ui/OcclusionEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
-import {SelectionPrompt} from "../ui/SelectionPrompt";
+import {SelectionModal} from "../ui/SelectionModal";
 
 export class ImageOcclusionNote extends Note {
     public type = "image_occlusion";
@@ -69,7 +69,7 @@ export class ImageOcclusionNote extends Note {
                         block_images,
                     );
                 let selectedImage = null;
-                let selectedImageIdx = await SelectionPrompt(block_images.map((image) => {
+                let selectedImageIdx = await SelectionModal(block_images.map((image) => {
                     return {
                         name: image,
                         icon: `<img class="px-4" height="48" width="64" src="${image}"/>`

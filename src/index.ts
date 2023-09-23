@@ -13,7 +13,7 @@ import { ImageOcclusionNote } from "./notes/ImageOcclusionNote";
 import * as blockAndPageHashCache from "./logseq/blockAndPageHashCache";
 import { Buffer } from "buffer/";
 import process from "process";
-import {SelectionPrompt} from "./ui/SelectionPrompt";
+import {SelectionModal} from "./ui/SelectionModal";
 
 async function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
