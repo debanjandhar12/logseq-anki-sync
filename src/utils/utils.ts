@@ -4,7 +4,7 @@ import replaceAsync from "string-replace-async";
 import "@logseq/libs";
 import {
     ANKI_CLOZE_REGEXP,
-    MD_MATH_BLOCK_REGEXP,
+    MD_MATH_BLOCK_REGEXP, OhmStrToListGrammar,
     specialChars,
 } from "../constants";
 
@@ -38,28 +38,7 @@ export function string_to_arr(str: string): any {
     const r = [];
 
     // Define and match the grammer
-    const grammer = ohm.grammar(String.raw`
-    StrRegArray {
-        Exp = listOf<StrOrRegex, separator> separator*
-        separator = (whitespace)* "," (whitespace)*
-        StrOrRegex = (Regex | Str | "")
-        Str = "\'" seqStr "\'"
-        Regex =  "/" seqReg "/" (letter|lineTerminator)*
-        seqReg = (("\\/" |"\\\\"|~("/")  any))+
-        seqStr = (("\\\\"|"\\'"| ~("\'")  any))*
-            
-        // External rules
-        whitespace = "\t"
-                   | "\x0B"    -- verticalTab
-                   | "\x0C"    -- formFeed
-                   | " "
-                   | "\u00A0"  -- noBreakSpace
-                   | "\uFEFF"  -- byteOrderMark
-                   | unicodeSpaceSeparator
-         unicodeSpaceSeparator = "\u2000".."\u200B" | "\u3000"
-         lineTerminator = "\n" | "\r" | "\u2028" | "\u2029"
-      }`);
-    const matchResult = grammer.match(str);
+    const matchResult = OhmStrToListGrammar.match(str);
     if (matchResult.failed()) {
         throw "Cannot parse array list from string";
         return r;
@@ -91,7 +70,7 @@ export function string_to_arr(str: string): any {
             r.push(this.children[1].sourceString);
         },
     };
-    const s = grammer.createSemantics();
+    const s = OhmStrToListGrammar.createSemantics();
     s.addOperation("semanticOperation", actions);
     s(matchResult).semanticOperation();
     return r;

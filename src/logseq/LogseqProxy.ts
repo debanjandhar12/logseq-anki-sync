@@ -13,7 +13,7 @@ import {
     SettingSchemaDesc,
 } from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
-import objectHash from "object-hash";
+import objectHash from "../utils/objectHashOptimized";
 import _ from "lodash";
 import { AddonRegistry } from "../addons/AddonRegistry";
 import getUUIDFromBlock from "./getUUIDFromBlock";

@@ -1,3 +1,5 @@
+import ohm from "ohm-js";
+
 export const specialChars =
     "\u2ddf\u22b3\u22b0\u278c\u23a1\u230f\u245d\u25da\u2efa\u2b79\u2b4d\u24e8\u2b8e\u2be4\u22cb\u2fed\u2063\u27c9\u24cf\u2904\u24a3\u24d0\u25e7\u22b5\u21da\u20ce\u2435\u2686\u2ba6\u27af\u244e\u23be\u298a\u26b0\u29ec\u2351\u234c\u2e7c\u2236\u243c\u2756\u21bf\u232b\u2936\u2b11\u2798\u20fe";
 export const ANKI_CLOZE_REGEXP = /(\{\{c(\d+)::)((.|\n)*?)\}\}/g;
@@ -22,6 +24,28 @@ export const isImage_REGEXP =
 export const isAudio_REGEXP = /^[^?]*\.(mp3|wav|ogg|flac|aac|opus)(\?.*)?$/i;
 export const isWebURL_REGEXP =
     /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
+
+export const OhmStrToListGrammar = ohm.grammar(String.raw`
+    StrRegArray {
+        Exp = listOf<StrOrRegex, separator> separator*
+        separator = (whitespace)* "," (whitespace)*
+        StrOrRegex = (Regex | Str | "")
+        Str = "\'" seqStr "\'"
+        Regex =  "/" seqReg "/" (letter|lineTerminator)*
+        seqReg = (("\\/" |"\\\\"|~("/")  any))+
+        seqStr = (("\\\\"|"\\'"| ~("\'")  any))*
+            
+        // External rules
+        whitespace = "\t"
+                   | "\x0B"    -- verticalTab
+                   | "\x0C"    -- formFeed
+                   | " "
+                   | "\u00A0"  -- noBreakSpace
+                   | "\uFEFF"  -- byteOrderMark
+                   | unicodeSpaceSeparator
+         unicodeSpaceSeparator = "\u2000".."\u200B" | "\u3000"
+         lineTerminator = "\n" | "\r" | "\u2028" | "\u2029"
+      }`);
 
 export const ANKI_ICON = `<svg height="18px" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" preserveAspectRatio="xMidYMid meet" viewBox="0 0 197.99999 198" id="svg2" version="1.1" inkscape:version="0.91 r13725" sodipodi:docname="application-icon.svg" enable-background="new" inkscape:export-filename="/home/tim/development/Anki-Android/docs/marketing/android_market/logo512-512-alpha.png" inkscape:export-xdpi="90" inkscape:export-ydpi="90">
 <title id="title4207">Anki Flat Design</title>
