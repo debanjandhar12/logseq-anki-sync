@@ -14,7 +14,7 @@ export async function SelectionModal(arr: {name : string, icon? : string}[], msg
                 div.remove();
             }
             onClose = onClose.bind(this);
-            ReactDOM.render(<ModelContent arr={arr} msg={msg} resolve={resolve} reject={reject} enableKeySelect={enableKeySelect} onClose={onClose}/>, div);
+            ReactDOM.render(<ModelComponent arr={arr} msg={msg} resolve={resolve} reject={reject} enableKeySelect={enableKeySelect} onClose={onClose}/>, div);
         } catch (e) {
             logseq.App.showMsg("Error", "Failed to open modal");
             console.log(e)
@@ -23,8 +23,9 @@ export async function SelectionModal(arr: {name : string, icon? : string}[], msg
     });
 }
 
-const ModelContent: React.FC<{ arr: {name : string, icon? : string}[], msg?:string, onClose : Function, resolve : Function, reject : Function, enableKeySelect? : boolean}> = ({arr, msg, onClose, resolve, reject, enableKeySelect}) => {
+const ModelComponent: React.FC<{ arr: {name : string, icon? : string}[], msg?:string, onClose : Function, resolve : Function, reject : Function, enableKeySelect? : boolean}> = ({arr, msg, onClose, resolve, reject, enableKeySelect}) => {
     const [open, setOpen] = React.useState(true);
+    let [items, setItems] = React.useState(arr);
     const handleSelection = React.useCallback((selection: number | null) => {
         resolve(selection);
         setOpen(false);
@@ -32,11 +33,12 @@ const ModelContent: React.FC<{ arr: {name : string, icon? : string}[], msg?:stri
 
     React.useEffect(() => {
         if(enableKeySelect) {
-            arr = arr.map((obj, i) => {
+            setItems(() => items.map((item, i) => {
                 if (i+1 >= 1 && i+1 <= 9)
-                    obj.name = `${obj.name}<span class="keyboard-shortcut px-4"><code>${i+1}</code></span>`;
-                return obj;
-            });
+                    item.name = `${item.name}<span class="keyboard-shortcut px-3"><code>${i+1}</code></span>`;
+                console.log(item.name);
+                return item;
+            }));
         }
 
         const onKeydown = (e: KeyboardEvent) => {
@@ -55,7 +57,7 @@ const ModelContent: React.FC<{ arr: {name : string, icon? : string}[], msg?:stri
         return () => {
             window.parent.document.removeEventListener("keydown", onKeydown);
         };
-    }, []);
+    }, [arr, enableKeySelect, onClose]);
 
     React.useEffect(() => {
         if (!open) {
@@ -66,16 +68,16 @@ const ModelContent: React.FC<{ arr: {name : string, icon? : string}[], msg?:stri
     return (
         <Modal open={open} setOpen={setOpen} onClose={onClose}>
             {msg && <h1 className="mb-4 text-2xl p-1">{msg}</h1>}
-            {arr.map((obj, index) => (
+            {items.map((item, index) => (
                 <LogseqButton
                     key={index}
                     onClick={() => handleSelection(index)}
                     color='indigo'
-                    isCentered={obj.icon == null}
+                    isCentered={item.icon == null}
                     isFullWidth={true}
-                    icon={obj.icon}
+                    icon={item.icon}
                 >
-                    <span dangerouslySetInnerHTML={{__html: obj.name}}/>
+                    <span dangerouslySetInnerHTML={{__html: item.name}}/>
                 </LogseqButton>
             ))}
         </Modal>
