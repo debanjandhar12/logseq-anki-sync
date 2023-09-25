@@ -1,12 +1,10 @@
 /***
 * This files contains the css for the both sides of anki cards.
 */
-/* import highlightjs css */
-@import "/node_modules/highlight.js/styles/default.css";
-@import "/node_modules/highlight.js/styles/dark.css" screen and (prefers-color-scheme: dark);
 
 body {
     background-color: white;
+    @import "/node_modules/highlight.js/scss/atom-one-light.scss";
 }
 
 .text {
@@ -342,6 +340,7 @@ li:not(.children) {
 body.nightMode {
     background-color: #2c2c2c;
     color: #fcfcfc;
+    @import "/node_modules/highlight.js/scss/atom-one-dark-reasonable.scss";
 }
 
 body.nightMode .text {

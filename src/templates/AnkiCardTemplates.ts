@@ -1,4 +1,4 @@
-import logseq_anki_sync_css from "./_logseq_anki_sync.css?inline";
+import logseq_anki_sync_css from "./_logseq_anki_sync.scss?inline";
 import logseq_anki_sync_front_css from "./_logseq_anki_sync_front.css?inline";
 import logseq_anki_sync_back_css from "./_logseq_anki_sync_back.css?inline";
 import logseq_anki_sync_js from "./_logseq_anki_sync.js?string";
