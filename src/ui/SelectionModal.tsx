@@ -77,7 +77,7 @@ const ModelComponent: React.FC<{ arr: {name : string, icon? : string}[], msg?:st
                     isFullWidth={true}
                     icon={item.icon}
                 >
-                    <span dangerouslySetInnerHTML={{__html: item.name}}/>
+                    <span style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} dangerouslySetInnerHTML={{__html: item.name}} />
                 </LogseqButton>
             ))}
         </Modal>
