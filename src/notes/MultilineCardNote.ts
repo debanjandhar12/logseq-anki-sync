@@ -122,18 +122,6 @@ export class MultilineCardNote extends Note {
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let clozedContent = "";
         const clozedContentAssets: Set<string> = new Set();
-        if (this.tags == null)
-            this.tags = await Promise.all(
-                _.map(
-                    (await LogseqProxy.Editor.getBlock(this.uuid)).refs,
-                    async (page) => {
-                        const tagPage = await LogseqProxy.Editor.getPage(
-                            page.id,
-                        );
-                        return _.get(tagPage, "name");
-                    },
-                ),
-            );
         const direction = this.getCardDirection();
 
         // Remove clozes and double braces one after another.
@@ -228,14 +216,6 @@ export class MultilineCardNote extends Note {
     public static async getNotesFromLogseqBlocks(
         otherNotes: Array<Note>,
     ): Promise<MultilineCardNote[]> {
-        const logseqCardGroup_blocks = await LogseqProxy.DB
-            .datascriptQueryBlocks(`
-        [:find (pull ?b [*])
-        :where
-        [?r :block/name "card-group"]
-        [?p :block/refs ?r]
-        [?b :block/parent ?p]
-        ]`);
         const logseqCard_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
@@ -248,6 +228,24 @@ export class MultilineCardNote extends Note {
         [?p :block/name "flashcard"]
         [?b :block/refs ?p]
         ]`);
+        let logseqCardGroup_blocks = await LogseqProxy.DB
+            .datascriptQueryBlocks(`
+        [:find (pull ?b [*])
+        :where
+        [?r :block/name "card-group"]
+        [?p :block/refs ?r]
+        [?b :block/parent ?p]
+        ]`);
+        logseqCardGroup_blocks = await Promise.all(logseqCardGroup_blocks.map(async (block) => {
+            const uuid = getUUIDFromBlock(block[0]);
+            const parent = block[0].parent.id;
+            const parentBlock = await LogseqProxy.Editor.getBlock(parent);
+            const tags = await MultilineCardNote.getImportantTags(
+                _.get(parentBlock, "refs", []).map((ref) => ref.id),
+            );
+            block[0].tagsFromParentCardGroup = [...tags];
+            return block;
+        }));
         let blocks: any = [
             ...logseqCard_blocks,
             ...flashCard_blocks,
@@ -259,6 +257,7 @@ export class MultilineCardNote extends Note {
                 const page = block[0].page
                     ? await LogseqProxy.Editor.getPage(block[0].page.id)
                     : {};
+                const tagsFromParentCardGroup = _.get(block[0], "tagsFromParentCardGroup", []);
                 block = await LogseqProxy.Editor.getBlock(uuid, {
                     includeChildren: true,
                 });
@@ -272,7 +271,8 @@ export class MultilineCardNote extends Note {
                         block.format,
                         block.properties || {},
                         page,
-                        tags,
+                        // Apply tags in parent card group block - #168
+                        (tags && tags.length > 0 ? tags : tagsFromParentCardGroup),
                         block.children,
                     );
                 } else {
