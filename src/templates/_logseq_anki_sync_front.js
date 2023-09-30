@@ -5,7 +5,7 @@ import { fabric } from "fabric";
 import { createOcclusionRectEl } from "../ui/OcclusionEditor";
 import path from "path-browserify";
 
-window.addEventListener("load", () => {
+const onLoadHandler = () => {
     if (type == "image_occlusion") {
         // Get current cloze id (only works for image occlusion)
         let currentClozeId = "-1";
@@ -13,6 +13,7 @@ window.addEventListener("load", () => {
             if (document.getElementById(`c${i}`)) currentClozeId = `${i}`;
         console.log(`Current cloze id: ${currentClozeId}`);
         if (currentClozeId == "-1") return;
+        if (!document.getElementById("localImgBasePath")) return;
         // Get localImgBasePath
         let localImgBasePath = document.getElementById("localImgBasePath").src;
         localImgBasePath = localImgBasePath.substring(
@@ -87,4 +88,10 @@ window.addEventListener("load", () => {
             });
         }
     }
-});
+}
+
+if (document.readyState === "complete") {
+    onLoadHandler();
+} else {
+    window.addEventListener('load', onLoadHandler);
+}
