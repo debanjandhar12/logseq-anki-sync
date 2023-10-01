@@ -62,4 +62,4 @@ Loved the tool? Please consider donating 💸 to help continue development!<br/>
 
 #### Sponsors:
  
-[@Tubo](https://github.com/Tubo) [@ryanbl](https://github.com/rtblair) [@chs33](https://github.com/chs33) [@thiswillbeyourgithub](https://github.com/thiswillbeyourgithub)
+[@Tubo](https://github.com/Tubo) [@ryanbl](https://github.com/rtblair) [@chs33](https://github.com/chs33) [@Rumpoled](https://github.com/Rumpoled) [@thiswillbeyourgithub](https://github.com/thiswillbeyourgithub)
