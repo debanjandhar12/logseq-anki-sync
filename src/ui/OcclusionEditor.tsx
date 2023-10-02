@@ -196,6 +196,24 @@ const OcclusionEditorComponent = React.forwardRef<any, any>(
             }
         }, [fabricSelection]);
 
+        // Show zoom view on mouse hover
+        const [zoomView, setZoomView] = React.useState<string>(null);
+        React.useEffect(() => {
+            fabricRef.current.on("mouse:move", function (e: any) {
+                setZoomView(() => {
+                    const currentZoom = fabricRef.current.getZoom();
+                   if (currentZoom >= 1) return null;
+                   fabricRef.current.setZoom(1.5);
+                   const zoomImg = fabricRef.current.toDataURL({top: (e.e.offsetY*(1.5/currentZoom)) - 15, left: (e.e.offsetX*(1.5/currentZoom)) - 30, width: 60, height: 30});
+                   fabricRef.current.setZoom(currentZoom);
+                   return zoomImg;
+                });
+            });
+            fabricRef.current.on("mouse:out", function (e: any) {
+                setZoomView(null);
+            });
+        }, [fabricRef]);
+
         // Prevent out of bounds - https://stackoverflow.com/a/42915768
         React.useEffect(() => {
             const preventOutOfBounds = (e: any) => {
@@ -360,6 +378,13 @@ const OcclusionEditorComponent = React.forwardRef<any, any>(
                         marginBottom: "0.3rem",
                     }}
                 >
+                    {zoomView && (<span
+                    style={{
+                        margin: "0.125rem auto 0.125rem 0",
+                    }}><img
+                        src={zoomView}
+                    />&lt;- Zoom</span>)
+                    }
                     <button
                         onClick={addOcclusion}
                         className="ui__button bg-indigo-600 hover:bg-indigo-700 focus:border-indigo-700 active:bg-indigo-700 text-center text-sm"
