@@ -3,6 +3,8 @@ import { LazyAnkiNoteManager } from "../anki-connect/LazyAnkiNoteManager";
 import { HTMLFile } from "../converter/Converter";
 import { DependencyEntity } from "../converter/getContentDirectDependencies";
 import _ from "lodash";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import {NoteUtils} from "./NoteUtils";
 
 export abstract class Note {
     public uuid: string;
@@ -12,6 +14,7 @@ export abstract class Note {
     public page: any;
     public type: string;
     public ankiId: number;
+    public tagIds: number[];
     static ankiNoteManager: LazyAnkiNoteManager;
 
     public constructor(
@@ -20,6 +23,7 @@ export abstract class Note {
         format: string,
         properties: any,
         page: any,
+        refs: number[],
     ) {
         this.uuid = uuid;
         this.content = content;
@@ -29,6 +33,7 @@ export abstract class Note {
         this.page.originalName =
             _.get(this, "page.originalName", null) ||
             _.get(this, "page.name", null); // Just in case the page doesn't have an originalName
+        this.tagIds = refs;
     }
 
     public static setAnkiNoteManager(ankiNoteManager: LazyAnkiNoteManager) {
@@ -59,6 +64,34 @@ export abstract class Note {
         return [this.uuid].map(
             (block) => ({ type: "Block", value: block }) as DependencyEntity,
         );
+    }
+
+    public static initLogseqOperations = () => {
+        logseq.provideStyle(`
+            .page-reference[data-ref=no-anki-sync], a[data-ref=no-anki-sync] {
+                opacity: .3;
+            }
+        `);
+        LogseqProxy.Editor.createPageSilentlyIfNotExists("no-anki-sync");
+    }
+
+    public static async removeUnwantedNotes(notes : Note[]): Promise<Note[]> {
+        let newNotes = notes;
+        newNotes = _.uniqBy(newNotes, "uuid");
+        newNotes = _.without(newNotes, undefined, null);
+        newNotes = _.filter(newNotes, (note) => {
+            // Remove template blocks and blocks without uuid
+            return (
+                _.get(note, "properties.template") == null ||
+                _.get(note, "properties.template") == undefined ||
+                _.get(note, "uuid") == null
+            );
+        });
+        newNotes = (await Promise.all(
+            newNotes.map(async note =>
+                (await NoteUtils.matchTagNamesWithTagIds(note.tagIds, ["no-anki-sync"])).includes("no-anki-sync") ? null : note)
+        )).filter(note => note !== null);
+        return newNotes;
     }
 
     // public static async abstract getBlocksFromLogseq(): Block[];

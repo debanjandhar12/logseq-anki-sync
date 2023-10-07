@@ -22,7 +22,7 @@ type LogSeqOperation = {
     operation: string;
     parameters: any;
 };
-type LogSeqOperationHash = string;
+type LogSeqOperationHash = number;
 
 const cache = new Map<LogSeqOperationHash, any>();
 const getLogseqLock = new AwaitLock();
@@ -282,6 +282,21 @@ export namespace LogseqProxy {
             await getLogseqLock.acquireAsync();
             try {
                 await logseq.Editor.upsertBlockProperty(block, key, value);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                getLogseqLock.release();
+            }
+        }
+
+        static async createPageSilentlyIfNotExists(
+            pageName: string,
+        ) {
+            await getLogseqLock.acquireAsync();
+            try {
+                if (await logseq.Editor.getPage(pageName) == null) {
+                    await logseq.Editor.createPage(pageName, {}, {redirect: false});
+                }
             } catch (e) {
                 console.error(e);
             } finally {

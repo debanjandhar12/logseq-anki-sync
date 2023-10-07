@@ -36,8 +36,9 @@ export class ImageOcclusionNote extends Note {
         format: string,
         properties: any,
         page: any,
+        tagIds: number[] = [],
     ) {
-        super(uuid, content, format, properties, page);
+        super(uuid, content, format, properties, page, tagIds);
     }
 
     public static initLogseqOperations = () => {
@@ -46,7 +47,7 @@ export class ImageOcclusionNote extends Note {
             async (block) => {
                 const uuid = getUUIDFromBlock(block as BlockEntity);
                 block = await logseq.Editor.getBlock(uuid); // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
-                const block_images = await ImageOcclusionNote.getImagesInBlock(
+                const block_images = await ImageOcclusionNote.getImagesInBlockOrNote(
                     block,
                 );
                 if (block_images.length == 0) {
@@ -113,7 +114,7 @@ export class ImageOcclusionNote extends Note {
             Buffer.from(this.properties?.occlusion, "base64").toString(),
         );
         const block = await LogseqProxy.Editor.getBlock(this.uuid);
-        let block_images = await ImageOcclusionNote.getImagesInBlock(block);
+        let block_images = await ImageOcclusionNote.getImagesInBlockOrNote(block);
         imgToOcclusionArrHashMap = ImageOcclusionNote.migrateOutdatedImages(
             imgToOcclusionArrHashMap,
             block_images,
@@ -150,7 +151,7 @@ export class ImageOcclusionNote extends Note {
           [?b :block/properties ?p]
           [(get ?p :occlusion)]
         ]`);
-        blocks = await Promise.all(
+        let notes : (ImageOcclusionNote|false)[] = await Promise.all(
             blocks.map(async (block) => {
                 const uuid = getUUIDFromBlock(block[0]);
                 const page = block[0].page
@@ -167,35 +168,27 @@ export class ImageOcclusionNote extends Note {
                         block.format,
                         block.properties || {},
                         page,
+                        _.get(block, "refs", []).map((ref) => ref.id)
                     );
                 else {
                     return null;
                 }
             }),
         );
-        console.log("ImageOcclusionNote Loaded");
-        blocks = _.uniqBy(blocks, "uuid");
-        blocks = _.without(blocks, undefined, null);
-        blocks = _.filter(blocks, (block) => {
-            // Remove template blocks and blocks without uuid
-            return (
-                _.get(block, "properties.template") == null ||
-                _.get(block, "properties.template") == undefined ||
-                _.get(block, "uuid") == null
-            );
-        });
-        blocks = await Promise.all(
-            _.map(blocks, async (block) => {
+        console.log("ImageOcclusionNote Loaded", notes);
+        notes = await Note.removeUnwantedNotes(notes as ImageOcclusionNote[]);
+        notes = await Promise.all(
+            _.map(notes, async (note) => {
                 // Remove blocks that do not have images with occlusion
                 try {
                     let imgToOcclusionArrHashMap = JSON.parse(
                         Buffer.from(
-                            block.properties?.occlusion,
+                            note.properties?.occlusion,
                             "base64",
                         ).toString(),
                     );
-                    let blockImages = await ImageOcclusionNote.getImagesInBlock(
-                        block,
+                    let blockImages = await ImageOcclusionNote.getImagesInBlockOrNote(
+                        note,
                     );
                     imgToOcclusionArrHashMap =
                         ImageOcclusionNote.migrateOutdatedImages(
@@ -212,7 +205,7 @@ export class ImageOcclusionNote extends Note {
                             occlusionArr.length > 0 &&
                             blockImages.includes(image)
                         )
-                            return block; // Found a valid occlusion! Return true.
+                            return note; // Found a valid occlusion!
                     }
                 } catch (e) {
                     return false;
@@ -220,13 +213,12 @@ export class ImageOcclusionNote extends Note {
                 return false; // No valid occlusion found. Return false.
             }),
         );
-        blocks = _.without(blocks, false);
-        // console.log(blocks);
-        return blocks;
+        notes = _.without(notes, false);
+        return notes as ImageOcclusionNote[];
     }
 
     // -- Helper functions --
-    public static async getImagesInBlock(block: any): Promise<string[]> {
+    public static async getImagesInBlockOrNote(block: any): Promise<string[]> {
         let block_content = block.content;
         block_content = await processProperties(block_content); // Process pdf properties
         block_content = await safeReplaceAsync(

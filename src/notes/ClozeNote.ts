@@ -21,8 +21,9 @@ export class ClozeNote extends Note {
         format: string,
         properties: any,
         page: any,
+        tagIds: number[],
     ) {
-        super(uuid, content, format, properties, page);
+        super(uuid, content, format, properties, page, tagIds);
     }
 
     public static initLogseqOperations = () => {
@@ -249,7 +250,7 @@ export class ClozeNote extends Note {
             ...replaceCloze_blocks,
             ...orgCloze_blocks,
         ];
-        blocks = await Promise.all(
+        let notes = await Promise.all(
             blocks.map(async (block) => {
                 const uuid = getUUIDFromBlock(block[0]);
                 const page = block[0].page
@@ -266,23 +267,14 @@ export class ClozeNote extends Note {
                         block.format,
                         block.properties || {},
                         page,
+                        _.get(block, "refs", []).map((ref) => ref.id),
                     );
                 else {
                     return null;
                 }
             }),
         );
-        console.log("ClozeNote Cards Loaded");
-        blocks = _.uniqBy(blocks, "uuid");
-        blocks = _.without(blocks, undefined, null);
-        blocks = _.filter(blocks, (block) => {
-            // Remove template blocks and blocks without uuid
-            return (
-                _.get(block, "properties.template") == null ||
-                _.get(block, "properties.template") == undefined ||
-                _.get(block, "uuid") == null
-            );
-        });
-        return blocks;
+        notes = await Note.removeUnwantedNotes(notes)
+        return notes;
     }
 }

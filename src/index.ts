@@ -14,6 +14,7 @@ import * as blockAndPageHashCache from "./logseq/blockAndPageHashCache";
 import { Buffer } from "buffer/";
 import process from "process";
 import {SelectionModal} from "./ui/SelectionModal";
+import {Note} from "./notes/Note";
 
 async function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
@@ -61,6 +62,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     }
     LogseqProxy.init();
     blockAndPageHashCache.init();
+    Note.initLogseqOperations();
     ClozeNote.initLogseqOperations();
     MultilineCardNote.initLogseqOperations();
     SwiftArrowNote.initLogseqOperations();

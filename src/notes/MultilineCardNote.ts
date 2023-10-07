@@ -8,6 +8,7 @@ import { LogseqProxy } from "../logseq/LogseqProxy";
 import { BlockUUID } from "@logseq/libs/dist/LSPlugin.user";
 import { DependencyEntity } from "../converter/getContentDirectDependencies";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
+import {NoteUtils} from "./NoteUtils";
 
 export class MultilineCardNote extends Note {
     public type = "multiline_card";
@@ -21,8 +22,9 @@ export class MultilineCardNote extends Note {
         page: any,
         tags: any = [],
         children: any = [],
+        tagIds: number[] = [],
     ) {
-        super(uuid, content, format, properties, page);
+        super(uuid, content, format, properties, page, tagIds);
         this.children = children;
         this.tags = tags;
     }
@@ -64,7 +66,16 @@ export class MultilineCardNote extends Note {
             .page-reference[data-ref^=depth-], a[data-ref^=depth-] {
                 opacity: .3;
             }
+            .page-reference[data-ref=flashcard], a[data-ref=card-group] {
+                opacity: .3;
+            }
         `);
+        LogseqProxy.Editor.createPageSilentlyIfNotExists("card-group");
+        LogseqProxy.Editor.createPageSilentlyIfNotExists("flashcard");
+        LogseqProxy.Editor.createPageSilentlyIfNotExists("forward");
+        LogseqProxy.Editor.createPageSilentlyIfNotExists("reversed");
+        LogseqProxy.Editor.createPageSilentlyIfNotExists("bidirectional");
+        LogseqProxy.Editor.createPageSilentlyIfNotExists("incremental");
     };
 
     private getCardDirection(): string {
@@ -93,30 +104,10 @@ export class MultilineCardNote extends Note {
         return maxDepth;
     }
 
-    private static async getImportantTags(tagIds: any[]): Promise<string[]> {
-        const tags = [],
-            tagIdSet = new Set(tagIds);
-        let tagPage;
-        tagPage = await LogseqProxy.Editor.getPage("forward");
-        if (tagPage && tagPage.id && tagIdSet.has(tagPage.id))
-            tags.push("forward");
-        tagPage = await LogseqProxy.Editor.getPage("reversed");
-        if (tagPage && tagPage.id && tagIdSet.has(tagPage.id))
-            tags.push("reversed");
-        tagPage = await LogseqProxy.Editor.getPage("bidirectional");
-        if (tagPage && tagPage.id && tagIdSet.has(tagPage.id))
-            tags.push("bidirectional");
-        tagPage = await LogseqProxy.Editor.getPage("incremental");
-        if (tagPage && tagPage.id && tagIdSet.has(tagPage.id))
-            tags.push("incremental");
-        for (let i = 0; i < 10; i++) {
-            tagPage = await LogseqProxy.Editor.getPage("depth-" + i);
-            if (tagPage && tagPage.id && tagIdSet.has(tagPage.id)) {
-                tags.push("depth-" + i);
-                break;
-            }
-        }
-        return tags;
+    private static async getRelevantTags(tagIds: any[]): Promise<string[]> {
+        return await NoteUtils.matchTagNamesWithTagIds(_.get(tagIds, "refs", []).map((ref) => ref.id),
+            ['forward', 'reversed', 'bidirectional', 'incremental',
+                ...Array.from(Array(10).keys()).map((i) => `depth-${i}`)]);
     }
 
     public async getClozedContentHTML(): Promise<HTMLFile> {
@@ -240,7 +231,7 @@ export class MultilineCardNote extends Note {
             const uuid = getUUIDFromBlock(block[0]);
             const parent = block[0].parent.id;
             const parentBlock = await LogseqProxy.Editor.getBlock(parent);
-            const tags = await MultilineCardNote.getImportantTags(
+            const tags = await MultilineCardNote.getRelevantTags(
                 _.get(parentBlock, "refs", []).map((ref) => ref.id),
             );
             block[0].tagsFromParentCardGroup = [...tags];
@@ -251,7 +242,7 @@ export class MultilineCardNote extends Note {
             ...flashCard_blocks,
             ...logseqCardGroup_blocks,
         ];
-        blocks = await Promise.all(
+        let notes = await Promise.all(
             blocks.map(async (block) => {
                 const uuid = getUUIDFromBlock(block[0]);
                 const page = block[0].page
@@ -262,7 +253,7 @@ export class MultilineCardNote extends Note {
                     includeChildren: true,
                 });
                 if (block) {
-                    const tags = await MultilineCardNote.getImportantTags(
+                    const tags = await MultilineCardNote.getRelevantTags(
                         _.get(block, "refs", []).map((ref) => ref.id),
                     );
                     return new MultilineCardNote(
@@ -274,6 +265,7 @@ export class MultilineCardNote extends Note {
                         // Apply tags in parent card group block - #168
                         (tags && tags.length > 0 ? tags : tagsFromParentCardGroup),
                         block.children,
+                        _.get(block, "refs", []).map((ref) => ref.id),
                     );
                 } else {
                     return null;
@@ -281,29 +273,19 @@ export class MultilineCardNote extends Note {
             }),
         );
         console.log("MultilineCardNote Loaded");
-        blocks = _.uniqBy(blocks, "uuid");
-        blocks = _.without(blocks, undefined, null);
-        blocks = _.filter(blocks, (block) => {
-            // Remove template blocks and blocks without uuid
-            return (
-                _.get(block, "properties.template") == null ||
-                _.get(block, "properties.template") == undefined ||
-                _.get(block, "uuid") == null
-            );
-        });
-        blocks = _.filter(blocks, (block) => {
+        notes = await Note.removeUnwantedNotes(notes);
+        notes = _.filter(notes, (note) => {
             // Retain only blocks whose children count > 0 or direction is expictly specifed or no other note type is being generated from that block
             return (
-                _.get(block, "properties.direction") ||
-                block.tags.includes("forward") ||
-                block.tags.includes("bidirectional") ||
-                block.tags.includes("reversed") ||
-                block.children.length > 0 ||
-                !_.find(otherNotes, { uuid: block.uuid })
+                _.get(note, "properties.direction") ||
+                note.tags.includes("forward") ||
+                note.tags.includes("bidirectional") ||
+                note.tags.includes("reversed") ||
+                note.children.length > 0 ||
+                !_.find(otherNotes, { uuid: note.uuid })
             );
         });
-
-        return blocks;
+        return notes;
     }
 
     public getBlockDependencies(): DependencyEntity[] {

@@ -20,8 +20,9 @@ export class SwiftArrowNote extends Note {
         format: string,
         properties: any,
         page: any,
+        tagIds: number[] = [],
     ) {
-        super(uuid, content, format, properties, page);
+        super(uuid, content, format, properties, page, tagIds);
     }
 
     public static initLogseqOperations = () => {};
@@ -71,7 +72,7 @@ export class SwiftArrowNote extends Note {
         [(re-find ?regex ?content)]
         ]`);
         let blocks: any = [...singleSwiftArrowBlocks];
-        blocks = await Promise.all(
+        let notes = await Promise.all(
             blocks.map(async (block) => {
                 const uuid = getUUIDFromBlock(block[0]);
                 const page = block[0].page
@@ -88,6 +89,7 @@ export class SwiftArrowNote extends Note {
                         block.format,
                         block.properties || {},
                         page,
+                        _.get(block, "refs", []).map((ref) => ref.id)
                     );
                 else {
                     return null;
@@ -95,22 +97,13 @@ export class SwiftArrowNote extends Note {
             }),
         );
         console.log("SwiftArrowNote Blocks Loaded");
-        blocks = _.uniqBy(blocks, "uuid");
-        blocks = _.without(blocks, undefined, null);
-        blocks = _.filter(blocks, (block) => {
-            // Remove template blocks and blocks without uuid
-            return (
-                _.get(block, "properties.template") == null ||
-                _.get(block, "properties.template") == undefined ||
-                _.get(block, "uuid") == null
-            );
-        });
-        blocks = _.filter(blocks, (block) => {
+        notes = await Note.removeUnwantedNotes(notes);
+        notes = _.filter(notes, (note) => {
             // Remove notes that do not genetate any clozes
-            const block_content = block.content;
+            const note_content = note.content;
             let cardGenerated = false;
             safeReplace(
-                block_content,
+                note_content,
                 /(.+?)(\s*(:<->|:->|:<-)\s*)(.+)/s,
                 (match, ...groups) => {
                     cardGenerated = true;
@@ -119,6 +112,6 @@ export class SwiftArrowNote extends Note {
             );
             return cardGenerated;
         });
-        return blocks;
+        return notes;
     }
 }
