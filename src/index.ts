@@ -79,7 +79,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
 
     // Show welcome message
     if (logseq.settings.lastWelcomeVersion && logseq.settings.lastWelcomeVersion !== baseInfo.version) {
-        showModelWithButtons(`Welcome to Logseq Anki Sync ${baseInfo.version}! \n\nUpdate is installed successfully.`,
+        showModelWithButtons(`Welcome to Logseq Anki Sync ${baseInfo.version}! <br/><br/><small>Update is installed successfully.</small>`,
             [{name:"Read Release notes", f:()=>{
                     window.open(`https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${baseInfo.version}`);
                 }}]);
