@@ -72,7 +72,7 @@ const ModelComponent: React.FC<{ arr: {name : string, icon? : string}[], msg?:st
                 <LogseqButton
                     key={index}
                     onClick={() => handleSelection(index)}
-                    color='indigo'
+                    color='primary'
                     isCentered={item.icon == null}
                     isFullWidth={true}
                     icon={item.icon}

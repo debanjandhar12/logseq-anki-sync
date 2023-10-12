@@ -5,11 +5,17 @@ type LogseqButtonProps = {
     onClick?: () => void,
     icon?: string,
     isFullWidth?: boolean,
-    color?: 'green' | 'indigo' | 'red' | 'gray'
+    color?: 'primary' | 'default' | 'success',
 };
 
 export const LogseqButton: FC<LogseqButtonProps> = ({children, onClick, icon, isFullWidth, color, isCentered}) => {
-    let classNameString = `ui__button bg-${color}-600 hover:bg-${color}-700 focus:border-${color}-700 active:bg-${color}-700 text-center text-sm shadow-sm inline-flex rounded-md border border-transparent px-4 py-2 bg-indigo-600 text-base leading-6 font-medium`;
+    let classNameString = 'inline-flex justify-center rounded-md';
+    if (color === 'primary') {
+        classNameString += ' border border-transparent px-4 py-2 bg-indigo-600 text-base leading-6 font-medium text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo ui__modal-enter';
+    }
+    else {
+        classNameString += ' border border-gray-300 px-4 py-2 bg-white text-base leading-6 font-medium text-gray-700 shadow-sm hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue';
+    }
 
     if (isFullWidth) {
         classNameString += ' w-full';
