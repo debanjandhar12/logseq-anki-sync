@@ -28,6 +28,7 @@ import { ImageOcclusionNote } from "./notes/ImageOcclusionNote";
 import NoteHashCalculator from "./notes/NoteHashCalculator";
 import { cancelable, CancelablePromise } from "cancelable-promise";
 import { DepGraph } from "dependency-graph";
+import {NoteUtils} from "./notes/NoteUtils";
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
     graphName: string;
@@ -543,6 +544,9 @@ export class LogseqToAnkiSync {
                     content: escapeClozeAndSecoundBrace(parent.content),
                     format: parent.format,
                     uuid: parent.uuid,
+                    hideWhenCardParent: (await NoteUtils.matchTagNamesWithTagIds(
+                        _.get(parent, "refs", []).map((ref) => ref.id), ["hide-when-card-parent"]))
+                        .includes("hide-when-card-parent")
                 });
                 parentID = parent.parent.id;
             }
@@ -551,6 +555,8 @@ export class LogseqToAnkiSync {
                     parentBlock.content,
                     parentBlock.format,
                 );
+                if (parentBlock.hideWhenCardParent)
+                    parentBlockConverted.html = `<span class="hidden-when-card-parent">${parentBlockConverted.html}</span>`
                 parentBlockConverted.assets.forEach((asset) =>
                     assets.add(asset),
                 );

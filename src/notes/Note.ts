@@ -73,6 +73,7 @@ export abstract class Note {
             }
         `);
         LogseqProxy.Editor.createPageSilentlyIfNotExists("no-anki-sync");
+        LogseqProxy.Editor.createPageSilentlyIfNotExists("hide-when-card-parent"); // TODO: relocate this
     }
 
     public static async removeUnwantedNotes(notes : Note[]): Promise<Note[]> {
