@@ -32,7 +32,7 @@ const ModelComponent : React.FC<{
 }> = ({ msg, btns, resolve, reject, onClose }) => {
     const [open, setOpen] = React.useState(true);
     const returnResult = React.useCallback((result: number | false) => {
-        resolve(returnResult);
+        resolve(result);
         setOpen(false);
     }, [resolve]);
 

@@ -192,7 +192,7 @@ export class LogseqToAnkiSync {
         const confirm_result = await Confirm(confirm_msg);
         // @ts-ignore
         window.parent.AnkiConnect = null; // Remove AnkiConnect from the global scope
-        if (!confirm_result || confirm_result == false) {
+        if (!confirm_result) {
             buildNoteHashes.cancel();
             window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
             console.log("Sync Aborted by user!");

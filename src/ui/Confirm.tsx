@@ -31,7 +31,7 @@ const ModelComponent : React.FC<{
 }> = ({ msg, resolve, reject, onClose }) => {
     const [open, setOpen] = React.useState(true);
     const returnResult = React.useCallback((result: boolean) => {
-        resolve(returnResult);
+        resolve(result);
         setOpen(false);
     }, [resolve]);
 
