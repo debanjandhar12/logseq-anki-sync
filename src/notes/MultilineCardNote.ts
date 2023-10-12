@@ -105,7 +105,7 @@ export class MultilineCardNote extends Note {
     }
 
     private static async getRelevantTags(tagIds: any[]): Promise<string[]> {
-        return await NoteUtils.matchTagNamesWithTagIds(_.get(tagIds, "refs", []).map((ref) => ref.id),
+        return await NoteUtils.matchTagNamesWithTagIds(tagIds,
             ['forward', 'reversed', 'bidirectional', 'incremental',
                 ...Array.from(Array(10).keys()).map((i) => `depth-${i}`)]);
     }
@@ -256,6 +256,7 @@ export class MultilineCardNote extends Note {
                     const tags = await MultilineCardNote.getRelevantTags(
                         _.get(block, "refs", []).map((ref) => ref.id),
                     );
+                    console.log(tags);
                     return new MultilineCardNote(
                         uuid,
                         block.content,
