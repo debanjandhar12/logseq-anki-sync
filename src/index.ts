@@ -15,6 +15,7 @@ import { Buffer } from "buffer/";
 import process from "process";
 import {SelectionModal} from "./ui/SelectionModal";
 import {Note} from "./notes/Note";
+import {showModelWithButtons} from "./ui/ModelWithBtns";
 
 async function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
@@ -75,6 +76,15 @@ async function main(baseInfo: LSPluginBaseInfo) {
     window.Buffer = Buffer;
     // @ts-ignore
     window.process = process;
+
+    // Show welcome message
+    if (logseq.settings.lastWelcomeVersion && logseq.settings.lastWelcomeVersion !== baseInfo.version) {
+        showModelWithButtons(`Welcome to Logseq Anki Sync ${baseInfo.version}! \n\nUpdate is installed successfully.`,
+            [{name:"Read Release notes", f:()=>{
+                    window.open(`https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${baseInfo.version}`);
+                }}]);
+    }
+    logseq.updateSettings({lastWelcomeVersion: baseInfo.version});
 }
 
 // Bootstrap
