@@ -256,7 +256,6 @@ export class MultilineCardNote extends Note {
                     const tags = await MultilineCardNote.getRelevantTags(
                         _.get(block, "refs", []).map((ref) => ref.id),
                     );
-                    console.log(tags);
                     return new MultilineCardNote(
                         uuid,
                         block.content,

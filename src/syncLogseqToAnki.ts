@@ -557,7 +557,6 @@ export class LogseqToAnkiSync {
                 ));
                 if (parentBlock.hideWhenCardParent)
                     parentBlockConverted.html = `<span class="hidden-when-card-parent">${parentBlockConverted.html}</span>`
-                console.log(parentBlockConverted.html);
                 parentBlockConverted.assets.forEach((asset) =>
                     assets.add(asset),
                 );
