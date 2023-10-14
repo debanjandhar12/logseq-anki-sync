@@ -1,4 +1,4 @@
-import { ANKI_ICON, DONATE_ICON, isWebURL_REGEXP } from "../constants";
+import {ADD_OCCLUSION_ICON, ANKI_ICON, DONATE_ICON, isWebURL_REGEXP, REMOVE_OCCLUSION_ICON} from "../constants";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import _ from "lodash";
@@ -375,7 +375,7 @@ const OcclusionEditorComponent = React.forwardRef<any, any>(
                     style={{
                         justifyContent: "end",
                         alignItems: "center",
-                        marginBottom: "0.3rem",
+                        marginBottom: "0.5rem",
                     }}
                 >
                     {zoomView && (<span
@@ -386,31 +386,27 @@ const OcclusionEditorComponent = React.forwardRef<any, any>(
                     />&lt;- Zoom</span>)
                     }
                     <button
+                        title={"Add Occlusion"}
                         onClick={addOcclusion}
-                        className="ui__button bg-indigo-600 hover:bg-indigo-700 focus:border-indigo-700 active:bg-indigo-700 text-center text-sm"
+                        className="inline-flex justify-center rounded-md  reduce-opacity-when-disabled not-allowed-cursor-when-disabled bg-indigo-600 hover:bg-indigo-700 focus:border-indigo-700 active:bg-indigo-700 text-center text-sm"
                         style={{
                             margin: "0.125rem 0.25rem 0.125rem 0",
-                            padding: ".35rem .35rem",
+                            padding: ".30rem .30rem",
                         }}
                     >
-                        <i
-                            className="ti ti-plus"
-                            style={{ fontSize: "1.25rem" }}
-                        ></i>
+                        <i style={{color: 'white'}} dangerouslySetInnerHTML={{ __html: ADD_OCCLUSION_ICON }}></i>
                     </button>
                     <button
+                        title={"Delete Occlusion"}
                         onClick={deleteOcclusion}
-                        className="ui__button bg-indigo-600 hover:bg-indigo-700 focus:border-indigo-700 active:bg-indigo-700 text-center text-sm"
+                        className="inline-flex justify-center rounded-md reduce-opacity-when-disabled not-allowed-cursor-when-disabled bg-red-600 hover:bg-red-700 focus:border-red-700 active:bg-red-700 text-center text-sm"
                         style={{
                             margin: "0.125rem 0.25rem 0.125rem 0",
-                            padding: ".35rem .35rem",
+                            padding: ".30rem .30rem",
                         }}
                         disabled={fabricSelection == null}
                     >
-                        <i
-                            className="ti ti-trash"
-                            style={{ fontSize: "1.25rem" }}
-                        ></i>
+                        <i style={{color: 'white'}} dangerouslySetInnerHTML={{ __html: REMOVE_OCCLUSION_ICON }}></i>
                     </button>
                     <span style={{ fontSize: "0.875rem", marginLeft: "1rem" }}>
                         Cloze Id:

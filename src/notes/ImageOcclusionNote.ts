@@ -9,7 +9,7 @@ import {
 } from "../utils/utils";
 import _ from "lodash";
 import {
-    isImage_REGEXP,
+    isImage_REGEXP, isWebURL_REGEXP,
     LOGSEQ_BLOCK_REF_REGEXP,
     MD_IMAGE_EMBEDED_REGEXP,
     MD_PROPERTIES_REGEXP,
@@ -73,7 +73,7 @@ export class ImageOcclusionNote extends Note {
                 let selectedImageIdx = await SelectionModal(block_images.map((image) => {
                     return {
                         name: image,
-                        icon: `<img class="px-4" height="48" width="64" src="${image}"/>`
+                        icon: `<img class="px-4" height="48" width="64" src="${image.match(isWebURL_REGEXP) ? image : window.parent.logseq.api.make_asset_url(image)}"></img>`,
                     };
                 }), 'Select Image for occlusion', true);
                 if (selectedImageIdx != null) selectedImage = block_images[selectedImageIdx];

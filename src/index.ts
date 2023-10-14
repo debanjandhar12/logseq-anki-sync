@@ -16,6 +16,7 @@ import process from "process";
 import {SelectionModal} from "./ui/SelectionModal";
 import {Note} from "./notes/Note";
 import {showModelWithButtons} from "./ui/ModelWithBtns";
+import {UI} from "./ui/UI";
 
 async function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
@@ -69,6 +70,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     SwiftArrowNote.initLogseqOperations();
     ImageOcclusionNote.initLogseqOperations();
     AddonRegistry.getAll().forEach((addon) => addon.init());
+    UI.init();
     console.log("Window Parent:", window.parent);
 
     // The lines below are needed for vite build and dev to work properly.

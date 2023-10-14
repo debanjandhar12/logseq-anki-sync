@@ -74,12 +74,13 @@ const ModelComponent : React.FC<{
                             isFullWidth={true}
                             isCentered={true}
                             onClick={() => returnResult(true)}
-                            color='primary'>Confirm</LogseqButton>
+                            color='primary'><span style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}><span>Confirm</span><span className="px-1 opacity-80"><code>⏎</code></span></span></LogseqButton>
                     </span>
                     <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
                         <LogseqButton
                             isFullWidth={true}
                             isCentered={true}
+                            color={'faded-default'}
                             onClick={() => returnResult(false)}>Cancel</LogseqButton>
                     </span>
                 </div>
