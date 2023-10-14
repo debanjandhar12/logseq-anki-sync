@@ -62,14 +62,15 @@ const onLoadHandler = () => {
             document.getElementById("imgToOcclusionArrHashMap").innerHTML,
         );
         for (let image in imgToOcclusionArrHashMap) {
+            console.log(image, imgToOcclusionArrHashMap, imgToOcclusionArrHashMap[image], imgToCanvasHashMap, imgToCanvasHashMap[image]);
             let occlusionArr = imgToOcclusionArrHashMap[image];
             occlusionArr.forEach((obj) => {
                 if (obj.cId == currentClozeId) {
                     (
-                        imgToCanvasHashMap[
-                            localImgBasePath + "/" + path.basename(image)
-                        ] ||
+                        imgToCanvasHashMap[localImgBasePath + "/" + path.basename(image)] ||
+                        imgToCanvasHashMap[encodeURI(localImgBasePath + "/" + path.basename(image))] ||
                         imgToCanvasHashMap[image] ||
+                        imgToCanvasHashMap[encodeURI(image)] ||
                         []
                     ).forEach((canvas) => {
                         let occlusion = createOcclusionRectEl(
