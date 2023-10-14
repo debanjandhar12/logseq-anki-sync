@@ -551,12 +551,13 @@ export class LogseqToAnkiSync {
                 parentID = parent.parent.id;
             }
             for await (const parentBlock of parentBlocks.reverse()) {
-                const parentBlockConverted = await convertToHTMLFile(
+                const parentBlockConverted = _.clone(await convertToHTMLFile(
                     parentBlock.content,
                     parentBlock.format,
-                );
+                ));
                 if (parentBlock.hideWhenCardParent)
                     parentBlockConverted.html = `<span class="hidden-when-card-parent">${parentBlockConverted.html}</span>`
+                console.log(parentBlockConverted.html);
                 parentBlockConverted.assets.forEach((asset) =>
                     assets.add(asset),
                 );
