@@ -54,7 +54,7 @@ const addPageNode = async (pageName) => {
     if (graph.hasNode(pageName + "Page")) return;
     const page = await LogseqProxy.Editor.getPage(pageName);
     const toHash = [];
-    toHash.push({ updatedAt: _.get(page, "updatedAt", "") }); // A Page has no dependencies, so we just hash the updatedAt timestamp
+    toHash.push([ _.get(page, "updatedAt", "") ]); // A Page has no dependencies, so we just hash the updatedAt timestamp
     graph.addNode(pageName + "Page", hashSum(toHash));
 };
 
@@ -86,11 +86,14 @@ const addBlockNode = async (blockUUID) => {
     graph.dependenciesOf(blockUUID + "Block").forEach((dependency) => {
         toHash.push(graph.getNodeData(dependency));
     });
-    toHash.push({
-        updatedAt: _.get(blockPage, "updatedAt", ""),
-        parent: _.get(block, "parent.id", ""),
-        left: _.get(block, "left.id", ""),
-    });
+    toHash.push([
+        _.get(blockPage, "updatedAt", ""),
+        _.get(block, "content", "").length,
+        _.get(block, "content", "").slice(0, 4),
+        _.get(block, "content", "").slice(-1, -5),
+        _.get(block, "parent.id", ""),
+        _.get(block, "left.id", ""),
+    ]);
     graph.setNodeData(blockUUID + "Block", hashSum(toHash));
 };
 
@@ -100,12 +103,13 @@ const addFirstLineOfBlockNode = async (blockUUID) => {
     if (graph.hasNode(blockUUID + "FirstLineOfBlock")) return;
     graph.addNode(blockUUID + "FirstLineOfBlock");
     const block = await LogseqProxy.Editor.getBlock(blockUUID);
+    const blockContentFirstLine = getFirstNonEmptyLine(
+        _.get(block, "content", "")
+            .replaceAll(MD_PROPERTIES_REGEXP, "")
+            .replaceAll(ORG_PROPERTIES_REGEXP, ""),
+    );
     const directDependencies = await getContentDirectDependencies(
-        getFirstNonEmptyLine(
-            _.get(block, "content", "")
-                .replaceAll(MD_PROPERTIES_REGEXP, "")
-                .replaceAll(ORG_PROPERTIES_REGEXP, ""),
-        ),
+        blockContentFirstLine,
         _.get(block, "format", ""),
     );
     for (const dependency of directDependencies) {
@@ -125,12 +129,12 @@ const addFirstLineOfBlockNode = async (blockUUID) => {
         .forEach((dependency) => {
             toHash.push(graph.getNodeData(dependency));
         });
-    toHash.push({
-        content: _.get(block, "content", ""),
-        format: _.get(block, "format", "markdown"),
-        parent: _.get(block, "parent.id", ""),
-        left: _.get(block, "left.id", ""),
-    });
+    toHash.push([
+        blockContentFirstLine,
+        _.get(block, "format", "markdown"),
+        _.get(block, "parent.id", ""),
+        _.get(block, "left.id", ""),
+    ]);
     graph.setNodeData(blockUUID + "FirstLineOfBlock", hashSum(toHash));
 };
 
