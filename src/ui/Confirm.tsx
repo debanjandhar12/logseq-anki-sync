@@ -14,7 +14,7 @@ export async function Confirm(msg: string): Promise<boolean> {
                 div.remove();
             }
             onClose = onClose.bind(this);
-            ReactDOM.render(<ModelComponent msg={msg} resolve={resolve} reject={reject} />, div);
+            ReactDOM.render(<ModelComponent msg={msg} resolve={resolve} reject={reject} onClose={onClose} />, div);
         } catch (e) {
             logseq.App.showMsg("Error", "Failed to open modal");
             console.log(e)
@@ -35,25 +35,22 @@ const ModelComponent : React.FC<{
         setOpen(false);
     }, [resolve]);
 
-    React.useEffect(() => {
-        const onKeydown = (e: KeyboardEvent) => {
-            console.log('onKeydown');
-            if (e.key === "Escape") {
-                returnResult(false);
-            }
-            else if (e.key === "Enter") {
-                returnResult(true);
-            }
-        };
-        window.parent.document.addEventListener("keydown", onKeydown);
-        return () => {
-            window.parent.document.removeEventListener("keydown", onKeydown);
-        };
-    }, [onClose]);
+    const onKeydown = React.useCallback((e: KeyboardEvent) => {
+        console.log('onKeydown');
+        if (e.key === "Escape") {
+            returnResult(false);
+        }
+        else if (e.key === "Enter") {
+            returnResult(true);
+        }
+    }, [returnResult]);
 
     React.useEffect(() => {
-        if (!open) {
-            returnResult(false);
+        if (open)
+            window.parent.document.addEventListener("keydown", onKeydown);
+        else returnResult(false);
+        return () => {
+            window.parent.document.removeEventListener("keydown", onKeydown);
         }
     }, [open]);
 

@@ -14,7 +14,7 @@ export async function showModelWithButtons(msg: string, btns: {name: string, f :
                 div.remove();
             }
             onClose = onClose.bind(this);
-            ReactDOM.render(<ModelComponent msg={msg} btns={btns} resolve={resolve} reject={reject} />, div);
+            ReactDOM.render(<ModelComponent msg={msg} btns={btns} resolve={resolve} reject={reject} onClose={onClose}/>, div);
         } catch (e) {
             logseq.App.showMsg("Error", "Failed to open modal");
             console.log(e)
@@ -36,21 +36,22 @@ const ModelComponent : React.FC<{
         setOpen(false);
     }, [resolve]);
 
+    const onKeydown = React.useCallback((e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+            returnResult(false);
+        }
+        else if (e.key === "Enter") {
+            returnResult(1);
+        }
+    }, [returnResult]);
+
     React.useEffect(() => {
-        const onKeydown = (e: KeyboardEvent) => {
-            console.log('onKeydown');
-            if (e.key === "Escape") {
-                returnResult(false);
-            }
-            else if (e.key === "Enter") {
-                returnResult(true);
-            }
-        };
-        window.parent.document.addEventListener("keydown", onKeydown);
+        if (open)
+            window.parent.document.addEventListener("keydown", onKeydown);
         return () => {
             window.parent.document.removeEventListener("keydown", onKeydown);
-        };
-    }, [onClose]);
+        }
+    }, [open]);
 
     React.useEffect(() => {
         if (!open) {

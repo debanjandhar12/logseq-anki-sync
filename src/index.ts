@@ -17,6 +17,7 @@ import {SelectionModal} from "./ui/SelectionModal";
 import {Note} from "./notes/Note";
 import {showModelWithButtons} from "./ui/ModelWithBtns";
 import {UI} from "./ui/UI";
+import * as AnkiConnect from "./anki-connect/AnkiConnect";
 
 async function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
@@ -71,6 +72,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     ImageOcclusionNote.initLogseqOperations();
     AddonRegistry.getAll().forEach((addon) => addon.init());
     UI.init();
+    window.parent.AnkiConnect = AnkiConnect; // Make AnkiConnect available globally
     console.log("Window Parent:", window.parent);
 
     // The lines below are needed for vite build and dev to work properly.

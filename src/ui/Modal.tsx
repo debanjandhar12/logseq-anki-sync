@@ -3,8 +3,7 @@ import ReactDOM from "react-dom";
 
 export function Modal({open, setOpen, onClose, children}: PropsWithChildren<{}>) {
     React.useEffect(() => {
-        if (!open) {
-            console.log(onClose);
+        if (!open && onClose) {
             onClose();
         }
     }, [open]);
