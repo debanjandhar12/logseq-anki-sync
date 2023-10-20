@@ -17,7 +17,7 @@ import {
     sortAsync,
 } from "./utils/utils";
 import path from "path-browserify";
-import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "./constants";
+import {ANKI_CLOZE_REGEXP, ANKI_ICON, LOGSEQ_ICON, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} from "./constants";
 import { convertToHTMLFile } from "./converter/Converter";
 import { LogseqProxy } from "./logseq/LogseqProxy";
 import pkg from "../package.json";
@@ -29,6 +29,8 @@ import NoteHashCalculator from "./notes/NoteHashCalculator";
 import { cancelable, CancelablePromise } from "cancelable-promise";
 import { DepGraph } from "dependency-graph";
 import {NoteUtils} from "./notes/NoteUtils";
+import {ActionNotification} from "./ui/ActionNotification";
+import {showModelWithButtons} from "./ui/ModelWithBtns";
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
     graphName: string;
@@ -168,8 +170,6 @@ export class LogseqToAnkiSync {
             },
         );
         // Prompt the user
-        // @ts-ignore
-        window.parent.AnkiConnect = AnkiConnect; // Make AnkiConnect available to the confirm dialog
         const confirm_msg = `<div><b>The logseq to anki sync plugin will attempt to perform the following actions:</b></div>
                             <div>Create ${
                                 toCreateNotes.length
@@ -190,8 +190,6 @@ export class LogseqToAnkiSync {
                             }<div><br/>
                             <div>Are you sure you want to continue?<div>`;
         const confirm_result = await Confirm(confirm_msg);
-        // @ts-ignore
-        window.parent.AnkiConnect = null; // Remove AnkiConnect from the global scope
         if (!confirm_result) {
             buildNoteHashes.cancel();
             window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
@@ -261,22 +259,63 @@ export class LogseqToAnkiSync {
         } \n Updated Blocks: ${
             toUpdateNotes.length - failedUpdated.size
         } \n Deleted Blocks: ${toDeleteNotes.length - failedDeleted.size}`;
-        let status = "success";
         if (failedCreated.size > 0)
             summery += `\nFailed Created: ${failedCreated.size} `;
         if (failedUpdated.size > 0)
             summery += `\nFailed Updated: ${failedUpdated.size} `;
         if (failedDeleted.size > 0)
             summery += `\nFailed Deleted: ${failedDeleted.size} `;
-        if (
-            failedCreated.size > 0 ||
-            failedUpdated.size > 0 ||
-            failedDeleted.size > 0
-        )
-            status = "warning";
-        logseq.UI.showMsg(summery, status, {
-            timeout: status == "success" ? 1200 : 4000,
-        });
+
+        console.log(toCreateNotes, toUpdateNotes, toDeleteNotes);
+        // logseq.UI.showMsg(summery, status, {
+        //     timeout: status == "success" ? 1200 : 4000,
+        // });
+        const buildAnkiLink = (ankiId) => { return `<a class="inline-flex flex-row items-center button" style="color:inherit; display: inline-flex; padding: 0; height: auto; user-select: text;" onMouseOver="this.style.color='var(--ctp-link-text-hover-color)'" onMouseOut="this.style.color='inherit'"  onclick="window.AnkiConnect.guiBrowse('nid:${ankiId}')"><i>${ANKI_ICON}</i><span>${ankiId}</span></a>` }
+        const buildLogseqLink = (uuid) => { return `<a class="inline-flex flex-row items-center button" style="color:inherit; display: inline-flex; padding: 0; height:auto; user-select: text;" onMouseOver="this.style.color='var(--ctp-link-text-hover-color)'" onMouseOut="this.style.color='inherit'" href="logseq://graph/${encodeURIComponent(this.graphName)}?page=${encodeURIComponent(uuid)}"><i>${LOGSEQ_ICON}</i><span>${uuid}</span></a>` }
+        ActionNotification([{name: "View Details", func: () => {
+                showModelWithButtons(`
+                    <div style="font-size: 16px" class="w-100">
+                            <div class="p-4" style="background-color: var(--ls-tertiary-background-color); border-radius: 0.25rem; cursor: pointer; margin-bottom: 0.5rem; padding: 0.25rem 0.5rem; -webkit-user-select: none; -moz-user-select: none; user-select: none; z-index: 1;">Created</div>                        
+                            <ul style="font-size: 14px">
+                            ${toCreateNotes.length == 0 ? `No notes were created.` : ``}
+                            ${toCreateNotes.map((note) => {
+                                if (!failedCreated.has(`${note.uuid}-${note.type}`))
+                                    return `<li><span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${note.type}]</span>
+                                                ${note.uuid} <span class="px-1" style="user-select: none">--></span> ${buildAnkiLink(note.ankiId)} <small class="px-1">(Synced Successfully)</small></span></li>`
+                                else return ``;
+                            }).join("")}
+                            ${Array.from(failedCreated).map((note) => {
+                                const noteUuid = note.substring(0,note.lastIndexOf('-'));
+                                const noteType = note.substring(note.lastIndexOf('-')+1);
+                                return `<li><span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${noteType}]</span>
+                                            ${buildLogseqLink(noteUuid)} <small  class="px-1">(Failed to Sync)</small></span></li>`
+                            }).join("")}
+                            </ul>
+                            <div class="p-4" style="background-color: var(--ls-tertiary-background-color); border-radius: 0.25rem; cursor: pointer; margin-bottom: 0.5rem; padding: 0.25rem 0.5rem; -webkit-user-select: none; -moz-user-select: none; user-select: none; z-index: 1; margin-top: 1rem;">Updated</div>                        
+                            <ul style="font-size: 14px">
+                            ${toUpdateNotes.length == 0 ? `No notes were updated.` : ``}
+                            ${toUpdateNotes.map((note) => {
+                                if (!failedUpdated.has(`${note.uuid}-${note.type}`))
+                                    return `<li><span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${note.type}]</span>
+                                                ${buildLogseqLink(note.uuid)} <span class="px-1" style="user-select: none">--></span> ${buildAnkiLink(note.ankiId)} <small  class="px-1">(Synced Successfully)</small></span></li>`
+                                else return ``;
+                            }).join("")}
+                            ${Array.from(failedUpdated).map((note) => {
+                                const noteUuid = note.substring(0,note.lastIndexOf('-'));
+                                const noteType = note.substring(note.lastIndexOf('-')+1);
+                                return `<li><span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${noteType}]</span>
+                                            ${buildLogseqLink(noteUuid)} <small  class="px-1">(Failed to Sync)</small></span></li>`
+                            }).join("")}
+                        </ul>
+                        <div class="p-4" style="background-color: var(--ls-tertiary-background-color); border-radius: 0.25rem; cursor: pointer; margin-bottom: 0.5rem; padding: 0.25rem 0.5rem; -webkit-user-select: none; -moz-user-select: none; user-select: none; z-index: 1; margin-top: 1rem;">Deleted</div>          
+                        <span style="font-size: 14px">
+                            ${toDeleteNotes.length > 0 ? `The ${toDeleteNotes.length} notes from anki were deleted successfully.` : `No notes were deleted.`}
+                            ${failedDeleted.size > 0 ? `The ${Array.from(failedDeleted).join(",")} notes from anki failed to be deleted.` : ``}
+                        </span>
+                    </div>
+                `, [])
+            }}], summery, 20000,
+            failedCreated.size > 0 || failedUpdated.size > 0 || failedDeleted.size > 0 ? WARNING_ICON : SUCCESS_ICON);
         console.log(summery);
         if (failedCreated.size > 0)
             console.log("\nFailed Created:", failedCreated);
