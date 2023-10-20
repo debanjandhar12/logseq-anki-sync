@@ -35,14 +35,14 @@ async function main(baseInfo: LSPluginBaseInfo) {
         syncLogseqToAnki,
     );
     logseq.provideStyle(`
-    .logseq-anki-toolbar-item-${baseInfo.id} {
+    logseq-anki-toolbar-item-${baseInfo.id} {
       display: flex;
       align-items: center;
       position: relative;
       top: 0px;
       opacity: 0.8;
     }
-    .logseq-anki-toolbar-item-${baseInfo.id}:hover {
+    logseq-anki-toolbar-item-${baseInfo.id}:hover {
       opacity: 1;
     }
   `);
@@ -52,7 +52,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
         }`,
         template: String.raw`
       <a title="Start Logseq to Anki Sync" data-on-click="syncLogseqToAnki" class="button logseq-anki-toolbar-item-${baseInfo.id}">
-        <i class="ti">${ANKI_ICON}</i>
+        <i class="ui__icon ti" style="font-size: 18px;">${ANKI_ICON}</i>
       </a>
     `,
     });

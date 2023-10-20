@@ -17,7 +17,7 @@ import {
     sortAsync,
 } from "./utils/utils";
 import path from "path-browserify";
-import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} from "./constants";
+import {ANKI_CLOZE_REGEXP, ANKI_ICON, LOGSEQ_ICON, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} from "./constants";
 import { convertToHTMLFile } from "./converter/Converter";
 import { LogseqProxy } from "./logseq/LogseqProxy";
 import pkg from "../package.json";
@@ -270,8 +270,8 @@ export class LogseqToAnkiSync {
         // logseq.UI.showMsg(summery, status, {
         //     timeout: status == "success" ? 1200 : 4000,
         // });
-        const buildAnkiLink = (ankiId) => { return `<a style="color:inherit" onMouseOver="this.style.color='var(--ctp-link-text-hover-color)'" onMouseOut="this.style.color='inherit'" onclick="window.AnkiConnect.guiBrowse('nid:${ankiId}')">${ankiId}</a>` }
-        const buildLogseqLink = (uuid) => { return `<a style="color:inherit" onMouseOver="this.style.color='var(--ctp-link-text-hover-color)'" onMouseOut="this.style.color='inherit'" href="logseq://graph/${encodeURIComponent(this.graphName)}?page=${encodeURIComponent(uuid)}">${uuid}</a>` }
+        const buildAnkiLink = (ankiId) => { return `<a class="inline-flex flex-row items-center button" style="color:inherit; display: inline-flex; padding: 0; height: auto; user-select: text;" onMouseOver="this.style.color='var(--ctp-link-text-hover-color)'" onMouseOut="this.style.color='inherit'"  onclick="window.AnkiConnect.guiBrowse('nid:${ankiId}')"><i>${ANKI_ICON}</i><span>${ankiId}</span></a>` }
+        const buildLogseqLink = (uuid) => { return `<a class="inline-flex flex-row items-center button" style="color:inherit; display: inline-flex; padding: 0; height:auto; user-select: text;" onMouseOver="this.style.color='var(--ctp-link-text-hover-color)'" onMouseOut="this.style.color='inherit'" href="logseq://graph/${encodeURIComponent(this.graphName)}?page=${encodeURIComponent(uuid)}"><i>${LOGSEQ_ICON}</i><span>${uuid}</span></a>` }
         ActionNotification([{name: "View Details", func: () => {
                 showModelWithButtons(`
                     <div style="font-size: 16px" class="w-100">
@@ -280,15 +280,15 @@ export class LogseqToAnkiSync {
                             ${toCreateNotes.length == 0 ? `No notes were created.` : ``}
                             ${toCreateNotes.map((note) => {
                                 if (!failedCreated.has(`${note.uuid}-${note.type}`))
-                                    return `<li><span class="opacity-50">[${note.type}]</span>
-                                                ${note.uuid} --> ${buildAnkiLink(note.ankiId)} <small>(Synced Successfully)</small></li>`
+                                    return `<li><span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${note.type}]</span>
+                                                ${note.uuid} <span class="px-1" style="user-select: none">--></span> ${buildAnkiLink(note.ankiId)} <small class="px-1">(Synced Successfully)</small></span></li>`
                                 else return ``;
                             }).join("")}
                             ${Array.from(failedCreated).map((note) => {
                                 const noteUuid = note.substring(0,note.lastIndexOf('-'));
                                 const noteType = note.substring(note.lastIndexOf('-')+1);
-                                return `<li><span class="opacity-50">[${noteType}]</span>
-                                            ${buildLogseqLink(noteUuid)} <small>(Failed to Sync)</small></li>`
+                                return `<li><span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${noteType}]</span>
+                                            ${buildLogseqLink(noteUuid)} <small  class="px-1">(Failed to Sync)</small></span></li>`
                             }).join("")}
                             </ul>
                             <div class="p-4" style="background-color: var(--ls-tertiary-background-color); border-radius: 0.25rem; cursor: pointer; margin-bottom: 0.5rem; padding: 0.25rem 0.5rem; -webkit-user-select: none; -moz-user-select: none; user-select: none; z-index: 1; margin-top: 1rem;">Updated</div>                        
@@ -296,15 +296,15 @@ export class LogseqToAnkiSync {
                             ${toUpdateNotes.length == 0 ? `No notes were updated.` : ``}
                             ${toUpdateNotes.map((note) => {
                                 if (!failedUpdated.has(`${note.uuid}-${note.type}`))
-                                    return `<li><span class="opacity-50">[${note.type}]</span>
-                                                ${buildLogseqLink(note.uuid)} --> ${buildAnkiLink(note.ankiId)} <small>(Synced Successfully)</small></li>`
+                                    return `<li><span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${note.type}]</span>
+                                                ${buildLogseqLink(note.uuid)} <span class="px-1" style="user-select: none">--></span> ${buildAnkiLink(note.ankiId)} <small  class="px-1">(Synced Successfully)</small></span></li>`
                                 else return ``;
                             }).join("")}
                             ${Array.from(failedUpdated).map((note) => {
                                 const noteUuid = note.substring(0,note.lastIndexOf('-'));
                                 const noteType = note.substring(note.lastIndexOf('-')+1);
-                                return `<li><span class="opacity-50">[${noteType}]</span>
-                                            ${buildLogseqLink(noteUuid)} <small>(Failed to Sync)</small></li>`
+                                return `<li><span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${noteType}]</span>
+                                            ${buildLogseqLink(noteUuid)} <small  class="px-1">(Failed to Sync)</small></span></li>`
                             }).join("")}
                         </ul>
                         <div class="p-4" style="background-color: var(--ls-tertiary-background-color); border-radius: 0.25rem; cursor: pointer; margin-bottom: 0.5rem; padding: 0.25rem 0.5rem; -webkit-user-select: none; -moz-user-select: none; user-select: none; z-index: 1; margin-top: 1rem;">Deleted</div>          
