@@ -3,7 +3,7 @@ import React from "react";
 import {Modal} from "./Modal";
 import {LogseqButton} from "./basic/LogseqButton";
 
-export async function showModelWithButtons(msg: string, btns: {name: string, f : Function}[]): Promise<number | false> {
+export async function showModelWithButtons(msg: string, btns: {name: string, f : Function, returnOnClick? : boolean}[]): Promise<number | false> {
     return new Promise<number | false>(async (resolve, reject) => {
         try {
             const main = window.parent.document.querySelector("#root main");
@@ -25,7 +25,7 @@ export async function showModelWithButtons(msg: string, btns: {name: string, f :
 
 const ModelComponent : React.FC<{
     msg: string;
-    btns: {name: string, f : Function}[];
+    btns: {name: string, f : Function, returnOnClick? : boolean}[];
     resolve: Function;
     reject: Function;
     onClose: () => void;
@@ -79,7 +79,8 @@ const ModelComponent : React.FC<{
                                           color='primary'
                                           onClick={() => {
                                               btn.f();
-                                              returnResult(i);
+                                              if (btn.returnOnClick == null || btn.returnOnClick == true)
+                                                returnResult(i);
                                           }}>{btn.name}</LogseqButton>
                         </span>
                         )
