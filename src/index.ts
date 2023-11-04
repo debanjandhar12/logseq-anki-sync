@@ -13,9 +13,9 @@ import { ImageOcclusionNote } from "./notes/ImageOcclusionNote";
 import * as blockAndPageHashCache from "./logseq/blockAndPageHashCache";
 import { Buffer } from "buffer/";
 import process from "process";
-import {SelectionModal} from "./ui/SelectionModal";
+import {SelectionModal} from "./ui/general/SelectionModal";
 import {Note} from "./notes/Note";
-import {showModelWithButtons} from "./ui/ModelWithBtns";
+import {showModelWithButtons} from "./ui/general/ModelWithBtns";
 import {UI} from "./ui/UI";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
 

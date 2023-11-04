@@ -2,7 +2,7 @@
  * This files contains the js for the front side of anki cards.
  */
 import { fabric } from "fabric";
-import { createOcclusionRectEl } from "../ui/OcclusionEditor";
+import { createOcclusionRectEl } from "../ui/customized/OcclusionEditor";
 import path from "path-browserify";
 
 const onLoadHandler = () => {

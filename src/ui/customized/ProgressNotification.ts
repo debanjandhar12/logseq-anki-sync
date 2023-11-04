@@ -1,4 +1,4 @@
-import { ANKI_ICON, GRAPH_ICON } from "../constants";
+import { ANKI_ICON, GRAPH_ICON } from "../../constants";
 
 export class ProgressNotification {
     max: number;

@@ -1,8 +1,8 @@
 import {Modal} from "./Modal";
 import React from "react";
-import {LogseqButton} from "./basic/LogseqButton";
+import {LogseqButton} from "../basic/LogseqButton";
 import ReactDOM from "react-dom";
-import {waitForElement} from "../utils/waitForElement";
+import {waitForElement} from "../../utils/waitForElement";
 import {Notification} from "./Notification";
 
 export async function ActionNotification(btns: {name : string, func: Function}[], msg : string, timeout?: number, icon? : string): Promise<string> {

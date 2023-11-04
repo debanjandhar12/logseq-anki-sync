@@ -1,20 +1,22 @@
 import ReactDOM from "react-dom";
 import React from "react";
 import {Modal} from "./Modal";
-import {LogseqButton} from "./basic/LogseqButton";
+import {LogseqButton} from "../basic/LogseqButton";
 
-export async function Confirm(msg: string): Promise<boolean> {
-    return new Promise<boolean>(async (resolve, reject) => {
+export async function showModelWithButtons(msg: string, btns: {name: string, f : Function, returnOnClick? : boolean}[]): Promise<number | false> {
+    return new Promise<number | false>(async (resolve, reject) => {
         try {
             const main = window.parent.document.querySelector("#root main");
             const div = window.parent.document.createElement("div");
             main?.appendChild(div);
             let onClose = () => {
-                ReactDOM.unmountComponentAtNode(div);
-                div.remove();
+                try {
+                    ReactDOM.unmountComponentAtNode(div);
+                    div.remove();
+                } catch (e) {}
             }
             onClose = onClose.bind(this);
-            ReactDOM.render(<ModelComponent msg={msg} resolve={resolve} reject={reject} onClose={onClose} />, div);
+            ReactDOM.render(<ModelComponent msg={msg} btns={btns} resolve={resolve} reject={reject} onClose={onClose}/>, div);
         } catch (e) {
             logseq.App.showMsg("Error", "Failed to open modal");
             console.log(e)
@@ -25,32 +27,37 @@ export async function Confirm(msg: string): Promise<boolean> {
 
 const ModelComponent : React.FC<{
     msg: string;
+    btns: {name: string, f : Function, returnOnClick? : boolean}[];
     resolve: Function;
     reject: Function;
     onClose: () => void;
-}> = ({ msg, resolve, reject, onClose }) => {
+}> = ({ msg, btns, resolve, reject, onClose }) => {
     const [open, setOpen] = React.useState(true);
-    const returnResult = React.useCallback((result: boolean) => {
+    const returnResult = React.useCallback((result: number | false) => {
         resolve(result);
         setOpen(false);
     }, [resolve]);
 
     const onKeydown = React.useCallback((e: KeyboardEvent) => {
-        console.log('onKeydown');
         if (e.key === "Escape") {
             returnResult(false);
         }
         else if (e.key === "Enter") {
-            returnResult(true);
+            returnResult(1);
         }
     }, [returnResult]);
 
     React.useEffect(() => {
         if (open)
             window.parent.document.addEventListener("keydown", onKeydown);
-        else returnResult(false);
         return () => {
             window.parent.document.removeEventListener("keydown", onKeydown);
+        }
+    }, [open]);
+
+    React.useEffect(() => {
+        if (!open) {
+            returnResult(false);
         }
     }, [open]);
 
@@ -66,20 +73,20 @@ const ModelComponent : React.FC<{
                     </div>
                 </div>
                 <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                    <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
-                        <LogseqButton
-                            isFullWidth={true}
-                            isCentered={true}
-                            onClick={() => returnResult(true)}
-                            color='primary'><span style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}><span>Confirm</span><span className="px-1 opacity-80"><code>⏎</code></span></span></LogseqButton>
-                    </span>
-                    <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
-                        <LogseqButton
-                            isFullWidth={true}
-                            isCentered={true}
-                            color={'faded-default'}
-                            onClick={() => returnResult(false)}>Cancel</LogseqButton>
-                    </span>
+                    {btns.map((btn, i) => {
+                        return (<span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
+                            <LogseqButton key={i}
+                                          isFullWidth={true}
+                                          isCentered={true}
+                                          color='primary'
+                                          onClick={() => {
+                                              btn.f();
+                                              if (btn.returnOnClick == null || btn.returnOnClick == true)
+                                                returnResult(i);
+                                          }}>{btn.name}</LogseqButton>
+                        </span>
+                        )
+                    })}
                 </div>
             </div>
         </Modal>

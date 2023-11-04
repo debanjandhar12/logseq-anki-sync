@@ -1,6 +1,6 @@
 import {Modal} from "./Modal";
 import React from "react";
-import {LogseqButton} from "./basic/LogseqButton";
+import {LogseqButton} from "../basic/LogseqButton";
 import ReactDOM from "react-dom";
 
 export async function SelectionModal(arr: {name : string, icon? : string}[], msg? : string, enableKeySelect? : boolean): Promise<string> {
@@ -10,8 +10,10 @@ export async function SelectionModal(arr: {name : string, icon? : string}[], msg
             const div = window.parent.document.createElement("div");
             main?.appendChild(div);
             let onClose = () => {
-                ReactDOM.unmountComponentAtNode(div);
-                div.remove();
+                try {
+                    ReactDOM.unmountComponentAtNode(div);
+                    div.remove();
+                } catch (e) {}
             }
             onClose = onClose.bind(this);
             ReactDOM.render(<ModelComponent arr={arr} msg={msg} resolve={resolve} reject={reject} enableKeySelect={enableKeySelect} onClose={onClose}/>, div);

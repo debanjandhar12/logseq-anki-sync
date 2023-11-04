@@ -21,11 +21,10 @@ import {
     HTMLFile,
     processProperties,
 } from "../converter/Converter";
-import { SelectPrompt } from "../ui/SelectPrompt";
-import { OcclusionEditor } from "../ui/OcclusionEditor";
+import { OcclusionEditor } from "../ui/customized/OcclusionEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
-import {SelectionModal} from "../ui/SelectionModal";
+import {SelectionModal} from "../ui/general/SelectionModal";
 
 export class ImageOcclusionNote extends Note {
     public type = "image_occlusion";

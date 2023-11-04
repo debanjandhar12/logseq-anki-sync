@@ -1,8 +1,8 @@
-import {ADD_OCCLUSION_ICON, ANKI_ICON, DONATE_ICON, isWebURL_REGEXP, REMOVE_OCCLUSION_ICON} from "../constants";
+import {ADD_OCCLUSION_ICON, ANKI_ICON, DONATE_ICON, isWebURL_REGEXP, REMOVE_OCCLUSION_ICON} from "../../constants";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import _ from "lodash";
-import fabric from "../../node_modules/fabric/dist/fabric.js?string";
+import fabric from "fabric/dist/fabric.js?string";
 import path from "path-browserify";
 
 if (!window.parent.fabric) {

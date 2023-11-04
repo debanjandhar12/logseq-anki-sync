@@ -2,7 +2,7 @@ import * as AnkiConnect from "../anki-connect/AnkiConnect";
 import {get_better_error_msg} from "../utils/utils";
 import {Addon} from "./Addon";
 import _ from "lodash";
-import {SelectionModal} from "../ui/SelectionModal";
+import {SelectionModal} from "../ui/general/SelectionModal";
 
 export class PreviewInAnkiContextMenu extends Addon {
     static _instance: PreviewInAnkiContextMenu;
