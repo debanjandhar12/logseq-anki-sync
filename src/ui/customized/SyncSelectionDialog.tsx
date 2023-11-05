@@ -107,7 +107,7 @@ const SyncSelectionDialogComponent : React.FC<{
             toUpdateNotes: toUpdateNotesSelection.map((selected, index) => selected ? toUpdateNotes[index] : null).filter(Boolean),
             toDeleteNotes: toDeleteNotesSelection.map((selected, index) => selected ? toDeleteNotes[index] : null).filter(Boolean),
         });
-    }, [resolve, toCreateNotes, toUpdateNotes, toDeleteNotes]);
+    }, [returnResult, toCreateNotes, toUpdateNotes, toDeleteNotes, toCreateNotesSelection, toUpdateNotesSelection, toDeleteNotesSelection]);
 
     const handleCancel = useCallback(() => {
         returnResult(null);
@@ -271,18 +271,6 @@ const SyncSelectionDialogComponent : React.FC<{
 }
 
 // Utils
-export const ANKI_ICON_COMPONENT = React.memo(() => {
-    return (
-        <i dangerouslySetInnerHTML={{__html: ANKI_ICON}}></i>
-    )
-});
-
-export const Logseq_ICON_COMPONENT = React.memo(() => {
-    return (
-        <i dangerouslySetInnerHTML={{__html: LOGSEQ_ICON}}></i>
-    )
-});
-
 export const AnkiLink = ({ankiId = null}) => {
 
     const hoverStyle = {color: 'var(--ctp-link-text-hover-color)'};
@@ -291,16 +279,17 @@ export const AnkiLink = ({ankiId = null}) => {
 
     const onMouseOver = () => setStyle(hoverStyle);
     const onMouseOut = () => setStyle(normalStyle);
-    const onClickHandler = () => window.AnkiConnect.guiBrowse(`nid:${ankiId}`);
+    const onClickHandler = () => window.parent.AnkiConnect.guiBrowse(`nid:${ankiId}`);
 
     const children = ankiId == null ? 'New note' : ankiId;
 
     return (
         <a onClick={onClickHandler} onMouseOver={onMouseOver} onMouseOut={onMouseOut}
            className="inline-flex flex-row items-center button"
+           title={'Anki Note: ' + children}
            style={{...style, display: "inline-flex", padding: 0, height: "auto", userSelect: "text"}}
         >
-            <ANKI_ICON_COMPONENT />
+            <i className={'anki-icon'}/>
             <span>{children}</span>
         </a>
     );
@@ -320,10 +309,11 @@ export const LogseqLink = ({uuid, graphName}) => {
     return (
         <a onMouseOver={onMouseOver} onMouseOut={onMouseOut}
            className="inline-flex flex-row items-center button"
+              title={'Logseq Block: ' + uuid}
            style={{...style, display: "inline-flex", padding: 0, height: "auto", userSelect: "text"}}
            href={href}
         >
-            <Logseq_ICON_COMPONENT />
+            <i className={'logseq-icon'}/>
             <span>{uuid}</span>
         </a>
     );
@@ -331,24 +321,24 @@ export const LogseqLink = ({uuid, graphName}) => {
 
 export const CreateLineDisplay = ({note, graphName}) => {
     return (
-        <span className="inline-flex items-center">
-            <span className="opacity-50 px-1" style={{userSelect: "none"}}>[{note.type}]</span>
-            <LogseqLink uuid={note.uuid} graphName={graphName} />
-            <span className="px-1" style={{userSelect: "none"}}>{`-->`}</span>
-            <AnkiLink />
+        <span className="inline-flex items-center" style={{fontSize: '14px'}}>
+            <span className="opacity-50 px-1" style={{userSelect: "none",lineBreak:'strict'}}>[{note.type}]</span>
+            <LogseqLink uuid={note.uuid} graphName={graphName}/>
+            <span className="px-1" style={{userSelect: "none"}}>{`⟶`}</span>
+            <AnkiLink/>
         </span>
     );
 }
 
 export const UpdateLineDisplay = ({note, graphName}) => {
     return (
-        <span className="inline-flex items-center">
-            <span className="opacity-50 px-1" style={{userSelect: "none"}}>[{note.type}]</span>
-            <LogseqLink uuid={note.uuid} graphName={graphName} />
+        <span className="inline-flex items-center" style={{fontSize: '14px'}}>
+            <span className="opacity-50 px-1" style={{userSelect: "none",lineBreak:'strict'}}>[{note.type}]</span>
+            <LogseqLink uuid={note.uuid} graphName={graphName}/>
             {note.ankiId && (
                 <>
-                    <span className="px-1" style={{userSelect: "none"}}>{`-->`}</span>
-                    <AnkiLink ankiId={note.ankiId} />
+                    <span className="px-1" style={{userSelect: "none"}}>{`⟶`}</span>
+                    <AnkiLink ankiId={note.ankiId}/>
                 </>
             )}
         </span>
@@ -357,8 +347,8 @@ export const UpdateLineDisplay = ({note, graphName}) => {
 
 export const DeleteLineDisplay = (ankiId) => {
     return (
-        <span className="inline-flex items-center">
-            <AnkiLink ankiId={ankiId} />
+        <span className="inline-flex items-center" style={{fontSize: '14px'}}>
+            <AnkiLink ankiId={ankiId}/>
         </span>
     )
 }

@@ -155,21 +155,28 @@ export class LogseqToAnkiSync {
 
         // -- Prompt the user what actions are going to be performed --
         // Perform caching while user is reading the prompt
-        const buildNoteHashes = new CancelablePromise(
-            async (resolve, reject, onCancel) => {
-                for (const note of notes) {
-                    await NoteHashCalculator.getHash(note, [
-                        "",
-                        [],
-                        "",
-                        "",
-                        [],
-                        "",
-                    ]);
-                    if (buildNoteHashes.isCanceled()) break;
-                }
-            },
-        );
+        let buildNoteHashes : any = {dontCreateCancelable: false, cancel: () => {buildNoteHashes.dontCreateCancelable = true;}};
+        setTimeout(() => {
+            if (buildNoteHashes.dontCreateCancelable == false) {
+                buildNoteHashes = new CancelablePromise(
+                    async (resolve, reject, onCancel) => {
+                        await new Promise((resolve) => setTimeout(resolve, 10000));
+                        for (const note of notes) {
+                            await NoteHashCalculator.getHash(note, [
+                                "",
+                                [],
+                                "",
+                                "",
+                                [],
+                                "",
+                            ]);
+                            if (buildNoteHashes.isCanceled()) break;
+                        }
+                    },
+                );
+            }
+        }, 4000);
+
 
         const noteSelection = await SyncSelectionDialog(toCreateNotesOriginal, toUpdateNotesOriginal, toDeleteNotesOriginal);
         if (!noteSelection) {
