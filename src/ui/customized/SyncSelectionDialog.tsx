@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {Modal} from "../general/Modal";
 import {LogseqButton} from "../basic/LogseqButton";
 import {LogseqCheckbox} from "../basic/LogseqCheckbox";
@@ -40,9 +40,10 @@ const SyncSelectionDialogComponent : React.FC<{
     const [toCreateNotesSelection, setToCreateNotesSelection] = useState(new Array(toCreateNotes.length).fill(true));
     const [toUpdateNotesSelection, setToUpdateNotesSelection] = useState(new Array(toUpdateNotes.length).fill(true));
     const [toDeleteNotesSelection, setToDeleteNotesSelection] = useState(new Array(toDeleteNotes.length).fill(true));
-    const [isAllCreateNotesSelected, setIsAllCreateNotesSelected] = useState(true);
-    const [isAllUpdateNotesSelected, setIsAllUpdateNotesSelected] = useState(true);
-    const [isAllDeleteNotesSelected, setIsAllDeleteNotesSelected] = useState(true);
+    // const [isAllCreateNotesSelected, setIsAllCreateNotesSelected] = useState(true);
+    // const [isAllUpdateNotesSelected, setIsAllUpdateNotesSelected] = useState(true);
+    // const [isAllDeleteNotesSelected, setIsAllDeleteNotesSelected] = useState(true);
+
     const [selectionMenu, setSelectionMenu] = useState([
         {
             title: 'Select All',
@@ -89,28 +90,28 @@ const SyncSelectionDialogComponent : React.FC<{
         addAdditionalSelectionMenu().then();
     }, []);
 
-    useEffect(() => {
-        setIsAllCreateNotesSelected(toCreateNotesSelection.every(Boolean));
-        setIsAllUpdateNotesSelected(toUpdateNotesSelection.every(Boolean));
-        setIsAllDeleteNotesSelected(toDeleteNotesSelection.every(Boolean));
-    }, [toCreateNotesSelection, toUpdateNotesSelection, toDeleteNotesSelection]);
+    // useEffect(() => {
+    //     setIsAllCreateNotesSelected(toCreateNotesSelection.every(Boolean));
+    //     setIsAllUpdateNotesSelected(toUpdateNotesSelection.every(Boolean));
+    //     setIsAllDeleteNotesSelected(toDeleteNotesSelection.every(Boolean));
+    // }, [toCreateNotesSelection, toUpdateNotesSelection, toDeleteNotesSelection]);
 
     const returnResult = React.useCallback((result) => {
         resolve(result);
         setOpen(false);
     }, [resolve]);
 
-    const handleConfirm = () => {
+    const handleConfirm = useCallback(() => {
         returnResult({
             toCreateNotes: toCreateNotesSelection.map((selected, index) => selected ? toCreateNotes[index] : null).filter(Boolean),
             toUpdateNotes: toUpdateNotesSelection.map((selected, index) => selected ? toUpdateNotes[index] : null).filter(Boolean),
             toDeleteNotes: toDeleteNotesSelection.map((selected, index) => selected ? toDeleteNotes[index] : null).filter(Boolean),
         });
-    };
+    }, [resolve, toCreateNotes, toUpdateNotes, toDeleteNotes]);
 
-    const handleCancel = () => {
+    const handleCancel = useCallback(() => {
         returnResult(null);
-    };
+    }, [resolve]);
 
     const onKeydown = React.useCallback((e: KeyboardEvent) => {
         if (e.key === "Escape") {
@@ -143,7 +144,6 @@ const SyncSelectionDialogComponent : React.FC<{
         }
         getGraphName().then();
     }, []);
-
     return (
         <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false}>
             <div className="settings-modal of-plugins">
@@ -185,13 +185,13 @@ const SyncSelectionDialogComponent : React.FC<{
                         {toCreateNotes.map((note, index) => (
                             <LogseqCheckbox
                                 checked={toCreateNotesSelection[index]}
+                                key={note.uuid}
                                 onChange={() => {
                                     let newToCreateNotesSelection = [...toCreateNotesSelection];
                                     newToCreateNotesSelection[index] = !newToCreateNotesSelection[index];
                                     setToCreateNotesSelection(newToCreateNotesSelection);
-                                }}
-                            >
-                                <span dangerouslySetInnerHTML={{__html: buildCreateLineDisplay(note, graphName)}}></span>
+                                }}>
+                                <CreateLineDisplay key={note.uuid} note={note} graphName={graphName}/>
                             </LogseqCheckbox>
                         ))}
                         <div className="p-4" style={{
@@ -209,13 +209,13 @@ const SyncSelectionDialogComponent : React.FC<{
                         {toUpdateNotes.map((note, index) => (
                             <LogseqCheckbox
                             checked={toUpdateNotesSelection[index]}
-                         onChange={() => {
-                             let newToUpdateNotesSelection = [...toUpdateNotesSelection];
-                             newToUpdateNotesSelection[index] = !newToUpdateNotesSelection[index];
-                             setToUpdateNotesSelection(newToUpdateNotesSelection);
-                         }}
-                    >
-                        <span dangerouslySetInnerHTML={{__html: buildUpdateLineDisplay(note, graphName)}}></span>
+                            key={note.uuid}
+                            onChange={() => {
+                                 let newToUpdateNotesSelection = [...toUpdateNotesSelection];
+                                 newToUpdateNotesSelection[index] = !newToUpdateNotesSelection[index];
+                                 setToUpdateNotesSelection(newToUpdateNotesSelection);
+                            }}>
+                        <UpdateLineDisplay key={note.uuid} note={note} graphName={graphName}/>
                     </LogseqCheckbox>
                     ))}
                     <div className="p-4" style={{
@@ -230,16 +230,15 @@ const SyncSelectionDialogComponent : React.FC<{
                     }}>Delete
                     </div>
                     {toDeleteNotes.length <= 0 && ( <span style={{fontSize: '14px'}}>No notes to be deleted</span> )}
-                    {toDeleteNotes.map((note, index) => (
+                    {toDeleteNotes.map((ankiId, index) => (
                     <LogseqCheckbox
                         checked={toDeleteNotesSelection[index]}
                         onChange={() => {
                             let newToDeleteNotesSelection = [...toDeleteNotesSelection];
                             newToDeleteNotesSelection[index] = !newToDeleteNotesSelection[index];
                             setToDeleteNotesSelection(newToDeleteNotesSelection);
-                        }}
-                    >
-                        <span dangerouslySetInnerHTML={{__html: buildDeleteLineDisplay(note.ankiId)}}></span>
+                        }}>
+                        <DeleteLineDisplay key={ankiId} ankiId={ankiId}/>
                     </LogseqCheckbox>
                     ))
                     }
@@ -272,27 +271,94 @@ const SyncSelectionDialogComponent : React.FC<{
 }
 
 // Utils
-export const buildAnkiLink = (ankiId) => {
-    if (ankiId == null) return `<a class="inline-flex flex-row items-center button" style="color:inherit; display: inline-flex; padding: 0; height: auto; user-select: text;" onMouseOver="this.style.color='var(--ctp-link-text-hover-color)'" onMouseOut="this.style.color='inherit'"><i>${ANKI_ICON}</i><span>New note</span></a>`
-    return `<a class="inline-flex flex-row items-center button" style="color:inherit; display: inline-flex; padding: 0; height: auto; user-select: text;" onMouseOver="this.style.color='var(--ctp-link-text-hover-color)'" onMouseOut="this.style.color='inherit'"  onclick="window.AnkiConnect.guiBrowse('nid:${ankiId}')"><i>${ANKI_ICON}</i><span>${ankiId}</span></a>`
-}
-export const buildLogseqLink = (uuid, graphName) => {
-    return `<a class="inline-flex flex-row items-center button" style="color:inherit; display: inline-flex; padding: 0; height:auto; user-select: text;" onMouseOver="this.style.color='var(--ctp-link-text-hover-color)'" onMouseOut="this.style.color='inherit'" href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(uuid)}"><i>${LOGSEQ_ICON}</i><span>${uuid}</span></a>`
+export const ANKI_ICON_COMPONENT = React.memo(() => {
+    return (
+        <i dangerouslySetInnerHTML={{__html: ANKI_ICON}}></i>
+    )
+});
+
+export const Logseq_ICON_COMPONENT = React.memo(() => {
+    return (
+        <i dangerouslySetInnerHTML={{__html: LOGSEQ_ICON}}></i>
+    )
+});
+
+export const AnkiLink = ({ankiId = null}) => {
+
+    const hoverStyle = {color: 'var(--ctp-link-text-hover-color)'};
+    const normalStyle = {color: 'inherit'};
+    const [style, setStyle] = React.useState(normalStyle);
+
+    const onMouseOver = () => setStyle(hoverStyle);
+    const onMouseOut = () => setStyle(normalStyle);
+    const onClickHandler = () => window.AnkiConnect.guiBrowse(`nid:${ankiId}`);
+
+    const children = ankiId == null ? 'New note' : ankiId;
+
+    return (
+        <a onClick={onClickHandler} onMouseOver={onMouseOver} onMouseOut={onMouseOut}
+           className="inline-flex flex-row items-center button"
+           style={{...style, display: "inline-flex", padding: 0, height: "auto", userSelect: "text"}}
+        >
+            <ANKI_ICON_COMPONENT />
+            <span>{children}</span>
+        </a>
+    );
 }
 
-export const buildCreateLineDisplay = (note, graphName) => {
-    return `<span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${note.type}]</span>
-                                                ${buildLogseqLink(note.uuid, graphName)} <span class="px-1" style="user-select: none">--></span> ${buildAnkiLink(null)}</span>`;
+export const LogseqLink = ({uuid, graphName}) => {
+
+    const hoverStyle = {color: 'var(--ctp-link-text-hover-color)'};
+    const normalStyle = {color: 'inherit'};
+    const [style, setStyle] = React.useState(normalStyle);
+
+    const onMouseOver = () => setStyle(hoverStyle);
+    const onMouseOut = () => setStyle(normalStyle);
+
+    const href = `logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(uuid)}`;
+
+    return (
+        <a onMouseOver={onMouseOver} onMouseOut={onMouseOut}
+           className="inline-flex flex-row items-center button"
+           style={{...style, display: "inline-flex", padding: 0, height: "auto", userSelect: "text"}}
+           href={href}
+        >
+            <Logseq_ICON_COMPONENT />
+            <span>{uuid}</span>
+        </a>
+    );
 }
 
-export const buildUpdateLineDisplay = (note, graphName) => {
-    if (note.ankiId == null)
-        return `<span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${note.type}]</span>
-                                                ${buildLogseqLink(note.uuid, graphName)}</span>`;
-    return `<span class="inline-flex items-center"><span class="opacity-50 px-1" style="user-select: none">[${note.type}]</span>
-                                                ${buildLogseqLink(note.uuid, graphName)} <span class="px-1" style="user-select: none">--></span> ${buildAnkiLink(note.ankiId)}</span>`;
+export const CreateLineDisplay = ({note, graphName}) => {
+    return (
+        <span className="inline-flex items-center">
+            <span className="opacity-50 px-1" style={{userSelect: "none"}}>[{note.type}]</span>
+            <LogseqLink uuid={note.uuid} graphName={graphName} />
+            <span className="px-1" style={{userSelect: "none"}}>{`-->`}</span>
+            <AnkiLink />
+        </span>
+    );
 }
 
-export const buildDeleteLineDisplay = (ankiId) => {
-    return `<span class="inline-flex items-center">${buildAnkiLink(ankiId)}</span>`;
+export const UpdateLineDisplay = ({note, graphName}) => {
+    return (
+        <span className="inline-flex items-center">
+            <span className="opacity-50 px-1" style={{userSelect: "none"}}>[{note.type}]</span>
+            <LogseqLink uuid={note.uuid} graphName={graphName} />
+            {note.ankiId && (
+                <>
+                    <span className="px-1" style={{userSelect: "none"}}>{`-->`}</span>
+                    <AnkiLink ankiId={note.ankiId} />
+                </>
+            )}
+        </span>
+    );
+}
+
+export const DeleteLineDisplay = (ankiId) => {
+    return (
+        <span className="inline-flex items-center">
+            <AnkiLink ankiId={ankiId} />
+        </span>
+    )
 }

@@ -6,7 +6,12 @@ import ReactDOM from "react-dom";
 import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
 import {ANKI_ICON, LOGSEQ_ICON} from "../../constants";
 import _ from "lodash";
-import {buildCreateLineDisplay, buildUpdateLineDisplay} from "./SyncSelectionDialog";
+import {
+    buildCreateLineDisplay,
+    buildUpdateLineDisplay,
+    CreateLineDisplay,
+    UpdateLineDisplay
+} from "./SyncSelectionDialog";
 
 export async function SyncResultDialog(
     createdNotes: Array<any>,
@@ -128,9 +133,9 @@ const SyncResultDialogComponent : React.FC<{
                         </div>
                         {createdNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes were created.</span>)}
                         {createdNotes.map((note, index) => (
-                            <span className="inline-flex items-center">
+                            <span className="inline-flex items-center" key={note.uuid}>
                                 <span style={{fontSize: '18px', color: 'var(--ls-success-color)', userSelect: 'none'}} title={'Synced Successfully'}>✓</span>
-                                <span dangerouslySetInnerHTML={{__html: buildCreateLineDisplay(note, graphName)}}></span>
+                                <CreateLineDisplay note={note} graphName={graphName}/>
                             </span>
                         ))}
                         {Array.from(failedCreated).map((noteUuidTypeStr, index) => {
@@ -139,7 +144,7 @@ const SyncResultDialogComponent : React.FC<{
                             return (
                             <span className="inline-flex items-center">
                                 <span style={{fontSize: '18px', color: 'var(--ls-error-color)', userSelect: 'none'}} title={'Sync Failed'}>⚠</span>
-                                <span dangerouslySetInnerHTML={{__html: buildCreateLineDisplay({uuid, type}, graphName)}}></span>
+                                <CreateLineDisplay note={{uuid, type}} graphName={graphName}/>
                             </span>)
                         })}
                         <div className="p-4" style={{
@@ -155,9 +160,9 @@ const SyncResultDialogComponent : React.FC<{
                         </div>
                         {updatedNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes were updated.</span>)}
                         {updatedNotes.map((note, index) => (
-                            <span className="inline-flex items-center">
+                            <span className="inline-flex items-center" key={note.uuid}>
                                 <span style={{fontSize: '18px', color: 'var(--ls-success-color)', userSelect: 'none'}} title={'Synced Successfully'}>✓</span>
-                                <span dangerouslySetInnerHTML={{__html: buildUpdateLineDisplay(note, graphName)}}></span>
+                                <UpdateLineDisplay note={note} graphName={graphName}/>
                             </span>
                         ))}
                         {Array.from(failedUpdated).map((noteUuidTypeStr, index) => {
@@ -166,7 +171,7 @@ const SyncResultDialogComponent : React.FC<{
                             return (
                                 <span className="inline-flex items-center">
                                     <span style={{fontSize: '18px', color: 'var(--ls-error-color)', userSelect: 'none'}} title={'Sync Failed'}>⚠</span>
-                                    <span dangerouslySetInnerHTML={{__html: buildUpdateLineDisplay({uuid, type}, graphName)}}></span>
+                                    <UpdateLineDisplay note={{uuid, type}} graphName={graphName}/>
                                 </span>)
                         })}
                         <div className="p-4" style={{
