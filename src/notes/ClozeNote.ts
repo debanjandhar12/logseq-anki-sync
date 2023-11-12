@@ -179,13 +179,18 @@ export class ClozeNote extends Note {
         }
 
         // --- Add logseq clozes ---
-        clozedContent = safeReplace(clozedContent, /\{\{cloze (.*?)\}\}/g, (match, group1) => {
-            group1 = group1.replace(
-                /(.*)(\\\\|::)(.*)/,
-                (match, g1, g2, g3) => `${g1.trim()}::${g3.trim()}`,
-            ); // Add support for logseq cloze cue
-            return `{{c${cloze_id++}::${group1}}}`;
-        });
+        clozedContent = safeReplace(
+            clozedContent,
+            /\{\{cloze(\d{1,})? (.*?)\}\}/g,
+            (match, group1, group2) => {
+                group2 = group2.replace(
+                    /(.*)(\\\\|::)(.*)/,
+                    (match, g1, g2, g3) => `${g1.trim()}::${g3.trim()}`,
+                ); // Add support for logseq cloze cue
+                if (group1) return `{{c${group1}::${group2}}}`;
+                return `{{c${cloze_id++}::${group1}}}`;
+            },
+        );
 
         // --- Add org block clozes ---
         clozedContent = safeReplace(
