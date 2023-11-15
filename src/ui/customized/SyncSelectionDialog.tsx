@@ -185,13 +185,13 @@ const SyncSelectionDialogComponent : React.FC<{
                         {toCreateNotes.map((note, index) => (
                             <LogseqCheckbox
                                 checked={toCreateNotesSelection[index]}
-                                key={note.uuid}
+                                key={note.uuid+note.type}
                                 onChange={() => {
                                     let newToCreateNotesSelection = [...toCreateNotesSelection];
                                     newToCreateNotesSelection[index] = !newToCreateNotesSelection[index];
                                     setToCreateNotesSelection(newToCreateNotesSelection);
                                 }}>
-                                <CreateLineDisplay key={note.uuid} note={note} graphName={graphName}/>
+                                <CreateLineDisplay note={note} graphName={graphName}/>
                             </LogseqCheckbox>
                         ))}
                         <div className="p-4" style={{
@@ -209,13 +209,13 @@ const SyncSelectionDialogComponent : React.FC<{
                         {toUpdateNotes.map((note, index) => (
                             <LogseqCheckbox
                             checked={toUpdateNotesSelection[index]}
-                            key={note.uuid}
+                            key={note.uuid+note.type}
                             onChange={() => {
                                  let newToUpdateNotesSelection = [...toUpdateNotesSelection];
                                  newToUpdateNotesSelection[index] = !newToUpdateNotesSelection[index];
                                  setToUpdateNotesSelection(newToUpdateNotesSelection);
                             }}>
-                        <UpdateLineDisplay key={note.uuid} note={note} graphName={graphName}/>
+                        <UpdateLineDisplay note={note} graphName={graphName}/>
                     </LogseqCheckbox>
                     ))}
                     <div className="p-4" style={{
@@ -232,13 +232,14 @@ const SyncSelectionDialogComponent : React.FC<{
                     {toDeleteNotes.length <= 0 && ( <span style={{fontSize: '14px'}}>No notes to be deleted</span> )}
                     {toDeleteNotes.map((ankiId, index) => (
                     <LogseqCheckbox
+                        key={ankiId}
                         checked={toDeleteNotesSelection[index]}
                         onChange={() => {
                             let newToDeleteNotesSelection = [...toDeleteNotesSelection];
                             newToDeleteNotesSelection[index] = !newToDeleteNotesSelection[index];
                             setToDeleteNotesSelection(newToDeleteNotesSelection);
                         }}>
-                        <DeleteLineDisplay key={ankiId} ankiId={ankiId}/>
+                        <DeleteLineDisplay ankiId={ankiId}/>
                     </LogseqCheckbox>
                     ))
                     }
@@ -345,7 +346,7 @@ export const UpdateLineDisplay = ({note, graphName}) => {
     );
 }
 
-export const DeleteLineDisplay = (ankiId) => {
+export const DeleteLineDisplay = ({ankiId}) => {
     return (
         <span className="inline-flex items-center" style={{fontSize: '14px'}}>
             <AnkiLink ankiId={ankiId}/>

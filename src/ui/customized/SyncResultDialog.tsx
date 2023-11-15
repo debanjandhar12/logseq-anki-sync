@@ -131,7 +131,7 @@ const SyncResultDialogComponent : React.FC<{
                         </div>
                         {createdNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes were created.</span>)}
                         {createdNotes.map((note, index) => (
-                            <span className="inline-flex items-center" key={note.uuid}>
+                            <span className="inline-flex items-center" key={note.uuid+note.type}>
                                 <span style={{fontSize: '14px', color: 'var(--ls-success-color)', userSelect: 'none'}} title={'Synced Successfully'}>✓</span>
                                 <CreateLineDisplay note={note} graphName={graphName}/>
                             </span>
@@ -140,7 +140,7 @@ const SyncResultDialogComponent : React.FC<{
                             const uuid = noteUuidTypeStr.substring(0,noteUuidTypeStr.lastIndexOf('-'));
                             const type = noteUuidTypeStr.substring(noteUuidTypeStr.lastIndexOf('-')+1);
                             return (
-                            <span className="inline-flex items-center">
+                            <span className="inline-flex items-center" key={uuid+type}>
                                 <span style={{fontSize: '14px', color: 'var(--ls-error-color)', userSelect: 'none'}} title={'Sync Failed'}>⚠</span>
                                 <CreateLineDisplay note={{uuid, type}} graphName={graphName}/>
                             </span>)
@@ -158,7 +158,7 @@ const SyncResultDialogComponent : React.FC<{
                         </div>
                         {updatedNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes were updated.</span>)}
                         {updatedNotes.map((note, index) => (
-                            <span className="inline-flex items-center" key={note.uuid}>
+                            <span className="inline-flex items-center" key={note.uuid+note.type}>
                                 <span style={{fontSize: '14px', color: 'var(--ls-success-color)', userSelect: 'none'}} title={'Synced Successfully'}>✓</span>
                                 <UpdateLineDisplay note={note} graphName={graphName}/>
                             </span>
@@ -167,7 +167,7 @@ const SyncResultDialogComponent : React.FC<{
                             const uuid = noteUuidTypeStr.substring(0,noteUuidTypeStr.lastIndexOf('-'));
                             const type = noteUuidTypeStr.substring(noteUuidTypeStr.lastIndexOf('-')+1);
                             return (
-                                <span className="inline-flex items-center">
+                                <span className="inline-flex items-center" key={uuid+type}>
                                     <span style={{fontSize: '14px', color: 'var(--ls-error-color)', userSelect: 'none'}} title={'Sync Failed'}>⚠</span>
                                     <UpdateLineDisplay note={{uuid, type}} graphName={graphName}/>
                                 </span>)
