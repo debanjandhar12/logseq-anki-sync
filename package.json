@@ -1,6 +1,6 @@
 {
   "name": "logseq-anki-sync",
-  "version": "5.4.0",
+  "version": "5.4.1",
   "title": "Logseq Anki Sync",
   "description": "An logseq to anki syncing plugin with superpowers - image occlusion, card direction, incremental cards, and a lot more.",
   "main": "dist/index.html",

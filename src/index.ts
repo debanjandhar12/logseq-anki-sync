@@ -18,6 +18,7 @@ import {Note} from "./notes/Note";
 import {showModelWithButtons} from "./ui/general/ModelWithBtns";
 import {UI} from "./ui/UI";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
+import pkg from "./../package.json";
 
 async function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
@@ -88,7 +89,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
                                     <br /><br /><small class="px-2">Based on the results of the feature vote, the selective sync functionality has been incorporated! 🎉</small>
                                     <br/><br/>`,
             [{name:"Read Release notes", f:()=>{
-                    window.open(`https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${baseInfo.version}`);
+                    window.open(`https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}`);
                 }, returnOnClick: false},
             ]);
     }
