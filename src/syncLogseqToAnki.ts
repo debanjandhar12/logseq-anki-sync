@@ -12,7 +12,7 @@ import { MultilineCardNote } from "./notes/MultilineCardNote";
 import _ from "lodash";
 import {
     escapeClozeAndSecoundBrace,
-    get_better_error_msg,
+    handleAnkiError,
     getCaseInsensitive,
     sortAsync,
 } from "./utils/utils";
@@ -47,9 +47,7 @@ export class LogseqToAnkiSync {
         try {
             await this.performSync();
         } catch (e) {
-            logseq.UI.showMsg(get_better_error_msg(e.toString()), "warning", {
-                timeout: 4000,
-            });
+            handleAnkiError(e.toString());
             logseq.provideUI({
                 key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`,
                 template: ``,

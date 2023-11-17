@@ -1,5 +1,5 @@
 import * as AnkiConnect from "../anki-connect/AnkiConnect";
-import {get_better_error_msg} from "../utils/utils";
+import {handleAnkiError} from "../utils/utils";
 import {Addon} from "./Addon";
 import _ from "lodash";
 import {SelectionModal} from "../ui/general/SelectionModal";
@@ -29,9 +29,7 @@ export class PreviewInAnkiContextMenu extends Addon {
             await AnkiConnect.requestPermission();
             await AnkiConnect.guiBrowse("uuid:" + blocks[0].uuid);
         } catch (e) {
-            logseq.UI.showMsg(get_better_error_msg(e.toString()), "error", {
-                timeout: 4000,
-            });
+            handleAnkiError(e.toString());
         }
     }
 
@@ -54,9 +52,7 @@ export class PreviewInAnkiContextMenu extends Addon {
                 `note:${modelName} "Breadcrumb:re:^<a.*>(${pagesToView.map((page) =>
                     _.escapeRegExp(page).replaceAll('"', '\\"')).join("|")})</a>.*$"`);
         } catch (e) {
-            logseq.UI.showMsg(get_better_error_msg(e.toString()), "error", {
-                timeout: 4000,
-            });
+            handleAnkiError(e.toString());
         }
     }
 

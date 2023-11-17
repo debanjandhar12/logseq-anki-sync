@@ -5,8 +5,9 @@ import "@logseq/libs";
 import {
     ANKI_CLOZE_REGEXP,
     MD_MATH_BLOCK_REGEXP, OhmStrToListGrammar,
-    specialChars,
+    specialChars, WARNING_ICON,
 } from "../constants";
+import {ActionNotification} from "../ui/general/ActionNotification";
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
@@ -114,16 +115,23 @@ export function get_math_inside_md(content: string): Array<string> {
     return arr;
 }
 
-export function get_better_error_msg(msg: string): string {
+export function handleAnkiError(msg: string): void {
     switch (msg) {
         case "failed to issue request":
-            return "Please ensure Anki is open in background with AnkiConnect installed properly. See installation instruction for more information.";
+            ActionNotification([{name:"Installation Guide", func: () => window.parent.open('https://github.com/debanjandhar12/logseq-anki-sync#%EF%B8%8F-installation-video')}],
+                "Please ensure Anki is open in background with AnkiConnect installed properly. Read installation guide for details.", 5000, WARNING_ICON)
+            break;
         case "Permission to access anki was denied":
-            return "Please give permission to access anki by clicking Yes when promted.";
+            logseq.UI.showMsg("Please give permission to access anki by clicking yes when prompted.", "warning", {
+                timeout: 5000,
+            });
+            break;
         case "collection is not available":
-            return "Please select an Anki Profile before syncing.";
+            logseq.UI.showMsg("Please select an anki profile before syncing.", "warning", {
+                timeout: 5000,
+            });
+            break;
     }
-    return msg;
 }
 
 export function getRandomUnicodeString(length?: number): string {
