@@ -1,5 +1,6 @@
 import { Addon } from "./Addon";
 import { PreviewInAnkiContextMenu } from "./PreviewInAnki";
+import {HideOcclusionData} from "./HideOcclusionData";
 
 export class AddonRegistry {
     public static addons: Addon[] = [];
@@ -15,3 +16,4 @@ export class AddonRegistry {
 }
 
 AddonRegistry.add(PreviewInAnkiContextMenu.getInstance());
+AddonRegistry.add(HideOcclusionData.getInstance());
