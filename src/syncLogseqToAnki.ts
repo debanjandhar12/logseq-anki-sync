@@ -14,7 +14,7 @@ import {
     escapeClozeAndSecoundBrace,
     handleAnkiError,
     getCaseInsensitive,
-    sortAsync,
+    sortAsync, splitNamespace,
 } from "./utils/utils";
 import path from "path-browserify";
 import {ANKI_CLOZE_REGEXP, ANKI_ICON, LOGSEQ_ICON, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} from "./constants";
@@ -575,11 +575,14 @@ export class LogseqToAnkiSync {
         }
         deck = deck || _.get(note, "page.properties.deck");
         const shouldParseDeckFromNamespace = async () => {
-            if (_.get(note, "page.namespace.id") == null) return false;
+            if (_.get(note, "page.namespace.id") == null &&
+                (_.get(note, "page.originalName", "") ||
+                _.get(note, "page.properties.title", "")).includes('/') == false) return false;
             if (logseq.settings.deckFromLogseqNamespace) return true;
 
             // Logic based on discussion at https://github.com/debanjandhar12/logseq-anki-sync/pull/143
-            const rootPageName = _.get(note, "page.name").split("/")[0];
+            const rootPageName = splitNamespace(_.get(note, "page.originalName", "") ||
+                _.get(note, "page.properties.title", ""))[0];
             if (
                 _.get(
                     await LogseqProxy.Editor.getPage(rootPageName),
@@ -592,17 +595,16 @@ export class LogseqToAnkiSync {
         deck =
             deck ||
             ((await shouldParseDeckFromNamespace())
-                ? (
-                      _.get(note, "page.originalName", "") ||
-                      _.get(note, "page.properties.title", "")
-                  )
-                      .split("/")
+                ?     splitNamespace(
+                         _.get(note, "page.originalName", "") ||
+                          _.get(note, "page.properties.title", "")
+                      )
                       .slice(0, -1)
                       .join("/")
                 : false);
         deck = deck || logseq.settings.defaultDeck || "Default";
         if (typeof deck != "string") deck = deck[0];
-        deck = deck.replace(/\//g, "::");
+        deck = splitNamespace(deck).join("::");
 
         // Parse breadcrumb
         let breadcrumb = `<a href="logseq://graph/${encodeURIComponent(

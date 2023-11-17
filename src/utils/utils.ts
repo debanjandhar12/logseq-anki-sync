@@ -1,5 +1,5 @@
 import ohm from "ohm-js";
-import _ from "lodash";
+import _, {isArray} from "lodash";
 import replaceAsync from "string-replace-async";
 import "@logseq/libs";
 import {
@@ -132,6 +132,29 @@ export function handleAnkiError(msg: string): void {
             });
             break;
     }
+}
+export function splitNamespace(str: string) {
+    const original = str;
+    // Find all matches of \[\[.*\]\]
+    const matches = str.match(/\[\[.*?\]\]/g);
+    // Replace all matches with a random string
+    const randomStrings = [];
+    if (matches && isArray(matches)) {
+        for (const match of matches) {
+            randomStrings.push(getRandomUnicodeString());
+            str = str.replace(match, randomStrings[randomStrings.length - 1]);
+        }
+    }
+    // Split the string
+    const parts = str.split("/");
+    // Replace the random strings with the original matches
+    for (let i = 0; i < parts.length; i++) {
+        for (let j = 0; j < randomStrings.length; j++) {
+            parts[i] = parts[i].replace(randomStrings[j], matches[j]);
+        }
+    }
+    console.log(parts);
+    return parts;
 }
 
 export function getRandomUnicodeString(length?: number): string {
