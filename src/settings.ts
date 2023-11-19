@@ -76,11 +76,17 @@ export const addSettingsToLogseq = () => {
         },
         {
             key: "renderAnkiClozeMarcosInLogseq",
-            type: "boolean",
-            default: false,
-            title: "Render Anki Cloze Macros in Logseq? (Recommended: Disabled) [Experimental] [In Development]",
+            type: "enum",
+            default: "",
+            title: "Render Anki Cloze Macros by plugin in Logseq? (Recommended: Off) [Experimental] [In Development]",
             description:
-                "Render Anki Cloze Macros in Logseq. <br/> When enabled, the Anki Cloze Macros ({{c1 Pikachu}}, {{c2 Mew}}, ...) will be rendered in Logseq.",
+                "When enabled, the Anki Cloze Macros ({{c1 Pikachu}}, {{c2 Mew}}, ...) will be rendered as normal text or blanks that turn visible on hover. Refresh or reopen Logseq to take effect.",
+            enumChoices: [
+                "Off",
+                "On",
+                "On hover",
+            ],
+            enumPicker: "select",
         },
         {
             key: "advancedSettingsHeading",

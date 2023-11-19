@@ -32,6 +32,27 @@ export class ClozeNote extends Note {
             ["editor/input", `replacecloze:: " '' "`, { "backward-pos": 3 }],
             ["editor/clear-current-slash"],
         ]);
+        
+        if (logseq.settings.renderAnkiClozeMarcosInLogseq.includes("On hover")) {
+            logseq.provideStyle(`
+                .anki-cloze {
+                    color: transparent !important;
+                    background: unset !important;
+                    text-decoration: underline 1px dashed var(--ls-primary-text-color) !important;
+                    text-underline-position: under !important;
+                    }
+                    .anki-cloze:hover {
+                    color: var(--ls-primary-text-color) !important;
+                    background: unset !important;
+                }
+            `);
+        } else if (logseq.settings.renderAnkiClozeMarcosInLogseq == "On") {
+            logseq.provideStyle(`
+                .anki-cloze {
+                    background-color:rgb(59 130 246 / 0.1);
+                }
+            `);
+        }
         const setupAnkiClozeObserverAndRenderThemInLogseqWhenObserved = () => {
             // Set up observer for Anki Cloze Macro Syntax
             const displayAnkiCloze = (elem: Element) => {
@@ -48,14 +69,11 @@ export class ClozeNote extends Note {
                             /^{?{{c\d (.*?)((::|\\\\).*)?}}}?$/,
                             "$1",
                         );
-                        if (logseq.settings.renderAnkiClozeMarcosInLogseq)
-                            content = (
-                                await convertToHTMLFile(content, "markdown")
-                            ).html;
+                        content = ( await convertToHTMLFile(content, "markdown") ).html;
                         // if parent element has class macro
                         if (cloze.parentElement.classList.contains("macro"))
                             cloze.parentElement.style.display = "initial";
-                        cloze.outerHTML = `<span style="background-color:rgb(59 130 246 / 0.1);white-space: initial;">${content}</span>`;
+                        cloze.outerHTML = `<span class="anki-cloze" style="white-space: initial;">${content}</span>`;
                     }
                 });
             };
@@ -74,6 +92,7 @@ export class ClozeNote extends Note {
                 childList: true,
             });
         };
+        if (logseq.settings.renderAnkiClozeMarcosInLogseq != "Off")
         setupAnkiClozeObserverAndRenderThemInLogseqWhenObserved();
     };
 
