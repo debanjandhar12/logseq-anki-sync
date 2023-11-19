@@ -63,9 +63,9 @@ export class ClozeNote extends Note {
                 if (!clozes) return;
                 clozes = elem.querySelectorAll('span[title^="Unsupported macro name: c"]');
                 clozes.forEach(async (cloze) => {
-                    if (/c\d$/.test((cloze as Element & {title}).title)) {
+                    if (/c(loze)?\d$/.test((cloze as Element & { title }).title)) {
                         let content = cloze.innerHTML.replace(
-                            /^{?{{c\d (.*?)((::|\\\\).*)?}}}?$/,
+                            /^{?{{c(?:loze)?\d (.*?)((::|\\\\).*)?}}}?$/,
                             "$1",
                         );
                         if (logseq.settings.renderClozeMarcosInLogseq)
@@ -188,7 +188,7 @@ export class ClozeNote extends Note {
                     (match, g1, g2, g3) => `${g1.trim()}::${g3.trim()}`,
                 ); // Add support for logseq cloze cue
                 if (group1) return `{{c${group1}::${group2}}}`;
-                return `{{c${cloze_id++}::${group1}}}`;
+                return `{{c${cloze_id++}::${group2}}}`;
             },
         );
 
