@@ -144,6 +144,19 @@ const SyncSelectionDialogComponent : React.FC<{
         }
         getGraphName().then();
     }, []);
+
+    const [skipOnHashMatch, setSkipOnHashMatch] = useState(true);
+    React.useEffect(() => {
+        logseq.updateSettings({
+            skipOnDependencyHashMatch: true
+        });
+    }, []);
+    React.useEffect(() => {
+        logseq.updateSettings({
+            skipOnDependencyHashMatch: skipOnHashMatch
+        });
+    }, [skipOnHashMatch]);
+
     return (
         <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false}>
             <div className="settings-modal of-plugins">
@@ -245,7 +258,23 @@ const SyncSelectionDialogComponent : React.FC<{
                     }
                 </div>
             </div>
-            <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse" style={{borderTop: '1px solid var(--ls-quaternary-background-color)', padding: '2px'}}>
+                <div className="mt-5 sm:mt-4 sm:flex"
+                     style={{borderTop: '1px solid var(--ls-quaternary-background-color)', padding: '2px', alignItems: 'center'}}>
+                    <div className="hidden md-block" style={{flexGrow: '1', marginLeft: "12px"}}>
+                        <div className={'anki_de'} style={{width:'fit-content'}}><LogseqButton
+                            color={'link'}
+                            size={'sm'}>⮝</LogseqButton>
+                            <div className={'footer-option-list'}>
+                                <LogseqCheckbox
+                                    checked={skipOnHashMatch}
+                                    onChange={() => setSkipOnHashMatch(!skipOnHashMatch)}
+                                >Skip on hash match (<abbr
+                                    title="When enabled, this will result in faster performance. However, sometimes this may lead to ignoring some changes."
+                                >?</abbr>)</LogseqCheckbox>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="sm:flex sm:flex-row-reverse">
                     <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
                         <LogseqButton
                             isFullWidth={true}
@@ -258,13 +287,14 @@ const SyncSelectionDialogComponent : React.FC<{
                         }}><span>Confirm</span><span
                             className="px-1 opacity-80"><code>⏎</code></span></span></LogseqButton>
                     </span>
-                    <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
+                        <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
                         <LogseqButton
                             isFullWidth={true}
                             isCentered={true}
                             color={'faded-default'}
                             onClick={() => handleCancel()}>Cancel</LogseqButton>
                     </span>
+                    </div>
                 </div>
             </div>
         </Modal>

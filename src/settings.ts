@@ -90,13 +90,6 @@ export const addSettingsToLogseq = () => {
             default: null,
         },
         {
-            key: "skipOnDependencyHashMatch",
-            type: "boolean",
-            default: true,
-            title: "Enable skip on DependecyHash match for improved syncing speed? (Recommended: Enabled)",
-            description: "Enable skip rendering on DependecyHash match.",
-        },
-        {
             key: "cacheLogseqAPIv1",
             type: "boolean",
             default: true,
