@@ -194,7 +194,7 @@ const SyncSelectionDialogComponent : React.FC<{
                             zIndex: 1
                         }}>Create
                         </div>
-                        {toCreateNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes to be created</span>)}
+                        {toCreateNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes to be created.</span>)}
                         {toCreateNotes.map((note, index) => (
                             <LogseqCheckbox
                                 checked={toCreateNotesSelection[index]}
@@ -216,9 +216,34 @@ const SyncSelectionDialogComponent : React.FC<{
                             padding: '0.25rem 0.5rem',
                             userSelect: 'none',
                             zIndex: 1
+                        }}>Delete
+                        </div>
+                        {toDeleteNotes.length <= 0 && ( <span style={{fontSize: '14px'}}>No notes to be deleted.</span> )}
+                        {toDeleteNotes.map((ankiId, index) => (
+                            <LogseqCheckbox
+                                key={ankiId}
+                                checked={toDeleteNotesSelection[index]}
+                                onChange={() => {
+                                    let newToDeleteNotesSelection = [...toDeleteNotesSelection];
+                                    newToDeleteNotesSelection[index] = !newToDeleteNotesSelection[index];
+                                    setToDeleteNotesSelection(newToDeleteNotesSelection);
+                                }}>
+                                <DeleteLineDisplay ankiId={ankiId}/>
+                            </LogseqCheckbox>
+                        ))
+                        }
+                        <div className="p-4" style={{
+                            backgroundColor: 'var(--ls-tertiary-background-color)',
+                            borderRadius: '0.25rem',
+                            cursor: 'pointer',
+                            marginTop: '0.5rem',
+                            marginBottom: '0.5rem',
+                            padding: '0.25rem 0.5rem',
+                            userSelect: 'none',
+                            zIndex: 1
                         }}>Update
                         </div>
-                        {toUpdateNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes to be updated</span>)}
+                        {toUpdateNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes to be updated.</span>)}
                         {toUpdateNotes.map((note, index) => (
                             <LogseqCheckbox
                             checked={toUpdateNotesSelection[index]}
@@ -231,31 +256,6 @@ const SyncSelectionDialogComponent : React.FC<{
                         <UpdateLineDisplay note={note} graphName={graphName}/>
                     </LogseqCheckbox>
                     ))}
-                    <div className="p-4" style={{
-                        backgroundColor: 'var(--ls-tertiary-background-color)',
-                        borderRadius: '0.25rem',
-                        cursor: 'pointer',
-                        marginTop: '0.5rem',
-                        marginBottom: '0.5rem',
-                        padding: '0.25rem 0.5rem',
-                        userSelect: 'none',
-                        zIndex: 1
-                    }}>Delete
-                    </div>
-                    {toDeleteNotes.length <= 0 && ( <span style={{fontSize: '14px'}}>No notes to be deleted</span> )}
-                    {toDeleteNotes.map((ankiId, index) => (
-                    <LogseqCheckbox
-                        key={ankiId}
-                        checked={toDeleteNotesSelection[index]}
-                        onChange={() => {
-                            let newToDeleteNotesSelection = [...toDeleteNotesSelection];
-                            newToDeleteNotesSelection[index] = !newToDeleteNotesSelection[index];
-                            setToDeleteNotesSelection(newToDeleteNotesSelection);
-                        }}>
-                        <DeleteLineDisplay ankiId={ankiId}/>
-                    </LogseqCheckbox>
-                    ))
-                    }
                 </div>
             </div>
                 <div className="mt-5 sm:mt-4 sm:flex"
