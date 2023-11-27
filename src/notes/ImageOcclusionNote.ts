@@ -69,7 +69,7 @@ export class ImageOcclusionNote extends Note {
                         block_images,
                     );
                 let selectedImage = null;
-                let selectedImageIdx = await SelectionModal(block_images.map((image) => {
+                let selectedImageIdx = block_images.length == 1 ? 0 : await SelectionModal(block_images.map((image) => {
                     return {
                         name: image,
                         icon: `<img class="px-4" height="48" width="64" src="${image.match(isWebURL_REGEXP) ? image : window.parent.logseq.api.make_asset_url(image)}"></img>`,
