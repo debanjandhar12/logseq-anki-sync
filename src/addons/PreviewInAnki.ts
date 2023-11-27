@@ -49,7 +49,7 @@ export class PreviewInAnkiContextMenu extends Addon {
                     pagesToView = [pagesToView, ...namespacePages.map((page) => page.name)];
             }
             await AnkiConnect.guiBrowse(
-                `note:${modelName} "Breadcrumb:re:^<a.*>(${pagesToView.map((page) =>
+                `"note:${modelName}" "Breadcrumb:re:^<a.*>(${pagesToView.map((page) =>
                     _.escapeRegExp(page).replaceAll('"', '\\"')).join("|")})</a>.*$"`);
         } catch (e) {
             handleAnkiError(e.toString());

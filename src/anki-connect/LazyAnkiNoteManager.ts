@@ -31,7 +31,7 @@ export class LazyAnkiNoteManager {
     }
 
     async buildNoteInfoMap(modelName: string): Promise<any> {
-        const result = await AnkiConnect.query(`note:${modelName}`);
+        const result = await AnkiConnect.query(`"note:${modelName}"`);
         const notes = await AnkiConnect.invoke("notesInfo", { notes: result });
         const cards = [];
         for (const note of notes) {
