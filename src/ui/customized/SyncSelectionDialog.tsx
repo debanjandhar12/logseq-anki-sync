@@ -192,7 +192,7 @@ const SyncSelectionDialogComponent : React.FC<{
                             padding: '0.25rem 0.5rem',
                             userSelect: 'none',
                             zIndex: 1
-                        }}>Create
+                        }}>Create<span className="opacity-50 px-1" style={{userSelect: "none", float: 'right', fontSize: '14px'}}> {toCreateNotesSelection.filter(Boolean).length} / {toCreateNotesSelection.length}</span>
                         </div>
                         {toCreateNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes to be created.</span>)}
                         {toCreateNotes.map((note, index) => (
@@ -216,7 +216,7 @@ const SyncSelectionDialogComponent : React.FC<{
                             padding: '0.25rem 0.5rem',
                             userSelect: 'none',
                             zIndex: 1
-                        }}>Delete
+                        }}>Delete<span className="opacity-50 px-1" style={{userSelect: "none", float: 'right', fontSize: '14px'}}> {toDeleteNotesSelection.filter(Boolean).length} / {toDeleteNotesSelection.length}</span>
                         </div>
                         {toDeleteNotes.length <= 0 && ( <span style={{fontSize: '14px'}}>No notes to be deleted.</span> )}
                         {toDeleteNotes.map((ankiId, index) => (
@@ -241,7 +241,7 @@ const SyncSelectionDialogComponent : React.FC<{
                             padding: '0.25rem 0.5rem',
                             userSelect: 'none',
                             zIndex: 1
-                        }}>Update
+                        }}>Update<span className="opacity-50 px-1" style={{userSelect: "none", float: 'right', fontSize: '14px'}}> {toUpdateNotesSelection.filter(Boolean).length} / {toUpdateNotesSelection.length}</span>
                         </div>
                         {toUpdateNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes to be updated.</span>)}
                         {toUpdateNotes.map((note, index) => (
@@ -263,7 +263,7 @@ const SyncSelectionDialogComponent : React.FC<{
                     <div className="hidden md-block" style={{flexGrow: '1', marginLeft: "12px"}}>
                         <div className={'anki_de'} style={{width:'fit-content'}}><LogseqButton
                             color={'link'}
-                            size={'sm'}>⮝</LogseqButton>
+                            size={'sm'}>🢁</LogseqButton>
                             <div className={'footer-option-list'}>
                                 <LogseqCheckbox
                                     checked={skipOnHashMatch}
@@ -353,10 +353,10 @@ export const LogseqLink = ({uuid, graphName}) => {
 export const CreateLineDisplay = ({note, graphName}) => {
     return (
         <span className="inline-flex items-center" style={{fontSize: '14px'}}>
-            <span className="opacity-50 px-1" style={{userSelect: "none",lineBreak:'strict'}}>[{note.type}]</span>
-            <LogseqLink uuid={note.uuid} graphName={graphName}/>
+            <span className="opacity-50 px-1" style={{userSelect: "none",flexShrink:'0'}}>[{note.type}]</span>
+            <span className={`truncate`}><LogseqLink uuid={note.uuid} graphName={graphName}/></span>
             <span className="px-1" style={{userSelect: "none"}}>{`⟶`}</span>
-            <AnkiLink/>
+            <span style={{flexShrink:'0'}}><AnkiLink/></span>
         </span>
     );
 }
@@ -364,12 +364,12 @@ export const CreateLineDisplay = ({note, graphName}) => {
 export const UpdateLineDisplay = ({note, graphName}) => {
     return (
         <span className="inline-flex items-center" style={{fontSize: '14px'}}>
-            <span className="opacity-50 px-1" style={{userSelect: "none",lineBreak:'strict'}}>[{note.type}]</span>
-            <LogseqLink uuid={note.uuid} graphName={graphName}/>
+            <span className="opacity-50 px-1" style={{userSelect: "none",flexShrink:'0'}}>[{note.type}]</span>
+            <span className={`truncate`}><LogseqLink uuid={note.uuid} graphName={graphName}/></span>
             {note.ankiId && (
                 <>
                     <span className="px-1" style={{userSelect: "none"}}>{`⟶`}</span>
-                    <AnkiLink ankiId={note.ankiId}/>
+                    <span style={{flexShrink:'0'}}><AnkiLink ankiId={note.ankiId}/></span>
                 </>
             )}
         </span>

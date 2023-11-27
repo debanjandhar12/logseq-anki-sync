@@ -20,7 +20,7 @@ import {UI} from "./ui/UI";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
 import pkg from "./../package.json";
 
-async function main(baseInfo: LSPluginBaseInfo) {
+function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
     const syncLogseqToAnki = async function () {
         await new LogseqToAnkiSync().sync();

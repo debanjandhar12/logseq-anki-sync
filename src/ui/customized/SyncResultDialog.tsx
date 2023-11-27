@@ -131,46 +131,21 @@ const SyncResultDialogComponent : React.FC<{
                         </div>
                         {createdNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes were created.</span>)}
                         {createdNotes.map((note, index) => (
-                            <span className="inline-flex items-center" key={note.uuid+note.type}>
-                                <span style={{fontSize: '14px', color: 'var(--ls-success-color)', userSelect: 'none'}} title={'Synced Successfully'}>✓</span>
+                            <span className="inline-flex items-center" key={note.uuid + note.type}>
+                                <span style={{fontSize: '14px', color: 'var(--ls-success-color)', userSelect: 'none'}}
+                                      title={'Synced Successfully'}>✓</span>
                                 <CreateLineDisplay note={note} graphName={graphName}/>
                             </span>
                         ))}
                         {Array.from(failedCreated).map((noteUuidTypeStr, index) => {
-                            const uuid = noteUuidTypeStr.substring(0,noteUuidTypeStr.lastIndexOf('-'));
-                            const type = noteUuidTypeStr.substring(noteUuidTypeStr.lastIndexOf('-')+1);
+                            const uuid = noteUuidTypeStr.substring(0, noteUuidTypeStr.lastIndexOf('-'));
+                            const type = noteUuidTypeStr.substring(noteUuidTypeStr.lastIndexOf('-') + 1);
                             return (
-                            <span className="inline-flex items-center" key={uuid+type}>
-                                <span style={{fontSize: '14px', color: 'var(--ls-error-color)', userSelect: 'none'}} title={'Sync Failed'}>⚠</span>
+                                <span className="inline-flex items-center" key={uuid + type}>
+                                <span style={{fontSize: '14px', color: 'var(--ls-error-color)', userSelect: 'none'}}
+                                      title={'Sync Failed'}>⚠</span>
                                 <CreateLineDisplay note={{uuid, type}} graphName={graphName}/>
                             </span>)
-                        })}
-                        <div className="p-4" style={{
-                            backgroundColor: 'var(--ls-tertiary-background-color)',
-                            borderRadius: '0.25rem',
-                            cursor: 'pointer',
-                            marginTop: '0.5rem',
-                            marginBottom: '0.5rem',
-                            padding: '0.25rem 0.5rem',
-                            userSelect: 'none',
-                            zIndex: 1
-                        }}>Updated
-                        </div>
-                        {updatedNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes were updated.</span>)}
-                        {updatedNotes.map((note, index) => (
-                            <span className="inline-flex items-center" key={note.uuid+note.type}>
-                                <span style={{fontSize: '14px', color: 'var(--ls-success-color)', userSelect: 'none'}} title={'Synced Successfully'}>✓</span>
-                                <UpdateLineDisplay note={note} graphName={graphName}/>
-                            </span>
-                        ))}
-                        {Array.from(failedUpdated).map((noteUuidTypeStr, index) => {
-                            const uuid = noteUuidTypeStr.substring(0,noteUuidTypeStr.lastIndexOf('-'));
-                            const type = noteUuidTypeStr.substring(noteUuidTypeStr.lastIndexOf('-')+1);
-                            return (
-                                <span className="inline-flex items-center" key={uuid+type}>
-                                    <span style={{fontSize: '14px', color: 'var(--ls-error-color)', userSelect: 'none'}} title={'Sync Failed'}>⚠</span>
-                                    <UpdateLineDisplay note={{uuid, type}} graphName={graphName}/>
-                                </span>)
                         })}
                         <div className="p-4" style={{
                             backgroundColor: 'var(--ls-tertiary-background-color)',
@@ -187,6 +162,35 @@ const SyncResultDialogComponent : React.FC<{
                             {deletedNotes.length > 0 ? `The ${deletedNotes.length} notes were deleted successfully` : `No notes were deleted.`}
                             {failedDeleted.size > 0 ? `The ${failedDeleted.size} notes failed to delete` : ``}
                         </span>
+                        <div className="p-4" style={{
+                            backgroundColor: 'var(--ls-tertiary-background-color)',
+                            borderRadius: '0.25rem',
+                            cursor: 'pointer',
+                            marginTop: '0.5rem',
+                            marginBottom: '0.5rem',
+                            padding: '0.25rem 0.5rem',
+                            userSelect: 'none',
+                            zIndex: 1
+                        }}>Updated
+                        </div>
+                        {updatedNotes.length <= 0 && (<span style={{fontSize: '14px'}}>No notes were updated.</span>)}
+                        {updatedNotes.map((note, index) => (
+                            <span className="inline-flex items-center" key={note.uuid + note.type}>
+                                <span style={{fontSize: '14px', color: 'var(--ls-success-color)', userSelect: 'none'}}
+                                      title={'Synced Successfully'}>✓</span>
+                                <UpdateLineDisplay note={note} graphName={graphName}/>
+                            </span>
+                        ))}
+                        {Array.from(failedUpdated).map((noteUuidTypeStr, index) => {
+                            const uuid = noteUuidTypeStr.substring(0, noteUuidTypeStr.lastIndexOf('-'));
+                            const type = noteUuidTypeStr.substring(noteUuidTypeStr.lastIndexOf('-') + 1);
+                            return (
+                                <span className="inline-flex items-center" key={uuid + type}>
+                                    <span style={{fontSize: '14px', color: 'var(--ls-error-color)', userSelect: 'none'}}
+                                          title={'Sync Failed'}>⚠</span>
+                                    <UpdateLineDisplay note={{uuid, type}} graphName={graphName}/>
+                                </span>)
+                        })}
                     </div>
                 </div>
             </div>
