@@ -17,7 +17,7 @@ import {
     sortAsync, splitNamespace,
 } from "./utils/utils";
 import path from "path-browserify";
-import {ANKI_CLOZE_REGEXP, ANKI_ICON, LOGSEQ_ICON, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} from "./constants";
+import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} from "./constants";
 import { convertToHTMLFile } from "./converter/Converter";
 import { LogseqProxy } from "./logseq/LogseqProxy";
 import pkg from "../package.json";

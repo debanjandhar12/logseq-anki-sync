@@ -4,7 +4,7 @@ import {LogseqButton} from "../basic/LogseqButton";
 import {LogseqCheckbox} from "../basic/LogseqCheckbox";
 import ReactDOM from "react-dom";
 import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
-import {ANKI_ICON, LOGSEQ_ICON} from "../../constants";
+import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
 
 export async function SyncSelectionDialog(toCreateNotes: Array<any>, toUpdateNotes: Array<any>, toDeleteNotes: Array<any>): Promise<{ toCreateNotes: Array<any>; toUpdateNotes: Array<any>; toDeleteNotes: Array<any> } | null> {
