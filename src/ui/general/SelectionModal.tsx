@@ -37,7 +37,7 @@ const ModelComponent: React.FC<{ arr: {name : string, icon? : string}[], msg?:st
         if(enableKeySelect) {
             setItems(() => items.map((item, i) => {
                 if (i+1 >= 1 && i+1 <= 9)
-                    item.name = `${item.name}<span class="keyboard-shortcut px-3"><code>${i+1}</code></span>`;
+                    item.name = `${item.name}<span class="keyboard-shortcut px-3"><div class="opacity-80 ui__button-shortcut-key" style="margin-left: 2px;">${i+1}</div></span>`;
                 console.log(item.name);
                 return item;
             }));

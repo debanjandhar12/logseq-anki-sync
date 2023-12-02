@@ -79,7 +79,6 @@ const ModelComponent : React.FC<{
                         <LogseqButton
                             isFullWidth={true}
                             isCentered={true}
-                            color={'faded-default'}
                             onClick={() => returnResult(false)}>Cancel</LogseqButton>
                     </span>
                 </div>

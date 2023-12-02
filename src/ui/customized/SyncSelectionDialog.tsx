@@ -279,19 +279,20 @@ const SyncSelectionDialogComponent : React.FC<{
                         <LogseqButton
                             isFullWidth={true}
                             isCentered={true}
+                            depth={1}
                             onClick={() => handleConfirm()}
                             color='primary'><span style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
                         }}><span>Confirm</span><span
-                            className="px-1 opacity-80"><code>⏎</code></span></span></LogseqButton>
+                            className="opacity-80 ui__button-shortcut-key" style={{marginLeft: '2px'}}>⏎</span></span></LogseqButton>
                     </span>
-                        <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
+                    <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
                         <LogseqButton
                             isFullWidth={true}
                             isCentered={true}
-                            color={'faded-default'}
+                            depth={1}
                             onClick={() => handleCancel()}>Cancel</LogseqButton>
                     </span>
                     </div>
