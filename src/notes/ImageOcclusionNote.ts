@@ -21,10 +21,13 @@ import {
     HTMLFile,
     processProperties,
 } from "../converter/Converter";
-import { OcclusionEditor } from "../ui/customized/OcclusionEditor";
+import {OcclusionData, OcclusionEditor, OcclusionElement} from "../ui/customized/OcclusionEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
 import {SelectionModal} from "../ui/general/SelectionModal";
+import {val} from "cheerio/lib/api/attributes";
+
+export type ImageToOcclusionDataHashMap = { [key: string]: OcclusionData };
 
 export class ImageOcclusionNote extends Note {
     public type = "image_occlusion";
@@ -56,18 +59,11 @@ export class ImageOcclusionNote extends Note {
                     );
                     return;
                 }
-                let imgToOcclusionArrHashMap = JSON.parse(
-                    Buffer.from(
-                        block.properties?.occlusion ||
+                let imgToOcclusionDataHashMap : ImageToOcclusionDataHashMap = ImageOcclusionNote.upgradeProperties(JSON.parse(
+                    Buffer.from(block.properties?.occlusion ||
                             Buffer.from("{}", "utf8").toString("base64"),
-                        "base64",
-                    ).toString(),
-                );
-                imgToOcclusionArrHashMap =
-                    ImageOcclusionNote.migrateOutdatedImages(
-                        imgToOcclusionArrHashMap,
-                        block_images,
-                    );
+                        "base64").toString()));
+                imgToOcclusionDataHashMap = ImageOcclusionNote.migratePdfImages(imgToOcclusionDataHashMap, block_images);
                 let selectedImage = null;
                 let selectedImageIdx = block_images.length == 1 ? 0 : await SelectionModal(block_images.map((image) => {
                     return {
@@ -78,26 +74,24 @@ export class ImageOcclusionNote extends Note {
                 if (selectedImageIdx != null) selectedImage = block_images[selectedImageIdx];
                 if (selectedImage) {
                     selectedImage = (selectedImage as string).split("?")[0];
-                    const newOcclusionArr = await OcclusionEditor(
+                    const newOcclusionData = await OcclusionEditor(
                         selectedImage,
-                        imgToOcclusionArrHashMap[selectedImage] || [],
+                        _.get(imgToOcclusionDataHashMap[selectedImage], 'elements', []) as OcclusionElement[],
+                        {}
                     );
-                    console.log("newOcclusionArr", newOcclusionArr);
-                    if (newOcclusionArr) {
-                        imgToOcclusionArrHashMap[selectedImage] =
-                            newOcclusionArr;
-                        if (
-                            Buffer.from(
-                                JSON.stringify(imgToOcclusionArrHashMap),
+                    if (newOcclusionData && typeof newOcclusionData == "object") {
+                        imgToOcclusionDataHashMap[selectedImage] =
+                            newOcclusionData;
+                        if (Buffer.from(
+                                JSON.stringify(imgToOcclusionDataHashMap),
                                 "utf8",
-                            ).toString("base64") == block.properties?.occlusion
-                        )
+                            ).toString("base64") == block.properties?.occlusion)
                             console.log("No change");
                         await LogseqProxy.Editor.upsertBlockProperty(
                             uuid,
                             "occlusion",
                             Buffer.from(
-                                JSON.stringify(imgToOcclusionArrHashMap),
+                                JSON.stringify(imgToOcclusionDataHashMap),
                                 "utf8",
                             ).toString("base64"),
                         );
@@ -109,21 +103,19 @@ export class ImageOcclusionNote extends Note {
 
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let clozedContent: string = this.content;
-        let imgToOcclusionArrHashMap = JSON.parse(
+        let imgToOcclusionDataHashMap = ImageOcclusionNote.upgradeProperties(JSON.parse(
             Buffer.from(this.properties?.occlusion, "base64").toString(),
-        );
+        ));
         const block = await LogseqProxy.Editor.getBlock(this.uuid);
         let block_images = await ImageOcclusionNote.getImagesInBlockOrNote(block);
-        imgToOcclusionArrHashMap = ImageOcclusionNote.migrateOutdatedImages(
-            imgToOcclusionArrHashMap,
-            block_images,
-        );
+        imgToOcclusionDataHashMap = ImageOcclusionNote.migratePdfImages(
+            imgToOcclusionDataHashMap, block_images);
         const clozes = new Set();
-        for (const image in imgToOcclusionArrHashMap) {
-            const occlusionArr = imgToOcclusionArrHashMap[image];
+        for (const image in imgToOcclusionDataHashMap) {
+            const occlusionElements = imgToOcclusionDataHashMap[image].elements;
             block_images = block_images.map((image) => image.split("?")[0]);
             if (block_images.includes(image)) {
-                for (const occlusion of occlusionArr) {
+                for (const occlusion of occlusionElements) {
                     clozes.add(occlusion.cId);
                 }
             }
@@ -132,12 +124,9 @@ export class ImageOcclusionNote extends Note {
         ${Array.from(clozes)
             .map((cloze) => `{{c${cloze}:: ::<span id="c${cloze}"></span>}}`)
             .join("")}
-        <div id="imgToOcclusionArrHashMap">${JSON.stringify(
-            imgToOcclusionArrHashMap,
-        )}</div>
+        <div id="imgToOcclusionDataHashMap">${JSON.stringify(imgToOcclusionDataHashMap)}</div>
         <img id="localImgBasePath" src="_logseq_anki_sync.css"></img>
         </div>`;
-
         return convertToHTMLFile(clozedContent, this.format);
     }
 
@@ -180,28 +169,25 @@ export class ImageOcclusionNote extends Note {
             _.map(notes, async (note) => {
                 // Remove blocks that do not have images with occlusion
                 try {
-                    let imgToOcclusionArrHashMap = JSON.parse(
-                        Buffer.from(
-                            note.properties?.occlusion,
-                            "base64",
-                        ).toString(),
-                    );
+                    let imgToOcclusionDataHashMap = ImageOcclusionNote.upgradeProperties(JSON.parse(
+                        Buffer.from(note.properties?.occlusion, "base64").toString(),
+                    ));
                     let blockImages = await ImageOcclusionNote.getImagesInBlockOrNote(
                         note,
                     );
-                    imgToOcclusionArrHashMap =
-                        ImageOcclusionNote.migrateOutdatedImages(
-                            imgToOcclusionArrHashMap,
+                    imgToOcclusionDataHashMap =
+                        ImageOcclusionNote.migratePdfImages(
+                            imgToOcclusionDataHashMap,
                             blockImages,
                         );
                     blockImages = blockImages.map(
                         (image) => image.split("?")[0],
                     );
-                    for (const image in imgToOcclusionArrHashMap) {
-                        const occlusionArr = imgToOcclusionArrHashMap[image];
+                    for (const image in imgToOcclusionDataHashMap) {
+                        const occlusionElements = imgToOcclusionDataHashMap[image].elements;
                         if (
-                            occlusionArr &&
-                            occlusionArr.length > 0 &&
+                            occlusionElements &&
+                            occlusionElements.length > 0 &&
                             blockImages.includes(image)
                         )
                             return note; // Found a valid occlusion!
@@ -275,17 +261,14 @@ export class ImageOcclusionNote extends Note {
     }
 
     // This migrates the occlusions associated with older image annotation links with newer ones
-    private static migrateOutdatedImages(
-        imgToOcclusionArrHashMap,
-        block_images,
-    ) {
-        const newImgToOcclusionArrHashMap = {};
+    private static migratePdfImages(imgToOcclusionDataHashMap : ImageToOcclusionDataHashMap, block_images : string[]) : ImageToOcclusionDataHashMap {
+        const newImgToOcclusionDataHashMap = {};
         block_images.forEach((image) => {
-            const k = Object.keys(imgToOcclusionArrHashMap)
+            const k = Object.keys(imgToOcclusionDataHashMap)
                 .sort()
                 .reverse()
                 .find((key) => {
-                    if (imgToOcclusionArrHashMap[image]) {
+                    if (imgToOcclusionDataHashMap[image]) {
                         return true;
                     }
                     let imageURLParams: any = new Map();
@@ -309,15 +292,26 @@ export class ImageOcclusionNote extends Note {
                     return false;
                 });
             if (k) {
-                newImgToOcclusionArrHashMap[image.split("?")[0]] =
-                    imgToOcclusionArrHashMap[k];
+                newImgToOcclusionDataHashMap[image.split("?")[0]] =
+                    imgToOcclusionDataHashMap[k];
             }
         });
-        console.log(
-            "migrateOutdatedImages",
-            imgToOcclusionArrHashMap,
-            newImgToOcclusionArrHashMap,
-        );
-        return newImgToOcclusionArrHashMap;
+        console.log("migratePdfImages",imgToOcclusionDataHashMap,newImgToOcclusionDataHashMap);
+        return newImgToOcclusionDataHashMap;
+    }
+
+    private static upgradeProperties(hashMap : any) : ImageToOcclusionDataHashMap {
+        const newHashMap : ImageToOcclusionDataHashMap = {};
+        for (const [key, value] of Object.entries(hashMap)) {
+            if (Array.isArray(value)) { // Old format (< 5.6.0 of logseq-anki-sync). Upgrade it.
+                newHashMap[key] = {
+                    elements: value,
+                    config: {}
+                }
+            } else if (typeof value == "object" && Array.isArray(value.elements)) { // New format.
+                newHashMap[key] = value as OcclusionData;
+            }
+        }
+        return newHashMap;
     }
 }

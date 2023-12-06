@@ -28,6 +28,7 @@ export class UI {
           width: 200px;
           z-index:999;
         }
+        
         .anki_de:hover > .menu-list {
             opacity: .9;
             display: block;
@@ -76,7 +77,29 @@ export class UI {
           width: 200px;
           z-index:999;
         }
+        
         .anki_de:hover > .footer-option-list {
+            opacity: 1;
+            display: block;
+        }
+        
+        .anki_de .image-occlusion-menu {
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          border-radius: 0.25rem;
+          position: absolute;
+          display: none;
+          list-style: none;
+          overflow: hidden;
+          margin: 0;
+          padding: 10px;
+          background-color: var(--ls-primary-background-color);
+          top: 80px;
+          right: 96px;
+          width: 200px;
+          z-index:999;
+        }
+        
+        .anki_de:hover > .image-occlusion-menu {
             opacity: 1;
             display: block;
         }

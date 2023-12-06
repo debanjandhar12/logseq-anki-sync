@@ -3,9 +3,11 @@ import ReactDOM from "react-dom";
 import _ from "lodash";
 import fabric from "fabric/dist/fabric.js?string";
 import path from "path-browserify";
-import {ADD_OCCLUSION_ICON, ANKI_ICON, DONATE_ICON, isWebURL_REGEXP, REMOVE_OCCLUSION_ICON} from "../../constants";
+import {ADD_OCCLUSION_ICON, ANKI_ICON, DONATE_ICON, isWebURL_REGEXP, REMOVE_OCCLUSION_ICON, SETTINGS_ICON} from "../../constants";
 import {Modal} from "../general/Modal";
 import {LogseqButton} from "../basic/LogseqButton";
+import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
+import {LogseqCheckbox} from "../basic/LogseqCheckbox";
 
 if (!window.parent.fabric) {
     const fabricScript = window.parent.document.createElement("script");
@@ -13,10 +15,28 @@ if (!window.parent.fabric) {
     window.parent.document.body.appendChild(fabricScript);
 }
 
+export type OcclusionElement = {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    angle: number;
+    cId: number;
+};
+
+export type OcclusionConfig = {
+    hideAllTestOne?: boolean;
+};
+
+export type OcclusionData = {
+    config: OcclusionConfig;
+    elements: Array<OcclusionElement>;
+};
+
 export async function OcclusionEditor(
     imgURL: string,
-    occlusionArr: Array<any>,
-): Promise<Array<any> | boolean> {
+    occlusionElements: Array<OcclusionElement>,
+    occlusionConfig: OcclusionConfig): Promise<OcclusionData | boolean> {
     return new Promise(async function (resolve, reject) {
         try {
             const main = window.parent.document.querySelector("#root main");
@@ -30,7 +50,7 @@ export async function OcclusionEditor(
                 } catch (e) {}
             }
             onClose = onClose.bind(this);
-            ReactDOM.render(<OcclusionEditorComponent imgURL={imgURL} occlusionArr={occlusionArr} resolve={resolve} reject={reject} onClose={onClose}/>, div);
+            ReactDOM.render(<OcclusionEditorComponent imgURL={imgURL} occlusionElements={occlusionElements} occlusionConfig={occlusionConfig} resolve={resolve} reject={reject} onClose={onClose}/>, div);
         } catch (e) {
             logseq.App.showMsg("Error", "Failed to open modal");
             console.log(e)
@@ -41,18 +61,20 @@ export async function OcclusionEditor(
 
 const OcclusionEditorComponent : React.FC<{
     imgURL: string;
-    occlusionArr: Array<any>;
-    resolve: (value: Array<any> | boolean) => void;
+    occlusionElements: Array<OcclusionElement>;
+    occlusionConfig: OcclusionConfig;
+    resolve: (value: OcclusionData | boolean) => void;
     reject: Function;
     onClose: () => void;
-}> = ({ imgURL, occlusionArr, resolve, reject, onClose }) => {
+}> = ({ imgURL, occlusionElements,occlusionConfig,  resolve, reject, onClose }) => {
     const [open, setOpen] = useState(true);
+    const [occlusionConfigState, setOcclusionConfigState] = React.useState<OcclusionConfig>(occlusionConfig || {});
     const fabricRef = React.useRef<any>();
     const canvasRef = React.useRef(null);
     const cidSelectorRef = React.useRef(null);
     const [imgEl, setImgEl] = React.useState(new window.parent.Image());
     const handleConfirm = () => {
-        const occlusionArr = fabricRef.current
+        const newOcclusionElements = fabricRef.current
             .getObjects()
             .map((obj) => ({
                 left: obj.left,
@@ -62,7 +84,10 @@ const OcclusionEditorComponent : React.FC<{
                 angle: obj.angle,
                 cId: parseInt(obj._objects[1].text),
             }));
-        resolve(occlusionArr);
+        resolve({
+            config: occlusionConfigState,
+            elements: newOcclusionElements,
+        });
         onClose();
     };
     const handleCancel = () => {
@@ -116,7 +141,7 @@ const OcclusionEditorComponent : React.FC<{
                 );
                 fabricRef.current.renderAll();
 
-                occlusionArr.forEach((obj) => {
+                occlusionElements.forEach((obj) => {
                     const occlusionEl = createOcclusionRectEl(
                         obj.left,
                         obj.top,
@@ -346,12 +371,25 @@ const OcclusionEditorComponent : React.FC<{
                             margin: "0.125rem auto 0.125rem 0",
                         }}><img
                         src={zoomView}
-                    />&lt;- Zoom</span>)
+                    /><span className={'sm:hidden md:block'}>&lt;- Zoom</span></span>)
                     }
-                    <span className={fabricSelection ? "flex" : "hidden"} style={{alignItems: "center", justifyItems: "center", paddingRight: '1rem', borderRight: '1px solid var(--ls-quaternary-background-color)'}}>
+                    <span className={fabricSelection ? "flex" : "hidden"} style={{
+                        alignItems: "center",
+                        justifyItems: "center",
+                        paddingRight: '0.5rem',
+                        borderRight: '1px solid var(--ls-quaternary-background-color)'
+                    }}>
                         {/* Add additional toolbar for fabricselection here */}
-                        <div style={{position: 'relative', width: "80px", height: "1.6rem"}}>
-                            <span style={{position: 'absolute', zIndex: 2, marginTop: '-8px', fontSize: '12px', userSelect: 'none', pointerEvents: 'none'}}
+                        <span style={{visibility:'hidden'}}><LogseqButton size={'sm'} icon={ADD_OCCLUSION_ICON}/></span> {/* An hack to align with the other buttons */}
+                        <div style={{position: 'relative', width: "80px", height: "1.6rem" }}>
+                            <span style={{
+                                position: 'absolute',
+                                zIndex: 2,
+                                marginTop: '-8px',
+                                fontSize: '12px',
+                                userSelect: 'none',
+                                pointerEvents: 'none'
+                            }}
                                   className={'text-sm opacity-80'}>
                                 Cloze Id:
                             </span>
@@ -369,6 +407,24 @@ const OcclusionEditorComponent : React.FC<{
                             </select>
                         </div>
                     </span>
+                    <span className={'anki_de'} style={{
+                        alignItems: "center",
+                        justifyItems: "center",
+                        paddingLeft: '0.5rem',
+                        paddingRight: '0.5rem',
+                        borderRight: '1px solid var(--ls-quaternary-background-color)'
+                    }}>
+                        <LogseqButton color={'default'} size={'sm'} icon={SETTINGS_ICON} />
+                        <div className={'image-occlusion-menu'}>
+                                <LogseqCheckbox
+                                    checked={occlusionConfigState.hideAllTestOne}
+                                    onChange={(e) => setOcclusionConfigState({...occlusionConfigState, hideAllTestOne: e.target.checked})}
+                                >Hide All, Test One (<abbr
+                                    title="When enabled, hides all occlusions including the one being tested during anki review."
+                                >?</abbr>)</LogseqCheckbox>
+                        </div>
+                    </span>
+                    <span style={{paddingLeft: '0.5rem'}} />
                     <LogseqButton color={'success'} size={'sm'} title={"Add Occlusion"} onClick={addOcclusion}
                                   icon={ADD_OCCLUSION_ICON}/>
                     <LogseqButton color={'failed'} size={'sm'} title={"Delete Occlusion"} onClick={deleteOcclusion}

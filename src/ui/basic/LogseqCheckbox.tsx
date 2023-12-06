@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 
 type LogseqCheckboxProps = {
   children: React.ReactNode;
-  onChange?: () => void;
+  onChange?: (e?: any) => void;
   disabled?: boolean;
   checked?: boolean;
 };
