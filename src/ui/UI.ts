@@ -95,7 +95,7 @@ export class UI {
           background-color: var(--ls-primary-background-color);
           top: 80px;
           right: 96px;
-          width: 200px;
+          width: 220px;
           z-index:999;
         }
         

@@ -8,6 +8,7 @@ import {Modal} from "../general/Modal";
 import {LogseqButton} from "../basic/LogseqButton";
 import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
 import {LogseqCheckbox} from "../basic/LogseqCheckbox";
+import {createWorker, PSM} from 'tesseract.js';
 
 if (!window.parent.fabric) {
     const fabricScript = window.parent.document.createElement("script");
@@ -342,6 +343,71 @@ const OcclusionEditorComponent : React.FC<{
             fabricRef.current.renderAll();
         }
     };
+    const [isAIGeneratingOcclusion, setIsAIGeneratingOcclusion] = useState(false);
+
+    const aiGenerateOcclusion = async () => {
+        try {
+            setIsAIGeneratingOcclusion(true);
+            const worker = await createWorker('eng', 3, {});
+            await worker.setParameters({'tessedit_pageseg_mode': PSM.SPARSE_TEXT})
+            const ret = await worker.recognize(imgEl.src);
+            let counter = 0;
+            if (!ret.data.confidence || ret.data.confidence < 50) throw new Error("AI failed to recognize the image");
+            for (const paragraph of _.get(ret, 'data.paragraphs', [])) {
+                const width = paragraph.bbox.x1 - paragraph.bbox.x0;
+                const height = paragraph.bbox.y1 - paragraph.bbox.y0;
+
+                // Ignore small occlusions
+                if (width < 4 || height < 4) continue;
+                if (width*height < Math.pow(0.025, 2)*imgEl.width*imgEl.height) continue;
+                // Ignore occlusions that intersect with existing ones
+                function doRectsCollide(a, b) {
+                    return !(
+                        ((a.top + a.height) < (b.top)) ||
+                        (a.top > (b.top + b.height)) ||
+                        ((a.left + a.width) < b.left) ||
+                        (a.left > (b.left + b.width))
+                    );
+                }
+                let intersects = false;
+                for (const obj of fabricRef.current.getObjects()) {
+                    if (doRectsCollide({
+                        top: paragraph.bbox.y0,
+                        left: paragraph.bbox.x0,
+                        width: width,
+                        height: height,
+                    }, {
+                        top: obj.top,
+                        left: obj.left,
+                        width: obj.getScaledWidth(),
+                        height: obj.getScaledHeight(),
+                    })) {
+                        intersects = true;
+                        break;
+                    }
+                }
+                if (intersects) continue;
+
+                const occlusionEl = createOcclusionRectEl(
+                    paragraph.bbox.x0 + width / 2,
+                    paragraph.bbox.y0 + height / 2,
+                    width,
+                    height,
+                    null,
+                    (counter++) % 9 + 1,
+                );
+                fabricRef.current.add(occlusionEl);
+                fabricRef.current.renderAll();
+            }
+            if (counter === 0) logseq.Editor.showMsg("All possible occlusions already present.", "warning");
+            else logseq.Editor.showMsg(`Generated ${counter} occlusions`, "success");
+            await worker.terminate();
+            setIsAIGeneratingOcclusion(false);
+        } catch (e) {
+            logseq.Editor.showMsg("Failed to generate occlusions", "error");
+        }
+    }
+
     return (
         <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false} size={'large'}>
             <div className="settings-modal of-plugins">
@@ -422,6 +488,11 @@ const OcclusionEditorComponent : React.FC<{
                                 >Hide All, Test One (<abbr
                                     title="When enabled, hides all occlusions including the one being tested during anki review."
                                 >?</abbr>)</LogseqCheckbox>
+                            <hr style={{margin:'0.5rem'}}/>
+                            <div style={{marginLeft:'auto', marginRight:'auto'}}>
+                                <LogseqButton color={'primary'} size={'sm'} title={"Generate Occlusions using AI"} onClick={aiGenerateOcclusion}
+                                              disabled={isAIGeneratingOcclusion}>{!isAIGeneratingOcclusion ? 'Generate Occlusions using AI' : 'Generating occlusions...'}</LogseqButton>
+                            </div>
                         </div>
                     </span>
                     <span style={{paddingLeft: '0.5rem'}} />
