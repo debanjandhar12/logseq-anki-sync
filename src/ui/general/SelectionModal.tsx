@@ -68,7 +68,7 @@ const ModelComponent: React.FC<{ arr: {name : string, icon? : string}[], msg?:st
     }, [open]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={onClose}>
+        <Modal open={open} setOpen={setOpen} onClose={onClose} zDepth={'high'}>
             {msg && <h1 className="mb-4 text-2xl p-1">{msg}</h1>}
             {items.map((item, index) => (
                 <LogseqButton

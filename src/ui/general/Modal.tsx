@@ -5,10 +5,12 @@ interface ModalProps {
     open: boolean;
     setOpen: React.Dispatch<React.SetStateAction<boolean>>;
     onClose?: () => void;
+    size?: 'default' | 'large';
+    zDepth?: 'high' | 'default';
     hasCloseButton?: boolean;
 }
 
-export function Modal({open, setOpen, onClose, children, hasCloseButton = true}: PropsWithChildren<ModalProps>) {
+export function Modal({open, setOpen, size = 'default', zDepth = 'default', onClose, children, hasCloseButton = true}: PropsWithChildren<ModalProps>) {
     React.useEffect(() => {
         if (!open && onClose) {
             onClose();
@@ -16,9 +18,13 @@ export function Modal({open, setOpen, onClose, children, hasCloseButton = true}:
     }, [open]);
 
     if (!open) return null;
+    let style = {};
+    if (size === 'large') {
+        style = {...style, width: '90vw'};
+    }
 
     return (
-        <div className={`ui__modal settings-modal cp__settings-main`} style={{ zIndex: "9999" }}>
+        <div className={`ui__modal`} style={{ zIndex: zDepth === 'high' ? 9999 : 999 }}>
             <div className="ui__modal-overlay ease-out duration-300 opacity-100 enter-done">
                 <div className="absolute inset-0 opacity-75"></div>
             </div>
@@ -32,7 +38,7 @@ export function Modal({open, setOpen, onClose, children, hasCloseButton = true}:
                         </button>
                     </div>
                 )}
-                <div className="panel-content">
+                <div className="panel-content" style={style}>
                     {children}
                 </div>
             </div>

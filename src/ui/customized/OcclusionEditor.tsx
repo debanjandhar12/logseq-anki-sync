@@ -343,7 +343,7 @@ const OcclusionEditorComponent : React.FC<{
         }
     };
     return (
-        <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false}>
+        <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false} size={'large'}>
             <div className="settings-modal of-plugins">
                 <div className="absolute top-0 right-0 pt-2 pr-3">
                     <a href="https://github.com/sponsors/debanjandhar12">

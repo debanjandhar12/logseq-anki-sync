@@ -62,7 +62,7 @@ const ModelComponent : React.FC<{
     }, [open]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={onClose}>
+        <Modal open={open} setOpen={setOpen} onClose={onClose} zDepth={'high'}>
             <div className="ui__confirm-modal is-">
                 <div className="sm:flex sm:items-start">
                     <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
