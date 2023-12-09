@@ -403,16 +403,19 @@ const OcclusionEditorComponent : React.FC<{
                 }
                 let intersects = false;
                 for (const obj of fabricRef.current.getObjects()) {
+                    const matrix = obj.calcTransformMatrix();
+                    const objActualTop = matrix[5];
+                    const objActualLeft = matrix[4];
                     if (doRectsCollide({
                         top: paragraph.bbox.y0,
                         left: paragraph.bbox.x0,
                         width: width,
                         height: height,
                     }, {
-                        top: obj.top,
-                        left: obj.left,
-                        width: obj.getScaledWidth(),
-                        height: obj.getScaledHeight(),
+                        top: objActualTop - obj.height * obj.scaleY / 2,
+                        left: objActualLeft - obj.width * obj.scaleX / 2,
+                        width: obj.width * obj.scaleX,
+                        height: obj.height * obj.scaleY,
                     })) {
                         intersects = true;
                         break;
