@@ -82,7 +82,7 @@ const OcclusionEditorComponent : React.FC<{
                 const matrix = obj.calcTransformMatrix();
                 const actualTop = matrix[5];
                 const actualLeft = matrix[4];
-
+                
                 return {
                     left: actualLeft,
                     top: actualTop,
@@ -261,13 +261,16 @@ const OcclusionEditorComponent : React.FC<{
     React.useEffect(() => {
         if (!fabricRef || !open) return;
         const onKeydown = (e: KeyboardEvent) => {
+            if (!fabricRef || !open) return;
             if (e.key === "Escape" && fabricRef.current.getActiveObjects().length > 0) {
                 fabricRef.current.discardActiveObjects();
                 fabricRef.current.renderAll();
+                e.preventDefault();
                 e.stopImmediatePropagation();
             }
             else if (e.key === "Escape") {
                 onClose();
+                e.preventDefault();
                 e.stopImmediatePropagation();
             }
             if (e.ctrlKey && e.key === 'a') {
@@ -282,20 +285,25 @@ const OcclusionEditorComponent : React.FC<{
             }
             if (e.key === "Enter") {
                 handleConfirm();
+                e.preventDefault();
                 e.stopImmediatePropagation();
             }
             if (e.key === "Delete" && fabricRef.current.getActiveObjects().length > 0) {
                 deleteOcclusion();
+                e.preventDefault();
                 e.stopImmediatePropagation();
             }
             if (e.key === "Insert") {
                 addOcclusion();
+                e.preventDefault();
                 e.stopImmediatePropagation();
             }
             if (e.key === "ArrowUp") {
                 if (fabricRef.current.getActiveObject()) {
                     fabricRef.current.getActiveObject().top -= 1;
                     fabricRef.current.renderAll();
+                    fabricRef.current.fire('object:modified', {target: fabricRef.current.getActiveObject()});
+                    e.preventDefault();
                     e.stopImmediatePropagation();
                 }
             }
@@ -303,6 +311,8 @@ const OcclusionEditorComponent : React.FC<{
                 if (fabricRef.current.getActiveObject()) {
                     fabricRef.current.getActiveObject().top += 1;
                     fabricRef.current.renderAll();
+                    fabricRef.current.fire('object:modified', {target: fabricRef.current.getActiveObject()});
+                    e.preventDefault();
                     e.stopImmediatePropagation();
                 }
             }
@@ -310,6 +320,8 @@ const OcclusionEditorComponent : React.FC<{
                 if (fabricRef.current.getActiveObject()) {
                     fabricRef.current.getActiveObject().left -= 1;
                     fabricRef.current.renderAll();
+                    fabricRef.current.fire('object:modified', {target: fabricRef.current.getActiveObject()});
+                    e.preventDefault();
                     e.stopImmediatePropagation();
                 }
             }
@@ -317,6 +329,8 @@ const OcclusionEditorComponent : React.FC<{
                 if (fabricRef.current.getActiveObject()) {
                     fabricRef.current.getActiveObject().left += 1;
                     fabricRef.current.renderAll();
+                    fabricRef.current.fire('object:modified', {target: fabricRef.current.getActiveObject()});
+                    e.preventDefault();
                     e.stopImmediatePropagation();
                 }
             }
@@ -325,6 +339,7 @@ const OcclusionEditorComponent : React.FC<{
                     cidSelectorRef.current.value = e.key;
                     const event = new Event("change", { bubbles: true });
                     cidSelectorRef.current.dispatchEvent(event);
+                    e.preventDefault();
                     e.stopImmediatePropagation();
                 }
             }
@@ -552,7 +567,6 @@ const OcclusionEditorComponent : React.FC<{
                     <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
                         <LogseqButton
                             isFullWidth={true}
-                            isCentered={true}
                             depth={1}
                             onClick={() => handleConfirm()}
                             color='primary'><span style={{
@@ -566,7 +580,6 @@ const OcclusionEditorComponent : React.FC<{
                     <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
                         <LogseqButton
                             isFullWidth={true}
-                            isCentered={true}
                             depth={1}
                             onClick={() => handleCancel()}>Cancel</LogseqButton>
                     </span>

@@ -114,11 +114,16 @@ const SyncSelectionDialogComponent : React.FC<{
     }, [resolve]);
 
     const onKeydown = React.useCallback((e: KeyboardEvent) => {
+        if (!open) return;
         if (e.key === "Escape") {
             handleCancel();
+            e.preventDefault();
+            e.stopImmediatePropagation();
         }
         else if (e.key === "Enter") {
             handleConfirm();
+            e.preventDefault();
+            e.stopImmediatePropagation();
         }
     }, [returnResult]);
 
@@ -278,7 +283,6 @@ const SyncSelectionDialogComponent : React.FC<{
                     <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
                         <LogseqButton
                             isFullWidth={true}
-                            isCentered={true}
                             depth={1}
                             onClick={() => handleConfirm()}
                             color='primary'><span style={{
@@ -291,7 +295,6 @@ const SyncSelectionDialogComponent : React.FC<{
                     <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
                         <LogseqButton
                             isFullWidth={true}
-                            isCentered={true}
                             depth={1}
                             onClick={() => handleCancel()}>Cancel</LogseqButton>
                     </span>
@@ -311,7 +314,14 @@ export const AnkiLink = ({ankiId = null}) => {
 
     const onMouseOver = () => setStyle(hoverStyle);
     const onMouseOut = () => setStyle(normalStyle);
-    const onClickHandler = () => window.parent.AnkiConnect.guiBrowse(`nid:${ankiId}`);
+    const onClickHandler = (e) => {
+        if (ankiId != null) {
+            window.parent.AnkiConnect.guiBrowse(`nid:${ankiId}`)
+        }
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+    };
 
     const children = ankiId == null ? 'New note' : ankiId;
 

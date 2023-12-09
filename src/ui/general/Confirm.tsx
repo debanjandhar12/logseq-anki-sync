@@ -38,12 +38,16 @@ const ModelComponent : React.FC<{
     }, [resolve]);
 
     const onKeydown = React.useCallback((e: KeyboardEvent) => {
-        console.log('onKeydown');
+        if(!open) return;
         if (e.key === "Escape") {
             returnResult(false);
+            e.preventDefault();
+            e.stopImmediatePropagation();
         }
         else if (e.key === "Enter") {
             returnResult(true);
+            e.preventDefault();
+            e.stopImmediatePropagation();
         }
     }, [returnResult]);
 
@@ -71,14 +75,12 @@ const ModelComponent : React.FC<{
                     <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
                         <LogseqButton
                             isFullWidth={true}
-                            isCentered={true}
                             onClick={() => returnResult(true)}
                             color='primary'><span style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}><span>Confirm</span><span className="px-1 opacity-80"><code>⏎</code></span></span></LogseqButton>
                     </span>
                     <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
                         <LogseqButton
                             isFullWidth={true}
-                            isCentered={true}
                             onClick={() => returnResult(false)}>Cancel</LogseqButton>
                     </span>
                 </div>

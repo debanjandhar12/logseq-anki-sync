@@ -44,12 +44,17 @@ const ModelComponent: React.FC<{ arr: {name : string, icon? : string}[], msg?:st
         }
 
         const onKeydown = (e: KeyboardEvent) => {
+            if (!open) return;
             if (e.key === "Escape") {
                 handleSelection(null);
+                e.preventDefault();
+                e.stopImmediatePropagation();
             }
             else if (e.key >= "1" && e.key <= "9" && enableKeySelect) {
                 if (parseInt(e.key) <= arr.length) {
                     handleSelection(parseInt(e.key) - 1);
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                 }
             }
         };
@@ -75,7 +80,6 @@ const ModelComponent: React.FC<{ arr: {name : string, icon? : string}[], msg?:st
                     key={index}
                     onClick={() => handleSelection(index)}
                     color='primary'
-                    isCentered={item.icon == null}
                     isFullWidth={true}
                     icon={item.icon}
                 >

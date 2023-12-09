@@ -77,8 +77,11 @@ const SyncResultDialogComponent : React.FC<{
     const [open, setOpen] = useState(true);
 
     const onKeydown = React.useCallback((e: KeyboardEvent) => {
+        if (!open) return;
         if (e.key === "Escape") {
             onClose();
+            e.preventDefault();
+            e.stopImmediatePropagation();
         }
     }, []);
 
@@ -134,7 +137,7 @@ const SyncResultDialogComponent : React.FC<{
                             <span className="inline-flex items-center" key={note.uuid + note.type}>
                                 <span style={{fontSize: '14px', color: 'var(--ls-success-color)', userSelect: 'none'}}
                                       title={'Synced Successfully'}>✓</span>
-                                <CreateLineDisplay note={note} graphName={graphName}/>
+                                <UpdateLineDisplay note={note} graphName={graphName}/> { /* Use update line display for created notes */ }
                             </span>
                         ))}
                         {Array.from(failedCreated).map((noteUuidTypeStr, index) => {

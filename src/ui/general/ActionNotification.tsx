@@ -62,13 +62,13 @@ const ActionNotificationComponent: React.FC<{ btns: {name : string, func: Functi
     return (
         <Notification open={open} setOpen={setOpen} onClose={onClose} hasCloseBtn={true} icon={icon}>
             <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end'}}>
-                <span style={{alignSelf: 'flex-start'}}>{msg}</span>
+                <span style={{alignSelf: 'flex-start',marginBottom: '0.2em'}}>{msg}</span>
                 {buttons.map((btn, index) => (
                     <LogseqButton
                         key={index}
                         onClick={() => handleAction(index)}
                         color='primary'
-                        style={{marginTop: '1em'}}
+                        depth={2}
                         size='sm'
                     >
                         {btn.name}
