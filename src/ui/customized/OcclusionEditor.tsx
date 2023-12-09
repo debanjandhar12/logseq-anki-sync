@@ -77,14 +77,21 @@ const OcclusionEditorComponent : React.FC<{
     const handleConfirm = () => {
         const newOcclusionElements = fabricRef.current
             .getObjects()
-            .map((obj) => ({
-                left: obj.left,
-                top: obj.top,
-                width: obj.getScaledWidth(),
-                height: obj.getScaledHeight(),
-                angle: obj.angle,
-                cId: parseInt(obj._objects[1].text),
-            }));
+            .map((obj) => {
+                // https://github.com/fabricjs/fabric.js/issues/801#issuecomment-218116910
+                const matrix = obj.calcTransformMatrix();
+                const actualTop = matrix[5];
+                const actualLeft = matrix[4];
+
+                return {
+                    left: actualLeft,
+                    top: actualTop,
+                    width: obj.getScaledWidth(),
+                    height: obj.getScaledHeight(),
+                    angle: obj.angle,
+                    cId: parseInt(obj._objects[1].text)
+                }
+            });
         resolve({
             config: occlusionConfigState,
             elements: newOcclusionElements,
@@ -100,7 +107,7 @@ const OcclusionEditorComponent : React.FC<{
         const initFabric = async () => {
             fabricRef.current = new window.parent.fabric.Canvas(
                 canvasRef.current,
-                { stateful: true },
+                { stateful: true }
             );
             fabricRef.current.selection = false; // disable group selection
             fabricRef.current.uniformScaling = false; // disable object scaling keeping aspect ratio
@@ -140,6 +147,7 @@ const OcclusionEditorComponent : React.FC<{
                         scaleY: 1,
                     },
                 );
+                fabricRef.current.selection = true;
                 fabricRef.current.renderAll();
 
                 occlusionElements.forEach((obj) => {
@@ -166,22 +174,22 @@ const OcclusionEditorComponent : React.FC<{
     }, [open]);
 
     // Handle Selection
-    const [fabricSelection, setFabricSelection] = React.useState(null);
+    const [fabricSelection, setFabricSelection] = React.useState<Array<fabric.Object>>([]);
     React.useEffect(() => {
         if (!fabricRef || !fabricRef.current) return;
         fabricRef.current.on("selection:created", function () {
-            setFabricSelection(fabricRef.current.getActiveObject());
+            setFabricSelection(fabricRef.current.getActiveObjects());
         });
         fabricRef.current.on("selection:updated", function () {
-            setFabricSelection(fabricRef.current.getActiveObject());
+            setFabricSelection(fabricRef.current.getActiveObjects());
         });
         fabricRef.current.on("selection:cleared", function () {
             setFabricSelection(null);
         });
     }, [fabricRef]);
     React.useEffect(() => {
-        if (fabricSelection) {
-            cidSelectorRef.current.value = fabricSelection._objects[1].text;
+        if (fabricSelection && fabricSelection.length > 0) {
+            cidSelectorRef.current.value = fabricSelection[0]._objects[1].text;
         }
     }, [fabricSelection]);
 
@@ -208,27 +216,43 @@ const OcclusionEditorComponent : React.FC<{
     React.useEffect(() => {
         if (!fabricRef || !fabricRef.current) return;
         const preventOutOfBounds = (e: any) => {
-            const obj = e.target;
-            const top = obj.top;
-            const bottom = top + obj.height * obj.scaleY;
-            const left = obj.left;
-            const right = left + obj.width * obj.scaleX;
+            if (e.target.originX != "center") {
+                e.target.left = Math.min(Math.max(e.target.left, 0), imgEl.width - e.target.width * e.target.scaleX);
+                e.target.top = Math.min(Math.max(e.target.top, 0), imgEl.height - e.target.height * e.target.scaleY);
+            } else {
+                const top =  e.target.top;
+                const left = e.target.left;
+                const bottom = e.target.top + e.target.height * e.target.scaleY;
+                const right = e.target.left + e.target.width * e.target.scaleX;
+                const halfObjectHeight = (bottom - top) / 2;
+                const halfObjectWidth = (right - left) / 2;
+                const topBound = halfObjectHeight;
+                const bottomBound = imgEl.height - halfObjectHeight;
+                const leftBound = halfObjectWidth;
+                const rightBound = imgEl.width - halfObjectWidth;
+                e.target.left = Math.min(Math.max(left, leftBound), rightBound);
+                e.target.top = Math.min(Math.max(top, topBound), bottomBound);
+            }
+        }
 
-            const topBound = (obj.height * obj.scaleY) / 2;
-            const bottomBound = topBound + imgEl.height;
-            const leftBound = (obj.width * obj.scaleX) / 2;
-            const rightBound = leftBound + imgEl.width;
-
-            // capping logic here
-            obj.left = Math.min(
-                Math.max(left, leftBound),
-                rightBound - obj.width * obj.scaleX,
-            );
-            obj.top = Math.min(
-                Math.max(top, topBound),
-                bottomBound - obj.height * obj.scaleY,
-            );
-        };
+        fabricRef.current.on("selection:created", (e) => {
+            if (fabricRef.current.getActiveObjects().length > 1) {
+                window.parent.fabric.Group.prototype.lockScalingX = true;
+                window.parent.fabric.Group.prototype.lockScalingY = true;
+                window.parent.fabric.Group.prototype.lockRotation = true;
+                // window.parent.fabric.Group.prototype.lockMovementX = true;
+                // window.parent.fabric.Group.prototype.lockMovementY = true;
+                fabricRef.current.renderAll();
+            }
+            else {
+                window.parent.fabric.Group.prototype.lockScalingX = false;
+                window.parent.fabric.Group.prototype.lockScalingY = false;
+                window.parent.fabric.Group.prototype.lockRotation = false;
+                // window.parent.fabric.Group.prototype.lockMovementX = false;
+                // window.parent.fabric.Group.prototype.lockMovementY = false;
+                fabricRef.current.renderAll();
+            }
+        });
         fabricRef.current.on("object:moving", preventOutOfBounds);
         fabricRef.current.on("object:modified", preventOutOfBounds);
     }, [fabricRef]);
@@ -237,8 +261,8 @@ const OcclusionEditorComponent : React.FC<{
     React.useEffect(() => {
         if (!fabricRef || !open) return;
         const onKeydown = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && fabricRef.current.getActiveObject()) {
-                fabricRef.current.discardActiveObject();
+            if (e.key === "Escape" && fabricRef.current.getActiveObjects().length > 0) {
+                fabricRef.current.discardActiveObjects();
                 fabricRef.current.renderAll();
                 e.stopImmediatePropagation();
             }
@@ -246,11 +270,21 @@ const OcclusionEditorComponent : React.FC<{
                 onClose();
                 e.stopImmediatePropagation();
             }
+            if (e.ctrlKey && e.key === 'a') {
+                fabricRef.current.discardActiveObject();
+                var sel = new window.parent.fabric.ActiveSelection(fabricRef.current.getObjects(), {
+                    canvas: fabricRef.current,
+                });
+                fabricRef.current.setActiveObject(sel);
+                fabricRef.current.renderAll();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
             if (e.key === "Enter") {
                 handleConfirm();
                 e.stopImmediatePropagation();
             }
-            if (e.key === "Delete" && fabricRef.current.getActiveObject()) {
+            if (e.key === "Delete" && fabricRef.current.getActiveObjects().length > 0) {
                 deleteOcclusion();
                 e.stopImmediatePropagation();
             }
@@ -332,16 +366,14 @@ const OcclusionEditorComponent : React.FC<{
         fabricRef.current.renderAll();
     };
     const deleteOcclusion = () => {
-        fabricRef.current.remove(fabricRef.current.getActiveObject());
+        fabricRef.current.remove(...fabricRef.current.getActiveObjects());
         fabricRef.current.renderAll();
     };
     const onCIdChange = () => {
-        if (fabricSelection) {
-            fabricRef.current
-                .getActiveObject()
-                ._objects[1].set("text", cidSelectorRef.current.value);
-            fabricRef.current.renderAll();
-        }
+        fabricSelection.forEach(obj => {
+            obj._objects[1].set("text", cidSelectorRef.current.value);
+        });
+        fabricRef.current.renderAll();
     };
     const [isAIGeneratingOcclusion, setIsAIGeneratingOcclusion] = useState(false);
 
@@ -439,7 +471,7 @@ const OcclusionEditorComponent : React.FC<{
                         src={zoomView}
                     /><span className={'sm:hidden md:block'}>&lt;- Zoom</span></span>)
                     }
-                    <span className={fabricSelection ? "flex" : "hidden"} style={{
+                    <span className={fabricSelection && fabricSelection.length > 0 ? "flex" : "hidden"} style={{
                         alignItems: "center",
                         justifyItems: "center",
                         paddingRight: '0.5rem',
@@ -499,7 +531,7 @@ const OcclusionEditorComponent : React.FC<{
                     <LogseqButton color={'success'} size={'sm'} title={"Add Occlusion"} onClick={addOcclusion}
                                   icon={ADD_OCCLUSION_ICON}/>
                     <LogseqButton color={'failed'} size={'sm'} title={"Delete Occlusion"} onClick={deleteOcclusion}
-                                  icon={REMOVE_OCCLUSION_ICON} disabled={fabricSelection == null}/>
+                                  icon={REMOVE_OCCLUSION_ICON} disabled={fabricSelection == null || fabricSelection.length == 0}/>
                 </div>
                 <div style={{maxHeight: '70vh'}}>
                     <div
