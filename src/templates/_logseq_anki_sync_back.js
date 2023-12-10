@@ -12,5 +12,5 @@ const onLoadHandler = () => {
 if (document.readyState === "complete") {
     onLoadHandler();
 } else {
-    window.addEventListener('load', onLoadHandler);
+    window.addEventListener("load", onLoadHandler);
 }

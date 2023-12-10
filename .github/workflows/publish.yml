@@ -1,60 +1,60 @@
 name: Publish plugin
 
 on:
-  workflow_dispatch:
-          
+    workflow_dispatch:
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v2
+    build:
+        runs-on: ubuntu-latest
 
-      - name: Get package values
-        uses: jarrettmeyer/github-action-package-values@v1
-        id: package
-        
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20.x'
-          
-      - name: Install dependencies
-        run: yarn
-                        
-      - name: Build
-        id: build
-        run: |
-          yarn run build
-          mkdir ${{ steps.package.outputs.package_name }}
-          cp README.md package.json icon.png ${{ steps.package.outputs.package_name }}
-          mv dist ${{ steps.package.outputs.package_name }}
-          cd ${{ steps.package.outputs.package_name }}
-          zip -r ${{ steps.package.outputs.package_name }}.zip *
-          cd ..
-          mv ${{ steps.package.outputs.package_name }}/${{ steps.package.outputs.package_name }}.zip ./
-          echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
-          
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: v${{ steps.package.outputs.package_version }}
-        with:
-          allowUpdates: false
-          draft: true
-          prerelease: false
-          generateReleaseNotes: true
-          tag: v${{ steps.package.outputs.package_version }}
+        steps:
+            - uses: actions/checkout@v2
 
-      - name: Upload zip file
-        id: upload_zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ steps.package.outputs.package_name }}.zip
-          asset_name: ${{ steps.package.outputs.package_name }}-v${{ steps.package.outputs.package_version }}.zip
-          asset_content_type: application/zip
+            - name: Get package values
+              uses: jarrettmeyer/github-action-package-values@v1
+              id: package
+
+            - name: Use Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: "20.x"
+
+            - name: Install dependencies
+              run: yarn
+
+            - name: Build
+              id: build
+              run: |
+                  yarn run build
+                  mkdir ${{ steps.package.outputs.package_name }}
+                  cp README.md package.json icon.png ${{ steps.package.outputs.package_name }}
+                  mv dist ${{ steps.package.outputs.package_name }}
+                  cd ${{ steps.package.outputs.package_name }}
+                  zip -r ${{ steps.package.outputs.package_name }}.zip *
+                  cd ..
+                  mv ${{ steps.package.outputs.package_name }}/${{ steps.package.outputs.package_name }}.zip ./
+                  echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
+
+            - name: Create Release
+              uses: ncipollo/release-action@v1
+              id: create_release
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  VERSION: v${{ steps.package.outputs.package_version }}
+              with:
+                  allowUpdates: false
+                  draft: true
+                  prerelease: false
+                  generateReleaseNotes: true
+                  tag: v${{ steps.package.outputs.package_version }}
+
+            - name: Upload zip file
+              id: upload_zip
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ./${{ steps.package.outputs.package_name }}.zip
+                  asset_name: ${{ steps.package.outputs.package_name }}-v${{ steps.package.outputs.package_version }}.zip
+                  asset_content_type: application/zip

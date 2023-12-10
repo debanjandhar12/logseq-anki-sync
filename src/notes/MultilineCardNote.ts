@@ -1,12 +1,12 @@
-import { Note } from "./Note";
+import {Note} from "./Note";
 import "@logseq/libs";
 import _ from "lodash";
-import { convertToHTMLFile, HTMLFile } from "../converter/Converter";
-import { escapeClozeAndSecoundBrace, safeReplace } from "../utils/utils";
-import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../constants";
-import { LogseqProxy } from "../logseq/LogseqProxy";
-import { BlockUUID } from "@logseq/libs/dist/LSPlugin.user";
-import { DependencyEntity } from "../converter/getContentDirectDependencies";
+import {convertToHTMLFile, HTMLFile} from "../converter/Converter";
+import {escapeClozeAndSecoundBrace, safeReplace} from "../utils/utils";
+import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP} from "../constants";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
+import {DependencyEntity} from "../converter/getContentDirectDependencies";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {NoteUtils} from "./NoteUtils";
 
@@ -82,8 +82,7 @@ export class MultilineCardNote extends Note {
         let direction = _.get(this, "properties.direction");
         if (direction != "->" && direction != "<-" && direction != "<->") {
             if (
-                (this.tags.includes("reversed") &&
-                    this.tags.includes("forward")) ||
+                (this.tags.includes("reversed") && this.tags.includes("forward")) ||
                 this.tags.includes("bidirectional")
             )
                 direction = "<->";
@@ -105,9 +104,13 @@ export class MultilineCardNote extends Note {
     }
 
     private static async getRelevantTags(tagIds: any[]): Promise<string[]> {
-        return await NoteUtils.matchTagNamesWithTagIds(tagIds,
-            ['forward', 'reversed', 'bidirectional', 'incremental',
-                ...Array.from(Array(10).keys()).map((i) => `depth-${i}`)]);
+        return await NoteUtils.matchTagNamesWithTagIds(tagIds, [
+            "forward",
+            "reversed",
+            "bidirectional",
+            "incremental",
+            ...Array.from(Array(10).keys()).map((i) => `depth-${i}`),
+        ]);
     }
 
     public async getClozedContentHTML(): Promise<HTMLFile> {
@@ -119,13 +122,8 @@ export class MultilineCardNote extends Note {
         this.content = escapeClozeAndSecoundBrace(this.content);
 
         // Render the parent block and add to clozedContent
-        const parentBlockHTMLFile = await convertToHTMLFile(
-            this.content,
-            this.format,
-        );
-        parentBlockHTMLFile.assets.forEach((asset) =>
-            clozedContentAssets.add(asset),
-        );
+        const parentBlockHTMLFile = await convertToHTMLFile(this.content, this.format);
+        parentBlockHTMLFile.assets.forEach((asset) => clozedContentAssets.add(asset));
         if (direction == "<->" || direction == "<-")
             // Insert cloze braces depending upon direction else simply add parent block html to clozedContent
             clozedContent = `{{c2::${parentBlockHTMLFile.html}}}`;
@@ -138,15 +136,13 @@ export class MultilineCardNote extends Note {
             childrenList: any,
             level = 0,
         ): Promise<HTMLFile> => {
-            if (level >= maxDepth)
-                return { html: "", assets: new Set<string>(), tags: [] };
+            if (level >= maxDepth) return {html: "", assets: new Set<string>(), tags: []};
             const childrenListAssets = new Set<string>();
             let childrenListHTML = `\n<ul class="children-list left-border">`;
             for (const child of childrenList) {
                 childrenListHTML += `\n<li class="children">`;
                 const childContent = _.get(child, "content", "");
-                let sanitizedChildContent =
-                    escapeClozeAndSecoundBrace(childContent);
+                let sanitizedChildContent = escapeClozeAndSecoundBrace(childContent);
                 const childExtra = _.get(child, "properties.extra");
                 if (childExtra) {
                     sanitizedChildContent += `\n<div class="extra">${childExtra}</div>`;
@@ -157,9 +153,7 @@ export class MultilineCardNote extends Note {
                 );
                 let sanitizedChildHTML = sanitizedChildHTMLFile.html;
                 const sanitizedChildAssets = sanitizedChildHTMLFile.assets;
-                sanitizedChildAssets.forEach((asset) =>
-                    childrenListAssets.add(asset),
-                );
+                sanitizedChildAssets.forEach((asset) => childrenListAssets.add(asset));
                 if (child.children.length > 0) {
                     const allChildrenHTMLFile = await getChildrenListHTMLFile(
                         child.children,
@@ -186,15 +180,10 @@ export class MultilineCardNote extends Note {
             };
         };
         const childrenHTMLFile = await getChildrenListHTMLFile(this.children);
-        childrenHTMLFile.assets.forEach((asset) =>
-            clozedContentAssets.add(asset),
-        );
+        childrenHTMLFile.assets.forEach((asset) => clozedContentAssets.add(asset));
         clozedContent += childrenHTMLFile.html;
 
-        if (
-            this.children.length == 0 &&
-            (direction == "<->" || direction == "->")
-        )
+        if (this.children.length == 0 && (direction == "<->" || direction == "->"))
             clozedContent += `{{c${cloze_id}::}}`; // #16
 
         return {
@@ -219,24 +208,25 @@ export class MultilineCardNote extends Note {
         [?p :block/name "flashcard"]
         [?b :block/refs ?p]
         ]`);
-        let logseqCardGroup_blocks = await LogseqProxy.DB
-            .datascriptQueryBlocks(`
+        let logseqCardGroup_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
         [?r :block/name "card-group"]
         [?p :block/refs ?r]
         [?b :block/parent ?p]
         ]`);
-        logseqCardGroup_blocks = await Promise.all(logseqCardGroup_blocks.map(async (block) => {
-            const uuid = getUUIDFromBlock(block[0]);
-            const parent = block[0].parent.id;
-            const parentBlock = await LogseqProxy.Editor.getBlock(parent);
-            const tags = await MultilineCardNote.getRelevantTags(
-                _.get(parentBlock, "refs", []).map((ref) => ref.id),
-            );
-            block[0].tagsFromParentCardGroup = [...tags];
-            return block;
-        }));
+        logseqCardGroup_blocks = await Promise.all(
+            logseqCardGroup_blocks.map(async (block) => {
+                const uuid = getUUIDFromBlock(block[0]);
+                const parent = block[0].parent.id;
+                const parentBlock = await LogseqProxy.Editor.getBlock(parent);
+                const tags = await MultilineCardNote.getRelevantTags(
+                    _.get(parentBlock, "refs", []).map((ref) => ref.id),
+                );
+                block[0].tagsFromParentCardGroup = [...tags];
+                return block;
+            }),
+        );
         let blocks: any = [
             ...logseqCard_blocks,
             ...flashCard_blocks,
@@ -263,7 +253,7 @@ export class MultilineCardNote extends Note {
                         block.properties || {},
                         page,
                         // Apply tags in parent card group block - #168
-                        (tags && tags.length > 0 ? tags : tagsFromParentCardGroup),
+                        tags && tags.length > 0 ? tags : tagsFromParentCardGroup,
                         block.children,
                         _.get(block, "refs", []).map((ref) => ref.id),
                     );
@@ -282,7 +272,7 @@ export class MultilineCardNote extends Note {
                 note.tags.includes("bidirectional") ||
                 note.tags.includes("reversed") ||
                 note.children.length > 0 ||
-                !_.find(otherNotes, { uuid: note.uuid })
+                !_.find(otherNotes, {uuid: note.uuid})
             );
         });
         return notes;
@@ -298,7 +288,7 @@ export class MultilineCardNote extends Note {
             return result;
         }
         return [this.uuid, ...getChildrenUUID(this.children)].map(
-            (block) => ({ type: "Block", value: block }) as DependencyEntity,
+            (block) => ({type: "Block", value: block}) as DependencyEntity,
         );
     }
 }

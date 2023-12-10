@@ -1,14 +1,10 @@
-import {
-    BlockEntity,
-    BlockUUID,
-    PageIdentity,
-} from "@logseq/libs/dist/LSPlugin";
+import {BlockEntity, BlockUUID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {
     LOGSEQ_BLOCK_REF_REGEXP,
     LOGSEQ_EMBDED_PAGE_REGEXP,
     LOGSEQ_EMBDED_BLOCK_REGEXP,
 } from "../constants";
-import { LogseqProxy } from "../logseq/LogseqProxy";
+import {LogseqProxy} from "../logseq/LogseqProxy";
 export type DependencyEntity = {
     type: "FirstLineOfBlock" | "Block" | "Page";
     value: BlockUUID | PageEntityName;
@@ -59,10 +55,10 @@ export default async function getContentDirectDependencies(
                 }) as DependencyEntity,
         ),
         ...Array.from(blockDependency).map(
-            (block) => ({ type: "Block", value: block }) as DependencyEntity,
+            (block) => ({type: "Block", value: block}) as DependencyEntity,
         ),
         ...Array.from(pageDependency).map(
-            (page) => ({ type: "Page", value: page }) as DependencyEntity,
+            (page) => ({type: "Page", value: page}) as DependencyEntity,
         ),
     ];
 }

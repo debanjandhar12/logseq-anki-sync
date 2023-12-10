@@ -18,8 +18,6 @@ window.openBlockInLogseq = (uuid) => {
     // javascript get first child link element
     let page_link = element.getElementsByTagName("a")[0];
     let block_link = document.createElement("a");
-    block_link.href = `${page_link.href.match(
-        /logseq:\/\/graph\/.*\?/,
-    )}block-id=${uuid}`;
+    block_link.href = `${page_link.href.match(/logseq:\/\/graph\/.*\?/)}block-id=${uuid}`;
     block_link.click();
 };

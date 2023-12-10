@@ -1,4 +1,4 @@
-import { ANKI_ICON, GRAPH_ICON } from "../../constants";
+import {ANKI_ICON, GRAPH_ICON} from "../../constants";
 
 export class ProgressNotification {
     max: number;
@@ -16,9 +16,9 @@ export class ProgressNotification {
                 icon == "anki" ? ANKI_ICON : GRAPH_ICON
             }</div><div class="ml-3 w-0 flex-1">
             <div class="text-sm leading-5 font-medium whitespace-pre-line " style="margin: 0px;">${msg}
-            <progress id="logseq-anki-sync-progress-bar-${
-                logseq.baseInfo.id
-            }" value="${this.current}" max="${this.max}" style="width: 62%;" />
+            <progress id="logseq-anki-sync-progress-bar-${logseq.baseInfo.id}" value="${
+                this.current
+            }" max="${this.max}" style="width: 62%;" />
             </div>
             </div><div class="ml-4 flex-shrink-0 flex">
             </div></div></div></div></div></div>

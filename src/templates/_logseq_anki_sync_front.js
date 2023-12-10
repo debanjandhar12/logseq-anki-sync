@@ -1,8 +1,8 @@
 /***
  * This files contains the js for the front side of anki cards.
  */
-import { fabric } from "fabric";
-import { createOcclusionRectEl } from "../ui/customized/OcclusionEditor";
+import {fabric} from "fabric";
+import {createOcclusionRectEl} from "../ui/customized/OcclusionEditor";
 import path from "path-browserify";
 
 const onLoadHandler = () => {
@@ -16,10 +16,7 @@ const onLoadHandler = () => {
         if (!document.getElementById("localImgBasePath")) return;
         // Get localImgBasePath
         let localImgBasePath = document.getElementById("localImgBasePath").src;
-        localImgBasePath = localImgBasePath.substring(
-            0,
-            localImgBasePath.lastIndexOf("/"),
-        );
+        localImgBasePath = localImgBasePath.substring(0, localImgBasePath.lastIndexOf("/"));
         // Replace all images with canvas
         let imgToCanvasListHashMap = {};
         let images = Array.from(document.getElementsByTagName("img"));
@@ -38,14 +35,10 @@ const onLoadHandler = () => {
                 let scaleX = canvas.width / imgFabric.width,
                     scaleY = canvas.height / imgFabric.height;
                 canvas.setViewportTransform([scaleX, 0, 0, scaleY, 0, 0]);
-                canvas.setBackgroundImage(
-                    imgFabric,
-                    canvas.renderAll.bind(canvas),
-                    {
-                        scaleX: 1,
-                        scaleY: 1,
-                    },
-                );
+                canvas.setBackgroundImage(imgFabric, canvas.renderAll.bind(canvas), {
+                    scaleX: 1,
+                    scaleY: 1,
+                });
             };
             canvasEl.style.position = "relative";
             image.replaceWith(canvasEl);
@@ -58,14 +51,19 @@ const onLoadHandler = () => {
         document.getElementById("main-content").style.visibility = "visible";
 
         // Iterate the images in imgToOcclusionDataHashMap and inject the canvas into dom instead of images
-        let imgToOcclusionDataHashMap = JSON.parse(document.getElementById("imgToOcclusionDataHashMap").innerHTML,);
+        let imgToOcclusionDataHashMap = JSON.parse(
+            document.getElementById("imgToOcclusionDataHashMap").innerHTML,
+        );
         for (let image in imgToOcclusionDataHashMap) {
             let occlusionElements = imgToOcclusionDataHashMap[image].elements;
             let occlusionConfig = imgToOcclusionDataHashMap[image].config;
             console.log(occlusionConfig);
             occlusionElements.forEach((occlusionElem) => {
-                let canvasList = imgToCanvasListHashMap[localImgBasePath + "/" + path.basename(image)] ||
-                    imgToCanvasListHashMap[encodeURI(localImgBasePath + "/" + path.basename(image))] ||
+                let canvasList =
+                    imgToCanvasListHashMap[localImgBasePath + "/" + path.basename(image)] ||
+                    imgToCanvasListHashMap[
+                        encodeURI(localImgBasePath + "/" + path.basename(image))
+                    ] ||
                     imgToCanvasListHashMap[image] ||
                     imgToCanvasListHashMap[encodeURI(image)] ||
                     [];
@@ -83,8 +81,10 @@ const onLoadHandler = () => {
                         canvas.add(occlusion);
                         canvas.renderAll();
                     });
-                }
-                else if (occlusionElem.cId != currentClozeId && occlusionConfig.hideAllTestOne == true) {
+                } else if (
+                    occlusionElem.cId != currentClozeId &&
+                    occlusionConfig.hideAllTestOne == true
+                ) {
                     canvasList.forEach((canvas) => {
                         let occlusion = createOcclusionRectEl(
                             occlusionElem.left,
@@ -105,10 +105,10 @@ const onLoadHandler = () => {
             });
         }
     }
-}
+};
 
 if (document.readyState === "complete") {
     onLoadHandler();
 } else {
-    window.addEventListener('load', onLoadHandler);
+    window.addEventListener("load", onLoadHandler);
 }

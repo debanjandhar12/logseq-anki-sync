@@ -6,12 +6,12 @@
  * 3. Some properties of the page where block is located
  */
 
-import { Note } from "./Note";
+import {Note} from "./Note";
 import hashSum from "hash-sum";
 import pkg from "../../package.json";
-import { LogseqProxy } from "../logseq/LogseqProxy";
+import {LogseqProxy} from "../logseq/LogseqProxy";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
-import { DependencyEntity } from "../converter/getContentDirectDependencies";
+import {DependencyEntity} from "../converter/getContentDirectDependencies";
 import {
     getBlockHash,
     getFirstLineOfBlockHash,
@@ -20,10 +20,7 @@ import {
 import _ from "lodash";
 
 export default class NoteHashCalculator {
-    public static async getHash(
-        note: Note,
-        ankiFields: any[],
-    ): Promise<string> {
+    public static async getHash(note: Note, ankiFields: any[]): Promise<string> {
         const toHash = [];
 
         // Collect parent And DirectDependencies (TODO: refactor parents out)
@@ -50,8 +47,7 @@ export default class NoteHashCalculator {
             if (dep.type == "Block") toHash.push(await getBlockHash(dep.value));
             else if (dep.type == "FirstLineOfBlock")
                 toHash.push(await getFirstLineOfBlockHash(dep.value));
-            else if (dep.type == "Page")
-                toHash.push(await getPageHash(dep.value));
+            else if (dep.type == "Page") toHash.push(await getPageHash(dep.value));
         }
 
         // Add additional things from block to toHash
@@ -79,7 +75,7 @@ export default class NoteHashCalculator {
                 "debug",
             ]),
         );
-        toHash.push({ v: pkg.version });
+        toHash.push({v: pkg.version});
 
         // Add additional things from ankiFields to toHash
         let [html, assets, deck, breadcrumb, tags, extra] = ankiFields;

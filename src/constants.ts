@@ -5,8 +5,7 @@ export const specialChars =
 export const ANKI_CLOZE_REGEXP = /(\{\{c(\d+)::)((.|\n)*?)\}\}/g;
 export const MD_MATH_BLOCK_REGEXP = /\$\$([\s\S]*?)\$\$/g;
 export const MD_PROPERTIES_REGEXP = /^\s*(\w|-)*::.*\n?\n?/gm;
-export const MD_IMAGE_EMBEDED_REGEXP =
-    /!\[[^\]]*\]\((.*?)\s*("(?:.*[^"])")?\s*\)/g;
+export const MD_IMAGE_EMBEDED_REGEXP = /!\[[^\]]*\]\((.*?)\s*("(?:.*[^"])")?\s*\)/g;
 export const ORG_MATH_BLOCK_REGEXP = /\\\[([\s\S]*?)\\\]/g;
 export const ORG_PROPERTIES_REGEXP = /:PROPERTIES:\n((.|\n)*?):END:\n?/gm;
 export const LOGSEQ_BLOCK_REF_REGEXP = /\(\(([^\)\n]*?)\)\)(?!\))/gm;
@@ -14,13 +13,10 @@ export const LOGSEQ_RENAMED_BLOCK_REF_REGEXP = /\[(.*?)\]\(\(\((.*?)\)\)\)/gm;
 export const LOGSEQ_RENAMED_PAGE_REF_REGEXP = /\[(.*?)\]\(\[\[(.*?)\]\]\)/gm;
 export const LOGSEQ_PAGE_REF_REGEXP = /(?<!#)\[\[(.*?)\]\]/gm;
 // The \u2063? is to match the zero-width space that the plugin sometimes add to bypass cloze end.
-export const LOGSEQ_EMBDED_PAGE_REGEXP =
-    /\{\{embed \[\[(.*?)\]\] *?\}\u2063?\}/gm;
-export const LOGSEQ_EMBDED_BLOCK_REGEXP =
-    /\{\{embed \(\((.*?)\)\) *?\}\u2063?\}/gm;
+export const LOGSEQ_EMBDED_PAGE_REGEXP = /\{\{embed \[\[(.*?)\]\] *?\}\u2063?\}/gm;
+export const LOGSEQ_EMBDED_BLOCK_REGEXP = /\{\{embed \(\((.*?)\)\) *?\}\u2063?\}/gm;
 
-export const isImage_REGEXP =
-    /^[^?]*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)(\?.*)?$/i;
+export const isImage_REGEXP = /^[^?]*\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)(\?.*)?$/i;
 export const isAudio_REGEXP = /^[^?]*\.(mp3|wav|ogg|flac|aac|opus)(\?.*)?$/i;
 export const isWebURL_REGEXP =
     /^(https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:(\/\/)?(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/i;
@@ -186,7 +182,7 @@ export const DONATE_ICON =
 export const GRAPH_ICON = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hierarchy" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="5" r="2"></circle><circle cx="5" cy="19" r="2"></circle><circle cx="19" cy="19" r="2"></circle><path d="M6.5 17.5l5.5 -4.5l5.5 4.5"></path><line x1="12" y1="7" x2="12" y2="13"></line></svg>`;
 
 export const LOGSEQ_ICON = `<svg width="1em" height="1em" viewBox="0 0 128 128" id="svg16" sodipodi:docname="logseq_icon_simple.svg" inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/"><rect x="4.55" y="4.837" width="118.9" height="118.33" rx="27.073" ry="30.829" enable-background="new" fill="#002b34" stroke-width="1.0408" style="" id="rect4"/><g transform="translate(249.20942,50.168715)" fill="#86c8c8" id="g14"><path transform="rotate(41.244)" d="m -156.95,133.24 a 17.127,15.341 0 0 1 -17.095,15.341 17.127,15.341 0 0 1 -17.158,-15.285 17.127,15.341 0 0 1 17.033,-15.397 17.127,15.341 0 0 1 17.22,15.229" id="path8"/><ellipse cx="-174.02" cy="30.698" rx="38.706001" ry="30.240999" id="ellipse10"/><ellipse transform="matrix(0.98259,-0.18578,0.15255,0.9883,0,0)" cx="-172.09" cy="-55.007999" rx="16.385" ry="10.568" id="ellipse12"/></g></svg>`;
-export const ADD_OCCLUSION_ICON = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-square-plus-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12.5 21h-7.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v7.5" /><path d="M16 19h6" /><path d="M19 16v6" /></svg>`
+export const ADD_OCCLUSION_ICON = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-square-plus-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12.5 21h-7.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v7.5" /><path d="M16 19h6" /><path d="M19 16v6" /></svg>`;
 
 export const REMOVE_OCCLUSION_ICON = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-square-minus" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12.5 21h-7.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10" /><path d="M16 19h6" /></svg>`;
 

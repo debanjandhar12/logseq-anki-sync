@@ -5,7 +5,7 @@
 import * as AnkiConnect from "./AnkiConnect";
 import _ from "lodash";
 import "@logseq/libs";
-import { ANKI_CLOZE_REGEXP } from "../constants";
+import {ANKI_CLOZE_REGEXP} from "../constants";
 
 export class LazyAnkiNoteManager {
     public modelName: string;
@@ -32,12 +32,12 @@ export class LazyAnkiNoteManager {
 
     async buildNoteInfoMap(modelName: string): Promise<any> {
         const result = await AnkiConnect.query(`"note:${modelName}"`);
-        const notes = await AnkiConnect.invoke("notesInfo", { notes: result });
+        const notes = await AnkiConnect.invoke("notesInfo", {notes: result});
         const cards = [];
         for (const note of notes) {
             if (note.cards[0]) cards.push(note.cards[0]);
         }
-        const decks = await AnkiConnect.invoke("getDecks", { cards: cards });
+        const decks = await AnkiConnect.invoke("getDecks", {cards: cards});
         for (const note of notes) {
             // can be reduced to n log n
             let deck = "";
@@ -47,17 +47,14 @@ export class LazyAnkiNoteManager {
                     break;
                 }
             }
-            this.noteInfoMap.set(note.noteId, { ...note, deck });
+            this.noteInfoMap.set(note.noteId, {...note, deck});
         }
         if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts"))
             console.debug(this.noteInfoMap);
     }
 
     async buildMediaInfo(): Promise<void> {
-        const mediaFileNames = await AnkiConnect.invoke(
-            "getMediaFilesNames",
-            {},
-        );
+        const mediaFileNames = await AnkiConnect.invoke("getMediaFilesNames", {});
         this.mediaInfo = new Set(mediaFileNames);
         if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts"))
             console.debug(this.mediaInfo);
@@ -66,7 +63,7 @@ export class LazyAnkiNoteManager {
     addNote(deckName: string, modelName: string, fields, tags: string[]): void {
         this.addNoteActionsQueue1.push({
             action: "createDeck",
-            params: { deck: deckName },
+            params: {deck: deckName},
         });
         this.addNoteUuidTypeQueue1.push(fields["uuid-type"]);
         const cloze_id = _.get(ANKI_CLOZE_REGEXP.exec(fields["Text"]), 2) || 1;
@@ -81,7 +78,7 @@ export class LazyAnkiNoteManager {
                         Text: `{{c${cloze_id}:: placeholder}}`,
                     },
                     tags: tags,
-                    options: { allowDuplicate: true },
+                    options: {allowDuplicate: true},
                 },
             },
         });
@@ -111,7 +108,7 @@ export class LazyAnkiNoteManager {
         if (deckName != noteinfo.deck) {
             this.updateNoteActionsQueue.push({
                 action: "changeDeck",
-                params: { cards: cards, deck: deckName },
+                params: {cards: cards, deck: deckName},
             });
             this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
         }
@@ -124,14 +121,14 @@ export class LazyAnkiNoteManager {
         for (const tag of to_remove_tags) {
             this.updateNoteActionsQueue.push({
                 action: "removeTags",
-                params: { notes: [ankiId], tags: tag },
+                params: {notes: [ankiId], tags: tag},
             });
             this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
         }
         for (const tag of to_add_tags) {
             this.updateNoteActionsQueue.push({
                 action: "addTags",
-                params: { notes: [ankiId], tags: tag },
+                params: {notes: [ankiId], tags: tag},
             });
             this.updateNoteUuidTypeQueue.push(fields["uuid-type"]);
         }
@@ -169,7 +166,7 @@ export class LazyAnkiNoteManager {
     deleteNote(ankiId: number): void {
         this.deleteNoteActionsQueue.push({
             action: "deleteNotes",
-            params: { notes: [ankiId] },
+            params: {notes: [ankiId]},
         });
         this.deleteNoteAnkiIdQueue.push(ankiId);
     }
@@ -177,7 +174,7 @@ export class LazyAnkiNoteManager {
     storeAsset(filename: string, path: string): void {
         this.storeAssetActionsQueue.push({
             action: "storeMediaFile",
-            params: { filename, path },
+            params: {filename, path},
         });
     }
 
@@ -203,18 +200,16 @@ export class LazyAnkiNoteManager {
                 for (const uuidType of this.addNoteUuidTypeQueue2) {
                     getankiIdActionsQueue.push({
                         action: "findNotes",
-                        params: { query: `uuid-type:${uuidType}` },
+                        params: {query: `uuid-type:${uuidType}`},
                     });
                 }
-                const ankiIdActionsQueueRes = await AnkiConnect.invoke(
-                    "multi",
-                    { actions: getankiIdActionsQueue },
-                );
+                const ankiIdActionsQueueRes = await AnkiConnect.invoke("multi", {
+                    actions: getankiIdActionsQueue,
+                });
                 const ankiId = [];
                 const ankiIdUUIDTypePairs = [];
                 for (let i = 0; i < ankiIdActionsQueueRes.length; i++) {
-                    if (ankiIdActionsQueueRes[i] == null)
-                        ankiIdActionsQueueRes[i] = [];
+                    if (ankiIdActionsQueueRes[i] == null) ankiIdActionsQueueRes[i] = [];
                     ankiId[i] = ankiIdActionsQueueRes[i][0];
                     ankiIdUUIDTypePairs.push({
                         "uuid-type": this.addNoteUuidTypeQueue2[i],
@@ -311,50 +306,36 @@ export class LazyAnkiNoteManager {
                                 reader.onerror = reject;
                                 reader.readAsDataURL(blob);
                             });
-                            return (reader.result as string).replace(
-                                /^data:.+;base64,/,
-                                "",
-                            );
+                            return (reader.result as string).replace(/^data:.+;base64,/, "");
                         };
-                        const ankiAssetContent = await AnkiConnect.invoke(
-                            "multi",
-                            { actions: retriveAnkiAssetContentActionQueue },
-                        );
+                        const ankiAssetContent = await AnkiConnect.invoke("multi", {
+                            actions: retriveAnkiAssetContentActionQueue,
+                        });
                         batchStoreAssetActionsQueue = await Promise.all(
-                            batchStoreAssetActionsQueue.map(
-                                async (action, idx) => {
-                                    if (action.params.path != null) {
-                                        let fimg = "";
-                                        try {
-                                            fimg = await getBase64Image(
-                                                action.params.path,
-                                            );
-                                        } catch {}
+                            batchStoreAssetActionsQueue.map(async (action, idx) => {
+                                if (action.params.path != null) {
+                                    let fimg = "";
+                                    try {
+                                        fimg = await getBase64Image(action.params.path);
+                                    } catch {}
+                                    if (fimg != "" && fimg != "data:" && fimg != null) {
                                         if (
-                                            fimg != "" &&
-                                            fimg != "data:" &&
-                                            fimg != null
-                                        ) {
-                                            if (
-                                                ankiAssetContent[idx] != null &&
-                                                ankiAssetContent[idx] !=
-                                                    false &&
-                                                ankiAssetContent[idx] == fimg
-                                            )
-                                                return null;
-                                            delete action.params.path;
-                                            action.params.data = fimg;
-                                            return action;
-                                        } else return action;
-                                    }
-                                    return action;
-                                },
-                            ),
+                                            ankiAssetContent[idx] != null &&
+                                            ankiAssetContent[idx] != false &&
+                                            ankiAssetContent[idx] == fimg
+                                        )
+                                            return null;
+                                        delete action.params.path;
+                                        action.params.data = fimg;
+                                        return action;
+                                    } else return action;
+                                }
+                                return action;
+                            }),
                         );
-                        batchStoreAssetActionsQueue =
-                            batchStoreAssetActionsQueue.filter(
-                                (action) => action != null,
-                            );
+                        batchStoreAssetActionsQueue = batchStoreAssetActionsQueue.filter(
+                            (action) => action != null,
+                        );
                         finalStoreAssetActionsQueue = [
                             ...finalStoreAssetActionsQueue,
                             ...batchStoreAssetActionsQueue,
@@ -367,11 +348,7 @@ export class LazyAnkiNoteManager {
                         ];
                     }
                     this.storeAssetActionsQueue = [];
-                    console.log(
-                        "Assets Stored:",
-                        finalStoreAssetActionsQueue,
-                        result,
-                    );
+                    console.log("Assets Stored:", finalStoreAssetActionsQueue, result);
                 } catch (e) {
                     console.log(e);
                 }

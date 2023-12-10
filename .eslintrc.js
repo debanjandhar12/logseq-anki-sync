@@ -14,6 +14,7 @@ module.exports = {
     root: true,
     env: {
         node: true,
+        browser: true,
     },
     settings: {
         "import/resolver": {
@@ -25,5 +26,9 @@ module.exports = {
     },
     rules: {
         "@typescript-eslint/ban-ts-comment": "warn",
+        "max-len": ["error", {code: 96}],
+        "function-call-argument-newline": ["error", {minItems: 3}],
+        "function-paren-newline": ["error", {minItems: 3}],
     },
+    ignorePatterns: ["dist/*"],
 };

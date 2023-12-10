@@ -4,8 +4,10 @@ import replaceAsync from "string-replace-async";
 import "@logseq/libs";
 import {
     ANKI_CLOZE_REGEXP,
-    MD_MATH_BLOCK_REGEXP, OhmStrToListGrammar,
-    specialChars, WARNING_ICON,
+    MD_MATH_BLOCK_REGEXP,
+    OhmStrToListGrammar,
+    specialChars,
+    WARNING_ICON,
 } from "../constants";
 import {ActionNotification} from "../ui/general/ActionNotification";
 
@@ -16,8 +18,7 @@ export function regexPraser(input: string): RegExp {
     // Parse input
     const m = input.match(/(\/)(.+)\1([a-z]*)/i);
     // Invalid input (input not in format /regex/i)
-    if (m == null)
-        throw "Input string is not in required format for conversion to regex.";
+    if (m == null) throw "Input string is not in required format for conversion to regex.";
     // Invalid flags
     if (m[3] && !/^(?!.*?(.).*?\1)[gmixXsuUAJ]+$/.test(m[3])) {
         return RegExp(input);
@@ -93,10 +94,7 @@ export function decodeHTMLEntities(text, exclude = ["gt", "lt"]) {
     entities = entities.filter((e) => !exclude.includes(e[0]));
 
     for (let i = 0, max = entities.length; i < max; ++i)
-        text = text.replace(
-            new RegExp("&" + entities[i][0] + ";", "g"),
-            entities[i][1],
-        );
+        text = text.replace(new RegExp("&" + entities[i][0] + ";", "g"), entities[i][1]);
 
     return text;
 }
@@ -118,13 +116,29 @@ export function get_math_inside_md(content: string): Array<string> {
 export function handleAnkiError(msg: string): void {
     switch (msg) {
         case "failed to issue request":
-            ActionNotification([{name:"Installation Guide", func: () => window.parent.open('https://github.com/debanjandhar12/logseq-anki-sync#%EF%B8%8F-installation-video')}],
-                "Please ensure Anki is open in background with AnkiConnect installed properly. Read installation guide for details.", 5000, WARNING_ICON)
+            ActionNotification(
+                [
+                    {
+                        name: "Installation Guide",
+                        func: () =>
+                            window.parent.open(
+                                "https://github.com/debanjandhar12/logseq-anki-sync#%EF%B8%8F-installation-video",
+                            ),
+                    },
+                ],
+                "Please ensure Anki is open in background with AnkiConnect installed properly. Read installation guide for details.",
+                5000,
+                WARNING_ICON,
+            );
             break;
         case "Permission to access anki was denied":
-            logseq.UI.showMsg("Please give permission to access anki by clicking yes when prompted.", "warning", {
-                timeout: 5000,
-            });
+            logseq.UI.showMsg(
+                "Please give permission to access anki by clicking yes when prompted.",
+                "warning",
+                {
+                    timeout: 5000,
+                },
+            );
             break;
         case "collection is not available":
             logseq.UI.showMsg("Please select an anki profile before syncing.", "warning", {
@@ -166,8 +180,7 @@ export function getFirstNonEmptyLine(str: string): string {
         end;
     let current_line_empty = true;
     for (end = 0; end < str.length; end++) {
-        if (str[end] != " " && str[end] != "\t" && str[end] != "\n")
-            current_line_empty = false;
+        if (str[end] != " " && str[end] != "\t" && str[end] != "\n") current_line_empty = false;
         if (str[end] == "\n") {
             if (!current_line_empty) return str.substring(start, end);
             else {
@@ -180,11 +193,7 @@ export function getFirstNonEmptyLine(str: string): string {
 }
 
 // Replace function that avoids replacing inside math and code blocks
-export function safeReplace(
-    content: string,
-    regex: RegExp | string,
-    replaceArg: any,
-): string {
+export function safeReplace(content: string, regex: RegExp | string, replaceArg: any): string {
     let result = content;
     const hashmap = {};
     result = result.replace(MD_MATH_BLOCK_REGEXP, (match) => {
@@ -193,15 +202,12 @@ export function safeReplace(
         hashmap[str] = match.replaceAll("$", "$$$$");
         return str;
     });
-    result = result.replace(
-        /(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g,
-        (match: string) => {
-            // Escape inline math
-            const str = getRandomUnicodeString();
-            hashmap[str] = match.replaceAll("$", "$$$$");
-            return str;
-        },
-    );
+    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g, (match: string) => {
+        // Escape inline math
+        const str = getRandomUnicodeString();
+        hashmap[str] = match.replaceAll("$", "$$$$");
+        return str;
+    });
     result = result.replace(/(```|~~~)(.*)\n(.|\n)*?\n\1/g, (match) => {
         // Escape code
         const str = getRandomUnicodeString();
@@ -228,15 +234,12 @@ export async function safeReplaceAsync(
         hashmap[str] = match.replaceAll("$", "$$$$");
         return str;
     });
-    result = result.replace(
-        /(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g,
-        (match: string) => {
-            // Escape inline math
-            const str = getRandomUnicodeString();
-            hashmap[str] = match.replaceAll("$", "$$$$");
-            return str;
-        },
-    );
+    result = result.replace(/(?<!\$)\$((?=[\S])(?=[^$])[\S \t\r]*?)\$/g, (match: string) => {
+        // Escape inline math
+        const str = getRandomUnicodeString();
+        hashmap[str] = match.replaceAll("$", "$$$$");
+        return str;
+    });
     result = result.replace(/(```|~~~)(.*)\n(.|\n)*?\n\1/g, (match) => {
         // Escape code
         const str = getRandomUnicodeString();
@@ -250,10 +253,7 @@ export async function safeReplaceAsync(
     return result;
 }
 
-export async function sortAsync<T>(
-    arr: T[],
-    score: (a: T) => Promise<number>,
-): Promise<T[]> {
+export async function sortAsync<T>(arr: T[], score: (a: T) => Promise<number>): Promise<T[]> {
     const toSortPromises = arr.map(async (item) => {
         return {
             item: item,
@@ -277,9 +277,7 @@ export function getCaseInsensitive(obj, path, defaultValue) {
     const pathParts = Array.isArray(path) ? path : path.split(".");
     let target = obj;
     for (const part of pathParts) {
-        const key = Object.keys(target).find(
-            (k) => k.toLowerCase() === part.toLowerCase(),
-        );
+        const key = Object.keys(target).find((k) => k.toLowerCase() === part.toLowerCase());
         if (!key) {
             return defaultValue;
         }

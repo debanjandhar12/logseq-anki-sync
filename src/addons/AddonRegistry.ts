@@ -1,5 +1,5 @@
-import { Addon } from "./Addon";
-import { PreviewInAnkiContextMenu } from "./PreviewInAnki";
+import {Addon} from "./Addon";
+import {PreviewInAnkiContextMenu} from "./PreviewInAnki";
 import {HideOcclusionData} from "./HideOcclusionData";
 
 export class AddonRegistry {

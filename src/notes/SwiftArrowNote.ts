@@ -1,14 +1,10 @@
-import { Note } from "./Note";
+import {Note} from "./Note";
 import "@logseq/libs";
-import {
-    escapeClozeAndSecoundBrace,
-    getRandomUnicodeString,
-    safeReplace,
-} from "../utils/utils";
+import {escapeClozeAndSecoundBrace, getRandomUnicodeString, safeReplace} from "../utils/utils";
 import _ from "lodash";
-import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
-import { LogseqProxy } from "../logseq/LogseqProxy";
-import { convertToHTMLFile, HTMLFile } from "../converter/Converter";
+import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import {convertToHTMLFile, HTMLFile} from "../converter/Converter";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 export class SwiftArrowNote extends Note {
@@ -89,7 +85,7 @@ export class SwiftArrowNote extends Note {
                         block.format,
                         block.properties || {},
                         page,
-                        _.get(block, "refs", []).map((ref) => ref.id)
+                        _.get(block, "refs", []).map((ref) => ref.id),
                     );
                 else {
                     return null;

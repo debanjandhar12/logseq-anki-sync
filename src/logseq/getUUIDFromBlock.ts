@@ -1,4 +1,4 @@
-import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
+import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 
 export default function getUUIDFromBlock(block: BlockEntity): string {

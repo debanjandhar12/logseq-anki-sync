@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { ANKI_CLOZE_REGEXP } from "../constants";
+import {ANKI_CLOZE_REGEXP} from "../constants";
 
 const ANKI_PORT = 8765;
 
@@ -31,7 +31,7 @@ export function invoke(action: string, params = {}): any {
         });
 
         xhr.open("POST", "http://127.0.0.1:" + ANKI_PORT.toString());
-        xhr.send(JSON.stringify({ action, version: 6, params }));
+        xhr.send(JSON.stringify({action, version: 6, params}));
     });
 }
 
@@ -46,7 +46,7 @@ export async function requestPermission(): Promise<any> {
 }
 
 export async function createDeck(deckName: string): Promise<any> {
-    return await invoke("createDeck", { deck: deckName });
+    return await invoke("createDeck", {deck: deckName});
 }
 
 export async function addNote(
@@ -65,9 +65,9 @@ export async function addNote(
         note: {
             modelName: modelName,
             deckName: deckName,
-            fields: { ...fields, Text: `{{c${cloze_id}:: placeholder}}` },
+            fields: {...fields, Text: `{{c${cloze_id}:: placeholder}}`},
             tags: tags,
-            options: { allowDuplicate: true },
+            options: {allowDuplicate: true},
         },
     });
     r = updateNote(ankiId, deckName, modelName, fields, tags);
@@ -82,18 +82,17 @@ export async function updateNote(
     fields,
     tags: string[],
 ): Promise<any> {
-    const noteinfo = (await invoke("notesInfo", { notes: [ankiId] }))[0];
+    const noteinfo = (await invoke("notesInfo", {notes: [ankiId]}))[0];
     console.debug(noteinfo);
     const cards = noteinfo.cards;
-    let r = await invoke("changeDeck", { cards: cards, deck: deckName }); // Move cards made by note to new deck and create new deck if deck not created
+    let r = await invoke("changeDeck", {cards: cards, deck: deckName}); // Move cards made by note to new deck and create new deck if deck not created
 
     // Remove all old tags and add new ones
     const to_remove_tags = _.difference(noteinfo.tags, tags);
     const to_add_tags = _.difference(tags, noteinfo.tags);
     for (const tag of to_remove_tags)
-        r = await invoke("removeTags", { notes: [ankiId], tags: tag });
-    for (const tag of to_add_tags)
-        r = await invoke("addTags", { notes: [ankiId], tags: tag });
+        r = await invoke("removeTags", {notes: [ankiId], tags: tag});
+    for (const tag of to_add_tags) r = await invoke("addTags", {notes: [ankiId], tags: tag});
     return await invoke("updateNoteFields", {
         note: {
             id: ankiId,
@@ -105,7 +104,7 @@ export async function updateNote(
 }
 
 export async function deteteNote(ankiId: number): Promise<any> {
-    return await invoke("deleteNotes", { notes: [ankiId] });
+    return await invoke("deleteNotes", {notes: [ankiId]});
 }
 
 export async function removeEmptyNotes(): Promise<any> {
@@ -113,7 +112,7 @@ export async function removeEmptyNotes(): Promise<any> {
 }
 
 export async function query(q: string): Promise<any> {
-    return await invoke("findNotes", { query: q });
+    return await invoke("findNotes", {query: q});
 }
 
 export async function createBackup(): Promise<any> {
@@ -175,10 +174,7 @@ export async function createModel(
         });
     } catch (e) {
         // Solves #1 by failing silenty, #1 was caused by AnkiConnect calling old Anki API but apprarenty even if it gives error, it works correctly.
-        if (
-            e ==
-            "save() takes from 1 to 2 positional arguments but 3 were given"
-        )
+        if (e == "save() takes from 1 to 2 positional arguments but 3 were given")
             console.error(e);
         else throw e;
     }
@@ -190,11 +186,9 @@ export async function createModel(
     for (const filename in template_files)
         getcurrentTemplateFilesActions.push({
             action: "retrieveMediaFile",
-            params: { filename },
+            params: {filename},
         });
-    (
-        await invoke("multi", { actions: getcurrentTemplateFilesActions })
-    ).forEach((data, i) => {
+    (await invoke("multi", {actions: getcurrentTemplateFilesActions})).forEach((data, i) => {
         currentTemplateFiles[Object.keys(template_files)[i]] = data;
     });
     for (const filename in template_files) {
@@ -202,7 +196,7 @@ export async function createModel(
         if (data != currentTemplateFiles[filename])
             storeTemplateFilesActions.push({
                 action: "storeMediaFile",
-                params: { filename, data },
+                params: {filename, data},
             });
     }
     const updateTemplateFiles = await invoke("multi", {
@@ -211,20 +205,14 @@ export async function createModel(
     console.log("Updated Template Files:", updateTemplateFiles);
 }
 
-export async function storeMediaFileByContent(
-    filename: string,
-    content: string,
-): Promise<any> {
+export async function storeMediaFileByContent(filename: string, content: string): Promise<any> {
     return await invoke("storeMediaFile", {
         filename: filename,
         data: Buffer.from(content).toString("base64"),
     });
 }
 
-export async function storeMediaFileByPath(
-    filename: string,
-    path: string,
-): Promise<any> {
+export async function storeMediaFileByPath(filename: string, path: string): Promise<any> {
     return await invoke("storeMediaFile", {
         filename: filename,
         path: path,

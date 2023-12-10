@@ -17,10 +17,7 @@ export class PreviewInAnkiContextMenu extends Addon {
                 "Preview in Anki",
                 this.previewBlockNotesInAnki,
             );
-            logseq.App.registerPageMenuItem(
-                "Preview in Anki",
-                this.previewPageNotesInAnki,
-            );
+            logseq.App.registerPageMenuItem("Preview in Anki", this.previewPageNotesInAnki);
         }
     }
 
@@ -38,19 +35,22 @@ export class PreviewInAnkiContextMenu extends Addon {
             const namespacePages = await logseq.Editor.getPagesFromNamespace(page);
             let pagesToView = [page];
             await AnkiConnect.requestPermission();
-            let graphName =
-                _.get(await logseq.App.getCurrentGraph(), "name") || "Default";
+            let graphName = _.get(await logseq.App.getCurrentGraph(), "name") || "Default";
             let modelName = `${graphName}Model`.replace(/\s/g, "_");
             if (namespacePages.length > 0) {
-                let selection = await SelectionModal([{name: "Preview cards from this namespace in anki"}, {name: "Preview cards from this page in anki"}]);
-                if (selection == null)
-                    return;
-                if (selection == '0')
+                let selection = await SelectionModal([
+                    {name: "Preview cards from this namespace in anki"},
+                    {name: "Preview cards from this page in anki"},
+                ]);
+                if (selection == null) return;
+                if (selection == "0")
                     pagesToView = [pagesToView, ...namespacePages.map((page) => page.name)];
             }
             await AnkiConnect.guiBrowse(
-                `"note:${modelName}" "Breadcrumb:re:^<a.*>(${pagesToView.map((page) =>
-                    _.escapeRegExp(page).replaceAll('"', '\\"')).join("|")})</a>.*$"`);
+                `"note:${modelName}" "Breadcrumb:re:^<a.*>(${pagesToView
+                    .map((page) => _.escapeRegExp(page).replaceAll('"', '\\"'))
+                    .join("|")})</a>.*$"`,
+            );
         } catch (e) {
             handleAnkiError(e.toString());
         }

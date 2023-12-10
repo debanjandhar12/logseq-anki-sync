@@ -15,7 +15,7 @@ import {
 import AwaitLock from "await-lock";
 import objectHash from "../utils/objectHashOptimized";
 import _ from "lodash";
-import { AddonRegistry } from "../addons/AddonRegistry";
+import {AddonRegistry} from "../addons/AddonRegistry";
 import getUUIDFromBlock from "./getUUIDFromBlock";
 
 type LogSeqOperation = {
@@ -31,25 +31,22 @@ export namespace LogseqProxy {
     export class Editor {
         static async getBlock(
             srcBlock: BlockIdentity | EntityID,
-            opts: Partial<{ includeChildren: boolean }> = {},
+            opts: Partial<{includeChildren: boolean}> = {},
         ): Promise<BlockEntity | null> {
-            srcBlock =
-                typeof srcBlock === "string"
-                    ? srcBlock.toLowerCase()
-                    : srcBlock; // Convert to lowercase to avoid case sensitivity issues
+            srcBlock = typeof srcBlock === "string" ? srcBlock.toLowerCase() : srcBlock; // Convert to lowercase to avoid case sensitivity issues
 
             if (
                 cache.has(
                     objectHash({
                         operation: "getBlock",
-                        parameters: { srcBlock, opts },
+                        parameters: {srcBlock, opts},
                     }),
                 )
             )
                 return cache.get(
                     objectHash({
                         operation: "getBlock",
-                        parameters: { srcBlock, opts },
+                        parameters: {srcBlock, opts},
                     }),
                 );
             if (
@@ -58,7 +55,7 @@ export namespace LogseqProxy {
                         operation: "getBlock",
                         parameters: {
                             srcBlock,
-                            opts: _.extend({ includeChildren: true }, opts),
+                            opts: _.extend({includeChildren: true}, opts),
                         },
                     }),
                 )
@@ -69,7 +66,7 @@ export namespace LogseqProxy {
                         operation: "getBlock",
                         parameters: {
                             srcBlock,
-                            opts: _.extend({ includeChildren: true }, opts),
+                            opts: _.extend({includeChildren: true}, opts),
                         },
                     }),
                 );
@@ -81,7 +78,7 @@ export namespace LogseqProxy {
                 cache.set(
                     objectHash({
                         operation: "getBlock",
-                        parameters: { srcBlock, opts },
+                        parameters: {srcBlock, opts},
                     }),
                     block,
                 );
@@ -95,7 +92,7 @@ export namespace LogseqProxy {
                     cache.set(
                         objectHash({
                             operation: "getBlock",
-                            parameters: { srcBlock: uuid, opts },
+                            parameters: {srcBlock: uuid, opts},
                         }),
                         block,
                     );
@@ -103,7 +100,7 @@ export namespace LogseqProxy {
                     cache.set(
                         objectHash({
                             operation: "getBlock",
-                            parameters: { srcBlock: dbid, opts },
+                            parameters: {srcBlock: dbid, opts},
                         }),
                         block,
                     );
@@ -119,7 +116,7 @@ export namespace LogseqProxy {
                             cache.set(
                                 objectHash({
                                     operation: "getBlock",
-                                    parameters: { srcBlock: uuid, opts },
+                                    parameters: {srcBlock: uuid, opts},
                                 }),
                                 child,
                             );
@@ -127,7 +124,7 @@ export namespace LogseqProxy {
                             cache.set(
                                 objectHash({
                                     operation: "getBlock",
-                                    parameters: { srcBlock: dbid, opts },
+                                    parameters: {srcBlock: dbid, opts},
                                 }),
                                 child,
                             );
@@ -156,14 +153,14 @@ export namespace LogseqProxy {
                     cache.has(
                         objectHash({
                             operation: "getBlock",
-                            parameters: { srcBlock: srcBlocks[i], opts: {} },
+                            parameters: {srcBlock: srcBlocks[i], opts: {}},
                         }),
                     )
                 ) {
                     result[i] = cache.get(
                         objectHash({
                             operation: "getBlock",
-                            parameters: { srcBlock: srcBlocks[i], opts: {} },
+                            parameters: {srcBlock: srcBlocks[i], opts: {}},
                         }),
                     );
                 } else blockToFetch.push(srcBlocks[i]);
@@ -175,17 +172,11 @@ export namespace LogseqProxy {
                 [:find (pull ?b [*])
                 :where
                 [?b :block/uuid ?uuid]
-                [(contains? #{${blockToFetch.map(
-                    (block) => `#uuid "${block}" `,
-                )}} ?uuid)]
+                [(contains? #{${blockToFetch.map((block) => `#uuid "${block}" `)}} ?uuid)]
                 ]`);
             }
 
-            for (
-                let i = 0, j = 0;
-                i < srcBlocks.length && j < batchFetchResult.length;
-                i++
-            ) {
+            for (let i = 0, j = 0; i < srcBlocks.length && j < batchFetchResult.length; i++) {
                 if (batchFetchResult[j][0] == null) continue;
                 if (result[i] == null) {
                     result[i] = batchFetchResult[j][0];
@@ -195,24 +186,21 @@ export namespace LogseqProxy {
             return result;
         }
 
-        static async getPage(
-            srcPage: PageIdentity | EntityID,
-        ): Promise<PageEntity | null> {
-            srcPage =
-                typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
+        static async getPage(srcPage: PageIdentity | EntityID): Promise<PageEntity | null> {
+            srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
 
             if (
                 cache.has(
                     objectHash({
                         operation: "getPage",
-                        parameters: { srcPage },
+                        parameters: {srcPage},
                     }),
                 )
             )
                 return cache.get(
                     objectHash({
                         operation: "getPage",
-                        parameters: { srcPage },
+                        parameters: {srcPage},
                     }),
                 );
             let page = null;
@@ -222,7 +210,7 @@ export namespace LogseqProxy {
                 cache.set(
                     objectHash({
                         operation: "getPage",
-                        parameters: { srcPage },
+                        parameters: {srcPage},
                     }),
                     page,
                 );
@@ -234,24 +222,21 @@ export namespace LogseqProxy {
             return page;
         }
 
-        static async getPageBlocksTree(
-            srcPage: PageIdentity,
-        ): Promise<Array<BlockEntity>> {
-            srcPage =
-                typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
+        static async getPageBlocksTree(srcPage: PageIdentity): Promise<Array<BlockEntity>> {
+            srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
 
             if (
                 cache.has(
                     objectHash({
                         operation: "getPageBlocksTree",
-                        parameters: { srcPage },
+                        parameters: {srcPage},
                     }),
                 )
             )
                 return cache.get(
                     objectHash({
                         operation: "getPageBlocksTree",
-                        parameters: { srcPage },
+                        parameters: {srcPage},
                     }),
                 );
 
@@ -262,7 +247,7 @@ export namespace LogseqProxy {
                 cache.set(
                     objectHash({
                         operation: "getPageBlocksTree",
-                        parameters: { srcPage },
+                        parameters: {srcPage},
                     }),
                     pageBlockTree,
                 );
@@ -289,12 +274,10 @@ export namespace LogseqProxy {
             }
         }
 
-        static async createPageSilentlyIfNotExists(
-            pageName: string,
-        ) {
+        static async createPageSilentlyIfNotExists(pageName: string) {
             await getLogseqLock.acquireAsync();
             try {
-                if (await logseq.Editor.getPage(pageName) == null) {
+                if ((await logseq.Editor.getPage(pageName)) == null) {
                     await logseq.Editor.createPage(pageName, {}, {redirect: false});
                 }
             } catch (e) {
@@ -339,14 +322,14 @@ export namespace LogseqProxy {
                         !cache.has(
                             objectHash({
                                 operation: "getBlock",
-                                parameters: { srcBlock: uuid, opts: {} },
+                                parameters: {srcBlock: uuid, opts: {}},
                             }),
                         )
                     )
                         cache.set(
                             objectHash({
                                 operation: "getBlock",
-                                parameters: { srcBlock: uuid, opts: {} },
+                                parameters: {srcBlock: uuid, opts: {}},
                             }),
                             block,
                         );
@@ -355,14 +338,14 @@ export namespace LogseqProxy {
                         !cache.has(
                             objectHash({
                                 operation: "getBlock",
-                                parameters: { srcBlock: dbid, opts: {} },
+                                parameters: {srcBlock: dbid, opts: {}},
                             }),
                         )
                     )
                         cache.set(
                             objectHash({
                                 operation: "getBlock",
-                                parameters: { srcBlock: dbid, opts: {} },
+                                parameters: {srcBlock: dbid, opts: {}},
                             }),
                             block,
                         );
@@ -377,7 +360,7 @@ export namespace LogseqProxy {
 
         static registeredDBListeners = [];
         static registerDBChangeListener(
-            listener: (event: { blocks; txData; txMeta }) => void,
+            listener: (event: {blocks; txData; txMeta}) => void,
         ): void {
             this.registeredDBListeners.push(listener);
         }
@@ -415,201 +398,187 @@ export namespace LogseqProxy {
         }
     }
     export function init() {
-        logseq.DB.onChanged(async ({ blocks, txData, txMeta }) => {
+        logseq.DB.onChanged(async ({blocks, txData, txMeta}) => {
             for (const listener of LogseqProxy.DB.registeredDBListeners) {
-                listener({ blocks: [...blocks], txData, txMeta });
+                listener({blocks: [...blocks], txData, txMeta});
             }
         });
         logseq.onSettingsChanged((newSettings, oldSettings) => {
-            for (const listener of LogseqProxy.Settings
-                .registeredSettingsChangeListeners) {
+            for (const listener of LogseqProxy.Settings.registeredSettingsChangeListeners) {
                 listener(newSettings, oldSettings);
             }
         });
         logseq.App.onCurrentGraphChanged((e) => {
-            for (const listener of LogseqProxy.App
-                .registeredGraphChangeListeners) {
+            for (const listener of LogseqProxy.App.registeredGraphChangeListeners) {
                 listener(e);
             }
         });
         logseq.App.onCurrentGraphIndexed((e) => {
-            for (const listener of LogseqProxy.App
-                .registeredGraphIndexedListeners) {
+            for (const listener of LogseqProxy.App.registeredGraphIndexedListeners) {
                 listener(e);
             }
         });
-        LogseqProxy.DB.registerDBChangeListener(
-            async ({ blocks, txData, txMeta }) => {
-                if (!logseq.settings.cacheLogseqAPIv1) return;
-                if (logseq.settings.debug.includes("blockAndPageHashCache.ts"))
-                    console.log(
-                        "Maintaining LogseqProxy Cache",
-                        [...blocks],
-                        txData,
-                        txMeta,
+        LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
+            if (!logseq.settings.cacheLogseqAPIv1) return;
+            if (logseq.settings.debug.includes("blockAndPageHashCache.ts"))
+                console.log("Maintaining LogseqProxy Cache", [...blocks], txData, txMeta);
+            for (const tx of txData) {
+                const [txBlockID, txType, ...additionalDetails] = tx;
+                if (txType != "left" && txType != "parent") continue;
+                let block = await logseq.Editor.getBlock(txBlockID);
+                if (block != null) blocks.push(block);
+                block = await logseq.Editor.getBlock(additionalDetails[0]);
+                if (block != null) blocks.push(block);
+            }
+            const blockVisited = new Set();
+            while (blocks.length > 0) {
+                const block = blocks.pop();
+                if (blockVisited.has(block.id)) continue;
+                blockVisited.add(block.id);
+                block.uuid = getUUIDFromBlock(block);
+                if (block.uuid != null) {
+                    block.uuid = block.uuid.toString().toLowerCase(); // Convert to lowercase to match the lowercase UUIDs in the cache
+                    cache.delete(
+                        objectHash({
+                            operation: "getBlock",
+                            parameters: {srcBlock: block.uuid, opts: {}},
+                        }),
                     );
-                for (const tx of txData) {
-                    const [txBlockID, txType, ...additionalDetails] = tx;
-                    if (txType != "left" && txType != "parent") continue;
-                    let block = await logseq.Editor.getBlock(txBlockID);
-                    if (block != null) blocks.push(block);
-                    block = await logseq.Editor.getBlock(additionalDetails[0]);
-                    if (block != null) blocks.push(block);
+                    cache.delete(
+                        objectHash({
+                            operation: "getBlock",
+                            parameters: {
+                                srcBlock: block.uuid,
+                                opts: {includeChildren: true},
+                            },
+                        }),
+                    );
+                    cache.delete(
+                        objectHash({
+                            operation: "getPage",
+                            parameters: {srcPage: block.uuid},
+                        }),
+                    );
+                    cache.delete(
+                        objectHash({
+                            operation: "getPageBlocksTree",
+                            parameters: {srcPage: block.uuid},
+                        }),
+                    );
                 }
-                const blockVisited = new Set();
-                while (blocks.length > 0) {
-                    const block = blocks.pop();
-                    if (blockVisited.has(block.id)) continue;
-                    blockVisited.add(block.id);
-                    block.uuid = getUUIDFromBlock(block);
-                    if (block.uuid != null) {
-                        block.uuid = block.uuid.toString().toLowerCase(); // Convert to lowercase to match the lowercase UUIDs in the cache
-                        cache.delete(
-                            objectHash({
-                                operation: "getBlock",
-                                parameters: { srcBlock: block.uuid, opts: {} },
-                            }),
-                        );
-                        cache.delete(
-                            objectHash({
-                                operation: "getBlock",
-                                parameters: {
-                                    srcBlock: block.uuid,
-                                    opts: { includeChildren: true },
-                                },
-                            }),
-                        );
+                if (block.page != null && block.page.id != null) {
+                    cache.delete(
+                        objectHash({
+                            operation: "getPage",
+                            parameters: {srcPage: block.page.id},
+                        }),
+                    );
+                    cache.delete(
+                        objectHash({
+                            operation: "getPageBlocksTree",
+                            parameters: {srcPage: block.page.id},
+                        }),
+                    );
+                    const page = await logseq.Editor.getPage(block.page.id);
+                    if (page.originalName != null) {
+                        page.originalName = page.originalName.toLowerCase(); // Convert to lowercase to match the lowercase names in the cache
                         cache.delete(
                             objectHash({
                                 operation: "getPage",
-                                parameters: { srcPage: block.uuid },
+                                parameters: {srcPage: page.originalName},
                             }),
                         );
                         cache.delete(
                             objectHash({
                                 operation: "getPageBlocksTree",
-                                parameters: { srcPage: block.uuid },
+                                parameters: {srcPage: page.originalName},
                             }),
                         );
                     }
-                    if (block.page != null && block.page.id != null) {
+                    if (page.name != null) {
+                        page.name = page.name.toLowerCase(); // Convert to lowercase to match the lowercase names in the cache
                         cache.delete(
                             objectHash({
                                 operation: "getPage",
-                                parameters: { srcPage: block.page.id },
+                                parameters: {srcPage: page.name},
                             }),
                         );
                         cache.delete(
                             objectHash({
                                 operation: "getPageBlocksTree",
-                                parameters: { srcPage: block.page.id },
+                                parameters: {srcPage: page.name},
                             }),
                         );
-                        const page = await logseq.Editor.getPage(block.page.id);
-                        if (page.originalName != null) {
-                            page.originalName = page.originalName.toLowerCase(); // Convert to lowercase to match the lowercase names in the cache
-                            cache.delete(
-                                objectHash({
-                                    operation: "getPage",
-                                    parameters: { srcPage: page.originalName },
-                                }),
-                            );
-                            cache.delete(
-                                objectHash({
-                                    operation: "getPageBlocksTree",
-                                    parameters: { srcPage: page.originalName },
-                                }),
-                            );
-                        }
-                        if (page.name != null) {
-                            page.name = page.name.toLowerCase(); // Convert to lowercase to match the lowercase names in the cache
-                            cache.delete(
-                                objectHash({
-                                    operation: "getPage",
-                                    parameters: { srcPage: page.name },
-                                }),
-                            );
-                            cache.delete(
-                                objectHash({
-                                    operation: "getPageBlocksTree",
-                                    parameters: { srcPage: page.name },
-                                }),
-                            );
-                        }
-                    }
-                    if (block.originalName != null) {
-                        block.originalName = block.originalName.toLowerCase(); // Convert to lowercase to match the lowercase names in the cache
-                        cache.delete(
-                            objectHash({
-                                operation: "getPage",
-                                parameters: { srcPage: block.originalName },
-                            }),
-                        );
-                        cache.delete(
-                            objectHash({
-                                operation: "getPageBlocksTree",
-                                parameters: { srcPage: block.originalName },
-                            }),
-                        );
-                    }
-                    if (block.name != null) {
-                        block.name = block.name.toLowerCase(); // Convert to lowercase to match the lowercase names
-                        cache.delete(
-                            objectHash({
-                                operation: "getPage",
-                                parameters: { srcPage: block.name },
-                            }),
-                        );
-                        cache.delete(
-                            objectHash({
-                                operation: "getPageBlocksTree",
-                                parameters: { srcPage: block.name },
-                            }),
-                        );
-                    }
-                    if (block.id != null) {
-                        cache.delete(
-                            objectHash({
-                                operation: "getBlock",
-                                parameters: {
-                                    srcBlock: block.id,
-                                    opts: { includeChildren: true },
-                                },
-                            }),
-                        );
-                        cache.delete(
-                            objectHash({
-                                operation: "getBlock",
-                                parameters: { srcBlock: block.id, opts: {} },
-                            }),
-                        );
-                        cache.delete(
-                            objectHash({
-                                operation: "getPage",
-                                parameters: { srcPage: block.id },
-                            }),
-                        );
-                        cache.delete(
-                            objectHash({
-                                operation: "getPageBlocksTree",
-                                parameters: { srcPage: block.id },
-                            }),
-                        );
-                    }
-                    if (block.parent != null && block.parent.id != null) {
-                        const block_parent = await logseq.Editor.getBlock(
-                            block.parent.id,
-                        );
-                        if (block_parent != null) blocks.push(block_parent);
                     }
                 }
-            },
-        );
-        LogseqProxy.Settings.registerSettingsChangeListener(
-            (newSettings, oldSettings) => {
-                if (!newSettings.cacheLogseqAPIv1) LogseqProxy.Cache.clear();
-            },
-        );
+                if (block.originalName != null) {
+                    block.originalName = block.originalName.toLowerCase(); // Convert to lowercase to match the lowercase names in the cache
+                    cache.delete(
+                        objectHash({
+                            operation: "getPage",
+                            parameters: {srcPage: block.originalName},
+                        }),
+                    );
+                    cache.delete(
+                        objectHash({
+                            operation: "getPageBlocksTree",
+                            parameters: {srcPage: block.originalName},
+                        }),
+                    );
+                }
+                if (block.name != null) {
+                    block.name = block.name.toLowerCase(); // Convert to lowercase to match the lowercase names
+                    cache.delete(
+                        objectHash({
+                            operation: "getPage",
+                            parameters: {srcPage: block.name},
+                        }),
+                    );
+                    cache.delete(
+                        objectHash({
+                            operation: "getPageBlocksTree",
+                            parameters: {srcPage: block.name},
+                        }),
+                    );
+                }
+                if (block.id != null) {
+                    cache.delete(
+                        objectHash({
+                            operation: "getBlock",
+                            parameters: {
+                                srcBlock: block.id,
+                                opts: {includeChildren: true},
+                            },
+                        }),
+                    );
+                    cache.delete(
+                        objectHash({
+                            operation: "getBlock",
+                            parameters: {srcBlock: block.id, opts: {}},
+                        }),
+                    );
+                    cache.delete(
+                        objectHash({
+                            operation: "getPage",
+                            parameters: {srcPage: block.id},
+                        }),
+                    );
+                    cache.delete(
+                        objectHash({
+                            operation: "getPageBlocksTree",
+                            parameters: {srcPage: block.id},
+                        }),
+                    );
+                }
+                if (block.parent != null && block.parent.id != null) {
+                    const block_parent = await logseq.Editor.getBlock(block.parent.id);
+                    if (block_parent != null) blocks.push(block_parent);
+                }
+            }
+        });
+        LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
+            if (!newSettings.cacheLogseqAPIv1) LogseqProxy.Cache.clear();
+        });
         LogseqProxy.App.registerGraphChangeListener((e) => {
             LogseqProxy.Cache.clear();
         });
