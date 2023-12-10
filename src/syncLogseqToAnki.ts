@@ -1,7 +1,10 @@
 import "@logseq/libs";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
 import {LazyAnkiNoteManager} from "./anki-connect/LazyAnkiNoteManager";
-import {template_front, template_back, template_files} from "./templates/AnkiCardTemplates";
+import {
+    getTemplateFront,
+    getTemplateBack, getTemplateMediaFiles
+} from "./templates/AnkiCardTemplates";
 import {Note} from "./notes/Note";
 import {ClozeNote} from "./notes/ClozeNote";
 import {MultilineCardNote} from "./notes/MultilineCardNote";
@@ -69,9 +72,9 @@ export class LogseqToAnkiSync {
         await AnkiConnect.createModel(
             this.modelName,
             ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"],
-            template_front,
-            template_back,
-            template_files,
+            getTemplateFront(),
+            getTemplateBack(),
+            getTemplateMediaFiles()
         );
 
         // -- Prepare Anki Note Manager --

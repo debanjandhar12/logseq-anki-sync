@@ -89,6 +89,23 @@ export const addSettingsToLogseq = () => {
             default: null,
         },
         {
+            key: "ankiFieldOptions",
+            type: "enum",
+            default: [],
+            title: "Select different field options to apply to Anki cards? (Recommended: None)",
+            description: "This option allows you to add different filters and additional stuff to the Anki card templates. " +
+                "Takes effect only after next sync.",
+            enumChoices: [
+                "furigana",
+                "kana",
+                "kanji",
+                "tts",
+                "tags",
+                "rtl"
+            ],
+            enumPicker: "checkbox",
+        },
+        {
             key: "cacheLogseqAPIv1",
             type: "boolean",
             default: true,
