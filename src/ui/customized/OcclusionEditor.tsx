@@ -421,22 +421,27 @@ const OcclusionEditorComponent: React.FC<{
     const [isAIGeneratingOcclusion, setIsAIGeneratingOcclusion] = useState(false);
 
     const aiGenerateOcclusion = async () => {
+        let worker = null;
         try {
             setIsAIGeneratingOcclusion(true);
-            const worker = await createWorker("eng", 3, {});
+            worker = await createWorker("eng", 3, {});
             await worker.setParameters({tessedit_pageseg_mode: PSM.SPARSE_TEXT});
             const ret = await worker.recognize(imgEl.src);
             let counter = 0;
-            if (!ret.data.confidence || ret.data.confidence < 50)
+            if (!ret.data.confidence || ret.data.confidence < 40)
                 throw new Error("AI failed to recognize the image");
+            console.log(ret);
             for (const paragraph of _.get(ret, "data.paragraphs", [])) {
                 const width = paragraph.bbox.x1 - paragraph.bbox.x0;
                 const height = paragraph.bbox.y1 - paragraph.bbox.y0;
 
+                // Ignore low confidence paragraphs
+                if (paragraph.confidence < 40) continue;
                 // Ignore small occlusions
                 if (width < 4 || height < 4) continue;
                 if (width * height < Math.pow(0.025, 2) * imgEl.width * imgEl.height) continue;
                 // Ignore occlusions that intersect with existing ones
+
                 function doRectsCollide(a, b) {
                     return !(
                         a.top + a.height < b.top ||
@@ -486,11 +491,11 @@ const OcclusionEditorComponent: React.FC<{
             if (counter === 0)
                 logseq.Editor.showMsg("All possible occlusions already present.", "warning");
             else logseq.Editor.showMsg(`Generated ${counter} occlusions`, "success");
-            await worker.terminate();
-            setIsAIGeneratingOcclusion(false);
         } catch (e) {
             logseq.Editor.showMsg("Failed to generate occlusions", "error");
         }
+        if (worker) await worker.terminate();
+        setIsAIGeneratingOcclusion(false);
     };
 
     return (

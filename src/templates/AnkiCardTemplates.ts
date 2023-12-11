@@ -8,7 +8,6 @@ import template from "./template.html?raw";
 
 function getTemplate() {
     const templateModifiedBasedOnUserSetting = template;
-    console.log(logseq.settings.ankiFieldOptions);
     if(!Array.isArray(logseq.settings.ankiFieldOptions)) return template;
 
     let modifiedField = "{{cloze:Text}}";
