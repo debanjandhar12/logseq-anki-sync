@@ -33,7 +33,7 @@ export class ClozeNote extends Note {
             ["editor/clear-current-slash"],
         ]);
         
-        if (logseq.settings.renderAnkiClozeMarcosInLogseq.includes("On hover")) {
+        if (logseq.settings.showClozesOnHoverInAnki) {
             logseq.provideStyle(`
                 .anki-cloze {
                     color: transparent !important;
@@ -46,7 +46,8 @@ export class ClozeNote extends Note {
                     background: unset !important;
                 }
             `);
-        } else if (logseq.settings.renderAnkiClozeMarcosInLogseq == "On") {
+        } 
+        if (logseq.settings.renderAnkiClozeMarcosInLogseq) {
             logseq.provideStyle(`
                 .anki-cloze {
                     background-color:rgb(59 130 246 / 0.1);
@@ -69,7 +70,10 @@ export class ClozeNote extends Note {
                             /^{?{{c\d (.*?)((::|\\\\).*)?}}}?$/,
                             "$1",
                         );
-                        content = ( await convertToHTMLFile(content, "markdown") ).html;
+                        if (logseq.settings.renderAnkiClozeMarcosInLogseq)
+                            content = (
+                                await convertToHTMLFile(content, "markdown")
+                            ).html;
                         // if parent element has class macro
                         if (cloze.parentElement.classList.contains("macro"))
                             cloze.parentElement.style.display = "initial";
@@ -92,7 +96,7 @@ export class ClozeNote extends Note {
                 childList: true,
             });
         };
-        if (logseq.settings.renderAnkiClozeMarcosInLogseq != "Off")
+        if (logseq.settings.renderAnkiClozeMarcosInLogseq || logseq.settings.showClozesOnHoverInAnki)
         setupAnkiClozeObserverAndRenderThemInLogseqWhenObserved();
     };
 
