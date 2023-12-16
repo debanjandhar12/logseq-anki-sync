@@ -33,7 +33,7 @@ export class ClozeNote extends Note {
             ["editor/clear-current-slash"],
         ]);
         
-        if (logseq.settings.showClozesOnHoverInAnki) {
+        if (logseq.settings.hideClozeMarcosUntilHoverInLogseq) {
             logseq.provideStyle(`
                 .anki-cloze {
                     color: transparent !important;
@@ -47,7 +47,7 @@ export class ClozeNote extends Note {
                 }
             `);
         } 
-        if (logseq.settings.renderAnkiClozeMarcosInLogseq) {
+        else {
             logseq.provideStyle(`
                 .anki-cloze {
                     background-color:rgb(59 130 246 / 0.1);
@@ -68,7 +68,7 @@ export class ClozeNote extends Note {
                             /^{?{{c\d (.*?)((::|\\\\).*)?}}}?$/,
                             "$1",
                         );
-                        if (logseq.settings.renderAnkiClozeMarcosInLogseq)
+                        if (logseq.settings.renderClozeMarcosInLogseq)
                             content = (await convertToHTMLFile(content, "markdown")).html;
                         // if parent element has class macro
                         if (cloze.parentElement.classList.contains("macro"))
@@ -92,7 +92,6 @@ export class ClozeNote extends Note {
                 childList: true,
             });
         };
-        if (logseq.settings.renderAnkiClozeMarcosInLogseq || logseq.settings.showClozesOnHoverInAnki)
         setupAnkiClozeObserverAndRenderThemInLogseqWhenObserved();
     };
 

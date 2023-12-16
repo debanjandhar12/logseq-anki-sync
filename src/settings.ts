@@ -74,20 +74,20 @@ export const addSettingsToLogseq = () => {
                 "Select the addons to use. Note: All addons activate / deactivate only after restart.",
         },
         {
-            key: "renderAnkiClozeMarcosInLogseq",
+            key: "renderClozeMarcosInLogseq",
             type: "boolean",
             default: false,
-            title: "Render Anki Cloze Macros in Logseq? (Recommended: Disabled) [Experimental] [In Development]",
+            title: "Render cloze macros in Logseq? (Recommended: Disabled) [Experimental] [In Development]",
             description:
-                "Render Anki Cloze Macros in Logseq. <br/> When enabled, the Anki Cloze Macros ({{c1 Pikachu}}, {{c2 Mew}}, ...) will be rendered in Logseq.",
+                "When enabled, markdown used inside ({{c1 Hello}}, {{c2 World}}, ...) clozes will be rendered. Takes effect only after restart.",
         },
         {
-            key: "showClozesOnHoverInAnki",
+            key: "hideClozeMarcosUntilHoverInLogseq",
             type: "boolean",
             default: false,
-            title: "Display Anki Cloze content on mouse hover? (Recommended: Disabled) [Experimental] [In Development]",
+            title: "Hide cloze macros in Logseq? (Recommended: Disabled) [Experimental]",
             description:
-                "When enabled, the content in Anki Cloze Macros ({{c1 Pikachu}}, {{c2 Mew}}, ...) will be blank visible only in mouse hover mode.",
+                "When enabled, ({{c1 Hello}}, {{c2 World}}, ...) clozes will be hidden by default and displayed only on hover. Takes effect only after restart.",
         },
         {
             key: "advancedSettingsHeading",

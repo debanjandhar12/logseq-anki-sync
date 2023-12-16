@@ -424,24 +424,31 @@ const OcclusionEditorComponent: React.FC<{
         let worker = null;
         try {
             setIsAIGeneratingOcclusion(true);
-            worker = await createWorker("eng", 3, {});
+            worker = await createWorker("eng", 3, {
+                langPath: 'https://tessdata.projectnaptha.com/4.0.0_best'
+            });
             await worker.setParameters({tessedit_pageseg_mode: PSM.SPARSE_TEXT});
             const ret = await worker.recognize(imgEl.src);
+            console.log(ret);
             let counter = 0;
             if (!ret.data.confidence || ret.data.confidence < 40)
                 throw new Error("AI failed to recognize the image");
-            console.log(ret);
+            const avgParagraphTextLength = _.meanBy(
+                _.get(ret, "data.paragraphs", []),
+                (paragraph) => (paragraph as {text: string}).text.trim().length,
+            );
             for (const paragraph of _.get(ret, "data.paragraphs", [])) {
                 const width = paragraph.bbox.x1 - paragraph.bbox.x0;
                 const height = paragraph.bbox.y1 - paragraph.bbox.y0;
 
                 // Ignore low confidence paragraphs
-                if (paragraph.confidence < 40) continue;
+                if (paragraph.confidence < 48) continue;
                 // Ignore small occlusions
                 if (width < 4 || height < 4) continue;
                 if (width * height < Math.pow(0.025, 2) * imgEl.width * imgEl.height) continue;
-                // Ignore occlusions that intersect with existing ones
+                if (paragraph.text.trim().length < Math.min(avgParagraphTextLength / 2, 3)) continue;
 
+                // Ignore occlusions that intersect with existing ones
                 function doRectsCollide(a, b) {
                     return !(
                         a.top + a.height < b.top ||
@@ -455,8 +462,7 @@ const OcclusionEditorComponent: React.FC<{
                     const matrix = obj.calcTransformMatrix();
                     const objActualTop = matrix[5];
                     const objActualLeft = matrix[4];
-                    if (
-                        doRectsCollide(
+                    if (doRectsCollide(
                             {
                                 top: paragraph.bbox.y0,
                                 left: paragraph.bbox.x0,
@@ -468,9 +474,7 @@ const OcclusionEditorComponent: React.FC<{
                                 left: objActualLeft - (obj.width * obj.scaleX) / 2,
                                 width: obj.width * obj.scaleX,
                                 height: obj.height * obj.scaleY,
-                            },
-                        )
-                    ) {
+                            })) {
                         intersects = true;
                         break;
                     }
