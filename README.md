@@ -2,7 +2,7 @@
 
 <h3 align="center">An logseq to anki syncing plugin with super powers.</h3>
 
-## 🤔 Features
+## 🚀 Features
 <ul><li>
 <details open>
   <summary><b>🐾 Supports rendering of logseq markdown and org mode in anki</b></summary>
@@ -12,7 +12,7 @@
   </div>
 </details></li><li>
 <details>
-  <summary><b>🚀 Several additional features like image occlusion, pdfs, card direction, etc</b></summary>
+  <summary><b>🔥 Several additional features like image occlusion, pdfs, card direction, etc</b></summary>
   <div>
    The plugin supports image occlusion, occlusion on pdf annotaion, card direction, incremental cards, clozes, hints and a lot more. Check <a href="#-documentation">documentation</a> for more details!
    <img src='https://github.com/debanjandhar12/logseq-anki-sync/assets/49021233/5b036383-d7cc-4837-9f74-da21a5f504f8' height='440' /> <br/>
