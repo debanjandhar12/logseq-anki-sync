@@ -31,6 +31,7 @@ export function invoke(action: string, params = {}): any {
         });
 
         xhr.open("POST", "http://127.0.0.1:" + ANKI_PORT.toString());
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         xhr.send(JSON.stringify({action, version: 6, params}));
     });
 }
