@@ -43,7 +43,7 @@
    NB: Make sure the anki is running in background before clicking the Sync to Anki button.
 6. If you receive a [logseq wants to access anki message](https://raw.githubusercontent.com/debanjandhar12/Obsidian-Anki-Sync/main/docs/images/permission.png), click `Yes`.
 
-# 🗎 Documentation
+# 🗃️ Documentation
 
 <b>User Documentation</b>
 
