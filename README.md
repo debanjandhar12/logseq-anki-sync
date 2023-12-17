@@ -2,7 +2,7 @@
 
 <h3 align="center">An logseq to anki syncing plugin with super powers.</h3>
 
-## Features
+## 🤔 Features
 <ul><li>
 <details open>
   <summary><b>🐾 Supports rendering of logseq markdown and org mode in anki</b></summary>
