@@ -45,7 +45,9 @@ export class SwiftArrowNote extends Note {
                 } else replacement += `${g1.trim()}`;
                 const beforeArrowSpace = g2.split(/(:<->|:->|:<-)/s)[0];
                 const afterArrowSpace = g2.split(/(:<->|:->|:<-)/s)[2];
-                replacement += `${beforeArrowSpace}<b>${g3}</b>${afterArrowSpace}`;
+                replacement += `${beforeArrowSpace}${beforeArrowSpace.endsWith(" ") ? "" : " "}` +
+                                `<b>${g3}</b>` +
+                                `${afterArrowSpace.startsWith(" ") ? "" : " "}${afterArrowSpace}`;
                 if (g3 == ":->" || g3 == ":<->") {
                     replacement += `${startDoubleBracket}1${doubleSemicolon}${g4.trim()}${endDoubleBracket}`;
                 } else replacement += `${g4.trim()}`;
