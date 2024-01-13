@@ -18,12 +18,12 @@
         "icon": "/icon.png"
     },
     "dependencies": {
-        "@logseq/libs": "^0.0.15",
+        "@logseq/libs": "^0.0.17",
         "@thi.ng/hiccup": "^4.2.29",
         "@yellowdig/cljs-tools": "0.2.0",
         "await-lock": "^2.2.2",
         "cancelable-promise": "4.3.1",
-        "cheerio": "1.0.0-rc.12",
+        "cheerio": "^1.0.0-rc.12",
         "dependency-graph": "^0.11.0",
         "fabric": "5.2.4",
         "hash-sum": "2.0.0",

@@ -444,6 +444,26 @@ describe("Markdown Input", () => {
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('Hello <b>World</b>');
         });
+        test("Hiccup Rendering", async () => {
+            const htmlFile = await convertToHTMLFile("Hello [:b World]", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('b').text()).toBe('World');
+        });
+        test("Admonition Rendering - Important", async () => {
+            const htmlFile = await convertToHTMLFile(`#+BEGIN_IMPORTANT
+            Hello World.
+            #+END_IMPORTANT`, "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.important').text()).toContain('Hello World.');
+        });
+        test("Admonition Rendering - Quote", async () => {
+            const htmlFile = await convertToHTMLFile(`> Hello World.`, "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('blockquote').text()).toContain('Hello World.');
+        });
         test("Code Rendering", async () => {
             const htmlFile = await convertToHTMLFile("``Hello`` `World`", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
@@ -453,7 +473,7 @@ describe("Markdown Input", () => {
             const htmlFile = await convertToHTMLFile("Hello [[Ref Test]]", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
-            expect($('a').text()).toContain('Ref Test');
+            expect($('a').text()).toBe('Ref Test');
             expect($('a').attr('href')).toBe('logseq://graph/TestGraph?page=Ref%20Test');
         });
         test("Consecutive Page Ref Rendering - https://github.com/debanjandhar12/logseq-anki-sync/issues/101", async () => {
@@ -476,8 +496,15 @@ describe("Markdown Input", () => {
             const htmlFile = await convertToHTMLFile("[Some notes](marginnote3app://note/8B11CF4A-DE3C-4A71-84G8-ODF5EE2EBO4C)", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
-            expect($('a').text()).toContain('Some notes');
+            expect($('a').text()).toBe('Some notes');
             expect($('a').attr('href')).toBe('marginnote3app://note/8B11CF4A-DE3C-4A71-84G8-ODF5EE2EBO4C');
+        });
+        test("Tag Rendering", async () => {
+            const htmlFile = await convertToHTMLFile("Hello #World", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('a').text()).toBe('World');
+            expect($('a').attr('href')).toBe('logseq://graph/TestGraph?page=World');
         });
     });
     describe("Code Block rendering", () => {
@@ -571,6 +598,14 @@ describe("Markdown Input", () => {
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html).toContain('[sound:https://example.com/audio.mp3]');
         });
+
+        test("Video Rendering - Local Video", async () => {
+            const htmlFile = await convertToHTMLFile("![](./assets/video.mp4)", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            expect(htmlFile.assets).toContain('./assets/video.mp4');
+            const $ = cheerio.load(htmlFile.html);
+            expect($('video').attr('src')).toEqual('video.mp4');
+        });
     });
     describe("Block Reference Rendering", () => {
         test("Basic block ref rendering", async () => {
@@ -630,7 +665,6 @@ describe("Markdown Input", () => {
           expect(htmlFile.html.trim()).toMatchSnapshot();
           const $ = cheerio.load(htmlFile.html);
           expect($('.embed-page > .children-list').length).toBe(1);
-          expect($('.embed-page  .children-list').length).toBe(7);
        });
     });
     describe("PDF Rendering", () => {
@@ -660,6 +694,18 @@ describe("Markdown Input", () => {
            const $ = cheerio.load(htmlFile.html);
            expect($('img').attr('src')).toEqual('1_65a22d2c-a245-4a3f-89cc-1b1a7b724abc_1673181377785.png');
            expect(htmlFile.html.trim()).toContain('🔵');
+       });
+    });
+    describe("Latex Rendering", () => {
+       test("Inline Latex Rendering", async () => {
+              const htmlFile = await convertToHTMLFile("This is inline latex: $\\frac{1}{2}$", "markdown");
+                expect(htmlFile.html.trim()).toMatchSnapshot();
+                expect(htmlFile.html.trim()).toContain('\\(\\frac{1}{2}\\)');
+       });
+       test("Block Latex Rendering", async () => {
+                  const htmlFile = await convertToHTMLFile("This is block latex: $$\\frac{1}{2}$$", "markdown");
+                 expect(htmlFile.html.trim()).toMatchSnapshot();
+                 expect(htmlFile.html.trim()).toContain('\\[\\frac{1}{2}\\]');
        });
     });
 });

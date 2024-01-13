@@ -27,7 +27,7 @@ import {
     ORG_PROPERTIES_REGEXP,
     specialChars,
     LOGSEQ_RENAMED_PAGE_REF_REGEXP,
-    isAudio_REGEXP,
+    isAudio_REGEXP, isVideo_REGEXP
 } from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
@@ -67,20 +67,21 @@ export async function convertToHTMLFile(
     opts = {processRefEmbeds: true},
 ): Promise<HTMLFile> {
     if (
+        typeof window !== 'undefined' &&
         convertToHTMLFileCache.has(
-            objectHash({
+            String(objectHash({
                 content,
                 format,
                 processRefEmbeds: opts.processRefEmbeds,
-            }),
+            })),
         )
     )
         return convertToHTMLFileCache.get(
-            objectHash({
+            String(objectHash({
                 content,
                 format,
                 processRefEmbeds: opts.processRefEmbeds,
-            }),
+            })),
         );
 
     let resultContent = content.trim(),
@@ -285,11 +286,11 @@ export async function convertToHTMLFile(
     if (logseq.settings.debug.includes("Converter.ts"))
         console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
     convertToHTMLFileCache.set(
-        objectHash({
+        String(objectHash({
             content,
             format,
             processRefEmbeds: opts.processRefEmbeds,
-        }),
+        })),
         {html: resultContent, assets: resultAssets, tags: resultTags},
     );
     return {html: resultContent, assets: resultAssets, tags: resultTags};
@@ -728,6 +729,54 @@ async function processLink(
     ) {
         const str = getRandomUnicodeString();
         hashmap[str] = `[sound:${path.basename(link_url).split("?")[0]}]`;
+        resultAssets.add(link_url.split("?")[0]);
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
+    }
+
+    // Video Display
+    if (
+        link_type == "Search" &&
+        link_url.match(isVideo_REGEXP) &&
+        !content.match(isWebURL_REGEXP) &&
+        link_full_text.startsWith("!")
+    ) {
+        const str = getRandomUnicodeString();
+        hashmap[str] = `<video src="${path.basename(link_url).split("?")[0]}" 
+                        controlsList="nodownload" controls></video>`;
+        resultAssets.add(link_url.split("?")[0]);
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
+    }
+    if (
+        link_type == "Complex" &&
+        link_url.link.match(isVideo_REGEXP) &&
+        (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))
+    ) {
+        const str = getRandomUnicodeString();
+        hashmap[str] = `<video src="${link_url.protocol}://${link_url.link.split("?")[0]}" 
+                        controlsList="nodownload" controls></video>`;
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
+    }
+    if (
+        format == "org" &&
+        link_type == "Page_ref" &&
+        link_url.match(isVideo_REGEXP) &&
+        !link_url.match(isWebURL_REGEXP)
+    ) {
+        const str = getRandomUnicodeString();
+        hashmap[str] = `<video src="${path.basename(link_url).split("?")[0]}" 
+                        controlsList="nodownload" controls></video>`;
         resultAssets.add(link_url.split("?")[0]);
         return new Uint8Array([
             ...resultUTF8.subarray(0, start_pos),

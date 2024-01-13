@@ -1,5 +1,21 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Markdown Input > Basic Inline rendering > Admonition Rendering - Important 1`] = `
+"<div class="important"><div style="display: revert">
+        <span>Hello World.
+          <br>
+</span>
+      </div></div>"
+`;
+
+exports[`Markdown Input > Basic Inline rendering > Admonition Rendering - Quote 1`] = `
+"<blockquote>
+        <span>Hello World.
+          <br>
+</span>
+      </blockquote>"
+`;
+
 exports[`Markdown Input > Basic Inline rendering > Bold Rendering 1`] = `"<span>This <b>bold</b> and this <b>bold</b> too.</span>"`;
 
 exports[`Markdown Input > Basic Inline rendering > Code Rendering 1`] = `"<span><code>Hello</code> <code>World</code></span>"`;
@@ -7,6 +23,8 @@ exports[`Markdown Input > Basic Inline rendering > Code Rendering 1`] = `"<span>
 exports[`Markdown Input > Basic Inline rendering > Consecutive Page Ref Rendering - https://github.com/debanjandhar12/logseq-anki-sync/issues/101 1`] = `"<span><a href="logseq://graph/TestGraph?page=Ref%20Test" class="page-reference">Ref Test</a><a href="logseq://graph/TestGraph?page=Ref%20Test" class="page-reference">Ref Test</a> <a href="logseq://graph/TestGraph?page=Ref%20Test" class="page-reference">Ref Test</a>,<a href="logseq://graph/TestGraph?page=Ref%20Test" class="page-reference">Ref Test</a></span>"`;
 
 exports[`Markdown Input > Basic Inline rendering > HTML Rendering 1`] = `"<span>Hello <b>World</b></span>"`;
+
+exports[`Markdown Input > Basic Inline rendering > Hiccup Rendering 1`] = `"<span>Hello <b>World</b></span>"`;
 
 exports[`Markdown Input > Basic Inline rendering > Https / Http URL Rendering 1`] = `"<span>Hello <a href="https://example.com">World</a> <a href="https://example.com">https://example.com</a> <a href="http://example.com">http://example.com</a></span>"`;
 
@@ -23,6 +41,8 @@ World</span>"
 exports[`Markdown Input > Basic Inline rendering > Page Ref Rendering 1`] = `"<span>Hello <a href="logseq://graph/TestGraph?page=Ref%20Test" class="page-reference">Ref Test</a></span>"`;
 
 exports[`Markdown Input > Basic Inline rendering > Single line text rendering 1`] = `"<span>Hello World</span>"`;
+
+exports[`Markdown Input > Basic Inline rendering > Tag Rendering 1`] = `"<span>Hello <a class="tag" href="logseq://graph/TestGraph?page=World">World</a></span>"`;
 
 exports[`Markdown Input > Block Embed Rendering > Basic block embed rendering 1`] = `
 "<span>Page Embed: <div class="embed-block">
@@ -166,6 +186,10 @@ exports[`Markdown Input > Code Block rendering > Everything after codeblock star
 </code></pre>"
 `;
 
+exports[`Markdown Input > Latex Rendering > Block Latex Rendering 1`] = `"<span>This is block latex: \\[\\frac{1}{2}\\]</span>"`;
+
+exports[`Markdown Input > Latex Rendering > Inline Latex Rendering 1`] = `"<span>This is inline latex: \\(\\frac{1}{2}\\)</span>"`;
+
 exports[`Markdown Input > Media rendering > Audio Rendering - Local Audio 1`] = `"<span>[sound:audio.mp3]</span>"`;
 
 exports[`Markdown Input > Media rendering > Audio Rendering - Web Audio 1`] = `"<span>[sound:https://example.com/audio.mp3]</span>"`;
@@ -177,6 +201,11 @@ exports[`Markdown Input > Media rendering > Image Rendering - Image with Width a
 exports[`Markdown Input > Media rendering > Image Rendering - Local Image 1`] = `"<span><img src="image.png"   /></span>"`;
 
 exports[`Markdown Input > Media rendering > Image Rendering - Web Image 1`] = `"<span><img src="https://example.com/image.png"   /></span>"`;
+
+exports[`Markdown Input > Media rendering > Video Rendering - Local Video 1`] = `
+"<span><video src="video.mp4" 
+                        controlsList="nodownload" controls></video></span>"
+`;
 
 exports[`Markdown Input > PDF Rendering > Basic PDF rendering 1`] = `"<span><a href="#-2e--2e--2f-assets-2f-Linux_Slides_1_1673180335043_0-2e-pdf">../assets/Linux_Slides_1_1673180335043_0.pdf</a></span>"`;
 
