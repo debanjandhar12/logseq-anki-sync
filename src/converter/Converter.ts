@@ -55,9 +55,11 @@ export interface HTMLFile {
 }
 
 const convertToHTMLFileCache = new Map<string, HTMLFile>();
-window.addEventListener("syncLogseqToAnkiComplete", () => {
-    convertToHTMLFileCache.clear();
-});
+if (typeof window !== 'undefined') {
+    window.addEventListener("syncLogseqToAnkiComplete", () => {
+        convertToHTMLFileCache.clear();
+    });
+}
 
 export async function convertToHTMLFile(
     content: string,
@@ -307,6 +309,8 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     block_props["hl-type"] = block_props["hl-type"] || block_props["hlType"];
     block_props["hl-page"] = block_props["hl-page"] || block_props["hlPage"];
     block_props["hl-stamp"] = block_props["hl-stamp"] || block_props["hlStamp"];
+    block_props["hl-color"] = block_props["hl-color"] || block_props["hlColor"];
+    const annotationSymbolMap = {'yellow':'🟡', 'green':'🟢', 'blue':'🔵', 'red':'🔴', 'purple':'🟣'};
     if (block_props["ls-type"] == "annotation" && block_props["hl-type"] == "area") {
         // Image annotation
         try {
@@ -320,7 +324,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
                 block_props["hl-stamp"]
             }.png?imageAnnotationBlockUUID=${block_uuid}`;
             resultContent =
-                `\ud83d\udccc**P${block_props["hl-page"]}** <div></div> ![](${hls_img_loc})\n` +
+                `${annotationSymbolMap[block_props["hl-color"]] || '\ud83d\udccc'}**P${block_props["hl-page"]}** <div></div> ![](${hls_img_loc})\n` +
                 resultContent;
         } catch (e) {
             console.log(e);
@@ -328,7 +332,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     } else if (block_props["ls-type"] == "annotation") {
         // Text annotation
         try {
-            resultContent = `\ud83d\udccc**P${block_props["hl-page"]}** ` + resultContent;
+            resultContent = `${annotationSymbolMap[block_props["hl-color"]] || '\ud83d\udccc'}**P${block_props["hl-page"]}** ` + resultContent;
         } catch (e) {
             console.log(e);
         }
@@ -643,7 +647,7 @@ async function processLink(
     ) {
         const str = getRandomUnicodeString();
         hashmap[str] = `<img src="${path.basename(link_url).split("?")[0]}" ${
-            link_label_text ? `title="${link_label_text}"` : ``
+            link_label_text ? `alt="${link_label_text}"` : ``
         } ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${
             metadata && metadata.height ? `height="${metadata.height}"` : ``
         }/>`;
@@ -661,7 +665,7 @@ async function processLink(
     ) {
         const str = getRandomUnicodeString();
         hashmap[str] = `<img src="${link_url.protocol}://${link_url.link.split("?")[0]}" ${
-            link_label_text ? `title="${link_label_text}"` : ``
+            link_label_text ? `alt="${link_label_text}"` : ``
         } ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${
             metadata && metadata.height ? `height="${metadata.height}"` : ``
         }/>`;

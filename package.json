@@ -71,7 +71,7 @@
         "vite": "^4.3.8",
         "vite-plugin-logseq": "^1.1.2",
         "vite-plugin-node-polyfills": "^0.8.2",
-        "vitest": "^0.31.1",
+        "vitest": "^1.2.0",
         "vm-browserify": "^1.1.2"
     }
 }
