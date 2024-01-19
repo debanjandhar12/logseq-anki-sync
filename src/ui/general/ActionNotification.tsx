@@ -110,7 +110,7 @@ const ActionNotificationComponent: React.FC<{
                         onClick={() => handleAction(index)}
                         color="primary"
                         depth={2}
-                        size="sm">
+                        size="xs">
                         {btn.name}
                     </LogseqButton>
                 ))}

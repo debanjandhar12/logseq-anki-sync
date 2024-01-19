@@ -130,7 +130,7 @@ const SyncResultDialogComponent: React.FC<{
                 </div>
                 <header
                     style={{
-                        borderBottom: "1px solid var(--ls-quaternary-background-color)",
+                        borderBottom: "1px solid var(--ls-border-color)",
                         padding: "8px 12px",
                     }}>
                     <h3 className="title inline-flex items-center" style={{marginTop: "2px"}}>

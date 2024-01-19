@@ -93,9 +93,9 @@ export class UI {
           margin: 0;
           padding: 10px;
           background-color: var(--ls-primary-background-color);
-          top: 80px;
-          right: 96px;
-          width: 220px;
+          top: 76px;
+          right: 120px;
+          width: 240px;
           z-index:999;
         }
         

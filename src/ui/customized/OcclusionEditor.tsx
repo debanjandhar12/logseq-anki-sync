@@ -517,7 +517,7 @@ const OcclusionEditorComponent: React.FC<{
                 </div>
                 <header
                     style={{
-                        borderBottom: "1px solid var(--ls-quaternary-background-color)",
+                        borderBottom: "1px solid var(--ls-border-color)",
                         padding: "8px 12px",
                     }}>
                     <h3 className="title inline-flex items-center" style={{marginTop: "2px"}}>
@@ -527,7 +527,7 @@ const OcclusionEditorComponent: React.FC<{
                 </header>
                 <div
                     style={{
-                        borderBottom: "1px solid var(--ls-quaternary-background-color)",
+                        borderBottom: "1px solid var(--ls-border-color)",
                         alignItems: "center",
                         justifyContent: "end",
                     }}
@@ -551,7 +551,7 @@ const OcclusionEditorComponent: React.FC<{
                             alignItems: "center",
                             justifyItems: "center",
                             paddingRight: "0.5rem",
-                            borderRight: "1px solid var(--ls-quaternary-background-color)",
+                            borderRight: "1px solid var(--ls-border-color)",
                         }}>
                         {/* Add additional toolbar for fabricselection here */}
                         <span style={{visibility: "hidden"}}>
@@ -597,7 +597,7 @@ const OcclusionEditorComponent: React.FC<{
                             justifyItems: "center",
                             paddingLeft: "0.5rem",
                             paddingRight: "0.5rem",
-                            borderRight: "1px solid var(--ls-quaternary-background-color)",
+                            borderRight: "1px solid var(--ls-border-color)",
                         }}>
                         <LogseqButton color={"default"} size={"sm"} icon={SETTINGS_ICON} />
                         <div className={"image-occlusion-menu"}>
@@ -657,7 +657,7 @@ const OcclusionEditorComponent: React.FC<{
                 <div
                     className="mt-1 sm:flex sm:flex-row-reverse"
                     style={{
-                        borderTop: "1px solid var(--ls-quaternary-background-color)",
+                        borderTop: "1px solid var(--ls-border-color)",
                         padding: "2px",
                         alignItems: "center",
                     }}>

@@ -236,7 +236,7 @@ const SyncSelectionDialogComponent: React.FC<{
                 <div className="absolute top-0 right-0 pt-2 pr-2">
                     <div style={{display: "flex", alignItems: "center"}}>
                         <LogseqDropdownMenu menuArr={selectionMenu}>
-                            <LogseqButton size={"xs"} color="link">
+                            <LogseqButton size={"xs"} color="outline-link">
                                 Selection
                             </LogseqButton>
                         </LogseqDropdownMenu>
@@ -261,7 +261,7 @@ const SyncSelectionDialogComponent: React.FC<{
                 </div>
                 <header
                     style={{
-                        borderBottom: "1px solid var(--ls-quaternary-background-color)",
+                        borderBottom: "1px solid var(--ls-border-color)",
                         padding: "8px 12px",
                     }}>
                     <h3 className="title inline-flex items-center" style={{marginTop: "2px"}}>
@@ -391,7 +391,7 @@ const SyncSelectionDialogComponent: React.FC<{
                 <div
                     className="mt-5 sm:mt-4 sm:flex"
                     style={{
-                        borderTop: "1px solid var(--ls-quaternary-background-color)",
+                        borderTop: "1px solid var(--ls-border-color)",
                         padding: "2px",
                         alignItems: "center",
                     }}>
@@ -399,7 +399,7 @@ const SyncSelectionDialogComponent: React.FC<{
                         className="hidden md-block"
                         style={{flexGrow: "1", marginLeft: "12px"}}>
                         <div className={"anki_de"} style={{width: "fit-content"}}>
-                            <LogseqButton color={"link"} size={"sm"}>
+                            <LogseqButton color={"outline-link"} size={"sm"}>
                                 🢁
                             </LogseqButton>
                             <div className={"footer-option-list"}>

@@ -7,50 +7,52 @@ type LogseqButtonProps = {
     disabled?: boolean;
     depth?: number;
     title?: string;
-    color?: "primary" | "default" | "success" | "link" | "failed";
+    color?: "primary" | "default" | "secondary" |"success" | "failed" | "ghost" | "link" | "outline-link";
     size?: "xs" | "sm" | "md" | "lg";
 };
+
 export const LogseqButton: FC<LogseqButtonProps> = ({
-    children,
-    onClick,
-    icon,
-    isFullWidth,
-    color = "default",
-    disabled,
-    size = "md",
-    depth = 0,
-    title,
-}) => {
+                                                        children,
+                                                        onClick,
+                                                        icon,
+                                                        isFullWidth,
+                                                        color = "secondary",
+                                                        disabled,
+                                                        size = "md",
+                                                        depth = 0,
+                                                        title,
+                                                    }) => {
     let classNameString =
-        "inline-flex justify-center reduce-opacity-when-disabled not-allowed-cursor-when-disabled";
-    classNameString += " ui__button ";
+        "ui__button inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
     classNameString += ` ui__button-depth-${depth} `;
 
-    if (color === "primary") {
-        classNameString += " ui__button-theme-color ui__button-color-custom ";
-    } else if (color === "link") {
-        classNameString +=
-            " ui__button-theme-text border border-transparent bg-indigo-600 font-medium shadow-sm hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo anki_ui_link_button ";
-    } else if (color === "success") {
-        classNameString += " ui__button-theme-color ui__button-color-green ";
+    if (color === "primary" || color == "default") {
+        classNameString += " bg-primary/90 hover:bg-primary/100 active:opacity-90 text-primary-foreground as-classic";
+    } else if (color === "secondary") {
+        classNameString += " bg-secondary/70 text-secondary-foreground hover:bg-secondary/100 active:opacity-80 as-secondary";
     } else if (color === "failed") {
-        classNameString += " ui__button-theme-color ui__button-color-red ";
-    } else if (color === "default") {
-        classNameString += " ui__button-theme-color ui__button-color-gray ";
+        classNameString += " bg-destructive/90 hover:bg-destructive/100 active:opacity-90 text-destructive-foreground as-destructive";
+    } else if (color === "success") {
+        classNameString += " bg-primary/90 hover:bg-primary/100 active:opacity-90 text-primary-foreground as-classic primary-green";
+    } else if (color === "ghost") {
+        classNameString += " hover:bg-secondary/70 hover:text-secondary-foreground active:opacity-80 as-ghost";
+    } else if (color === "link") {
+        classNameString += " text-primary underline-offset-4 hover:underline active:opacity-80 as-link";
+    } else if (color === "outline-link") {
+        classNameString += " anki_ui_link_button active:opacity-90 border bg-background";
     }
 
-    switch (size) {
-        case "xs":
-            classNameString += " px-0 py-0 ";
-            classNameString += " text-xs ";
-            break;
-        case "lg":
-            classNameString += " px-4 py-2 ";
-            classNameString += " text-lg leading-6 ";
-            break;
-        case "sm":
-        default:
-            classNameString += ` ui__button-size-${size} `;
+    if (size === "xs") {
+        classNameString += " px-2 py-1 text-xs rounded h-6";
+    }
+    else if (size === "sm") {
+        classNameString += " px-2 py-1 text-sm rounded h-7";
+    }
+    else if (size === "lg") {
+        classNameString += " px-4 py-3 text-lg rounded h-11";
+    }
+    else if (size === "md") {
+        classNameString += " px-3 py-1 text-md rounded h-7";
     }
 
     if (isFullWidth) {
@@ -61,10 +63,10 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
         <button
             disabled={disabled}
             className={classNameString}
-            style={{margin: "0.25rem 0.25rem 0.125rem 0.25rem"}}
             title={title}
+            style={{borderColor: "hsl(var(--primary-foreground))", margin: "0.25rem"}}
             onClick={onClick}>
-            {icon && <span className="icon" dangerouslySetInnerHTML={{__html: icon}} />}
+            {icon && <span className="ui__icon ti" dangerouslySetInnerHTML={{__html:icon}}></span>}
             {children}
         </button>
     );
