@@ -325,6 +325,42 @@ li:not(.children) {
     margin: 0;
 }
 
+/* Logseq block coloring */
+.block-highlight-yellow {
+    background-color: #946800;
+    border-radius: 4px;
+}
+
+.block-highlight-pink {
+    background-color: #cd1d8d;
+    border-radius: 4px;
+}
+
+.block-highlight-blue {
+    background-color: #006adc;
+    border-radius: 4px;
+}
+
+.block-highlight-red {
+    background-color: #cd2b31;
+    border-radius: 4px;
+}
+
+.block-highlight-green {
+    background-color: #18794e;
+    border-radius: 4px;
+}
+
+.block-highlight-purple {
+    background-color: #793aaf;
+    border-radius: 4px;
+}
+
+.block-highlight-gray {
+    background-color: #111827;
+    border-radius: 4px;
+}
+
 /* --- UI css --- */
 .bubble {
     font-family: arial;

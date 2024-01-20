@@ -218,7 +218,7 @@ export class ImageOcclusionNote extends Note {
     // -- Helper functions --
     public static async getImagesInBlockOrNote(block: any): Promise<string[]> {
         let block_content = block.content;
-        block_content = await processProperties(block_content); // Process pdf properties
+        [block_content] = await processProperties(block_content); // Process pdf properties
         block_content = await safeReplaceAsync(
             block_content,
             LOGSEQ_BLOCK_REF_REGEXP,
@@ -249,7 +249,7 @@ export class ImageOcclusionNote extends Note {
                         : "";
                     block_ref_content_first_line =
                         block_ref_props_str + "\n" + block_ref_content_first_line;
-                    block_ref_content_first_line = await processProperties(
+                    [block_ref_content_first_line] = await processProperties(
                         block_ref_content_first_line,
                     ); // Process pdf properties
                     return block_ref_content_first_line;

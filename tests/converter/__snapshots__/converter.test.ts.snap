@@ -92,6 +92,8 @@ exports[`Markdown Input > Basic Inline rendering > Single line text rendering 1`
 
 exports[`Markdown Input > Basic Inline rendering > Tag Rendering 1`] = `"<span>Hello <a class="tag" href="logseq://graph/TestGraph?page=World">World</a></span>"`;
 
+exports[`Markdown Input > Basic Inline rendering > logseq block highlight / coloring 1`] = `"<span class="block-highlight-red">Hello World.</span>"`;
+
 exports[`Markdown Input > Block Embed Rendering > Basic block embed rendering 1`] = `
 "<span>Page Embed: <div class="embed-block">
                         

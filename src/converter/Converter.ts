@@ -90,7 +90,8 @@ export async function convertToHTMLFile(
     if (logseq.settings.debug.includes("Converter.ts"))
         console.log("--Start Converting--\nOriginal:", resultContent);
 
-    resultContent = await processProperties(resultContent, format);
+    let block_props;
+    [resultContent, block_props] = await processProperties(resultContent, format);
     if (logseq.settings.debug.includes("Converter.ts"))
         console.log("After processing embeded:", resultContent);
 
@@ -275,6 +276,10 @@ export async function convertToHTMLFile(
             $(elm).html(`<div style="display: revert">${$(elm).html()}</div>`);
         },
     );
+    // Add block highlight to first span
+    if (block_props["background-color"]) {
+        $("span:first-child").addClass(`block-highlight-${block_props["background-color"]}`);
+    }
     resultContent = decodeHTMLEntities(decodeHTMLEntities($("#content ul li").html() || ""));
     if (logseq.settings.debug.includes("Converter.ts"))
         console.log("After Mldoc.export:", resultContent);
@@ -296,7 +301,7 @@ export async function convertToHTMLFile(
     return {html: resultContent, assets: resultAssets, tags: resultTags};
 }
 
-export async function processProperties(resultContent, format = "markdown"): Promise<string> {
+export async function processProperties(resultContent, format = "markdown"): Promise<[string,any]> {
     resultContent = safeReplace(resultContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
     const block_props = {};
     resultContent = safeReplace(resultContent, MD_PROPERTIES_REGEXP, (match) => {
@@ -305,6 +310,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
         block_props[key.trim()] = value.trim();
         return "";
     });
+
     // Add support for pdf annotation
     block_props["ls-type"] = block_props["ls-type"] || block_props["lsType"];
     block_props["hl-type"] = block_props["hl-type"] || block_props["hlType"];
@@ -338,7 +344,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
             console.log(e);
         }
     }
-    return resultContent;
+    return [resultContent, block_props];
 }
 
 async function processRefEmbeds(

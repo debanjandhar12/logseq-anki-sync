@@ -464,6 +464,13 @@ describe("Markdown Input", () => {
             const $ = cheerio.load(htmlFile.html);
             expect($('blockquote').text()).toContain('Hello World.');
         });
+        test("logseq block highlight / coloring", async () => {
+            const htmlFile = await convertToHTMLFile(`background-color:: red\nHello World.`, "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('span').text()).toContain('Hello World.');
+            expect($('span').hasClass('block-highlight-red')).toBe(true);
+        });
         test("Code Rendering", async () => {
             const htmlFile = await convertToHTMLFile("``Hello`` `World`", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
