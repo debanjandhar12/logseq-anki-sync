@@ -1,5 +1,53 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Complex Markdown / Org Mode Rendering Cases > Math inside table 1`] = `
+"<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+        <thead>
+          <tr>
+            <th scope="col" class="org-left">Hello</th>
+            <th scope="col" class="org-left">\\(\\frac{1}{2}\\)</th>
+          </tr>
+        </thead>
+      </table>"
+`;
+
+exports[`Complex Markdown / Org Mode Rendering Cases > https://github.com/debanjandhar12/logseq-anki-sync/issues/248 1`] = `
+"<pre><code data-lang="mips" class="mips hljs"><span class="hljs-keyword">lw </span>$<span class="hljs-built_in">t0</span>, <span class="hljs-number">4</span>($<span class="hljs-built_in">gp</span>) <span class="hljs-comment"># fetch N</span>
+<span class="hljs-keyword">mult </span>$<span class="hljs-built_in">t0</span>, $<span class="hljs-built_in">t0</span>, $<span class="hljs-built_in">t0</span> <span class="hljs-comment"># N*N</span>
+<span class="hljs-keyword">lw </span>$<span class="hljs-built_in">t1</span>, <span class="hljs-number">4</span>($<span class="hljs-built_in">gp</span>) <span class="hljs-comment"># fetch N</span>
+<span class="hljs-keyword">ori </span>$<span class="hljs-built_in">t2</span>, $<span class="hljs-built_in">zero</span>, <span class="hljs-number">3</span> <span class="hljs-comment"># 3</span>
+<span class="hljs-keyword">mult </span>$<span class="hljs-built_in">t1</span>, $<span class="hljs-built_in">t1</span>, $<span class="hljs-built_in">t2</span> <span class="hljs-comment"># 3*N</span>
+<span class="hljs-keyword">add </span>$<span class="hljs-built_in">t2</span>, $<span class="hljs-built_in">t0</span>, $<span class="hljs-built_in">t1</span> <span class="hljs-comment"># N*N + 3*N</span>
+<span class="hljs-keyword">sw </span>$<span class="hljs-built_in">t2</span>, <span class="hljs-number">0</span>($<span class="hljs-built_in">gp</span>)
+</code></pre>"
+`;
+
+exports[`Markdown Input > Anki Clozes Cases > Clozes inside code 1`] = `
+"<pre><code class="hljs"><span class="hljs-template-variable">{{<span class="hljs-name">c1</span> class}}</span><span class="language-xml"> Apple;
+
+</span></code></pre>"
+`;
+
+exports[`Markdown Input > Anki Clozes Cases > Clozes on code block 1`] = `
+"<span>{{c1::
+        <br>
+</span>
+      <pre><code class="hljs"><span class="hljs-keyword">class</span> <span class="hljs-title class_">Apple</span>;
+</code></pre>
+      <span>}}</span>"
+`;
+
+exports[`Markdown Input > Anki Clozes Cases > Math inside table with clozes 1`] = `
+"<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+        <thead>
+          <tr>
+            <th scope="col" class="org-left">\\(\\frac{1}{ {{c2::2}} }\\)</th>
+            <th scope="col" class="org-left">{{c1::\\(\\frac{1}{2}\\)}}</th>
+          </tr>
+        </thead>
+      </table>"
+`;
+
 exports[`Markdown Input > Basic Inline rendering > Admonition Rendering - Important 1`] = `
 "<div class="important"><div style="display: revert">
         <span>Hello World.
@@ -148,8 +196,15 @@ exports[`Markdown Input > Code Block rendering > Basic Code Block 1`] = `
 </code></pre>"
 `;
 
+exports[`Markdown Input > Code Block rendering > Basic Code Block with ~~~ syntax 1`] = `
+"<pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
+}
+</code></pre>"
+`;
+
 exports[`Markdown Input > Code Block rendering > Code Block with character first line 1`] = `
-"<span>a <code>\`
+"<span>randomchar <code>\`
 function hello() {
   console.log(\`Hello World\`);
 }
@@ -186,9 +241,27 @@ exports[`Markdown Input > Code Block rendering > Everything after codeblock star
 </code></pre>"
 `;
 
+exports[`Markdown Input > Code Block rendering > Inline Code Block 1`] = `"<span><code>function hello() { console.log('Hello World'); }</code></span>"`;
+
+exports[`Markdown Input > Code Block rendering > Two Basic Code Block - one after another 1`] = `
+"<span>Test:
+        <br>
+</span>
+      <pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
+}
+</code></pre>
+      <pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
+}
+</code></pre>"
+`;
+
 exports[`Markdown Input > Latex Rendering > Block Latex Rendering 1`] = `"<span>This is block latex: \\[\\frac{1}{2}\\]</span>"`;
 
 exports[`Markdown Input > Latex Rendering > Inline Latex Rendering 1`] = `"<span>This is inline latex: \\(\\frac{1}{2}\\)</span>"`;
+
+exports[`Markdown Input > Latex Rendering > Two Inline Latex Rendering 1`] = `"<span>This is consecutive math: \\(\\frac{1}{2}\\) \\(\\frac{3}{4}\\)</span>"`;
 
 exports[`Markdown Input > Media rendering > Audio Rendering - Local Audio 1`] = `"<span>[sound:audio.mp3]</span>"`;
 

@@ -196,6 +196,12 @@ export function getFirstNonEmptyLine(str: string): string {
 export function safeReplace(content: string, regex: RegExp | string, replaceArg: any): string {
     let result = content;
     const hashmap = {};
+    result = result.replace(/(```|~~~)(.*)\n(.|\n)*?\n\1/g, (match) => {
+        // Escape code
+        const str = getRandomUnicodeString();
+        hashmap[str] = match;
+        return str;
+    });
     result = result.replace(MD_MATH_BLOCK_REGEXP, (match) => {
         // Escape block math
         const str = getRandomUnicodeString();
@@ -206,12 +212,6 @@ export function safeReplace(content: string, regex: RegExp | string, replaceArg:
         // Escape inline math
         const str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$", "$$$$");
-        return str;
-    });
-    result = result.replace(/(```|~~~)(.*)\n(.|\n)*?\n\1/g, (match) => {
-        // Escape code
-        const str = getRandomUnicodeString();
-        hashmap[str] = match;
         return str;
     });
     result = result.replace(regex, replaceArg);
@@ -228,6 +228,12 @@ export async function safeReplaceAsync(
 ): Promise<string> {
     let result = content;
     const hashmap = {};
+    result = result.replace(/(```|~~~)(.*)\n(.|\n)*?\n\1/g, (match) => {
+        // Escape code
+        const str = getRandomUnicodeString();
+        hashmap[str] = match;
+        return str;
+    });
     result = result.replace(MD_MATH_BLOCK_REGEXP, (match) => {
         // Escape block math
         const str = getRandomUnicodeString();
@@ -238,12 +244,6 @@ export async function safeReplaceAsync(
         // Escape inline math
         const str = getRandomUnicodeString();
         hashmap[str] = match.replaceAll("$", "$$$$");
-        return str;
-    });
-    result = result.replace(/(```|~~~)(.*)\n(.|\n)*?\n\1/g, (match) => {
-        // Escape code
-        const str = getRandomUnicodeString();
-        hashmap[str] = match;
         return str;
     });
     result = await replaceAsync(result, regex, replaceArg);

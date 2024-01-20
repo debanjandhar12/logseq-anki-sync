@@ -508,43 +508,63 @@ describe("Markdown Input", () => {
         });
     });
     describe("Code Block rendering", () => {
+        test("Inline Code Block", async () => {
+            const htmlFile = await convertToHTMLFile("`function hello() { console.log('Hello World'); }`", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('code').text()).toContain('function hello() { console.log(\'Hello World\'); }');
+        });
         test("Basic Code Block", async () => {
             const htmlFile = await convertToHTMLFile("```\nfunction hello() {\n  console.log(`Hello World`);\n}\n```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
-            expect($('code').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
+            expect($('.hljs').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
+        });
+        test("Basic Code Block with ~~~ syntax", async () => {
+            const htmlFile = await convertToHTMLFile("~~~\nfunction hello() {\n  console.log(`Hello World`);\n}\n~~~", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.hljs').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
+        });
+        test("Two Basic Code Block - one after another", async () => {
+            const htmlFile = await convertToHTMLFile("Test:\n```\nfunction hello() {\n  console.log(`Hello World`);\n}\n```\n```\nfunction hello() {\n  console.log(`Hello World`);\n}\n```", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.hljs')).toHaveLength(2);
+            expect($('.hljs').first().text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
+            expect($('.hljs').last().text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
         });
         test("Code Block with spacing", async () => {
             const htmlFile = await convertToHTMLFile("   ```\nfunction hello() {\n  console.log(`Hello World`);\n}\n\t ```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
-            expect($('code').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
+            expect($('.hljs').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
         });
         test("Code Block with character first line", async () => {
-            const htmlFile = await convertToHTMLFile("a ```\nfunction hello() {\n  console.log(`Hello World`);\n}\n\t ```", "markdown");
+            const htmlFile = await convertToHTMLFile("randomchar ```\nfunction hello() {\n  console.log(`Hello World`);\n}\n\t ```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
-            expect($('code').length).toBe(0);
+            expect($('.hljs').length).toBe(0);
         });
         test("Everything after codeblock start line should be ignored", async () => {
             const htmlFile = await convertToHTMLFile("   ```js randomchar\nfunction hello() {\n  console.log(`Hello World`);\n}\n```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
-            expect($('code').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
+            expect($('.hljs').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
             expect(htmlFile.html).not.toContain('randomchar');
         });
         test("Everything after codeblock end line should be ignored", async () => {
             const htmlFile = await convertToHTMLFile("```\nfunction hello() {\n  console.log(`Hello World`);\n}\n``` randomchar\nOk", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
-            expect($('code').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
+            expect($('.hljs').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
             expect(htmlFile.html).not.toContain('randomchar');
         });
         test("Codeblock end line before should not have nonspace char before", async () => {
             const htmlFile = await convertToHTMLFile("   ```\nfunction hello() {\n  console.log(`Hello World`);\n}\nrandomchar\t ```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
-            expect($('code').length).toBe(0);
+            expect($('.hljs').length).toBe(0);
         });
     });
     describe("Block Math rendering", () => {
@@ -702,10 +722,55 @@ describe("Markdown Input", () => {
                 expect(htmlFile.html.trim()).toMatchSnapshot();
                 expect(htmlFile.html.trim()).toContain('\\(\\frac{1}{2}\\)');
        });
+        test("Two Inline Latex Rendering", async () => {
+            const htmlFile = await convertToHTMLFile("This is consecutive math: $\\frac{1}{2}$ $\\frac{3}{4}$", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            expect(htmlFile.html.trim()).toContain('\\(\\frac{1}{2}\\)');
+            expect(htmlFile.html.trim()).toContain('\\(\\frac{3}{4}\\)');
+        });
        test("Block Latex Rendering", async () => {
                   const htmlFile = await convertToHTMLFile("This is block latex: $$\\frac{1}{2}$$", "markdown");
                  expect(htmlFile.html.trim()).toMatchSnapshot();
                  expect(htmlFile.html.trim()).toContain('\\[\\frac{1}{2}\\]');
        });
     });
+    describe("Anki Clozes Cases", () => {
+        test("Math inside table with clozes", async () => {
+            const htmlFile = await convertToHTMLFile("| $\\frac{1}{ {{c2::2}} }$ | {{c1::$\\frac{1}{2}$}} |", "markdown", true);
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('table').text()).toContain('\\(\\frac{1}{ {{c2::2}} }\\)');
+            expect($('table').text()).toContain('\\(\\frac{1}{2}\\)');
+        });
+        test("Clozes inside code", async () => {
+            const htmlFile = await convertToHTMLFile("```\n{{c1 class}} Apple;\n```", "markdown", true);
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.hljs').text()).toContain('{{c1 class}}');
+            expect($('.hljs').text()).toContain('Apple');
+        });
+        test("Clozes on code block", async () => {
+            const htmlFile = await convertToHTMLFile("{{c1::```\nclass Apple;\n```}}", "markdown", true);
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect(htmlFile.html.trim()).toMatch(/{{c1::\n(.|\n)*?\n\s*<span>}}<\/span>/g);
+            expect($('.hljs').text()).toContain('class Apple;');
+        });
+    });
 });
+
+describe("Complex Markdown / Org Mode Rendering Cases", () => {
+    test("Math inside table", async () => {
+        const htmlFile = await convertToHTMLFile("| Hello | $\\frac{1}{2}$ |", "markdown");
+        expect(htmlFile.html.trim()).toMatchSnapshot();
+        const $ = cheerio.load(htmlFile.html);
+        expect($('table').text()).toContain('\\(\\frac{1}{2}\\)');
+    });
+    test("https://github.com/debanjandhar12/logseq-anki-sync/issues/248", async () => {
+        const htmlFile = await convertToHTMLFile('```mips\nlw $t0, 4($gp) # fetch N\nmult $t0, $t0, $t0 # N*N\nlw $t1, 4($gp) # fetch N\nori $t2, $zero, 3 # 3\nmult $t1, $t1, $t2 # 3*N\nadd $t2, $t0, $t1 # N*N + 3*N\nsw $t2, 0($gp)\n```', "markdown");
+        expect(htmlFile.html.trim()).toMatchSnapshot();
+        const $ = cheerio.load(htmlFile.html);
+        expect($('.hljs').text()).toContain('lw $t0, 4($gp)');
+    });
+});
+
