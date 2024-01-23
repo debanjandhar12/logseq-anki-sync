@@ -68,4 +68,4 @@ Loved the tool? Please consider donating 💸 to help continue development!<br/>
 
 #### Sponsors:
 
-[@Tubo](https://github.com/Tubo) [@ryanbl](https://github.com/rtblair) [@chs33](https://github.com/chs33) [@Koreanki](https://github.com/junyounglees) [@Rumpoled](https://github.com/Rumpoled) [@thiswillbeyourgithub](https://github.com/thiswillbeyourgithub) [@Speedy5onzales](https://github.com/Speedy5onzales)
+[@Tubo](https://github.com/Tubo) [@ryanbl](https://github.com/rtblair) [@kieranlal](https://github.com/kieranlal) [@chs33](https://github.com/chs33) [@Koreanki](https://github.com/junyounglees) [@Rumpoled](https://github.com/Rumpoled) [@Resia1](https://github.com/Resia1) [@thiswillbeyourgithub](https://github.com/thiswillbeyourgithub) [@Speedy5onzales](https://github.com/Speedy5onzales)
