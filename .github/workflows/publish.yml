@@ -35,6 +35,9 @@ jobs:
                   mv ${{ steps.package.outputs.package_name }}/${{ steps.package.outputs.package_name }}.zip ./
                   echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
 
+            - name: Run Test Suites
+              run: yarn test
+
             - name: Create Release
               uses: ncipollo/release-action@v1
               id: create_release
