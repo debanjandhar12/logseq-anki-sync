@@ -104,12 +104,13 @@ export class LogseqToAnkiSync {
             // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
             if (!note.properties["id"]) {
                 try {
-                    LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid);
+                    await LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid);
                 } catch (e) {
                     console.error(e);
                 }
             }
         }
+
         notes = await sortAsync(notes, async (a) => {
             return _.get(await LogseqProxy.Editor.getBlock(a.uuid), "id", 0); // Sort by db/id
         });
@@ -216,6 +217,15 @@ export class LogseqToAnkiSync {
         syncProgress.increment();
         await AnkiConnect.invoke("reloadCollection", {});
         window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
+
+        // Save logseq graph if any changes were made
+        if (toCreateNotes.some((note) => !note.properties["id"])) {
+            try {
+                await window.parent.logseq.api.force_save_graph();
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            } catch (e) {
+            }
+        }
 
         // -- Show Result / Summery --
         let summery = `Sync Completed! \n Created Blocks: ${
