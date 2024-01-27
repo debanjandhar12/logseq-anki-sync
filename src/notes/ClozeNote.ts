@@ -209,11 +209,13 @@ export class ClozeNote extends Note {
 
     public static async getNotesFromLogseqBlocks(): Promise<ClozeNote[]> {
         // Get blocks with Anki or Logseq cloze macro syntax
+        const clozeRegex = /{{(c\d*|cloze\d*) .*}}/;
+        const clozePattern = clozeRegex.source.replace(/\\/g, "\\\\");
         const macroCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
         [?b :block/content ?content]
-        [(re-pattern "{{(c[0-9]|cloze) .*}}") ?regex]
+        [(re-pattern "${clozePattern}") ?regex]
         [(re-find ?regex ?content)]
         ]`);
         // Get blocks with .replacecloze or replacecloze property
