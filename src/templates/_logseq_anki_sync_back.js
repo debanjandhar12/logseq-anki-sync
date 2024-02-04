@@ -3,6 +3,10 @@
  */
 
 const onLoadHandler = () => {
+    if (!document.getElementsByClassName("anki-card-back-side")[0]) {
+        console.log("Not front side of anki card")
+        return;
+    }
     if (type == "image_occlusion") {
         // Show the main content
         document.getElementById("main-content").style.visibility = "visible";

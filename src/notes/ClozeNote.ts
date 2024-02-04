@@ -40,8 +40,8 @@ export class ClozeNote extends Note {
                     background: unset !important;
                     text-decoration: underline 1px dashed var(--ls-primary-text-color) !important;
                     text-underline-position: under !important;
-                    }
-                    .anki-cloze:hover {
+                }
+                .anki-cloze:hover {
                     color: var(--ls-primary-text-color) !important;
                     background: unset !important;
                 }

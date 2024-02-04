@@ -35,12 +35,14 @@ function getTemplate() {
 export function getTemplateFront() {
     return `<script src="_logseq_anki_sync_front.js" type='text/javascript' async=false defer=false></script>
         ${getTemplate()}
+        <span style="display: none" class="anki-card-front-side"></span>
         <link rel="stylesheet" href="_logseq_anki_sync_front.css">`;
 }
 
 export function getTemplateBack() {
     return `<script src="_logseq_anki_sync_back.js" type='text/javascript' async=false defer=false></script>
         ${getTemplate()}
+        <span style="display: none" class="anki-card-back-side"></span>
         <link rel="stylesheet" href="_logseq_anki_sync_back.css">`;
 }
 

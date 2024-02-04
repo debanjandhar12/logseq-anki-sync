@@ -38,6 +38,11 @@ p {
     color: blue;
 }
 
+.cloze-inactive-hidden {
+    font-weight: bold;
+    /* coloring for this element is handled in _logseq_anki_sync_front.js */
+}
+
 .extra {
     background-color: antiquewhite;
     border-radius: 4px;
