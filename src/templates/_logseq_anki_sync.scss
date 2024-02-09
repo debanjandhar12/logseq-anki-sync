@@ -82,6 +82,7 @@ h5 {
     padding-top: 2px;
     list-style: none;
     padding-left: 1.4rem;
+    counter-reset: number;
 }
 
 .children {
@@ -99,6 +100,13 @@ h5 {
     left: -1.8rem;
     top: -1px;
     font-size: 1.8rem;
+}
+
+.children.numbered::before {
+    content: counter(number) ".";
+    counter-increment: number;
+    font-size: 1rem;
+    top: 2px;
 }
 
 .children:hover::before {

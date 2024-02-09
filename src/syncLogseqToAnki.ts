@@ -508,6 +508,7 @@ export class LogseqToAnkiSync {
                             ["hide-when-card-parent"],
                         )
                     ).includes("hide-when-card-parent"),
+                    properties: parent.properties,
                 });
                 parentID = parent.parent.id;
             }
@@ -518,9 +519,11 @@ export class LogseqToAnkiSync {
                 if (parentBlock.hideWhenCardParent)
                     parentBlockConverted.html = `<span class="hidden-when-card-parent">${parentBlockConverted.html}</span>`;
                 parentBlockConverted.assets.forEach((asset) => assets.add(asset));
-                newHtml += `<ul class="children-list"><li class="children">${parentBlockConverted.html}`;
+                newHtml += `<ul class="children-list"><li class="children ${_.get(parentBlock, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">
+                                ${parentBlockConverted.html}`;
             }
-            newHtml += `<ul class="children-list"><li class="children">${html}</li></ul>`;
+            newHtml += `<ul class="children-list"><li class="children ${_.get(note, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">
+                            ${html}</li></ul>`;
             parentBlocks.reverse().forEach((parentBlock) => {
                 newHtml += `</li></ul>`;
             });

@@ -367,7 +367,7 @@ async function processRefEmbeds(
                 if (level >= 100) return "";
                 let result = `\n<ul class="children-list">`;
                 for (const child of children) {
-                    result += `\n<li class="children">`;
+                    result += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">`;
                     // _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
                     const block_content =
                         escapeClozeAndSecoundBrace(_.get(child, "content")) || "";
@@ -414,7 +414,7 @@ async function processRefEmbeds(
                 if (level >= 100) return "";
                 let result = `\n<ul class="children-list">`;
                 for (const child of children) {
-                    result += `\n<li class="children">`;
+                    result += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">`;
                     const block_content =
                         escapeClozeAndSecoundBrace(_.get(child, "content")) || "";
                     const format = _.get(child, "format") || "markdown";
