@@ -32,6 +32,7 @@ function main(baseInfo: LSPluginBaseInfo) {
         {
             key: `logseq-anki-sync-command-palette-${baseInfo.id}`,
             label: `Start Logseq to Anki Sync`,
+            keybinding: {mode: "global", binding: ''}
         },
         syncLogseqToAnki,
     );
