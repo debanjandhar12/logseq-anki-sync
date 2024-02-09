@@ -74,7 +74,7 @@ const addBlockNode = async (blockUUID) => {
         else if (dependency.type === "FirstLineOfBlock")
             await addFirstLineOfBlockNode(dependency.value);
         else if (dependency.type === "Page") await addPageNode(dependency.value);
-        graph.addDependency(blockUUID + "Block", dependency.value + dependency.type);
+        graph.addDependency(blockUUID + "Block", dependency.value.toLowerCase() + dependency.type);
     }
     const toHash = [];
     graph.dependenciesOf(blockUUID + "Block").forEach((dependency) => {

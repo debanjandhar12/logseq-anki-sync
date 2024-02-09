@@ -44,7 +44,7 @@ export default async function getContentDirectDependencies(
     }
     // Add dependencies due to LOGSEQ_EMBDED_PAGE_REGEXP
     while ((match = LOGSEQ_EMBDED_PAGE_REGEXP.exec(content))) {
-        pageDependency.add(new PageEntityName(match[1]));
+        pageDependency.add(match[1]);
     }
     return [
         ...Array.from(firstLineOfBlockDependency).map(
@@ -62,9 +62,4 @@ export default async function getContentDirectDependencies(
         ),
     ];
 }
-
-export class PageEntityName {
-    constructor(public name: string) {
-        this.name = name;
-    }
-}
+type PageEntityName = string;
