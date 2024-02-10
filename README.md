@@ -58,6 +58,11 @@
 -   Developer Documentation: [Compiling Instructions](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Compiling-Instructions), [Structure of this Plugin](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Structure-of-this-Plugin)
     > Please create a [github issue](https://github.com/debanjandhar12/logseq-anki-sync/issues) for any feature request and reporting bugs.
 
+# 🎉 Vote for features
+Vote Features for next version: <a href="https://forms.gle/DCQ6vLwBHpzjSegQ9">https://forms.gle/DCQ6vLwBHpzjSegQ9</a>
+
+If your feature is not listed in the form, you can also create a github issue.
+
 # 🙏 Support
 
 Loved the tool? Please consider donating 💸 to help continue development!<br/>
@@ -68,4 +73,4 @@ Loved the tool? Please consider donating 💸 to help continue development!<br/>
 
 #### Sponsors:
 
-[@Tubo](https://github.com/Tubo) [@ryanbl](https://github.com/rtblair) [@kieranlal](https://github.com/kieranlal) [@chs33](https://github.com/chs33) [@Koreanki](https://github.com/junyounglees) [@Rumpoled](https://github.com/Rumpoled) [@Resia1](https://github.com/Resia1) [@thiswillbeyourgithub](https://github.com/thiswillbeyourgithub) [@Speedy5onzales](https://github.com/Speedy5onzales)
+[@Tubo](https://github.com/Tubo) [@ryanbl](https://github.com/rtblair) [@kieranlal](https://github.com/kieranlal) [@Satoriq](https://github.com/Satoriq) [@Dunrar](https://github.com/Dunrar) [@chs33](https://github.com/chs33) [@Koreanki](https://github.com/junyounglees) [@Rumpoled](https://github.com/Rumpoled) [@Resia1](https://github.com/Resia1) [@thiswillbeyourgithub](https://github.com/thiswillbeyourgithub) [@Speedy5onzales](https://github.com/Speedy5onzales)
