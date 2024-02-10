@@ -98,7 +98,7 @@ exports[`Markdown Input > Block Embed Rendering > Basic block embed rendering 1`
 "<span>Page Embed: <div class="embed-block">
                         
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>A <b>block</b> with no ref.
         <br>
 Some more content...</span>
@@ -116,13 +116,13 @@ exports[`Markdown Input > Block Embed Rendering > Nested block embed rendering 1
 "<span>Page Embed: <div class="embed-block">
                         
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>A block with page embed:
         <br>
 <div class="embed-block">
                         
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>A <b>block</b> with no ref.
         <br>
 Some more content...</span>
@@ -136,7 +136,7 @@ exports[`Markdown Input > Block Embed Rendering > block ref inside block embed r
 "<span>Page Embed: <div class="embed-block">
                         
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>A block with block ref:
         <br>
 <span onclick="window.open('logseq://graph/TestGraph?block-id=65a22d3c-954d-442b-8dca-4461fc209f84')" class="block-ref">
@@ -152,7 +152,7 @@ exports[`Markdown Input > Block Embed Rendering > formatting inside block embed 
 "<span>Page Embed: <div class="embed-block">
                         
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>Another block with no ref. <code>\`
 function() hi {}
 
@@ -163,14 +163,14 @@ function() hi {}
 </span>
     
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>nested child 1</span>
     
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>nested child 1.1</span>
     </li></ul></li>
-<li class="children">
+<li class="children ">
       <span>nested child 2</span>
     </li></ul></li></ul>
                         </div></span>"
@@ -299,13 +299,13 @@ exports[`Markdown Input > Page Embed Rendering > Basic page embed rendering 1`] 
                         <a href="logseq://graph/TestGraph?page=Ref%20Test" class="embed-header">Ref Test</a>
                         
 <ul class="children-list">
-<li class="children"></li>
-<li class="children">
+<li class="children "></li>
+<li class="children ">
       <span>A <b>block</b> with no ref.
         <br>
 Some more content...</span>
     </li>
-<li class="children">
+<li class="children ">
       <span>A block with block ref:
         <br>
 <span onclick="window.open('logseq://graph/TestGraph?block-id=65a22d3c-954d-442b-8dca-4461fc209f84')" class="block-ref">
@@ -314,20 +314,20 @@ Some more content...</span>
 </span>
     </span></span>
     </li>
-<li class="children">
+<li class="children ">
       <span>A block with page embed:
         <br>
 <div class="embed-block">
                         
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>A <b>block</b> with no ref.
         <br>
 Some more content...</span>
     </li></ul>
                         </div></span>
     </li>
-<li class="children">
+<li class="children ">
       <span>Another block with no ref. <code>\`
 function() hi {}
 
@@ -338,23 +338,23 @@ function() hi {}
 </span>
     
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>nested child 1</span>
     
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>nested child 1.1</span>
     </li></ul></li>
-<li class="children">
+<li class="children ">
       <span>nested child 2</span>
     </li></ul></li>
-<li class="children">
+<li class="children ">
       <span>Another block with page embed:
         <br>
 <div class="embed-block">
                         
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>Another block with no ref. <code>\`
 function() hi {}
 
@@ -365,14 +365,14 @@ function() hi {}
 </span>
     
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>nested child 1</span>
     
 <ul class="children-list">
-<li class="children">
+<li class="children ">
       <span>nested child 1.1</span>
     </li></ul></li>
-<li class="children">
+<li class="children ">
       <span>nested child 2</span>
     </li></ul></li></ul>
                         </div></span>
