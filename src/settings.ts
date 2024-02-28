@@ -79,7 +79,7 @@ export const addSettingsToLogseq = () => {
             default: false,
             title: "Render cloze macros in Logseq? (Recommended: Disabled) [Experimental] [In Development]",
             description:
-                "When enabled, markdown used inside ({{c1 Hello}}, {{c2 World}}, ...) clozes will be rendered. Takes effect only after restart.",
+                "When enabled, markdown used inside ({{c1 Hello}}, {{c2 World}}, ...) clozes will be rendered.",
         },
         {
             key: "hideClozeMarcosUntilHoverInLogseq",
@@ -87,7 +87,7 @@ export const addSettingsToLogseq = () => {
             default: false,
             title: "Hide cloze macros in Logseq? (Recommended: Disabled) [Experimental]",
             description:
-                "When enabled, ({{c1 Hello}}, {{c2 World}}, ...) clozes will be hidden by default and displayed only on hover. Takes effect only after restart.",
+                "When enabled, ({{c1 Hello}}, {{c2 World}}, ...) clozes will be hidden by default and displayed only on hover.",
         },
         {
             key: "advancedSettingsHeading",
@@ -146,6 +146,12 @@ export const addSettingsToLogseq = () => {
             for (const addon of newSettings.addons) {
                 AddonRegistry.get(addon).init();
             }
+        }
+        else if (!_.isEqual(newSettings.renderClozeMarcosInLogseq, oldSettings.renderClozeMarcosInLogseq)) {
+            window.parent.LSPluginCore.reload([logseq.baseInfo.id]);
+        }
+        else if (!_.isEqual(newSettings.hideClozeMarcosUntilHoverInLogseq, oldSettings.hideClozeMarcosUntilHoverInLogseq)) {
+            window.parent.LSPluginCore.reload([logseq.baseInfo.id]);
         }
     });
     const style = document.createElement("style");
