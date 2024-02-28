@@ -71,7 +71,7 @@ export const addSettingsToLogseq = () => {
             enumChoices: AddonRegistry.getAll().map((addon) => addon.getName()),
             enumPicker: "checkbox",
             description:
-                "Select the addons to use. Note: All addons activate / deactivate only after restart.",
+                "Select the addons to use.",
         },
         {
             key: "renderClozeMarcosInLogseq",
@@ -148,7 +148,8 @@ export const addSettingsToLogseq = () => {
             }
         }
     });
-    logseq.provideStyle(`
+    const style = document.createElement("style");
+    style.innerHTML = `
         [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner code {
             display: none;
         }
@@ -156,5 +157,7 @@ export const addSettingsToLogseq = () => {
         [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="donationHeading"].heading-item {
             border: none;
         }
-    `);
+    `;
+    window.parent.document.head.appendChild(style);
+    logseq.provideStyle(style.innerHTML);   // This is in case above appendChild doesn't work
 };
