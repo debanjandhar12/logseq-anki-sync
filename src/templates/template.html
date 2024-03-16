@@ -30,6 +30,17 @@
         `;
     document.body.appendChild(style);
 </script>
+<script async="false" defer="false">
+    document.addEventListener('keydown', function(event) {
+        if (event.keyCode === 74) {
+            scrollToClozeElement();
+        } else if (event.keyCode === 75) {
+            openBlockInLogseq('{{uuid}}');
+        } else if (event.keyCode === 76) {
+            window.scroll(0, 0);
+        }
+    })
+</script>
 <div style="display: flex; justify-content: space-between" role="menubar">
     <div class="bubble breadcrumb2">{{Breadcrumb}}</div>
     <div class="note-actions">
