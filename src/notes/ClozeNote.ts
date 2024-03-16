@@ -32,6 +32,12 @@ export class ClozeNote extends Note {
             ["editor/input", `replacecloze:: " '' "`, {"backward-pos": 3}],
             ["editor/clear-current-slash"],
         ]);
+        logseq.provideStyle(`
+            .page-reference[data-ref=type-in], a[data-ref=type-in] {
+                opacity: .3;
+            }
+        `);
+        LogseqProxy.Editor.createPageSilentlyIfNotExists("type-in");
         
         if (logseq.settings.hideClozeMarcosUntilHoverInLogseq) {
             logseq.provideStyle(`
