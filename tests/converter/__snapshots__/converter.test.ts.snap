@@ -90,7 +90,7 @@ exports[`Markdown Input > Basic Inline rendering > Page Ref Rendering 1`] = `"<s
 
 exports[`Markdown Input > Basic Inline rendering > Single line text rendering 1`] = `"<span>Hello World</span>"`;
 
-exports[`Markdown Input > Basic Inline rendering > Tag Rendering 1`] = `"<span>Hello <a class="tag" href="logseq://graph/TestGraph?page=World">World</a></span>"`;
+exports[`Markdown Input > Basic Inline rendering > Tag Rendering 1`] = `"<span>Hello <a class="tag" data-ref="World" href="logseq://graph/TestGraph?page=World">#World</a></span>"`;
 
 exports[`Markdown Input > Basic Inline rendering > logseq block highlight / coloring 1`] = `"<span class="block-highlight-red">Hello World.</span>"`;
 
@@ -158,7 +158,7 @@ function() hi {}
 
 </code>\`
         <br>
-<a class="tag" href="logseq://graph/TestGraph?page=test">test</a> <a href="logseq://graph/TestGraph?page=Test" class="page-reference">[Test]] [Testing</a>
+<a class="tag" data-ref="test" href="logseq://graph/TestGraph?page=test"></a> <a href="logseq://graph/TestGraph?page=Test" class="page-reference">[Test]] [Testing</a>
         <br>
 </span>
     
@@ -333,7 +333,7 @@ function() hi {}
 
 </code>\`
         <br>
-<a class="tag" href="logseq://graph/TestGraph?page=test">test</a> <a href="logseq://graph/TestGraph?page=Test" class="page-reference">[Test]] [Testing</a>
+<a class="tag" data-ref="test" href="logseq://graph/TestGraph?page=test"></a> <a href="logseq://graph/TestGraph?page=Test" class="page-reference">[Test]] [Testing</a>
         <br>
 </span>
     
@@ -360,7 +360,7 @@ function() hi {}
 
 </code>\`
         <br>
-<a class="tag" href="logseq://graph/TestGraph?page=test">test</a> <a href="logseq://graph/TestGraph?page=Test" class="page-reference">[Test]] [Testing</a>
+<a class="tag" data-ref="test" href="logseq://graph/TestGraph?page=test"></a> <a href="logseq://graph/TestGraph?page=Test" class="page-reference">[Test]] [Testing</a>
         <br>
 </span>
     

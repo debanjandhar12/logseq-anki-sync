@@ -75,7 +75,7 @@ export class ClozeNote extends Note {
                             "$1",
                         );
                         if (logseq.settings.renderClozeMarcosInLogseq)
-                            content = (await convertToHTMLFile(content, "markdown")).html;
+                            content = (await convertToHTMLFile(content, "markdown", {displayTags: true, processRefEmbeds: false})).html;
                         // if parent element has class macro
                         if (cloze.parentElement.classList.contains("macro"))
                             cloze.parentElement.style.display = "initial";

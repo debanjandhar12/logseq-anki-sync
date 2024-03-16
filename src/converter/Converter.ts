@@ -64,7 +64,7 @@ if (typeof window !== 'undefined') {
 export async function convertToHTMLFile(
     content: string,
     format = "markdown",
-    opts = {processRefEmbeds: true},
+    opts: { processRefEmbeds?: boolean; displayTags?: boolean } = { processRefEmbeds: true, displayTags: false }
 ): Promise<HTMLFile> {
     if (
         typeof window !== 'undefined' &&
@@ -73,6 +73,7 @@ export async function convertToHTMLFile(
                 content,
                 format,
                 processRefEmbeds: opts.processRefEmbeds,
+                displayTags: opts.displayTags
             })),
         )
     )
@@ -81,6 +82,7 @@ export async function convertToHTMLFile(
                 content,
                 format,
                 processRefEmbeds: opts.processRefEmbeds,
+                displayTags: opts.displayTags
             })),
         );
 
@@ -251,9 +253,9 @@ export async function convertToHTMLFile(
         // Add tags to resultTags and add logseq page link to the tag
         resultTags.add(tagName);
         $(elm).replaceWith(
-            `<a class="tag" href="logseq://graph/${encodeURIComponent(
+            `<a class="tag" data-ref="${tagName}" href="logseq://graph/${encodeURIComponent(
                 graphName,
-            )}?page=${encodeURIComponent(tagName)}">${tagName}</a>${afterText}`,
+            )}?page=${encodeURIComponent(tagName)}">${opts.displayTags ? `#${tagName}` : ''}</a>${afterText}`,
         );
     });
     $(".mathblock, .latex-environment").each(function (i, elm) {
@@ -295,6 +297,7 @@ export async function convertToHTMLFile(
             content,
             format,
             processRefEmbeds: opts.processRefEmbeds,
+            displayTags: opts.displayTags
         })),
         {html: resultContent, assets: resultAssets, tags: resultTags},
     );

@@ -12,7 +12,6 @@ const onLoadHandler = () => {
     }
     handleImageOcclusion();
     handleShowAllTestOneTagForClozesAndMultilineIncrementalCards();
-    handleTypeInTag();
 };
 
 function handleImageOcclusion() {
@@ -148,14 +147,6 @@ function handleShowAllTestOneTagForClozesAndMultilineIncrementalCards() {
         }
         hideElement(el);
     });
-}
-
-function handleTypeInTag() {
-    if (window.type === "image_occlusion") return;
-    if (document.getElementById('tags').getAttribute('tags_name').split(' ')
-        .includes('type-in')) {
-        document.getElementsByClassName('type-in')[0].style.display = "block";
-    }
 }
 
 if (document.readyState === "complete") {
