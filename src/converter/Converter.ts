@@ -636,7 +636,6 @@ async function processLink(
     format,
 ) {
     const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
-    console.log("link node", node);
     const link_type = _.get(node[0][1], "url[0]");
     const link_url = _.get(node[0][1], "url[1]");
     let metadata;

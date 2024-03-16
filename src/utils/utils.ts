@@ -167,7 +167,6 @@ export function splitNamespace(str: string) {
             parts[i] = parts[i].replace(randomStrings[j], matches[j]);
         }
     }
-    console.log(parts);
     return parts;
 }
 
