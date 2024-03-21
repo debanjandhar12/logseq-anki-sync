@@ -114,6 +114,13 @@ function handleImageOcclusion() {
             }
         });
     }
+    // Change the style of canvas
+    let canvases = Array.from(document.getElementsByTagName("canvas"));
+    for (let canvasEl of canvases) {
+        if (!canvasEl.classList.contains("lower-canvas")) continue;
+        canvasEl.style['user-select'] = 'inherit';
+        canvasEl.style['touch-action'] = 'inherit';
+    }
 }
 
 function handleShowAllTestOneTagForClozesAndMultilineIncrementalCards() {

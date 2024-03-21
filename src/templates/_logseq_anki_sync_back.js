@@ -19,6 +19,7 @@ function handleImageOcclusion() {
 
 if (document.readyState === "complete") {
     onLoadHandler();
+    window.addEventListener("load", onLoadHandler);
 } else {
     window.addEventListener("load", onLoadHandler);
 }
