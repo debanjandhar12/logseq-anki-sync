@@ -24,6 +24,21 @@ code {
     padding: 2px;
 }
 
+.typeGood {
+    background: #afa;
+    color: #000
+}
+
+.typeBad {
+    color: #000;
+    background: #faa
+}
+
+.typeMissed {
+    color: #000;
+    background: #ccc
+}
+
 p {
     margin: 0px;
     padding: 0px;
