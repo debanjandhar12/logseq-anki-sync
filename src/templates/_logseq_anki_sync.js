@@ -42,7 +42,7 @@ function handleTypeInTag() {
     if (window.type === "image_occlusion") return;
     if (document.getElementById('tags').getAttribute('tags_name').split(' ')
         .includes('type-in')) {
-        document.getElementsByClassName('type-in')[0].style.display = "block";
+        document.getElementsByClassName('type-in-container')[0].style.display = "block";
     }
 }
 

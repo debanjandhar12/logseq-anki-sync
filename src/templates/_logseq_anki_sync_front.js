@@ -12,6 +12,7 @@ const onLoadHandler = () => {
     }
     handleImageOcclusion();
     handleShowAllTestOneTagForClozesAndMultilineIncrementalCards();
+    handleTypeInTag();
 };
 
 function handleImageOcclusion() {
@@ -154,6 +155,15 @@ function handleShowAllTestOneTagForClozesAndMultilineIncrementalCards() {
         }
         hideElement(el);
     });
+}
+
+function handleTypeInTag() {
+    localStorage.setItem('logseq-prev-typeans', "");
+    let typeans = document.getElementById('typeans');
+    if (typeans == null) return;
+    typeans.onchange = function(e) {
+        localStorage.setItem('logseq-prev-typeans', e.target.value);
+    }
 }
 
 if (document.readyState === "complete") {

@@ -4,6 +4,7 @@
     var uuid_type = "";
     var type = "";
     var style, load_event;
+    var process = {'env': { 'NODE_DEBUG': false }}; // required for difflib to work correctly
 </script>
 <script async="false" defer="false">
     try {
@@ -51,7 +52,10 @@
 </div>
 <span id="main-content" role="region">
     <span class="text"> {{cloze:Text}} </span>
-    <span class="type-in center" style="display: none;"> <hr /> {{type:cloze:Text}} </span>
+    <span class="type-in-container center" style="display: none;">
+        <hr />
+        <input type="text" id="typeans" style="font-family: 'Arial'; font-size: 20px;">
+    </span>
     <div class="extra">{{Extra}}</div>
 </span>
 <div id="additionalData" class="hidden">
