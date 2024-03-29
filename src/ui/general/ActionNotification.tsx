@@ -4,6 +4,7 @@ import {LogseqButton} from "../basic/LogseqButton";
 import ReactDOM from "react-dom";
 import {waitForElement} from "../../utils/waitForElement";
 import {Notification} from "./Notification";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 
 export async function ActionNotification(
     btns: {name: string; func: Function}[],
@@ -46,6 +47,7 @@ export async function ActionNotification(
                 />,
                 main as HTMLElement,
             );
+            LogseqProxy.App.registerPluginUnloadListener(onClose);
         } catch (e) {
             logseq.UI.closeMsg(uniqueNotificationId);
             await logseq.UI.showMsg(msg, "success");

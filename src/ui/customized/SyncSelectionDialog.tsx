@@ -6,6 +6,7 @@ import ReactDOM from "react-dom";
 import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 
 export async function SyncSelectionDialog(
     toCreateNotes: Array<any>,
@@ -43,6 +44,7 @@ export async function SyncSelectionDialog(
                 />,
                 div,
             );
+            LogseqProxy.App.registerPluginUnloadListener(onClose);
         } catch (e) {
             logseq.App.showMsg("Error", "Failed to open modal");
             console.log(e);

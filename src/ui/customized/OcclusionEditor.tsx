@@ -16,6 +16,7 @@ import {LogseqButton} from "../basic/LogseqButton";
 import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
 import {LogseqCheckbox} from "../basic/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 
 if (!window.parent.fabric) {
     const fabricScript = window.parent.document.createElement("script");
@@ -70,6 +71,7 @@ export async function OcclusionEditor(
                 />,
                 div,
             );
+            LogseqProxy.App.registerPluginUnloadListener(onClose);
         } catch (e) {
             logseq.App.showMsg("Error", "Failed to open modal");
             console.log(e);

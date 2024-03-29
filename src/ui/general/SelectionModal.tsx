@@ -2,6 +2,7 @@ import {Modal} from "./Modal";
 import React from "react";
 import {LogseqButton} from "../basic/LogseqButton";
 import ReactDOM from "react-dom";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 
 export async function SelectionModal(
     arr: {name: string; icon?: string}[],
@@ -31,6 +32,7 @@ export async function SelectionModal(
                 />,
                 div,
             );
+            LogseqProxy.App.registerPluginUnloadListener(onClose);
         } catch (e) {
             logseq.App.showMsg("Error", "Failed to open modal");
             console.log(e);

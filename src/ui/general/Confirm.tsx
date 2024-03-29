@@ -2,6 +2,7 @@ import ReactDOM from "react-dom";
 import React from "react";
 import {Modal} from "./Modal";
 import {LogseqButton} from "../basic/LogseqButton";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 
 export async function Confirm(msg: string): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
@@ -25,6 +26,7 @@ export async function Confirm(msg: string): Promise<boolean> {
                 />,
                 div,
             );
+            LogseqProxy.App.registerPluginUnloadListener(onClose);
         } catch (e) {
             logseq.App.showMsg("Error", "Failed to open modal");
             console.log(e);

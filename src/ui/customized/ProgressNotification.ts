@@ -1,4 +1,5 @@
 import {ANKI_ICON, GRAPH_ICON} from "../../constants";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 
 export class ProgressNotification {
     max: number;
@@ -33,6 +34,12 @@ export class ProgressNotification {
           background-color: var(--ls-link-text-color,#045591);
         }
         `);
+        LogseqProxy.App.registerPluginUnloadListener(() => {
+            logseq.provideUI({
+                key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`,
+                template: ``,
+            });
+        });
     }
 
     increment(amount = 1) {

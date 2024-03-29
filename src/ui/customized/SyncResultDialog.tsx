@@ -7,6 +7,7 @@ import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
 import {CreateLineDisplay, UpdateLineDisplay} from "./SyncSelectionDialog";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 
 export async function SyncResultDialog(
     createdNotes: Array<any>,
@@ -54,6 +55,7 @@ export async function SyncResultDialog(
                 />,
                 div,
             );
+            LogseqProxy.App.registerPluginUnloadListener(onClose);
         } catch (e) {
             logseq.App.showMsg("Error", "Failed to open modal");
             console.log(e);
