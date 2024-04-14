@@ -1,12 +1,12 @@
 import {Note} from "./Note";
 import "@logseq/libs";
 import _ from "lodash";
-import {convertToHTMLFile, HTMLFile} from "../converter/Converter";
+import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHtmlConverter";
 import {escapeClozeAndSecoundBrace, safeReplace} from "../utils/utils";
 import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
-import {DependencyEntity} from "../converter/getContentDirectDependencies";
+import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {NoteUtils} from "./NoteUtils";
 

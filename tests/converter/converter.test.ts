@@ -403,7 +403,7 @@ vi.mock('../../src/logseq/LogseqProxy', () => ({
 global.logseq = {
     // @ts-ignore
     settings: {
-        debug: []   // Add Converter.ts in array to enable debug logs
+        debug: []   // Add LogseqToHtmlConverter.ts in array to enable debug logs
     },
     // @ts-ignore
     App: {
@@ -415,7 +415,7 @@ global.logseq = {
     }
 };
 
-import {convertToHTMLFile} from '../../src/converter/Converter';
+import {convertToHTMLFile} from '../../src/logseq/LogseqToHtmlConverter';
 
 describe("Markdown Input", () => {
     describe("Basic Inline rendering", () => {

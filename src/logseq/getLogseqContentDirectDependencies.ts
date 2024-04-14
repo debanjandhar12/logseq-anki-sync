@@ -4,12 +4,12 @@ import {
     LOGSEQ_EMBDED_PAGE_REGEXP,
     LOGSEQ_EMBDED_BLOCK_REGEXP,
 } from "../constants";
-import {LogseqProxy} from "../logseq/LogseqProxy";
+import {LogseqProxy} from "./LogseqProxy";
 export type DependencyEntity = {
     type: "FirstLineOfBlock" | "Block" | "Page";
     value: BlockUUID | PageEntityName;
 };
-export default async function getContentDirectDependencies(
+export default async function getLogseqContentDirectDependencies(
     content: string,
     format = "markdown",
 ): Promise<DependencyEntity[]> {

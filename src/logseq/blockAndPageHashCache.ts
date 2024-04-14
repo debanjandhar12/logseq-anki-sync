@@ -6,7 +6,7 @@
 import {DepGraph} from "dependency-graph";
 import {LogseqProxy} from "./LogseqProxy";
 import getUUIDFromBlock from "./getUUIDFromBlock";
-import getContentDirectDependencies from "../converter/getContentDirectDependencies";
+import getLogseqContentDirectDependencies from "./getLogseqContentDirectDependencies";
 import hashSum from "hash-sum";
 import _ from "lodash";
 import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
@@ -65,7 +65,7 @@ const addBlockNode = async (blockUUID) => {
     graph.addNode(blockUUID + "Block");
     const block = await LogseqProxy.Editor.getBlock(blockUUID);
     const blockPage = await LogseqProxy.Editor.getPage(_.get(block, "page.id", ""));
-    const directDependencies = await getContentDirectDependencies(
+    const directDependencies = await getLogseqContentDirectDependencies(
         _.get(block, "content", ""),
         _.get(block, "format", ""),
     );
@@ -102,7 +102,7 @@ const addFirstLineOfBlockNode = async (blockUUID) => {
             .replaceAll(MD_PROPERTIES_REGEXP, "")
             .replaceAll(ORG_PROPERTIES_REGEXP, ""),
     );
-    const directDependencies = await getContentDirectDependencies(
+    const directDependencies = await getLogseqContentDirectDependencies(
         blockContentFirstLine,
         _.get(block, "format", ""),
     );
@@ -174,7 +174,6 @@ export const init = () => {
         if (!newSettings.cacheLogseqAPIv1) clearGraph();
     });
     LogseqProxy.App.registerGraphChangeListener((e) => {
-        console.log("Working");
         clearGraph();
     });
     LogseqProxy.App.registerGraphIndexedListener((e) => {

@@ -9,7 +9,7 @@ import {
 import _ from "lodash";
 import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
-import {HTMLFile, convertToHTMLFile} from "../converter/Converter";
+import {HTMLFile, convertToHTMLFile} from "../logseq/LogseqToHtmlConverter";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 export class ClozeNote extends Note {

@@ -18,7 +18,7 @@ import {
 } from "./utils/utils";
 import path from "path-browserify";
 import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} from "./constants";
-import {convertToHTMLFile} from "./converter/Converter";
+import {convertToHTMLFile} from "./logseq/LogseqToHtmlConverter";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import pkg from "../package.json";
 import {SwiftArrowNote} from "./notes/SwiftArrowNote";

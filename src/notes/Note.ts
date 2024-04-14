@@ -1,7 +1,7 @@
 import "@logseq/libs";
 import {LazyAnkiNoteManager} from "../anki-connect/LazyAnkiNoteManager";
-import {HTMLFile} from "../converter/Converter";
-import {DependencyEntity} from "../converter/getContentDirectDependencies";
+import {HTMLFile} from "../logseq/LogseqToHtmlConverter";
+import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import _ from "lodash";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {NoteUtils} from "./NoteUtils";

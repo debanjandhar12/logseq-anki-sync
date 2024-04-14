@@ -387,6 +387,11 @@ export namespace LogseqProxy {
         static registerGraphIndexedListener(listener: (e) => void): void {
             this.registeredGraphIndexedListeners.push(listener);
         }
+
+        static registerPluginUnloadListeners = [];
+        static registerPluginUnloadListener(listener: () => void): void {
+            this.registerPluginUnloadListeners.push(listener);
+        }
     }
     export class Cache {
         static clear(): void {
@@ -416,6 +421,11 @@ export namespace LogseqProxy {
         logseq.App.onCurrentGraphIndexed((e) => {
             for (const listener of LogseqProxy.App.registeredGraphIndexedListeners) {
                 listener(e);
+            }
+        });
+        logseq.beforeunload(async () => {
+            for (const listener of LogseqProxy.App.registerPluginUnloadListeners) {
+                listener();
             }
         });
         LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {

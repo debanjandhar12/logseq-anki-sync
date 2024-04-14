@@ -11,7 +11,7 @@ import hashSum from "hash-sum";
 import pkg from "../../package.json";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
-import {DependencyEntity} from "../converter/getContentDirectDependencies";
+import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import {
     getBlockHash,
     getFirstLineOfBlockHash,

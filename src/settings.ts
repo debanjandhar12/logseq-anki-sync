@@ -129,7 +129,7 @@ export const addSettingsToLogseq = () => {
             enumChoices: [
                 "syncLogseqToAnki.ts",
                 "LogseqProxy.ts",
-                "Converter.ts",
+                "LogseqToHtmlConverter.ts",
                 "LazyAnkiNoteManager.ts",
             ],
             enumPicker: "checkbox",
