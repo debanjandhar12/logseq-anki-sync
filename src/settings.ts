@@ -66,7 +66,7 @@ export const addSettingsToLogseq = () => {
         {
             key: "addons",
             type: "enum",
-            default: ["Preview Cards in Anki"],
+            default: ["Preview Cards in Anki Context Menu"],
             title: "Addons:",
             enumChoices: AddonRegistry.getAll().map((addon) => addon.getName()),
             enumPicker: "checkbox",

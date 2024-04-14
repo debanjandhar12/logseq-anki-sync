@@ -8,7 +8,7 @@ export class PreviewInAnkiContextMenu extends Addon {
     static _instance: PreviewInAnkiContextMenu;
 
     public getName(): string {
-        return "Preview Cards in Anki";
+        return "Preview Cards in Anki Context Menu";
     }
 
     public init(): void {

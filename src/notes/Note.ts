@@ -65,9 +65,13 @@ export abstract class Note {
             .page-reference[data-ref=no-anki-sync], a[data-ref=no-anki-sync] {
                 opacity: .3;
             }
+            .anki_only {
+                display: none;
+            }
         `);
         LogseqProxy.Editor.createPageSilentlyIfNotExists("no-anki-sync");
         LogseqProxy.Editor.createPageSilentlyIfNotExists("hide-when-card-parent"); // TODO: relocate this
+        // TODO: Add EXTRA, ANKI_ONLY here
     };
 
     public static async removeUnwantedNotes(notes: Note[]): Promise<Note[]> {
