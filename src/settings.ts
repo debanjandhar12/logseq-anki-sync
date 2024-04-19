@@ -14,8 +14,8 @@ export const addSettingsToLogseq = () => {
             default: null,
         },
         {
-            key: "generalSettingsHeading",
-            title: "🐱 General Settings",
+            key: "ankiDisplaySettingsHeading",
+            title: "📇 Anki Display & Deck",
             description: "",
             type: "heading",
             default: null,
@@ -56,21 +56,11 @@ export const addSettingsToLogseq = () => {
             default: "Default",
         },
         {
-            key: "othersHeading",
-            title: "😼 Other Settings",
+            key: "logseqSideSettingsHeading",
+            title: "🐾 Logseq Menu & Display",
             description: "",
             type: "heading",
             default: null,
-        },
-        {
-            key: "addons",
-            type: "enum",
-            default: ["Preview Cards in Anki Context Menu"],
-            title: "Addons:",
-            enumChoices: AddonRegistry.getAll().map((addon) => addon.getName()),
-            enumPicker: "checkbox",
-            description:
-                "Select the addons to use.",
         },
         {
             key: "renderClozeMarcosInLogseq",
@@ -89,8 +79,18 @@ export const addSettingsToLogseq = () => {
                 "When enabled, ({{c1 Hello}}, {{c2 World}}, ...) clozes will be hidden by default and displayed only on hover.",
         },
         {
+            key: "addons",
+            type: "enum",
+            default: ["Preview Cards in Anki Context Menu"],
+            title: "Addons:",
+            enumChoices: AddonRegistry.getAll().map((addon) => addon.getName()),
+            enumPicker: "checkbox",
+            description:
+                "Select the addons to use. They add additional features to the plugin."
+        },
+        {
             key: "advancedSettingsHeading",
-            title: "🐯 Advanced Settings",
+            title: "🎓 Advanced Settings",
             description: "",
             type: "heading",
             default: null,
@@ -118,7 +118,7 @@ export const addSettingsToLogseq = () => {
             default: true,
             title: "Enable caching Logseq API for improved syncing speed? (Recommended: Enabled) [Experimental]",
             description:
-                "Enable active cache for Logseq API. When enabled, the Logseq API and hashes of blocks will be cached and actively maintained in memory.  <br/> NB: It is recommended to disable this option if notes are not getting updated properly.",
+                "Enable active cache for Logseq API. When enabled, syncing will be faster but the plugin may use more memory.  <br/> <sub>NB: It is recommended to disable this option if notes are not getting updated properly.</sub>",
         },
         {
             key: "debug",
