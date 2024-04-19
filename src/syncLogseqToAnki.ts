@@ -33,6 +33,7 @@ import {ActionNotification} from "./ui/general/ActionNotification";
 import {showModelWithButtons} from "./ui/general/ModelWithBtns";
 import {SyncSelectionDialog} from "./ui/customized/SyncSelectionDialog";
 import {SyncResultDialog} from "./ui/customized/SyncResultDialog";
+import {BlockEntity, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
     graphName: string;
@@ -530,6 +531,36 @@ export class LogseqToAnkiSync {
             html = newHtml;
         }
 
+        // Parse useNamespaceAsDefaultDeck value (based on https://github.com/debanjandhar12/logseq-anki-sync/pull/143)
+        let useNamespaceAsDefaultDeck = logseq.settings.useNamespaceAsDefaultDeck;
+        if (_.get(note, "page.properties.useNamespaceAsDefaultDeck") == "false") {
+            useNamespaceAsDefaultDeck = false;
+        }
+        else if (_.get(note, "page.properties.useNamespaceAsDefaultDeck")) {
+            useNamespaceAsDefaultDeck = true;
+        }
+        try {
+            let parentNamespaceID : number = _.get(note, "page.namespace.id");
+            let parentNamespacePage : PageEntity | null;
+            while (true) {
+                parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
+                if(!parentNamespacePage) break;
+                if (_.get(parentNamespacePage, "properties.useNamespaceAsDefaultDeck")) {
+                    if (_.get(parentNamespacePage, "properties.useNamespaceAsDefaultDeck") == "false") {
+                        useNamespaceAsDefaultDeck = false;
+                    }
+                    else if (_.get(parentNamespacePage, "properties.useNamespaceAsDefaultDeck")) {
+                        useNamespaceAsDefaultDeck = true;
+                    }
+                    break;
+                }
+                if (_.get(parentNamespacePage, "namespace.id") == null) break;
+                parentNamespaceID = parentNamespacePage.namespace.id;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
         // Parse deck using logic described at https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F
         let deck: any = false;
         try {
@@ -546,39 +577,30 @@ export class LogseqToAnkiSync {
             console.error(e);
         }
         deck = deck || _.get(note, "page.properties.deck");
-        const shouldParseDeckFromNamespace = async () => {
-            if (
-                _.get(note, "page.namespace.id") == null &&
-                (
+        if (!deck && _.get(note, "page.namespace.id") != null) {
+            if(useNamespaceAsDefaultDeck == true) { // https://github.com/debanjandhar12/logseq-anki-sync/pull/143
+                deck = splitNamespace(
                     _.get(note, "page.originalName", "") ||
-                    _.get(note, "page.properties.title", "")
-                ).includes("/") == false
-            )
-                return false;
-            if (logseq.settings.deckFromLogseqNamespace) return true;
-
-            // Logic based on discussion at https://github.com/debanjandhar12/logseq-anki-sync/pull/143
-            const rootPageName = splitNamespace(
-                _.get(note, "page.originalName", "") ||
                     _.get(note, "page.properties.title", ""),
-            )[0];
-            if (
-                _.get(await LogseqProxy.Editor.getPage(rootPageName), "properties.parsens") ==
-                true
-            )
-                return true;
-            return false;
-        };
-        deck =
-            deck ||
-            ((await shouldParseDeckFromNamespace())
-                ? splitNamespace(
-                      _.get(note, "page.originalName", "") ||
-                          _.get(note, "page.properties.title", ""),
-                  )
-                      .slice(0, -1)
-                      .join("/")
-                : false);
+                ).slice(0, -1).join("/");
+            }
+            try {
+                let parentNamespaceID : number = _.get(note, "page.namespace.id");
+                let parentNamespacePage : PageEntity | null;
+                while (true) {
+                    parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
+                    if(!parentNamespacePage) break;
+                    if (_.get(parentNamespacePage, "properties.deck") != null) {
+                        deck = _.get(parentNamespacePage, "properties.deck");
+                        break;
+                    }
+                    if (_.get(parentNamespacePage, "namespace.id") == null) break;
+                    parentNamespaceID = parentNamespacePage.namespace.id;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
         deck = deck || logseq.settings.defaultDeck || "Default";
         if (typeof deck != "string") deck = deck[0];
         deck = splitNamespace(deck).join("::");
@@ -599,15 +621,15 @@ export class LogseqToAnkiSync {
             try {
                 const parentBlocks = [];
                 let parentID = (await LogseqProxy.Editor.getBlock(note.uuid)).parent.id;
-                let parent;
-                while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
+                let parentBlock : BlockEntity;
+                while ((parentBlock = await LogseqProxy.Editor.getBlock(parentID)) != null) {
                     parentBlocks.push({
-                        content: parent.content
+                        content: parentBlock.content
                             .replaceAll(MD_PROPERTIES_REGEXP, "")
                             .replaceAll(ANKI_CLOZE_REGEXP, "$3"),
-                        uuid: parent.uuid,
+                        uuid: parentBlock.uuid,
                     });
-                    parentID = parent.parent.id;
+                    parentID = parentBlock.parent.id;
                 }
                 while (parentBlocks.length > 0) {
                     const parentBlock = parentBlocks.pop();
@@ -630,11 +652,24 @@ export class LogseqToAnkiSync {
             ...getCaseInsensitive(note, "page.properties.tags", []),
         ];
         try {
-            let parentID = note.uuid;
-            let parent;
-            while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
-                tags = [...tags, ...getCaseInsensitive(parent, "properties.tags", [])];
-                parentID = parent.parent.id;
+            let parentID : number | string = note.uuid;
+            let parentBlock : BlockEntity | null;
+            while ((parentBlock = await LogseqProxy.Editor.getBlock(parentID)) != null) {
+                tags = [...tags, ...getCaseInsensitive(parentBlock, "properties.tags", [])];
+                parentID = parentBlock.parent.id;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        try {
+            let parentNamespaceID : number = _.get(note, "page.namespace.id");
+            let parentNamespacePage : PageEntity | null;
+            while (true) {
+                parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
+                if(!parentNamespacePage) break;
+                tags = [...tags, ...getCaseInsensitive(parentNamespacePage, "properties.tags", [])];
+                if (_.get(parentNamespacePage, "namespace.id") == null) break;
+                parentNamespaceID = parentNamespacePage.namespace.id;
             }
         } catch (e) {
             console.error(e);

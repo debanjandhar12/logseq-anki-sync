@@ -41,20 +41,19 @@ export const addSettingsToLogseq = () => {
             description: "When enabled, the parent blocks content will be shown in the card.",
         },
         {
+            key: "useNamespaceAsDefaultDeck",
+            type: "boolean",
+            default: true,
+            title: "Use namespace as default deck if possible? (Recommended: Enabled)",
+            description: "When enabled, the namespace of the page will be set as deck when no deck property is specified.<br/><sub>For example, if a note is in page 'Japanese/Verbs', the deck will be set as 'Japanese'.</sub>",
+        },
+        {
             key: "defaultDeck",
             type: "string",
             title: "Default Deck:",
             description:
-                "The default deck to use for cards when page is not inside a namespace and no page or block deck property is specified.",
+                "The default deck to use for cards when no deck property is specified.<br/> If <code>useNamespaceAsDefaultDeck</code> is enabled, this will be used as the default deck only when page is not in any namespace.",
             default: "Default",
-        },
-        {
-            key: "deckFromLogseqNamespace",
-            type: "boolean",
-            default: true,
-            title: "Auto create anki deck from logseq namespace? (Recommended: Enabled)",
-            description:
-                'When enabled, namespaces from logseq will be used to create decks in anki.  <br/> For example, if the page is in namespace "Math/Algebra", the card will be placed inside "Math" deck.',
         },
         {
             key: "othersHeading",
@@ -156,7 +155,7 @@ export const addSettingsToLogseq = () => {
     });
     const style = document.createElement("style");
     style.innerHTML = `
-        [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner code {
+        [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner h2 code {
             display: none;
         }
         

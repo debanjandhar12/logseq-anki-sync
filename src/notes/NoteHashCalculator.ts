@@ -56,15 +56,17 @@ export default class NoteHashCalculator {
             deck: encodeURIComponent(_.get(note, "page.properties.deck", "")),
         });
         if (_.get(note, "page.namespace.id") != null) {
-            // Include properties of root namespace, fixes https://github.com/debanjandhar12/logseq-anki-sync/pull/143#issuecomment-1403965977
-            const rootPageName = _.get(note, "page.name").split("/")[0];
-            toHash.push({
-                rootPageProps: _.get(
-                    await LogseqProxy.Editor.getPage(rootPageName),
-                    "properties",
-                    {},
-                ),
-            });
+            // Include properties of parent namespaces
+            const pageParts = _.get(note, "page.name").split("/");
+            for (let i = 1; i < pageParts.length; i++) {
+                const namespace = pageParts.slice(0, i).join("/");
+                toHash.push({
+                    namespaceProperties: _.pick(
+                        _.get(await LogseqProxy.Editor.getPage(namespace), "properties", {}),
+                        ["deck", "tags", "useNamespaceAsDefaultDeck"]
+                    )
+                });
+            }
         }
         toHash.push(
             _.omit(logseq.settings, [
@@ -75,7 +77,7 @@ export default class NoteHashCalculator {
                 "debug",
             ]),
         );
-        toHash.push({v: pkg.version});
+        toHash.push({pluginVersion: pkg.version, logseqVersion: window.parent["logseq.sdk.core.version"] || ""});
 
         // Add additional things from ankiFields to toHash
         let [html, assets, deck, breadcrumb, tags, extra] = ankiFields;

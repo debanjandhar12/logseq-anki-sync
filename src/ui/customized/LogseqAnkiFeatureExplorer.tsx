@@ -45,6 +45,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
     const [open, setOpen] = useState(true);
     const [blockContent, setBlockContent] = useState("");
     const [pageTree, setPageTree] = useState([]);
+    const [namespaceTree, setNamespaceTree] = useState([]);
     useEffect(() => {
         (async function () {
             const block = await logseq.Editor.getBlock(editingBlockUUID);
@@ -76,6 +77,23 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
             setParentBlocksWithAnkiTags(parentBlockWithAnkiTags);
         })();
     }, [pageTree]);
+
+    const [hackyForceRender, setHackyForceRender] = useState(false);
+    useEffect(() => {
+        (async function () {
+            const block = await logseq.Editor.getBlock(editingBlockUUID);
+            const page = await logseq.Editor.getPage(block.page.id);
+            const parentNamespaces = page.name.split("/");
+            let namespaceTree = [];
+            for (let i = 1; i < parentNamespaces.length; i++) {
+                const namespace = parentNamespaces.slice(0, i).join("/");
+                const namespacePage = await logseq.Editor.getPage(namespace);
+                const namespacePageTree = await logseq.Editor.getPageBlocksTree(namespacePage.name);
+                namespaceTree.push({...namespacePage, blocks: namespacePageTree});
+            }
+            setNamespaceTree(namespaceTree);
+        })();
+    }, [blockContent, hackyForceRender]);
 
     // Other useful info for rendering feature list
     const [isEditingBlockMultiline, setIsEditingBlockMultiline] = useState(false);
@@ -137,6 +155,35 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                 </header>
                 <div
                     style={{maxHeight: "71vh", padding: '4px', overflowY: "auto", overflowX: "hidden"}}>
+                    {namespaceTree.map((namespace) =>
+                        <BlockFeatureContainer title={`Namespace Properties ("${namespace.name}")`} uuid={namespace.blocks[0].uuid}>
+                            <FeatureGrid>
+                                <PropFeature
+                                    blockContent={namespace.blocks[0].content}
+                                    setBlockContent={async () => {
+                                        setHackyForceRender(!hackyForceRender);
+                                    }}
+                                    editingBlockUUID={namespace.blocks[0].uuid}
+                                    propName={"deck"}
+                                    helpMsg={
+                                        "This property sets the anki deck of all notes from this namespace."
+                                    }
+                                />
+                                <PropFeature
+                                    blockContent={namespace.blocks[0].content}
+                                    setBlockContent={async () => {
+                                        setHackyForceRender(!hackyForceRender);
+                                    }}
+                                    editingBlockUUID={namespace.blocks[0].uuid}
+                                    propName={"tags"}
+                                    placeHolderValue={"tag1, [[tag2]], tag3"}
+                                    helpMsg={
+                                        "This property sets the anki tags of all notes from this namespace."
+                                    }
+                                />
+                            </FeatureGrid>
+                        </BlockFeatureContainer>
+                    )}
                     {pageTree[0] && (
                         <BlockFeatureContainer
                             uuid={getUUIDFromBlock(pageTree[0])}
@@ -200,7 +247,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                         editingBlockUUID={block.uuid}
                                         propName={"deck"}
                                         helpMsg={
-                                            "This property sets the anki deck of all children notes. This overrides the page property / other parent block property."
+                                            "This property sets the anki deck of all children notes. This overrides the namespace property / page property / other parent block property."
                                         }
                                     />
                                     <PropFeature
@@ -265,7 +312,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     editingBlockUUID={editingBlockUUID}
                                     propName={"deck"}
                                     helpMsg={
-                                        "This property sets the anki deck of block notes. If parent block / page property has this defined, it will be overridden."
+                                        "This property sets the anki deck of block notes. If parent block / namespace property / page property has this defined, it will be overridden."
                                     }
                                 />
                                 <PropFeature
@@ -275,7 +322,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     propName={"tags"}
                                     placeHolderValue={"tag1, [[tag2]], tag3"}
                                     helpMsg={
-                                        "This property sets the anki tags of block notes. If parent block / page property has this defined, the tag list will be merged."
+                                        "This property sets the anki tags of block notes. If parent block / namespace property / page property has this defined, the tag list will be merged."
                                     }
                                 />
                                 <TagFeature
