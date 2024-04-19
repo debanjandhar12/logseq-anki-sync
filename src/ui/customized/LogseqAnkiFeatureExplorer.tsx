@@ -69,12 +69,13 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
             let parentBlock = await logseq.Editor.getBlock(block.parent.id);
             let parentBlockWithAnkiTags = [];
             while (parentBlock) {
-                if (parentBlock.properties["tags"] || parentBlock.properties["deck"]) {
+                if ((parentBlock.properties && (parentBlock.properties["tags"] || parentBlock.properties["deck"])) ||
+                parentBlock.content.includes('hide-when-card-parent')) {
                     parentBlockWithAnkiTags.push(parentBlock);
                 }
                 parentBlock = await logseq.Editor.getBlock(parentBlock.parent.id);
             }
-            setParentBlocksWithAnkiTags(parentBlockWithAnkiTags);
+            setParentBlocksWithAnkiTags(parentBlockWithAnkiTags.reverse());
         })();
     }, [pageTree]);
 
@@ -122,6 +123,22 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
         })();
     }, [blockContent]);
 
+    const onKeydown = React.useCallback((e: KeyboardEvent) => {
+            if (!open) return;
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                setOpen(false);
+            }
+    }, []);
+    React.useEffect(() => {
+        if (open) window.parent.document.addEventListener("keydown", onKeydown);
+        else onClose();
+        return () => {
+            window.parent.document.removeEventListener("keydown", onKeydown);
+        };
+    }, [open]);
+
     return (
         <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false}>
             <div className="settings-modal of-plugins pb-2">
@@ -156,7 +173,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                 <div
                     style={{maxHeight: "71vh", padding: '4px', overflowY: "auto", overflowX: "hidden"}}>
                     {namespaceTree.map((namespace) =>
-                        <BlockFeatureContainer title={`Namespace Properties ("${namespace.name}")`} uuid={namespace.blocks[0].uuid}>
+                        <BlockFeatureContainer key={namespace.name} title={`Namespace Properties ("${namespace.name}")`} uuid={namespace.blocks[0].uuid}>
                             <FeatureGrid>
                                 <PropFeature
                                     blockContent={namespace.blocks[0].content}
@@ -166,7 +183,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     editingBlockUUID={namespace.blocks[0].uuid}
                                     propName={"deck"}
                                     helpMsg={
-                                        "This property sets the anki deck of all notes from this namespace."
+                                        "This property sets the default deck of all notes from this namespace."
                                     }
                                 />
                                 <PropFeature
@@ -182,6 +199,27 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     }
                                 />
                             </FeatureGrid>
+                            <ExpandableFeatureGrid>
+                                <PropFeature
+                                    propName={"useNamespaceAsDefaultDeck"}
+                                    blockContent={namespace.blocks[0].content}
+                                    setBlockContent={async () => {
+                                        setHackyForceRender(!hackyForceRender);
+                                    }}
+                                    editingBlockUUID={namespace.blocks[0].uuid}
+                                    selectOptions={["true", "false"]}
+                                    isEnabledFn={async () => {
+                                        const block = await logseq.Editor.getBlock(editingBlockUUID);
+                                        const page = await logseq.Editor.getPage(block.page.id);
+                                        if(!page.namespace || !page.namespace.id) return {isEnabled: false, helpMsg: "This property only works in namespace pages."};
+
+                                        return {isEnabled: true};
+                                    }}
+                                    helpMsg={
+                                        "This property sets whether to use namespace as default deck if possible."
+                                    }
+                                />
+                            </ExpandableFeatureGrid>
                         </BlockFeatureContainer>
                     )}
                     {pageTree[0] && (
@@ -202,7 +240,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     editingBlockUUID={getUUIDFromBlock(pageTree[0])}
                                     propName={"deck"}
                                     helpMsg={
-                                        "This property sets the anki deck of all notes from this page."
+                                        "This property sets the default deck of all notes from this page. This will override namespace deck property if any."
                                     }
                                 />
                                 <PropFeature
@@ -219,10 +257,36 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     propName={"tags"}
                                     placeHolderValue={"tag1, [[tag2]], tag3"}
                                     helpMsg={
-                                        "This property sets the anki tags of all notes from this page."
+                                        "This property sets the anki tags of all notes from this page. This will be merged with namespace tags property if any."
                                     }
                                 />
                             </FeatureGrid>
+                            <ExpandableFeatureGrid>
+                                <PropFeature
+                                    propName={"useNamespaceAsDefaultDeck"}
+                                    blockContent={pageTree[0].content}
+                                    setBlockContent={async (content) => {
+                                        const page = await logseq.Editor.getPage(
+                                            pageTree[0].page.id,
+                                        );
+                                        const pageTreeNew =
+                                            await logseq.Editor.getPageBlocksTree(page.name);
+                                        setPageTree(pageTreeNew);
+                                    }}
+                                    isEnabledFn={async () => {
+                                        const block = await logseq.Editor.getBlock(editingBlockUUID);
+                                        const page = await logseq.Editor.getPage(block.page.id);
+                                        if(!page.namespace || !page.namespace.id) return {isEnabled: false, helpMsg: "This property only works in namespace pages."};
+
+                                        return {isEnabled: true};
+                                    }}
+                                    editingBlockUUID={getUUIDFromBlock(pageTree[0])}
+                                    selectOptions={["true", "false"]}
+                                    helpMsg={
+                                        "This property sets whether to use namespace as default deck if possible."
+                                    }
+                                />
+                            </ExpandableFeatureGrid>
                         </BlockFeatureContainer>
                     )}
                     {parentBlocksWithAnkiTags.map((block) => {
@@ -247,7 +311,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                         editingBlockUUID={block.uuid}
                                         propName={"deck"}
                                         helpMsg={
-                                            "This property sets the anki deck of all children notes. This overrides the namespace property / page property / other parent block property."
+                                            "This property sets the anki deck of all children notes. This overrides the namespace property / page property / other parent block property if any."
                                         }
                                     />
                                     <PropFeature
@@ -266,9 +330,11 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                         propName={"tags"}
                                         placeHolderValue={"tag1, [[tag2]], tag3"}
                                         helpMsg={
-                                            "This property sets the anki tags of all children notes."
+                                            "This property sets the anki tags of all children notes. This will be merged with namespace tags property / page tags property / other parent block tags property if any."
                                         }
                                     />
+                                </FeatureGrid>
+                                <ExpandableFeatureGrid>
                                     <TagFeature
                                         blockContent={block.content}
                                         setBlockContent={async () => {
@@ -287,7 +353,33 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                             "This tag hides this block in front side of anki card."
                                         }
                                     />
-                                </FeatureGrid>
+                                <PropFeature
+                                    propName={"useNamespaceAsDefaultDeck"}
+                                    blockContent={block.content}
+                                    setBlockContent={async () => {
+                                        const page = await logseq.Editor.getPage(
+                                            block.page.id,
+                                        );
+                                        const pageTreeNew =
+                                            await logseq.Editor.getPageBlocksTree(
+                                                page.name,
+                                            );
+                                        setPageTree(pageTreeNew);
+                                    }}
+                                    isEnabledFn={async () => {
+                                        const block = await logseq.Editor.getBlock(editingBlockUUID);
+                                        const page = await logseq.Editor.getPage(block.page.id);
+                                        if(!page.namespace || !page.namespace.id) return {isEnabled: false, helpMsg: "This property only works in namespace pages."};
+
+                                        return {isEnabled: true};
+                                    }}
+                                    editingBlockUUID={block.uuid}
+                                    selectOptions={["true", "false"]}
+                                    helpMsg={
+                                        "This property sets whether to use namespace as default deck if possible."
+                                    }
+                                />
+                                </ExpandableFeatureGrid>
                             </BlockFeatureContainer>
                         );
                     })}
@@ -297,14 +389,13 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                 ⚠️
                             </span>
                             <span style={{color: "var(--amplify-components-button-warning-color, red)"}}>
-                                Not recomended to create anki notes in page properties block.
+                                Not recommended to create anki notes in page properties block.
                             </span>
                         </BlockFeatureContainer>
-                    )
-                    }
+                    )}
                     {editingBlockUUID != getUUIDFromBlock(pageTree[0]) && (
                         <BlockFeatureContainer uuid={editingBlockUUID} title={"Current Block"}>
-                            <h4>All Notes</h4>
+                            <h4 style={{marginTop: '4px'}}>All Notes</h4>
                             <FeatureGrid>
                                 <PropFeature
                                     blockContent={blockContent}
@@ -312,7 +403,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     editingBlockUUID={editingBlockUUID}
                                     propName={"deck"}
                                     helpMsg={
-                                        "This property sets the anki deck of block notes. If parent block / namespace property / page property has this defined, it will be overridden."
+                                        "This property sets the deck of anki notes created from this block. If parent block / namespace property / page property has this defined, it will be overridden."
                                     }
                                 />
                                 <PropFeature
@@ -322,7 +413,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     propName={"tags"}
                                     placeHolderValue={"tag1, [[tag2]], tag3"}
                                     helpMsg={
-                                        "This property sets the anki tags of block notes. If parent block / namespace property / page property has this defined, the tag list will be merged."
+                                        "This property sets the anki tags of notes created from this block. If parent block / namespace property / page property has this defined, the tag list will be merged."
                                     }
                                 />
                                 <TagFeature
@@ -378,7 +469,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     }
                                 />
                             </FeatureGrid>
-                            <h4>Multiline Note</h4>
+                            <h4 style={{marginTop: '8px'}}>Multiline Note</h4>
                             <FeatureGrid>
                                 <TagFeature
                                     blockContent={blockContent}
@@ -386,7 +477,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     editingBlockUUID={editingBlockUUID}
                                     tagName={"flashcard"}
                                     tagDisplayText="#flashcard / #card"
-                                    isEnabledFn={() => {
+                                    isEnabledFn={async () => {
                                         if (
                                             isEditingBlockMultiline &&
                                             !blockContent.includes("#card") &&
@@ -405,7 +496,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     blockContent={blockContent}
                                     setBlockContent={setBlockContent}
                                     editingBlockUUID={editingBlockUUID}
-                                    isEnabledFn={() => {
+                                    isEnabledFn={async () => {
                                         if (isEditingBlockMultiline || blockContent.includes("#card-group"))
                                             return {isEnabled: true};
                                         return {
@@ -425,7 +516,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     setBlockContent={setBlockContent}
                                     editingBlockUUID={editingBlockUUID}
                                     tagName={"incremental"}
-                                    isEnabledFn={() => {
+                                    isEnabledFn={async () => {
                                         if (isEditingBlockMultiline) return {isEnabled: true};
                                         return {
                                             isEnabled: false,
@@ -440,7 +531,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                 <DepthTagFeature
                                     blockContent={blockContent}
                                     setBlockContent={setBlockContent}
-                                    isEnabledFn={() => {
+                                    isEnabledFn={async () => {
                                         if (isEditingBlockMultiline) return {isEnabled: true};
                                         return {
                                             isEnabled: false,
@@ -458,7 +549,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     setBlockContent={setBlockContent}
                                     editingBlockUUID={editingBlockUUID}
                                     propName={"extra"}
-                                    isEnabledFn={() => {
+                                    isEnabledFn={async () => {
                                         if (isEditingBlockMultiline) return {isEnabled: true};
                                         return {
                                             isEnabled: false,
@@ -471,7 +562,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     }
                                 />
                             </FeatureGrid>
-                            <h4>Cloze Note</h4>
+                            <h4 style={{marginTop: '4px'}}>Cloze Note</h4>
                             <FeatureGrid>
                                 <TextFeatureComponent
                                     blockContent={blockContent}
@@ -504,7 +595,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     }
                                 />
                             </FeatureGrid>
-                            <h4>Image Occlusion Note</h4>
+                            <h4 style={{marginTop: '4px'}}>Image Occlusion Note</h4>
                             TODO
                             {/* <FeatureGrid> */}
                             {/*<code style={{fontSize: '17px'}}>occlusion::</code>*/}
@@ -564,13 +655,31 @@ export const FeatureGrid: React.FC<{children: React.ReactNode}> = ({children}) =
     );
 };
 
+export const ExpandableFeatureGrid: React.FC<{children?: React.ReactNode}> = ({children}) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    if (!children) return null;
+    
+    return (
+        <div style={{marginTop: '4px'}}>
+            <div onClick={() => setIsExpanded(!isExpanded)}>
+                {!isExpanded ? (
+                    <div style={{userSelect: 'none', textAlign: 'center', borderRadius: '2px', backgroundColor: 'var(--ls-tertiary-background-color)'}} className="opacity-70 hover:opacity-80 cursor-pointer">⮝ Expand</div>
+                ) : (
+                    <div style={{userSelect: 'none', textAlign: 'center', borderRadius: '2px', backgroundColor: 'var(--ls-tertiary-background-color)'}} className="opacity-70 hover:opacity-80 cursor-pointer">⮟ Collapse</div>
+                )}
+            </div>
+            {isExpanded && <FeatureGrid>{children}</FeatureGrid>}
+        </div>
+    );
+}
+
 const TagFeature: React.FC<{
     blockContent: string;
     setBlockContent: (content: string) => void;
     editingBlockUUID: string;
     tagName: string;
     tagDisplayText?: string;
-    isEnabledFn?: () => {isEnabled: boolean; helpMsg?: string};
+    isEnabledFn?: () => Promise<{isEnabled: boolean; helpMsg?: string}>;
     helpMsg: string;
 }> = ({
     blockContent,
@@ -594,7 +703,12 @@ const TagFeature: React.FC<{
             }
         })();
     }, [blockContent]);
-    const isEnabled = isEnabledFn();
+    const [isEnabled, setIsEnabled] = useState({isEnabled: true});
+    (async function () {
+        const isEnabledNew = await isEnabledFn();
+        if(isEnabledNew.isEnabled !== isEnabled.isEnabled)
+            setIsEnabled(isEnabledNew);
+    })();
     return (
         <>
             <div>
@@ -649,7 +763,7 @@ const DepthTagFeature: React.FC<{
     blockContent: string;
     setBlockContent: (content: string) => void;
     editingBlockUUID: string;
-    isEnabledFn?: () => {isEnabled: boolean; helpMsg?: string};
+    isEnabledFn?: () => Promise<{isEnabled: boolean; helpMsg?: string}>;
     helpMsg: string;
 }> = ({
     blockContent,
@@ -673,8 +787,12 @@ const DepthTagFeature: React.FC<{
             }
         })();
     }, [blockContent, tagName]);
-    const isEnabled = isEnabledFn();
-    if (tagIndex < 1 || tagIndex > 9) isEnabled.isEnabled = false;
+    const [isEnabled, setIsEnabled] = useState({isEnabled: true});
+    (async function () {
+        const isEnabledNew = await isEnabledFn();
+        if(isEnabledNew.isEnabled !== isEnabled.isEnabled)
+            setIsEnabled(isEnabledNew);
+    })();
     return (
         <>
             <div>
@@ -740,7 +858,7 @@ const DirectionTagFeature: React.FC<{
     blockContent: string;
     setBlockContent: (content: string) => void;
     editingBlockUUID: string;
-    isEnabledFn?: () => {isEnabled: boolean; helpMsg?: string};
+    isEnabledFn?: () => Promise<{isEnabled: boolean; helpMsg?: string}>;
     helpMsg: string;
 }> = ({
     blockContent,
@@ -773,7 +891,12 @@ const DirectionTagFeature: React.FC<{
             }
         })();
     }, [blockContent]);
-    const isEnabled = isEnabledFn();
+    const [isEnabled, setIsEnabled] = useState({isEnabled: true});
+    (async function () {
+        const isEnabledNew = await isEnabledFn();
+        if(isEnabledNew.isEnabled !== isEnabled.isEnabled)
+            setIsEnabled(isEnabledNew);
+    })();
 
     return (
         <>
@@ -844,9 +967,10 @@ const PropFeature: React.FC<{
     setBlockContent: (content: string) => void;
     editingBlockUUID: string;
     propName: string;
-    isEnabledFn?: () => {isEnabled: boolean; helpMsg?: string};
+    isEnabledFn?: () => Promise<{isEnabled: boolean; helpMsg?: string}>;
     placeHolderValue?: string;
     helpMsg: string;
+    selectOptions?: string[];
 }> = ({
     blockContent,
     setBlockContent,
@@ -857,10 +981,10 @@ const PropFeature: React.FC<{
     isEnabledFn = () => {
         return {isEnabled: true};
     },
+    selectOptions,
 }) => {
     const [doesContainProp, setDoesContainProp] = useState(false);
     const [propValue, setPropValue] = useState("");
-    const isEnabled = isEnabledFn();
     useEffect(() => {
         (async function () {
             const props = (await logseq.Editor.getBlock(editingBlockUUID)).properties;
@@ -872,6 +996,12 @@ const PropFeature: React.FC<{
             }
         })();
     }, [blockContent]);
+    const [isEnabled, setIsEnabled] = useState({isEnabled: true});
+    (async function () {
+        const isEnabledNew = await isEnabledFn();
+        if(isEnabledNew.isEnabled !== isEnabled.isEnabled)
+            setIsEnabled(isEnabledNew);
+    })();
     return (
         <>
             <div>
@@ -899,23 +1029,46 @@ const PropFeature: React.FC<{
                 )}
                 {doesContainProp && isEnabled.isEnabled && (
                     <div style={{display: "flex", alignItems: "center"}}>
-                        <input
-                            type={"text"}
-                            value={propValue}
-                            onChange={async (e) => {
-                                await logseq.Editor.upsertBlockProperty(
-                                    editingBlockUUID,
-                                    propName,
-                                    e.target.value,
-                                );
-                                const block = await logseq.Editor.getBlock(editingBlockUUID);
-                                setBlockContent(block.content);
-                                setPropValue(e.target.value);
-                            }}
-                            placeholder={placeHolderValue || ""}
-                            style={{height: "28px"}}
-                            className={"form-input"}
-                        />
+                        {selectOptions ? (
+                            <select
+                                value={propValue}
+                                onChange={async (e) => {
+                                    await logseq.Editor.upsertBlockProperty(
+                                        editingBlockUUID,
+                                        propName,
+                                        e.target.value,
+                                    );
+                                    const block = await logseq.Editor.getBlock(editingBlockUUID);
+                                    setBlockContent(block.content);
+                                    setPropValue(e.target.value);
+                                }}
+                                className={"form-select"}
+                                style={{padding: "0px 8px", height: "28px"}}>
+                                {selectOptions.map((option) => (
+                                    <option key={option} value={option}>
+                                        {option}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                type={"text"}
+                                value={propValue}
+                                onChange={async (e) => {
+                                    await logseq.Editor.upsertBlockProperty(
+                                        editingBlockUUID,
+                                        propName,
+                                        e.target.value,
+                                    );
+                                    const block = await logseq.Editor.getBlock(editingBlockUUID);
+                                    setBlockContent(block.content);
+                                    setPropValue(e.target.value);
+                                }}
+                                placeholder={placeHolderValue || ""}
+                                style={{height: "28px"}}
+                                className={"form-input"}
+                            />
+                        )}
                         <LogseqButton
                             title={"Remove Prop"}
                             size={"xs"}
