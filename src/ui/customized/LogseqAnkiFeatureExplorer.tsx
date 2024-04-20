@@ -3,7 +3,7 @@ import {LogseqProxy} from "../../logseq/LogseqProxy";
 import React, {useEffect, useState} from "react";
 import {Modal} from "../general/Modal";
 import _ from "lodash";
-import {getFirstNonEmptyLine} from "../../utils/utils";
+import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import {LogseqButton} from "../basic/LogseqButton";
 import {BlockContentParser} from "../../logseq/BlockContentParser";
@@ -70,7 +70,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
             let parentBlock = await logseq.Editor.getBlock(block.parent.id);
             let parentBlockWithAnkiTags = [];
             while (parentBlock) {
-                if ((parentBlock.properties && (parentBlock.properties["tags"] || parentBlock.properties["deck"])) ||
+                if ((parentBlock.properties && (parentBlock.properties["tags"] || parentBlock.properties["deck"] || parentBlock.properties["disable-anki-sync"])) ||
                 parentBlock.content.includes('hide-when-card-parent')) {
                     parentBlockWithAnkiTags.push(parentBlock);
                 }
@@ -80,7 +80,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
         })();
     }, [pageTree]);
 
-    const [hackyForceRender, setHackyForceRender] = useState(false);
+    const [hackyNamespaceForceRender, setHackyNamespaceForceRender] = useState(false);
     useEffect(() => {
         (async function () {
             const block = await logseq.Editor.getBlock(editingBlockUUID);
@@ -95,7 +95,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
             }
             setNamespaceTree(namespaceTree);
         })();
-    }, [blockContent, hackyForceRender]);
+    }, [blockContent, hackyNamespaceForceRender]);
 
     // Other useful info for rendering feature list
     const [isEditingBlockMultiline, setIsEditingBlockMultiline] = useState(false);
@@ -179,7 +179,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                 <PropFeature
                                     blockContent={namespace.blocks[0].content}
                                     setBlockContent={async () => {
-                                        setHackyForceRender(!hackyForceRender);
+                                        setHackyNamespaceForceRender(!hackyNamespaceForceRender);
                                     }}
                                     editingBlockUUID={namespace.blocks[0].uuid}
                                     propName={"deck"}
@@ -190,7 +190,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                 <PropFeature
                                     blockContent={namespace.blocks[0].content}
                                     setBlockContent={async () => {
-                                        setHackyForceRender(!hackyForceRender);
+                                        setHackyNamespaceForceRender(!hackyNamespaceForceRender);
                                     }}
                                     editingBlockUUID={namespace.blocks[0].uuid}
                                     propName={"tags"}
@@ -202,10 +202,22 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                             </FeatureGrid>
                             <ExpandableFeatureGrid>
                                 <PropFeature
-                                    propName={"useNamespaceAsDefaultDeck"}
+                                    propName={"disable-anki-sync"}
                                     blockContent={namespace.blocks[0].content}
                                     setBlockContent={async () => {
-                                        setHackyForceRender(!hackyForceRender);
+                                        setHackyNamespaceForceRender(!hackyNamespaceForceRender);
+                                    }}
+                                    editingBlockUUID={namespace.blocks[0].uuid}
+                                    selectOptions={["true", "false"]}
+                                    helpMsg={
+                                        "This property disables anki sync for all notes in this namespace."
+                                    }
+                                />
+                                <PropFeature
+                                    propName={"use-namespace-as-default-deck"}
+                                    blockContent={namespace.blocks[0].content}
+                                    setBlockContent={async () => {
+                                        setHackyNamespaceForceRender(!hackyNamespaceForceRender);
                                     }}
                                     editingBlockUUID={namespace.blocks[0].uuid}
                                     selectOptions={["true", "false"]}
@@ -264,7 +276,24 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                             </FeatureGrid>
                             <ExpandableFeatureGrid>
                                 <PropFeature
-                                    propName={"useNamespaceAsDefaultDeck"}
+                                    propName={"disable-anki-sync"}
+                                    blockContent={pageTree[0].content}
+                                    setBlockContent={async (content) => {
+                                        const page = await logseq.Editor.getPage(
+                                            pageTree[0].page.id,
+                                        );
+                                        const pageTreeNew =
+                                            await logseq.Editor.getPageBlocksTree(page.name);
+                                        setPageTree(pageTreeNew);
+                                    }}
+                                    editingBlockUUID={getUUIDFromBlock(pageTree[0])}
+                                    selectOptions={["true", "false"]}
+                                    helpMsg={
+                                        "This property disables anki sync for all notes in this page."
+                                    }
+                                />
+                                <PropFeature
+                                    propName={"use-namespace-as-default-deck"}
                                     blockContent={pageTree[0].content}
                                     setBlockContent={async (content) => {
                                         const page = await logseq.Editor.getPage(
@@ -354,32 +383,25 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                             "This tag hides this block in front side of anki card."
                                         }
                                     />
-                                <PropFeature
-                                    propName={"useNamespaceAsDefaultDeck"}
-                                    blockContent={block.content}
-                                    setBlockContent={async () => {
-                                        const page = await logseq.Editor.getPage(
-                                            block.page.id,
-                                        );
-                                        const pageTreeNew =
-                                            await logseq.Editor.getPageBlocksTree(
-                                                page.name,
+                                    <PropFeature
+                                        propName={"disable-anki-sync"}
+                                        blockContent={block.content}
+                                        setBlockContent={async () => {
+                                            const page = await logseq.Editor.getPage(
+                                                block.page.id,
                                             );
-                                        setPageTree(pageTreeNew);
-                                    }}
-                                    isEnabledFn={async () => {
-                                        const block = await logseq.Editor.getBlock(editingBlockUUID);
-                                        const page = await logseq.Editor.getPage(block.page.id);
-                                        if(!page.namespace || !page.namespace.id) return {isEnabled: false, helpMsg: "This property only works in namespace pages."};
-
-                                        return {isEnabled: true};
-                                    }}
-                                    editingBlockUUID={block.uuid}
-                                    selectOptions={["true", "false"]}
-                                    helpMsg={
-                                        "This property sets whether to use namespace as default deck if possible."
-                                    }
-                                />
+                                            const pageTreeNew =
+                                                await logseq.Editor.getPageBlocksTree(
+                                                    page.name,
+                                                );
+                                            setPageTree(pageTreeNew);
+                                        }}
+                                        editingBlockUUID={block.uuid}
+                                        selectOptions={["true", "false"]}
+                                        helpMsg={
+                                            "This property disables anki sync for this block. This will override parent block / namespace property / page property if any."
+                                        }
+                                    />
                                 </ExpandableFeatureGrid>
                             </BlockFeatureContainer>
                         );
@@ -435,15 +457,6 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                         "This tag hides all clozes except the one being tested. This works with multiline and cloze notes."
                                     }
                                 />
-                                <TagFeature
-                                    blockContent={blockContent}
-                                    setBlockContent={setBlockContent}
-                                    editingBlockUUID={editingBlockUUID}
-                                    tagName={"no-anki-sync"}
-                                    helpMsg={
-                                        "This tag prevents the block from being synced to anki."
-                                    }
-                                />
                                 {/*Extra*/}
                                 <OrgBlockFeature
                                     blockContent={blockContent}
@@ -470,7 +483,20 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     }
                                 />
                             </FeatureGrid>
-                            <h4 style={{marginTop: '8px'}}>Multiline Note</h4>
+                            <div style={{marginTop: '10px'}}></div>
+                            <ExpandableFeatureGrid>
+                                <PropFeature
+                                    propName={"disable-anki-sync"}
+                                    blockContent={blockContent}
+                                    setBlockContent={setBlockContent}
+                                    editingBlockUUID={editingBlockUUID}
+                                    selectOptions={["true", "false"]}
+                                    helpMsg={
+                                        "This property disables anki sync for this block. This will override parent block / namespace property / page property if any."
+                                    }
+                                />
+                            </ExpandableFeatureGrid>
+                            <h4 style={{marginTop: '12px'}}>Multiline Note</h4>
                             <FeatureGrid>
                                 <TagFeature
                                     blockContent={blockContent}
@@ -563,7 +589,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     }
                                 />
                             </FeatureGrid>
-                            <h4 style={{marginTop: '4px'}}>Cloze Note</h4>
+                            <h4 style={{marginTop: '8px'}}>Cloze Note</h4>
                             <FeatureGrid>
                                 <TextFeatureComponent
                                     blockContent={blockContent}
@@ -596,7 +622,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     }
                                 />
                             </FeatureGrid>
-                            <h4 style={{marginTop: '4px'}}>Image Occlusion Note</h4>
+                            <h4 style={{marginTop: '8px'}}>Image Occlusion Note</h4>
                             <FeatureGrid>
                                 <ImageOcclusionFeature
                                     blockContent={blockContent}
@@ -989,9 +1015,9 @@ const PropFeature: React.FC<{
     useEffect(() => {
         (async function () {
             const props = (await logseq.Editor.getBlock(editingBlockUUID)).properties;
-            if (props[propName] != null) {
+            if (getLogseqBlockPropSafe(props, propName) != null) {
                 setDoesContainProp(true);
-                setPropValue(props[propName]);
+                setPropValue(getLogseqBlockPropSafe(props, propName));
             } else {
                 setDoesContainProp(false);
             }
@@ -1016,12 +1042,22 @@ const PropFeature: React.FC<{
                         color={"primary"}
                         isFullWidth={true}
                         onClick={async () => {
-                            await logseq.Editor.upsertBlockProperty(
-                                editingBlockUUID,
-                                propName,
-                                "",
-                            );
+                            if (!selectOptions) {
+                                await logseq.Editor.upsertBlockProperty(
+                                    editingBlockUUID,
+                                    propName,
+                                    "",
+                                );
+                            } else {
+                                await logseq.Editor.upsertBlockProperty(
+                                    editingBlockUUID,
+                                    propName,
+                                    selectOptions[0],
+                                );
+                            }
                             const block = await logseq.Editor.getBlock(editingBlockUUID);
+                            await logseq.Editor.updateBlock(editingBlockUUID, block.content+'...'); // Force logseq to update the block cache
+                            await logseq.Editor.updateBlock(editingBlockUUID, block.content);
                             setBlockContent(block.content);
                         }}
                         disabled={!isEnabled.isEnabled}>
@@ -1040,6 +1076,8 @@ const PropFeature: React.FC<{
                                         e.target.value,
                                     );
                                     const block = await logseq.Editor.getBlock(editingBlockUUID);
+                                    await logseq.Editor.updateBlock(editingBlockUUID, block.content+'...'); // Force logseq to update the block cache
+                                    await logseq.Editor.updateBlock(editingBlockUUID, block.content);
                                     setBlockContent(block.content);
                                     setPropValue(e.target.value);
                                 }}
@@ -1062,6 +1100,8 @@ const PropFeature: React.FC<{
                                         e.target.value,
                                     );
                                     const block = await logseq.Editor.getBlock(editingBlockUUID);
+                                    await logseq.Editor.updateBlock(editingBlockUUID, block.content+'...'); // Force logseq to update the block cache
+                                    await logseq.Editor.updateBlock(editingBlockUUID, block.content);
                                     setBlockContent(block.content);
                                     setPropValue(e.target.value);
                                 }}
@@ -1081,6 +1121,8 @@ const PropFeature: React.FC<{
                                     null,
                                 );
                                 const block = await logseq.Editor.getBlock(editingBlockUUID);
+                                await logseq.Editor.updateBlock(editingBlockUUID, block.content+'...'); // Force logseq to update the block cache
+                                await logseq.Editor.updateBlock(editingBlockUUID, block.content);
                                 setBlockContent(block.content);
                                 setPropValue("");
                             }}>

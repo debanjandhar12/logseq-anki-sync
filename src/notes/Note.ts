@@ -5,6 +5,7 @@ import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import _ from "lodash";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {NoteUtils} from "./NoteUtils";
+import {getLogseqBlockPropSafe} from "../utils/utils";
 
 export abstract class Note {
     public uuid: string;
@@ -62,14 +63,10 @@ export abstract class Note {
 
     public static initLogseqOperations = () => {
         logseq.provideStyle(`
-            .page-reference[data-ref=no-anki-sync], a[data-ref=no-anki-sync] {
-                opacity: .3;
-            }
             .anki_only {
                 display: none;
             }
         `);
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("no-anki-sync");
         LogseqProxy.Editor.createPageSilentlyIfNotExists("hide-when-card-parent"); // TODO: relocate this
         // TODO: Add EXTRA, ANKI_ONLY here
     };
@@ -88,13 +85,53 @@ export abstract class Note {
         });
         newNotes = (
             await Promise.all(
-                newNotes.map(async (note) =>
-                    (
-                        await NoteUtils.matchTagNamesWithTagIds(note.tagIds, ["no-anki-sync"])
-                    ).includes("no-anki-sync")
-                        ? null
-                        : note,
-                ),
+                newNotes.map(async (note) => {
+                    let isAnkiSyncDisabled = null;
+                    try {
+                        let parentBlockUUID : string | number = note.uuid;
+                        while(parentBlockUUID != null) {
+                            const parentBlock = await LogseqProxy.Editor.getBlock(parentBlockUUID);
+                            if (parentBlock == null) break;
+                            if ([true, "true"].includes(getLogseqBlockPropSafe(parentBlock, 'properties.disable-anki-sync'))) {
+                                isAnkiSyncDisabled = true;
+                                break;
+                            }
+                            else if ([false, "false"].includes(getLogseqBlockPropSafe(parentBlock, 'properties.disable-anki-sync'))) {
+                                isAnkiSyncDisabled = false;
+                                break;
+                            }
+                            parentBlockUUID = _.get(parentBlock, 'parent.id', null);
+                        }
+                    } catch (e) { console.error(e); }
+
+                    if (isAnkiSyncDisabled === null) {
+                        try {
+                            let parentNamespaceID : number = note.page.id;
+                            while(parentNamespaceID != null) {
+                                const parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
+                                if (parentNamespacePage == null) break;
+                                if ([true, "true"].includes(getLogseqBlockPropSafe(parentNamespacePage, 'properties.disable-anki-sync'))) {
+                                    isAnkiSyncDisabled = true;
+                                    break;
+                                }
+                                else if ([false, "false"].includes(getLogseqBlockPropSafe(parentNamespacePage, 'properties.disable-anki-sync'))) {
+                                    isAnkiSyncDisabled = false;
+                                    break;
+                                }
+                                parentNamespaceID = _.get(parentNamespacePage, 'namespace.id', null);
+                            }
+                        } catch (e) { console.error(e); }
+                    }
+
+                    // TODO: Remove line 126-129 after a few releases
+                    if ((await NoteUtils.matchTagNamesWithTagIds(note.tagIds, ["no-anki-sync"])
+                    ).includes("no-anki-sync")) {
+                        isAnkiSyncDisabled = true;
+                    }
+
+                    if(isAnkiSyncDisabled === true) return null;
+                    return note;
+                }),
             )
         ).filter((note) => note !== null);
         return newNotes;

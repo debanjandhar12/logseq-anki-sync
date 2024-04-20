@@ -1,5 +1,6 @@
 import {Mldoc} from "mldoc";
 import {isAudio_REGEXP, isImage_REGEXP, isVideo_REGEXP } from "../constants";
+import _ from "lodash";
 
 export class BlockContentParser {
     private static async _find(blockContent : string, blockContentFormat: "org" | 'Org' | 'Markdown',findType: 'link' | 'html' | 'hiccup' | 'img' | 'audio' | 'video' | 'inline_code' | 'code' | 'inline_math' | 'math' | 'tag') {

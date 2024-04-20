@@ -14,7 +14,7 @@ import {
     handleAnkiError,
     getCaseInsensitive,
     sortAsync,
-    splitNamespace,
+    splitNamespace, getLogseqBlockPropSafe
 } from "./utils/utils";
 import path from "path-browserify";
 import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} from "./constants";
@@ -532,77 +532,68 @@ export class LogseqToAnkiSync {
         }
 
         // Parse useNamespaceAsDefaultDeck value (based on https://github.com/debanjandhar12/logseq-anki-sync/pull/143)
-        let useNamespaceAsDefaultDeck = logseq.settings.useNamespaceAsDefaultDeck;
-        if (_.get(note, "page.properties.useNamespaceAsDefaultDeck") == "false") {
-            useNamespaceAsDefaultDeck = false;
-        }
-        else if (_.get(note, "page.properties.useNamespaceAsDefaultDeck")) {
-            useNamespaceAsDefaultDeck = true;
-        }
+        let useNamespaceAsDefaultDeck = null;
         try {
-            let parentNamespaceID : number = _.get(note, "page.namespace.id");
-            let parentNamespacePage : PageEntity | null;
-            while (true) {
-                parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
+            let parentNamespaceID : number = note.page.id;
+            while (parentNamespaceID != null) {
+                let parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
                 if(!parentNamespacePage) break;
-                if (_.get(parentNamespacePage, "properties.useNamespaceAsDefaultDeck")) {
-                    if (_.get(parentNamespacePage, "properties.useNamespaceAsDefaultDeck") == "false") {
-                        useNamespaceAsDefaultDeck = false;
-                    }
-                    else if (_.get(parentNamespacePage, "properties.useNamespaceAsDefaultDeck")) {
-                        useNamespaceAsDefaultDeck = true;
-                    }
+                if ([true, "true"].includes(getLogseqBlockPropSafe(parentNamespacePage, "properties.use-namespace-as-default-deck"))) {
+                    useNamespaceAsDefaultDeck = true;
                     break;
                 }
-                if (_.get(parentNamespacePage, "namespace.id") == null) break;
-                parentNamespaceID = parentNamespacePage.namespace.id;
+                else if ([false, "false"].includes(getLogseqBlockPropSafe(parentNamespacePage, "properties.use-namespace-as-default-deck"))) {
+                    useNamespaceAsDefaultDeck = false;
+                    break;
+                }
+
+                parentNamespaceID = _.get(parentNamespacePage, 'namespace.id', null);
             }
         } catch (e) {
             console.error(e);
         }
+        if (useNamespaceAsDefaultDeck == null) useNamespaceAsDefaultDeck = logseq.settings.useNamespaceAsDefaultDeck;
 
         // Parse deck using logic described at https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F
-        let deck: any = false;
+        let deck: any = null;
         try {
-            let parentID = note.uuid;
-            let parent;
-            while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
-                if (_.get(parent, "properties.deck") != null) {
-                    deck = _.get(parent, "properties.deck");
+            let parentBlockUUID : string | number = note.uuid;
+            while (parentBlockUUID != null) {
+                const parentBlock = await LogseqProxy.Editor.getBlock(parentBlockUUID);
+                if (getLogseqBlockPropSafe(parentBlock, "properties.deck") != null) {
+                    deck = getLogseqBlockPropSafe(parentBlock, "properties.deck");
                     break;
                 }
-                parentID = parent.parent.id;
+                parentBlockUUID = _.get(parentBlock, "parent.id", null);
             }
-        } catch (e) {
-            console.error(e);
-        }
-        deck = deck || _.get(note, "page.properties.deck");
-        if (!deck && _.get(note, "page.namespace.id") != null) {
-            if(useNamespaceAsDefaultDeck == true) { // https://github.com/debanjandhar12/logseq-anki-sync/pull/143
-                deck = splitNamespace(
-                    _.get(note, "page.originalName", "") ||
-                    _.get(note, "page.properties.title", ""),
-                ).slice(0, -1).join("/");
-            }
+        } catch (e) { console.error(e); }
+
+        if (deck === null) {
             try {
-                let parentNamespaceID : number = _.get(note, "page.namespace.id");
-                let parentNamespacePage : PageEntity | null;
-                while (true) {
-                    parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
+                let parentNamespaceID : number = note.page.id;
+                while (parentNamespaceID != null) {
+                    let parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
                     if(!parentNamespacePage) break;
-                    if (_.get(parentNamespacePage, "properties.deck") != null) {
-                        deck = _.get(parentNamespacePage, "properties.deck");
+                    if (getLogseqBlockPropSafe(parentNamespacePage, "properties.deck") != null) {
+                        deck = getLogseqBlockPropSafe(parentNamespacePage, "properties.deck");
                         break;
                     }
-                    if (_.get(parentNamespacePage, "namespace.id") == null) break;
-                    parentNamespaceID = parentNamespacePage.namespace.id;
+                    parentNamespaceID = _.get(parentNamespacePage, 'namespace.id', null);
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
+
+        if (deck === null && useNamespaceAsDefaultDeck == true) {
+            deck = splitNamespace(
+                _.get(note, "page.originalName", "") ||
+                _.get(note, "page.properties.title", ""),
+            ).slice(0, -1).join("/");
+        }
+
         deck = deck || logseq.settings.defaultDeck || "Default";
+
         if (typeof deck != "string") deck = deck[0];
+
         deck = splitNamespace(deck).join("::");
 
         // Parse breadcrumb
@@ -646,30 +637,23 @@ export class LogseqToAnkiSync {
         }
 
         // Parse tags
-        tags = [
-            ...Array.from(tags),
-            ...getCaseInsensitive(note, "properties.tags", []),
-            ...getCaseInsensitive(note, "page.properties.tags", []),
-        ];
+        tags = [...Array.from(tags)];
         try {
-            let parentID : number | string = note.uuid;
-            let parentBlock : BlockEntity | null;
-            while ((parentBlock = await LogseqProxy.Editor.getBlock(parentID)) != null) {
+            let parentBlockUUID : string | number = note.uuid;
+            while (parentBlockUUID != null) {
+                const parentBlock = await LogseqProxy.Editor.getBlock(parentBlockUUID);
                 tags = [...tags, ...getCaseInsensitive(parentBlock, "properties.tags", [])];
-                parentID = parentBlock.parent.id;
+                parentBlockUUID = _.get(parentBlock, "parent.id", null);
             }
         } catch (e) {
             console.error(e);
         }
         try {
-            let parentNamespaceID : number = _.get(note, "page.namespace.id");
-            let parentNamespacePage : PageEntity | null;
-            while (true) {
-                parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
-                if(!parentNamespacePage) break;
+            let parentNamespaceID : number = _.get(note, "page.id", null);
+            while (parentNamespaceID != null) {
+                const parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
                 tags = [...tags, ...getCaseInsensitive(parentNamespacePage, "properties.tags", [])];
-                if (_.get(parentNamespacePage, "namespace.id") == null) break;
-                parentNamespaceID = parentNamespacePage.namespace.id;
+                parentNamespaceID = _.get(parentNamespacePage, "namespace.id", null);
             }
         } catch (e) {
             console.error(e);

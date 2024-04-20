@@ -61,10 +61,8 @@ export default class NoteHashCalculator {
             for (let i = 1; i < pageParts.length; i++) {
                 const namespace = pageParts.slice(0, i).join("/");
                 toHash.push({
-                    namespaceProperties: _.pick(
-                        _.get(await LogseqProxy.Editor.getPage(namespace), "properties", {}),
-                        ["deck", "tags", "useNamespaceAsDefaultDeck"]
-                    )
+                    namespaceProperties:
+                        _.get(await LogseqProxy.Editor.getPage(namespace), "properties", {})
                 });
             }
         }

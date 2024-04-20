@@ -206,14 +206,16 @@ export namespace LogseqProxy {
             let page = null;
             await getLogseqLock.acquireAsync();
             try {
-                page = await logseq.Editor.getPage(srcPage);
-                cache.set(
-                    objectHash({
-                        operation: "getPage",
-                        parameters: {srcPage},
-                    }),
-                    page,
-                );
+                if (typeof srcPage === "number") {
+                    page = await logseq.Editor.getPage(srcPage);    // properties are not returned when using dbid
+                    page = await logseq.Editor.getPage(page.name);
+                    cache.set(objectHash({operation: "getPage", parameters: {srcPage}}), page);
+                    cache.set(objectHash({operation: "getPage", parameters: {srcPage: page.name}}), page);
+                }
+                else {
+                    page = await logseq.Editor.getPage(srcPage);
+                    cache.set(objectHash({operation: "getPage", parameters: {srcPage}}), page);
+                }
             } catch (e) {
                 console.error(e);
             } finally {
