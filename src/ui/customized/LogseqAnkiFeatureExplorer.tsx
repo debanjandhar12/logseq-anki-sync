@@ -7,6 +7,7 @@ import {getFirstNonEmptyLine} from "../../utils/utils";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import {LogseqButton} from "../basic/LogseqButton";
 import {BlockContentParser} from "../../logseq/BlockContentParser";
+import {ImageOcclusionNote} from "../../notes/ImageOcclusionNote";
 
 export async function LogseqAnkiFeatureExplorer(editingBlockUUID) {
     return new Promise(async function (resolve, reject) {
@@ -596,16 +597,16 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                 />
                             </FeatureGrid>
                             <h4 style={{marginTop: '4px'}}>Image Occlusion Note</h4>
-                            TODO
-                            {/* <FeatureGrid> */}
-                            {/*<code style={{fontSize: '17px'}}>occlusion::</code>*/}
-                            {/*<LogseqButton title={"Add Prop"} size={"xs"} color={"primary"} isFullWidth={true} onClick={async () => {*/}
-                            {/*    */}
-                            {/*}}>*/}
-                            {/*    Create / Edit Image Occlusion*/}
-                            {/*</LogseqButton>*/}
-                            {/*<HelpButton helpMsg={"This property is used to create image occlusion cards."} />*/}
-                            {/* </FeatureGrid> */}
+                            <FeatureGrid>
+                                <ImageOcclusionFeature
+                                    blockContent={blockContent}
+                                    setBlockContent={setBlockContent}
+                                    editingBlockUUID={editingBlockUUID}
+                                    helpMsg={
+                                        "This property stores image occlusion data."
+                                    }
+                                />
+                            </FeatureGrid>
                         </BlockFeatureContainer>
                     )}
                 </div>
@@ -1145,7 +1146,13 @@ const TextFeatureComponent: React.FC<{
     text: string;
     displayText?: string;
     helpMsg: string;
-}> = ({blockContent, setBlockContent, editingBlockUUID, text, displayText, helpMsg}) => {
+    onClick?: () => Promise<void>;
+}> = ({blockContent, setBlockContent, editingBlockUUID, text, displayText, helpMsg, onClick = async () => {
+    const newContent = blockContent + "\n" + text;
+    await logseq.Editor.updateBlock(editingBlockUUID, newContent);
+    setBlockContent(newContent);
+    await logseq.UI.showMsg("Text Added", "success", {timeout: 1000});
+}}) => {
     return (
         <>
             <div>
@@ -1157,12 +1164,7 @@ const TextFeatureComponent: React.FC<{
                     size={"xs"}
                     color={"primary"}
                     isFullWidth={true}
-                    onClick={async () => {
-                        const newContent = blockContent + "\n" + text;
-                        await logseq.Editor.updateBlock(editingBlockUUID, newContent);
-                        setBlockContent(newContent);
-                        await logseq.UI.showMsg("Text Added", "success", {timeout: 1000});
-                    }}>
+                    onClick={onClick}>
                     Add Text
                 </LogseqButton>
             </div>
@@ -1172,6 +1174,38 @@ const TextFeatureComponent: React.FC<{
         </>
     );
 };
+
+export function ImageOcclusionFeature({blockContent, setBlockContent, editingBlockUUID, helpMsg}: {
+    blockContent: string;
+    setBlockContent: (content: string) => void;
+    editingBlockUUID: string;
+    helpMsg: string;
+}) {
+    return (
+        <>
+            <div>
+                <code style={{fontSize: "17px"}}>occlusion::</code>
+            </div>
+            <div>
+                <LogseqButton
+                    title={"Add Prop"}
+                    size={"xs"}
+                    color={"primary"}
+                    isFullWidth={true}
+                    onClick={async () => {
+                        await ImageOcclusionNote.handleImageOcclusionOperation({uuid: editingBlockUUID});
+                        const block = await logseq.Editor.getBlock(editingBlockUUID);
+                        setBlockContent(block.content);
+                    }}>
+                    Create / Edit Image Occlusion
+                </LogseqButton>
+            </div>
+            <div>
+                <HelpButton helpMsg={helpMsg} />
+            </div>
+        </>
+    );
+}
 
 const HelpButton: React.FC<{helpMsg: string; disabledHelpMsg?: string | null | undefined}> = ({
     helpMsg,
