@@ -20,12 +20,12 @@ jobs:
                   node-version: "20.x"
 
             - name: Install dependencies
-              run: yarn
+              run: pnpm
 
             - name: Build
               id: build
               run: |
-                  yarn run build
+                  pnpm run build
                   mkdir ${{ steps.package.outputs.package_name }}
                   cp README.md package.json icon.png ${{ steps.package.outputs.package_name }}
                   mv dist ${{ steps.package.outputs.package_name }}
@@ -36,7 +36,7 @@ jobs:
                   echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
 
             - name: Run Test Suites
-              run: yarn test
+              run: pnpm test
 
             - name: Create Release
               uses: ncipollo/release-action@v1

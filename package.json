@@ -1,6 +1,6 @@
 {
     "name": "logseq-anki-sync",
-    "version": "6.2.1",
+    "version": "6.2.9",
     "title": "Logseq Anki Sync",
     "description": "An logseq to anki syncing plugin with superpowers - image occlusion, card direction, incremental cards, and a lot more.",
     "main": "dist/index.html",
@@ -10,7 +10,7 @@
     "scripts": {
         "dev": "vite",
         "build": "export NODE_OPTIONS=--max_old_space_size=4096 && vite build",
-        "preinstall": "npx only-allow yarn",
+        "preinstall": "npx only-allow pnpm",
         "test": "vitest"
     },
     "logseq": {
