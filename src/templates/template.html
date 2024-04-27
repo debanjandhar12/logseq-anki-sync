@@ -5,6 +5,8 @@
     var type = "";
     var style, load_event;
     var process = {'env': { 'NODE_DEBUG': false }}; // required for difflib to work correctly
+    var keydownHandler;
+
 </script>
 <script async="false" defer="false">
     try {
@@ -32,7 +34,10 @@
     document.body.appendChild(style);
 </script>
 <script async="false" defer="false">
-    document.addEventListener('keydown', function(event) {
+    if (keydownHandler) {
+        document.removeEventListener('keydown', keydownHandler, true);
+    }
+    function keydownMethod(event) {
         if (event.shiftKey) {
             if (event.keyCode === 74) {
                 scrollToClozeElement();
@@ -42,7 +47,9 @@
                 window.scroll(0, 0);
             }
         }
-    })
+    }
+    keydownHandler = keydownMethod;
+    document.addEventListener('keydown', keydownHandler, true);
 </script>
 <div style="display: flex; justify-content: space-between" role="menubar">
     <div class="bubble breadcrumb2">{{Breadcrumb}}</div>
