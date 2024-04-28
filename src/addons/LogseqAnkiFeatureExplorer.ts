@@ -15,6 +15,10 @@ export class AnkiFeatureExplorer extends Addon {
                 this.openAnkiFeatureExplorer,
             );
             logseq.Editor.registerSlashCommand("Open Anki Feature Explorer", this.openAnkiFeatureExplorer);
+            logseq.App.registerPageMenuItem("Anki Feature Explorer", async (page) => {
+                const blocks = await logseq.Editor.getPageBlocksTree(page.page);
+                await this.openAnkiFeatureExplorer(...blocks);
+            });
         }
     }
 

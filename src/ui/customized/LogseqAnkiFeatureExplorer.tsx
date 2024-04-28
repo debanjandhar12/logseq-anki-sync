@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {Modal} from "../general/Modal";
 import _ from "lodash";
 import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
@@ -1012,17 +1012,30 @@ const PropFeature: React.FC<{
 }) => {
     const [doesContainProp, setDoesContainProp] = useState(false);
     const [propValue, setPropValue] = useState("");
+    const inputRef = useRef(null); // Add a ref
+    const [inputCursor, setInputCursor] = useState([0, 0]);
+
     useEffect(() => {
         (async function () {
             const props = (await logseq.Editor.getBlock(editingBlockUUID)).properties;
+            const propsWithActualValues = (await logseq.Editor.getBlock(editingBlockUUID)).propertiesTextValues;  // This will contain more info (page refs text)
             if (getLogseqBlockPropSafe(props, propName) != null) {
                 setDoesContainProp(true);
-                setPropValue(getLogseqBlockPropSafe(props, propName));
+                setPropValue(getLogseqBlockPropSafe(propsWithActualValues, propName) || getLogseqBlockPropSafe(props, propName));
             } else {
                 setDoesContainProp(false);
             }
         })();
     }, [blockContent]);
+
+    useEffect(() => {
+        if (!inputRef) return;
+        const input: any = inputRef.current;
+        if (input) {
+            input.setSelectionRange(inputCursor[0], inputCursor[1]);
+        }
+    }, [inputRef, inputCursor, propValue]);
+
     const [isEnabled, setIsEnabled] = useState({isEnabled: true});
     (async function () {
         const isEnabledNew = await isEnabledFn();
@@ -1069,6 +1082,7 @@ const PropFeature: React.FC<{
                         {selectOptions ? (
                             <select
                                 value={propValue}
+                                ref={inputRef}
                                 onChange={async (e) => {
                                     await logseq.Editor.upsertBlockProperty(
                                         editingBlockUUID,
@@ -1080,6 +1094,7 @@ const PropFeature: React.FC<{
                                     await logseq.Editor.updateBlock(editingBlockUUID, block.content);
                                     setBlockContent(block.content);
                                     setPropValue(e.target.value);
+                                    inputRef.current?.focus();
                                 }}
                                 className={"form-select"}
                                 style={{padding: "0px 8px", height: "28px"}}>
@@ -1093,7 +1108,9 @@ const PropFeature: React.FC<{
                             <input
                                 type={"text"}
                                 value={propValue}
+                                ref={inputRef}
                                 onChange={async (e) => {
+                                    setInputCursor([e.target.selectionStart, e.target.selectionEnd]);
                                     await logseq.Editor.upsertBlockProperty(
                                         editingBlockUUID,
                                         propName,
