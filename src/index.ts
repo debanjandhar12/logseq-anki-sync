@@ -89,7 +89,12 @@ function main(baseInfo: LSPluginBaseInfo) {
         showModelWithButtons(
             `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${baseInfo.version}!</span> 
                                     <br/><small class="px-2">Update is installed successfully. </small>
-                                    <br /><br /><small class="px-2" style="display: block">In this version, <code>#type-in</code> tag is introduced as per feature vote survey results. This tag presents a text box enabling you to input your answer. This works with multiline, cloze and swift cards. </small>
+                                    <br /><br /><small class="px-2" style="display: block">In this version, Feature Explorer Addon is introduced. Aditionally, there are several other breaking changes: 
+                                    <ul>
+                                    <li><code>disable-anki-sync</code> property is introduced in this version. When set to true, it will prevent syncing cards from namespace / page / blocks. (See feature explorer for usage)</li>
+                                    <li><code>#no-anki-sync</code> tag is now marked for removal. Please use <code>disable-anki-sync</code> instead. It will be remove in upcoming version.</li>
+                                    <li><code>parsens</code> property is now removed. Please use newly added property - <code>useNamespaceAsDefaultDeck</code> instead. (See feature explorer for usage)</li>
+                                    </ul> </small>
                                     <br/><small class="px-2" style="display: block">Serveral bugs were also fixed.</small>
                                     <br/>
                                     `,
