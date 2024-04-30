@@ -68,10 +68,12 @@ export class ImageOcclusionNote extends Note {
                     ).toString(),
                 ),
             );
+        console.log(imgToOcclusionDataHashMap);
         imgToOcclusionDataHashMap = ImageOcclusionNote.migratePdfImages(
             imgToOcclusionDataHashMap,
             block_images,
         );
+        console.log(imgToOcclusionDataHashMap);
         let selectedImage = null;
         let selectedImageIdx =
             block_images.length == 1
@@ -107,16 +109,19 @@ export class ImageOcclusionNote extends Note {
                 if (
                     Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
                         "base64",
-                    ) == block.properties?.occlusion
-                )
-                    console.log("No change");
-                await LogseqProxy.Editor.upsertBlockProperty(
-                    uuid,
-                    "occlusion",
-                    Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
+                    ) != block.properties?.occlusion
+                ) {
+                    console.log(imgToOcclusionDataHashMap, Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
                         "base64",
-                    ),
-                );
+                    ));
+                    await LogseqProxy.Editor.upsertBlockProperty(
+                        getUUIDFromBlock(block as BlockEntity),
+                        "occlusion",
+                        Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
+                            "base64",
+                        ),
+                    );
+                }
             }
         }
     }
@@ -286,7 +291,7 @@ export class ImageOcclusionNote extends Note {
                 .sort()
                 .reverse()
                 .find((key) => {
-                    if (imgToOcclusionDataHashMap[image]) {
+                    if (key == image && imgToOcclusionDataHashMap[image]) {
                         return true;
                     }
                     let imageURLParams: any = new Map();

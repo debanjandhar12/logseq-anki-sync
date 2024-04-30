@@ -18,6 +18,7 @@ import {
     getPageHash,
 } from "../logseq/blockAndPageHashCache";
 import _ from "lodash";
+import {getLogseqBlockPropSafe} from "../utils/utils";
 
 export default class NoteHashCalculator {
     public static async getHash(note: Note, ankiFields: any[]): Promise<string> {
@@ -53,7 +54,7 @@ export default class NoteHashCalculator {
         // Add additional things from block to toHash
         toHash.push({
             page: encodeURIComponent(_.get(note, "page.originalName", "")),
-            deck: encodeURIComponent(_.get(note, "page.properties.deck", "")),
+            pageProps: encodeURIComponent(_.get(note, "page.properties", "")),
         });
         if (_.get(note, "page.namespace.id") != null) {
             // Include properties of parent namespaces
@@ -69,8 +70,8 @@ export default class NoteHashCalculator {
         toHash.push(
             _.omit(logseq.settings, [
                 "addons",
-                "renderAnkiClozeMarcosInLogseq",
-                "skipOnDependencyHashMatch",
+                "renderClozeMarcosInLogseq",
+                "hideClozeMarcosUntilHoverInLogseq",
                 "cacheLogseqAPIv1",
                 "debug",
             ]),

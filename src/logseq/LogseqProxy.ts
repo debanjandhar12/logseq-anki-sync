@@ -210,7 +210,9 @@ export namespace LogseqProxy {
                     page = await logseq.Editor.getPage(srcPage);    // properties are not returned when using dbid
                     page = await logseq.Editor.getPage(page.name);
                     cache.set(objectHash({operation: "getPage", parameters: {srcPage}}), page);
-                    cache.set(objectHash({operation: "getPage", parameters: {srcPage: page.name}}), page);
+                    let pageName = _.get(page, "originalName", null) || _.get(page, "name", null);
+                    pageName = pageName.toLowerCase();
+                    cache.set(objectHash({operation: "getPage", parameters: {srcPage: pageName}}), page);
                 }
                 else {
                     page = await logseq.Editor.getPage(srcPage);
@@ -431,7 +433,10 @@ export namespace LogseqProxy {
             }
         });
         LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
-            if (!logseq.settings.cacheLogseqAPIv1) return;
+            if (!logseq.settings.cacheLogseqAPIv1) {
+                LogseqProxy.Cache.clear();
+                return;
+            }
             if (logseq.settings.debug.includes("blockAndPageHashCache.ts"))
                 console.log("Maintaining LogseqProxy Cache", [...blocks], txData, txMeta);
             for (const tx of txData) {
