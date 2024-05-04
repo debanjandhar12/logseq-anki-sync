@@ -1031,7 +1031,7 @@ const PropFeature: React.FC<{
     useEffect(() => {
         if (!inputRef) return;
         const input: any = inputRef.current;
-        if (input) {
+        if (input && !selectOptions) {
             input.setSelectionRange(inputCursor[0], inputCursor[1]);
         }
     }, [inputRef, inputCursor, propValue]);
@@ -1109,7 +1109,8 @@ const PropFeature: React.FC<{
                                 type={"text"}
                                 value={propValue}
                                 ref={inputRef}
-                                onChange={async (e) => {
+                                onInput={async (e) => {
+                                    setPropValue(e.target.value);
                                     setInputCursor([e.target.selectionStart, e.target.selectionEnd]);
                                     await logseq.Editor.upsertBlockProperty(
                                         editingBlockUUID,
@@ -1120,7 +1121,7 @@ const PropFeature: React.FC<{
                                     await logseq.Editor.updateBlock(editingBlockUUID, block.content+'...'); // Force logseq to update the block cache
                                     await logseq.Editor.updateBlock(editingBlockUUID, block.content);
                                     setBlockContent(block.content);
-                                    setPropValue(e.target.value);
+                                    console.log('updated');
                                 }}
                                 placeholder={placeHolderValue || ""}
                                 style={{height: "28px"}}

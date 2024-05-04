@@ -54,7 +54,7 @@ export default class NoteHashCalculator {
         // Add additional things from block to toHash
         toHash.push({
             page: encodeURIComponent(_.get(note, "page.originalName", "")),
-            pageProps: encodeURIComponent(_.get(note, "page.properties", "")),
+            pageProps: _.get(note, "page.properties", ""),
         });
         if (_.get(note, "page.namespace.id") != null) {
             // Include properties of parent namespaces
