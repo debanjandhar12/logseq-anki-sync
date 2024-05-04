@@ -52,7 +52,7 @@ export const addSettingsToLogseq = () => {
             type: "string",
             title: "Default Deck:",
             description:
-                "The default deck to use for cards when no deck property is specified.<br/> If <code>useNamespaceAsDefaultDeck</code> is enabled, this will be used as the default deck only when page is not in any namespace.",
+                "The default deck to use for cards when no deck property is specified.<br/> If <code>use-namespace-as-default-deck</code> is enabled, this will be used as the default deck only when page is not in any namespace.",
             default: "Default",
         },
         {
@@ -79,14 +79,14 @@ export const addSettingsToLogseq = () => {
                 "When enabled, ({{c1 Hello}}, {{c2 World}}, ...) clozes will be hidden by default and displayed only on hover.",
         },
         {
-            key: "addons",
+            key: "addonsList",
             type: "enum",
             default: AddonRegistry.getAll().map((addon) => addon.getName()),
             title: "Addons:",
             enumChoices: AddonRegistry.getAll().map((addon) => addon.getName()),
             enumPicker: "checkbox",
             description:
-                "Select the addons to use. They add additional features to the plugin."
+                "Select the addons to use. They add / modify gui elements to enhance plugin capabilities inside Logseq."
         },
         {
             key: "advancedSettingsHeading",
@@ -137,12 +137,12 @@ export const addSettingsToLogseq = () => {
     ];
     LogseqProxy.Settings.useSettingsSchema(settingsTemplate);
     LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
-        if (oldSettings.addons === undefined) oldSettings.addons = [];
-        if (!_.isEqual(newSettings.addons, oldSettings.addons)) {
-            for (const addon of oldSettings.addons) {
+        if (oldSettings.addonsList === undefined) oldSettings.addonsList = [];
+        if (!_.isEqual(newSettings.addonsList, oldSettings.addonsList)) {
+            for (const addon of oldSettings.addonsList) {
                 AddonRegistry.get(addon).remove();
             }
-            for (const addon of newSettings.addons) {
+            for (const addon of newSettings.addonsList) {
                 AddonRegistry.get(addon).init();
             }
         }

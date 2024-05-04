@@ -6,7 +6,7 @@ export abstract class Addon {
         window.parent.LSPluginCore.reload([logseq.baseInfo.id]);
     }
     public isEnabled(): boolean {
-        const addons = logseq.settings.addons || [];
-        return addons.includes(this.getName());
+        const addonsList = logseq.settings.addonsList || [];
+        return addonsList.includes(this.getName());
     }
 }

@@ -69,7 +69,7 @@ export default class NoteHashCalculator {
         }
         toHash.push(
             _.omit(logseq.settings, [
-                "addons",
+                "addonsList",
                 "renderClozeMarcosInLogseq",
                 "hideClozeMarcosUntilHoverInLogseq",
                 "cacheLogseqAPIv1",
