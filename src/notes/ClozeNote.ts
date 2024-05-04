@@ -137,14 +137,19 @@ export class ClozeNote extends Note {
             : this.properties[".replacecloze"];
         if (replaceclozeProp) {
             let replaceclozeArr: any;
-            if (typeof replaceclozeProp == "string" && replaceclozeProp.trim() != "") {
-                replaceclozeArr = string_to_arr(replaceclozeProp.replace(/(^\s*"|\s*"$)/g, ""));
-            } else if (
-                typeof replaceclozeProp == "object" &&
-                replaceclozeProp.constructor == Array
-            ) {
-                replaceclozeArr = string_to_arr(replaceclozeProp.join(","));
-            } else replaceclozeArr = [];
+            try {
+                if (typeof replaceclozeProp == "string" && replaceclozeProp.trim() != "") {
+                    replaceclozeArr = string_to_arr(replaceclozeProp.replace(/(^\s*"|\s*"$)/g, ""));
+                }
+                else if (
+                    typeof replaceclozeProp == "object" &&
+                    replaceclozeProp.constructor == Array) {
+                    replaceclozeArr = string_to_arr(replaceclozeProp.join(","));
+                }
+                else replaceclozeArr = [];
+            } catch (e) {
+                throw "Error parsing replacecloze property";
+            }
 
             const replaceclozehintProp = this.properties.replaceclozehint
                 ? this.properties.replaceclozehint

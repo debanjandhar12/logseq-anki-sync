@@ -13,24 +13,24 @@ export async function SyncResultDialog(
     createdNotes: Array<any>,
     updatedNotes: Array<any>,
     deletedNotes: Array<any>,
-    failedCreated: Set<string>,
-    failedUpdated: Set<string>,
-    failedDeleted: Set<string>,
+    failedCreated: { [key: string]: string },
+    failedUpdated: { [key: string]: string },
+    failedDeleted: { [key: string]: string },
 ): Promise<{
     createdNotes: Array<any>;
     updatedNotes: Array<any>;
     deletedNotes: Array<any>;
-    failedCreated: Set<string>;
-    failedUpdated: Set<string>;
-    failedDeleted: Set<string>;
+    failedCreated: { [key: string]: string };
+    failedUpdated: { [key: string]: string };
+    failedDeleted: { [key: string]: string };
 } | null> {
     return new Promise<{
         createdNotes: Array<any>;
         updatedNotes: Array<any>;
         deletedNotes: Array<any>;
-        failedCreated: Set<string>;
-        failedUpdated: Set<string>;
-        failedDeleted: Set<string>;
+        failedCreated: { [key: string]: string };
+        failedUpdated: { [key: string]: string };
+        failedDeleted: { [key: string]: string };
     } | null>(async (resolve, reject) => {
         try {
             const main = window.parent.document.querySelector("#root main");
@@ -68,9 +68,9 @@ const SyncResultDialogComponent: React.FC<{
     createdNotes: Array<any>;
     updatedNotes: Array<any>;
     deletedNotes: Array<any>;
-    failedCreated: Set<string>;
-    failedUpdated: Set<string>;
-    failedDeleted: Set<string>;
+    failedCreated: { [key: string]: string };
+    failedUpdated: { [key: string]: string };
+    failedDeleted: { [key: string]: string };
     onClose: () => void;
 }> = ({
     createdNotes,
@@ -180,7 +180,7 @@ const SyncResultDialogComponent: React.FC<{
                                 {/* Use update line display for created notes */}
                             </span>
                         ))}
-                        {Array.from(failedCreated).map((noteUuidTypeStr, index) => {
+                        {Object.keys(failedCreated).map((noteUuidTypeStr, index) => {
                             const uuid = noteUuidTypeStr.substring(
                                 0,
                                 noteUuidTypeStr.lastIndexOf("-"),
@@ -203,6 +203,10 @@ const SyncResultDialogComponent: React.FC<{
                                         note={{uuid, type}}
                                         graphName={graphName}
                                     />
+                                    <a style={{fontSize: '14px', marginLeft: '5px'}} onClick={
+                                        () => logseq.UI.showMsg(failedCreated[noteUuidTypeStr].toString()
+                                            , 'warning', {timeout: 0})
+                                    }>(show error details)</a>
                                 </span>
                             );
                         })}
@@ -224,8 +228,8 @@ const SyncResultDialogComponent: React.FC<{
                             {deletedNotes.length > 0
                                 ? `The ${deletedNotes.length} notes were deleted successfully`
                                 : `No notes were deleted.`}
-                            {failedDeleted.size > 0
-                                ? `The ${failedDeleted.size} notes failed to delete`
+                            {Object.keys(failedDeleted).length > 0
+                                ? `The ${Object.keys(failedDeleted).length} notes failed to delete`
                                 : ``}
                         </span>
                         <div
@@ -261,7 +265,7 @@ const SyncResultDialogComponent: React.FC<{
                                 <UpdateLineDisplay note={note} graphName={graphName} />
                             </span>
                         ))}
-                        {Array.from(failedUpdated).map((noteUuidTypeStr, index) => {
+                        {Object.keys(failedUpdated).map((noteUuidTypeStr, index) => {
                             const uuid = noteUuidTypeStr.substring(
                                 0,
                                 noteUuidTypeStr.lastIndexOf("-"),
@@ -284,6 +288,10 @@ const SyncResultDialogComponent: React.FC<{
                                         note={{uuid, type}}
                                         graphName={graphName}
                                     />
+                                    <a style={{fontSize: '14px', marginLeft: '5px'}} onClick={
+                                        () => logseq.UI.showMsg(failedUpdated[noteUuidTypeStr].toString()
+                                            , 'warning', {timeout: 0})
+                                    }>(show error details)</a>
                                 </span>
                             );
                         })}

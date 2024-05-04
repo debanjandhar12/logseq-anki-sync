@@ -118,9 +118,9 @@ export class LogseqToAnkiSync {
         //scanProgress.increment();
 
         // -- Declare some variables to keep track of different operations performed --
-        const failedCreated: Set<string> = new Set(),
-            failedUpdated: Set<string> = new Set(),
-            failedDeleted: Set<string> = new Set();
+        const failedCreated: { [key: string]: any } = {};
+        const failedUpdated: { [key: string]: any } = {};
+        const failedDeleted: { [key: string]: any } = {};
         const toCreateNotesOriginal = new Array<Note>(),
             toUpdateNotesOriginal = new Array<Note>(),
             toDeleteNotesOriginal = new Array<number>();
@@ -230,13 +230,18 @@ export class LogseqToAnkiSync {
 
         // -- Show Result / Summery --
         let summery = `Sync Completed! \n Created Blocks: ${
-            toCreateNotes.length - failedCreated.size
-        } \n Updated Blocks: ${toUpdateNotes.length - failedUpdated.size} \n Deleted Blocks: ${
-            toDeleteNotes.length - failedDeleted.size
+            toCreateNotes.length - Object.keys(failedCreated).length
+        } \n Updated Blocks: ${
+            toUpdateNotes.length - Object.keys(failedUpdated).length
+        } \n Deleted Blocks: ${
+            toDeleteNotes.length - Object.keys(failedDeleted).length
         }`;
-        if (failedCreated.size > 0) summery += `\nFailed Created: ${failedCreated.size} `;
-        if (failedUpdated.size > 0) summery += `\nFailed Updated: ${failedUpdated.size} `;
-        if (failedDeleted.size > 0) summery += `\nFailed Deleted: ${failedDeleted.size} `;
+        if (Object.keys(failedCreated).length > 0)
+            summery += `\nFailed Created: ${Object.keys(failedCreated).length} `;
+        if (Object.keys(failedUpdated).length > 0)
+            summery += `\nFailed Updated: ${Object.keys(failedUpdated).length} `;
+        if (Object.keys(failedDeleted).length > 0)
+            summery += `\nFailed Deleted: ${Object.keys(failedDeleted).length} `;
 
         console.log(toCreateNotes, toUpdateNotes, toDeleteNotes);
         // logseq.UI.showMsg(summery, status, {
@@ -277,7 +282,7 @@ export class LogseqToAnkiSync {
 
     private async createNotes(
         toCreateNotes: Note[],
-        failedCreated: Set<any>,
+        failedCreated: { [key: string]: any },
         ankiNoteManager: LazyAnkiNoteManager,
         syncProgress: ProgressNotification,
     ): Promise<void> {
@@ -321,7 +326,7 @@ export class LogseqToAnkiSync {
                 );
             } catch (e) {
                 console.error(e);
-                failedCreated.add(`${note.uuid}-${note.type}`);
+                failedCreated[`${note.uuid}-${note.type}`] = e;
             }
             syncProgress.increment();
         }
@@ -341,8 +346,8 @@ export class LogseqToAnkiSync {
 
         for (const subOperationResult of subOperationResults) {
             if (subOperationResult != null && subOperationResult.error != null) {
-                console.error(subOperationResult.error);
-                failedCreated.add(subOperationResult["uuid-type"]);
+                console.log(subOperationResult.error);
+                failedCreated[subOperationResult["uuid-type"]] = subOperationResult.error;
             }
         }
 
@@ -356,7 +361,7 @@ export class LogseqToAnkiSync {
 
     private async updateNotes(
         toUpdateNotes: Note[],
-        failedUpdated: Set<any>,
+        failedUpdated: { [key: string]: any },
         ankiNoteManager: LazyAnkiNoteManager,
         syncProgress: ProgressNotification,
     ): Promise<void> {
@@ -448,7 +453,7 @@ export class LogseqToAnkiSync {
                 }
             } catch (e) {
                 console.error(e);
-                failedUpdated.add(`${note.uuid}-${note.type}`);
+                failedUpdated[`${note.uuid}-${note.type}`] = e;
             }
             syncProgress.increment();
         }
@@ -457,7 +462,7 @@ export class LogseqToAnkiSync {
         for (const subOperationResult of subOperationResults) {
             if (subOperationResult != null && subOperationResult.error != null) {
                 console.error(subOperationResult.error);
-                failedUpdated.add(subOperationResult["uuid-type"]);
+                failedUpdated[subOperationResult["uuid-type"]] = subOperationResult.error;
             }
         }
 
@@ -471,7 +476,7 @@ export class LogseqToAnkiSync {
 
     private async deleteNotes(
         toDeleteNotes: number[],
-        failedDeleted,
+        failedDeleted : { [key: string]: any },
         ankiNoteManager: LazyAnkiNoteManager,
         syncProgress: ProgressNotification,
     ) {
@@ -483,7 +488,7 @@ export class LogseqToAnkiSync {
         for (const subOperationResult of subOperationResults) {
             if (subOperationResult != null && subOperationResult.error != null) {
                 console.error(subOperationResult.error);
-                failedDeleted.add(subOperationResult.error.ankiId);
+                failedDeleted[subOperationResult.error.ankiId] = subOperationResult.error;
             }
         }
     }
