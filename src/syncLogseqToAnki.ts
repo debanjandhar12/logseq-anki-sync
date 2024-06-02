@@ -84,25 +84,25 @@ export class LogseqToAnkiSync {
         Note.setAnkiNoteManager(ankiNoteManager);
 
         // -- Get the notes that are to be synced from logseq --
-        const scanProgress = new ProgressNotification(
+        const scanNotification = new ProgressNotification(
             `Scanning Logseq Graph <span style="opacity: 0.8">[${this.graphName}]</span>:`,
             5,
             "graph",
         );
         let notes: Array<Note> = [];
         notes = [...notes, ...(await ClozeNote.getNotesFromLogseqBlocks())];
-        scanProgress.increment();
+        scanNotification.increment();
         notes = [...notes, ...(await SwiftArrowNote.getNotesFromLogseqBlocks())];
-        scanProgress.increment();
+        scanNotification.increment();
         notes = [...notes, ...(await ImageOcclusionNote.getNotesFromLogseqBlocks())];
-        scanProgress.increment();
+        scanNotification.increment();
         notes = [...notes, ...(await MultilineCardNote.getNotesFromLogseqBlocks(notes))];
-        scanProgress.increment();
+        scanNotification.increment();
         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 1 sec
-        scanProgress.increment();
+        scanNotification.increment();
 
         for (const note of notes) {
-            // Force persistance of note's logseq block uuid accross re-index by adding id property to block in logseq
+            // Force persistance of note's logseq block uuid across re-index by adding id property to block in logseq
             if (!note.properties["id"]) {
                 try {
                     await LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid);
@@ -115,7 +115,7 @@ export class LogseqToAnkiSync {
         notes = await sortAsync(notes, async (a) => {
             return _.get(await LogseqProxy.Editor.getBlock(a.uuid), "id", 0); // Sort by db/id
         });
-        //scanProgress.increment();
+        //scanNotification.increment();
 
         // -- Declare some variables to keep track of different operations performed --
         const failedCreated: { [key: string]: any } = {};
@@ -130,7 +130,7 @@ export class LogseqToAnkiSync {
             else toUpdateNotesOriginal.push(note);
         }
         const noteAnkiIds: Array<number> = await Promise.all(
-            notes.map(async (block) => await block.getAnkiId()),
+            notes.map((block) => block.getAnkiId()),
         ); // Flatten current logseq block's anki ids
         const AnkiIds: Array<number> = [...ankiNoteManager.noteInfoMap.keys()];
         for (const ankiId of AnkiIds) {
@@ -198,25 +198,27 @@ export class LogseqToAnkiSync {
 
         // -- Sync --
         const start_time = performance.now();
-        const tenPercent = Math.ceil(
-            (toCreateNotes.length + toUpdateNotes.length + toDeleteNotes.length) / 10,
+        const twentyPercent = Math.ceil(
+            (toCreateNotes.length + toUpdateNotes.length + toDeleteNotes.length) / 20,
         );
-        const syncProgress = new ProgressNotification(
-            "Syncing Logseq Notes to Anki:",
+        const syncNotificationMsg = "Syncing logseq notes to anki...";
+        const syncNotificationObj = new ProgressNotification(
+            syncNotificationMsg,
             toCreateNotes.length +
                 toUpdateNotes.length +
                 toDeleteNotes.length +
-                2 * tenPercent +
+                twentyPercent +
                 1,
             "anki",
         );
-        await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager, syncProgress);
-        syncProgress.increment(tenPercent);
-        await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager, syncProgress);
-        syncProgress.increment(tenPercent);
-        await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncProgress);
-        syncProgress.increment();
+        await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager, syncNotificationObj);
+        await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager, syncNotificationObj);
+        await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncNotificationObj);
+        await syncNotificationObj.updateMessage("Syncing logseq assets to anki...");
+        await this.updateAssets(ankiNoteManager);
+        await syncNotificationObj.increment(twentyPercent);
         await AnkiConnect.invoke("reloadCollection", {});
+        await syncNotificationObj.increment();
         window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
 
         // Save logseq graph if any changes were made
@@ -284,7 +286,7 @@ export class LogseqToAnkiSync {
         toCreateNotes: Note[],
         failedCreated: { [key: string]: any },
         ankiNoteManager: LazyAnkiNoteManager,
-        syncProgress: ProgressNotification,
+        syncNotificationObj: ProgressNotification,
     ): Promise<void> {
         for (const note of toCreateNotes) {
             try {
@@ -328,7 +330,7 @@ export class LogseqToAnkiSync {
                 console.error(e);
                 failedCreated[`${note.uuid}-${note.type}`] = e;
             }
-            syncProgress.increment();
+            syncNotificationObj.increment();
         }
 
         let [addedNoteAnkiIdUUIDPairs, subOperationResults] = await ankiNoteManager.execute(
@@ -363,7 +365,7 @@ export class LogseqToAnkiSync {
         toUpdateNotes: Note[],
         failedUpdated: { [key: string]: any },
         ankiNoteManager: LazyAnkiNoteManager,
-        syncProgress: ProgressNotification,
+        syncNotificationObj: ProgressNotification,
     ): Promise<void> {
         const graphPath = (await logseq.App.getCurrentGraph()).path;
         for (const note of toUpdateNotes) {
@@ -455,7 +457,7 @@ export class LogseqToAnkiSync {
                 console.error(e);
                 failedUpdated[`${note.uuid}-${note.type}`] = e;
             }
-            syncProgress.increment();
+            syncNotificationObj.increment();
         }
 
         let subOperationResults = await ankiNoteManager.execute("updateNotes");
@@ -465,8 +467,12 @@ export class LogseqToAnkiSync {
                 failedUpdated[subOperationResult["uuid-type"]] = subOperationResult.error;
             }
         }
+    }
 
-        subOperationResults = await ankiNoteManager.execute("storeAssets");
+    private async updateAssets(
+        ankiNoteManager: LazyAnkiNoteManager
+    ): Promise<void> {
+        let subOperationResults = await ankiNoteManager.execute("storeAssets");
         for (const subOperationResult of subOperationResults) {
             if (subOperationResult != null && subOperationResult.error != null) {
                 console.error(subOperationResult.error);
@@ -478,11 +484,11 @@ export class LogseqToAnkiSync {
         toDeleteNotes: number[],
         failedDeleted : { [key: string]: any },
         ankiNoteManager: LazyAnkiNoteManager,
-        syncProgress: ProgressNotification,
+        syncNotificationObj: ProgressNotification,
     ) {
         for (const ankiId of toDeleteNotes) {
             ankiNoteManager.deleteNote(ankiId);
-            syncProgress.increment();
+            syncNotificationObj.increment();
         }
         const subOperationResults = await ankiNoteManager.execute("deleteNotes");
         for (const subOperationResult of subOperationResults) {

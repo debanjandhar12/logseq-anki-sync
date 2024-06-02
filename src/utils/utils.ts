@@ -269,7 +269,6 @@ export async function sortAsync<T>(arr: T[], score: (a: T) => Promise<number>): 
         };
     });
     return await Promise.all(toSortPromises).then((toSort) => {
-        console.log(toSort);
         return toSort
             .sort((a, b) => {
                 return a.score - b.score;
