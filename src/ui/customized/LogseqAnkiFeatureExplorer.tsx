@@ -1,38 +1,24 @@
-import ReactDOM from "react-dom";
-import {LogseqProxy} from "../../logseq/LogseqProxy";
 import React, {useEffect, useRef, useState} from "react";
 import {Modal} from "../general/Modal";
-import _ from "lodash";
 import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import {LogseqButton} from "../basic/LogseqButton";
 import {BlockContentParser} from "../../logseq/BlockContentParser";
 import {ImageOcclusionNote} from "../../notes/ImageOcclusionNote";
+import {UI} from "../UI";
 
 export async function LogseqAnkiFeatureExplorer(editingBlockUUID) {
     return new Promise(async function (resolve, reject) {
         try {
-            const main = window.parent.document.querySelector("#root main");
-            const div = window.parent.document.createElement("div");
-            div.className = "logseq-anki-feature-explorer";
-            main?.appendChild(div);
-            let onClose = () => {
-                try {
-                    ReactDOM.unmountComponentAtNode(div);
-                    div.remove();
-                } catch (e) {}
-            };
+            let {key, onClose} = await UI.getEventHandlersForMountedReactComponent(await logseq.Editor.newBlockUUID());
             onClose = onClose.bind(this);
-            ReactDOM.render(
+            await UI.mountReactComponentInLogseq(key, '#root main',
                 <LogseqAnkiFeatureExplorerComponent
                     editingBlockUUID={editingBlockUUID}
                     onClose={onClose}
-                />,
-                div,
-            );
-            LogseqProxy.App.registerPluginUnloadListener(onClose);
+                />);
         } catch (e) {
-            logseq.UI.showMsg("Error", "Failed to open modal");
+            await logseq.UI.showMsg(e, "error");
             console.log(e);
             reject(e);
         }

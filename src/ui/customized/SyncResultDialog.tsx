@@ -1,13 +1,11 @@
 import React, {useEffect, useState} from "react";
 import {Modal} from "../general/Modal";
-import {LogseqButton} from "../basic/LogseqButton";
-import {LogseqCheckbox} from "../basic/LogseqCheckbox";
 import ReactDOM from "react-dom";
-import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
 import {CreateLineDisplay, UpdateLineDisplay} from "./SyncSelectionDialog";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {UI} from "../UI";
 
 export async function SyncResultDialog(
     createdNotes: Array<any>,
@@ -33,17 +31,9 @@ export async function SyncResultDialog(
         failedDeleted: { [key: string]: string };
     } | null>(async (resolve, reject) => {
         try {
-            const main = window.parent.document.querySelector("#root main");
-            const div = window.parent.document.createElement("div");
-            main?.appendChild(div);
-            let onClose = () => {
-                try {
-                    ReactDOM.unmountComponentAtNode(div);
-                    div.remove();
-                } catch (e) {}
-            };
+            let {key, onClose} = await UI.getEventHandlersForMountedReactComponent(await logseq.Editor.newBlockUUID());
             onClose = onClose.bind(this);
-            ReactDOM.render(
+            await UI.mountReactComponentInLogseq(key, '#root main',
                 <SyncResultDialogComponent
                     createdNotes={createdNotes}
                     updatedNotes={updatedNotes}
@@ -52,12 +42,9 @@ export async function SyncResultDialog(
                     failedUpdated={failedUpdated}
                     failedDeleted={failedDeleted}
                     onClose={onClose}
-                />,
-                div,
-            );
-            LogseqProxy.App.registerPluginUnloadListener(onClose);
+                />);
         } catch (e) {
-            logseq.App.showMsg("Error", "Failed to open modal");
+            await logseq.UI.showMsg(e, "error");
             console.log(e);
             reject(e);
         }

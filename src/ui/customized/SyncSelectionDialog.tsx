@@ -7,6 +7,7 @@ import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {UI} from "../UI";
 
 export async function SyncSelectionDialog(
     toCreateNotes: Array<any>,
@@ -23,17 +24,9 @@ export async function SyncSelectionDialog(
         toDeleteNotes: Array<any>;
     } | null>(async (resolve, reject) => {
         try {
-            const main = window.parent.document.querySelector("#root main");
-            const div = window.parent.document.createElement("div");
-            main?.appendChild(div);
-            let onClose = () => {
-                try {
-                    ReactDOM.unmountComponentAtNode(div);
-                    div.remove();
-                } catch (e) {}
-            };
+            let {key, onClose} = await UI.getEventHandlersForMountedReactComponent(await logseq.Editor.newBlockUUID());
             onClose = onClose.bind(this);
-            ReactDOM.render(
+            await UI.mountReactComponentInLogseq(key, '#root main',
                 <SyncSelectionDialogComponent
                     toCreateNotes={toCreateNotes}
                     toUpdateNotes={toUpdateNotes}
@@ -41,12 +34,9 @@ export async function SyncSelectionDialog(
                     resolve={resolve}
                     reject={reject}
                     onClose={onClose}
-                />,
-                div,
-            );
-            LogseqProxy.App.registerPluginUnloadListener(onClose);
+                />);
         } catch (e) {
-            logseq.App.showMsg("Error", "Failed to open modal");
+            await logseq.UI.showMsg(e, "error");
             console.log(e);
             reject(e);
         }

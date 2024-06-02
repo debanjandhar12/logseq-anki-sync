@@ -3,32 +3,22 @@ import React from "react";
 import {Modal} from "./Modal";
 import {LogseqButton} from "../basic/LogseqButton";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {UI} from "../UI";
 
 export async function Confirm(msg: string): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
         try {
-            const main = window.parent.document.querySelector("#root main");
-            const div = window.parent.document.createElement("div");
-            main?.appendChild(div);
-            let onClose = () => {
-                try {
-                    ReactDOM.unmountComponentAtNode(div);
-                    div.remove();
-                } catch (e) {}
-            };
+            let {key, onClose} = await UI.getEventHandlersForMountedReactComponent(await logseq.Editor.newBlockUUID());
             onClose = onClose.bind(this);
-            ReactDOM.render(
+            await UI.mountReactComponentInLogseq(key, '#root main',
                 <ModelComponent
                     msg={msg}
                     resolve={resolve}
                     reject={reject}
                     onClose={onClose}
-                />,
-                div,
-            );
-            LogseqProxy.App.registerPluginUnloadListener(onClose);
+                />);
         } catch (e) {
-            logseq.App.showMsg("Error", "Failed to open modal");
+            await logseq.UI.showMsg(e, "error");
             console.log(e);
             reject(e);
         }

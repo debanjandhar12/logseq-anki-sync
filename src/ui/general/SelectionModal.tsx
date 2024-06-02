@@ -3,6 +3,7 @@ import React from "react";
 import {LogseqButton} from "../basic/LogseqButton";
 import ReactDOM from "react-dom";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {UI} from "../UI";
 
 export async function SelectionModal(
     arr: {name: string; icon?: string}[],
@@ -11,17 +12,9 @@ export async function SelectionModal(
 ): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
         try {
-            const main = window.parent.document.querySelector("#root main");
-            const div = window.parent.document.createElement("div");
-            main?.appendChild(div);
-            let onClose = () => {
-                try {
-                    ReactDOM.unmountComponentAtNode(div);
-                    div.remove();
-                } catch (e) {}
-            };
+            let {key, onClose} = await UI.getEventHandlersForMountedReactComponent(await logseq.Editor.newBlockUUID());
             onClose = onClose.bind(this);
-            ReactDOM.render(
+            await UI.mountReactComponentInLogseq(key, '#root main',
                 <ModelComponent
                     arr={arr}
                     msg={msg}
@@ -29,12 +22,9 @@ export async function SelectionModal(
                     reject={reject}
                     enableKeySelect={enableKeySelect}
                     onClose={onClose}
-                />,
-                div,
-            );
-            LogseqProxy.App.registerPluginUnloadListener(onClose);
+                />);
         } catch (e) {
-            logseq.App.showMsg("Error", "Failed to open modal");
+            await logseq.UI.showMsg(e, "error");
             console.log(e);
             reject(e);
         }

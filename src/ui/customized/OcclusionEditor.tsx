@@ -17,6 +17,7 @@ import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
 import {LogseqCheckbox} from "../basic/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {UI} from "../UI";
 
 if (!window.parent.fabric) {
     const fabricScript = window.parent.document.createElement("script");
@@ -49,31 +50,20 @@ export async function OcclusionEditor(
 ): Promise<OcclusionData | boolean> {
     return new Promise(async function (resolve, reject) {
         try {
-            const main = window.parent.document.querySelector("#root main");
-            const div = window.parent.document.createElement("div");
-            div.className = "occlusion__editor";
-            main?.appendChild(div);
-            let onClose = () => {
-                try {
-                    ReactDOM.unmountComponentAtNode(div);
-                    div.remove();
-                } catch (e) {}
-            };
+            let {key, onClose} = await UI.getEventHandlersForMountedReactComponent(await logseq.Editor.newBlockUUID());
             onClose = onClose.bind(this);
-            ReactDOM.render(
+            await UI.mountReactComponentInLogseq(key, '#root main',
                 <OcclusionEditorComponent
+                    uiKey={key}
                     imgURL={imgURL}
                     occlusionElements={occlusionElements}
                     occlusionConfig={occlusionConfig}
                     resolve={resolve}
                     reject={reject}
                     onClose={onClose}
-                />,
-                div,
-            );
-            LogseqProxy.App.registerPluginUnloadListener(onClose);
+                />);
         } catch (e) {
-            logseq.App.showMsg("Error", "Failed to open modal");
+            await logseq.UI.showMsg(e, "error");
             console.log(e);
             reject(e);
         }
@@ -81,13 +71,14 @@ export async function OcclusionEditor(
 }
 
 const OcclusionEditorComponent: React.FC<{
+    uiKey: string;
     imgURL: string;
     occlusionElements: Array<OcclusionElement>;
     occlusionConfig: OcclusionConfig;
     resolve: (value: OcclusionData | boolean) => void;
     reject: Function;
     onClose: () => void;
-}> = ({imgURL, occlusionElements, occlusionConfig, resolve, reject, onClose}) => {
+}> = ({uiKey, imgURL, occlusionElements, occlusionConfig, resolve, reject, onClose}) => {
     const [open, setOpen] = useState(true);
     const [occlusionConfigState, setOcclusionConfigState] = React.useState<OcclusionConfig>(
         occlusionConfig || {},
@@ -141,7 +132,7 @@ const OcclusionEditorComponent: React.FC<{
                 const img = new window.parent.fabric.Image(imgEl);
                 const canvasWidth = Math.min(
                     imgEl.width,
-                    window.parent.document.querySelector(".occlusion__editor").clientWidth -
+                    window.parent.document.getElementById(`${uiKey}`).clientWidth -
                         160,
                 );
                 const canvasHeight = Math.min(
@@ -291,6 +282,7 @@ const OcclusionEditorComponent: React.FC<{
         const onKeydown = (e: KeyboardEvent) => {
             if (!fabricRef || !open) return;
             if (e.key === "Escape" && fabricRef.current.getActiveObjects().length > 0) {
+                console.log(fabricRef);
                 fabricRef.current.discardActiveObjects();
                 fabricRef.current.renderAll();
                 e.preventDefault();
