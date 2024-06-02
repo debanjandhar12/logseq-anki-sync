@@ -7,6 +7,7 @@ import * as fs from "fs";
 const {parseSync, traverse} = require("@babel/core");
 const generate = require("@babel/generator").default;
 import {build} from "esbuild";
+import {fileURLToPath} from "node:url";
 // https://vitejs.dev/config/
 
 function staticFileSyncTransformPlugin() {
@@ -108,6 +109,15 @@ export default defineConfig({
         staticFileSyncTransformPlugin(),
         bundleJSStringPlugin(),
     ],
+    resolve:
+    {
+        alias: [
+            { find: 'react/jsx-dev-runtime', replacement: fileURLToPath(new URL('./node_modules/react/jsx-dev-runtime.js', import.meta.url)) },
+            { find: 'react/jsx-runtime', replacement:  fileURLToPath(new URL('./node_modules/react/jsx-runtime.js', import.meta.url)) },
+            { find: 'react', replacement: fileURLToPath(new URL('./src/ui/React.ts', import.meta.url)) },
+            { find: 'react-dom', replacement: fileURLToPath(new URL('./src/ui/ReactDOM.ts', import.meta.url)) }
+        ]
+    },
     build: {
         sourcemap: true,
         target: "modules",
