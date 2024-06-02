@@ -574,10 +574,14 @@ export const LogseqLink = ({uuid, graphName}) => {
 
     const onMouseOver = () => setStyle(hoverStyle);
     const onMouseOut = () => setStyle(normalStyle);
-
-    const href = `logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(
-        uuid,
-    )}`;
+    const onClickHandler = (e) => {
+        if (uuid) {
+            logseq.Editor.openInRightSidebar(uuid);
+            logseq.UI.showMsg(`Block opened in right sidebar.`);
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        }
+    };
 
     return (
         <a
@@ -592,7 +596,7 @@ export const LogseqLink = ({uuid, graphName}) => {
                 height: "auto",
                 userSelect: "text",
             }}
-            href={href}>
+            onClick={onClickHandler}>
             <i className={"logseq-icon"} />
             <span>{uuid}</span>
         </a>

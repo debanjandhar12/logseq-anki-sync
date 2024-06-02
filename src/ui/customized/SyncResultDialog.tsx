@@ -150,14 +150,15 @@ const SyncResultDialogComponent: React.FC<{
                         {createdNotes.length <= 0 && (
                             <span style={{fontSize: "14px"}}>No notes were created.</span>
                         )}
-                        {createdNotes.map((note, index) => (
+                        {createdNotes.map((note, index) =>
+                            failedCreated[note.uuid + "-" + note.type] ? null : (
                             <span
                                 className="inline-flex items-center"
                                 key={note.uuid + note.type}>
                                 <span
                                     style={{
                                         fontSize: "14px",
-                                        color: "var(--ls-success-color)",
+                                        color: "var(--amplify-colors-font-success)",
                                         userSelect: "none",
                                     }}
                                     title={"Synced Successfully"}>
@@ -180,7 +181,7 @@ const SyncResultDialogComponent: React.FC<{
                                     <span
                                         style={{
                                             fontSize: "14px",
-                                            color: "var(--ls-error-color)",
+                                            color: "var(--amplify-colors-font-error)",
                                             userSelect: "none",
                                         }}
                                         title={"Sync Failed"}>
@@ -237,13 +238,13 @@ const SyncResultDialogComponent: React.FC<{
                             <span style={{fontSize: "14px"}}>No notes were updated.</span>
                         )}
                         {updatedNotes.map((note, index) => (
-                            <span
+                            failedUpdated[note.uuid + "-" + note.type] ? null : <span
                                 className="inline-flex items-center"
                                 key={note.uuid + note.type}>
                                 <span
                                     style={{
                                         fontSize: "14px",
-                                        color: "var(--ls-success-color)",
+                                        color: "var(--amplify-colors-font-success)",
                                         userSelect: "none",
                                     }}
                                     title={"Synced Successfully"}>
@@ -265,7 +266,7 @@ const SyncResultDialogComponent: React.FC<{
                                     <span
                                         style={{
                                             fontSize: "14px",
-                                            color: "var(--ls-error-color)",
+                                            color: "var(--amplify-colors-font-error)",
                                             userSelect: "none",
                                         }}
                                         title={"Sync Failed"}>

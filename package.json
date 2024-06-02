@@ -38,7 +38,8 @@
         "hash-it": "^6.0.0",
         "sass": "^1.68.0",
         "tesseract.js": "^5.0.3",
-        "difflib": "^0.2.4"
+        "difflib": "^0.2.4",
+        "focus-trap-react": "^10.2.3"
     },
     "devDependencies": {
         "@babel/core": "^7.0.0",
