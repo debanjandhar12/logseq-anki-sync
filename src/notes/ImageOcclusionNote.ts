@@ -48,6 +48,9 @@ export class ImageOcclusionNote extends Note {
         logseq.Editor.registerBlockContextMenuItem("Image Occlusion", async (block) => {
             await ImageOcclusionNote.handleImageOcclusionOperation(block);
         });
+        logseq.Editor.registerSlashCommand("Image Occlusion", async (block) => {
+            await ImageOcclusionNote.handleImageOcclusionOperation(block);
+        });
     };
 
     public static async handleImageOcclusionOperation(block: BlockEntity | {uuid: string;}) {
