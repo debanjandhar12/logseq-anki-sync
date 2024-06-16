@@ -57,15 +57,15 @@
         <span
             class="note-action bubble"
             onclick="openBlockInLogseq('{{uuid}}')"
-            title="Open block in Logseq"
-            aria-label="Open block in Logseq"
+            title="Open block in Logseq (Shift + K)"
+            aria-label="Open block in Logseq (Shift + K)"
             >➡️</span
         >
         <span
             class="note-action bubble"
             onclick="scrollToClozeElement()"
-            title="Scroll to cloze"
-            aria-label="Scroll to cloze"
+            title="Scroll to cloze (Shift + J)"
+            aria-label="Scroll to cloze (Shift + J)"
             >⏬</span
         >
     </div>
@@ -82,7 +82,16 @@
     <div id="deck" deck_name="{{Deck}}"></div>
     <div id="tags" tags_name="{{Tags}}"></div>
 </div>
+<!-- All three  script tags needed to trigger the load event - may cause multiple triggers -->
 <script async="false" defer="false">
+    load_event = new Event("load");
+    window.dispatchEvent(load_event);
+</script>
+<script>
+    load_event = new Event("load");
+    window.dispatchEvent(load_event);
+</script>
+<script defer="defer">
     load_event = new Event("load");
     window.dispatchEvent(load_event);
 </script>
