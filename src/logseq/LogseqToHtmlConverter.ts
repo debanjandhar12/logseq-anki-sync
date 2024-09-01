@@ -224,7 +224,7 @@ export async function convertToHTMLFile(
             if (elm.attribs["data-lang"]) {
                 $(elm).html(
                     hljs
-                        .highlight(elm.attribs["data-lang"], $(elm).html())
+                        .highlight(elm.attribs["data-lang"], $(elm).text())
                         .value.replace(/\n$/, ""),
                 );
             } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, ""));

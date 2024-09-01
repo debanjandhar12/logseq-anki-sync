@@ -578,6 +578,20 @@ describe("Markdown Input", () => {
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').length).toBe(0);
         });
+        test("Sql with < char should not render &lt; #269 #79", async () => {
+            const htmlFile = await convertToHTMLFile("```sql\nselect * from users where id < 1\n```", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.hljs').length).toBe(1);
+            expect($('.hljs').text()).not.toContain('&lt;');
+        });
+        test("HTML codeblocks works correctly #269", async () => {
+            const htmlFile = await convertToHTMLFile("```html\n<!DOCTYPE html>\n```", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.hljs').length).toBe(1);
+            expect($('.hljs').text()).not.toContain('&lt;');
+        });
     });
     describe("Block Math rendering", () => {
        test("Math with arrow - https://github.com/debanjandhar12/logseq-anki-sync/issues/24", async () => {

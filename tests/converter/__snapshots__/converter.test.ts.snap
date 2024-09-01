@@ -243,7 +243,17 @@ exports[`Markdown Input > Code Block rendering > Everything after codeblock star
 </code></pre>"
 `;
 
+exports[`Markdown Input > Code Block rendering > HTML codeblocks works correctly #269 1`] = `
+"<pre><code data-lang="html" class="html hljs"><span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-keyword">html</span>&gt;</span>
+</code></pre>"
+`;
+
 exports[`Markdown Input > Code Block rendering > Inline Code Block 1`] = `"<span><code>function hello() { console.log('Hello World'); }</code></span>"`;
+
+exports[`Markdown Input > Code Block rendering > Sql with < char should not render &lt; #269 #79 1`] = `
+"<pre><code data-lang="sql" class="sql hljs"><span class="hljs-keyword">select</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">from</span> users <span class="hljs-keyword">where</span> id <span class="hljs-operator">&lt;</span> <span class="hljs-number">1</span>
+</code></pre>"
+`;
 
 exports[`Markdown Input > Code Block rendering > Two Basic Code Block - one after another 1`] = `
 "<span>Test:
