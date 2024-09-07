@@ -3,7 +3,7 @@ import "@logseq/libs";
 import * as cheerio from "cheerio";
 import {
     decodeHTMLEntities,
-    escapeClozeAndSecoundBrace,
+    escapeClozesAndMacroDelimiters,
     getFirstNonEmptyLine,
     getRandomUnicodeString,
     safeReplace,
@@ -373,7 +373,7 @@ async function processRefEmbeds(
                     result += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">`;
                     // _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
                     const block_content =
-                        escapeClozeAndSecoundBrace(_.get(child, "content")) || "";
+                        escapeClozesAndMacroDelimiters(_.get(child, "content")) || "";
                     const format = _.get(child, "format") || "markdown";
                     const blockContentHTMLFile = await convertToHTMLFile(block_content, format);
                     blockContentHTMLFile.assets.forEach((element) => {
@@ -419,7 +419,7 @@ async function processRefEmbeds(
                 for (const child of children) {
                     result += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">`;
                     const block_content =
-                        escapeClozeAndSecoundBrace(_.get(child, "content")) || "";
+                        escapeClozesAndMacroDelimiters(_.get(child, "content")) || "";
                     const format = _.get(child, "format") || "markdown";
                     const blockContentHTMLFile = await convertToHTMLFile(block_content, format);
                     blockContentHTMLFile.assets.forEach((element) => {
@@ -517,7 +517,7 @@ async function processRefEmbeds(
                 block_content = safeReplace(block_content, MD_PROPERTIES_REGEXP, "");
                 block_content = safeReplace(block_content, ORG_PROPERTIES_REGEXP, "");
                 let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
-                block_content_first_line = escapeClozeAndSecoundBrace(block_content_first_line);
+                block_content_first_line = escapeClozesAndMacroDelimiters(block_content_first_line);
                 let blockRef_content = block_content_first_line;
                 for (const [prop, value] of Object.entries(block_props))
                     blockRef_content += `\n${prop}:: ${value}`;

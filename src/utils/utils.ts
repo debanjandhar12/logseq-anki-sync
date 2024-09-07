@@ -4,6 +4,7 @@ import replaceAsync from "string-replace-async";
 import "@logseq/libs";
 import {
     ANKI_CLOZE_REGEXP,
+    LOGSEQ_PLUGIN_CLOZE_REGEXP,
     MD_MATH_BLOCK_REGEXP,
     OhmStrToListGrammar,
     specialChars,
@@ -27,8 +28,9 @@ export function regexPraser(input: string): RegExp {
     return new RegExp(m[2], m[3]);
 }
 
-export function escapeClozeAndSecoundBrace(input: string): string {
+export function escapeClozesAndMacroDelimiters(input: string): string {
     return input
+        .replace(LOGSEQ_PLUGIN_CLOZE_REGEXP, `<span class="anki-cloze-from-another-note" style="white-space: initial;" title="c$1 - $2">$2</span>`)
         .replace(ANKI_CLOZE_REGEXP, "$3")
         .replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`)
         .replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`)

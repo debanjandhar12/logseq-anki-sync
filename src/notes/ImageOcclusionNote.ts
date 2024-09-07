@@ -1,9 +1,8 @@
 import {Note} from "./Note";
 import "@logseq/libs";
 import {
-    escapeClozeAndSecoundBrace,
+    escapeClozesAndMacroDelimiters,
     getFirstNonEmptyLine,
-    getRandomUnicodeString,
     safeReplace,
     safeReplaceAsync,
 } from "../utils/utils";
@@ -150,6 +149,7 @@ export class ImageOcclusionNote extends Note {
                 }
             }
         }
+        clozedContent = escapeClozesAndMacroDelimiters(clozedContent);
         clozedContent += `\n<div class="hidden">
         ${Array.from(clozes)
             .map((cloze) => `{{c${cloze}:: ::<span id="c${cloze}"></span>}}`)

@@ -10,7 +10,7 @@ import {ClozeNote} from "./notes/ClozeNote";
 import {MultilineCardNote} from "./notes/MultilineCardNote";
 import _ from "lodash";
 import {
-    escapeClozeAndSecoundBrace,
+    escapeClozesAndMacroDelimiters,
     handleAnkiError,
     getCaseInsensitive,
     sortAsync,
@@ -511,7 +511,7 @@ export class LogseqToAnkiSync {
             let parent;
             while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
                 parentBlocks.push({
-                    content: escapeClozeAndSecoundBrace(parent.content),
+                    content: escapeClozesAndMacroDelimiters(parent.content),
                     format: parent.format,
                     uuid: parent.uuid,
                     hideWhenCardParent: (

@@ -13,6 +13,10 @@ body {
     color: black;
 }
 
+.anki-cloze-from-another-note, .cloze-inactive {
+    background-color: rgb(59 130 246 / 0.1);
+ }
+
 .hidden {
     display: none;
 }

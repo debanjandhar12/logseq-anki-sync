@@ -4,10 +4,10 @@ import {
     string_to_arr,
     get_math_inside_md,
     safeReplace,
-    escapeClozeAndSecoundBrace,
+    escapeClozesAndMacroDelimiters,
 } from "../utils/utils";
 import _ from "lodash";
-import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
+import {LOGSEQ_PLUGIN_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {HTMLFile, convertToHTMLFile} from "../logseq/LogseqToHtmlConverter";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
@@ -71,15 +71,15 @@ export class ClozeNote extends Note {
                 clozes.forEach(async (cloze) => {
                     if (/c(loze)?[1-9]$/.test((cloze as Element & { title }).title)) {
                         let content = cloze.innerHTML.replace(
-                            /^{?{{c(?:loze)?[1-9] (.*?)((::|\\\\).*)?}}}?$/,
-                            "$1",
+                            LOGSEQ_PLUGIN_CLOZE_REGEXP,
+                            "$2",
                         );
                         if (logseq.settings.renderClozeMarcosInLogseq)
                             content = (await convertToHTMLFile(content, "markdown", {displayTags: true, processRefEmbeds: false})).html;
                         // if parent element has class macro
                         if (cloze.parentElement.classList.contains("macro"))
                             cloze.parentElement.style.display = "initial";
-                        cloze.outerHTML = `<span class="anki-cloze" style="white-space: initial;">${content}</span>`;
+                        cloze.outerHTML = `<span class="anki-cloze" style="white-space: initial;" title="${cloze.innerHTML}">${content}</span>`;
                     }
                 });
             };
@@ -174,14 +174,14 @@ export class ClozeNote extends Note {
                     clozedContent = clozedContent.replaceAll(
                         reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(),
                         (match) => {
-                            return `{{c${cloze_id}::${escapeClozeAndSecoundBrace(match)}${
+                            return `{{c${cloze_id}::${escapeClozesAndMacroDelimiters(match)}${
                                 replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""
                             }\u{2063}}}`; // Add extra space between braces inside math
                         },
                     );
                 else
                     clozedContent = clozedContent.replace(reg, (match) => {
-                        return `{{c${cloze_id}::${escapeClozeAndSecoundBrace(match)}${
+                        return `{{c${cloze_id}::${escapeClozesAndMacroDelimiters(match)}${
                             replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""
                         }\u{2063}}}`; // Add extra space between braces inside math
                     });

@@ -1,6 +1,6 @@
 import {Note} from "./Note";
 import "@logseq/libs";
-import {escapeClozeAndSecoundBrace, getRandomUnicodeString, safeReplace} from "../utils/utils";
+import {escapeClozesAndMacroDelimiters, getRandomUnicodeString, safeReplace} from "../utils/utils";
 import _ from "lodash";
 import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
@@ -54,7 +54,7 @@ export class SwiftArrowNote extends Note {
                 return replacement;
             },
         );
-        clozedContent = escapeClozeAndSecoundBrace(clozedContent);
+        clozedContent = escapeClozesAndMacroDelimiters(clozedContent);
         clozedContent = clozedContent.replaceAll(startDoubleBracket, "{{c");
         clozedContent = clozedContent.replaceAll(doubleSemicolon, "::");
         clozedContent = clozedContent.replaceAll(endDoubleBracket, "}}");
