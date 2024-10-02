@@ -366,6 +366,15 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                         "This tag hides all clozes except the one being tested. This works with multiline and cloze notes."
                                     }
                                 />
+                                <TagFeature
+                                    blockContent={blockContent}
+                                    editingBlockUUID={editingBlockUUID}
+                                    setForceRefresh={setForceRefresh}
+                                    tagName={"hide-all-card-parent"}
+                                    helpMsg={
+                                        "This tag hides all parent blocks in front side of anki card."
+                                    }
+                                />
                                 {/*Extra*/}
                                 <OrgBlockFeature
                                     blockContent={blockContent}

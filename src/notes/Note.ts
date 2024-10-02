@@ -67,6 +67,7 @@ export abstract class Note {
                 display: none;
             }
         `);
+        LogseqProxy.Editor.createPageSilentlyIfNotExists("hide-all-card-parent"); // TODO: relocate this
         LogseqProxy.Editor.createPageSilentlyIfNotExists("hide-when-card-parent"); // TODO: relocate this
         // TODO: Add EXTRA, ANKI_ONLY here
     };

@@ -5,12 +5,12 @@
     display: none;
 }
 
-.hidden-when-card-parent {
+.hidden-parent {
     visibility: hidden;
     position: relative;
 }
 
-.hidden-when-card-parent::before {
+.hidden-parent::before {
     content: "<Parent Hidden in Front Side of Card>";
     visibility: visible;
     background-color: rgb(226, 236, 240);
@@ -18,6 +18,6 @@
     opacity: 0.6;
 }
 
-body.nightMode .hidden-when-card-parent::before {
+body.nightMode .hidden-parent::before {
     background-color: #4d4d4d;
 }
