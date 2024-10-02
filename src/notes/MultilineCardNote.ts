@@ -84,7 +84,7 @@ export class MultilineCardNote extends Note {
         LogseqProxy.Editor.createPageSilentlyIfNotExists("bidirectional");
         LogseqProxy.Editor.createPageSilentlyIfNotExists("incremental");
         LogseqProxy.Editor.createPageSilentlyIfNotExists("hide-all-test-one");
-        for (let i = 0; i <= 9; i++) {
+        for (let i = 1; i <= 9; i++) {
             LogseqProxy.Editor.createPageSilentlyIfNotExists(`depth-${i}`);
         }
     };
