@@ -89,7 +89,8 @@ function main(baseInfo: LSPluginBaseInfo) {
         showModelWithButtons(
             `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${baseInfo.version}!</span> 
                                     <br/><small class="px-2">Update is installed successfully. </small>
-                                    <br /><br /><small class="px-2" style="display: block">In this version, several bugs were fixed. Logseq To HTML Converter also received improvements.<br/>
+                                    <br /><br /><small class="px-2" style="display: block">In this version, <code>hide-all-card-parent</code> tag is introduced. It hides all parent blocks in front side of card.
+                                    </small>
                                     `,
             [
                 {
