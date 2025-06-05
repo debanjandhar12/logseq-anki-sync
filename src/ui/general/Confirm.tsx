@@ -79,29 +79,25 @@ const ModelComponent: React.FC<{
                     </div>
                 </div>
                 <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                    <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
-                        <LogseqButton
-                            isFullWidth={true}
-                            onClick={() => returnResult(true)}
-                            color="primary">
-                            <span
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}>
-                                <span>Confirm</span>
-                                <span className="px-1 opacity-80">
-                                    <code>⏎</code>
-                                </span>
+                    <LogseqButton
+                        isFullWidth={true}
+                        onClick={() => returnResult(true)}
+                        color="primary">
+                        <span
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}>
+                            <span>Confirm</span>
+                            <span className="px-1 opacity-80">
+                                <code>⏎</code>
                             </span>
-                        </LogseqButton>
-                    </span>
-                    <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
-                        <LogseqButton isFullWidth={true} onClick={() => returnResult(false)}>
-                            Cancel
-                        </LogseqButton>
-                    </span>
+                        </span>
+                    </LogseqButton>
+                    <LogseqButton isFullWidth={true} onClick={() => returnResult(false)}>
+                        Cancel
+                    </LogseqButton>
                 </div>
             </div>
         </Modal>

@@ -290,7 +290,7 @@ const SyncSelectionDialogComponent: React.FC<{
 
     return (
         <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false}>
-            <div className="settings-modal of-plugins">
+            <div className="of-plugins pb-2" style={{margin: '-2rem'}}>
                 <div className="absolute top-0 right-0 pt-2 pr-2">
                     <div style={{display: "flex", alignItems: "center"}}>
                         <LogseqDropdownMenu menuArr={selectionMenu}>
@@ -492,35 +492,31 @@ const SyncSelectionDialogComponent: React.FC<{
                         </div>
                     </div>
                     <div className="sm:flex sm:flex-row-reverse">
-                        <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
-                            <LogseqButton
-                                isFullWidth={true}
-                                depth={1}
-                                onClick={() => handleConfirm()}
-                                color="primary">
+                        <LogseqButton
+                            isFullWidth={true}
+                            depth={1}
+                            onClick={() => handleConfirm()}
+                            color="primary">
+                            <span
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}>
+                                <span>Confirm</span>
                                 <span
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    }}>
-                                    <span>Confirm</span>
-                                    <span
-                                        className="opacity-80 ui__button-shortcut-key"
-                                        style={{marginLeft: "2px"}}>
-                                        ⏎
-                                    </span>
+                                    className="opacity-80 ui__button-shortcut-key"
+                                    style={{marginLeft: "2px"}}>
+                                    ⏎
                                 </span>
-                            </LogseqButton>
-                        </span>
-                        <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
-                            <LogseqButton
-                                isFullWidth={true}
-                                depth={1}
-                                onClick={() => handleCancel()}>
-                                Cancel
-                            </LogseqButton>
-                        </span>
+                            </span>
+                        </LogseqButton>
+                        <LogseqButton
+                            isFullWidth={true}
+                            depth={1}
+                            onClick={() => handleCancel()}>
+                            Cancel
+                        </LogseqButton>
                     </div>
                 </div>
             </div>

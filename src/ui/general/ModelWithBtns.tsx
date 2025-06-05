@@ -101,22 +101,20 @@ const ModelComponent: React.FC<{
                 <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                     {btns.map((btn, i) => {
                         return (
-                            <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
-                                <LogseqButton
-                                    key={i}
-                                    isFullWidth={true}
-                                    color="primary"
-                                    onClick={() => {
-                                        btn.f();
-                                        if (
-                                            btn.returnOnClick == null ||
-                                            btn.returnOnClick == true
-                                        )
-                                            returnResult(i);
-                                    }}>
-                                    {btn.name}
-                                </LogseqButton>
-                            </span>
+                            <LogseqButton
+                                key={i}
+                                isFullWidth={true}
+                                color="primary"
+                                onClick={() => {
+                                    btn.f();
+                                    if (
+                                        btn.returnOnClick == null ||
+                                        btn.returnOnClick == true
+                                    )
+                                        returnResult(i);
+                                }}>
+                                {btn.name}
+                            </LogseqButton>
                         );
                     })}
                 </div>

@@ -97,7 +97,7 @@ const SyncResultDialogComponent: React.FC<{
 
     return (
         <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false}>
-            <div className="settings-modal of-plugins pb-2">
+            <div className="of-plugins pb-2" style={{margin: '-2rem'}}>
                 <div className="absolute top-0 right-0 pt-2 pr-2">
                     <button
                         aria-label="Close"

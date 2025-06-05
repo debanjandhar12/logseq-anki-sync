@@ -23,13 +23,13 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
                                                         title,
                                                     }) => {
     let classNameString =
-        "ui__button inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
+        "ui__button inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium transition-colors ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
     classNameString += ` ui__button-depth-${depth} `;
 
     if (color === "primary" || color == "default") {
         classNameString += " bg-primary/90 hover:bg-primary/100 active:opacity-90 text-primary-foreground as-classic";
     } else if (color === "secondary") {
-        classNameString += " bg-secondary/70 text-secondary-foreground hover:bg-secondary/100 active:opacity-80 as-secondary";
+        classNameString += "bg-background hover:bg-accent active:opacity-80 as-outline border";
     } else if (color === "failed") {
         classNameString += " bg-destructive/90 hover:bg-destructive/100 active:opacity-90 text-destructive-foreground as-destructive";
     } else if (color === "success") {
@@ -60,14 +60,15 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
     }
 
     return (
-        <button
-            disabled={disabled}
-            className={classNameString}
-            title={title}
-            style={{borderColor: "hsl(var(--primary-foreground))", margin: "0.25rem"}}
-            onClick={onClick}>
-            {icon && <span className="ui__icon ti" dangerouslySetInnerHTML={{__html:icon}}></span>}
-            {children}
-        </button>
+        <div style={{margin: "0.25rem"}} className={'flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto'}>
+            <button
+                disabled={disabled}
+                className={classNameString}
+                title={title}
+                onClick={onClick}>
+                {icon && <span className="ui__icon ti" dangerouslySetInnerHTML={{__html:icon}}></span>}
+                {children}
+            </button>
+        </div>
     );
 };

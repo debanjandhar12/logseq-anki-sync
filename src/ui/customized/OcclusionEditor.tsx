@@ -1,5 +1,4 @@
 import React, {useState, useEffect, useCallback, useRef} from "react";
-import ReactDOM from "react-dom";
 import _ from "lodash";
 import fabric from "fabric/dist/fabric.js?string";
 import path from "path-browserify";
@@ -503,7 +502,7 @@ const OcclusionEditorComponent: React.FC<{
             onClose={onClose}
             hasCloseButton={false}
             size={"large"}>
-            <div className="settings-modal of-plugins">
+            <div className="of-plugins" style={{margin: '-2rem'}}>
                 <div className="absolute top-0 right-0 pt-2 pr-3">
                     <a href="https://github.com/sponsors/debanjandhar12">
                         <img alt="Donate" style={{height: "1.4rem"}} src={DONATE_ICON} />
@@ -655,35 +654,31 @@ const OcclusionEditorComponent: React.FC<{
                         padding: "2px",
                         alignItems: "center",
                     }}>
-                    <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
-                        <LogseqButton
-                            isFullWidth={true}
-                            depth={1}
-                            onClick={() => handleConfirm()}
-                            color="primary">
+                    <LogseqButton
+                        isFullWidth={true}
+                        depth={1}
+                        onClick={() => handleConfirm()}
+                        color="primary">
+                        <span
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}>
+                            <span>Confirm</span>
                             <span
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}>
-                                <span>Confirm</span>
-                                <span
-                                    className="opacity-80 ui__button-shortcut-key"
-                                    style={{marginLeft: "2px"}}>
-                                    ⏎
-                                </span>
+                                className="opacity-80 ui__button-shortcut-key"
+                                style={{marginLeft: "2px"}}>
+                                ⏎
                             </span>
-                        </LogseqButton>
-                    </span>
-                    <span className="flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto">
-                        <LogseqButton
-                            isFullWidth={true}
-                            depth={1}
-                            onClick={() => handleCancel()}>
-                            Cancel
-                        </LogseqButton>
-                    </span>
+                        </span>
+                    </LogseqButton>
+                    <LogseqButton
+                        isFullWidth={true}
+                        depth={1}
+                        onClick={() => handleCancel()}>
+                        Cancel
+                    </LogseqButton>
                 </div>
             </div>
         </Modal>
