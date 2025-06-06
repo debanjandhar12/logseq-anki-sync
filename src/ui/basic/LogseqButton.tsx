@@ -1,4 +1,5 @@
-import React, {FC} from "react";
+import React, {FC} from '../React';
+
 type LogseqButtonProps = {
     children?: React.ReactNode;
     onClick?: () => void;
@@ -29,7 +30,7 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
     if (color === "primary" || color == "default") {
         classNameString += " bg-primary/90 hover:bg-primary/100 active:opacity-90 text-primary-foreground as-classic";
     } else if (color === "secondary") {
-        classNameString += "bg-background hover:bg-accent active:opacity-80 as-outline border";
+        classNameString += " bg-background hover:bg-accent active:opacity-80 as-outline border";
     } else if (color === "failed") {
         classNameString += " bg-destructive/90 hover:bg-destructive/100 active:opacity-90 text-destructive-foreground as-destructive";
     } else if (color === "success") {

@@ -1,3 +1,6 @@
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
+
 export {};
 declare global {
     interface Window {
@@ -6,6 +9,12 @@ declare global {
         fabric: any;
         Image: any;
         AnkiConnect: any;
-        logseq: {api: any};
+        logseq: {
+            api: any;
+            Experiments: {
+                React: typeof React;
+                ReactDOM: typeof ReactDOM;
+            };
+        };
     }
 }

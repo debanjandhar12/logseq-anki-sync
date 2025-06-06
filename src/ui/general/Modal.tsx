@@ -1,5 +1,4 @@
-import React, {PropsWithChildren} from "react";
-import ReactDOM from "react-dom";
+import React, {PropsWithChildren} from "../React";
 import FocusTrap from "focus-trap-react";
 
 interface ModalProps {

@@ -1,5 +1,5 @@
-import ReactDOM from "react-dom";
-import React from "react";
+import ReactDOM from "../ReactDOM";
+import React from "../React";
 import {Modal} from "./Modal";
 import {LogseqButton} from "../basic/LogseqButton";
 import {LogseqProxy} from "../../logseq/LogseqProxy";

@@ -1,5 +1,13 @@
-import React, {PropsWithChildren} from "react";
-import ReactDOM from "react-dom";
+import React, {PropsWithChildren} from "../React";
+import ReactDOM from "../ReactDOM";
+
+interface NotificationProps {
+    open: boolean;
+    setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    onClose?: () => void;
+    hasCloseBtn?: boolean;
+    icon?: string;
+}
 
 export function Notification({
     open,
@@ -8,7 +16,7 @@ export function Notification({
     hasCloseBtn,
     icon,
     children,
-}: PropsWithChildren<{}>) {
+}: PropsWithChildren<NotificationProps>) {
     React.useEffect(() => {
         if (!open && onClose) {
             onClose();

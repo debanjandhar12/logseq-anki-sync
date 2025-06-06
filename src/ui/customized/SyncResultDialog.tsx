@@ -1,6 +1,6 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState} from "../React";
 import {Modal} from "../general/Modal";
-import ReactDOM from "react-dom";
+import ReactDOM from "../ReactDOM";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
 import {CreateLineDisplay, UpdateLineDisplay} from "./SyncSelectionDialog";

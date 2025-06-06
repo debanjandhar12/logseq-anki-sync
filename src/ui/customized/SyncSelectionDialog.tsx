@@ -1,8 +1,8 @@
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "../React";
 import {Modal} from "../general/Modal";
 import {LogseqButton} from "../basic/LogseqButton";
 import {LogseqCheckbox} from "../basic/LogseqCheckbox";
-import ReactDOM from "react-dom";
+import ReactDOM from "../ReactDOM";
 import {LogseqDropdownMenu} from "../basic/LogseqDropdownMenu";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";

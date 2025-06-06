@@ -104,7 +104,7 @@ export async function updateNote(
     });
 }
 
-export async function deteteNote(ankiId: number): Promise<any> {
+export async function deleteNote(ankiId: number): Promise<any> {
     return await invoke("deleteNotes", {notes: [ankiId]});
 }
 

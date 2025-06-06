@@ -1,3 +1,14 @@
-const ReactDOM = logseq.Experiments.ReactDOM;
-export const {__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED, createPortal, findDOMNode, flushSync, hydrate, render, unmountComponentAtNode, unstable_batchedUpdates, unstable_createPortal, unstable_renderSubtreeIntoContainer, version} = ReactDOM;
+import type * as ReactDOMTypes from 'react-dom';
+
+const ReactDOM = logseq.Experiments.ReactDOM as typeof ReactDOMTypes;
+
 export default ReactDOM;
+
+export const render = ReactDOM.render;
+export const unmountComponentAtNode = ReactDOM.unmountComponentAtNode;
+export const findDOMNode = ReactDOM.findDOMNode;
+export const createPortal = ReactDOM.createPortal;
+
+export type {
+    Renderer
+} from 'react-dom';

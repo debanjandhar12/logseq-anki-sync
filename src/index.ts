@@ -2,7 +2,6 @@ import "@logseq/libs";
 import {LSPluginBaseInfo} from "@logseq/libs/dist/LSPlugin";
 import {ClozeNote} from "./notes/ClozeNote";
 import {MultilineCardNote} from "./notes/MultilineCardNote";
-import _ from "lodash";
 import {LogseqToAnkiSync} from "./syncLogseqToAnki";
 import {addSettingsToLogseq} from "./settings";
 import {ANKI_ICON} from "./constants";
@@ -13,7 +12,6 @@ import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
 import * as blockAndPageHashCache from "./logseq/blockAndPageHashCache";
 import {Buffer} from "buffer/";
 import process from "process";
-import {SelectionModal} from "./ui/general/SelectionModal";
 import {Note} from "./notes/Note";
 import {showModelWithButtons} from "./ui/general/ModelWithBtns";
 import {UI} from "./ui/UI";
@@ -82,26 +80,27 @@ function main(baseInfo: LSPluginBaseInfo) {
     window.process = process;
 
     // Show welcome message
-    if (
-        logseq.settings.lastWelcomeVersion &&
-        logseq.settings.lastWelcomeVersion !== pkg.version
-    ) {
-        showModelWithButtons(
-            `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span> 
+    if (logseq.settings.lastWelcomeVersion &&
+        logseq.settings.lastWelcomeVersion !== pkg.version) {
+        (async () => {
+            await new Promise(resolve => setTimeout(resolve, 1000));    // wait logseq's react to load
+            await showModelWithButtons(
+                `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span> 
                                     <br/><small class="px-2">Update is installed successfully. </small>
                                     <br /><br /><small class="px-2" style="display: block">This patch contains minor bug fixes.</small>`,
-            [
-                {
-                    name: "Read Release notes",
-                    f: () => {
-                        window.open(
-                            `https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}`,
-                        );
+                [
+                    {
+                        name: "Read Release Notes",
+                        f: () => {
+                            window.open(
+                                `https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}`,
+                            );
+                        },
+                        returnOnClick: false,
                     },
-                    returnOnClick: false,
-                },
-            ],
-        );
+                ],
+            )
+        })();
     }
     logseq.updateSettings({lastWelcomeVersion: pkg.version});
 }

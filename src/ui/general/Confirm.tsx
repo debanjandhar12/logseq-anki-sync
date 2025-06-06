@@ -1,8 +1,6 @@
-import ReactDOM from "react-dom";
-import React from "react";
+import React from "../React";
 import {Modal} from "./Modal";
 import {LogseqButton} from "../basic/LogseqButton";
-import {LogseqProxy} from "../../logseq/LogseqProxy";
 import {UI} from "../UI";
 
 export async function Confirm(msg: string): Promise<boolean> {

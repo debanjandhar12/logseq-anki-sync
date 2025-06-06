@@ -1,8 +1,6 @@
 import {Modal} from "./Modal";
-import React from "react";
+import React from "../React";
 import {LogseqButton} from "../basic/LogseqButton";
-import ReactDOM from "react-dom";
-import {LogseqProxy} from "../../logseq/LogseqProxy";
 import {UI} from "../UI";
 
 export async function SelectionModal(

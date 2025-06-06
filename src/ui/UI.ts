@@ -1,4 +1,4 @@
-import ReactDOM from "react-dom";
+import ReactDOM from './ReactDOM';
 import {LogseqProxy} from "../logseq/LogseqProxy";
 
 export class UI {

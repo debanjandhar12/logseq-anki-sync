@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback, useRef} from "react";
+import React, {useState, useEffect, useCallback, useRef} from "../React";
 import _ from "lodash";
 import fabric from "fabric/dist/fabric.js?string";
 import path from "path-browserify";
