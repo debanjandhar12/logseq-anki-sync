@@ -40,6 +40,10 @@ export class LogseqToAnkiSync {
     modelName: string;
 
     public async sync(): Promise<void> {
+        if (logseq.App.checkCurrentIsDbGraph && await logseq.App.checkCurrentIsDbGraph() === true) {
+            await logseq.UI.showMsg("Anki sync not supported in DB Graphs yet", "error");
+            return;
+        }
         if (LogseqToAnkiSync.isSyncing) {
             console.log(`Syncing already in process...`);
             return;
