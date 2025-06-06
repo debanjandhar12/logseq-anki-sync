@@ -65,7 +65,9 @@ export class SwiftArrowNote extends Note {
         const singleSwiftArrowBlocks = await logseq.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
-        [?b :block/content ?content]
+        (or
+           (and [?b :block/content ?content])
+           (and [?b :block/title ?content]))
         [(re-pattern ":(<->|->|<-)") ?regex]
         [(re-find ?regex ?content)]
         ]`);

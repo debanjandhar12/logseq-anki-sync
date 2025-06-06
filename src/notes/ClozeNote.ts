@@ -220,7 +220,9 @@ export class ClozeNote extends Note {
         const macroCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
-        [?b :block/content ?content]
+        (or
+           (and [?b :block/content ?content])
+           (and [?b :block/title ?content]))
         [(re-pattern "${clozePattern}") ?regex]
         [(re-find ?regex ?content)]
         ]`);
@@ -238,7 +240,9 @@ export class ClozeNote extends Note {
         const orgCloze_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
         [:find (pull ?b [*])
         :where
-        [?b :block/content ?content]
+        (or
+           (and [?b :block/content ?content])
+           (and [?b :block/title ?content]))
         [(re-pattern "#\\\\+BEGIN_(CLOZE)( .*)?\\\\n((.|\\\\n)*?)#\\\\+END_\\\\1") ?regex]
         [(re-find ?regex ?content)]
         ]`);
