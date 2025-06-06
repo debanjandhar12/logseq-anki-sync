@@ -84,14 +84,12 @@ function main(baseInfo: LSPluginBaseInfo) {
     // Show welcome message
     if (
         logseq.settings.lastWelcomeVersion &&
-        logseq.settings.lastWelcomeVersion !== baseInfo.version
+        logseq.settings.lastWelcomeVersion !== pkg.version
     ) {
         showModelWithButtons(
-            `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${baseInfo.version}!</span> 
+            `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span> 
                                     <br/><small class="px-2">Update is installed successfully. </small>
-                                    <br /><br /><small class="px-2" style="display: block">In this version, <code>hide-all-card-parent</code> tag is introduced. It hides all parent blocks in front side of card.
-                                    </small>
-                                    `,
+                                    <br /><br /><small class="px-2" style="display: block">This patch contains minor bug fixes.</small>`,
             [
                 {
                     name: "Read Release notes",
@@ -105,7 +103,7 @@ function main(baseInfo: LSPluginBaseInfo) {
             ],
         );
     }
-    logseq.updateSettings({lastWelcomeVersion: baseInfo.version});
+    logseq.updateSettings({lastWelcomeVersion: pkg.version});
 }
 
 // Bootstrap

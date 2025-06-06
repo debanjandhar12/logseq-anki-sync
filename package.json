@@ -1,6 +1,6 @@
 {
     "name": "logseq-anki-sync",
-    "version": "6.4.6",
+    "version": "6.4.7",
     "title": "Logseq Anki Sync",
     "description": "An logseq to anki syncing plugin with superpowers - image occlusion, card direction, incremental cards, and a lot more.",
     "main": "dist/index.html",
@@ -18,7 +18,7 @@
         "icon": "/icon.png"
     },
     "dependencies": {
-        "@logseq/libs": "^0.0.17",
+        "@logseq/libs": "^0.2.1",
         "@thi.ng/hiccup": "^4.2.29",
         "@yellowdig/cljs-tools": "0.2.0",
         "await-lock": "^2.2.2",
@@ -70,10 +70,10 @@
         "process": "^0.11.10",
         "stream-browserify": "^3.0.0",
         "typescript": "^5.1.6",
-        "vite": "^4.3.8",
+        "vite": "^6.3.5",
         "vite-plugin-logseq": "^1.1.2",
         "vite-plugin-node-polyfills": "^0.8.2",
-        "vitest": "^1.2.0",
+        "vitest": "^3.2.2",
         "vm-browserify": "^1.1.2"
     }
 }
