@@ -225,9 +225,9 @@ export async function convertToHTMLFile(
                 $(elm).html(
                     hljs
                         .highlight(elm.attribs["data-lang"], $(elm).text())
-                        .value.replace(/\n$/, ""),
+                        .value.replace(/\n$/, "").replace(/::/g, '<span>&#58;</span><span>&#58;</span>'),
                 );
-            } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, ""));
+            } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, "").replace(/::/g, '<span>&#58;</span><span>&#58;</span>'));
         } catch (e) {
             console.warn(e);
         }
