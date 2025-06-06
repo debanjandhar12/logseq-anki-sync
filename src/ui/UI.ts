@@ -1,5 +1,6 @@
 import ReactDOM from './ReactDOM';
 import {LogseqProxy} from "../logseq/LogseqProxy";
+import { waitForElement } from '../utils/waitForElement';
 
 export class UI {
     public static init() {
@@ -120,7 +121,7 @@ export class UI {
             try {
                 const div = window.parent.document.getElementById(key);
                 ReactDOM.unmountComponentAtNode(div);
-                await logseq.provideUI({
+                logseq.provideUI({
                     key: key,
                     path: "#root main",
                     template: "",
@@ -128,6 +129,7 @@ export class UI {
                     replace: true,
                     close: "outside"
                 });
+                div.remove();
             } catch (e) {
                 console.log(e);
             }
@@ -138,7 +140,7 @@ export class UI {
 
     public static async mountReactComponentInLogseq(key, path, component) {
         // Random key to avoid conflicts
-        await logseq.provideUI({
+        logseq.provideUI({
             key: key,
             path: path,
             close: "outside",
@@ -146,16 +148,10 @@ export class UI {
         });
 
         // Wait for the element to be mounted
-        const attempt = 0;
-        while (!window.parent.document.getElementById(key)) {
-            await new Promise(r => setTimeout(r, 100));
-            if (attempt > 10) {
-                throw new Error("Element failed to be mounted");
-            }
-        }
+        await waitForElement(`//div[@id='${key}']`, 10000, window.parent.document);
         const { onClose } = await this.getEventHandlersForMountedReactComponent(key);
         LogseqProxy.App.registerPluginUnloadListener(onClose);
 
-        logseq.Experiments.ReactDOM.render(component, window.parent.document.getElementById(key));
+        ReactDOM.render(component, window.parent.document.getElementById(key));
     }
 }

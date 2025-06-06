@@ -1,6 +1,8 @@
 import type * as ReactTypes from 'react';
+import * as OriginalReact from 'react';
 
-const React = logseq.Experiments.React as typeof ReactTypes;
+const React = ((typeof logseq !== 'undefined' && logseq?.Experiments?.React) as typeof ReactTypes
+    || OriginalReact) ;
 
 export default React;
 

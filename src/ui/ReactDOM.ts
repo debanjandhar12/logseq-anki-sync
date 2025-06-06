@@ -1,6 +1,8 @@
 import type * as ReactDOMTypes from 'react-dom';
+import * as OriginalReactDOM from "react-dom";
 
-const ReactDOM = logseq.Experiments.ReactDOM as typeof ReactDOMTypes;
+const ReactDOM = ((typeof logseq !== 'undefined' && logseq?.Experiments?.ReactDOM)
+    || OriginalReactDOM) as typeof ReactDOMTypes;
 
 export default ReactDOM;
 
