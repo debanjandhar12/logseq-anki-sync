@@ -1,5 +1,5 @@
 import { Addon } from "./Addon";
-import { LogseqAnkiFeatureExplorer } from "../ui/customized/LogseqAnkiFeatureExplorer";
+import { LogseqAnkiFeatureExplorer } from "../ui/pages/LogseqAnkiFeatureExplorer";
 
 export class AnkiFeatureExplorer extends Addon {
     static _instance: AnkiFeatureExplorer;

@@ -21,10 +21,10 @@ import {
     OcclusionData,
     OcclusionEditor,
     OcclusionElement,
-} from "../ui/customized/OcclusionEditor";
+} from "../ui/pages/OcclusionEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
-import {SelectionModal} from "../ui/general/SelectionModal";
+import {SelectionModal} from "../ui/modals/SelectionModal";
 import {val} from "cheerio/lib/api/attributes";
 
 export type ImageToOcclusionDataHashMap = {[key: string]: OcclusionData};
