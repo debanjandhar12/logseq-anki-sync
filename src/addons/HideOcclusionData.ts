@@ -10,11 +10,19 @@ export class HideOcclusionData extends Addon {
     public init(): void {
         if (this.isEnabled()) {
             logseq.provideStyle({
-                style: `div:has(a[data-ref="occlusion"]) + span + .page-property-value > div {
+                style: `
+            div:has(a[data-ref="occlusion"]) + span + .page-property-value > div {
                 display: none;
             }
             div:has(a[data-ref="occlusion"]) + span + .page-property-value:before {
                 display: inline;
+                content: '<hidden occlusion data>';
+                font-style: italic;
+            }
+            div:has(a[data-ref="occlusion"]) > .page-property-value > div {
+                display: none;
+            }
+            div:has(a[data-ref="occlusion"]) > .page-property-value::before {
                 content: '<hidden occlusion data>';
                 font-style: italic;
             }`,
