@@ -10,7 +10,7 @@ import {
     specialChars,
     WARNING_ICON,
 } from "../constants";
-import {ActionNotification} from "../ui/general/ActionNotification";
+import {ActionNotification} from "../ui/common/ActionNotification";
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {

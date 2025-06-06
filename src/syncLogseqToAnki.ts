@@ -22,17 +22,17 @@ import {convertToHTMLFile} from "./logseq/LogseqToHtmlConverter";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import pkg from "../package.json";
 import {SwiftArrowNote} from "./notes/SwiftArrowNote";
-import {ProgressNotification} from "./ui/customized/ProgressNotification";
-import {Confirm} from "./ui/general/Confirm";
+import {ProgressNotification} from "./ui/pages/ProgressNotification";
+import {Confirm} from "./ui/modals/Confirm";
 import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
 import NoteHashCalculator from "./notes/NoteHashCalculator";
 import {cancelable, CancelablePromise} from "cancelable-promise";
 import {DepGraph} from "dependency-graph";
 import {NoteUtils} from "./notes/NoteUtils";
-import {ActionNotification} from "./ui/general/ActionNotification";
-import {showModelWithButtons} from "./ui/general/ModelWithBtns";
-import {SyncSelectionDialog} from "./ui/customized/SyncSelectionDialog";
-import {SyncResultDialog} from "./ui/customized/SyncResultDialog";
+import {ActionNotification} from "./ui/common/ActionNotification";
+import {showModelWithButtons} from "./ui/modals/ModelWithBtns";
+import {SyncSelectionDialog} from "./ui/pages/SyncSelectionDialog";
+import {SyncResultDialog} from "./ui/pages/SyncResultDialog";
 import {BlockEntity, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -218,11 +218,11 @@ export class LogseqToAnkiSync {
         await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager, syncNotificationObj);
         await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager, syncNotificationObj);
         await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncNotificationObj);
-        await syncNotificationObj.updateMessage("Syncing logseq assets to anki...");
+        syncNotificationObj.updateMessage("Syncing logseq assets to anki...");
         await this.updateAssets(ankiNoteManager);
-        await syncNotificationObj.increment(twentyPercent);
+        syncNotificationObj.increment(twentyPercent);
         await AnkiConnect.invoke("reloadCollection", {});
-        await syncNotificationObj.increment();
+        syncNotificationObj.increment();
         window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
 
         // Save logseq graph if any changes were made
