@@ -544,11 +544,14 @@ export class LogseqToAnkiSync {
                 newHtml += `<ul class="children-list"><li class="children ${_.get(parentBlock, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">
                                 ${parentBlockConverted.html}`;
             }
-            newHtml += `<ul class="children-list"><li class="children ${_.get(note, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">
-                            ${html}</li></ul>`;
-            parentBlocks.reverse().forEach((parentBlock) => {
-                newHtml += `</li></ul>`;
-            });
+            if (parentBlocks.length > 0) {
+                newHtml += `<ul class="children-list"><li class="children ${_.get(note, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">${html}</li></ul>`;
+                newHtml += '</li></ul>'.repeat(parentBlocks.length);
+            } else {
+                // keep the ul wrapper to avoid breaking the presentation of the note
+                newHtml += `<ul class="children-list">${html}</ul>`;
+            }
+
             html = newHtml;
         }
 
