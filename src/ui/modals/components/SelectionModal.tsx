@@ -39,7 +39,7 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
             if (selection === null) {
                 returnResult(null);
             } else {
-                returnResult(selection || null);
+                returnResult(selection);
             }
         },
         [returnResult, items]
