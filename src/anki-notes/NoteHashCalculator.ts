@@ -20,6 +20,7 @@ import {
 import _ from "lodash";
 import {getLogseqBlockPropSafe} from "../utils/utils";
 
+
 export default class NoteHashCalculator {
     public static async getHash(note: Note, ankiFields: any[]): Promise<string> {
         const toHash = [];
@@ -28,9 +29,10 @@ export default class NoteHashCalculator {
         const dependencies = note.getBlockDependencies();
         let parentID = (await LogseqProxy.Editor.getBlock(note.uuid)).parent.id;
         let parent;
+        const { includeParentContent } = LogseqProxy.Settings.getPluginSettings();
         while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
             const blockUUID = getUUIDFromBlock(parent) || parent.parent.id;
-            if (logseq.settings.includeParentContent)
+            if (includeParentContent)
                 dependencies.push({
                     type: "Block",
                     value: blockUUID,
@@ -67,8 +69,9 @@ export default class NoteHashCalculator {
                 });
             }
         }
+        const settings = LogseqProxy.Settings.getPluginSettings();
         toHash.push(
-            _.omit(logseq.settings, [
+            _.omit(settings, [
                 "addonsList",
                 "renderClozeMarcosInLogseq",
                 "hideClozeMarcosUntilHoverInLogseq",

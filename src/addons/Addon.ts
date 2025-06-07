@@ -1,3 +1,6 @@
+import '@logseq/libs';
+import { LogseqProxy } from '../logseq/LogseqProxy';
+
 export abstract class Addon {
     public abstract getName(): string;
     public abstract init(): void;
@@ -6,7 +9,7 @@ export abstract class Addon {
         window.parent.LSPluginCore.reload([logseq.baseInfo.id]);
     }
     public isEnabled(): boolean {
-        const addonsList = logseq.settings.addonsList || [];
-        return addonsList.includes(this.getName());
+        const { addonsList } = LogseqProxy.Settings.getPluginSettings();
+        return addonsList?.includes(this.getName()) ?? false;
     }
 }

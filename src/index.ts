@@ -17,6 +17,7 @@ import {UI} from "./ui/UI";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
 import pkg from "./../package.json";
 
+
 function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
     const syncLogseqToAnki = async function () {
@@ -79,8 +80,9 @@ function main(baseInfo: LSPluginBaseInfo) {
     window.process = process;
 
     // Show welcome message
-    if (logseq.settings.lastWelcomeVersion &&
-        logseq.settings.lastWelcomeVersion !== pkg.version) {
+    const { lastWelcomeVersion } = LogseqProxy.Settings.getPluginSettings();
+    if (lastWelcomeVersion &&
+        lastWelcomeVersion !== pkg.version) {
         (async () => {
             await new Promise(resolve => setTimeout(resolve, 1000));    // wait logseq's react to load
             await showButtonModal(

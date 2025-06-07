@@ -12,6 +12,7 @@ import {LogseqProxy} from "../logseq/LogseqProxy";
 import {HTMLFile, convertToHTMLFile} from "../logseq/LogseqToHtmlConverter";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
+
 export class ClozeNote extends Note {
     public type = "cloze";
 
@@ -38,8 +39,9 @@ export class ClozeNote extends Note {
             }
         `);
         LogseqProxy.Editor.createPageSilentlyIfNotExists("type-in");
-        
-        if (logseq.settings.hideClozeMarcosUntilHoverInLogseq) {
+
+        const { hideClozeMarcosUntilHoverInLogseq } = LogseqProxy.Settings.getPluginSettings();
+        if (hideClozeMarcosUntilHoverInLogseq) {
             logseq.provideStyle(`
                 .anki-cloze {
                     color: transparent !important;
@@ -74,7 +76,8 @@ export class ClozeNote extends Note {
                             LOGSEQ_PLUGIN_CLOZE_REGEXP,
                             "$2",
                         );
-                        if (logseq.settings.renderClozeMarcosInLogseq)
+                        const { renderClozeMarcosInLogseq } = LogseqProxy.Settings.getPluginSettings();
+                        if (renderClozeMarcosInLogseq)
                             content = (await convertToHTMLFile(content, "markdown", {displayTags: true, processRefEmbeds: false})).html;
                         // if parent element has class macro
                         if (cloze.parentElement.classList.contains("macro"))
