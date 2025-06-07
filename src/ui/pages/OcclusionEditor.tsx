@@ -11,10 +11,11 @@ import {
     SETTINGS_ICON,
 } from "../../constants";
 import {Modal} from "../modals/Modal";
+import {useModal} from "../modals/hooks/useModal";
+import {createModalPromise} from "../modals/utils/createModalPromise";
 import {LogseqButton} from "../common/LogseqButton";
 import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
-import {UI} from "../UI";
 
 if (!window.parent.fabric) {
     const fabricScript = window.parent.document.createElement("script");
@@ -40,43 +41,39 @@ export type OcclusionData = {
     elements: Array<OcclusionElement>;
 };
 
-export async function OcclusionEditor(
+export async function showOcclusionEditor(
     imgURL: string,
     occlusionElements: Array<OcclusionElement>,
     occlusionConfig: OcclusionConfig,
 ): Promise<OcclusionData | boolean> {
-    return new Promise(async function (resolve, reject) {
-        try {
-            let {key, onClose} = await UI.getEventHandlersForMountedReactComponent(await logseq.Editor.newBlockUUID());
-            onClose = onClose.bind(this);
-            await UI.mountReactComponentInLogseq(key, '#root main',
-                <OcclusionEditorComponent
-                    uiKey={key}
-                    imgURL={imgURL}
-                    occlusionElements={occlusionElements}
-                    occlusionConfig={occlusionConfig}
-                    resolve={resolve}
-                    reject={reject}
-                    onClose={onClose}
-                />);
-        } catch (e) {
-            await logseq.UI.showMsg(e, "error");
-            console.log(e);
-            reject(e);
-        }
-    });
+    return createModalPromise<OcclusionData | boolean>(
+        (props) => (
+            <OcclusionEditorComponent
+                imgURL={imgURL}
+                occlusionElements={occlusionElements}
+                occlusionConfig={occlusionConfig}
+                {...props}
+            />
+        ),
+        {},
+        { errorMessage: "Failed to open Occlusion Editor" }
+    );
 }
 
 const OcclusionEditorComponent: React.FC<{
-    uiKey: string;
     imgURL: string;
     occlusionElements: Array<OcclusionElement>;
     occlusionConfig: OcclusionConfig;
     resolve: (value: OcclusionData | boolean) => void;
     reject: Function;
     onClose: () => void;
-}> = ({uiKey, imgURL, occlusionElements, occlusionConfig, resolve, reject, onClose}) => {
-    const [open, setOpen] = useState(true);
+    uiKey: string;
+}> = ({imgURL, occlusionElements, occlusionConfig, resolve, reject, onClose, uiKey}) => {
+    const { open, setOpen, handleCancel: modalHandleCancel, returnResult } = useModal<OcclusionData | boolean>(resolve, {
+        onClose,
+        enableEscapeKey: false, // We'll handle Escape key manually due to complex interactions
+        enableEnterKey: false   // We'll handle Enter key manually
+    });
     const [occlusionConfigState, setOcclusionConfigState] = React.useState<OcclusionConfig>(
         occlusionConfig || {},
     );
@@ -100,15 +97,13 @@ const OcclusionEditorComponent: React.FC<{
                 cId: parseInt(obj._objects[1].text),
             };
         });
-        resolve({
+        returnResult({
             config: occlusionConfigState,
             elements: newOcclusionElements,
         });
-        onClose();
     };
     const handleCancel = () => {
-        resolve(false);
-        onClose();
+        returnResult(false);
     };
 
     React.useEffect(() => {
@@ -129,8 +124,7 @@ const OcclusionEditorComponent: React.FC<{
                 const img = new window.parent.fabric.Image(imgEl);
                 const canvasWidth = Math.min(
                     imgEl.width,
-                    window.parent.document.getElementById(`${uiKey}`).clientWidth -
-                        160,
+                    window.parent.document.getElementById(uiKey)?.clientWidth - 160 || 800,
                 );
                 const canvasHeight = Math.min(
                     imgEl.height,
@@ -285,7 +279,7 @@ const OcclusionEditorComponent: React.FC<{
                 e.preventDefault();
                 e.stopImmediatePropagation();
             } else if (e.key === "Escape") {
-                onClose();
+                modalHandleCancel();
                 e.preventDefault();
                 e.stopImmediatePropagation();
             }

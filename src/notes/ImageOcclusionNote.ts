@@ -19,7 +19,7 @@ import {LogseqProxy} from "../logseq/LogseqProxy";
 import {convertToHTMLFile, HTMLFile, processProperties} from "../logseq/LogseqToHtmlConverter";
 import {
     OcclusionData,
-    OcclusionEditor,
+    showOcclusionEditor,
     OcclusionElement,
 } from "../ui/pages/OcclusionEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
@@ -95,7 +95,7 @@ export class ImageOcclusionNote extends Note {
         if (selectedImageIdx != null) selectedImage = block_images[selectedImageIdx];
         if (selectedImage) {
             selectedImage = (selectedImage as string).split("?")[0];
-            const newOcclusionData = await OcclusionEditor(
+            const newOcclusionData = await showOcclusionEditor(
                 selectedImage,
                 _.get(
                     imgToOcclusionDataHashMap[selectedImage],

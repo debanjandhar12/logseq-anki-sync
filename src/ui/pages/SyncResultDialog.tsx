@@ -7,7 +7,7 @@ import { Modal } from "../modals/Modal";
 import { ModalHeader } from "../modals/ModalHeader";
 import { useModal } from "../modals/hooks/useModal";
 
-export async function SyncResultDialog(
+export async function showSyncResultDialog(
     createdNotes: Array<any>,
     updatedNotes: Array<any>,
     deletedNotes: Array<any>,

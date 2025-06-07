@@ -10,7 +10,7 @@ import { ModalHeader } from "../modals/ModalHeader";
 import { DialogModalFooter } from "../modals/ModalFooter";
 import { useModal } from "../modals/hooks/useModal";
 
-export async function SyncSelectionDialog(
+export async function showSyncSelectionDialog(
     toCreateNotes: Array<any>,
     toUpdateNotes: Array<any>,
     toDeleteNotes: Array<any>,

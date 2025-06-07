@@ -1,5 +1,5 @@
 import { Addon } from "./Addon";
-import { LogseqAnkiFeatureExplorer } from "../ui/pages/LogseqAnkiFeatureExplorer";
+import { showLogseqAnkiFeatureExplorer } from "../ui/pages/LogseqAnkiFeatureExplorer";
 
 export class AnkiFeatureExplorer extends Addon {
     static _instance: AnkiFeatureExplorer;
@@ -24,7 +24,7 @@ export class AnkiFeatureExplorer extends Addon {
 
     private async openAnkiFeatureExplorer(...blocks) {
         try {
-            await LogseqAnkiFeatureExplorer(blocks[0].uuid);
+            await showLogseqAnkiFeatureExplorer(blocks[0].uuid);
         } catch (e) {
             console.error(e);
         }

@@ -1,36 +1,39 @@
 import React, {useCallback, useEffect, useRef, useState} from "../React";
 import {Modal} from "../modals/Modal";
+import {useModal} from "../modals/hooks/useModal";
+import {createModalPromise} from "../modals/utils/createModalPromise";
 import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import {LogseqButton} from "../common/LogseqButton";
 import {BlockContentParser} from "../../logseq/BlockContentParser";
 import {ImageOcclusionNote} from "../../notes/ImageOcclusionNote";
-import {UI} from "../UI";
 import _ from "lodash";
 
-export async function LogseqAnkiFeatureExplorer(editingBlockUUID: string) {
-    return new Promise(async function (resolve, reject) {
-        try {
-            let {key, onClose} = await UI.getEventHandlersForMountedReactComponent(await logseq.Editor.newBlockUUID());
-            onClose = onClose.bind(this);
-            await UI.mountReactComponentInLogseq(key, '#root main',
-                <LogseqAnkiFeatureExplorerComponent
-                    editingBlockUUID={editingBlockUUID}
-                    onClose={onClose}
-                />);
-        } catch (e) {
-            await logseq.UI.showMsg(e, "error");
-            console.log(e);
-            reject(e);
-        }
-    });
+export async function showLogseqAnkiFeatureExplorer(editingBlockUUID: string): Promise<void> {
+    return createModalPromise<void>(
+        (props) => (
+            <LogseqAnkiFeatureExplorerComponent
+                editingBlockUUID={editingBlockUUID}
+                {...props}
+            />
+        ),
+        {},
+        { errorMessage: "Failed to open Logseq Anki Feature Explorer" }
+    );
 }
 
 const LogseqAnkiFeatureExplorerComponent: React.FC<{
     editingBlockUUID: string;
+    resolve: (value: void) => void;
+    reject: (error: any) => void;
     onClose: () => void;
-}> = ({editingBlockUUID, onClose}) => {
-    const [open, setOpen] = useState(true);
+    uiKey: string;
+}> = ({editingBlockUUID, resolve, reject, onClose, uiKey}) => {
+    const { open, setOpen, handleCancel } = useModal<void>(resolve, {
+        onClose,
+        enableEscapeKey: true,
+        enableEnterKey: false
+    });
     const [blockContent, setBlockContent] = useState("");
     const [pageTree, setPageTree] = useState([]);
     const [namespaceTree, setNamespaceTree] = useState([]);
@@ -112,21 +115,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
         })();
     }, [blockContent]);
 
-    const onKeydown = React.useCallback((e: KeyboardEvent) => {
-            if (!open) return;
-            if (e.key === "Escape") {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                setOpen(false);
-            }
-    }, []);
-    React.useEffect(() => {
-        if (open) window.parent.document.addEventListener("keydown", onKeydown);
-        else onClose();
-        return () => {
-            window.parent.document.removeEventListener("keydown", onKeydown);
-        };
-    }, [open]);
+
 
     return (
         <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false}>
@@ -136,7 +125,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                         aria-label="Close"
                         type="button"
                         className="ui__modal-close opacity-60 hover:opacity-100"
-                        onClick={() => setOpen(false)}>
+                        onClick={() => handleCancel()}>
                         <svg
                             stroke="currentColor"
                             viewBox="0 0 24 24"

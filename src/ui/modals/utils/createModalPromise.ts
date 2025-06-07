@@ -14,6 +14,7 @@ export async function createModalPromise<T>(
         resolve: (value: T) => void;
         reject: (error: any) => void;
         onClose: () => void;
+        uiKey: string;
         [key: string]: any;
     }) => React.ReactElement,
     componentProps: Record<string, any> = {},
@@ -38,6 +39,7 @@ export async function createModalPromise<T>(
                     resolve,
                     reject,
                     onClose: boundOnClose,
+                    uiKey: key,
                     ...componentProps,
                 })
             );

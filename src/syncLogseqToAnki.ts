@@ -29,8 +29,8 @@ import NoteHashCalculator from "./notes/NoteHashCalculator";
 import {CancelablePromise} from "cancelable-promise";
 import {NoteUtils} from "./notes/NoteUtils";
 import {ActionNotification} from "./ui/common/ActionNotification";
-import {SyncSelectionDialog} from "./ui/pages/SyncSelectionDialog";
-import {SyncResultDialog} from "./ui/pages/SyncResultDialog";
+import {showSyncSelectionDialog} from "./ui/pages/SyncSelectionDialog";
+import {showSyncResultDialog} from "./ui/pages/SyncResultDialog";
 import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -161,7 +161,7 @@ export class LogseqToAnkiSync {
             }
         }, 4000);
 
-        const noteSelection = await SyncSelectionDialog(
+        const noteSelection = await showSyncSelectionDialog(
             toCreateNotesOriginal,
             toUpdateNotesOriginal,
             toDeleteNotesOriginal,
@@ -256,7 +256,7 @@ export class LogseqToAnkiSync {
                 {
                     name: "View Details",
                     func: () => {
-                        SyncResultDialog(
+                        showSyncResultDialog(
                             toCreateNotes,
                             toUpdateNotes,
                             toDeleteNotes,
