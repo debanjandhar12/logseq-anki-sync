@@ -2,10 +2,7 @@ import React, {useState} from "../React";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
 import {CreateLineDisplay, UpdateLineDisplay} from "./SyncSelectionDialog";
-import { createModalPromise } from "../modals/utils/createModalPromise";
-import { Modal } from "../modals/Modal";
-import { ModalHeader } from "../modals/ModalHeader";
-import { useModal } from "../modals/hooks/useModal";
+import { createModalPromise, Modal, ModalHeader, useModal } from "../";
 
 export async function showSyncResultDialog(
     createdNotes: Array<any>,

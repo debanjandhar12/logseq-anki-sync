@@ -24,7 +24,7 @@ import {
 } from "../ui/pages/OcclusionEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
-import {showSelectionModal} from "../ui/modals";
+import {showSelectionModal} from "../ui";
 
 export type ImageToOcclusionDataHashMap = {[key: string]: OcclusionData};
 

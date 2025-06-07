@@ -23,7 +23,7 @@ import {LogseqProxy} from "./logseq/LogseqProxy";
 import pkg from "../package.json";
 import {SwiftArrowNote} from "./notes/SwiftArrowNote";
 import {ProgressNotification} from "./ui/pages/ProgressNotification";
-import {showConfirmModal} from "./ui/modals";
+import {showConfirmModal} from "./ui";
 import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
 import NoteHashCalculator from "./notes/NoteHashCalculator";
 import {CancelablePromise} from "cancelable-promise";

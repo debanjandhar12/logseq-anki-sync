@@ -1,14 +1,11 @@
 import React, {useCallback, useEffect, useState} from "../React";
-import {Modal} from "../modals/Modal";
+import {Modal} from "../";
 import {LogseqButton} from "../common/LogseqButton";
 import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {LogseqDropdownMenu} from "../common/LogseqDropdownMenu";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
-import { createModalPromise } from "../modals/utils/createModalPromise";
-import { ModalHeader } from "../modals/ModalHeader";
-import { DialogModalFooter } from "../modals/ModalFooter";
-import { useModal } from "../modals/hooks/useModal";
+import { createModalPromise, ModalHeader, DialogModalFooter, useModal } from "../";
 
 export async function showSyncSelectionDialog(
     toCreateNotes: Array<any>,

@@ -1,7 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from "../React";
-import {Modal} from "../modals/Modal";
-import {useModal} from "../modals/hooks/useModal";
-import {createModalPromise} from "../modals/utils/createModalPromise";
+import {Modal, useModal, createModalPromise} from "../";
 import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import {LogseqButton} from "../common/LogseqButton";
