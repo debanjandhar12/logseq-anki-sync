@@ -699,7 +699,6 @@ export class LogseqToAnkiSync {
         );
         assets = new Set([...assets, ...extra.assets]);
         extra = extra.html;
-        console.log(breadcrumb);
         return [html, assets, deck, breadcrumb, tags, extra];
     }
 }
