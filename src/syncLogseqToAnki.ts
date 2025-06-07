@@ -499,6 +499,16 @@ export class LogseqToAnkiSync {
         }
     }
 
+
+    private getBreadcrumbName = (page) => {
+        return page.properties?.title ||           // Frontmatter title
+                page.properties?.alias ||           // Frontmatter alias  
+                page.title ||                       // Page title property
+                page.name ||                        // Clean page name
+                page.originalName ||                // Last resort
+                'Untitled'
+    }
+
     private async parseNote(
         note: Note,
     ): Promise<[string, Set<string>, string, string, string[], string]> {
@@ -534,11 +544,14 @@ export class LogseqToAnkiSync {
                 newHtml += `<ul class="children-list"><li class="children ${_.get(parentBlock, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">
                                 ${parentBlockConverted.html}`;
             }
-            newHtml += `<ul class="children-list"><li class="children ${_.get(note, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">
-                            ${html}</li></ul>`;
-            parentBlocks.reverse().forEach((parentBlock) => {
-                newHtml += `</li></ul>`;
-            });
+            if (parentBlocks.length > 0) {
+                newHtml += `<ul class="children-list"><li class="children ${_.get(note, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">${html}</li></ul>`;
+                newHtml += '</li></ul>'.repeat(parentBlocks.length);
+            } else {
+                // keep the ul wrapper to avoid breaking the presentation of the note
+                newHtml += `<ul class="children-list">${html}</ul>`;
+            }
+
             html = newHtml;
         }
 
@@ -611,14 +624,14 @@ export class LogseqToAnkiSync {
         let breadcrumb = `<a href="logseq://graph/${encodeURIComponent(
             this.graphName,
         )}?page=${encodeURIComponent(note.page.originalName)}" class="hidden">${
-            note.page.originalName
+            this.getBreadcrumbName(note.page)
         }</a>`;
         if (logseq.settings.breadcrumbDisplay.includes("Show Page name"))
             breadcrumb = `<a href="logseq://graph/${encodeURIComponent(
                 this.graphName,
             )}?page=${encodeURIComponent(note.page.originalName)}" title="${
-                note.page.originalName
-            }">${note.page.originalName}</a>`;
+                this.getBreadcrumbName(note.page)
+            }">${this.getBreadcrumbName(note.page)}</a>`;
         if (logseq.settings.breadcrumbDisplay == "Show Page name and parent blocks context") {
             try {
                 const parentBlocks = [];
@@ -689,7 +702,7 @@ export class LogseqToAnkiSync {
         );
         assets = new Set([...assets, ...extra.assets]);
         extra = extra.html;
-
+        console.log(breadcrumb);
         return [html, assets, deck, breadcrumb, tags, extra];
     }
 }
