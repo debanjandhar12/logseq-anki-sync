@@ -11,7 +11,6 @@ import {SwiftArrowNote} from "./notes/SwiftArrowNote";
 import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
 import * as blockAndPageHashCache from "./logseq/blockAndPageHashCache";
 import {Buffer} from "buffer/";
-import process from "process";
 import {Note} from "./notes/Note";
 import {showButtonModal} from "./ui/modals";
 import {UI} from "./ui/UI";

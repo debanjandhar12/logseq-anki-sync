@@ -1,7 +1,8 @@
 import type * as ReactDOMTypes from 'react-dom';
 import * as OriginalReactDOM from "react-dom";
 
-const ReactDOM = ((typeof logseq !== 'undefined' && logseq?.Experiments?.ReactDOM)
+const ReactDOM = ((process.env.NODE_ENV === 'production' &&
+        typeof logseq !== 'undefined' && logseq?.Experiments?.ReactDOM)
     || OriginalReactDOM) as typeof ReactDOMTypes;
 
 export default ReactDOM;

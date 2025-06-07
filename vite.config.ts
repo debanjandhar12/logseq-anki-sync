@@ -1,5 +1,5 @@
 import reactPlugin from "@vitejs/plugin-react";
-import {defineConfig} from "vite";
+import {defineConfig, loadEnv} from "vite";
 import logseqDevPlugin from "vite-plugin-logseq";
 import {nodePolyfills} from "vite-plugin-node-polyfills";
 import * as path from "path";
@@ -100,18 +100,26 @@ function bundleJSStringPlugin() {
     };
 }
 
-export default defineConfig({
-    base: "./",
-    plugins: [
-        logseqDevPlugin(),
-        reactPlugin(),
-        nodePolyfills(),
-        staticFileSyncTransformPlugin(),
-        bundleJSStringPlugin(),
-    ],
-    build: {
-        sourcemap: true,
-        target: "modules",
-        minify: "esbuild",
-    },
+export default defineConfig(({ command, mode }) => {
+    const env = loadEnv(mode, process.cwd(), '');
+
+    return {
+        base: "./",
+        plugins: [
+            logseqDevPlugin(),
+            reactPlugin(),
+            nodePolyfills(),
+            staticFileSyncTransformPlugin(),
+            bundleJSStringPlugin(),
+        ],
+        define: {
+            'process.env': JSON.stringify(env),
+            'process.env.NODE_ENV': JSON.stringify(mode),
+        },
+        build: {
+            sourcemap: true,
+            target: "modules",
+            minify: "esbuild",
+        },
+    };
 });
