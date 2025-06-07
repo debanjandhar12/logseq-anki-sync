@@ -16,6 +16,7 @@ import AwaitLock from "await-lock";
 import objectHash from "../utils/objectHashOptimized";
 import _ from "lodash";
 import getUUIDFromBlock from "./getUUIDFromBlock";
+import { PluginSettings } from "../settings";
 
 type LogSeqOperation = {
     operation: string;
@@ -373,11 +374,19 @@ export namespace LogseqProxy {
             logseq.useSettingsSchema(schemas);
         }
 
-        static registeredSettingsChangeListeners = [];
+        static registeredSettingsChangeListeners: Array<(newSettings: PluginSettings, oldSettings: PluginSettings) => void> = [];
         static registerSettingsChangeListener(
-            listener: (newSettings, oldSettings) => void,
+            listener: (newSettings: PluginSettings, oldSettings: PluginSettings) => void,
         ): void {
             this.registeredSettingsChangeListeners.push(listener);
+        }
+
+        /**
+         * Get the typed settings object from logseq
+         * This is a utility function to provide proper typing for logseq.settings
+         */
+        static getPluginSettings(): PluginSettings {
+            return logseq.settings as unknown as PluginSettings;
         }
     }
     export class App {
@@ -432,11 +441,12 @@ export namespace LogseqProxy {
             }
         });
         LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
-            if (!logseq.settings.cacheLogseqAPIv1) {
+            const { cacheLogseqAPIv1, debug } = LogseqProxy.Settings.getPluginSettings();
+            if (!cacheLogseqAPIv1) {
                 LogseqProxy.Cache.clear();
                 return;
             }
-            if (logseq.settings.debug.includes("blockAndPageHashCache.ts"))
+            if (debug.includes("blockAndPageHashCache.ts"))
                 console.log("Maintaining LogseqProxy Cache", [...blocks], txData, txMeta);
             for (const tx of txData) {
                 const [txBlockID, txType, ...additionalDetails] = tx;
@@ -602,7 +612,10 @@ export namespace LogseqProxy {
             LogseqProxy.Cache.clear();
         });
         window.addEventListener("syncLogseqToAnkiComplete", () => {
-            if (!logseq.settings.cacheLogseqAPIv1) LogseqProxy.Cache.clear();
+            const { cacheLogseqAPIv1 } = LogseqProxy.Settings.getPluginSettings();
+            if (!cacheLogseqAPIv1) LogseqProxy.Cache.clear();
         });
     }
 }
+
+

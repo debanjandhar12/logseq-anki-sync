@@ -4,6 +4,22 @@ import {AddonRegistry} from "./addons/AddonRegistry";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {DONATE_ICON} from "./constants";
 
+// Type definitions for plugin settings
+export interface PluginSettings {
+    breadcrumbDisplay: "Dont show breadcrumb" | "Show Page name only" | "Show Page name and parent blocks context";
+    includeParentContent: boolean;
+    useNamespaceAsDefaultDeck: boolean;
+    defaultDeck: string;
+    renderClozeMarcosInLogseq: boolean;
+    hideClozeMarcosUntilHoverInLogseq: boolean;
+    addonsList: string[];
+    ankiFieldOptions: ("furigana" | "kana" | "kanji" | "tts" | "tags" | "rtl")[];
+    cacheLogseqAPIv1: boolean;
+    debug: ("syncLogseqToAnki.ts" | "LogseqProxy.ts" | "LogseqToHtmlConverter.ts" | "LazyAnkiNoteManager.ts" | "blockAndPageHashCache.ts")[];
+    skipOnDependencyHashMatch?: boolean;
+    lastWelcomeVersion?: string;
+}
+
 export const addSettingsToLogseq = () => {
     const settingsTemplate: SettingSchemaDesc[] = [
         {
@@ -130,13 +146,14 @@ export const addSettingsToLogseq = () => {
                 "LogseqProxy.ts",
                 "LogseqToHtmlConverter.ts",
                 "LazyAnkiNoteManager.ts",
+                "blockAndPageHashCache.ts",
             ],
             enumPicker: "checkbox",
             description: "Select the files to enable debugging for.",
         },
     ];
     LogseqProxy.Settings.useSettingsSchema(settingsTemplate);
-    LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
+    LogseqProxy.Settings.registerSettingsChangeListener((newSettings: PluginSettings, oldSettings: PluginSettings) => {
         if (oldSettings.addonsList === undefined) oldSettings.addonsList = [];
         if (!_.isEqual(newSettings.addonsList, oldSettings.addonsList)) {
             for (const addon of oldSettings.addonsList) {

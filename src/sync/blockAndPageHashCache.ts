@@ -11,6 +11,7 @@ import hashSum from "hash-sum";
 import _ from "lodash";
 import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {getFirstNonEmptyLine} from "../utils/utils";
+
 let graph = new DepGraph();
 
 // -- Hash Dependency Graph --
@@ -150,7 +151,8 @@ export const getPageHash = async (pageName) => {
 // -- Maintain Cache State by using DB.onChanged --
 export const init = () => {
     LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
-        if (!logseq.settings.cacheLogseqAPIv1) return;
+        const { cacheLogseqAPIv1 } = LogseqProxy.Settings.getPluginSettings();
+        if (!cacheLogseqAPIv1) return;
         for (const tx of txData) {
             const [txBlockID, txType, ...additionalDetails] = tx;
             if (txType != "left" && txType != "parent") continue;
@@ -180,6 +182,7 @@ export const init = () => {
         clearGraph();
     });
     window.addEventListener("syncLogseqToAnkiComplete", () => {
-        if (!logseq.settings.cacheLogseqAPIv1) clearGraph();
+        const { cacheLogseqAPIv1 } = LogseqProxy.Settings.getPluginSettings();
+        if (!cacheLogseqAPIv1) clearGraph();
     });
 };

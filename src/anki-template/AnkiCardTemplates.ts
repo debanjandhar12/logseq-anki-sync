@@ -5,28 +5,30 @@ import logseq_anki_sync_js from "./_logseq_anki_sync.js?string";
 import logseq_anki_sync_front_js from "./_logseq_anki_sync_front.js?string";
 import logseq_anki_sync_back_js from "./_logseq_anki_sync_back.js?string";
 import template from "./template.html?raw";
+import { LogseqProxy } from "../logseq/LogseqProxy";
 
 function getTemplate() {
     const templateModifiedBasedOnUserSetting = template;
-    if(!Array.isArray(logseq.settings.ankiFieldOptions)) return template;
+    const { ankiFieldOptions } = LogseqProxy.Settings.getPluginSettings();
+    if(!Array.isArray(ankiFieldOptions)) return template;
 
     let modifiedField = "{{cloze:Text}}";
-    if (logseq.settings.ankiFieldOptions.includes("tts")) {
+    if (ankiFieldOptions.includes("tts")) {
         modifiedField = "{{tts en_US:" + modifiedField.substring(2);
     }
-    if (logseq.settings.ankiFieldOptions.includes("furigana")) {
+    if (ankiFieldOptions.includes("furigana")) {
         modifiedField = "{{furigana:" + modifiedField.substring(2);
     }
-    if (logseq.settings.ankiFieldOptions.includes("kanji")) {
+    if (ankiFieldOptions.includes("kanji")) {
         modifiedField = "{{kanji:" + modifiedField.substring(2);
     }
-    if (logseq.settings.ankiFieldOptions.includes("kana")) {
+    if (ankiFieldOptions.includes("kana")) {
         modifiedField = "{{kana:" + modifiedField.substring(2);
     }
-    if (logseq.settings.ankiFieldOptions.includes("tags")) {
+    if (ankiFieldOptions.includes("tags")) {
         modifiedField = modifiedField + `{{#Tags}}<br/><br/><sub>Tags: {{Tags}}</sub>{{/Tags}}`;
     }
-    if (logseq.settings.ankiFieldOptions.includes("rtl")) {
+    if (ankiFieldOptions.includes("rtl")) {
         modifiedField = "<div dir='rtl'>" + modifiedField + "</div>";
     }
     return templateModifiedBasedOnUserSetting.replace("{{cloze:Text}}", modifiedField);

@@ -32,6 +32,7 @@ import {ActionNotification} from "../ui/common/ActionNotification";
 import {showSyncSelectionDialog} from "../ui/pages/SyncSelectionDialog";
 import {showSyncResultDialog} from "../ui/pages/SyncResultDialog";
 import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
+
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
     graphName: string;
@@ -400,8 +401,9 @@ export class LogseqToAnkiSync {
                     oldTags,
                     oldExtra,
                 ]);
+                const { skipOnDependencyHashMatch } = LogseqProxy.Settings.getPluginSettings();
                 if (
-                    logseq.settings.skipOnDependencyHashMatch != true ||
+                    skipOnDependencyHashMatch != true ||
                     oldConfig.dependencyHash != dependencyHash
                 ) {
                     // Reparse Note + update assets + update                    // Parse Note
@@ -425,7 +427,8 @@ export class LogseqToAnkiSync {
                         );
                     });
                     // Update note
-                    if (logseq.settings.debug.includes("syncLogseqToAnki.ts"))
+                    const { debug } = LogseqProxy.Settings.getPluginSettings();
+                    if (debug.includes("syncLogseqToAnki.ts"))
                         console.log(
                             `dependencyHash mismatch for note with id ${note.uuid}-${note.type}`,
                         );
@@ -507,7 +510,8 @@ export class LogseqToAnkiSync {
     ): Promise<[string, Set<string>, string, string, string[], string]> {
         let {html, assets, tags} = await note.getClozedContentHTML();
 
-        if (logseq.settings.includeParentContent) {
+        const { includeParentContent } = LogseqProxy.Settings.getPluginSettings();
+        if (includeParentContent) {
             let newHtml = "";
             const parentBlocks = [];
             let parentID = (await LogseqProxy.Editor.getBlock(note.uuid)).parent.id;
@@ -566,7 +570,10 @@ export class LogseqToAnkiSync {
         } catch (e) {
             console.error(e);
         }
-        if (useNamespaceAsDefaultDeck == null) useNamespaceAsDefaultDeck = logseq.settings.useNamespaceAsDefaultDeck;
+        if (useNamespaceAsDefaultDeck == null) {
+            const { useNamespaceAsDefaultDeck: settingsUseNamespace } = LogseqProxy.Settings.getPluginSettings();
+            useNamespaceAsDefaultDeck = settingsUseNamespace;
+        }
 
         // Parse deck using logic described at https://github.com/debanjandhar12/logseq-anki-sync/wiki/How-to-set-or-change-the-deck-for-cards%3F
         let deck: any = null;
@@ -604,7 +611,8 @@ export class LogseqToAnkiSync {
             ).slice(0, -1).join("/");
         }
 
-        deck = deck || logseq.settings.defaultDeck || "Default";
+        const { defaultDeck } = LogseqProxy.Settings.getPluginSettings();
+        deck = deck || defaultDeck || "Default";
 
         if (typeof deck != "string") deck = deck[0];
 
@@ -616,13 +624,14 @@ export class LogseqToAnkiSync {
         )}?page=${encodeURIComponent(note.page.originalName)}" class="hidden">${
             note.page.originalName
         }</a>`;
-        if (logseq.settings.breadcrumbDisplay.includes("Show Page name"))
+        const { breadcrumbDisplay } = LogseqProxy.Settings.getPluginSettings();
+        if (breadcrumbDisplay.includes("Show Page name"))
             breadcrumb = `<a href="logseq://graph/${encodeURIComponent(
                 this.graphName,
             )}?page=${encodeURIComponent(note.page.originalName)}" title="${
                 note.page.originalName
             }">${note.page.originalName}</a>`;
-        if (logseq.settings.breadcrumbDisplay == "Show Page name and parent blocks context") {
+        if (breadcrumbDisplay == "Show Page name and parent blocks context") {
             try {
                 const parentBlocks = [];
                 let parentID = (await LogseqProxy.Editor.getBlock(note.uuid)).parent.id;

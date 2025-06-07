@@ -6,6 +6,7 @@ import * as AnkiConnect from "./AnkiConnect";
 import _ from "lodash";
 import "@logseq/libs";
 import {ANKI_CLOZE_REGEXP} from "../constants";
+import { LogseqProxy } from "../logseq/LogseqProxy";
 
 export class LazyAnkiNoteManager {
     public modelName: string;
@@ -49,14 +50,16 @@ export class LazyAnkiNoteManager {
             }
             this.noteInfoMap.set(note.noteId, {...note, deck});
         }
-        if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts"))
+        const { debug } = LogseqProxy.Settings.getPluginSettings();
+        if (debug.includes("LazyAnkiNoteManager.ts"))
             console.debug(this.noteInfoMap);
     }
 
     async buildMediaInfo(): Promise<void> {
         const mediaFileNames = await AnkiConnect.invoke("getMediaFilesNames", {});
         this.mediaInfo = new Set(mediaFileNames);
-        if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts"))
+        const { debug } = LogseqProxy.Settings.getPluginSettings();
+        if (debug.includes("LazyAnkiNoteManager.ts"))
             console.debug(this.mediaInfo);
     }
 
@@ -136,7 +139,8 @@ export class LazyAnkiNoteManager {
         let needsFieldUpdate = false;
         for (const key in fields) {
             if (noteinfo.fields[key].value != fields[key]) {
-                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts"))
+                const { debug } = LogseqProxy.Settings.getPluginSettings();
+                if (debug.includes("LazyAnkiNoteManager.ts"))
                     console.log(
                         "Difference found:",
                         key,
@@ -182,7 +186,8 @@ export class LazyAnkiNoteManager {
         let result = [];
         switch (operation) {
             case "addNotes": // Returns [ankiIdUUIDPairs, resut of sub-operations] pair
-                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts"))
+                const { debug: debugAddNotes } = LogseqProxy.Settings.getPluginSettings();
+                if (debugAddNotes.includes("LazyAnkiNoteManager.ts"))
                     console.log(this.addNoteUuidTypeQueue2);
                 // Create notes with dummy content to avoid error
                 const result1 = await AnkiConnect.invoke("multi", {
@@ -239,12 +244,13 @@ export class LazyAnkiNoteManager {
                 this.addNoteUuidTypeQueue2 = [];
                 break;
             case "updateNotes": // Returns resut of sub-operations
-                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts"))
+                const { debug: debugUpdateNotes } = LogseqProxy.Settings.getPluginSettings();
+                if (debugUpdateNotes.includes("LazyAnkiNoteManager.ts"))
                     console.log(this.updateNoteActionsQueue);
                 result = await AnkiConnect.invoke("multi", {
                     actions: this.updateNoteActionsQueue,
                 });
-                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts"))
+                if (debugUpdateNotes.includes("LazyAnkiNoteManager.ts"))
                     console.log(result);
                 for (let i = 0; i < result.length; i++) {
                     if (result[i] == null) result[i] = {};
@@ -256,7 +262,8 @@ export class LazyAnkiNoteManager {
                 this.updateNoteUuidTypeQueue = [];
                 break;
             case "deleteNotes": // Returns resut of sub-operations
-                if (logseq.settings.debug.includes("LazyAnkiNoteManager.ts"))
+                const { debug: debugDeleteNotes } = LogseqProxy.Settings.getPluginSettings();
+                if (debugDeleteNotes.includes("LazyAnkiNoteManager.ts"))
                     console.log(this.deleteNoteAnkiIdQueue);
                 result = await AnkiConnect.invoke("multi", {
                     actions: this.deleteNoteActionsQueue,
