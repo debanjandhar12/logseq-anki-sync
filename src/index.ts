@@ -12,7 +12,7 @@ import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
 import * as blockAndPageHashCache from "./logseq/blockAndPageHashCache";
 import {Buffer} from "buffer/";
 import {Note} from "./notes/Note";
-import {showButtonModal} from "./ui/modals";
+import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
 import pkg from "./../package.json";

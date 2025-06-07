@@ -10,9 +10,7 @@ import {
     REMOVE_OCCLUSION_ICON,
     SETTINGS_ICON,
 } from "../../constants";
-import {Modal} from "../modals/Modal";
-import {useModal} from "../modals/hooks/useModal";
-import {createModalPromise} from "../modals/utils/createModalPromise";
+import {Modal, useModal, createModalPromise} from "../";
 import {LogseqButton} from "../common/LogseqButton";
 import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
