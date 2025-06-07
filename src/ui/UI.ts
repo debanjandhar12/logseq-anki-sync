@@ -1,6 +1,6 @@
 import ReactDOM from './ReactDOM';
 import {LogseqProxy} from "../logseq/LogseqProxy";
-import { waitForElement } from '../utils/waitForElement';
+import { waitForElement } from './utils/waitForElement';
 
 export class UI {
     public static init() {
@@ -120,6 +120,7 @@ export class UI {
         let onClose = async () => {
             try {
                 const div = window.parent.document.getElementById(key);
+                if (!div) return;
                 ReactDOM.unmountComponentAtNode(div);
                 logseq.provideUI({
                     key: key,

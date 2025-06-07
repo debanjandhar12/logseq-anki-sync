@@ -23,17 +23,15 @@ import {LogseqProxy} from "./logseq/LogseqProxy";
 import pkg from "../package.json";
 import {SwiftArrowNote} from "./notes/SwiftArrowNote";
 import {ProgressNotification} from "./ui/pages/ProgressNotification";
-import {Confirm} from "./ui/modals/Confirm";
+import {showConfirmModal} from "./ui/modals";
 import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
 import NoteHashCalculator from "./notes/NoteHashCalculator";
-import {cancelable, CancelablePromise} from "cancelable-promise";
-import {DepGraph} from "dependency-graph";
+import {CancelablePromise} from "cancelable-promise";
 import {NoteUtils} from "./notes/NoteUtils";
 import {ActionNotification} from "./ui/common/ActionNotification";
-import {showModelWithButtons} from "./ui/modals/ModelWithBtns";
 import {SyncSelectionDialog} from "./ui/pages/SyncSelectionDialog";
 import {SyncResultDialog} from "./ui/pages/SyncResultDialog";
-import {BlockEntity, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
     graphName: string;
@@ -191,7 +189,7 @@ export class LogseqToAnkiSync {
         ) {
             // Prompt the user again if they are about to delete a lot of notes
             const confirm_msg = `<b class="text-red-600">This will delete all your notes in anki that are generated from this graph.</b><br/>Are you sure you want to continue?`;
-            if (!(await Confirm(confirm_msg))) {
+            if (!(await showConfirmModal(confirm_msg))) {
                 buildNoteHashes.cancel();
                 window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
                 console.log("Sync Aborted by user!");

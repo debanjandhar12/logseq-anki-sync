@@ -13,7 +13,7 @@ import * as blockAndPageHashCache from "./logseq/blockAndPageHashCache";
 import {Buffer} from "buffer/";
 import process from "process";
 import {Note} from "./notes/Note";
-import {showModelWithButtons} from "./ui/modals/ModelWithBtns";
+import {showButtonModal} from "./ui/modals";
 import {UI} from "./ui/UI";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
 import pkg from "./../package.json";
@@ -84,7 +84,7 @@ function main(baseInfo: LSPluginBaseInfo) {
         logseq.settings.lastWelcomeVersion !== pkg.version) {
         (async () => {
             await new Promise(resolve => setTimeout(resolve, 1000));    // wait logseq's react to load
-            await showModelWithButtons(
+            await showButtonModal(
                 `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span> 
                                     <br/><small class="px-2">Update is installed successfully. </small>
                                     <br /><br /><small class="px-2" style="display: block">This patch contains minor bug fixes.</small>`,
@@ -96,7 +96,7 @@ function main(baseInfo: LSPluginBaseInfo) {
                                 `https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}`,
                             );
                         },
-                        returnOnClick: false,
+                        closeOnClick: false,
                     },
                 ],
             )
