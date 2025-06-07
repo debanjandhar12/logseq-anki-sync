@@ -1,13 +1,13 @@
 import "@logseq/libs";
-import * as AnkiConnect from "./anki-connect/AnkiConnect";
-import {LazyAnkiNoteManager} from "./anki-connect/LazyAnkiNoteManager";
+import * as AnkiConnect from "../anki-connect/AnkiConnect";
+import {LazyAnkiNoteManager} from "../anki-connect/LazyAnkiNoteManager";
 import {
     getTemplateFront,
     getTemplateBack, getTemplateMediaFiles
-} from "./templates/AnkiCardTemplates";
-import {Note} from "./notes/Note";
-import {ClozeNote} from "./notes/ClozeNote";
-import {MultilineCardNote} from "./notes/MultilineCardNote";
+} from "../anki-template/AnkiCardTemplates";
+import {Note} from "../anki-notes/Note";
+import {ClozeNote} from "../anki-notes/ClozeNote";
+import {MultilineCardNote} from "../anki-notes/MultilineCardNote";
 import _ from "lodash";
 import {
     escapeClozesAndMacroDelimiters,
@@ -15,22 +15,22 @@ import {
     getCaseInsensitive,
     sortAsync,
     splitNamespace, getLogseqBlockPropSafe
-} from "./utils/utils";
+} from "../utils/utils";
 import path from "path-browserify";
-import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} from "./constants";
-import {convertToHTMLFile} from "./logseq/LogseqToHtmlConverter";
-import {LogseqProxy} from "./logseq/LogseqProxy";
-import pkg from "../package.json";
-import {SwiftArrowNote} from "./notes/SwiftArrowNote";
-import {ProgressNotification} from "./ui/pages/ProgressNotification";
-import {showConfirmModal} from "./ui";
-import {ImageOcclusionNote} from "./notes/ImageOcclusionNote";
-import NoteHashCalculator from "./notes/NoteHashCalculator";
+import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} from "../constants";
+import {convertToHTMLFile} from "../logseq/LogseqToHtmlConverter";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import pkg from "../../package.json";
+import {SwiftArrowNote} from "../anki-notes/SwiftArrowNote";
+import {ProgressNotification} from "../ui/pages/ProgressNotification";
+import {showConfirmModal} from "../ui";
+import {ImageOcclusionNote} from "../anki-notes/ImageOcclusionNote";
+import NoteHashCalculator from "../anki-notes/NoteHashCalculator";
 import {CancelablePromise} from "cancelable-promise";
-import {NoteUtils} from "./notes/NoteUtils";
-import {ActionNotification} from "./ui/common/ActionNotification";
-import {showSyncSelectionDialog} from "./ui/pages/SyncSelectionDialog";
-import {showSyncResultDialog} from "./ui/pages/SyncResultDialog";
+import {NoteUtils} from "../anki-notes/NoteUtils";
+import {ActionNotification} from "../ui/common/ActionNotification";
+import {showSyncSelectionDialog} from "../ui/pages/SyncSelectionDialog";
+import {showSyncResultDialog} from "../ui/pages/SyncResultDialog";
 import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -226,6 +226,7 @@ export class LogseqToAnkiSync {
         // Save logseq graph if any changes were made
         if (toCreateNotes.some((note) => !note.properties["id"])) {
             try {
+                //@ts-ignore
                 await window.parent.logseq.api.force_save_graph();
                 await new Promise((resolve) => setTimeout(resolve, 2000));
             } catch (e) {

@@ -13,7 +13,7 @@ export default async function getLogseqContentDirectDependencies(
     content: string,
     format = "markdown",
 ): Promise<DependencyEntity[]> {
-    if (content == null || content == undefined) return [];
+    if (content === null || content === undefined) return [];
     const blockDependency: Set<BlockUUID> = new Set();
     const firstLineOfBlockDependency: Set<BlockUUID> = new Set();
     const pageDependency: Set<PageEntityName> = new Set();

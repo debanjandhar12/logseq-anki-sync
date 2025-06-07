@@ -4,7 +4,7 @@ import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import {LogseqButton} from "../common/LogseqButton";
 import {BlockContentParser} from "../../logseq/BlockContentParser";
-import {ImageOcclusionNote} from "../../notes/ImageOcclusionNote";
+import {ImageOcclusionNote} from "../../anki-notes/ImageOcclusionNote";
 import _ from "lodash";
 
 export async function showLogseqAnkiFeatureExplorer(editingBlockUUID: string): Promise<void> {

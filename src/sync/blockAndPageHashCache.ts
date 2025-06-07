@@ -4,9 +4,9 @@
  * NB: Please pass only block UUIDs and page names to the functions of this service. Do not pass datalog ids.
  */
 import {DepGraph} from "dependency-graph";
-import {LogseqProxy} from "./LogseqProxy";
-import getUUIDFromBlock from "./getUUIDFromBlock";
-import getLogseqContentDirectDependencies from "./getLogseqContentDirectDependencies";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
+import getLogseqContentDirectDependencies from "../logseq/getLogseqContentDirectDependencies";
 import hashSum from "hash-sum";
 import _ from "lodash";
 import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";

@@ -15,7 +15,6 @@ import {
 import AwaitLock from "await-lock";
 import objectHash from "../utils/objectHashOptimized";
 import _ from "lodash";
-import {AddonRegistry} from "../addons/AddonRegistry";
 import getUUIDFromBlock from "./getUUIDFromBlock";
 
 type LogSeqOperation = {
