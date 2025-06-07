@@ -24,8 +24,7 @@ import {
 } from "../ui/pages/OcclusionEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
-import {SelectionModal} from "../ui/modals/SelectionModal";
-import {val} from "cheerio/lib/api/attributes";
+import {showSelectionModal} from "../ui/modals";
 
 export type ImageToOcclusionDataHashMap = {[key: string]: OcclusionData};
 
@@ -80,7 +79,7 @@ export class ImageOcclusionNote extends Note {
         let selectedImageIdx =
             block_images.length == 1
                 ? 0
-                : await SelectionModal(
+                : await showSelectionModal(
                     block_images.map((image) => {
                         return {
                             name: image,
@@ -91,8 +90,7 @@ export class ImageOcclusionNote extends Note {
                             }"></img>`,
                         };
                     }),
-                    "Select Image for occlusion",
-                    true,
+                    {message: "Select Image for occlusion", enableKeySelect: true}
                 );
         if (selectedImageIdx != null) selectedImage = block_images[selectedImageIdx];
         if (selectedImage) {
