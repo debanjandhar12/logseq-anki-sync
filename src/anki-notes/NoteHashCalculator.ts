@@ -16,7 +16,7 @@ import {
     getBlockHash,
     getFirstLineOfBlockHash,
     getPageHash,
-} from "../logseq/blockAndPageHashCache";
+} from "../sync/blockAndPageHashCache";
 import _ from "lodash";
 import {getLogseqBlockPropSafe} from "../utils/utils";
 
