@@ -1,0 +1,24 @@
+## Project Overview
+This project is a plugin for Logseq, a note-taking app. The plugin enables syncing between Logseq and Anki, supporting features like markdown/org-mode rendering, image occlusion, PDF annotation, etc. The plugin runs inside an iframe within Logseq and communicates with Anki through the AnkiConnect add-on.
+
+## Key Directories and Files
+- **@src/**: Main source code for the plugin.
+  - **@src/logseq/**:
+    - `LogseqProxy.ts`: Logseq API wrappers that internally use `@logseq/lib`.
+    - `BlockContentParser.ts`: Parses Logseq block content
+    - `LogseqToHtmlConverter.ts`: Converts Logseq content to HTML for Anki
+  - **@src/anki-connect/**: AnkiConnect API integration.
+  - **@src/anki-notes/**: Anki note types and utilities.
+  - **@src/sync/**: Synchronization logic between Logseq and Anki.
+  - **@src/ui/**: User interface components.
+  - **@src/types/**: Few global type definitions.
+- **@tests/**: Test suite for the plugin.
+
+## Additional Notes
+- Frameworks: pnpm, vite, vitest (jsdom), react, typescript
+- The project uses a custom vite plugin to inline javascript files as string.
+- Import display methods from ui module instead of importing them directly.
+- Do not access `logseq.setting` directly. Instead use `LogseqProxy.Settings.getPluginSettings()`.
+- React and ReactDOM are used from ./ui/React.ts and ./ui/ReactDOM.ts. Do not use them directly.
+- Some tests sent actual network requests to Logseq through the logseq-proxy. These require Logseq to be open and accessible at the configured API server (see ./tests/setup.ts).
+- Use types from `@logseq/lib` when writing logseq related code.

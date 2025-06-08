@@ -3,7 +3,7 @@ import * as OriginalReact from 'react';
 
 const React = ((process.env.NODE_ENV === 'production' &&
         typeof logseq !== 'undefined' && logseq?.Experiments?.React) as typeof ReactTypes
-    || OriginalReact) ;
+    || OriginalReact);
 
 export default React;
 

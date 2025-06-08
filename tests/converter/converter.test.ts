@@ -1,423 +1,10 @@
-import {describe, expect, it, test, vi} from 'vitest';
-import {BlockIdentity, EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import "@logseq/libs"
 import * as cheerio from "cheerio";
+import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import { convertToHTMLFile } from "../../src/logseq/LogseqToHtmlConverter";
+import {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 
-let allBlocks = [
-    {
-        "properties": {
-            "tags": [
-                "Test"
-            ]
-        },
-        "parent": {
-            "id": 57
-        },
-        "children": [],
-        "invalidProperties": [],
-        "id": 58,
-        "pathRefs": [
-            {
-                "id": 57
-            },
-            {
-                "id": 62
-            }
-        ],
-        "propertiesTextValues": {
-            "tags": "Test"
-        },
-        "level": 1,
-        "uuid": "65a22d2c-a245-4a3f-89cc-1b1a7b724abc",
-        "content": "tags:: Test",
-        "journal?": false,
-        "page": {
-            "id": 57
-        },
-        "preBlock?": true,
-        "propertiesOrder": [
-            "tags"
-        ],
-        "left": {
-            "id": 57
-        },
-        "format": "markdown",
-        "refs": [
-            {
-                "id": 62
-            }
-        ]
-    },
-    {
-        "properties": {
-            "id": "65a22d3c-954d-442b-8dca-4461fc209f84"
-        },
-        "parent": {
-            "id": 57
-        },
-        "children": [],
-        "id": 63,
-        "pathRefs": [
-            {
-                "id": 57
-            }
-        ],
-        "propertiesTextValues": {
-            "id": "65a22d3c-954d-442b-8dca-4461fc209f84"
-        },
-        "level": 1,
-        "uuid": "65a22d3c-954d-442b-8dca-4461fc209f84",
-        "content": "A **block** with no ref.\nid:: 65a22d3c-954d-442b-8dca-4461fc209f84\n\nSome more content...",
-        "journal?": false,
-        "page": {
-            "id": 57
-        },
-        "propertiesOrder": [
-            "id"
-        ],
-        "left": {
-            "id": 58
-        },
-        "format": "markdown"
-    },
-    {
-        "properties": {
-            "id": "65a22d50-f9d1-4527-ba45-6ada5c2eca9b"
-        },
-        "parent": {
-            "id": 57
-        },
-        "children": [],
-        "id": 64,
-        "pathRefs": [
-            {
-                "id": 57
-            },
-            {
-                "id": 63
-            }
-        ],
-        "propertiesTextValues": {
-            "id": "65a22d50-f9d1-4527-ba45-6ada5c2eca9b"
-        },
-        "level": 1,
-        "uuid": "65a22d50-f9d1-4527-ba45-6ada5c2eca9b",
-        "content": "A block with block ref:\nid:: 65a22d50-f9d1-4527-ba45-6ada5c2eca9b\n((65a22d3c-954d-442b-8dca-4461fc209f84))",
-        "journal?": false,
-        "page": {
-            "id": 57
-        },
-        "propertiesOrder": [
-            "id"
-        ],
-        "left": {
-            "id": 63
-        },
-        "format": "markdown",
-        "refs": [
-            {
-                "id": 63
-            }
-        ]
-    },
-    {
-        "properties": {
-            "id": "65a22d6d-bda8-47d0-a94a-235a0084dd5e"
-        },
-        "parent": {
-            "id": 57
-        },
-        "children": [],
-        "id": 65,
-        "pathRefs": [
-            {
-                "id": 57
-            },
-            {
-                "id": 63
-            },
-            {
-                "id": 66
-            }
-        ],
-        "propertiesTextValues": {
-            "id": "65a22d6d-bda8-47d0-a94a-235a0084dd5e"
-        },
-        "level": 1,
-        "uuid": "65a22d6d-bda8-47d0-a94a-235a0084dd5e",
-        "content": "A block with page embed:\nid:: 65a22d6d-bda8-47d0-a94a-235a0084dd5e\n{{embed ((65a22d3c-954d-442b-8dca-4461fc209f84))}}",
-        "journal?": false,
-        "macros": [
-            {
-                "id": 67
-            }
-        ],
-        "page": {
-            "id": 57
-        },
-        "propertiesOrder": [
-            "id"
-        ],
-        "left": {
-            "id": 64
-        },
-        "format": "markdown",
-        "refs": [
-            {
-                "id": 63
-            },
-            {
-                "id": 66
-            }
-        ]
-    },
-    {
-        "properties": {
-            "id": "65a22d87-a991-4322-b4b3-8e0b327acd1c"
-        },
-        "parent": {
-            "id": 57
-        },
-        "children": [
-            {
-                "properties": {},
-                "parent": {
-                    "id": 69
-                },
-                "children": [
-                    {
-                        "properties": {},
-                        "parent": {
-                            "id": 71
-                        },
-                        "children": [],
-                        "id": 74,
-                        "pathRefs": [
-                            {
-                                "id": 57
-                            },
-                            {
-                                "id": 62
-                            }
-                        ],
-                        "level": 3,
-                        "uuid": "65a22ec8-6320-429a-b033-741e5329c93d",
-                        "content": "nested child 1.1",
-                        "journal?": false,
-                        "page": {
-                            "id": 57
-                        },
-                        "left": {
-                            "id": 71
-                        },
-                        "format": "markdown"
-                    }
-                ],
-                "id": 71,
-                "pathRefs": [
-                    {
-                        "id": 57
-                    },
-                    {
-                        "id": 62
-                    }
-                ],
-                "level": 2,
-                "uuid": "65a22eb3-b994-48c8-98f5-a52c46dde256",
-                "content": "nested child 1",
-                "journal?": false,
-                "page": {
-                    "id": 57
-                },
-                "left": {
-                    "id": 69
-                },
-                "format": "markdown"
-            },
-            {
-                "properties": {},
-                "parent": {
-                    "id": 69
-                },
-                "children": [],
-                "id": 73,
-                "pathRefs": [
-                    {
-                        "id": 57
-                    },
-                    {
-                        "id": 62
-                    }
-                ],
-                "level": 2,
-                "uuid": "65a22ec3-1dfc-4dec-8634-6401665e6b82",
-                "content": "nested child 2",
-                "journal?": false,
-                "page": {
-                    "id": 57
-                },
-                "left": {
-                    "id": 71
-                },
-                "format": "markdown"
-            }
-        ],
-        "id": 69,
-        "pathRefs": [
-            {
-                "id": 57
-            },
-            {
-                "id": 62
-            }
-        ],
-        "propertiesTextValues": {
-            "id": "65a22d87-a991-4322-b4b3-8e0b327acd1c"
-        },
-        "level": 1,
-        "uuid": "65a22d87-a991-4322-b4b3-8e0b327acd1c",
-        "content": "Another block with no ref. ```\nfunction() hi {}\n```\n#test [[Test]] [Testing]([[Test]])\nid:: 65a22d87-a991-4322-b4b3-8e0b327acd1c",
-        "journal?": false,
-        "page": {
-            "id": 57
-        },
-        "collapsed?": true,
-        "propertiesOrder": [
-            "id"
-        ],
-        "left": {
-            "id": 65
-        },
-        "format": "markdown",
-        "refs": [
-            {
-                "id": 62
-            }
-        ]
-    },
-    {
-        "properties": {},
-        "parent": {
-            "id": 57
-        },
-        "children": [],
-        "id": 75,
-        "pathRefs": [
-            {
-                "id": 57
-            },
-            {
-                "id": 69
-            },
-            {
-                "id": 81
-            }
-        ],
-        "level": 1,
-        "uuid": "65a22edc-3fdb-49ed-b61d-a2ffc221522d",
-        "content": "Another block with page embed:\n{{embed ((65a22d87-a991-4322-b4b3-8e0b327acd1c))}}",
-        "journal?": false,
-        "macros": [
-            {
-                "id": 82
-            }
-        ],
-        "page": {
-            "id": 57
-        },
-        "left": {
-            "id": 69
-        },
-        "format": "markdown",
-        "refs": [
-            {
-                "id": 69
-            },
-            {
-                "id": 81
-            }
-        ]
-    }
-];
-vi.mock('../../src/logseq/LogseqProxy', () => ({
-    LogseqProxy: {
-        Editor: {
-            getBlock: vi.fn().mockImplementation(async (srcBlock: BlockIdentity | EntityID, opts: Partial<{
-                includeChildren: boolean
-            }>) => {
-                // TODO: Add support for opts.includeChildren
-                srcBlock = typeof srcBlock === "string" ? srcBlock.toLowerCase() : srcBlock;
-                let foundBlock = allBlocks.find(b => b.uuid === srcBlock);
-                return foundBlock;
-            }),
-            getPage: vi.fn().mockImplementation(async (srcPage: PageIdentity | EntityID) => {
-                srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage;
-                switch (srcPage) {
-                    case "ref test":
-                    case "65a22d2c-8b99-4897-a097-f5bdb6bfee5c":
-                        return {
-                            "properties": {
-                                "tags": [
-                                    "Test"
-                                ]
-                            },
-                            "updatedAt": 1705127448282,
-                            "createdAt": 1705127212440,
-                            "tags": [
-                                {
-                                    "id": 62
-                                }
-                            ],
-                            "id": 57,
-                            "propertiesTextValues": {
-                                "tags": "Test"
-                            },
-                            "name": "ref test",
-                            "uuid": "65a22d2c-8b99-4897-a097-f5bdb6bfee5c",
-                            "journal?": false,
-                            "originalName": "Ref Test",
-                            "file": {
-                                "id": 61
-                            },
-                            "format": "markdown"
-                        };
-                        break;
-                    default:
-                        return null;
-                }
-            }),
-            getPageBlocksTree: vi.fn().mockImplementation(async (srcPage: PageIdentity | EntityID) => {
-                srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage;
-                switch (srcPage) {
-                    case "ref test":
-                    case "65a22d2c-8b99-4897-a097-f5bdb6bfee5c":
-                        return allBlocks.filter(b => b.page.id === 57);
-                        break;
-                    default:
-                        return [];
-                }
-            }),
-        }
-    }
-}));
-
-global.logseq = {
-    // @ts-ignore
-    settings: {
-        debug: []   // Add LogseqToHtmlConverter.ts in array to enable debug logs
-    },
-    // @ts-ignore
-    App: {
-        getCurrentGraph: vi.fn().mockReturnValue({
-            "url": "logseq_local_/home/Graphs/TestGraph",
-            "name": "TestGraph",
-            "path": "/home/deban/home/Graphs/TestGraph"
-        }),
-    }
-};
-
-import {convertToHTMLFile} from '../../src/logseq/LogseqToHtmlConverter';
-
-describe("Markdown Input", () => {
+describe("Basic Markdown Test (no references)", () => {
     describe("Basic Inline rendering", () => {
         test("Single line text rendering", async () => {
             const htmlFile = await convertToHTMLFile("Hello World", "markdown");
@@ -480,8 +67,9 @@ describe("Markdown Input", () => {
             const htmlFile = await convertToHTMLFile("Hello [[Ref Test]]", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
+            const graphName = (await logseq.App.getCurrentGraph()).name;
             expect($('a').text()).toBe('Ref Test');
-            expect($('a').attr('href')).toBe('logseq://graph/TestGraph?page=Ref%20Test');
+            expect($('a').attr('href')).toBe(`logseq://graph/${graphName}?page=Ref%20Test`);
         });
         test("Consecutive Page Ref Rendering - https://github.com/debanjandhar12/logseq-anki-sync/issues/101", async () => {
             const htmlFile = await convertToHTMLFile("[[Ref Test]][[Ref Test]] [[Ref Test]],[[Ref Test]]", "markdown");
@@ -512,7 +100,8 @@ describe("Markdown Input", () => {
             const $ = cheerio.load(htmlFile.html);
             expect($('a').text()).toBe('#World');
             expect($('a').attr('data-ref')).toBe('World');
-            expect($('a').attr('href')).toBe('logseq://graph/TestGraph?page=World');
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            expect($('a').attr('href')).toBe(`logseq://graph/${graphName}?page=World`);
             const htmlFile2 = await convertToHTMLFile("Hello #World", "markdown");
             const $2 = cheerio.load(htmlFile2.html);
             expect($2('a').text()).toBe('');
@@ -653,66 +242,6 @@ describe("Markdown Input", () => {
             expect($('video').attr('src')).toEqual('video.mp4');
         });
     });
-    describe("Block Reference Rendering", () => {
-        test("Basic block ref rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Block Ref: ((65a22d3c-954d-442b-8dca-4461fc209f84))", "markdown");
-            expect(htmlFile.html.trim()).toMatchSnapshot();
-            const $ = cheerio.load(htmlFile.html);
-            expect($('.block-ref').text()).toContain('A block with no ref.');
-            expect($('.block-ref b').text()).toContain('block'); // Ref content has a bold word - block
-        });
-        test("Failed block ref rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Block Ref: ((wrong-block-ref))", "markdown");
-            expect(htmlFile.html.trim()).toMatchSnapshot();
-            const $ = cheerio.load(htmlFile.html);
-            expect($('.failed-block-ref').text()).toContain('wrong-block-ref');
-        });
-    });
-    describe("Block Embed Rendering", () => {
-        test("Basic block embed rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d3c-954d-442b-8dca-4461fc209f84))}}", "markdown");
-            expect(htmlFile.html.trim()).toMatchSnapshot();
-            const $ = cheerio.load(htmlFile.html);
-            expect($('.embed-block').text()).toContain('A block with no ref.');
-            expect($('.embed-block b').text()).toContain('block'); // Ref content has a bold word - block
-        });
-        test("Nested block embed rendering", async () => {
-           const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d6d-bda8-47d0-a94a-235a0084dd5e))}}", "markdown");
-           expect(htmlFile.html.trim()).toMatchSnapshot();
-           const $ = cheerio.load(htmlFile.html);
-           expect($('.embed-block').length).toBe(2);
-           expect($('.embed-block').first().text()).toContain('A block with page embed');
-           expect($('.embed-block').last().text()).toContain('A block with no ref');
-        });
-        test("block ref inside block embed rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d50-f9d1-4527-ba45-6ada5c2eca9b))}}", "markdown");
-            expect(htmlFile.html.trim()).toMatchSnapshot();
-            const $ = cheerio.load(htmlFile.html);
-            expect($('.embed-block').length).toBe(1);
-            expect($('.embed-block .block-ref').text()).toContain('A block with no ref.');
-        });
-        test("formatting inside block embed rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d87-a991-4322-b4b3-8e0b327acd1c))}}", "markdown");
-            expect(htmlFile.html.trim()).toMatchSnapshot();
-            const $ = cheerio.load(htmlFile.html);
-            expect($('.embed-block code').text()).toContain('function() hi {}');
-            expect($('.embed-block a').first().attr('data-ref')).toEqual('test');
-        });
-        test("Failed block embed rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((wrong-block-ref))}}", "markdown");
-            expect(htmlFile.html.trim()).toMatchSnapshot();
-            const $ = cheerio.load(htmlFile.html);
-            expect($('.embed-block').text()).toContain('');
-        });
-    });
-    describe("Page Embed Rendering", () => {
-       test("Basic page embed rendering", async () => {
-          const htmlFile = await convertToHTMLFile("Page Embed: {{embed [[Ref Test]]}}", "markdown");
-          expect(htmlFile.html.trim()).toMatchSnapshot();
-          const $ = cheerio.load(htmlFile.html);
-          expect($('.embed-page > .children-list').length).toBe(1);
-       });
-    });
     describe("PDF Rendering", () => {
        test("Basic PDF rendering", async () => {
               const htmlFile = await convertToHTMLFile("![Linux Slides 1.pdf](../assets/Linux_Slides_1_1673180335043_0.pdf)", "markdown");
@@ -762,21 +291,21 @@ describe("Markdown Input", () => {
     });
     describe("Anki Clozes Cases", () => {
         test("Math inside table with clozes", async () => {
-            const htmlFile = await convertToHTMLFile("| $\\frac{1}{ {{c2::2}} }$ | {{c1::$\\frac{1}{2}$}} |", "markdown", true);
+            const htmlFile = await convertToHTMLFile("| $\\frac{1}{ {{c2::2}} }$ | {{c1::$\\frac{1}{2}$}} |", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('table').text()).toContain('\\(\\frac{1}{ {{c2::2}} }\\)');
             expect($('table').text()).toContain('\\(\\frac{1}{2}\\)');
         });
         test("Clozes inside code", async () => {
-            const htmlFile = await convertToHTMLFile("```\n{{c1 class}} Apple;\n```", "markdown", true);
+            const htmlFile = await convertToHTMLFile("```\n{{c1 class}} Apple;\n```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').text()).toContain('{{c1 class}}');
             expect($('.hljs').text()).toContain('Apple');
         });
         test("Clozes on code block", async () => {
-            const htmlFile = await convertToHTMLFile("{{c1::```\nclass Apple;\n```}}", "markdown", true);
+            const htmlFile = await convertToHTMLFile("{{c1::```\nclass Apple;\n```}}", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect(htmlFile.html.trim()).toMatch(/{{c1::\n(.|\n)*?\n\s*<span>}}<\/span>/g);
@@ -800,3 +329,76 @@ describe("Complex Markdown / Org Mode Rendering Cases", () => {
     });
 });
 
+describe("Logseq Block References Rendering", () => {
+    let prevPage : PageEntity | BlockEntity, page : PageEntity;
+    beforeEach(async () => {
+        prevPage = await logseq.Editor.getCurrentPage();
+        page = await logseq.Editor.createPage('Test LogseqAnkiSync', {createFirstBlock: false});
+    });
+
+    afterEach(async () => {
+        await logseq.Editor.deletePage('Test LogseqAnkiSync');
+    });
+    
+    describe("Block Reference Rendering", () => {
+        test("Basic block ref rendering", async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "A **block** with no ref.", {properties:{id: '68454f3f-f6b7-4784-b13b-08892b8f21cb'}});
+            const htmlFile = await convertToHTMLFile(`Block Ref: ((${block.uuid}))`, "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.block-ref').text()).toContain('A block with no ref.');
+            expect($('.block-ref b').text()).toContain('block'); // Ref content has a bold word - block
+        });
+        test("Failed block ref rendering", async () => {
+            const htmlFile = await convertToHTMLFile("Block Ref: ((wrong-block-ref))", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.failed-block-ref').text()).toContain('wrong-block-ref');
+        });
+    });
+    // describe("Block Embed Rendering", () => {
+    //     test("Basic block embed rendering", async () => {
+    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d3c-954d-442b-8dca-4461fc209f84))}}", "markdown");
+    //         expect(htmlFile.html.trim()).toMatchSnapshot();
+    //         const $ = cheerio.load(htmlFile.html);
+    //         expect($('.embed-block').text()).toContain('A block with no ref.');
+    //         expect($('.embed-block b').text()).toContain('block'); // Ref content has a bold word - block
+    //     });
+    //     test("Nested block embed rendering", async () => {
+    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d6d-bda8-47d0-a94a-235a0084dd5e))}}", "markdown");
+    //         expect(htmlFile.html.trim()).toMatchSnapshot();
+    //         const $ = cheerio.load(htmlFile.html);
+    //         expect($('.embed-block').length).toBe(2);
+    //         expect($('.embed-block').first().text()).toContain('A block with page embed');
+    //         expect($('.embed-block').last().text()).toContain('A block with no ref');
+    //     });
+    //     test("block ref inside block embed rendering", async () => {
+    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d50-f9d1-4527-ba45-6ada5c2eca9b))}}", "markdown");
+    //         expect(htmlFile.html.trim()).toMatchSnapshot();
+    //         const $ = cheerio.load(htmlFile.html);
+    //         expect($('.embed-block').length).toBe(1);
+    //         expect($('.embed-block .block-ref').text()).toContain('A block with no ref.');
+    //     });
+    //     test("formatting inside block embed rendering", async () => {
+    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d87-a991-4322-b4b3-8e0b327acd1c))}}", "markdown");
+    //         expect(htmlFile.html.trim()).toMatchSnapshot();
+    //         const $ = cheerio.load(htmlFile.html);
+    //         expect($('.embed-block code').text()).toContain('function() hi {}');
+    //         expect($('.embed-block a').first().attr('data-ref')).toEqual('test');
+    //     });
+    //     test("Failed block embed rendering", async () => {
+    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((wrong-block-ref))}}", "markdown");
+    //         expect(htmlFile.html.trim()).toMatchSnapshot();
+    //         const $ = cheerio.load(htmlFile.html);
+    //         expect($('.embed-block').text()).toContain('');
+    //     });
+    // });
+    // describe("Page Embed Rendering", () => {
+    //     test("Basic page embed rendering", async () => {
+    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed [[Ref Test]]}}", "markdown");
+    //         expect(htmlFile.html.trim()).toMatchSnapshot();
+    //         const $ = cheerio.load(htmlFile.html);
+    //         expect($('.embed-page > .children-list').length).toBe(1);
+    //     });
+    // });
+});

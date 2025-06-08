@@ -1,5 +1,4 @@
 import {describe, expect, test} from "vitest";
-
 import { compareAnswer } from '../../src/anki-template/compareAnswer.js';
 
 describe("compareAnswer basic tests", () => {

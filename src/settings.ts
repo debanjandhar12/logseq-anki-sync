@@ -6,16 +6,17 @@ import {DONATE_ICON} from "./constants";
 
 // Type definitions for plugin settings
 export interface PluginSettings {
-    breadcrumbDisplay: "Dont show breadcrumb" | "Show Page name only" | "Show Page name and parent blocks context";
-    includeParentContent: boolean;
-    useNamespaceAsDefaultDeck: boolean;
-    defaultDeck: string;
-    renderClozeMarcosInLogseq: boolean;
-    hideClozeMarcosUntilHoverInLogseq: boolean;
-    addonsList: string[];
-    ankiFieldOptions: ("furigana" | "kana" | "kanji" | "tts" | "tags" | "rtl")[];
-    cacheLogseqAPIv1: boolean;
-    debug: ("syncLogseqToAnki.ts" | "LogseqProxy.ts" | "LogseqToHtmlConverter.ts" | "LazyAnkiNoteManager.ts" | "blockAndPageHashCache.ts")[];
+    disabled: boolean;
+    breadcrumbDisplay?: "Dont show breadcrumb" | "Show Page name only" | "Show Page name and parent blocks context";
+    includeParentContent?: boolean;
+    useNamespaceAsDefaultDeck?: boolean;
+    defaultDeck?: string;
+    renderClozeMarcosInLogseq?: boolean;
+    hideClozeMarcosUntilHoverInLogseq?: boolean;
+    addonsList?: string[];
+    ankiFieldOptions?: ("furigana" | "kana" | "kanji" | "tts" | "tags" | "rtl")[];
+    cacheLogseqAPIv1?: boolean;
+    debug?: ("syncLogseqToAnki.ts" | "LogseqProxy.ts" | "LogseqToHtmlConverter.ts" | "LazyAnkiNoteManager.ts" | "blockAndPageHashCache.ts")[];
     skipOnDependencyHashMatch?: boolean;
     lastWelcomeVersion?: string;
 }

@@ -386,7 +386,7 @@ export namespace LogseqProxy {
          * This is a utility function to provide proper typing for logseq.settings
          */
         static getPluginSettings(): PluginSettings {
-            return logseq.settings as unknown as PluginSettings;
+            return logseq.settings as PluginSettings;
         }
     }
     export class App {
