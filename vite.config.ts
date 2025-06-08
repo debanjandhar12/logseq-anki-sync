@@ -7,7 +7,6 @@ import * as fs from "fs";
 const {parseSync, traverse} = require("@babel/core");
 const generate = require("@babel/generator").default;
 import {build} from "esbuild";
-import {fileURLToPath} from "node:url";
 // https://vitejs.dev/config/
 
 function staticFileSyncTransformPlugin() {
@@ -102,24 +101,33 @@ function bundleJSStringPlugin() {
 
 export default defineConfig(({ command, mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
-
     return {
         base: "./",
         plugins: [
-            logseqDevPlugin(),
-            reactPlugin(),
+            mode === 'development' && logseqDevPlugin(), // for dev only
+            mode === 'development' && reactPlugin(), // for dev only
             nodePolyfills(),
             staticFileSyncTransformPlugin(),
             bundleJSStringPlugin(),
         ],
         define: {
-            'process.env': JSON.stringify(env),
-            'process.env.NODE_ENV': JSON.stringify(mode),
+            'process.env': JSON.stringify({...env, NODE_ENV: mode}),
         },
         build: {
             sourcemap: true,
             target: "modules",
             minify: "esbuild",
         },
+        test: {
+            include: ['**/*.test.ts'],
+            exclude: ['**/logseq-dev-plugin/**', '**/node_modules/**'],
+            setupFiles: ['./tests/setup.ts'],
+            // todo: why alias?
+            alias: {
+                '@logseq/libs': 'sass',
+            },
+            environment: 'jsdom',
+            env: {...env, NODE_ENV: mode},
+        }
     };
 });

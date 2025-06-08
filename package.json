@@ -19,6 +19,7 @@
     },
     "dependencies": {
         "@logseq/libs": "^0.2.1",
+        "logseq-proxy": "^0.1.2",
         "@thi.ng/hiccup": "^4.2.29",
         "@yellowdig/cljs-tools": "0.2.0",
         "await-lock": "^2.2.2",
@@ -48,12 +49,12 @@
         "@babel/preset-typescript": "^7.21.5",
         "@types/lodash": "^4.14.177",
         "@types/mustache": "^4.2.2",
-        "@types/node": "^18.8.3",
+        "@types/node": "^22.15.30",
         "@types/react": "17.0.2",
         "@types/react-dom": "17.0.2",
         "@typescript-eslint/eslint-plugin": "^5.61.0",
         "@typescript-eslint/parser": "^5.61.0",
-        "@vitejs/plugin-react": "^4.0.0",
+        "@vitejs/plugin-react": "^4.5.1",
         "assert": "^2.0.0",
         "buffer": "^6.0.3",
         "constants-browserify": "^1.0.0",
@@ -74,6 +75,9 @@
         "vite-plugin-logseq": "^1.1.2",
         "vite-plugin-node-polyfills": "^0.8.2",
         "vitest": "^3.2.2",
-        "vm-browserify": "^1.1.2"
+        "@vitest/browser": "^3.2.2",
+        "jsdom": "^26.1.0",
+        "vm-browserify": "^1.1.2",
+        "esbuild": "^0.25.5"
     }
 }

@@ -1,5 +1,195 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Basic Markdown Test (no references) > Anki Clozes Cases > Clozes inside code 1`] = `
+"<pre><code class="hljs"><span class="hljs-template-variable">{{<span class="hljs-name">c1</span> class}}</span><span class="language-xml"> Apple;
+
+</span></code></pre>"
+`;
+
+exports[`Basic Markdown Test (no references) > Anki Clozes Cases > Clozes on code block 1`] = `
+"<span>{{c1::
+        <br>
+</span>
+      <pre><code class="hljs"><span class="hljs-keyword">class</span> <span class="hljs-title class_">Apple</span>;
+</code></pre>
+      <span>}}</span>"
+`;
+
+exports[`Basic Markdown Test (no references) > Anki Clozes Cases > Math inside table with clozes 1`] = `
+"<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+        <thead>
+          <tr>
+            <th scope="col" class="org-left">\\(\\frac{1}{ {{c2::2}} }\\)</th>
+            <th scope="col" class="org-left">{{c1::\\(\\frac{1}{2}\\)}}</th>
+          </tr>
+        </thead>
+      </table>"
+`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Admonition Rendering - Important 1`] = `
+"<div class="important"><div style="display: revert">
+        <span>Hello World.
+          <br>
+</span>
+      </div></div>"
+`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Admonition Rendering - Quote 1`] = `
+"<blockquote>
+        <span>Hello World.
+          <br>
+</span>
+      </blockquote>"
+`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Bold Rendering 1`] = `"<span>This <b>bold</b> and this <b>bold</b> too.</span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Code Rendering 1`] = `"<span><code>Hello</code> <code>World</code></span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Consecutive Page Ref Rendering - https://github.com/debanjandhar12/logseq-anki-sync/issues/101 1`] = `"<span><a href="logseq://graph/Test?page=Ref%20Test" class="page-reference">Ref Test</a><a href="logseq://graph/Test?page=Ref%20Test" class="page-reference">Ref Test</a> <a href="logseq://graph/Test?page=Ref%20Test" class="page-reference">Ref Test</a>,<a href="logseq://graph/Test?page=Ref%20Test" class="page-reference">Ref Test</a></span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > HTML Rendering 1`] = `"<span>Hello <b>World</b></span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Hiccup Rendering 1`] = `"<span>Hello <b>World</b></span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Https / Http URL Rendering 1`] = `"<span>Hello <a href="https://example.com">World</a> <a href="https://example.com">https://example.com</a> <a href="http://example.com">http://example.com</a></span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Italic Rendering 1`] = `"<span>This <i>italic</i> and this <i>italic</i> too.</span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > MarginNote URL Parsing - https://github.com/debanjandhar12/logseq-anki-sync/issues/74 1`] = `"<span><a href="marginnote3app://note/8B11CF4A-DE3C-4A71-84G8-ODF5EE2EBO4C">Some notes</a></span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Multiline text rendering 1`] = `
+"<span>Hello
+        <br>
+World</span>"
+`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Page Ref Rendering 1`] = `"<span>Hello <a href="logseq://graph/Test?page=Ref%20Test" class="page-reference">Ref Test</a></span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Single line text rendering 1`] = `"<span>Hello World</span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > Tag Rendering 1`] = `"<span>Hello <a class="tag" data-ref="World" href="logseq://graph/Test?page=World">#World</a></span>"`;
+
+exports[`Basic Markdown Test (no references) > Basic Inline rendering > logseq block highlight / coloring 1`] = `"<span class="block-highlight-red">Hello World.</span>"`;
+
+exports[`Basic Markdown Test (no references) > Block Math rendering > Math with arrow - https://github.com/debanjandhar12/logseq-anki-sync/issues/24 1`] = `
+"<div class="mathblock">\\[ &lt;a,b&gt;
+       \\]</div>"
+`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > Basic Code Block 1`] = `
+"<pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
+}
+</code></pre>"
+`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > Basic Code Block with ~~~ syntax 1`] = `
+"<pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
+}
+</code></pre>"
+`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > Code Block with character first line 1`] = `
+"<span>randomchar <code>\`
+function hello() {
+  console.log(\`Hello World\`);
+}
+	 </code>\`</span>"
+`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > Code Block with spacing 1`] = `
+"<pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
+}
+</code></pre>"
+`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > Codeblock end line before should not have nonspace char before 1`] = `
+"<span><code>\`
+function hello() {
+  console.log(\`Hello World\`);
+}
+randomchar	 </code>\`</span>"
+`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > Everything after codeblock end line should be ignored 1`] = `
+"<pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
+}
+</code></pre>
+      <span>Ok</span>"
+`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > Everything after codeblock start line should be ignored 1`] = `
+"<pre><code data-lang="js" class="js hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">\`Hello World\`</span>);
+}
+</code></pre>"
+`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > HTML codeblocks works correctly #269 1`] = `
+"<pre><code data-lang="html" class="html hljs"><span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-keyword">html</span>&gt;</span>
+</code></pre>"
+`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > Inline Code Block 1`] = `"<span><code>function hello() { console.log('Hello World'); }</code></span>"`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > Sql with < char should not render &lt; #269 #79 1`] = `
+"<pre><code data-lang="sql" class="sql hljs"><span class="hljs-keyword">select</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">from</span> users <span class="hljs-keyword">where</span> id <span class="hljs-operator">&lt;</span> <span class="hljs-number">1</span>
+</code></pre>"
+`;
+
+exports[`Basic Markdown Test (no references) > Code Block rendering > Two Basic Code Block - one after another 1`] = `
+"<span>Test:
+        <br>
+</span>
+      <pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
+}
+</code></pre>
+      <pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
+}
+</code></pre>"
+`;
+
+exports[`Basic Markdown Test (no references) > Latex Rendering > Block Latex Rendering 1`] = `"<span>This is block latex: \\[\\frac{1}{2}\\]</span>"`;
+
+exports[`Basic Markdown Test (no references) > Latex Rendering > Inline Latex Rendering 1`] = `"<span>This is inline latex: \\(\\frac{1}{2}\\)</span>"`;
+
+exports[`Basic Markdown Test (no references) > Latex Rendering > Two Inline Latex Rendering 1`] = `"<span>This is consecutive math: \\(\\frac{1}{2}\\) \\(\\frac{3}{4}\\)</span>"`;
+
+exports[`Basic Markdown Test (no references) > Media rendering > Audio Rendering - Local Audio 1`] = `"<span>[sound:audio.mp3]</span>"`;
+
+exports[`Basic Markdown Test (no references) > Media rendering > Audio Rendering - Web Audio 1`] = `"<span>[sound:https://example.com/audio.mp3]</span>"`;
+
+exports[`Basic Markdown Test (no references) > Media rendering > Image Rendering - Image with Alt Text 1`] = `"<span><img src="https://example.com/image.png" alt="Alt Text"  /></span>"`;
+
+exports[`Basic Markdown Test (no references) > Media rendering > Image Rendering - Image with Width and Height 1`] = `"<span><img src="https://example.com/image.png" alt="Alt Text" width="100" height="200"/></span>"`;
+
+exports[`Basic Markdown Test (no references) > Media rendering > Image Rendering - Local Image 1`] = `"<span><img src="image.png"   /></span>"`;
+
+exports[`Basic Markdown Test (no references) > Media rendering > Image Rendering - Web Image 1`] = `"<span><img src="https://example.com/image.png"   /></span>"`;
+
+exports[`Basic Markdown Test (no references) > Media rendering > Video Rendering - Local Video 1`] = `
+"<span><video src="video.mp4" 
+                        controlsList="nodownload" controls></video></span>"
+`;
+
+exports[`Basic Markdown Test (no references) > PDF Rendering > Basic PDF rendering 1`] = `"<span><a href="#-2e--2e--2f-assets-2f-Linux_Slides_1_1673180335043_0-2e-pdf">../assets/Linux_Slides_1_1673180335043_0.pdf</a></span>"`;
+
+exports[`Basic Markdown Test (no references) > PDF Rendering > PDF Image Annotation Rendering 1`] = `
+"<span>🔵<b>P1</b> <div></div> <img src="1_65a22d2c-a245-4a3f-89cc-1b1a7b724abc_1673181377785.png"   />
+        <br>
+<span></span></span>"
+`;
+
+exports[`Basic Markdown Test (no references) > PDF Rendering > PDF Text Annotation Rendering - no color 1`] = `"<span>📌<b>P1</b> I am pdf page content</span>"`;
+
+exports[`Basic Markdown Test (no references) > PDF Rendering > PDF Text Annotation Rendering 1`] = `"<span>🔵<b>P1</b> I am pdf page content</span>"`;
+
 exports[`Complex Markdown / Org Mode Rendering Cases > Math inside table 1`] = `
 "<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
         <thead>
@@ -22,370 +212,12 @@ exports[`Complex Markdown / Org Mode Rendering Cases > https://github.com/debanj
 </code></pre>"
 `;
 
-exports[`Markdown Input > Anki Clozes Cases > Clozes inside code 1`] = `
-"<pre><code class="hljs"><span class="hljs-template-variable">{{<span class="hljs-name">c1</span> class}}</span><span class="language-xml"> Apple;
-
-</span></code></pre>"
-`;
-
-exports[`Markdown Input > Anki Clozes Cases > Clozes on code block 1`] = `
-"<span>{{c1::
-        <br>
-</span>
-      <pre><code class="hljs"><span class="hljs-keyword">class</span> <span class="hljs-title class_">Apple</span>;
-</code></pre>
-      <span>}}</span>"
-`;
-
-exports[`Markdown Input > Anki Clozes Cases > Math inside table with clozes 1`] = `
-"<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
-        <thead>
-          <tr>
-            <th scope="col" class="org-left">\\(\\frac{1}{ {{c2::2}} }\\)</th>
-            <th scope="col" class="org-left">{{c1::\\(\\frac{1}{2}\\)}}</th>
-          </tr>
-        </thead>
-      </table>"
-`;
-
-exports[`Markdown Input > Basic Inline rendering > Admonition Rendering - Important 1`] = `
-"<div class="important"><div style="display: revert">
-        <span>Hello World.
-          <br>
-</span>
-      </div></div>"
-`;
-
-exports[`Markdown Input > Basic Inline rendering > Admonition Rendering - Quote 1`] = `
-"<blockquote>
-        <span>Hello World.
-          <br>
-</span>
-      </blockquote>"
-`;
-
-exports[`Markdown Input > Basic Inline rendering > Bold Rendering 1`] = `"<span>This <b>bold</b> and this <b>bold</b> too.</span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > Code Rendering 1`] = `"<span><code>Hello</code> <code>World</code></span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > Consecutive Page Ref Rendering - https://github.com/debanjandhar12/logseq-anki-sync/issues/101 1`] = `"<span><a href="logseq://graph/TestGraph?page=Ref%20Test" class="page-reference">Ref Test</a><a href="logseq://graph/TestGraph?page=Ref%20Test" class="page-reference">Ref Test</a> <a href="logseq://graph/TestGraph?page=Ref%20Test" class="page-reference">Ref Test</a>,<a href="logseq://graph/TestGraph?page=Ref%20Test" class="page-reference">Ref Test</a></span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > HTML Rendering 1`] = `"<span>Hello <b>World</b></span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > Hiccup Rendering 1`] = `"<span>Hello <b>World</b></span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > Https / Http URL Rendering 1`] = `"<span>Hello <a href="https://example.com">World</a> <a href="https://example.com">https://example.com</a> <a href="http://example.com">http://example.com</a></span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > Italic Rendering 1`] = `"<span>This <i>italic</i> and this <i>italic</i> too.</span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > MarginNote URL Parsing - https://github.com/debanjandhar12/logseq-anki-sync/issues/74 1`] = `"<span><a href="marginnote3app://note/8B11CF4A-DE3C-4A71-84G8-ODF5EE2EBO4C">Some notes</a></span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > Multiline text rendering 1`] = `
-"<span>Hello
-        <br>
-World</span>"
-`;
-
-exports[`Markdown Input > Basic Inline rendering > Page Ref Rendering 1`] = `"<span>Hello <a href="logseq://graph/TestGraph?page=Ref%20Test" class="page-reference">Ref Test</a></span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > Single line text rendering 1`] = `"<span>Hello World</span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > Tag Rendering 1`] = `"<span>Hello <a class="tag" data-ref="World" href="logseq://graph/TestGraph?page=World">#World</a></span>"`;
-
-exports[`Markdown Input > Basic Inline rendering > logseq block highlight / coloring 1`] = `"<span class="block-highlight-red">Hello World.</span>"`;
-
-exports[`Markdown Input > Block Embed Rendering > Basic block embed rendering 1`] = `
-"<span>Page Embed: <div class="embed-block">
-                        
-<ul class="children-list">
-<li class="children ">
-      <span>A <b>block</b> with no ref.
-        <br>
-Some more content...</span>
-    </li></ul>
-                        </div></span>"
-`;
-
-exports[`Markdown Input > Block Embed Rendering > Failed block embed rendering 1`] = `
-"<span>Page Embed: <div class="embed-block">
-                        
-                        </div></span>"
-`;
-
-exports[`Markdown Input > Block Embed Rendering > Nested block embed rendering 1`] = `
-"<span>Page Embed: <div class="embed-block">
-                        
-<ul class="children-list">
-<li class="children ">
-      <span>A block with page embed:
-        <br>
-<div class="embed-block">
-                        
-<ul class="children-list">
-<li class="children ">
-      <span>A <b>block</b> with no ref.
-        <br>
-Some more content...</span>
-    </li></ul>
-                        </div></span>
-    </li></ul>
-                        </div></span>"
-`;
-
-exports[`Markdown Input > Block Embed Rendering > block ref inside block embed rendering 1`] = `
-"<span>Page Embed: <div class="embed-block">
-                        
-<ul class="children-list">
-<li class="children ">
-      <span>A block with block ref:
-        <br>
-<span onclick="window.open('logseq://graph/TestGraph?block-id=65a22d3c-954d-442b-8dca-4461fc209f84')" class="block-ref">
-      <span>A <b>block</b> with no ref.
-        <br>
-</span>
-    </span></span>
-    </li></ul>
-                        </div></span>"
-`;
-
-exports[`Markdown Input > Block Embed Rendering > formatting inside block embed rendering 1`] = `
-"<span>Page Embed: <div class="embed-block">
-                        
-<ul class="children-list">
-<li class="children ">
-      <span>Another block with no ref. <code>\`
-function() hi {}
-
-</code>\`
-        <br>
-<a class="tag" data-ref="test" href="logseq://graph/TestGraph?page=test"></a> <a href="logseq://graph/TestGraph?page=Test" class="page-reference">[Test]] [Testing</a>
-        <br>
-</span>
-    
-<ul class="children-list">
-<li class="children ">
-      <span>nested child 1</span>
-    
-<ul class="children-list">
-<li class="children ">
-      <span>nested child 1.1</span>
-    </li></ul></li>
-<li class="children ">
-      <span>nested child 2</span>
-    </li></ul></li></ul>
-                        </div></span>"
-`;
-
-exports[`Markdown Input > Block Math rendering > Math with arrow - https://github.com/debanjandhar12/logseq-anki-sync/issues/24 1`] = `
-"<div class="mathblock">\\[ &lt;a,b&gt;
-       \\]</div>"
-`;
-
-exports[`Markdown Input > Block Reference Rendering > Basic block ref rendering 1`] = `
-"<span>Block Ref: <span onclick="window.open('logseq://graph/TestGraph?block-id=65a22d3c-954d-442b-8dca-4461fc209f84')" class="block-ref">
+exports[`Logseq Block References Rendering > Block Reference Rendering > Basic block ref rendering 1`] = `
+"<span>Block Ref: <span onclick="window.open('logseq://graph/Test?block-id=68454f3f-f6b7-4784-b13b-08892b8f21cb')" class="block-ref">
       <span>A <b>block</b> with no ref.
         <br>
 </span>
     </span></span>"
 `;
 
-exports[`Markdown Input > Block Reference Rendering > Failed block ref rendering 1`] = `"<span>Block Ref: <span class="failed-block-ref">wrong-block-ref</span></span>"`;
-
-exports[`Markdown Input > Code Block rendering > Basic Code Block 1`] = `
-"<pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
-  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
-}
-</code></pre>"
-`;
-
-exports[`Markdown Input > Code Block rendering > Basic Code Block with ~~~ syntax 1`] = `
-"<pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
-  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
-}
-</code></pre>"
-`;
-
-exports[`Markdown Input > Code Block rendering > Code Block with character first line 1`] = `
-"<span>randomchar <code>\`
-function hello() {
-  console.log(\`Hello World\`);
-}
-	 </code>\`</span>"
-`;
-
-exports[`Markdown Input > Code Block rendering > Code Block with spacing 1`] = `
-"<pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
-  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
-}
-</code></pre>"
-`;
-
-exports[`Markdown Input > Code Block rendering > Codeblock end line before should not have nonspace char before 1`] = `
-"<span><code>\`
-function hello() {
-  console.log(\`Hello World\`);
-}
-randomchar	 </code>\`</span>"
-`;
-
-exports[`Markdown Input > Code Block rendering > Everything after codeblock end line should be ignored 1`] = `
-"<pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
-  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
-}
-</code></pre>
-      <span>Ok</span>"
-`;
-
-exports[`Markdown Input > Code Block rendering > Everything after codeblock start line should be ignored 1`] = `
-"<pre><code data-lang="js" class="js hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
-  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">\`Hello World\`</span>);
-}
-</code></pre>"
-`;
-
-exports[`Markdown Input > Code Block rendering > HTML codeblocks works correctly #269 1`] = `
-"<pre><code data-lang="html" class="html hljs"><span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-keyword">html</span>&gt;</span>
-</code></pre>"
-`;
-
-exports[`Markdown Input > Code Block rendering > Inline Code Block 1`] = `"<span><code>function hello() { console.log('Hello World'); }</code></span>"`;
-
-exports[`Markdown Input > Code Block rendering > Sql with < char should not render &lt; #269 #79 1`] = `
-"<pre><code data-lang="sql" class="sql hljs"><span class="hljs-keyword">select</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">from</span> users <span class="hljs-keyword">where</span> id <span class="hljs-operator">&lt;</span> <span class="hljs-number">1</span>
-</code></pre>"
-`;
-
-exports[`Markdown Input > Code Block rendering > Two Basic Code Block - one after another 1`] = `
-"<span>Test:
-        <br>
-</span>
-      <pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
-  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
-}
-</code></pre>
-      <pre><code class="hljs"><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>) {
-  <span class="hljs-built_in">console</span>.<span class="hljs-built_in">log</span>(<span class="hljs-string">\`Hello World\`</span>);
-}
-</code></pre>"
-`;
-
-exports[`Markdown Input > Latex Rendering > Block Latex Rendering 1`] = `"<span>This is block latex: \\[\\frac{1}{2}\\]</span>"`;
-
-exports[`Markdown Input > Latex Rendering > Inline Latex Rendering 1`] = `"<span>This is inline latex: \\(\\frac{1}{2}\\)</span>"`;
-
-exports[`Markdown Input > Latex Rendering > Two Inline Latex Rendering 1`] = `"<span>This is consecutive math: \\(\\frac{1}{2}\\) \\(\\frac{3}{4}\\)</span>"`;
-
-exports[`Markdown Input > Media rendering > Audio Rendering - Local Audio 1`] = `"<span>[sound:audio.mp3]</span>"`;
-
-exports[`Markdown Input > Media rendering > Audio Rendering - Web Audio 1`] = `"<span>[sound:https://example.com/audio.mp3]</span>"`;
-
-exports[`Markdown Input > Media rendering > Image Rendering - Image with Alt Text 1`] = `"<span><img src="https://example.com/image.png" alt="Alt Text"  /></span>"`;
-
-exports[`Markdown Input > Media rendering > Image Rendering - Image with Width and Height 1`] = `"<span><img src="https://example.com/image.png" alt="Alt Text" width="100" height="200"/></span>"`;
-
-exports[`Markdown Input > Media rendering > Image Rendering - Local Image 1`] = `"<span><img src="image.png"   /></span>"`;
-
-exports[`Markdown Input > Media rendering > Image Rendering - Web Image 1`] = `"<span><img src="https://example.com/image.png"   /></span>"`;
-
-exports[`Markdown Input > Media rendering > Video Rendering - Local Video 1`] = `
-"<span><video src="video.mp4" 
-                        controlsList="nodownload" controls></video></span>"
-`;
-
-exports[`Markdown Input > PDF Rendering > Basic PDF rendering 1`] = `"<span><a href="#-2e--2e--2f-assets-2f-Linux_Slides_1_1673180335043_0-2e-pdf">../assets/Linux_Slides_1_1673180335043_0.pdf</a></span>"`;
-
-exports[`Markdown Input > PDF Rendering > PDF Image Annotation Rendering 1`] = `
-"<span>🔵<b>P1</b> <div></div> <img src="1_65a22d2c-a245-4a3f-89cc-1b1a7b724abc_1673181377785.png"   />
-        <br>
-<span></span></span>"
-`;
-
-exports[`Markdown Input > PDF Rendering > PDF Text Annotation Rendering - no color 1`] = `"<span>📌<b>P1</b> I am pdf page content</span>"`;
-
-exports[`Markdown Input > PDF Rendering > PDF Text Annotation Rendering 1`] = `"<span>🔵<b>P1</b> I am pdf page content</span>"`;
-
-exports[`Markdown Input > Page Embed Rendering > Basic page embed rendering 1`] = `
-"<span>Page Embed: <div class="embed-page">
-                        <a href="logseq://graph/TestGraph?page=Ref%20Test" class="embed-header">Ref Test</a>
-                        
-<ul class="children-list">
-<li class="children "></li>
-<li class="children ">
-      <span>A <b>block</b> with no ref.
-        <br>
-Some more content...</span>
-    </li>
-<li class="children ">
-      <span>A block with block ref:
-        <br>
-<span onclick="window.open('logseq://graph/TestGraph?block-id=65a22d3c-954d-442b-8dca-4461fc209f84')" class="block-ref">
-      <span>A <b>block</b> with no ref.
-        <br>
-</span>
-    </span></span>
-    </li>
-<li class="children ">
-      <span>A block with page embed:
-        <br>
-<div class="embed-block">
-                        
-<ul class="children-list">
-<li class="children ">
-      <span>A <b>block</b> with no ref.
-        <br>
-Some more content...</span>
-    </li></ul>
-                        </div></span>
-    </li>
-<li class="children ">
-      <span>Another block with no ref. <code>\`
-function() hi {}
-
-</code>\`
-        <br>
-<a class="tag" data-ref="test" href="logseq://graph/TestGraph?page=test"></a> <a href="logseq://graph/TestGraph?page=Test" class="page-reference">[Test]] [Testing</a>
-        <br>
-</span>
-    
-<ul class="children-list">
-<li class="children ">
-      <span>nested child 1</span>
-    
-<ul class="children-list">
-<li class="children ">
-      <span>nested child 1.1</span>
-    </li></ul></li>
-<li class="children ">
-      <span>nested child 2</span>
-    </li></ul></li>
-<li class="children ">
-      <span>Another block with page embed:
-        <br>
-<div class="embed-block">
-                        
-<ul class="children-list">
-<li class="children ">
-      <span>Another block with no ref. <code>\`
-function() hi {}
-
-</code>\`
-        <br>
-<a class="tag" data-ref="test" href="logseq://graph/TestGraph?page=test"></a> <a href="logseq://graph/TestGraph?page=Test" class="page-reference">[Test]] [Testing</a>
-        <br>
-</span>
-    
-<ul class="children-list">
-<li class="children ">
-      <span>nested child 1</span>
-    
-<ul class="children-list">
-<li class="children ">
-      <span>nested child 1.1</span>
-    </li></ul></li>
-<li class="children ">
-      <span>nested child 2</span>
-    </li></ul></li></ul>
-                        </div></span>
-    </li></ul>
-                        </div></span>"
-`;
+exports[`Logseq Block References Rendering > Block Reference Rendering > Failed block ref rendering 1`] = `"<span>Block Ref: <span class="failed-block-ref">wrong-block-ref</span></span>"`;

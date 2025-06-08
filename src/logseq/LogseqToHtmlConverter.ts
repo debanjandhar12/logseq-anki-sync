@@ -90,12 +90,12 @@ export async function convertToHTMLFile(
         resultAssets = new Set<string>(),
         resultTags = new Set<string>();
     const { debug } = LogseqProxy.Settings.getPluginSettings();
-    if (debug.includes("LogseqToHtmlConverter.ts"))
+    if (debug?.includes("LogseqToHtmlConverter.ts"))
         console.log("--Start Converting--\nOriginal:", resultContent);
 
     let block_props;
     [resultContent, block_props] = await processProperties(resultContent, format);
-    if (debug.includes("LogseqToHtmlConverter.ts"))
+    if (debug?.includes("LogseqToHtmlConverter.ts"))
         console.log("After processing embeded:", resultContent);
 
     if (format == "org") {
@@ -195,8 +195,7 @@ export async function convertToHTMLFile(
         }
     }
     resultContent = new TextDecoder().decode(resultUTF8);
-    const { debug: debugAfterReplace } = LogseqProxy.Settings.getPluginSettings();
-    if (debugAfterReplace.includes("LogseqToHtmlConverter.ts"))
+    if (debug?.includes("LogseqToHtmlConverter.ts"))
         console.log("After replacing errorinous terms:", resultContent);
 
     // Process the block & page refs + embeds
@@ -285,16 +284,14 @@ export async function convertToHTMLFile(
         $("span:first-child").addClass(`block-highlight-${block_props["background-color"]}`);
     }
     resultContent = decodeHTMLEntities(decodeHTMLEntities($("#content ul li").html() || ""));
-    const { debug: debugAfterMldoc } = LogseqProxy.Settings.getPluginSettings();
-    if (debugAfterMldoc.includes("LogseqToHtmlConverter.ts"))
+    if (debug?.includes("LogseqToHtmlConverter.ts"))
         console.log("After Mldoc.export:", resultContent);
 
     // Bring back inline html content and clozes from hashmap
     for (const key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]);
     for (const key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]); // fix: sometimes the end space of hash gets removed (actual fix require this to be repeated len(keys) times instead of 2)
 
-    const { debug: debugFinal } = LogseqProxy.Settings.getPluginSettings();
-    if (debugFinal.includes("LogseqToHtmlConverter.ts"))
+    if (debug?.includes("LogseqToHtmlConverter.ts"))
         console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
     convertToHTMLFileCache.set(
         String(objectHash({
