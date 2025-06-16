@@ -22,15 +22,15 @@ import {convertToHTMLFile} from "../logseq/LogseqToHtmlConverter";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import pkg from "../../package.json";
 import {SwiftArrowNote} from "../anki-notes/SwiftArrowNote";
-import {ProgressNotification} from "../ui/pages/ProgressNotification";
+import {ProgressNotification} from "../ui";
 import {showConfirmModal} from "../ui";
 import {ImageOcclusionNote} from "../anki-notes/ImageOcclusionNote";
 import NoteHashCalculator from "../anki-notes/NoteHashCalculator";
 import {CancelablePromise} from "cancelable-promise";
 import {NoteUtils} from "../anki-notes/NoteUtils";
 import {ActionNotification} from "../ui/common/ActionNotification";
-import {showSyncSelectionDialog} from "../ui/pages/SyncSelectionDialog";
-import {showSyncResultDialog} from "../ui/pages/SyncResultDialog";
+import {showSyncSelectionDialog} from "../ui";
+import {showSyncResultDialog} from "../ui";
 import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 
 export class LogseqToAnkiSync {

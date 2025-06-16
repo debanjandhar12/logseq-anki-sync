@@ -18,11 +18,11 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
     return (
         <>
             {showCloseButton && onClose && (
-                <div className="absolute top-0 right-0 pt-2 pr-2">
+                <div className="absolute top-0 right-0 pt-2 pr-2" style={{ display: "flex", alignItems: "center" }}>
                     {children && (
-                        <div style={{ display: "flex", alignItems: "center" }}>
+                        <>
                             {children}
-                        </div>
+                        </>
                     )}
                     <button
                         aria-label="Close"
