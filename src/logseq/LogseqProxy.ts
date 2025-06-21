@@ -382,6 +382,13 @@ export namespace LogseqProxy {
         }
     }
     export class App {
+        static async checkCurrentIsDbGraph() {
+            try {
+                return await logseq.App.checkCurrentIsDbGraph()
+            } catch (e) {}
+            return false;
+        }
+
         static registeredGraphChangeListeners = [];
         static registerGraphChangeListener(listener: (e) => void): void {
             this.registeredGraphChangeListeners.push(listener);

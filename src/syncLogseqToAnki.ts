@@ -40,8 +40,8 @@ export class LogseqToAnkiSync {
     modelName: string;
 
     public async sync(): Promise<void> {
-        if (typeof logseq?.App?.checkCurrentIsDbGraph === 'function' && await logseq.App.checkCurrentIsDbGraph() === true) {
-            await logseq.UI.showMsg("Anki sync not supported in DB Graphs yet", "error");
+        if (await LogseqProxy.App.checkCurrentIsDbGraph()  === true) {
+            await logseq.UI.showMsg("Anki sync not supported in DB Graphs yet.\nDevelopment to support it is going on in db branch.", "error");
             return;
         }
         if (LogseqToAnkiSync.isSyncing) {
