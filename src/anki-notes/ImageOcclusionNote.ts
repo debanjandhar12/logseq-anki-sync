@@ -164,7 +164,7 @@ export class ImageOcclusionNote extends Note {
         :where
           [?b :block/properties ?p]
           [(get ?p :occlusion)]
-        ]`);
+        ]`, {suppressErrors: false});
         let notes: (ImageOcclusionNote | false)[] = await Promise.all(
             blocks.map(async (block) => {
                 const uuid = getUUIDFromBlock(block[0]);

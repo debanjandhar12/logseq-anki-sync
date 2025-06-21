@@ -228,7 +228,7 @@ export class ClozeNote extends Note {
            (and [?b :block/title ?content]))
         [(re-pattern "${clozePattern}") ?regex]
         [(re-find ?regex ?content)]
-        ]`);
+        ]`, {suppressErrors: false});
         // Get blocks with .replacecloze or replacecloze property
         const replaceCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
         [:find (pull ?b [*])
@@ -238,9 +238,9 @@ export class ClozeNote extends Note {
             [(get ?p :replacecloze)]
             [(get ?p :.replacecloze)]
           )
-        ]`);
+        ]`, {suppressErrors: false});
         // Get blocks with org cloze
-        const orgCloze_blocks = await LogseqProxy.DB.datascriptQueryBlocks(`
+        const orgCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
         [:find (pull ?b [*])
         :where
         (or
@@ -248,7 +248,7 @@ export class ClozeNote extends Note {
            (and [?b :block/title ?content]))
         [(re-pattern "#\\\\+BEGIN_(CLOZE)( .*)?\\\\n((.|\\\\n)*?)#\\\\+END_\\\\1") ?regex]
         [(re-find ?regex ?content)]
-        ]`);
+        ]`, {suppressErrors: false});
         let blocks: any = [...macroCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
         let notes = await Promise.all(
             blocks.map(async (block) => {
