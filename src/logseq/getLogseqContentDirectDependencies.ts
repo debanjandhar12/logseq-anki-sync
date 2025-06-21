@@ -1,4 +1,4 @@
-import {BlockEntity, BlockUUID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {BlockEntity, BlockPageName, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {
     LOGSEQ_BLOCK_REF_REGEXP,
     LOGSEQ_EMBDED_PAGE_REGEXP,
@@ -6,8 +6,8 @@ import {
 } from "../constants";
 import {LogseqProxy} from "./LogseqProxy";
 export type DependencyEntity = {
-    type: "FirstLineOfBlock" | "Block" | "Page";
-    value: BlockUUID | PageEntityName;
+    type: "Block" | "Page";
+    value: BlockUUID | BlockPageName;
 };
 export default async function getLogseqContentDirectDependencies(
     content: string,
@@ -15,8 +15,8 @@ export default async function getLogseqContentDirectDependencies(
 ): Promise<DependencyEntity[]> {
     if (content === null || content === undefined) return [];
     const blockDependency: Set<BlockUUID> = new Set();
-    const firstLineOfBlockDependency: Set<BlockUUID> = new Set();
-    const pageDependency: Set<PageEntityName> = new Set();
+    const pageDependency: Set<BlockPageName> = new Set();
+
     //  Add dependencies due to LOGSEQ_EMBDED_BLOCK_REGEXP
     let match;
     while ((match = LOGSEQ_EMBDED_BLOCK_REGEXP.exec(content))) {
@@ -38,22 +38,18 @@ export default async function getLogseqContentDirectDependencies(
             }
         }
     }
+
     // Add dependencies due to LOGSEQ_BLOCK_REF_REGEXP
     while ((match = LOGSEQ_BLOCK_REF_REGEXP.exec(content))) {
-        firstLineOfBlockDependency.add(match[1]);
+        blockDependency.add(match[1]);
     }
+
     // Add dependencies due to LOGSEQ_EMBDED_PAGE_REGEXP
     while ((match = LOGSEQ_EMBDED_PAGE_REGEXP.exec(content))) {
         pageDependency.add(match[1]);
     }
+
     return [
-        ...Array.from(firstLineOfBlockDependency).map(
-            (block) =>
-                ({
-                    type: "FirstLineOfBlock",
-                    value: block,
-                }) as DependencyEntity,
-        ),
         ...Array.from(blockDependency).map(
             (block) => ({type: "Block", value: block}) as DependencyEntity,
         ),
@@ -62,4 +58,3 @@ export default async function getLogseqContentDirectDependencies(
         ),
     ];
 }
-type PageEntityName = string;

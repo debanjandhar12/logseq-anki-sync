@@ -25,7 +25,7 @@ import {SwiftArrowNote} from "../anki-notes/SwiftArrowNote";
 import {ProgressNotification} from "../ui";
 import {showConfirmModal} from "../ui";
 import {ImageOcclusionNote} from "../anki-notes/ImageOcclusionNote";
-import NoteHashCalculator from "../anki-notes/NoteHashCalculator";
+import NoteHashCalculator from "./NoteHashCalculator";
 import {CancelablePromise} from "cancelable-promise";
 import {NoteUtils} from "../anki-notes/NoteUtils";
 import {ActionNotification} from "../ui/common/ActionNotification";

@@ -6,6 +6,8 @@ import _ from "lodash";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {NoteUtils} from "./NoteUtils";
 import {getLogseqBlockPropSafe} from "../utils/utils";
+import {PageEntity} from "@logseq/libs/dist/LSPlugin";
+import getNameFromPage from "../logseq/getNameFromPage";
 
 export abstract class Note {
     public uuid: string;
@@ -23,7 +25,7 @@ export abstract class Note {
         content: string,
         format: string,
         properties: any,
-        page: any,
+        page: PageEntity,
         refs: number[],
     ) {
         this.uuid = uuid;
@@ -31,8 +33,7 @@ export abstract class Note {
         this.format = format;
         this.properties = properties;
         this.page = page;
-        this.page.originalName =
-            _.get(this, "page.originalName", null) || _.get(this, "page.name", null); // Just in case the page doesn't have an originalName
+        this.page.name = this.page.originalName = getNameFromPage(page); // Unify naming
         this.tagIds = refs;
     }
 
