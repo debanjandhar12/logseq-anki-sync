@@ -15,7 +15,6 @@ export interface PluginSettings {
     hideClozeMarcosUntilHoverInLogseq?: boolean;
     addonsList?: string[];
     ankiFieldOptions?: ("furigana" | "kana" | "kanji" | "tts" | "tags" | "rtl")[];
-    cacheLogseqAPIv1?: boolean;
     debug?: ("syncLogseqToAnki.ts" | "LogseqProxy.ts" | "LogseqToHtmlConverter.ts" | "LazyAnkiNoteManager.ts" | "blockAndPageHashCache.ts")[];
     skipOnDependencyHashMatch?: boolean;
     lastWelcomeVersion?: string;
@@ -128,14 +127,6 @@ export const addSettingsToLogseq = () => {
                 "rtl"
             ],
             enumPicker: "checkbox",
-        },
-        {
-            key: "cacheLogseqAPIv1",
-            type: "boolean",
-            default: true,
-            title: "Enable caching Logseq API for improved syncing speed? (Recommended: Enabled) [Experimental]",
-            description:
-                "Enable active cache for Logseq API. When enabled, syncing will be faster but the plugin may use more memory.  <br/> <sub>NB: It is recommended to disable this option if notes are not getting updated properly.</sub>",
         },
         {
             key: "debug",

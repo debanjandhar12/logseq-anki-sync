@@ -99,33 +99,6 @@ export const getPageHash = async (pageName) => {
 
 // -- Maintain Cache State by using DB.onChanged --
 export const init = () => {
-    LogseqProxy.DB.registerDBChangeListener(async ({blocks, txData, txMeta}) => {
-        const { cacheLogseqAPIv1 } = LogseqProxy.Settings.getPluginSettings();
-        if (!cacheLogseqAPIv1) return;
-        for (const tx of txData) {
-            const [txBlockID, txType, ...additionalDetails] = tx;
-            if (txType != "left" && txType != "parent") continue;
-            let block = await logseq.Editor.getBlock(txBlockID);
-            if (block != null) blocks.push(block);
-            block = await logseq.Editor.getBlock(additionalDetails[0]);
-            if (block != null) blocks.push(block);
-        }
-        while (blocks.length > 0) {
-            const block = blocks.pop();
-            block.uuid = getUUIDFromBlock(block);
-            if (block.uuid != null) {
-                removeBlockNode(block.uuid);
-            }
-            if (block.originalName != null) removePageNode(block.originalName);
-            if (block.name != null) removePageNode(block.name);
-        }
-    });
-    LogseqProxy.Settings.registerSettingsChangeListener((newSettings, oldSettings) => {
-        if (!newSettings.cacheLogseqAPIv1) clearGraph();
-    });
-    LogseqProxy.App.registerGraphChangeListener((e) => {
-        clearGraph();
-    });
     window.addEventListener("syncLogseqToAnkiComplete", () => {
         clearGraph();
     });
