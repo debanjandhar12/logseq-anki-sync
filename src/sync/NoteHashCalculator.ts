@@ -53,7 +53,7 @@ export default class NoteHashCalculator {
         while (parentNamespaceID != null) {
             const parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
             toHash.push(await getPageHash(parentNamespacePage.name));
-            parentNamespaceID = parentNamespacePage.namespace.id;
+            parentNamespaceID = _.get(parentNamespacePage, "namespace.id");
         }
 
         // Add additional things  to toHash
@@ -81,7 +81,7 @@ export default class NoteHashCalculator {
         toHash.push([
             html.trim(),
             assets,
-            deck,
+            deck ? deck.trim().toLowerCase() : "",
             breadcrumb.trim(),
             tags,
             extra.trim(),

@@ -8,24 +8,24 @@ export async function showSyncResultDialog(
     createdNotes: Array<any>,
     updatedNotes: Array<any>,
     deletedNotes: Array<any>,
-    failedCreated: { [key: string]: string },
-    failedUpdated: { [key: string]: string },
-    failedDeleted: { [key: string]: string },
+    failedCreated: { [key: string]: Error },
+    failedUpdated: { [key: string]: Error },
+    failedDeleted: { [key: string]: Error },
 ): Promise<{
     createdNotes: Array<any>;
     updatedNotes: Array<any>;
     deletedNotes: Array<any>;
-    failedCreated: { [key: string]: string };
-    failedUpdated: { [key: string]: string };
-    failedDeleted: { [key: string]: string };
+    failedCreated: { [key: string]: Error };
+    failedUpdated: { [key: string]: Error };
+    failedDeleted: { [key: string]: Error };
 } | null> {
     return createModalPromise<{
         createdNotes: Array<any>;
         updatedNotes: Array<any>;
         deletedNotes: Array<any>;
-        failedCreated: { [key: string]: string };
-        failedUpdated: { [key: string]: string };
-        failedDeleted: { [key: string]: string };
+        failedCreated: { [key: string]: Error };
+        failedUpdated: { [key: string]: Error };
+        failedDeleted: { [key: string]: Error };
     } | null>(
         (props) => (
             <SyncResultDialogComponent
@@ -47,9 +47,9 @@ const SyncResultDialogComponent: React.FC<{
     createdNotes: Array<any>;
     updatedNotes: Array<any>;
     deletedNotes: Array<any>;
-    failedCreated: { [key: string]: string };
-    failedUpdated: { [key: string]: string };
-    failedDeleted: { [key: string]: string };
+    failedCreated: { [key: string]: Error };
+    failedUpdated: { [key: string]: Error };
+    failedDeleted: { [key: string]: Error };
     resolve: (value: any) => void;
     reject: (error: any) => void;
     onClose: () => void;
@@ -153,8 +153,12 @@ const SyncResultDialogComponent: React.FC<{
                                         graphName={graphName}
                                     />
                                     <a style={{fontSize: '14px', marginLeft: '5px'}} onClick={
-                                        () => logseq.UI.showMsg(failedCreated[noteUuidTypeStr].toString()
-                                            , 'warning', {timeout: 0})
+                                        () => {
+                                            const error = failedCreated[noteUuidTypeStr];
+                                            console.log(`Error object for ${noteUuidTypeStr}:`, error);
+                                            const errorMessage = `Error: ${error?.message}\n\nStack trace:\n${error?.stack}`;
+                                            logseq.UI.showMsg(errorMessage, 'warning', {timeout: 0});
+                                        }
                                     }>(show error details)</a>
                                 </span>
                             );
@@ -178,7 +182,17 @@ const SyncResultDialogComponent: React.FC<{
                                 ? `The ${deletedNotes.length} notes were deleted successfully`
                                 : `No notes were deleted.`}
                             {Object.keys(failedDeleted).length > 0
-                                ? `The ${Object.keys(failedDeleted).length} notes failed to delete`
+                                ?
+                                <span>
+                                    The ${Object.keys(failedDeleted).length} notes failed to delete
+                                    <a style={{fontSize: '14px', marginLeft: '5px'}} onClick={
+                                        () => {
+                                            console.log(`Error object for all failed deletes:`, failedDeleted);
+                                            const errorMessage = `${JSON.stringify(failedDeleted)}`;
+                                            logseq.UI.showMsg(errorMessage, 'warning', {timeout: 0});
+                                        }
+                                    }>(show error details)</a>
+                                </span>
                                 : ``}
                         </span>
                         <div
@@ -238,8 +252,12 @@ const SyncResultDialogComponent: React.FC<{
                                         graphName={graphName}
                                     />
                                     <a style={{fontSize: '14px', marginLeft: '5px'}} onClick={
-                                        () => logseq.UI.showMsg(failedUpdated[noteUuidTypeStr].toString()
-                                            , 'warning', {timeout: 0})
+                                        () => {
+                                            const error = failedUpdated[noteUuidTypeStr];
+                                            console.log(`Error object for ${noteUuidTypeStr}:`, error);
+                                            const errorMessage = `Error: ${error?.message}\n\nStack trace:\n${error?.stack}`;
+                                            logseq.UI.showMsg(errorMessage, 'warning', {timeout: 0});
+                                        }
                                     }>(show error details)</a>
                                 </span>
                             );

@@ -121,9 +121,9 @@ export class LogseqToAnkiSync {
         //scanNotification.increment();
 
         // -- Declare some variables to keep track of different operations performed --
-        const failedCreated: { [key: string]: any } = {};
-        const failedUpdated: { [key: string]: any } = {};
-        const failedDeleted: { [key: string]: any } = {};
+        const failedCreated: { [key: string]: Error } = {};
+        const failedUpdated: { [key: string]: Error } = {};
+        const failedDeleted: { [key: string]: Error } = {};
         const toCreateNotesOriginal = new Array<Note>(),
             toUpdateNotesOriginal = new Array<Note>(),
             toDeleteNotesOriginal = new Array<number>();
@@ -144,23 +144,16 @@ export class LogseqToAnkiSync {
 
         // -- Prompt the user what actions are going to be performed --
         // Perform caching while user is reading the prompt
-        let buildNoteHashes: any = {
-            dontCreateCancelable: false,
-            cancel: () => {
-                buildNoteHashes.dontCreateCancelable = true;
-            },
-        };
+        let buildNoteHashes: CancelablePromise | null = null;
         setTimeout(() => {
-            if (buildNoteHashes.dontCreateCancelable == false) {
-                buildNoteHashes = new CancelablePromise(async (resolve, reject, onCancel) => {
-                    await new Promise((resolve) => setTimeout(resolve, 10000));
-                    for (const note of notes) {
-                        await NoteHashCalculator.getHash(note, ["", [], "", "", [], ""]);
-                        if (buildNoteHashes.isCanceled()) break;
-                    }
-                });
-            }
-        }, 4000);
+            buildNoteHashes = new CancelablePromise(async (resolve, reject, onCancel) => {
+                await new Promise((resolve) => setTimeout(resolve, 10000));
+                for (const note of notes) {
+                    await NoteHashCalculator.getHash(note, ["", [], "", "", [], ""]);
+                    if (buildNoteHashes.isCanceled()) break;
+                }
+            });
+        }, 1000);
 
         const noteSelection = await showSyncSelectionDialog(
             toCreateNotesOriginal,
@@ -168,7 +161,7 @@ export class LogseqToAnkiSync {
             toDeleteNotesOriginal,
         );
         if (!noteSelection) {
-            buildNoteHashes.cancel();
+            buildNoteHashes?.cancel();
             window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
             console.log("Sync Aborted by user!");
             return;
@@ -191,13 +184,13 @@ export class LogseqToAnkiSync {
             // Prompt the user again if they are about to delete a lot of notes
             const confirm_msg = `<b class="text-red-600">This will delete all your notes in anki that are generated from this graph.</b><br/>Are you sure you want to continue?`;
             if (!(await showConfirmModal(confirm_msg))) {
-                buildNoteHashes.cancel();
+                buildNoteHashes?.cancel();
                 window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
                 console.log("Sync Aborted by user!");
                 return;
             }
         }
-        buildNoteHashes.cancel();
+        buildNoteHashes?.cancel();
 
         // -- Sync --
         const start_time = performance.now();
@@ -250,9 +243,6 @@ export class LogseqToAnkiSync {
             summery += `\nFailed Deleted: ${Object.keys(failedDeleted).length} `;
 
         console.log(toCreateNotes, toUpdateNotes, toDeleteNotes);
-        // logseq.UI.showMsg(summery, status, {
-        //     timeout: status == "success" ? 1200 : 4000,
-        // });
         ActionNotification(
             [
                 {
@@ -271,14 +261,14 @@ export class LogseqToAnkiSync {
             ],
             summery,
             20000,
-            failedCreated.size > 0 || failedUpdated.size > 0 || failedDeleted.size > 0
+            Object.keys(failedCreated).length > 0 || Object.keys(failedUpdated).length > 0 || Object.keys(failedDeleted).length > 0
                 ? WARNING_ICON
                 : SUCCESS_ICON,
         );
         console.log(summery);
-        if (failedCreated.size > 0) console.log("\nFailed Created:", failedCreated);
-        if (failedUpdated.size > 0) console.log("\nFailed Updated:", failedUpdated);
-        if (failedDeleted.size > 0) console.log("\nFailed Deleted:", failedDeleted);
+        if (Object.keys(failedCreated).length > 0) console.error("\nFailed Created:", failedCreated);
+        if (Object.keys(failedUpdated).length > 0) console.error("\nFailed Updated:", failedUpdated);
+        if (Object.keys(failedDeleted).length > 0) console.error("\nFailed Deleted:", failedDeleted);
         console.log(
             "syncLogseqToAnki() Time Taken:",
             (performance.now() - start_time).toFixed(2),
@@ -288,7 +278,7 @@ export class LogseqToAnkiSync {
 
     private async createNotes(
         toCreateNotes: Note[],
-        failedCreated: { [key: string]: any },
+        failedCreated: { [key: string]: Error },
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification,
     ): Promise<void> {
@@ -367,7 +357,7 @@ export class LogseqToAnkiSync {
 
     private async updateNotes(
         toUpdateNotes: Note[],
-        failedUpdated: { [key: string]: any },
+        failedUpdated: { [key: string]: Error },
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification,
     ): Promise<void> {
@@ -488,7 +478,7 @@ export class LogseqToAnkiSync {
 
     private async deleteNotes(
         toDeleteNotes: number[],
-        failedDeleted : { [key: string]: any },
+        failedDeleted: { [key: string]: Error },
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification,
     ) {

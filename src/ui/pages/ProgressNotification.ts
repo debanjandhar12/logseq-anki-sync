@@ -32,7 +32,7 @@ export class ProgressNotification {
         }
         #logseq-anki-sync-progress-bar-${logseq.baseInfo.id}::-webkit-progress-value {
           border-radius: 7px; 
-          background-color: var(--primary,#045591);
+          background-color: hsl(var(--primary)/.9);
         }
         `);
         LogseqProxy.App.registerPluginUnloadListener(() => {
