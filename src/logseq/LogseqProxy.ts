@@ -1,5 +1,5 @@
 /***
- * This is a syncronization-safe logseq api wrapper.
+ * This is a cached + syncronization-safe logseq api wrapper.
  * Fixes the following issues: #58
  * */
 import "@logseq/libs";
@@ -13,17 +13,18 @@ import {
     SettingSchemaDesc,
 } from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
-import getUUIDFromBlock from "./getUUIDFromBlock";
 import { PluginSettings } from "../settings";
+import pMemoize, {pMemoizeClear} from "p-memoize";
+import objectHashOptimized from "../utils/objectHashOptimized";
 
 const getLogseqLock = new AwaitLock();
 
 export namespace LogseqProxy {
     export class Editor {
-        static async getBlock(
+        static getBlock = pMemoize(async (
             srcBlock: BlockIdentity | EntityID,
             opts: Partial<{includeChildren: boolean, suppressErrors: boolean}> = {suppressErrors: true}
-        ): Promise<BlockEntity | null> {
+        ): Promise<BlockEntity | null> => {
             srcBlock = typeof srcBlock === "string" ? srcBlock.toLowerCase() : srcBlock; // Convert to lowercase to avoid case sensitivity issues
             let block = null;
             await getLogseqLock.acquireAsync();
@@ -36,9 +37,9 @@ export namespace LogseqProxy {
                 getLogseqLock.release();
             }
             return block;
-        }
+        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
 
-        static async getPage(srcPage: PageIdentity | EntityID, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}): Promise<PageEntity | null> {
+        static getPage = pMemoize(async (srcPage: PageIdentity | EntityID, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}): Promise<PageEntity | null> => {
             srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
             let page = null;
             await getLogseqLock.acquireAsync();
@@ -59,7 +60,7 @@ export namespace LogseqProxy {
                 getLogseqLock.release();
             }
             return page;
-        }
+        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
 
         static async getPageBlocksTree(srcPage: PageIdentity | EntityID, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}): Promise<BlockEntity[]> {
             srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
@@ -185,7 +186,9 @@ export namespace LogseqProxy {
                 listener();
             }
         });
+        window.addEventListener("syncLogseqToAnkiComplete", () => {
+            pMemoizeClear(LogseqProxy.Editor.getBlock);
+            pMemoizeClear(LogseqProxy.Editor.getPage);
+        });
     }
 }
-
-
