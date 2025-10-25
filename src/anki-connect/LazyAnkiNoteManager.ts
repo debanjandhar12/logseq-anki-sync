@@ -31,28 +31,27 @@ export class LazyAnkiNoteManager {
         await this.buildMediaInfo();
     }
 
-    async buildNoteInfoMap(modelName: string): Promise<any> {
-        const result = await AnkiConnect.query(`"note:${modelName}"`);
-        const notes = await AnkiConnect.invoke("notesInfo", {notes: result});
-        const cards = [];
-        for (const note of notes) {
-            if (note.cards[0]) cards.push(note.cards[0]);
+    async buildNoteInfoMap(modelName: string): Promise<void> {
+        const noteIds = await AnkiConnect.query(`"note:${modelName}"`);
+        const notes = await AnkiConnect.invoke("notesInfo", { notes: noteIds });
+
+        // Build reverse lookup: card ID → deck name
+        const cardIds = notes.map(note => note.cards[0]).filter(Boolean); // Extract first card id of each note
+        const decks = await AnkiConnect.invoke("getDecks", { cards: cardIds });
+        const cardToDeck = new Map<string, string>();   // lookup map
+        for (const [deckName, cards] of Object.entries(decks)) {
+            for (const cardId of cards) cardToDeck.set(cardId, deckName);
         }
-        const decks = await AnkiConnect.invoke("getDecks", {cards: cards});
+
+        // Add deck info based on first card to note object
         for (const note of notes) {
-            // can be reduced to n log n
-            let deck = "";
-            for (const prop in decks) {
-                if (decks[prop].includes(note.cards[0])) {
-                    deck = prop;
-                    break;
-                }
-            }
-            this.noteInfoMap.set(note.noteId, {...note, deck});
+            const firstCardId = note.cards[0];
+            const deck = firstCardId ? cardToDeck.get(firstCardId) || "" : "";
+            this.noteInfoMap.set(note.noteId, { ...note, deck });
         }
+
         const { debug } = LogseqProxy.Settings.getPluginSettings();
-        if (debug.includes("LazyAnkiNoteManager.ts"))
-            console.debug(this.noteInfoMap);
+        if (debug.includes("LazyAnkiNoteManager.ts")) console.debug(this.noteInfoMap);
     }
 
     async buildMediaInfo(): Promise<void> {
