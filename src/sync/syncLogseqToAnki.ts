@@ -5,9 +5,9 @@ import {
     getTemplateFront,
     getTemplateBack, getTemplateMediaFiles
 } from "../anki-template/AnkiCardTemplates";
-import {Note} from "../anki-notes/Note";
-import {ClozeNote} from "../anki-notes/ClozeNote";
-import {MultilineCardNote} from "../anki-notes/MultilineCardNote";
+import {Note} from "../anki-notes-generator/Note";
+import {ClozeNote} from "../anki-notes-generator/ClozeNote";
+import {MultilineCardNote} from "../anki-notes-generator/MultilineCardNote";
 import _ from "lodash";
 import {
     escapeClozesAndMacroDelimiters,
@@ -21,13 +21,13 @@ import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, SUCCESS_ICON, WARNING_ICON} fro
 import {convertToHTMLFile} from "../logseq/LogseqToHtmlConverter";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import pkg from "../../package.json";
-import {SwiftArrowNote} from "../anki-notes/SwiftArrowNote";
+import {SwiftArrowNote} from "../anki-notes-generator/SwiftArrowNote";
 import {ProgressNotification} from "../ui";
 import {showConfirmModal} from "../ui";
-import {ImageOcclusionNote} from "../anki-notes/ImageOcclusionNote";
+import {ImageOcclusionNote} from "../anki-notes-generator/ImageOcclusionNote";
 import NoteHashCalculator from "./NoteHashCalculator";
 import {CancelablePromise} from "cancelable-promise";
-import {NoteUtils} from "../anki-notes/NoteUtils";
+import {NoteUtils} from "../anki-notes-generator/NoteUtils";
 import {ActionNotification} from "../ui/common/ActionNotification";
 import {showSyncSelectionDialog} from "../ui";
 import {showSyncResultDialog} from "../ui";

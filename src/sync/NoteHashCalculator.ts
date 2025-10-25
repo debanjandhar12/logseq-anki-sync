@@ -6,7 +6,7 @@
  * 3. Some properties of the page where block is located
  */
 
-import {Note} from "../anki-notes/Note";
+import {Note} from "../anki-notes-generator/Note";
 import pkg from "../../package.json";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
