@@ -113,6 +113,10 @@ export default defineConfig(({ command, mode }) => {
         define: {
             'process.env': JSON.stringify({...env, NODE_ENV: mode}),
         },
+        server: {
+            port: 5173,
+            cors: true,
+        },
         build: {
             sourcemap: true,
             target: "modules",

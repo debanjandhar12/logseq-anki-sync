@@ -1,0 +1,73 @@
+# Project Structure
+
+This is a Logseq plugin for syncing flashcards to Anki with advanced features like image occlusion, bidirectional cards, incremental syncing, and block/page reference rendering.
+
+- **Entry Point:** `src/index.ts` initializes the plugin, registers UI commands, and sets up event listeners
+- **Output:** Build artifacts go to `dist/` directory
+- **Dependencies:** Defined in `package.json`
+- **Main Modules:**
+  - `src/logseq/` - Logseq API interaction with caching layer (LogseqProxy)
+  - `src/anki-connect/` - Anki Connect API integration
+  - `src/sync/` - Core syncing logic with hash-based change detection
+  - `src/anki-notes-generator/` - Generates Anki notes from Logseq blocks
+  - `src/ui/` - React-based UI components (modals, pages, settings)
+  - `src/utils/` - Shared utility functions
+  - `src/addons/` - Plugin addon system
+  - `src/anki-template/` - Anki card templates
+
+## Tech Stack
+
+- **Language:** TypeScript
+- **Build:** Vite with custom plugins for static file inlining and JS bundling
+- **UI Framework:** React 17 with focus-trap-react
+- **Testing:** Vitest with jsdom environment
+- **Key Libraries:** @logseq/libs, mldoc (logseq markdown parsing), cheerio (HTML manipulation)
+
+## Architecture
+
+**LogseqProxy Cache Layer:** All Logseq API calls go through `LogseqProxy` which provides memoized, synchronization-safe wrappers around @logseq/libs using p-memoize. Cache clears after sync via 'syncLogseqToAnkiComplete' event.
+
+**Dependency Hash Cache:** `blockAndPageHashCache.ts` maintains a dependency graph tracking block references, page embeds, and transitive dependencies. Each block's hash includes all dependency hashes plus metadata (page updatedAt, content length, parent/left ids). When a block changes, all dependent blocks' hashes automatically invalidate. Cache clears after sync via 'syncLogseqToAnkiComplete' event.
+
+**Syncing System:** `syncLogseqToAnki.ts` uses `NoteHashCalculator` to compute note hashes from dependency hashes + plugin settings + Anki fields. Only notes with changed hashes trigger re-rendering and Anki updates.
+
+**HTML Conversion:** `LogseqToHtmlConverter.ts` handles rendering Logseq markdown/org-mode to HTML, resolving block references, page embeds, PDF annotations, and other Logseq-specific syntax for Anki display.
+
+**Settings:** Defined in `settings.ts` using `SettingSchemaDesc`. Access via `LogseqProxy.Settings.getPluginSettings()`, never directly through `logseq.settings`.
+
+**UI Components:** React-based modals and pages live in `src/ui/`. Key pages include OcclusionEditor (fabric.js canvas for image occlusion) and feature explorer.
+
+## Testing
+
+**Test Location:** `tests/` directory with subdirectories matching src structure
+
+**Running Tests:**
+- `pnpm test --run` - Run all tests
+- `pnpm test converter.test.ts --run` - Run specific test file
+- `pnpm test -t "test case name" --run` - Run specific test case
+
+**Testing Approach:**
+- Vitest with jsdom environment
+- Uses `logseq-proxy` package to proxy @logseq/libs calls to actual HTTP requests against running Logseq instance
+- `tests/setup.ts` configures proxy to http://127.0.0.1:12315 - tests fail with fetch error if Logseq API server isn't running
+
+## Best Practices
+
+- **Code Organization:** Keep related functionality within appropriate module directories
+- **Logseq API:** Always use LogseqProxy instead of direct @logseq/libs calls for caching and synchronization safety
+- **Settings Access:** Use `LogseqProxy.Settings.getPluginSettings()` instead of `logseq.settings`
+- **React Imports:** Import React/ReactDOM from `ui/React.ts` and `ui/ReactDOM.ts`, not directly from npm packages
+- **Anki Operations:** Use LazyAnkiNoteManager instead of direct AnkiConnect calls for note management
+- **UI Development:** Follow existing modal/page patterns from `src/ui/` directory
+- **Build & Dev:** Use `pnpm dev` for hot reload development, `pnpm build` for production (pnpm is enforced via preinstall)
+
+# Development Guidelines
+You are an elite software engineering assistant. Generate mission-critical production-ready code following these strict guidelines:
+- DO NOT WRITE A SINGLE LINE OF CODE UNTIL YOU UNDERSTAND THE SYSTEM - Do not make assumptions or speculate
+- REFINE THE TASK UNTIL THE GOAL IS BULLET-PROOF
+- WHEN FIXING BUGS, try to fix things at the cause, not the symptom
+- ALWAYS HOLD THE STANDARD - Detect and follow existing patterns when working on new feature
+- DON'T BE HELPFUL, BE BETTER
+- WRITE SELF-DOCUMENTING CODE WITH DESCRIPTIVE NAMING
+- IF YOU KNOW A BETTER WAY — SPEAK UP
+- ALWAYS REMEMBER YOUR WORK ISN'T DONE UNTIL THE SYSTEM IS STABLE.
