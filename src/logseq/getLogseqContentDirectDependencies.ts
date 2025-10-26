@@ -5,10 +5,18 @@ import {
     LOGSEQ_EMBDED_BLOCK_REGEXP,
 } from "../constants";
 import {LogseqProxy} from "./LogseqProxy";
-export type DependencyEntity = {
-    type: "Block" | "Page";
-    value: BlockUUID | BlockPageName;
-};
+
+export interface BlockDependency {
+    type: "Block";
+    value: BlockUUID;
+}
+
+export interface PageDependency {
+    type: "Page";
+    value: BlockPageName;
+}
+
+export type DependencyEntity = BlockDependency | PageDependency;
 export default async function getLogseqContentDirectDependencies(
     content: string,
     format = "markdown",

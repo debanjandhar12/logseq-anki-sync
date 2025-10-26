@@ -1,6 +1,6 @@
 import * as AnkiConnect from "../AnkiConnect";
 import { AnkiActionQueue } from "../internal/AnkiActionQueue";
-import { AnkiNoteFields, AddNotesResult, AnkiOperationError, AnkiIdUuidPair } from "../types";
+import { AnkiNoteFields, AddNotesResult, OperationFailure, AnkiIdUuidPair } from "../types";
 import { ANKI_CLOZE_REGEXP } from "../../constants";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import _ from "lodash";
@@ -64,14 +64,16 @@ export class AddNoteOperation {
 
         // Execute queue 1: Create notes with dummy content
         const result1 = await this.queue1.execute();
-        const subOperationResults: AnkiOperationError[] = [];
+        const failedNotes: OperationFailure[] = [];
         
         for (let i = 0; i < result1.length; i++) {
-            if (result1[i] == null) result1[i] = {};
-            _.extend(result1[i], {
-                "uuid-type": this.uuidTypeQueue1[i],
-            });
-            subOperationResults.push(result1[i]);
+            if (result1[i]?.error) {
+                const error = result1[i].error;
+                failedNotes.push({
+                    identifier: this.uuidTypeQueue1[i],
+                    error: typeof error === 'string' ? new Error(error) : error,
+                });
+            }
         }
 
         // Get ankiId of newly added notes
@@ -88,31 +90,36 @@ export class AddNoteOperation {
         });
         
         const ankiId: number[] = [];
-        const ankiIdUUIDPairs: AnkiIdUuidPair[] = [];
+        const successfulNotes: AnkiIdUuidPair[] = [];
         for (let i = 0; i < ankiIdActionsQueueRes.length; i++) {
             if (ankiIdActionsQueueRes[i] == null) ankiIdActionsQueueRes[i] = [];
             ankiId[i] = ankiIdActionsQueueRes[i][0];
-            ankiIdUUIDPairs.push({
-                "uuid-type": this.uuidTypeQueue2[i],
-                ankiId: ankiIdActionsQueueRes[i][0],
-            });
+            if (ankiId[i] != null) {
+                successfulNotes.push({
+                    "uuid-type": this.uuidTypeQueue2[i],
+                    ankiId: ankiIdActionsQueueRes[i][0],
+                });
+            }
         }
 
         // Update note fields with ankiId
         const queue2Actions = this.queue2.getActions();
         for (let i = 0; i < queue2Actions.length; i++) {
-            if (ankiId[i] == null) queue2Actions[i] = {};
-            queue2Actions[i].params.note.id = ankiId[i];
+            if (ankiId[i] != null) {
+                queue2Actions[i].params.note.id = ankiId[i];
+            }
         }
 
         // Execute queue 2: Update with actual content
         const result2 = await this.queue2.execute();
         for (let i = 0; i < result2.length; i++) {
-            if (result2[i] == null) result2[i] = {};
-            _.extend(result2[i], {
-                "uuid-type": this.uuidTypeQueue2[i],
-            });
-            subOperationResults.push(result2[i]);
+            if (result2[i]?.error) {
+                const error = result2[i].error;
+                failedNotes.push({
+                    identifier: this.uuidTypeQueue2[i],
+                    error: typeof error === 'string' ? new Error(error) : error,
+                });
+            }
         }
 
         // Clear queues
@@ -122,8 +129,8 @@ export class AddNoteOperation {
         this.uuidTypeQueue2 = [];
 
         return {
-            ankiIdUUIDPairs,
-            subOperationResults,
+            successfulNotes,
+            failedNotes,
         };
     }
 }

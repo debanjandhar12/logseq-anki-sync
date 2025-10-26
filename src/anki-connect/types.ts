@@ -31,28 +31,34 @@ export interface AnkiAction {
     params: Record<string, any>;
 }
 
+export interface AnkiActionResult {
+    error?: Error | string;
+    [key: string]: any;
+}
+
 export interface AnkiIdUuidPair {
     'uuid-type': string;
     ankiId: number;
 }
 
-export interface AnkiOperationError {
-    'uuid-type'?: string;
-    ankiId?: number;
-    error?: Error;
+export interface OperationFailure {
+    identifier: string;
+    error: Error;
 }
 
 export interface AddNotesResult {
-    ankiIdUUIDPairs: AnkiIdUuidPair[];
-    subOperationResults: AnkiOperationError[];
+    successfulNotes: AnkiIdUuidPair[];
+    failedNotes: OperationFailure[];
 }
 
 export interface UpdateNotesResult {
-    results: AnkiOperationError[];
+    successfulNotes: string[]; // uuid-types
+    failedNotes: OperationFailure[];
 }
 
 export interface DeleteNotesResult {
-    results: AnkiOperationError[];
+    successfulNotes: number[]; // anki IDs
+    failedNotes: OperationFailure[];
 }
 
 export type OperationType = 'addNotes' | 'updateNotes' | 'deleteNotes' | 'storeAssets';

@@ -1,5 +1,5 @@
 import * as AnkiConnect from "../AnkiConnect";
-import { AnkiAction } from "../types";
+import { AnkiAction, AnkiActionResult } from "../types";
 
 export class AnkiActionQueue {
     private queue: AnkiAction[] = [];
@@ -8,7 +8,7 @@ export class AnkiActionQueue {
         this.queue.push(action);
     }
 
-    async execute(): Promise<any[]> {
+    async execute(): Promise<AnkiActionResult[]> {
         if (this.queue.length === 0) {
             return [];
         }

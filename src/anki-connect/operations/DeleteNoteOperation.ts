@@ -1,5 +1,5 @@
 import { AnkiActionQueue } from "../internal/AnkiActionQueue";
-import { DeleteNotesResult, AnkiOperationError } from "../types";
+import { DeleteNotesResult, OperationFailure } from "../types";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import _ from "lodash";
 
@@ -23,18 +23,24 @@ export class DeleteNoteOperation {
 
         const result = await this.queue.execute();
 
-        const results: AnkiOperationError[] = [];
+        const successfulNotes: number[] = [];
+        const failedNotes: OperationFailure[] = [];
         for (let i = 0; i < result.length; i++) {
-            if (result[i] == null) result[i] = {};
-            _.extend(result[i], {
-                ankiId: this.ankiIdQueue[i],
-            });
-            results.push(result[i]);
+            const ankiId = this.ankiIdQueue[i];
+            if (result[i]?.error) {
+                const error = result[i].error;
+                failedNotes.push({
+                    identifier: ankiId.toString(),
+                    error: typeof error === 'string' ? new Error(error) : error,
+                });
+            } else {
+                successfulNotes.push(ankiId);
+            }
         }
 
         this.queue.clear();
         this.ankiIdQueue = [];
 
-        return { results };
+        return { successfulNotes, failedNotes };
     }
 }

@@ -1,4 +1,4 @@
-import React, {FC, useRef, useState} from "../React";
+import React, { FC, useRef, useEffect } from "../React";
 
 type LogseqCheckboxProps = {
     children?: React.ReactNode;
@@ -16,14 +16,12 @@ export const LogseqCheckbox: FC<LogseqCheckboxProps> = ({
                                                             indeterminate = false,
                                                         }) => {
     const checkboxRef = useRef<HTMLInputElement>(null);
-    if (checkboxRef && indeterminate) {
-        if (checkboxRef.current)
-            checkboxRef.current.indeterminate = true;
-    }
-    else if (checkboxRef) {
-        if (checkboxRef.current)
-            checkboxRef.current.indeterminate = null;
-    }
+
+    useEffect(() => {
+        if (checkboxRef.current) {
+            checkboxRef.current.indeterminate = indeterminate;
+        }
+    }, [indeterminate]);
 
     return (
         <label style={{ display: "flex", alignItems: "center" }}>
@@ -31,7 +29,6 @@ export const LogseqCheckbox: FC<LogseqCheckboxProps> = ({
                 type="checkbox"
                 disabled={disabled}
                 checked={checked}
-                indeterminate={indeterminate}
                 className="form-checkbox h-4 w-4 transition duration-150 ease-in-out"
                 onChange={onChange}
                 ref={checkboxRef}

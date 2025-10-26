@@ -80,13 +80,13 @@ export class LazyAnkiNoteManager {
         switch (operation) {
             case "addNotes":
                 const addResult = await this.executeAddNotes();
-                return [addResult.ankiIdUUIDPairs, addResult.subOperationResults];
+                return [addResult.successfulNotes, addResult.failedNotes];
             case "updateNotes":
                 const updateResult = await this.executeUpdateNotes();
-                return updateResult.results;
+                return updateResult.failedNotes;
             case "deleteNotes":
                 const deleteResult = await this.executeDeleteNotes();
-                return deleteResult.results;
+                return deleteResult.failedNotes;
             case "storeAssets":
                 await this.executeAssets();
                 return [];

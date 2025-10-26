@@ -9,6 +9,7 @@ import {Note} from "../anki-notes-generator/Note";
 import {ClozeNote} from "../anki-notes-generator/ClozeNote";
 import {MultilineCardNote} from "../anki-notes-generator/MultilineCardNote";
 import _ from "lodash";
+import {ParsedNoteData} from "./types";
 import {
     escapeClozesAndMacroDelimiters,
     handleAnkiError,
@@ -149,7 +150,7 @@ export class LogseqToAnkiSync {
             buildNoteHashes = new CancelablePromise(async (resolve, reject, onCancel) => {
                 await new Promise((resolve) => setTimeout(resolve, 10000));
                 for (const note of notes) {
-                    await NoteHashCalculator.getHash(note, ["", [], "", "", [], ""]);
+                    await NoteHashCalculator.getHash(note, ["", new Set([]), "", "", [], ""]);
                     if (buildNoteHashes.isCanceled()) break;
                 }
             });
@@ -289,7 +290,7 @@ export class LogseqToAnkiSync {
                 );
                 const dependencyHash = await NoteHashCalculator.getHash(note, [
                     html,
-                    Array.from(assets),
+                    assets,
                     deck,
                     breadcrumb,
                     tags,
@@ -328,30 +329,24 @@ export class LogseqToAnkiSync {
         }
 
         const addResult = await ankiNoteManager.executeAddNotes();
-        let addedNoteAnkiIdUUIDPairs = addResult.ankiIdUUIDPairs;
-        let subOperationResults = addResult.subOperationResults;
-        for (const addedNoteAnkiIdUUIDPair of addedNoteAnkiIdUUIDPairs) {
+        for (const successfulNote of addResult.successfulNotes) {
             // update ankiId of added blocks
-            const uuidtype = addedNoteAnkiIdUUIDPair["uuid-type"];
+            const uuidtype = successfulNote["uuid-type"];
             const uuid = uuidtype.split("-").slice(0, -1).join("-");
             const type = uuidtype.split("-").slice(-1)[0];
             const note = _.find(toCreateNotes, {uuid: uuid, type: type});
-            note["ankiId"] = addedNoteAnkiIdUUIDPair["ankiId"];
+            note["ankiId"] = successfulNote["ankiId"];
             console.log(note);
         }
 
-        for (const subOperationResult of subOperationResults) {
-            if (subOperationResult != null && subOperationResult.error != null) {
-                console.log(subOperationResult.error);
-                failedCreated[subOperationResult["uuid-type"]] = subOperationResult.error;
-            }
+        for (const failure of addResult.failedNotes) {
+            console.log(failure.error);
+            failedCreated[failure.identifier] = failure.error;
         }
 
         const secondAddResult = await ankiNoteManager.executeAddNotes();
-        for (const subOperationResult of secondAddResult.subOperationResults) {
-            if (subOperationResult != null && subOperationResult.error != null) {
-                console.error(subOperationResult.error);
-            }
+        for (const failure of secondAddResult.failedNotes) {
+            console.error(failure.error);
         }
     }
 
@@ -402,7 +397,7 @@ export class LogseqToAnkiSync {
                     );
                     dependencyHash = await NoteHashCalculator.getHash(note, [
                         html,
-                        Array.from(assets),
+                        assets,
                         deck,
                         breadcrumb,
                         tags,
@@ -457,11 +452,9 @@ export class LogseqToAnkiSync {
         }
 
         const updateResult = await ankiNoteManager.executeUpdateNotes();
-        for (const subOperationResult of updateResult.results) {
-            if (subOperationResult != null && subOperationResult.error != null) {
-                console.error(subOperationResult.error);
-                failedUpdated[subOperationResult["uuid-type"]] = subOperationResult.error;
-            }
+        for (const failure of updateResult.failedNotes) {
+            console.error(failure.error);
+            failedUpdated[failure.identifier] = failure.error;
         }
     }
 
@@ -482,17 +475,15 @@ export class LogseqToAnkiSync {
             syncNotificationObj.increment();
         }
         const deleteResult = await ankiNoteManager.executeDeleteNotes();
-        for (const subOperationResult of deleteResult.results) {
-            if (subOperationResult != null && subOperationResult.error != null) {
-                console.error(subOperationResult.error);
-                failedDeleted[subOperationResult.error.ankiId] = subOperationResult.error;
-            }
+        for (const failure of deleteResult.failedNotes) {
+            console.error(failure.error);
+            failedDeleted[failure.identifier] = failure.error;
         }
     }
 
     private async parseNote(
         note: Note,
-    ): Promise<[string, Set<string>, string, string, string[], string]> {
+    ): Promise<ParsedNoteData> {
         let {html, assets, tags} = await note.getClozedContentHTML();
 
         const { includeParentContent } = LogseqProxy.Settings.getPluginSettings();

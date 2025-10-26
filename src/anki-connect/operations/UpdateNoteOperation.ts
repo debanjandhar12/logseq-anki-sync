@@ -1,6 +1,6 @@
 import { AnkiActionQueue } from "../internal/AnkiActionQueue";
 import { AnkiNoteCache } from "../internal/AnkiNoteCache";
-import { AnkiNoteFields, UpdateNotesResult, AnkiOperationError } from "../types";
+import { AnkiNoteFields, UpdateNotesResult, OperationFailure } from "../types";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import _ from "lodash";
 
@@ -106,18 +106,24 @@ export class UpdateNoteOperation {
             console.log("[UpdateNoteOperation] result:", result);
         }
 
-        const results: AnkiOperationError[] = [];
+        const successfulNotes: string[] = [];
+        const failedNotes: OperationFailure[] = [];
         for (let i = 0; i < result.length; i++) {
-            if (result[i] == null) result[i] = {};
-            _.extend(result[i], {
-                "uuid-type": this.uuidTypeQueue[i],
-            });
-            results.push(result[i]);
+            const uuidType = this.uuidTypeQueue[i];
+            if (result[i]?.error) {
+                const error = result[i].error;
+                failedNotes.push({
+                    identifier: uuidType,
+                    error: typeof error === 'string' ? new Error(error) : error,
+                });
+            } else {
+                successfulNotes.push(uuidType);
+            }
         }
 
         this.queue.clear();
         this.uuidTypeQueue = [];
 
-        return { results };
+        return { successfulNotes, failedNotes };
     }
 }

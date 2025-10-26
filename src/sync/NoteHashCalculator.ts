@@ -18,6 +18,7 @@ import {
 import _ from "lodash";
 import objectHashOptimized from "../utils/objectHashOptimized";
 import path from "path-browserify";
+import {ParsedNoteData} from "./types";
 
 
 export default class NoteHashCalculator {
@@ -37,7 +38,7 @@ export default class NoteHashCalculator {
         }
         return assetModifiedTimeMap;
     }
-    public static async getHash(note: Note, ankiFields: any[]): Promise<number> {
+    public static async getHash(note: Note, ankiFields: ParsedNoteData): Promise<number> {
         const toHash = [];
         const dependencies = note.getBlockDependencies();
 
@@ -93,12 +94,12 @@ export default class NoteHashCalculator {
         let [html, assets, deck, breadcrumb, tags, extra] = ankiFields;
         tags = tags.filter((tag: string) => tag.toLowerCase() != "leech"); // Remove leech from tags arr
         tags = tags.filter((tag: string) => tag.toLowerCase() != "marked"); // Also remove marked
-        assets.sort();
+        const assetsArray = Array.from(assets).sort();
         tags.sort();
         
         // Get asset modified times and include them in hash calculation
         const assetModifiedTimeMap = await this.getAssetModifiedTimeMap();
-        const assetsWithModifiedTime = assets.map((assetPath: string) => {
+        const assetsWithModifiedTime = assetsArray.map((assetPath: string) => {
             const filename = path.basename(assetPath);
             const modifiedTime = assetModifiedTimeMap.get(filename) || 0;
             console.log(filename, assetPath, 'modifiedTime', modifiedTime);
