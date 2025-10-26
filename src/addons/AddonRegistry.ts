@@ -3,6 +3,9 @@ import {PreviewInAnkiContextMenu} from "./PreviewInAnki";
 import {HideOcclusionData} from "./HideOcclusionData";
 import {AnkiFeatureExplorer} from "./LogseqAnkiFeatureExplorer";
 
+/**
+ * Global registry of addons for Logseq Anki Sync plugin.
+ */
 export class AddonRegistry {
     public static addonsList: Addon[] = [];
     public static add(addon: Addon) {
