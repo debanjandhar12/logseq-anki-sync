@@ -147,6 +147,27 @@ export namespace LogseqProxy {
             return logseq.settings as PluginSettings;
         }
     }
+    export class Assets {
+        static listFilesOfCurrentGraph = pMemoize(async (exts?: string | string[]): Promise<{
+            accessTime: number;
+            birthTime: number;
+            changeTime: number;
+            modifiedTime: number;
+            path: string;
+            size: number;
+        }[]> => {
+            let files = [];
+            await getLogseqLock.acquireAsync();
+            try {
+                files = await logseq.Assets.listFilesOfCurrentGraph(exts);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                getLogseqLock.release();
+            }
+            return files;
+        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
+    }
     export class App {
         static async checkCurrentIsDbGraph() {
             try {
@@ -189,6 +210,7 @@ export namespace LogseqProxy {
         window.addEventListener("syncLogseqToAnkiComplete", () => {
             pMemoizeClear(LogseqProxy.Editor.getBlock);
             pMemoizeClear(LogseqProxy.Editor.getPage);
+            pMemoizeClear(LogseqProxy.Assets.listFilesOfCurrentGraph);
         });
     }
 }

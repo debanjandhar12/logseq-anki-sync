@@ -327,9 +327,9 @@ export class LogseqToAnkiSync {
             syncNotificationObj.increment();
         }
 
-        let [addedNoteAnkiIdUUIDPairs, subOperationResults] = await ankiNoteManager.execute(
-            "addNotes",
-        );
+        const addResult = await ankiNoteManager.executeAddNotes();
+        let addedNoteAnkiIdUUIDPairs = addResult.ankiIdUUIDPairs;
+        let subOperationResults = addResult.subOperationResults;
         for (const addedNoteAnkiIdUUIDPair of addedNoteAnkiIdUUIDPairs) {
             // update ankiId of added blocks
             const uuidtype = addedNoteAnkiIdUUIDPair["uuid-type"];
@@ -347,8 +347,8 @@ export class LogseqToAnkiSync {
             }
         }
 
-        subOperationResults = await ankiNoteManager.execute("addNotes");
-        for (const subOperationResult of subOperationResults) {
+        const secondAddResult = await ankiNoteManager.executeAddNotes();
+        for (const subOperationResult of secondAddResult.subOperationResults) {
             if (subOperationResult != null && subOperationResult.error != null) {
                 console.error(subOperationResult.error);
             }
@@ -456,8 +456,8 @@ export class LogseqToAnkiSync {
             syncNotificationObj.increment();
         }
 
-        let subOperationResults = await ankiNoteManager.execute("updateNotes");
-        for (const subOperationResult of subOperationResults) {
+        const updateResult = await ankiNoteManager.executeUpdateNotes();
+        for (const subOperationResult of updateResult.results) {
             if (subOperationResult != null && subOperationResult.error != null) {
                 console.error(subOperationResult.error);
                 failedUpdated[subOperationResult["uuid-type"]] = subOperationResult.error;
@@ -468,12 +468,7 @@ export class LogseqToAnkiSync {
     private async updateAssets(
         ankiNoteManager: LazyAnkiNoteManager
     ): Promise<void> {
-        let subOperationResults = await ankiNoteManager.execute("storeAssets");
-        for (const subOperationResult of subOperationResults) {
-            if (subOperationResult != null && subOperationResult.error != null) {
-                console.error(subOperationResult.error);
-            }
-        }
+        await ankiNoteManager.executeAssets();
     }
 
     private async deleteNotes(
@@ -486,8 +481,8 @@ export class LogseqToAnkiSync {
             ankiNoteManager.deleteNote(ankiId);
             syncNotificationObj.increment();
         }
-        const subOperationResults = await ankiNoteManager.execute("deleteNotes");
-        for (const subOperationResult of subOperationResults) {
+        const deleteResult = await ankiNoteManager.executeDeleteNotes();
+        for (const subOperationResult of deleteResult.results) {
             if (subOperationResult != null && subOperationResult.error != null) {
                 console.error(subOperationResult.error);
                 failedDeleted[subOperationResult.error.ankiId] = subOperationResult.error;

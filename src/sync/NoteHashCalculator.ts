@@ -17,9 +17,26 @@ import {
 } from "./blockAndPageHashCache";
 import _ from "lodash";
 import objectHashOptimized from "../utils/objectHashOptimized";
+import path from "path-browserify";
 
 
 export default class NoteHashCalculator {
+    /**
+     * Gets a map of asset filenames to their modifiedTime timestamps
+     */
+    private static async getAssetModifiedTimeMap(): Promise<Map<string, number>> {
+        const assetModifiedTimeMap = new Map<string, number>();
+        try {
+            const files = await LogseqProxy.Assets.listFilesOfCurrentGraph();
+            for (const file of files) {
+                const filename = path.basename(file.path);
+                assetModifiedTimeMap.set(filename, file.modifiedTime);
+            }
+        } catch (e) {
+            console.error("[NoteHashCalculator] Error getting asset modified times:", e);
+        }
+        return assetModifiedTimeMap;
+    }
     public static async getHash(note: Note, ankiFields: any[]): Promise<number> {
         const toHash = [];
         const dependencies = note.getBlockDependencies();
@@ -78,9 +95,19 @@ export default class NoteHashCalculator {
         tags = tags.filter((tag: string) => tag.toLowerCase() != "marked"); // Also remove marked
         assets.sort();
         tags.sort();
+        
+        // Get asset modified times and include them in hash calculation
+        const assetModifiedTimeMap = await this.getAssetModifiedTimeMap();
+        const assetsWithModifiedTime = assets.map((assetPath: string) => {
+            const filename = path.basename(assetPath);
+            const modifiedTime = assetModifiedTimeMap.get(filename) || 0;
+            console.log(filename, assetPath, 'modifiedTime', modifiedTime);
+            return modifiedTime;
+        });
+        
         toHash.push([
             html.trim(),
-            assets,
+            assetsWithModifiedTime,
             deck ? deck.trim().toLowerCase() : "",
             breadcrumb.trim(),
             tags,
