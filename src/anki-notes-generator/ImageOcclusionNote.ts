@@ -1,5 +1,6 @@
 import {Note} from "./Note";
 import "@logseq/libs";
+import { WindowParentBridge } from "../logseq/WindowParentBridge";
 import {
     escapeClozesAndMacroDelimiters,
     getFirstNonEmptyLine,
@@ -86,7 +87,7 @@ export class ImageOcclusionNote extends Note {
                             icon: `<img class="px-4" height="48" width="64" src="${
                                 image.match(isWebURL_REGEXP)
                                     ? image
-                                    : window.parent.logseq.api.make_asset_url(image)
+                                    : WindowParentBridge.makeAssetUrl(image)
                             }"></img>`,
                         };
                     }),

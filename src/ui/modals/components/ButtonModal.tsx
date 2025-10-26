@@ -1,5 +1,6 @@
 import React from "../../React";
 import { Modal } from "../Modal";
+import { WindowParentBridge } from "../../../logseq/WindowParentBridge";
 import { useModal } from "../hooks/useModal";
 import { SimpleModalHeader } from "../ModalHeader";
 import { LogseqButton } from "../../common/LogseqButton";
@@ -45,9 +46,9 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
             }
         };
 
-        window.parent.document.addEventListener("keydown", onKeydown);
+        WindowParentBridge.addEventListener("keydown", onKeydown);
         return () => {
-            window.parent.document.removeEventListener("keydown", onKeydown);
+            WindowParentBridge.removeEventListener("keydown", onKeydown);
         };
     }, [open, returnResult]);
 

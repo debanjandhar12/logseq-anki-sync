@@ -33,6 +33,7 @@ import {ActionNotification} from "../ui/common/ActionNotification";
 import {showSyncSelectionDialog} from "../ui";
 import {showSyncResultDialog} from "../ui";
 import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
+import { WindowParentBridge } from "../logseq/WindowParentBridge";
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -163,7 +164,7 @@ export class LogseqToAnkiSync {
         );
         if (!noteSelection) {
             buildNoteHashes?.cancel();
-            window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
+            WindowParentBridge.dispatchLogseqAnkiSyncEvent("syncLogseqToAnkiComplete");
             console.log("Sync Aborted by user!");
             return;
         }
@@ -186,7 +187,7 @@ export class LogseqToAnkiSync {
             const confirm_msg = `<b class="text-red-600">This will delete all your notes in anki that are generated from this graph.</b><br/>Are you sure you want to continue?`;
             if (!(await showConfirmModal(confirm_msg))) {
                 buildNoteHashes?.cancel();
-                window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
+                WindowParentBridge.dispatchLogseqAnkiSyncEvent("syncLogseqToAnkiComplete");
                 console.log("Sync Aborted by user!");
                 return;
             }
@@ -216,13 +217,13 @@ export class LogseqToAnkiSync {
         syncNotificationObj.increment(twentyPercent);
         await AnkiConnect.invoke("reloadCollection", {});
         syncNotificationObj.increment();
-        window.parent.LogseqAnkiSync.dispatchEvent("syncLogseqToAnkiComplete");
+        WindowParentBridge.dispatchLogseqAnkiSyncEvent("syncLogseqToAnkiComplete");
 
         // Save logseq graph if any changes were made
         if (toCreateNotes.some((note) => !note.properties["id"])) {
             try {
                 //@ts-ignore
-                await window.parent.logseq.api.force_save_graph();
+                await WindowParentBridge.getInternalLogseqAPI().api.force_save_graph();
                 await new Promise((resolve) => setTimeout(resolve, 2000));
             } catch (e) {
             }

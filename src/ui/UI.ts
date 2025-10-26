@@ -1,6 +1,7 @@
 import ReactDOM from './ReactDOM';
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import { waitForElement } from './utils/waitForElement';
+import { WindowParentBridge } from "../logseq/WindowParentBridge";
 
 export class UI {
     public static init() {
@@ -119,7 +120,7 @@ export class UI {
     public static async getEventHandlersForMountedReactComponent(key) {
         let onClose = async () => {
             try {
-                const div = window.parent.document.getElementById(key);
+                const div = WindowParentBridge.getElementById(key);
                 if (!div) return;
                 ReactDOM.unmountComponentAtNode(div);
                 logseq.provideUI({
@@ -149,10 +150,10 @@ export class UI {
         });
 
         // Wait for the element to be mounted
-        await waitForElement(`//div[@id='${key}']`, 10000, window.parent.document);
+        await waitForElement(`//div[@id='${key}']`, 10000, WindowParentBridge.getDocument());
         const { onClose } = await this.getEventHandlersForMountedReactComponent(key);
         LogseqProxy.App.registerPluginUnloadListener(onClose);
 
-        ReactDOM.render(component, window.parent.document.getElementById(key));
+        ReactDOM.render(component, WindowParentBridge.getElementById(key));
     }
 }

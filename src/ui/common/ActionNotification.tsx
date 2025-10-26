@@ -1,5 +1,6 @@
 import React from "../React";
 import {LogseqButton} from "./LogseqButton";
+import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 import ReactDOM from "../ReactDOM";
 import {waitForElement} from "../utils/waitForElement";
 import {Notification} from "./Notification";
@@ -23,7 +24,7 @@ export async function ActionNotification(
             let main = await waitForElement(
                 `//div[text()='${uniqueNotificationId}']`,
                 360 * 1000,
-                window.parent.document,
+                WindowParentBridge.getDocument(),
             ) as HTMLDivElement;
             if (!main) throw new Error("Failed to find notification");
             main = main.closest(".notifications > .ui__notifications-content") as HTMLDivElement;

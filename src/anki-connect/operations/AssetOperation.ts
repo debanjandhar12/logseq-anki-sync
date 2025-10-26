@@ -1,5 +1,6 @@
 import * as AnkiConnect from "../AnkiConnect";
 import { AnkiAction } from "../types";
+import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 import _ from "lodash";
 
 interface AssetParams {
@@ -33,7 +34,7 @@ export class AssetOperation {
                 }));
 
                 const getBase64Image = async (url: string): Promise<string> => {
-                    const response = await window.parent.fetch(url);
+                    const response = await WindowParentBridge.getFetch()(url);
                     const blob = await response.blob();
                     const reader = new FileReader();
                     await new Promise((resolve, reject) => {

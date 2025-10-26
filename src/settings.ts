@@ -1,5 +1,6 @@
 import {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
+import { WindowParentBridge } from "./logseq/WindowParentBridge";
 import {AddonRegistry} from "./addons/AddonRegistry";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {DONATE_ICON} from "./constants";
@@ -156,10 +157,10 @@ export const addSettingsToLogseq = () => {
             }
         }
         else if (!_.isEqual(newSettings.renderClozeMarcosInLogseq, oldSettings.renderClozeMarcosInLogseq)) {
-            window.parent.LSPluginCore.reload([logseq.baseInfo.id]);
+            WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
         }
         else if (!_.isEqual(newSettings.hideClozeMarcosUntilHoverInLogseq, oldSettings.hideClozeMarcosUntilHoverInLogseq)) {
-            window.parent.LSPluginCore.reload([logseq.baseInfo.id]);
+            WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
         }
     });
     const style = document.createElement("style");
@@ -172,6 +173,6 @@ export const addSettingsToLogseq = () => {
             border: none;
         }
     `;
-    window.parent.document.head.appendChild(style);
+    WindowParentBridge.getHead().appendChild(style);
     logseq.provideStyle(style.innerHTML);   // This is in case above appendChild doesn't work
 };

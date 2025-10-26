@@ -1,5 +1,6 @@
 import '@logseq/libs';
 import { LogseqProxy } from '../logseq/LogseqProxy';
+import { WindowParentBridge } from '../logseq/WindowParentBridge';
 
 /**
  * This is base class for all addons of Logseq Anki Sync Plugin.
@@ -10,7 +11,7 @@ export abstract class Addon {
     public abstract init(): void;
     public remove(): void {
         console.log("Reloading Logseq Anki Sync plugin...");
-        window.parent.LSPluginCore.reload([logseq.baseInfo.id]);
+        WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
     }
     public isEnabled(): boolean {
         const { addonsList } = LogseqProxy.Settings.getPluginSettings();

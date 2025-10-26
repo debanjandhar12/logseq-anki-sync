@@ -1,5 +1,6 @@
 import React from "../../React";
 import { Modal } from "../Modal";
+import { WindowParentBridge } from "../../../logseq/WindowParentBridge";
 import { useModal } from "../hooks/useModal";
 import { LogseqButton } from "../../common/LogseqButton";
 import { createModalPromise } from "../utils/createModalPromise";
@@ -78,9 +79,9 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
             }
         };
 
-        window.parent.document.addEventListener("keydown", onKeydown);
+        WindowParentBridge.addEventListener("keydown", onKeydown);
         return () => {
-            window.parent.document.removeEventListener("keydown", onKeydown);
+            WindowParentBridge.removeEventListener("keydown", onKeydown);
         };
     }, [open, items, enableKeySelect, handleSelection]);
 

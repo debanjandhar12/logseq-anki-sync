@@ -1,5 +1,6 @@
 import {Note} from "./Note";
 import "@logseq/libs";
+import { WindowParentBridge } from "../logseq/WindowParentBridge";
 import {
     string_to_arr,
     get_math_inside_md,
@@ -94,9 +95,9 @@ export class ClozeNote extends Note {
                             displayAnkiCloze(addedNode as Element);
                         }
                     }
-                } else displayAnkiCloze(window.parent.document.body as Element);
+                } else displayAnkiCloze(WindowParentBridge.getBody() as Element);
             });
-            observer.observe(window.parent.document, {
+            observer.observe(WindowParentBridge.getDocument(), {
                 subtree: true,
                 childList: true,
             });

@@ -1,5 +1,6 @@
 import {ANKI_ICON, GRAPH_ICON} from "../../constants";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
+import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 
 export class ProgressNotification {
     max: number;
@@ -47,7 +48,7 @@ export class ProgressNotification {
         this.current += amount;
         try {
             if (this.progressBar == null) {
-                this.progressBar = window.parent.document.getElementById(
+                this.progressBar = WindowParentBridge.getElementById(
                     `logseq-anki-sync-progress-bar-${logseq.baseInfo.id}`,
                 );
             }
@@ -62,7 +63,7 @@ export class ProgressNotification {
 
     updateMessage(msg: string) {
         try {
-            const msgElement = window.parent.document.getElementById(`logseq-anki-sync-progress-bar-msg`);
+            const msgElement = WindowParentBridge.getElementById(`logseq-anki-sync-progress-bar-msg`);
             msgElement.innerText = msg;
         } catch (e) {}
     }

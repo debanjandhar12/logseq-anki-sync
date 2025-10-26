@@ -55,6 +55,7 @@ This is a Logseq plugin for syncing flashcards to Anki with advanced features li
 
 - **Code Organization:** Keep related functionality within appropriate module directories
 - **Logseq API:** Always use LogseqProxy instead of direct @logseq/libs calls for caching and synchronization safety
+- **Parent Window Access:** Always use WindowParentBridge instead of direct `window.parent` access for iframe communication. WindowParentBridge provides type-safe, testable access to parent window objects (Logseq API, AnkiConnect, Fabric.js, DOM elements, etc.)
 - **Settings Access:** Use `LogseqProxy.Settings.getPluginSettings()` instead of `logseq.settings`
 - **React Imports:** Import React/ReactDOM from `ui/React.ts` and `ui/ReactDOM.ts`, not directly from npm packages
 - **Anki Operations:** Use LazyAnkiNoteManager instead of direct AnkiConnect calls for note management

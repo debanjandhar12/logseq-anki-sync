@@ -2,6 +2,7 @@ import ohm from "ohm-js";
 import _, {isArray} from "lodash";
 import replaceAsync from "string-replace-async";
 import "@logseq/libs";
+import { WindowParentBridge } from "../logseq/WindowParentBridge";
 import {
     ANKI_CLOZE_REGEXP,
     LOGSEQ_PLUGIN_CLOZE_REGEXP,
@@ -123,7 +124,7 @@ export function handleAnkiError(msg: string): void {
                     {
                         name: "Installation Guide",
                         func: () =>
-                            window.parent.open(
+                            WindowParentBridge.openWindow(
                                 "https://github.com/debanjandhar12/logseq-anki-sync#%EF%B8%8F-installation-video",
                             ),
                     },

@@ -12,13 +12,14 @@ import {
 } from "../../constants";
 import {Modal, useModal, createModalPromise} from "../";
 import {LogseqButton} from "../common/LogseqButton";
+import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
 
-if (!window.parent.fabric) {
-    const fabricScript = window.parent.document.createElement("script");
+if (!WindowParentBridge.hasFabric()) {
+    const fabricScript = WindowParentBridge.createElement("script");
     fabricScript.innerHTML = fabric;
-    window.parent.document.body.appendChild(fabricScript);
+    WindowParentBridge.getBody().appendChild(fabricScript);
 }
 
 export type OcclusionElement = {
@@ -78,7 +79,7 @@ const OcclusionEditorComponent: React.FC<{
     const fabricRef = React.useRef<any>();
     const canvasRef = React.useRef(null);
     const cidSelectorRef = React.useRef(null);
-    const [imgEl, setImgEl] = React.useState(new window.parent.Image());
+    const [imgEl, setImgEl] = React.useState(WindowParentBridge.createImage());
     const handleConfirm = () => {
         const newOcclusionElements = fabricRef.current.getObjects().map((obj) => {
             // https://github.com/fabricjs/fabric.js/issues/801#issuecomment-218116910
@@ -106,7 +107,7 @@ const OcclusionEditorComponent: React.FC<{
 
     React.useEffect(() => {
         const initFabric = async () => {
-            fabricRef.current = new window.parent.fabric.Canvas(canvasRef.current, {
+            fabricRef.current = new (WindowParentBridge.getFabric() as any).Canvas(canvasRef.current, {
                 stateful: true,
             });
             fabricRef.current.selection = false; // disable group selection
@@ -119,14 +120,14 @@ const OcclusionEditorComponent: React.FC<{
                 ? imgURL
                 : encodeURI(path.join(graphPath, path.resolve(imgURL)));
             imgEl.onload = function () {
-                const img = new window.parent.fabric.Image(imgEl);
+                const img = new (WindowParentBridge.getFabric() as any).Image(imgEl);
                 const canvasWidth = Math.min(
                     imgEl.width,
-                    window.parent.document.getElementById(uiKey)?.clientWidth - 160 || 800,
+                    WindowParentBridge.getElementById(uiKey)?.clientWidth - 160 || 800,
                 );
                 const canvasHeight = Math.min(
                     imgEl.height,
-                    window.parent.document.body.clientHeight - 340,
+                    WindowParentBridge.getBodyDimensions().height - 340,
                 );
                 const scale = Number(
                     Math.min(
@@ -245,19 +246,20 @@ const OcclusionEditorComponent: React.FC<{
         };
 
         fabricRef.current.on("selection:created", (e) => {
+            const fabricLib = WindowParentBridge.getFabric();
             if (fabricRef.current.getActiveObjects().length > 1) {
-                window.parent.fabric.Group.prototype.lockScalingX = true;
-                window.parent.fabric.Group.prototype.lockScalingY = true;
-                window.parent.fabric.Group.prototype.lockRotation = true;
-                // window.parent.fabric.Group.prototype.lockMovementX = true;
-                // window.parent.fabric.Group.prototype.lockMovementY = true;
+                fabricLib.Group.prototype.lockScalingX = true;
+                fabricLib.Group.prototype.lockScalingY = true;
+                fabricLib.Group.prototype.lockRotation = true;
+                // fabricLib.Group.prototype.lockMovementX = true;
+                // fabricLib.Group.prototype.lockMovementY = true;
                 fabricRef.current.renderAll();
             } else {
-                window.parent.fabric.Group.prototype.lockScalingX = false;
-                window.parent.fabric.Group.prototype.lockScalingY = false;
-                window.parent.fabric.Group.prototype.lockRotation = false;
-                // window.parent.fabric.Group.prototype.lockMovementX = false;
-                // window.parent.fabric.Group.prototype.lockMovementY = false;
+                fabricLib.Group.prototype.lockScalingX = false;
+                fabricLib.Group.prototype.lockScalingY = false;
+                fabricLib.Group.prototype.lockRotation = false;
+                // fabricLib.Group.prototype.lockMovementX = false;
+                // fabricLib.Group.prototype.lockMovementY = false;
                 fabricRef.current.renderAll();
             }
         });
@@ -283,7 +285,7 @@ const OcclusionEditorComponent: React.FC<{
             }
             if (e.ctrlKey && e.key === "a") {
                 fabricRef.current.discardActiveObject();
-                var sel = new window.parent.fabric.ActiveSelection(
+                var sel = new (WindowParentBridge.getFabric() as any).ActiveSelection(
                     fabricRef.current.getObjects(),
                     {
                         canvas: fabricRef.current,
@@ -363,11 +365,11 @@ const OcclusionEditorComponent: React.FC<{
                 }
             }
         };
-        window.parent.document.addEventListener("keydown", onKeydown, {
+        WindowParentBridge.addEventListener("keydown", onKeydown, {
             capture: true,
         });
         return () => {
-            window.parent.document.removeEventListener("keydown", onKeydown, {capture: true});
+            WindowParentBridge.removeEventListener("keydown", onKeydown, {capture: true});
         };
     }, [fabricRef, open]);
 
@@ -683,7 +685,7 @@ export function createOcclusionRectEl(
     angle = 0,
     cId = 1,
 ) {
-    const rect = new window.parent.fabric.Rect({
+    const rect = new (WindowParentBridge.getFabric() as any).Rect({
         fill: "#FFEBA2",
         stroke: "#000",
         strokeWidth: 1,
@@ -695,12 +697,12 @@ export function createOcclusionRectEl(
         originX: "center",
         originY: "center",
     });
-    const text = new window.parent.fabric.Text(`${cId}`, {
+    const text = new (WindowParentBridge.getFabric() as any).Text(`${cId}`, {
         originX: "center",
         originY: "center",
     });
     text.scaleToHeight(height);
-    const group = new window.parent.fabric.Group([rect, text], {
+    const group = new (WindowParentBridge.getFabric() as any).Group([rect, text], {
         left: left,
         top: top,
         width: width,

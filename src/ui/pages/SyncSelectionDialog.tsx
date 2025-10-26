@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useState} from "../React";
 import {Modal} from "../";
+import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 import {LogseqButton} from "../common/LogseqButton";
 import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {LogseqDropdownMenu} from "../common/LogseqDropdownMenu";
@@ -243,9 +244,9 @@ const SyncSelectionDialogComponent: React.FC<{
     );
 
     React.useEffect(() => {
-        if (open) window.parent.document.addEventListener("keydown", onKeydown);
+        if (open) WindowParentBridge.addEventListener("keydown", onKeydown);
         return () => {
-            window.parent.document.removeEventListener("keydown", onKeydown);
+            WindowParentBridge.removeEventListener("keydown", onKeydown);
         };
     }, [open]);
 
@@ -466,11 +467,11 @@ export const AnkiLink = ({ankiId = null}) => {
     const onMouseOut = () => setStyle(normalStyle);
     const onClickHandler = (e: React.MouseEvent) => {
         if (ankiId != null) {
-            window.parent.AnkiConnect.guiBrowse(`nid:${ankiId}`);
+            WindowParentBridge.getAnkiConnect().guiBrowse(`nid:${ankiId}`);
         }
 
         e.preventDefault();
-        e.stopImmediatePropagation();
+        e.nativeEvent.stopImmediatePropagation();
     };
 
     const children = ankiId == null ? "New note" : ankiId;
@@ -507,7 +508,7 @@ export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string})
             logseq.Editor.openInRightSidebar(uuid);
             logseq.UI.showMsg(`Block opened in right sidebar.`);
             e.preventDefault();
-            e.stopImmediatePropagation();
+            e.nativeEvent.stopImmediatePropagation();
         }
     };
 

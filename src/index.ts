@@ -16,6 +16,7 @@ import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
 import pkg from "./../package.json";
+import { WindowParentBridge } from "./logseq/WindowParentBridge";
 
 
 function main(baseInfo: LSPluginBaseInfo) {
@@ -57,10 +58,11 @@ function main(baseInfo: LSPluginBaseInfo) {
     addSettingsToLogseq();
 
     // Init various modules
-    window.parent.LogseqAnkiSync = {};
-    window.parent.LogseqAnkiSync.dispatchEvent = (event: string) => {
-        window.dispatchEvent(new Event(event));
-    };
+    WindowParentBridge.setGlobalObject('LogseqAnkiSync', {
+        dispatchEvent: (event: string) => {
+            window.dispatchEvent(new Event(event));
+        }
+    });
     LogseqProxy.init();
     blockAndPageHashCache.init();
     Note.initLogseqOperations();
@@ -70,8 +72,7 @@ function main(baseInfo: LSPluginBaseInfo) {
     ImageOcclusionNote.initLogseqOperations();
     AddonRegistry.getAll().forEach((addon) => addon.init());
     UI.init();
-    window.parent.AnkiConnect = AnkiConnect; // Make AnkiConnect available globally
-    console.log("Window Parent:", window.parent);
+    WindowParentBridge.setGlobalObject('AnkiConnect', AnkiConnect); // Make AnkiConnect available globally
 
     // The lines below are needed for vite build and dev to work properly.
     // @ts-ignore

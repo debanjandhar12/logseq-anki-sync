@@ -1,5 +1,6 @@
 import React, {PropsWithChildren} from "../React";
 import FocusTrap from "focus-trap-react";
+import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 
 interface ModalProps {
     open: boolean;
@@ -34,7 +35,7 @@ export function Modal({
     const onKeydown = React.useCallback((e: KeyboardEvent) => {
         if (!open) return;
         if (e.key === "ArrowDown") {
-            let divWithScrollbar = Array.from(window.parent.document.querySelectorAll('.ui__modal div')).filter(div => {
+            let divWithScrollbar = Array.from(WindowParentBridge.querySelectorAll('.ui__modal div')).filter(div => {
                 return div.scrollHeight > div.clientHeight;
             })[0];
             if (divWithScrollbar) {
@@ -44,7 +45,7 @@ export function Modal({
             e.stopImmediatePropagation();
         }
         else if (e.key === "ArrowUp") {
-            let divWithScrollbar = Array.from(window.parent.document.querySelectorAll('.ui__modal div')).filter(div => {
+            let divWithScrollbar = Array.from(WindowParentBridge.querySelectorAll('.ui__modal div')).filter(div => {
                 return div.scrollHeight > div.clientHeight;
             })[0];
             if (divWithScrollbar) {
@@ -55,9 +56,9 @@ export function Modal({
         }
     }, []);
     React.useEffect(() => {
-        if (open) window.parent.document.addEventListener("keydown", onKeydown);
+        if (open) WindowParentBridge.addEventListener("keydown", onKeydown);
         return () => {
-            window.parent.document.removeEventListener("keydown", onKeydown);
+            WindowParentBridge.removeEventListener("keydown", onKeydown);
         };
     }, [open, onKeydown]);
 
