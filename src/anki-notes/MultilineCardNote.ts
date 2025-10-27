@@ -8,25 +8,21 @@ import {LogseqProxy} from "../logseq/LogseqProxy";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
-import {NoteUtils} from "./NoteUtils";
 
 export class MultilineCardNote extends Note {
     public type = "multiline_card";
     public children: any[];
-    public tags: any[];
     public constructor(
         uuid: string,
         content: string,
         format: string,
         properties: any,
         page: any,
-        tags: any = [],
+        tags: string[] = [],
         children: any = [],
-        tagIds: number[] = [],
     ) {
-        super(uuid, content, format, properties, page, tagIds);
+        super(uuid, content, format, properties, page, tags);
         this.children = children;
-        this.tags = tags;
     }
 
     public static initLogseqOperations = () => {
@@ -114,15 +110,6 @@ export class MultilineCardNote extends Note {
         return maxDepth;
     }
 
-    private static async getRelevantTags(tagIds: any[]): Promise<string[]> {
-        return await NoteUtils.matchTagNamesWithTagIds(tagIds, [
-            "forward",
-            "reversed",
-            "bidirectional",
-            "incremental",
-            ...Array.from(Array(10).keys()).map((i) => `depth-${i}`),
-        ]);
-    }
 
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let clozedContent = "";
@@ -231,9 +218,7 @@ export class MultilineCardNote extends Note {
                 const uuid = getUUIDFromBlock(block[0]);
                 const parent = block[0].parent.id;
                 const parentBlock = await LogseqProxy.Editor.getBlock(parent);
-                const tags = await MultilineCardNote.getRelevantTags(
-                    (_.get(parentBlock, "refs", []) as Array<any>).map((ref) => ref.id),
-                );
+                const tags = _.get(parentBlock, "properties.tags", []) as string[];
                 block[0].tagsFromParentCardGroup = [...tags];
                 return block;
             }),
@@ -254,9 +239,7 @@ export class MultilineCardNote extends Note {
                     includeChildren: true,
                 });
                 if (block) {
-                    const tags = await MultilineCardNote.getRelevantTags(
-                        _.get(block, "refs", []).map((ref) => ref.id),
-                    );
+                    const blockTags = _.get(block, "properties.tags", []) as string[];
                     return new MultilineCardNote(
                         uuid,
                         block.content,
@@ -264,9 +247,8 @@ export class MultilineCardNote extends Note {
                         block.properties || {},
                         page,
                         // Apply tags in parent card group block - #168
-                        tags && tags.length > 0 ? tags : tagsFromParentCardGroup,
+                        blockTags && blockTags.length > 0 ? blockTags : tagsFromParentCardGroup,
                         block.children,
-                        _.get(block, "refs", []).map((ref) => ref.id),
                     );
                 } else {
                     return null;

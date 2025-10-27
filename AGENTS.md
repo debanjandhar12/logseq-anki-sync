@@ -9,7 +9,7 @@ This is a Logseq plugin for syncing flashcards to Anki with advanced features li
   - `src/logseq/` - Logseq API interaction with caching layer (LogseqProxy)
   - `src/anki-connect/` - Anki Connect API integration
   - `src/sync/` - Core syncing logic with hash-based change detection
-  - `src/anki-notes-generator/` - Generates Anki notes from Logseq blocks
+  - `src/anki-notes/` - Generates Anki notes from Logseq blocks
   - `src/ui/` - React-based UI components (modals, pages, settings)
   - `src/utils/` - Shared utility functions
   - `src/addons/` - Plugin addon system

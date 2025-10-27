@@ -16,9 +16,9 @@ export class SwiftArrowNote extends Note {
         format: string,
         properties: any,
         page: any,
-        tagIds: number[] = [],
+        tags: string[] = [],
     ) {
-        super(uuid, content, format, properties, page, tagIds);
+        super(uuid, content, format, properties, page, tags);
     }
 
     public static initLogseqOperations = () => {};
@@ -89,7 +89,7 @@ export class SwiftArrowNote extends Note {
                         block.format,
                         block.properties || {},
                         page,
-                        _.get(block, "refs", []).map((ref) => ref.id),
+                        _.get(block, "properties.tags", []) as string[],
                     );
                 else {
                     return null;

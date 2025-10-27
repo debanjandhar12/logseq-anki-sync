@@ -4,7 +4,6 @@ import {HTMLFile} from "../logseq/LogseqToHtmlConverter";
 import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import _ from "lodash";
 import {LogseqProxy} from "../logseq/LogseqProxy";
-import {NoteUtils} from "./NoteUtils";
 import {getLogseqBlockPropSafe} from "../utils/utils";
 import {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import getNameFromPage from "../logseq/getNameFromPage";
@@ -17,7 +16,7 @@ export abstract class Note {
     public page: any;
     public type: string;
     public ankiId: number;
-    public tagIds: number[];
+    public tags: string[];
     static ankiNoteManager: LazyAnkiNoteManager;
 
     public constructor(
@@ -26,7 +25,7 @@ export abstract class Note {
         format: string,
         properties: any,
         page: PageEntity,
-        refs: number[],
+        tags: string[],
     ) {
         this.uuid = uuid;
         this.content = content;
@@ -34,7 +33,7 @@ export abstract class Note {
         this.properties = properties;
         this.page = page;
         this.page.name = this.page.originalName = getNameFromPage(page); // Unify naming
-        this.tagIds = refs;
+        this.tags = tags;
     }
 
     public static setAnkiNoteManager(ankiNoteManager: LazyAnkiNoteManager) {
@@ -128,8 +127,7 @@ export abstract class Note {
                     }
 
                     // TODO: Remove line 126-129 after a few releases
-                    if ((await NoteUtils.matchTagNamesWithTagIds(note.tagIds, ["no-anki-sync"])
-                    ).includes("no-anki-sync")) {
+                    if (note.tags.includes("no-anki-sync")) {
                         isAnkiSyncDisabled = true;
                     }
 

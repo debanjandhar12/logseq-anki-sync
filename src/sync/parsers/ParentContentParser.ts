@@ -2,7 +2,6 @@ import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { convertToHTMLFile } from "../../logseq/LogseqToHtmlConverter";
 import { escapeClozesAndMacroDelimiters } from "../../utils/utils";
-import { NoteUtils } from "../../anki-notes/NoteUtils";
 import _ from "lodash";
 
 interface ParentContentResult {
@@ -36,12 +35,9 @@ export class ParentContentParser {
         let parent;
 
         while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
-            const hiddenParent = (
-                await NoteUtils.matchTagNamesWithTagIds(
-                    _.get(parent, "refs", []).map((ref) => ref.id),
-                    ["hide-when-card-parent"]
-                )
-            ).includes("hide-when-card-parent") || Array.from(tags).includes("hide-all-card-parent");
+            const parentTags = _.get(parent, "properties.tags", []) as string[];
+            const hiddenParent = parentTags.includes("hide-when-card-parent") || 
+                                 Array.from(tags).includes("hide-all-card-parent");
 
             parentBlocks.push({
                 content: escapeClozesAndMacroDelimiters(parent.content),
