@@ -6,19 +6,19 @@
  * 3. Some properties of the page where block is located
  */
 
-import {Note} from "../anki-notes-generator/Note";
-import pkg from "../../package.json";
-import {LogseqProxy} from "../logseq/LogseqProxy";
-import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
-import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
+import {Note} from "../../anki-notes-generator/Note";
+import pkg from "../../../package.json";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
+import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
+import {DependencyEntity} from "../../logseq/getLogseqContentDirectDependencies";
 import {
     getBlockHash,
     getPageHash,
 } from "./blockAndPageHashCache";
 import _ from "lodash";
-import objectHashOptimized from "../utils/objectHashOptimized";
+import objectHashOptimized from "../../utils/objectHashOptimized";
 import path from "path-browserify";
-import {ParsedNoteData} from "./types";
+import {ParsedNoteData} from "../types";
 
 
 export default class NoteHashCalculator {

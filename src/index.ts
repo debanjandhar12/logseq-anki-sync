@@ -9,7 +9,7 @@ import {LogseqProxy} from "./logseq/LogseqProxy";
 import {AddonRegistry} from "./addons/AddonRegistry";
 import {SwiftArrowNote} from "./anki-notes-generator/SwiftArrowNote";
 import {ImageOcclusionNote} from "./anki-notes-generator/ImageOcclusionNote";
-import * as blockAndPageHashCache from "./sync/blockAndPageHashCache";
+import { blockAndPageHashCache } from "./sync/cache";
 import {Buffer} from "buffer/";
 import {Note} from "./anki-notes-generator/Note";
 import {showButtonModal} from "./ui";
