@@ -1022,9 +1022,10 @@ const PropFeature: React.FC<{
                                 value={propValue}
                                 ref={inputRef}
                                 onInput={async (e) => {
-                                    setPropValue(e.target.value);
-                                    setInputCursor([e.target.selectionStart, e.target.selectionEnd]);
-                                    await updatePropValueDebounced(e.target.value);
+                                    const target = e.target as HTMLInputElement;
+                                    setPropValue(target.value);
+                                    setInputCursor([target.selectionStart, target.selectionEnd]);
+                                    await updatePropValueDebounced(target.value);
                                 }}
                                 placeholder={placeHolderValue || ""}
                                 style={{height: "28px"}}

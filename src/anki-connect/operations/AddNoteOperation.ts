@@ -62,7 +62,7 @@ export class AddNoteOperation {
             console.log("[AddNoteOperation] uuidTypeQueue2:", this.uuidTypeQueue2);
         }
 
-        // Execute queue 1: Create notes with dummy content
+        // Execute queue 1: Create notes with dummy content (required to do this due to anki bug where note creation fails otherwise)
         const result1 = await this.queue1.execute();
         const failedNotes: OperationFailure[] = [];
         

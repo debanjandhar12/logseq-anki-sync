@@ -3,7 +3,7 @@
  */
 
 export interface AnkiNoteFields {
-    'uuid-type': string;
+    'uuid-type': string;    // contains ${logseq_block_uuid}-${note_type}
     uuid: string;
     Text: string;
     Extra: string;
@@ -42,7 +42,7 @@ export interface AnkiIdUuidPair {
 }
 
 export interface OperationFailure {
-    identifier: string;
+    identifier: string | number; // either ankiId or uuid-type
     error: Error;
 }
 

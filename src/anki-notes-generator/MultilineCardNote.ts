@@ -104,7 +104,7 @@ export class MultilineCardNote extends Note {
     }
 
     private getChildrenMaxDepth(): number {
-        let maxDepth = _.get(this, "properties.depth") || 9999;
+        let maxDepth = (this.properties?.depth as number | undefined) || 9999;
         for (const tag of this.tags) {
             const match = /^depth-(\d+)$/i.exec(tag);
             if (match) {

@@ -10,6 +10,7 @@ interface AssetParams {
 
 export class AssetOperation {
     private queue: AssetParams[] = [];
+    private readonly BATCH_SIZE = 10;
 
     storeAsset(filename: string, path: string): void {
         this.queue.push({ filename, path });
@@ -17,120 +18,107 @@ export class AssetOperation {
 
     async execute(): Promise<void> {
         try {
-            const uniqueQueue = _.uniqBy(this.queue, "filename");
-            let finalStoreAssetActionsQueue: AnkiAction[] = [];
-            const maxBatchSize = 10;
-            const result: any[] = [];
+            const uniqueAssets = _.uniqBy(this.queue, "filename");
+            const batches = _.chunk(uniqueAssets, this.BATCH_SIZE);
+            const allStoreActions: AnkiAction[] = [];
+            const storeResults: any[] = [];
 
-            while (uniqueQueue.length > 0) {
-                let batchQueue: AssetParams[] = [];
-                while (batchQueue.length < maxBatchSize && uniqueQueue.length > 0) {
-                    batchQueue.push(uniqueQueue.pop()!);
-                }
-
-                const retrieveAnkiAssetContentActionQueue = batchQueue.map((asset) => ({
+            for (const currentBatch of batches) {
+                const retrieveActions = currentBatch.map((asset) => ({
                     action: "retrieveMediaFile",
                     params: { filename: asset.filename },
                 }));
 
-                const getBase64Image = async (url: string): Promise<string> => {
-                    const response = await WindowParentBridge.getFetch()(url);
-                    const blob = await response.blob();
-                    const reader = new FileReader();
-                    await new Promise((resolve, reject) => {
-                        reader.onload = resolve;
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    });
-                    return (reader.result as string).replace(/^data:.+;base64,/, "");
-                };
-
-                const ankiAssetContent = await AnkiConnect.invoke("multi", {
-                    actions: retrieveAnkiAssetContentActionQueue,
+                const existingAssetContents = await AnkiConnect.invoke("multi", {
+                    actions: retrieveActions,
                 });
 
-                const batchStoreAssetActionsQueueWithNulls = await Promise.all(
-                    batchQueue.map(async (asset, idx) => {
-                        if (asset.path != null) {
-                            // Check if asset content has changed using base64 comparison
-                            if (await this.shouldSkipAssetUpdate(asset, ankiAssetContent[idx], getBase64Image)) {
-                                return null;
-                            }
-
-                            let fimg = "";
-                            try {
-                                fimg = await getBase64Image(asset.path);
-                            } catch {}
-                            if (fimg !== "" && fimg !== "data:" && fimg != null) {
-                                return {
-                                    action: "storeMediaFile",
-                                    params: {
-                                        filename: asset.filename,
-                                        data: fimg,
-                                    },
-                                } as AnkiAction;
-                            } else {
-                                return {
-                                    action: "storeMediaFile",
-                                    params: {
-                                        filename: asset.filename,
-                                        path: asset.path,
-                                    },
-                                } as AnkiAction;
-                            }
-                        }
-                        return {
-                            action: "storeMediaFile",
-                            params: {
-                                filename: asset.filename,
-                                path: asset.path,
-                            },
-                        } as AnkiAction;
-                    })
+                const storeActionsWithNulls = await Promise.all(
+                    currentBatch.map(async (asset, idx) =>
+                        this.createStoreActionForAsset(asset, existingAssetContents[idx])
+                    )
                 );
 
-                const batchStoreAssetActionsQueue = batchStoreAssetActionsQueueWithNulls.filter(
+                const storeActions = storeActionsWithNulls.filter(
                     (action): action is AnkiAction => action !== null
                 );
 
-                finalStoreAssetActionsQueue = [
-                    ...finalStoreAssetActionsQueue,
-                    ...batchStoreAssetActionsQueue,
-                ];
+                allStoreActions.push(...storeActions);
 
-                result.push(
-                    ...(await AnkiConnect.invoke("multi", {
-                        actions: batchStoreAssetActionsQueue,
-                    }))
-                );
+                const batchResults = await AnkiConnect.invoke("multi", {
+                    actions: storeActions,
+                });
+                storeResults.push(...batchResults);
             }
 
             this.queue = [];
-            console.log("Assets Stored:", finalStoreAssetActionsQueue, result);
+            console.log("Assets Stored:", allStoreActions, storeResults);
         } catch (e) {
             console.error("[AssetOperation] Error storing assets:", e);
         }
     }
 
+    private async createStoreActionForAsset(
+        asset: AssetParams,
+        existingContent: string | false
+    ): Promise<AnkiAction | null> {
+        if (asset.path == null || await this.shouldSkipAssetUpdate(asset, existingContent)) {
+            return null;
+        }
+
+        const base64Content = await this.getBase64FromUrl(asset.path);
+        if (base64Content && base64Content !== "data:") {
+            return {
+                action: "storeMediaFile",
+                params: {
+                    filename: asset.filename,
+                    data: base64Content,
+                },
+            };
+        }
+
+        return {
+            action: "storeMediaFile",
+            params: {
+                filename: asset.filename,
+                path: asset.path,
+            },
+        };
+    }
+
+    private async getBase64FromUrl(url: string): Promise<string> {
+        try {
+            const response = await WindowParentBridge.getFetch()(url);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            await new Promise((resolve, reject) => {
+                reader.onload = resolve;
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+            return (reader.result as string).replace(/^data:.+;base64,/, "");
+        } catch {
+            return "";
+        }
+    }
+
     private async shouldSkipAssetUpdate(
         asset: AssetParams,
-        ankiAssetContent: string | false,
-        getBase64Image: (url: string) => Promise<string>
+        existingContent: string | false
     ): Promise<boolean> {
-        if (ankiAssetContent === false || ankiAssetContent == null) {
+        if (existingContent === false || existingContent == null) {
             return false;
         }
 
-        // Compare base64 content to determine if asset has changed
         try {
-            const fimg = await getBase64Image(asset.path);
-            if (fimg !== "" && fimg !== "data:" && fimg != null && fimg === ankiAssetContent) {
-                return true;
-            }
-        } catch (e) {
-            // If base64 comparison fails, proceed with update
+            const newBase64Content = await this.getBase64FromUrl(asset.path);
+            return (
+                newBase64Content !== "" &&
+                newBase64Content !== "data:" &&
+                newBase64Content === existingContent
+            );
+        } catch {
+            return false;
         }
-
-        return false;
     }
 }

@@ -1,8 +1,14 @@
 import * as AnkiConnect from "../AnkiConnect";
 import { AnkiAction, AnkiActionResult } from "../types";
+import { chunk, flatten } from "lodash";
 
 export class AnkiActionQueue {
     private queue: AnkiAction[] = [];
+    private readonly BATCH_SIZE: number;
+
+    constructor(batchSize: number = 128) {
+        this.BATCH_SIZE = batchSize;
+    }
 
     push(action: AnkiAction): void {
         this.queue.push(action);
@@ -13,11 +19,18 @@ export class AnkiActionQueue {
             return [];
         }
 
-        const result = await AnkiConnect.invoke("multi", {
-            actions: this.queue,
-        });
+        // Create batches and execute multi action to avoid overwhelming anki
+        const batches = chunk(this.queue, this.BATCH_SIZE);
+        const results: AnkiActionResult[][] = [];
+
+        for (const batch of batches) {
+            const batchResult = await AnkiConnect.invoke("multi", {
+                actions: batch,
+            });
+            results.push(batchResult);
+        }
         
-        return result;
+        return flatten(results);
     }
 
     clear(): void {
