@@ -1,7 +1,7 @@
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { ParsedNoteData } from "../types";
 import { DeckParser } from "./DeckParser";
-import { BreadcrumbParser } from "./BreadcrumbParser";
+import { BreadcrumbAndParentBlockParser } from "./BreadcrumbAndParentBlockParser";
 import { TagParser } from "./TagParser";
 import { ExtraFieldParser } from "./ExtraFieldParser";
 import { ParentContentParser } from "./ParentContentParser";
@@ -16,7 +16,7 @@ export async function parseNote(note: Note, graphName: string): Promise<ParsedNo
 
     const deck = await DeckParser.parse(note);
 
-    const breadcrumb = await BreadcrumbParser.parse(note, graphName);
+    const breadcrumb = await BreadcrumbAndParentBlockParser.parse(note, graphName);
 
     const collectedTags = await TagParser.parse(note, Array.from(parentResult.tags));
 

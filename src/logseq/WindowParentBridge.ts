@@ -173,7 +173,7 @@ export class WindowParentBridge {
     }
 
     /**
-     * Add event listener to parent document
+     * Add event listener to parent window
      * @param event - Event name
      * @param handler - Event handler function
      * @param options - Event listener options
@@ -183,11 +183,11 @@ export class WindowParentBridge {
         handler: EventListenerOrEventListenerObject,
         options?: boolean | AddEventListenerOptions
     ): void {
-        this.getDocument().addEventListener(event, handler, options);
+        this.getParentWindow().addEventListener(event, handler, options);
     }
 
     /**
-     * Remove event listener from parent document
+     * Remove event listener from parent window
      * @param event - Event name
      * @param handler - Event handler function
      * @param options - Event listener options
@@ -197,7 +197,7 @@ export class WindowParentBridge {
         handler: EventListenerOrEventListenerObject,
         options?: boolean | EventListenerOptions
     ): void {
-        this.getDocument().removeEventListener(event, handler, options);
+        this.getParentWindow().removeEventListener(event, handler, options);
     }
 
     /**

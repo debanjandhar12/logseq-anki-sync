@@ -1,5 +1,6 @@
 import hljs from "highlight.js";
 import "@logseq/libs";
+import { PageIdentity } from "@logseq/libs/dist/LSPlugin";
 import * as cheerio from "cheerio";
 import {
     decodeHTMLEntities,
@@ -34,6 +35,7 @@ import * as hiccupConverter from "@thi.ng/hiccup";
 import {edn} from "@yellowdig/cljs-tools";
 import path from "path-browserify";
 import objectHash from "../utils/objectHashOptimized";
+import {WindowParentBridge} from "./WindowParentBridge";
 
 const mldocsOptions = {
     toc: false,
@@ -56,7 +58,11 @@ export interface HTMLFile {
 
 const convertToHTMLFileCache = new Map<string, HTMLFile>();
 if (typeof window !== 'undefined') {
-    window.addEventListener("syncLogseqToAnkiComplete", () => {
+    WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
+        const { debug } = LogseqProxy.Settings.getPluginSettings();
+        if (debug?.includes("LogseqToHtmlConverter.ts")) {
+            console.log("[LogseqToHtmlConverter] Clearing HTML conversion cache");
+        }
         convertToHTMLFileCache.clear();
     });
 }
@@ -327,7 +333,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
         try {
             const block_uuid = block_props["id"] || block_props["nid"];
             const block = await LogseqProxy.Editor.getBlock(block_uuid);
-            const page = await LogseqProxy.Editor.getPage(_.get(block, "page.id"));
+            const page = await LogseqProxy.Editor.getPage(_.get(block, "page.id") as number | PageIdentity);
             const hls_img_loc = `../assets/${_.get(page, "originalName", "").replace(
                 "hls__",
                 "",

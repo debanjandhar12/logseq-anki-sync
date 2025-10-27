@@ -16,6 +16,7 @@ import AwaitLock from "await-lock";
 import { PluginSettings } from "../settings";
 import pMemoize, {pMemoizeClear} from "p-memoize";
 import objectHashOptimized from "../utils/objectHashOptimized";
+import {WindowParentBridge} from "./WindowParentBridge";
 
 const getLogseqLock = new AwaitLock();
 
@@ -169,12 +170,12 @@ export namespace LogseqProxy {
         }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
     }
     export class App {
-        static async checkCurrentIsDbGraph() {
+        static checkCurrentIsDbGraph = pMemoize(async () => {
             try {
                 return await logseq.App.checkCurrentIsDbGraph()
             } catch (e) {}
             return false;
-        }
+        });
 
         static registeredGraphChangeListeners = [];
         static registerGraphChangeListener(listener: (e) => void): void {
@@ -207,10 +208,15 @@ export namespace LogseqProxy {
                 listener();
             }
         });
-        window.addEventListener("syncLogseqToAnkiComplete", () => {
+        WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
+            const { debug } = LogseqProxy.Settings.getPluginSettings();
+            if (debug?.includes("LogseqProxy.ts")) {
+                console.log("[LogseqProxy] Clearing memoization caches for getBlock, getPage, listFilesOfCurrentGraph, and checkCurrentIsDbGraph");
+            }
             pMemoizeClear(LogseqProxy.Editor.getBlock);
             pMemoizeClear(LogseqProxy.Editor.getPage);
             pMemoizeClear(LogseqProxy.Assets.listFilesOfCurrentGraph);
+            pMemoizeClear(LogseqProxy.App.checkCurrentIsDbGraph);
         });
     }
 }

@@ -4,7 +4,7 @@ import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import {LogseqButton} from "../common/LogseqButton";
 import {BlockContentParser} from "../../logseq/BlockContentParser";
-import {ImageOcclusionNote} from "../../anki-notes-generator/ImageOcclusionNote";
+import {ImageOcclusionNote} from "../../anki-notes/ImageOcclusionNote";
 import _ from "lodash";
 
 export async function showLogseqAnkiFeatureExplorer(editingBlockUUID: string): Promise<void> {
@@ -607,7 +607,7 @@ export const ExpandableFeatureGrid: React.FC<{children?: React.ReactNode}> = ({c
 
 const TagFeature: React.FC<{
     blockContent: string;
-    setForceRefresh: (p: number) => void;
+    setForceRefresh: React.Dispatch<React.SetStateAction<number>>;
     editingBlockUUID: string;
     tagName: string;
     tagDisplayText?: string;
@@ -635,7 +635,7 @@ const TagFeature: React.FC<{
             }
         })();
     }, [blockContent]);
-    const [isEnabled, setIsEnabled] = useState({isEnabled: true});
+    const [isEnabled, setIsEnabled] = useState<{isEnabled: boolean; helpMsg?: string}>({isEnabled: true});
     (async function () {
         const isEnabledNew = await isEnabledFn();
         if(isEnabledNew.isEnabled !== isEnabled.isEnabled)
@@ -693,7 +693,7 @@ const TagFeature: React.FC<{
 
 const DepthTagFeature: React.FC<{
     blockContent: string;
-    setForceRefresh: (p: (p) => any) => void;
+    setForceRefresh: React.Dispatch<React.SetStateAction<number>>;
     editingBlockUUID: string;
     isEnabledFn?: () => Promise<{isEnabled: boolean; helpMsg?: string}>;
     helpMsg: string;
@@ -719,7 +719,7 @@ const DepthTagFeature: React.FC<{
             }
         })();
     }, [blockContent, tagName]);
-    const [isEnabled, setIsEnabled] = useState({isEnabled: true});
+    const [isEnabled, setIsEnabled] = useState<{isEnabled: boolean; helpMsg?: string}>({isEnabled: true});
     (async function () {
         const isEnabledNew = await isEnabledFn();
         if(isEnabledNew.isEnabled !== isEnabled.isEnabled)
@@ -788,7 +788,7 @@ const DepthTagFeature: React.FC<{
 };
 const DirectionTagFeature: React.FC<{
     blockContent: string;
-    setForceRefresh: (p: (p) => any) => void;
+    setForceRefresh: React.Dispatch<React.SetStateAction<number>>;
     editingBlockUUID: string;
     isEnabledFn?: () => Promise<{isEnabled: boolean; helpMsg?: string}>;
     helpMsg: string;
@@ -823,7 +823,7 @@ const DirectionTagFeature: React.FC<{
             }
         })();
     }, [blockContent]);
-    const [isEnabled, setIsEnabled] = useState({isEnabled: true});
+    const [isEnabled, setIsEnabled] = useState<{isEnabled: boolean; helpMsg?: string}>({isEnabled: true});
     (async function () {
         const isEnabledNew = await isEnabledFn();
         if(isEnabledNew.isEnabled !== isEnabled.isEnabled)
@@ -895,7 +895,7 @@ const DirectionTagFeature: React.FC<{
 };
 const PropFeature: React.FC<{
     blockContent: string;
-    setForceRefresh: (p: (p) => any) => void;
+    setForceRefresh: React.Dispatch<React.SetStateAction<number>>;
     editingBlockUUID: string;
     propName: string;
     isEnabledFn?: () => Promise<{isEnabled: boolean; helpMsg?: string}>;
@@ -940,7 +940,7 @@ const PropFeature: React.FC<{
         }
     }, [inputRef, inputCursor, propValue]);
 
-    const [isEnabled, setIsEnabled] = useState({isEnabled: true});
+    const [isEnabled, setIsEnabled] = useState<{isEnabled: boolean; helpMsg?: string}>({isEnabled: true});
     (async function () {
         const isEnabledNew = await isEnabledFn();
         if(isEnabledNew.isEnabled !== isEnabled.isEnabled)
@@ -1054,7 +1054,7 @@ const PropFeature: React.FC<{
 
 const OrgBlockFeature: React.FC<{
     blockContent: string;
-    setForceRefresh: (p: (p) => any) => void;
+    setForceRefresh: React.Dispatch<React.SetStateAction<number>>;
     editingBlockUUID: string;
     orgBlockDisplayHTML: string;
     orgBlockText: string;
@@ -1097,7 +1097,7 @@ const OrgBlockFeature: React.FC<{
 
 const TextFeatureComponent: React.FC<{
     blockContent: string;
-    setForceRefresh: (p: (p) => any) => void;
+    setForceRefresh: React.Dispatch<React.SetStateAction<number>>;
     editingBlockUUID: string;
     text: string;
     displayText?: string;
@@ -1133,7 +1133,7 @@ const TextFeatureComponent: React.FC<{
 
 export function ImageOcclusionFeature({blockContent, setForceRefresh, editingBlockUUID, helpMsg}: {
     blockContent: string;
-    setForceRefresh: (p: (p) => any) => void;
+    setForceRefresh: React.Dispatch<React.SetStateAction<number>>;
     editingBlockUUID: string;
     helpMsg: string;
 }) {

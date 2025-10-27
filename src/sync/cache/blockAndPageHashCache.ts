@@ -15,6 +15,7 @@ import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../../constants";
 import {getFirstNonEmptyLine} from "../../utils/utils";
 import {BlockPageName, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import objectHashOptimized from "../../utils/objectHashOptimized";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
 let graph = new DepGraph();
 
@@ -78,6 +79,7 @@ const addBlockNode = async (blockUUID : BlockUUID) => {
         _.get(blockPage, "updatedAt", ""),
         _.get(block, "content", "").length,
         _.get(block, "parent.id", ""),
+        _.get(block, "page.id", ""),
         _.get(block, "left.id", ""),
     ]);
     graph.setNodeData(blockUUID + "Block", objectHashOptimized(toHash));
@@ -99,7 +101,11 @@ export const getPageHash = async (pageName) => {
 
 // -- Maintain Cache State by using DB.onChanged --
 export const init = () => {
-    window.addEventListener("syncLogseqToAnkiComplete", () => {
+    WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
+        const { debug } = LogseqProxy.Settings.getPluginSettings();
+        if (debug?.includes("blockAndPageHashCache.ts")) {
+            console.log("[blockAndPageHashCache] Clearing dependency graph cache");
+        }
         clearGraph();
     });
 }

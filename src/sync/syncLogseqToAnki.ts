@@ -5,9 +5,9 @@ import {
     getTemplateFront,
     getTemplateBack, getTemplateMediaFiles
 } from "../anki-template/AnkiCardTemplates";
-import {Note} from "../anki-notes-generator/Note";
-import {ClozeNote} from "../anki-notes-generator/ClozeNote";
-import {MultilineCardNote} from "../anki-notes-generator/MultilineCardNote";
+import {Note} from "../anki-notes/Note";
+import {ClozeNote} from "../anki-notes/ClozeNote";
+import {MultilineCardNote} from "../anki-notes/MultilineCardNote";
 import _ from "lodash";
 import {ParsedNoteData} from "./types";
 import {
@@ -18,10 +18,10 @@ import path from "path-browserify";
 import {SUCCESS_ICON, WARNING_ICON} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import pkg from "../../package.json";
-import {SwiftArrowNote} from "../anki-notes-generator/SwiftArrowNote";
+import {SwiftArrowNote} from "../anki-notes/SwiftArrowNote";
 import {ProgressNotification} from "../ui";
 import {showConfirmModal} from "../ui";
-import {ImageOcclusionNote} from "../anki-notes-generator/ImageOcclusionNote";
+import {ImageOcclusionNote} from "../anki-notes/ImageOcclusionNote";
 import { NoteHashCalculator } from "./cache";
 import {CancelablePromise} from "cancelable-promise";
 import {ActionNotification} from "../ui/common/ActionNotification";
@@ -39,10 +39,10 @@ export class LogseqToAnkiSync {
     modelName: string;
 
     public async sync(): Promise<void> {
-        if (await LogseqProxy.App.checkCurrentIsDbGraph()  === true) {
-            await logseq.UI.showMsg("Anki sync not supported in DB Graphs yet.\nDevelopment to support it is going on in db branch.", "error");
-            return;
-        }
+        // if (await LogseqProxy.App.checkCurrentIsDbGraph()  === true) {
+        //     await logseq.UI.showMsg("Anki sync not supported in DB Graphs yet.\nDevelopment to support it is going on in db branch.", "error");
+        //     return;
+        // }
         if (LogseqToAnkiSync.isSyncing) {
             console.log(`Syncing already in process...`);
             return;
@@ -73,7 +73,7 @@ export class LogseqToAnkiSync {
         const ankiNoteManager = await this.initializeAnkiNoteManager();
 
         const notes = await this.collectAllNotes();
-        await this.ensureNotesHaveIds(notes);
+        await this.persistLogseqBlockIds(notes);
 
         const syncPlan = await this.createSyncPlan(notes, ankiNoteManager);
         const { toCreateNotesOriginal, toUpdateNotesOriginal, toDeleteNotesOriginal } = syncPlan;
@@ -220,7 +220,10 @@ export class LogseqToAnkiSync {
         });
     }
 
-    private async ensureNotesHaveIds(notes: Note[]): Promise<void> {
+    private async persistLogseqBlockIds(notes: Note[]): Promise<void> {
+        if (await LogseqProxy.App.checkCurrentIsDbGraph() === true) return; // DB graphs don't have reindex feature.
+
+        // Need to persist id inside logseq blocks (which makeup notes) to prevent uuid from changing on re-index
         for (const note of notes) {
             if (!note.properties["id"]) {
                 try {

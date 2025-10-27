@@ -142,7 +142,7 @@ export class ImageOcclusionCommand {
 
 **Step 2:** Update Note classes to pure business logic:
 ```typescript
-// src/anki-notes-generator/ImageOcclusionNote.ts
+// src/anki-notes/ImageOcclusionNote.ts
 export class ImageOcclusionNote extends Note {
     // Only business logic, no UI
     public async getClozedContentHTML(): Promise<HTMLFile> { ... }

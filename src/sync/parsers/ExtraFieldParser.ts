@@ -1,4 +1,4 @@
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { convertToHTMLFile } from "../../logseq/LogseqToHtmlConverter";
 import _ from "lodash";

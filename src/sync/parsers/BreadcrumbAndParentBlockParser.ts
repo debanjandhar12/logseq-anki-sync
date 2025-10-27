@@ -1,9 +1,9 @@
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../../constants";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
 
-export class BreadcrumbParser {
+export class BreadcrumbAndParentBlockParser {
     static async parse(note: Note, graphName: string): Promise<string> {
         const { breadcrumbDisplay } = LogseqProxy.Settings.getPluginSettings();
         
@@ -44,7 +44,7 @@ export class BreadcrumbParser {
                 }">${firstLine}</a>`;
             }
         } catch (e) {
-            console.error("[BreadcrumbParser] Error building full breadcrumb:", e);
+            console.error("[BreadcrumbAndParentBlockParser] Error building full breadcrumb:", e);
         }
 
         return breadcrumb;

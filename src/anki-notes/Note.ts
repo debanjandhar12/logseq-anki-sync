@@ -54,7 +54,9 @@ export abstract class Note {
             (note) => note.fields["uuid-type"].value == `${this.uuid}-${this.type}`,
         );
         if (filteredankiNotesArr.length == 0) this.ankiId = null;
-        else this.ankiId = parseInt(filteredankiNotesArr[0].noteId);
+        else this.ankiId = typeof filteredankiNotesArr[0].noteId === 'number' 
+            ? filteredankiNotesArr[0].noteId 
+            : parseInt(filteredankiNotesArr[0].noteId);
         return this.ankiId;
     }
 

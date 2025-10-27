@@ -1,4 +1,4 @@
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import { ProgressNotification } from "../../ui";
 import { ParsedNoteData } from "../types";

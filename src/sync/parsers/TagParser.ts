@@ -1,4 +1,4 @@
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { getCaseInsensitive } from "../../utils/utils";
 import _ from "lodash";

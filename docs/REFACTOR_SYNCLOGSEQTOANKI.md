@@ -56,7 +56,7 @@ src/sync/
 │   ├── index.ts                 # Re-export all parsers
 │   ├── NoteParser.ts            # Main parsing coordinator
 │   ├── DeckParser.ts            # Deck resolution logic
-│   ├── BreadcrumbParser.ts      # Breadcrumb generation logic
+│   ├── BreadcrumbAndParentBlockParser.ts      # Breadcrumb generation logic
 │   ├── TagParser.ts             # Tag collection and normalization
 │   ├── ExtraFieldParser.ts      # Extra field parsing
 │   └── ParentContentParser.ts   # Parent content inclusion logic
@@ -84,7 +84,7 @@ src/sync/
     ├── index.ts                 # Re-export all parsers
     ├── NoteParser.ts            # Orchestrates parsing
     ├── DeckParser.ts
-    ├── BreadcrumbParser.ts
+    ├── BreadcrumbAndParentBlockParser.ts
     ├── TagParser.ts
     ├── ExtraFieldParser.ts
     └── ParentContentParser.ts
@@ -94,10 +94,10 @@ src/sync/
 
 ```typescript
 // parsers/NoteParser.ts
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { ParsedNoteData } from "../types";
 import { DeckParser } from "./DeckParser";
-import { BreadcrumbParser } from "./BreadcrumbParser";
+import { BreadcrumbAndParentBlockParser } from "./BreadcrumbAndParentBlockParser";
 import { TagParser } from "./TagParser";
 import { ExtraFieldParser } from "./ExtraFieldParser";
 import { ParentContentParser } from "./ParentContentParser";
@@ -114,7 +114,7 @@ export async function parseNote(note: Note, graphName: string): Promise<ParsedNo
     const deck = await DeckParser.parse(note);
 
     // Parse breadcrumb trail
-    const breadcrumb = await BreadcrumbParser.parse(note, graphName);
+    const breadcrumb = await BreadcrumbAndParentBlockParser.parse(note, graphName);
 
     // Parse tags from hierarchy
     const collectedTags = await TagParser.parse(note, Array.from(tags));
@@ -128,7 +128,7 @@ export async function parseNote(note: Note, graphName: string): Promise<ParsedNo
 
 ```typescript
 // parsers/DeckParser.ts
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { getLogseqBlockPropSafe, splitNamespace } from "../../utils/utils";
 import _ from "lodash";
@@ -233,13 +233,13 @@ export class DeckParser {
 ```
 
 ```typescript
-// parsers/BreadcrumbParser.ts
-import { Note } from "../../anki-notes-generator/Note";
+// parsers/BreadcrumbAndParentBlockParser.ts
+import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../../constants";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
 
-export class BreadcrumbParser {
+export class BreadcrumbAndParentBlockParser {
     static async parse(note: Note, graphName: string): Promise<string> {
         const { breadcrumbDisplay } = LogseqProxy.Settings.getPluginSettings();
         
@@ -280,7 +280,7 @@ export class BreadcrumbParser {
                 }">${firstLine}</a>`;
             }
         } catch (e) {
-            console.error("[BreadcrumbParser] Error building full breadcrumb:", e);
+            console.error("[BreadcrumbAndParentBlockParser] Error building full breadcrumb:", e);
         }
 
         return breadcrumb;
@@ -308,7 +308,7 @@ export class BreadcrumbParser {
 
 ```typescript
 // parsers/TagParser.ts
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { getCaseInsensitive } from "../../utils/utils";
 import _ from "lodash";
@@ -380,7 +380,7 @@ export class TagParser {
 
 ```typescript
 // parsers/ExtraFieldParser.ts
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { convertToHTMLFile } from "../../logseq/LogseqToHtmlConverter";
 import _ from "lodash";
@@ -407,11 +407,11 @@ export class ExtraFieldParser {
 
 ```typescript
 // parsers/ParentContentParser.ts
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { convertToHTMLFile } from "../../logseq/LogseqToHtmlConverter";
 import { escapeClozesAndMacroDelimiters } from "../../utils/utils";
-import { NoteUtils } from "../../anki-notes-generator/NoteUtils";
+import { NoteUtils } from "../../anki-notes/NoteUtils";
 import _ from "lodash";
 
 interface ParentContentResult {
@@ -504,7 +504,7 @@ export class ParentContentParser {
 // parsers/index.ts
 export { parseNote } from "./NoteParser";
 export { DeckParser } from "./DeckParser";
-export { BreadcrumbParser } from "./BreadcrumbParser";
+export { BreadcrumbAndParentBlockParser } from "./BreadcrumbAndParentBlockParser";
 export { TagParser } from "./TagParser";
 export { ExtraFieldParser } from "./ExtraFieldParser";
 export { ParentContentParser } from "./ParentContentParser";
@@ -550,7 +550,7 @@ src/sync/
 
 ```typescript
 // operations/CreateNotesOperation.ts
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import { ProgressNotification } from "../../ui";
 import { ParsedNoteData } from "../types";
@@ -656,7 +656,7 @@ export class CreateNotesOperation {
 
 ```typescript
 // operations/UpdateNotesOperation.ts
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import { ProgressNotification } from "../../ui";
 import { ParsedNoteData } from "../types";

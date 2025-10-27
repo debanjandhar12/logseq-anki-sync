@@ -90,8 +90,8 @@ export class MultilineCardNote extends Note {
     };
 
     private getCardDirection(): string {
-        let direction = _.get(this, "properties.direction");
-        if (direction != "->" && direction != "<-" && direction != "<->") {
+        let direction = _.get(this, "properties.direction") as string | undefined;
+        if (direction !== "->" && direction !== "<-" && direction !== "<->") {
             if (
                 (this.tags.includes("reversed") && this.tags.includes("forward")) ||
                 this.tags.includes("bidirectional")
@@ -232,7 +232,7 @@ export class MultilineCardNote extends Note {
                 const parent = block[0].parent.id;
                 const parentBlock = await LogseqProxy.Editor.getBlock(parent);
                 const tags = await MultilineCardNote.getRelevantTags(
-                    _.get(parentBlock, "refs", []).map((ref) => ref.id),
+                    (_.get(parentBlock, "refs", []) as Array<any>).map((ref) => ref.id),
                 );
                 block[0].tagsFromParentCardGroup = [...tags];
                 return block;

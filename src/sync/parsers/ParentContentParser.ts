@@ -1,8 +1,8 @@
-import { Note } from "../../anki-notes-generator/Note";
+import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { convertToHTMLFile } from "../../logseq/LogseqToHtmlConverter";
 import { escapeClozesAndMacroDelimiters } from "../../utils/utils";
-import { NoteUtils } from "../../anki-notes-generator/NoteUtils";
+import { NoteUtils } from "../../anki-notes/NoteUtils";
 import _ from "lodash";
 
 interface ParentContentResult {

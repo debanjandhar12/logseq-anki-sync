@@ -1,17 +1,17 @@
 import "@logseq/libs";
 import {LSPluginBaseInfo} from "@logseq/libs/dist/LSPlugin";
-import {ClozeNote} from "./anki-notes-generator/ClozeNote";
-import {MultilineCardNote} from "./anki-notes-generator/MultilineCardNote";
+import {ClozeNote} from "./anki-notes/ClozeNote";
+import {MultilineCardNote} from "./anki-notes/MultilineCardNote";
 import {LogseqToAnkiSync} from "./sync/syncLogseqToAnki";
 import {addSettingsToLogseq} from "./settings";
 import {ANKI_ICON} from "./constants";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {AddonRegistry} from "./addons/AddonRegistry";
-import {SwiftArrowNote} from "./anki-notes-generator/SwiftArrowNote";
-import {ImageOcclusionNote} from "./anki-notes-generator/ImageOcclusionNote";
+import {SwiftArrowNote} from "./anki-notes/SwiftArrowNote";
+import {ImageOcclusionNote} from "./anki-notes/ImageOcclusionNote";
 import { blockAndPageHashCache } from "./sync/cache";
 import {Buffer} from "buffer/";
-import {Note} from "./anki-notes-generator/Note";
+import {Note} from "./anki-notes/Note";
 import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
@@ -60,7 +60,7 @@ function main(baseInfo: LSPluginBaseInfo) {
     // Init various modules
     WindowParentBridge.setGlobalObject('LogseqAnkiSync', {
         dispatchEvent: (event: string) => {
-            window.dispatchEvent(new Event(event));
+            WindowParentBridge.dispatchEvent(event);
         }
     });
     LogseqProxy.init();
