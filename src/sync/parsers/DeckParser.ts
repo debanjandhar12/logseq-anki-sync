@@ -57,6 +57,7 @@ export class DeckParser {
             let parentBlockUUID: string | number = note.uuid;
             while (parentBlockUUID != null) {
                 const parentBlock = await LogseqProxy.Editor.getBlock(parentBlockUUID);
+                console.log('parentBlock', parentBlock);
                 const deck = getLogseqBlockPropSafe(parentBlock, "properties.deck");
                 if (deck != null) return deck;
                 parentBlockUUID = _.get(parentBlock, "parent.id", null);

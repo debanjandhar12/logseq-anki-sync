@@ -1,6 +1,7 @@
 import {Note} from "./Note";
 import "@logseq/libs";
 import { WindowParentBridge } from "../logseq/WindowParentBridge";
+import { LogseqPropertiesHelper } from "../logseq/LogseqPropertiesHelper";
 import {
     escapeClozesAndMacroDelimiters,
     getFirstNonEmptyLine,
@@ -54,8 +55,14 @@ export class ImageOcclusionNote extends Note {
 
     public static async handleImageOcclusionOperation(block: BlockEntity | {uuid: string;}) {
         const uuid = getUUIDFromBlock(block as BlockEntity);
-        block = await logseq.Editor.getBlock(uuid); // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
-        const block_images = await ImageOcclusionNote.getImagesInBlockOrNote(block);
+        // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
+        // Use helper method to get fresh block with properties
+        const fetchedBlock = await LogseqPropertiesHelper.getBlock(uuid);
+        if (!fetchedBlock) {
+            await logseq.UI.showMsg("Block not found.", "error");
+            return;
+        }
+        const block_images = await ImageOcclusionNote.getImagesInBlockOrNote(fetchedBlock);
         if (block_images.length == 0) {
             await logseq.UI.showMsg("No images found in this block.", "warning");
             return;
@@ -64,7 +71,7 @@ export class ImageOcclusionNote extends Note {
             ImageOcclusionNote.upgradeProperties(
                 JSON.parse(
                     Buffer.from(
-                        block.properties?.occlusion ||
+                        fetchedBlock.properties?.occlusion ||
                         Buffer.from("{}", "utf8").toString("base64"),
                         "base64",
                     ).toString(),
@@ -110,13 +117,13 @@ export class ImageOcclusionNote extends Note {
                 if (
                     Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
                         "base64",
-                    ) != block.properties?.occlusion
+                    ) != fetchedBlock.properties?.occlusion
                 ) {
                     console.log(imgToOcclusionDataHashMap, Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
                         "base64",
                     ));
                     await LogseqProxy.Editor.upsertBlockProperty(
-                        getUUIDFromBlock(block as BlockEntity),
+                        getUUIDFromBlock(fetchedBlock),
                         "occlusion",
                         Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
                             "base64",
@@ -193,7 +200,7 @@ export class ImageOcclusionNote extends Note {
         console.log("ImageOcclusionNote Loaded", notes);
         notes = await Note.removeUnwantedNotes(notes as ImageOcclusionNote[]);
         notes = await Promise.all(
-            _.map(notes, async (note) => {
+            _.map(notes, async (note: ImageOcclusionNote) => {
                 // Remove blocks that do not have images with occlusion
                 try {
                     let imgToOcclusionDataHashMap = ImageOcclusionNote.upgradeProperties(
@@ -236,7 +243,9 @@ export class ImageOcclusionNote extends Note {
             async (match, blockUUID) => {
                 // Add contents of direct block refs (1-level)
                 try {
-                    const block_ref = await logseq.Editor.getBlock(blockUUID); // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
+                    // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
+                    // Use helper method to get fresh block with properties
+                    const block_ref = await LogseqPropertiesHelper.getBlock(blockUUID);
                     let block_ref_content = _.get(block_ref, "content");
                     const block_ref_props = _.get(block_ref, "properties");
                     block_ref_content = safeReplace(
@@ -331,7 +340,7 @@ export class ImageOcclusionNote extends Note {
                     elements: value,
                     config: {},
                 };
-            } else if (typeof value == "object" && Array.isArray(value.elements)) {
+            } else if (typeof value == "object" && value !== null && "elements" in value && Array.isArray((value as any).elements)) {
                 // New format.
                 newHashMap[key] = value as OcclusionData;
             }

@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@logseq/libs':
-        specifier: ^0.2.1
-        version: 0.2.1
+        specifier: ^0.2.3
+        version: 0.2.3
       '@thi.ng/hiccup':
         specifier: ^4.2.29
         version: 4.3.3
@@ -54,8 +54,8 @@ importers:
         specifier: ^0.1.2
         version: 0.1.2
       mldoc:
-        specifier: ^1.5.8
-        version: 1.5.8
+        specifier: ^1.5.9
+        version: 1.5.9
       object-hash:
         specifier: 3.0.0
         version: 3.0.0
@@ -1115,8 +1115,8 @@ packages:
   '@logseq/libs@0.0.15':
     resolution: {integrity: sha512-Z4YrYGfu8Y3s9LTqVnPGkxlO+KZtP1YalH/A63zYgxP61cV5QtKlnHWNcjsKxsD5CkaSL4MlSN4mf7wNx/Fm0A==}
 
-  '@logseq/libs@0.2.1':
-    resolution: {integrity: sha512-lC2HTyJU3thHlqwXq++ZvwBHqhIlrlSel1O7xEAT5NW5wTPHVq3Mq1jJbvPrNpXaZtqhWn9nYuVj1ULKv9540g==}
+  '@logseq/libs@0.2.3':
+    resolution: {integrity: sha512-aMtZFsNvbFgVhiaA9K9DANPhIv+ZKaC5qW61si2UMsfwgykr4/hyT9Q7aoqf7ir3ZIwYDDhfEJqpthZCsUwbeA==}
 
   '@mapbox/node-pre-gyp@1.0.11':
     resolution: {integrity: sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ==}
@@ -3026,8 +3026,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  mldoc@1.5.8:
-    resolution: {integrity: sha512-wNUGgwdgB/5c3GTp2qRPzWD8CpeTmA/HDlGJjTJUo2WXJttiBaz8cHQh2OdAshiLdVxteqIaSTXSPFRf7z1YRw==}
+  mldoc@1.5.9:
+    resolution: {integrity: sha512-87FQ7hseS87tsk+VdpIigpu8LH+GwmbbFgpxgFwvnbH5oOjmIrc47laH4Dyggzqiy8/vMjDHkl7vsId0eXhCDQ==}
     hasBin: true
 
   mrmime@2.0.1:
@@ -5231,7 +5231,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@logseq/libs@0.2.1':
+  '@logseq/libs@0.2.3':
     dependencies:
       csstype: 3.1.0
       debug: 4.3.4
@@ -7530,7 +7530,7 @@ snapshots:
 
   mkdirp@1.0.4: {}
 
-  mldoc@1.5.8:
+  mldoc@1.5.9:
     dependencies:
       yargs: 12.0.5
 

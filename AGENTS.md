@@ -25,7 +25,12 @@ This is a Logseq plugin for syncing flashcards to Anki with advanced features li
 
 ## Architecture
 
-**LogseqProxy Cache Layer:** All Logseq API calls go through `LogseqProxy` which provides memoized, synchronization-safe wrappers around @logseq/libs using p-memoize. Cache clears after sync via 'syncLogseqToAnkiComplete' event.
+**LogseqProxy Cache Layer:** All Logseq API calls go through `LogseqProxy` which provides memoized, synchronization-safe wrappers around @logseq/libs using p-memoize. Cache clears after sync via 'syncLogseqToAnkiComplete' event. For fresh, non-cached data with properties attached, use `LogseqPropertiesHelper` class.
+
+**Property Access (Logseq 0.2.3+):** Properties are now namespaced (e.g., `:user.property/deck-bavZ5684`). The `LogseqPropertiesHelper` class automatically fetches properties, strips prefixes, and filters system properties, maintaining backward compatibility. Use this helper when:
+- Bypassing cache for fresh data (e.g., UI interactions, image occlusion editor)
+- Direct API calls are needed outside LogseqProxy
+- LogseqProxy automatically uses these internally for cached access
 
 **Dependency Hash Cache:** `blockAndPageHashCache.ts` maintains a dependency graph tracking block references, page embeds, and transitive dependencies. Each block's hash includes all dependency hashes plus metadata (page updatedAt, content length, parent/left ids). When a block changes, all dependent blocks' hashes automatically invalidate. Cache clears after sync via 'syncLogseqToAnkiComplete' event.
 
@@ -55,6 +60,10 @@ This is a Logseq plugin for syncing flashcards to Anki with advanced features li
 
 - **Code Organization:** Keep related functionality within appropriate module directories
 - **Logseq API:** Always use LogseqProxy instead of direct @logseq/libs calls for caching and synchronization safety
+- **Property Access:** Use `LogseqPropertiesHelper` for block/page property access:
+  - For cached access during sync: Use `LogseqProxy.Editor.getBlock()` / `getPage()` (properties included automatically)
+  - For fresh, non-cached data: Use `LogseqPropertiesHelper.getBlock()` / `getPage()` from `src/logseq/logseqPropertiesHelper.ts`
+  - Never call `logseq.Editor.getBlock()` / `getPage()` directly - properties won't be fetched/stripped properly
 - **Parent Window Access:** Always use WindowParentBridge instead of direct `window.parent` access for iframe communication. WindowParentBridge provides type-safe, testable access to parent window objects (Logseq API, AnkiConnect, Fabric.js, DOM elements, etc.)
 - **Settings Access:** Use `LogseqProxy.Settings.getPluginSettings()` instead of `logseq.settings`
 - **React Imports:** Import React/ReactDOM from `ui/React.ts` and `ui/ReactDOM.ts`, not directly from npm packages

@@ -17,6 +17,7 @@ import { PluginSettings } from "../settings";
 import pMemoize, {pMemoizeClear} from "p-memoize";
 import objectHashOptimized from "../utils/objectHashOptimized";
 import {WindowParentBridge} from "./WindowParentBridge";
+import { LogseqPropertiesHelper } from "./LogseqPropertiesHelper";
 
 const getLogseqLock = new AwaitLock();
 
@@ -30,7 +31,8 @@ export namespace LogseqProxy {
             let block = null;
             await getLogseqLock.acquireAsync();
             try {
-                block = await logseq.Editor.getBlock(srcBlock, opts);
+                // Use helper method to fetch block with properties
+                block = await LogseqPropertiesHelper.getBlock(srcBlock, opts);
             } catch (e) {
                 console.error(e);
                 if (!opts.suppressErrors) throw e;
@@ -45,15 +47,8 @@ export namespace LogseqProxy {
             let page = null;
             await getLogseqLock.acquireAsync();
             try {
-                if (typeof srcPage === "number") {
-                    page = await logseq.Editor.getPage(srcPage);
-                    // properties are not returned when using dbid,
-                    // hence use name to fetch again
-                    page = await logseq.Editor.getPage(page.name);
-                }
-                else {
-                    page = await logseq.Editor.getPage(srcPage);
-                }
+                // Use helper method to fetch page with properties
+                page = await LogseqPropertiesHelper.getPage(srcPage);
             } catch (e) {
                 console.error(e);
                 if (!opts.suppressErrors) throw e;

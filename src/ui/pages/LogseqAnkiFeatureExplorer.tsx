@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from "../React";
 import {Modal, useModal, createModalPromise} from "../";
 import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
+import { LogseqPropertiesHelper } from "../../logseq/LogseqPropertiesHelper";
 import {LogseqButton} from "../common/LogseqButton";
 import {BlockContentParser} from "../../logseq/BlockContentParser";
 import {ImageOcclusionNote} from "../../anki-notes/ImageOcclusionNote";
@@ -39,15 +40,15 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
 
     useEffect(() => {
         (async function () {
-            const block = await logseq.Editor.getBlock(editingBlockUUID);
+            const block = await LogseqPropertiesHelper.getBlock(editingBlockUUID);
             setBlockContent(block.content);
         })();
     }, [forceRefresh]);
 
     useEffect(() => {
         (async function () {
-            const block = await logseq.Editor.getBlock(editingBlockUUID);
-            const page = await logseq.Editor.getPage(block.page.id);
+            const block = await LogseqPropertiesHelper.getBlock(editingBlockUUID);
+            const page = await LogseqPropertiesHelper.getPage(block.page.id);
             const pageTree = await logseq.Editor.getPageBlocksTree(page.name);
             setPageTree(pageTree);
         })();
@@ -56,15 +57,15 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
     const [parentBlocksWithAnkiTags, setParentBlocksWithAnkiTags] = useState([]);
     useEffect(() => {
         (async function () {
-            const block = await logseq.Editor.getBlock(editingBlockUUID);
-            let parentBlock = await logseq.Editor.getBlock(block.parent.id);
+            const block = await LogseqPropertiesHelper.getBlock(editingBlockUUID);
+            let parentBlock = await LogseqPropertiesHelper.getBlock(block.parent.id);
             let parentBlockWithAnkiTags = [];
             while (parentBlock) {
                 if ((parentBlock.properties && (parentBlock.properties["tags"] || parentBlock.properties["deck"] || parentBlock.properties["disable-anki-sync"])) ||
                 parentBlock.content.includes('hide-when-card-parent')) {
                     parentBlockWithAnkiTags.push(parentBlock);
                 }
-                parentBlock = await logseq.Editor.getBlock(parentBlock.parent.id);
+                parentBlock = await LogseqPropertiesHelper.getBlock(parentBlock.parent.id);
             }
             setParentBlocksWithAnkiTags(parentBlockWithAnkiTags.reverse());
         })();
@@ -72,13 +73,13 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
 
     useEffect(() => {
         (async function () {
-            const block = await logseq.Editor.getBlock(editingBlockUUID);
-            const page = await logseq.Editor.getPage(block.page.id);
+            const block = await LogseqPropertiesHelper.getBlock(editingBlockUUID);
+            const page = await LogseqPropertiesHelper.getPage(block.page.id);
             const parentNamespaces = page.name.split("/");
             let namespaceTree = [];
             for (let i = 1; i < parentNamespaces.length; i++) {
                 const namespace = parentNamespaces.slice(0, i).join("/");
-                const namespacePage = await logseq.Editor.getPage(namespace);
+                const namespacePage = await LogseqPropertiesHelper.getPage(namespace);
                 const namespacePageTree = await logseq.Editor.getPageBlocksTree(namespacePage.name);
                 namespaceTree.push({...namespacePage, blocks: namespacePageTree});
             }
@@ -95,8 +96,8 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
             if (tags.map((tag) => tag.content).includes("#card") || tags.map((tag) => tag.content).includes("#flashcard")) {
                 setIsEditingBlockMultiline(true);
             } else {
-                const block = await logseq.Editor.getBlock(editingBlockUUID);
-                const parentBlock = await logseq.Editor.getBlock(block.parent.id);
+                const block = await LogseqPropertiesHelper.getBlock(editingBlockUUID);
+                const parentBlock = await LogseqPropertiesHelper.getBlock(block.parent.id);
                 if (!parentBlock) {
                     setIsEditingBlockMultiline(false);
                     return;
@@ -189,8 +190,8 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
                                     editingBlockUUID={namespace.blocks[0].uuid}
                                     selectOptions={["true", "false"]}
                                     isEnabledFn={async () => {
-                                        const block = await logseq.Editor.getBlock(editingBlockUUID);
-                                        const page = await logseq.Editor.getPage(block.page.id);
+                                        const block = await LogseqPropertiesHelper.getBlock(editingBlockUUID);
+                                        const page = await LogseqPropertiesHelper.getPage(block.page.id);
                                         if(!page.namespace || !page.namespace.id) return {isEnabled: false, helpMsg: "This property only works in namespace pages."};
 
                                         return {isEnabled: true};
@@ -921,8 +922,8 @@ const PropFeature: React.FC<{
 
     useEffect(() => {
         (async function () {
-            const props = (await logseq.Editor.getBlock(editingBlockUUID)).properties;
-            const propsWithActualValues = (await logseq.Editor.getBlock(editingBlockUUID)).propertiesTextValues;  // This will contain more info (page refs text)
+            const props = (await LogseqPropertiesHelper.getBlock(editingBlockUUID)).properties;
+            const propsWithActualValues = (await LogseqPropertiesHelper.getBlock(editingBlockUUID)).propertiesTextValues;  // This will contain more info (page refs text)
             if (getLogseqBlockPropSafe(props, propName) != null) {
                 setDoesContainProp(true);
                 setPropValue(getLogseqBlockPropSafe(propsWithActualValues, propName) || getLogseqBlockPropSafe(props, propName));
@@ -953,7 +954,7 @@ const PropFeature: React.FC<{
             propName,
             value,
         );
-        const block = await logseq.Editor.getBlock(editingBlockUUID);
+        const block = await LogseqPropertiesHelper.getBlock(editingBlockUUID);
         await logseq.Editor.updateBlock(editingBlockUUID, block.content+'...'); // Force logseq to update the block cache
         await logseq.Editor.updateBlock(editingBlockUUID, block.content);
         setForceRefresh(p => p+1);

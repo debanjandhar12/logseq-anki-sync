@@ -18,7 +18,7 @@
         "icon": "/icon.png"
     },
     "dependencies": {
-        "@logseq/libs": "^0.2.1",
+        "@logseq/libs": "^0.2.3",
         "@thi.ng/hiccup": "^4.2.29",
         "@yellowdig/cljs-tools": "0.2.0",
         "await-lock": "^2.2.2",
@@ -33,7 +33,7 @@
         "highlight.js": "11.7.0",
         "lodash": "^4.17.21",
         "logseq-proxy": "^0.1.2",
-        "mldoc": "^1.5.8",
+        "mldoc": "^1.5.9",
         "object-hash": "3.0.0",
         "ohm-js": "^16.6.0",
         "p-memoize": "^7.1.1",
