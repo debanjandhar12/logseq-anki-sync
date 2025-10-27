@@ -42,29 +42,6 @@ This comprehensive analysis examines the Logseq Anki Sync plugin codebase for in
 **Severity:** Medium  
 **Locations:** Throughout the codebase
 
-**Examples:**
-
-1. **LogseqProxy.ts:**
-```typescript
-static registeredDBListeners = [];  // No type annotation
-```
-Should be:
-```typescript
-static registeredDBListeners: Array<(event: {blocks; txData; txMeta}) => void> = [];
-```
-
-2. **syncLogseqToAnki.ts:**
-```typescript
-private async parseNote(note: Note): Promise<ParsedNoteData> {
-    return await parseNote(note, this.graphName);  // Missing error handling types
-}
-```
-
-3. **utils.ts:**
-```typescript
-export function getCaseInsensitive(obj, path, defaultValue) {  // No type annotations
-```
-
 **Recommendation:** Add explicit type annotations to all function parameters and return types.
 
 ---
@@ -156,26 +133,6 @@ try {
 
 ---
 
-### 2.2 Missing Error Context
-
-**Severity:** Medium  
-**Location:** Multiple files
-
-**Example:**
-```typescript
-// ClozeNote.ts
-} catch (e) {
-    throw "Error parsing replacecloze property";  // No original error context
-}
-```
-
-**Recommendation:**
-```typescript
-} catch (e) {
-    throw new Error(`Error parsing replacecloze property: ${e.message}`, { cause: e });
-}
-```
-
 ---
 
 ### 2.3 String-Based Error Throwing
@@ -209,39 +166,6 @@ throw new Error("Cannot parse array list from string");
 **Recommendation:** Update documentation in `AGENTS.md` to reflect actual directory name or rename directory to match documentation.
 
 ---
-
-### 3.2 Property Access Inconsistencies
-
-**Severity:** Medium  
-**Locations:** Throughout codebase
-
-**Issues:**
-
-1. **Mixed lodash.get vs optional chaining:**
-
-```typescript
-// Some files use:
-_.get(block, "content")
-
-// While newer code could use:
-block?.content
-```
-
-2. **Inconsistent property name handling:**
-
-```typescript
-// Note.ts
-const replaceclozeProp = this.properties.replacecloze
-    ? this.properties.replacecloze
-    : this.properties[".replacecloze"];
-```
-
-This pattern is repeated but could be abstracted.
-
-**Recommendation:** 
-- Prefer optional chaining for simple property access
-- Create utility function for property fallback patterns
-- Use the existing `getLogseqBlockPropSafe` consistently
 
 ---
 

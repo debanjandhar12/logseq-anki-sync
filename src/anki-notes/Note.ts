@@ -80,11 +80,7 @@ export abstract class Note {
         newNotes = _.without(newNotes, undefined, null);
         newNotes = _.filter(newNotes, (note) => {
             // Remove template blocks and blocks without uuid
-            return (
-                _.get(note, "properties.template") == null ||
-                _.get(note, "properties.template") == undefined ||
-                _.get(note, "uuid") == null
-            );
+            return (note?.properties?.template == null || false || note?.uuid == null);
         });
         newNotes = (
             await Promise.all(
@@ -103,7 +99,7 @@ export abstract class Note {
                                 isAnkiSyncDisabled = false;
                                 break;
                             }
-                            parentBlockUUID = _.get(parentBlock, 'parent.id', null);
+                            parentBlockUUID = parentBlock?.parent?.id ?? null;
                         }
                     } catch (e) { console.error(e); }
 
@@ -121,7 +117,7 @@ export abstract class Note {
                                     isAnkiSyncDisabled = false;
                                     break;
                                 }
-                                parentNamespaceID = _.get(parentNamespacePage, 'namespace.id', null);
+                                parentNamespaceID = parentNamespacePage?.namespace?.id ?? null;
                             }
                         } catch (e) { console.error(e); }
                     }

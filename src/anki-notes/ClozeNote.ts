@@ -136,9 +136,7 @@ export class ClozeNote extends Note {
         );
 
         // --- Add anki-cloze array clozes ---
-        const replaceclozeProp = this.properties.replacecloze
-            ? this.properties.replacecloze
-            : this.properties[".replacecloze"];
+        const replaceclozeProp = this.properties?.replacecloze ?? this.properties?.[".replacecloze"];
         if (replaceclozeProp) {
             let replaceclozeArr: any;
             try {
@@ -152,12 +150,10 @@ export class ClozeNote extends Note {
                 }
                 else replaceclozeArr = [];
             } catch (e) {
-                throw "Error parsing replacecloze property";
+                throw new Error(`Error parsing replacecloze property: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
             }
 
-            const replaceclozehintProp = this.properties.replaceclozehint
-                ? this.properties.replaceclozehint
-                : this.properties[".replaceclozehint"];
+            const replaceclozehintProp = this.properties?.replaceclozehint ?? this.properties?.[".replaceclozehint"];
             let replaceclozeHintArr: any;
             if (typeof replaceclozehintProp == "string" && replaceclozehintProp.trim() != "") {
                 replaceclozeHintArr = replaceclozehintProp
@@ -268,7 +264,7 @@ export class ClozeNote extends Note {
                         block.format,
                         block.properties || {},
                         page,
-                        _.get(block, "properties.tags", []) as string[],
+                        (block.properties?.tags ?? []) as string[],
                     );
                 else {
                     return null;

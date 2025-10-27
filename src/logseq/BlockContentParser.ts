@@ -50,15 +50,15 @@ export class BlockContentParser {
 
             // TODO: Potentially, web / local file links will not be parsed correctly in org mode
             if (type == "Link") {
-                const link_type = _.get(node[0][1], "url[0]");
-                let link_url = _.get(node[0][1], "url[1]");
+                const link_type = node[0][1]?.url?.[0];
+                let link_url = node[0][1]?.url?.[1];
                 if (typeof link_url === "object") {
                     if (link_url.protocol && link_url.link) {
                         link_url = link_url.protocol + "://" + link_url.link;
                     }
                 }
-                const link_full_text = _.get(node[0][1], "full_text");
-                const link_label_text = _.get(node[0][1], "label[0][1]");
+                const link_full_text = node[0][1]?.full_text;
+                const link_label_text = node[0][1]?.label?.[0]?.[1];
                 if ((link_type == "Search" || link_type == "Complex") &&
                     link_url.match(isImage_REGEXP) &&
                     link_full_text.startsWith("!") && findType == "img") {

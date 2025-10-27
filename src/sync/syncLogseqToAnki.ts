@@ -171,7 +171,7 @@ export class LogseqToAnkiSync {
     }
 
     private async getGraphName(): Promise<string> {
-        return _.get(await logseq.App.getCurrentGraph(), "name") || "Default";
+        return (await logseq.App.getCurrentGraph())?.name || "Default";
     }
 
     private getModelName(): string {
@@ -216,7 +216,7 @@ export class LogseqToAnkiSync {
         scanNotification.increment();
 
         return await sortAsync(notes, async (a) => {
-            return _.get(await LogseqProxy.Editor.getBlock(a.uuid), "id", 0);
+            return (await LogseqProxy.Editor.getBlock(a.uuid))?.id ?? 0;
         });
     }
 

@@ -120,9 +120,9 @@ export namespace LogseqProxy {
             return result;
         }
 
-        static registeredDBListeners = [];
+        static registeredDBListeners: Array<(event: {blocks: any[]; txData: any; txMeta: any}) => void> = [];
         static registerDBChangeListener(
-            listener: (event: {blocks; txData; txMeta}) => void,
+            listener: (event: {blocks: any[]; txData: any; txMeta: any}) => void,
         ): void {
             this.registeredDBListeners.push(listener);
         }
@@ -172,12 +172,12 @@ export namespace LogseqProxy {
             return false;
         });
 
-        static registeredGraphChangeListeners = [];
-        static registerGraphChangeListener(listener: (e) => void): void {
+        static registeredGraphChangeListeners: Array<(e: any) => void> = [];
+        static registerGraphChangeListener(listener: (e: any) => void): void {
             this.registeredGraphChangeListeners.push(listener);
         }
 
-        static registerPluginUnloadListeners = [];
+        static registerPluginUnloadListeners: Array<() => void> = [];
         static registerPluginUnloadListener(listener: () => void): void {
             this.registerPluginUnloadListeners.push(listener);
         }

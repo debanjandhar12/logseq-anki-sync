@@ -245,7 +245,7 @@ export async function convertToHTMLFile(
             "Error: Image Found! Image should have been processed by processLink already and be hidden from cheerio.",
         );
     });
-    const graphName = _.get(await logseq.App.getCurrentGraph(), "name");
+    const graphName = (await logseq.App.getCurrentGraph())?.name;
     $("a.tag").each(function (i, elm) {
         // Handle tags
         let tagName = $(elm).text(),
@@ -333,8 +333,8 @@ export async function processProperties(resultContent, format = "markdown"): Pro
         try {
             const block_uuid = block_props["id"] || block_props["nid"];
             const block = await LogseqProxy.Editor.getBlock(block_uuid);
-            const page = await LogseqProxy.Editor.getPage(_.get(block, "page.id") as number | PageIdentity);
-            const hls_img_loc = `../assets/${_.get(page, "originalName", "").replace(
+            const page = await LogseqProxy.Editor.getPage(block?.page?.id as number | PageIdentity);
+            const hls_img_loc = `../assets/${(page?.originalName ?? "").replace(
                 "hls__",
                 "",
             )}/${block_props["hl-page"]}_${block_uuid}_${
@@ -377,11 +377,11 @@ async function processRefEmbeds(
                 if (level >= 100) return "";
                 let result = `\n<ul class="children-list">`;
                 for (const child of children) {
-                    result += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">`;
-                    // _.get(block, "content").replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
+                    result += `\n<li class="children ${child?.properties?.['logseq.orderListType'] === "number" ? 'numbered' : ''}">`;
+                    // block.content.replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
                     const block_content =
-                        escapeClozesAndMacroDelimiters(_.get(child, "content")) || "";
-                    const format = _.get(child, "format") || "markdown";
+                        escapeClozesAndMacroDelimiters(child?.content) || "";
+                    const format = child?.format || "markdown";
                     const blockContentHTMLFile = await convertToHTMLFile(block_content, format);
                     blockContentHTMLFile.assets.forEach((element) => {
                         resultAssets.add(element);
@@ -424,10 +424,10 @@ async function processRefEmbeds(
                 if (level >= 100) return "";
                 let result = `\n<ul class="children-list">`;
                 for (const child of children) {
-                    result += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">`;
+                    result += `\n<li class="children ${child?.properties?.['logseq.orderListType'] === "number" ? 'numbered' : ''}">`;
                     const block_content =
-                        escapeClozesAndMacroDelimiters(_.get(child, "content")) || "";
-                    const format = _.get(child, "format") || "markdown";
+                        escapeClozesAndMacroDelimiters(child?.content) || "";
+                    const format = child?.format || "markdown";
                     const blockContentHTMLFile = await convertToHTMLFile(block_content, format);
                     blockContentHTMLFile.assets.forEach((element) => {
                         resultAssets.add(element);
@@ -453,7 +453,7 @@ async function processRefEmbeds(
             const str = getRandomUnicodeString();
             hashmap[str] = `<div class="embed-page">
                         <a href="logseq://graph/${encodeURIComponent(
-                            _.get(await logseq.App.getCurrentGraph(), "name"),
+                            (await logseq.App.getCurrentGraph())?.name,
                         )}?page=${encodeURIComponent(
                             pageName,
                         )}" class="embed-header">${pageName}</a>
@@ -470,7 +470,7 @@ async function processRefEmbeds(
             // Convert page refs
             const str = getRandomUnicodeString();
             hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
-                _.get(await logseq.App.getCurrentGraph(), "name"),
+                (await logseq.App.getCurrentGraph())?.name,
             )}?page=${encodeURIComponent(
                 pageName,
             )}" class="page-reference">${aliasContent}</a>`;
@@ -490,7 +490,7 @@ async function processRefEmbeds(
             }
             const str = getRandomUnicodeString();
             hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
-                _.get(await logseq.App.getCurrentGraph(), "name"),
+                (await logseq.App.getCurrentGraph())?.name,
             )}?page=${encodeURIComponent(pageName)}" class="page-reference">${pageName}</a>`;
             return str;
         },
@@ -503,7 +503,7 @@ async function processRefEmbeds(
             // Convert page refs
             const str = getRandomUnicodeString();
             hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
-                _.get(await logseq.App.getCurrentGraph(), "name"),
+                (await logseq.App.getCurrentGraph())?.name,
             )}?block-id=${encodeURIComponent(
                 blockUUID,
             )}" class="block-ref">${aliasContent}</a>`;
@@ -519,8 +519,8 @@ async function processRefEmbeds(
             const str = getRandomUnicodeString();
             try {
                 const block = await LogseqProxy.Editor.getBlock(blockUUID);
-                let block_content = _.get(block, "content");
-                const block_props = _.get(block, "properties");
+                let block_content = block?.content;
+                const block_props = block?.properties;
                 block_content = safeReplace(block_content, MD_PROPERTIES_REGEXP, "");
                 block_content = safeReplace(block_content, ORG_PROPERTIES_REGEXP, "");
                 let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
@@ -530,13 +530,13 @@ async function processRefEmbeds(
                     blockRef_content += `\n${prop}:: ${value}`;
                 const blockRefHTMLFile = await convertToHTMLFile(
                     blockRef_content,
-                    _.get(block, "format"),
+                    block?.format,
                 );
                 blockRefHTMLFile.assets.forEach((element) => {
                     resultAssets.add(element);
                 });
                 hashmap[str] = `<span onclick="window.open('logseq://graph/${encodeURIComponent(
-                    _.get(await logseq.App.getCurrentGraph(), "name"),
+                    (await logseq.App.getCurrentGraph())?.name,
                 )}?block-id=${encodeURIComponent(blockUUID)}')" class="block-ref">${
                     blockRefHTMLFile.html
                 }</span>`;
@@ -643,17 +643,17 @@ async function processLink(
     format,
 ) {
     const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
-    const link_type = _.get(node[0][1], "url[0]");
-    const link_url = _.get(node[0][1], "url[1]");
+    const link_type = node[0][1]?.url?.[0];
+    const link_url = node[0][1]?.url?.[1];
     let metadata;
     try {
         metadata = await edn.decode(node[0][1].metadata);
     } catch (e) {
         console.warn(e);
     }
-    const link_full_text = _.get(node[0][1], "full_text");
-    const link_label_type = _.get(node[0][1], "label[0][0]");
-    const link_label_text = _.get(node[0][1], "label[0][1]");
+    const link_full_text = node[0][1]?.full_text;
+    const link_label_type = node[0][1]?.label?.[0]?.[0];
+    const link_label_text = node[0][1]?.label?.[0]?.[1];
     // Image Display
     if (
         link_type == "Search" &&

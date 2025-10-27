@@ -174,7 +174,7 @@ export function splitNamespace(str: string) {
 }
 
 // This is required to deal with properties with "-" in them
-export function getLogseqBlockPropSafe(obj, path, defaultValue = null) {
+export function getLogseqBlockPropSafe<T = any>(obj: any, path: string, defaultValue: T = null as T): T {
     let returnVal = _.get(obj, path, null);
     if (returnVal == null) {
         return _.get(obj, path.split("-").map((x, i) => i === 0 ? x[0].toLowerCase() + x.slice(1) : x[0].toUpperCase() + x.slice(1)).join(""), defaultValue);
@@ -280,7 +280,7 @@ export async function sortAsync<T>(arr: T[], score: (a: T) => Promise<number>): 
     });
 }
 
-export function getCaseInsensitive(obj, path, defaultValue) {
+export function getCaseInsensitive<T = any>(obj: any, path: string | string[], defaultValue: T): T {
     if (!obj) {
         return defaultValue;
     }
