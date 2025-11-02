@@ -1,0 +1,28 @@
+---
+id: image-occlusion
+title: Image Occlusion Cards
+description: Create flashcards that hide regions of an image to test your recall.
+sidebar_position: 4
+---
+
+import GifPlayer from '@site/src/components/GifPlayer';
+
+Image Occlusion lets you create cards that hide parts of an image to test your knowledge of that **hidden** information.
+
+## Creating Image Occlusion cards
+
+The plugin provides an in-built Image Occlusion Editor to make these cards. It can be accessed by right-clicking the bullet of the Logseq block containing an image.
+
+<GifPlayer
+  gif="https://github.com/debanjandhar12/logseq-anki-sync/assets/49021233/c9df02f9-3fa9-495e-9d45-131afba83721"
+  alt="Image occlusion editor demo"
+/>
+
+In Logseq Anki Sync, image occlusion behaves like cloze deletion but for images. Each occlusion has an ID, and occlusions with the same ID will be **hidden** together.
+
+### Common FAQ
+
+<details>
+  <summary>Where is occlusion information stored in Logseq?</summary>
+  <div>The occlusion information is stored in the <code>occlusion</code> block property as a base64 string. Deleting this property will cause the occlusion card to be deleted.</div>
+</details>

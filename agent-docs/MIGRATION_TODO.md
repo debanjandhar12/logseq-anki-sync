@@ -8,3 +8,8 @@ Notes:
 
 Known issues:
 - Focus trap in uis dont work...
+
+Good Links:
+- https://discuss.logseq.com/t/logseq-db-unofficial-faq/32508/11?u=danzu
+- https://discuss.logseq.com/t/logseq-db-changelog/30013/31?u=danzu
+- https://github.com/logseq/docs/blob/master/db-version-changes.md

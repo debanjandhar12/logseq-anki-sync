@@ -1,0 +1,27 @@
+{
+  "name": "logseq-anki-sync-docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "docs:dev": "pnpm docusaurus start",
+    "docs:build": "pnpm docusaurus build",
+    "docs:serve": "pnpm docusaurus serve --build"
+  },
+  "dependencies": {
+    "@algolia/client-search": "5.46.1",
+    "@docusaurus/core": "3.9.2",
+    "@docusaurus/module-type-aliases": "3.9.2",
+    "@docusaurus/preset-classic": "3.9.2",
+    "@docusaurus/theme-search-algolia": "3.9.2",
+    "clsx": "^2.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-gif-player": "^0.4.2"
+  },
+  "devDependencies": {
+    "@tsconfig/docusaurus": "^2.0.3",
+    "typescript": "^5.6.3"
+  }
+}

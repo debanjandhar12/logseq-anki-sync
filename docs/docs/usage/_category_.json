@@ -1,0 +1,9 @@
+{
+  "label": "Usage Guides",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "title": "Usage Guides",
+    "description": "Configure decks, hints, and advanced metadata for your notes."
+  }
+}
