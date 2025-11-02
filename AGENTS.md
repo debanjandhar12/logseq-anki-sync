@@ -1,6 +1,6 @@
 # Project Structure
 
-This is a Logseq plugin for syncing flashcards to Anki with advanced features like image occlusion, bidirectional cards, incremental syncing, and block/page reference rendering.
+This is a Logseq plugin for one-way syncing flashcards to Anki with advanced features like image occlusion, cloze cards and block/page reference rendering.
 
 - **Entry Point:** `src/index.ts` initializes the plugin, registers UI commands, and sets up event listeners
 - **Output:** Build artifacts go to `dist/` directory
