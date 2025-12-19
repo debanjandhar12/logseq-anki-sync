@@ -1,0 +1,34 @@
+/* Dark mode lightbox background */
+[data-rmiz-modal-overlay] {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+  height: 100vh !important;
+}
+
+/* Image wrapper for icon positioning */
+.rmiz-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.rmiz-wrapper:hover .rmiz-icon {
+  opacity: 1;
+}
+
+.rmiz-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+html[data-theme='light'] .rmiz-icon {
+  color: rgba(0, 0, 0, 0.9);
+  background: rgba(255, 255, 255, 0.9);
+}
