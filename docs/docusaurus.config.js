@@ -34,17 +34,23 @@ const config = {
       },
     ],
   ],
+  themes: [
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      {
+        hashed: true,
+        language: ["en"],
+        highlightSearchTermsOnTargetPage: true,
+        explicitSearchResultPath: true,
+      },
+    ],
+  ],
   themeConfig: {
-    algolia: {
-      appId: process.env.ALGOLIA_APP_ID ?? 'APP_ID',
-      apiKey: process.env.ALGOLIA_API_KEY ?? 'SEARCH_API_KEY',
-      indexName: process.env.ALGOLIA_INDEX_NAME ?? 'INDEX_NAME',
-      contextualSearch: true,
-      searchParameters: {},
-      searchPagePath: 'search',
+    colorMode: {
+      defaultMode: 'dark',
+      disableSwitch: false,
     },
     navbar: {
-      title: 'Logseq Anki Sync',
       logo: {
         alt: 'Anki logo',
         src: 'img/anki-logo.svg',
@@ -57,16 +63,15 @@ const config = {
           label: 'Documentation',
         },
         {
+          href: 'https://github.com/debanjandhar12/logseq-anki-sync',
+          position: 'right',
+          label: 'GitHub Project',
+        },
+        {
           href: 'https://github.com/sponsors/debanjandhar12',
           position: 'right',
           label: 'GitHub Sponsors',
           className: 'navbar-sponsor-button',
-        },
-        {
-          href: 'https://github.com/debanjandhar12/logseq-anki-sync',
-          position: 'right',
-          className: 'header-github-link',
-          'aria-label': 'GitHub repository',
         },
       ],
     },
@@ -88,10 +93,6 @@ const config = {
             {
               label: 'GitHub Discussions',
               href: 'https://github.com/debanjandhar12/logseq-anki-sync/discussions',
-            },
-            {
-              label: 'GitHub Project',
-              href: 'https://github.com/debanjandhar12/logseq-anki-sync',
             },
           ],
         },

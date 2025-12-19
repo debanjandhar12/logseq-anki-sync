@@ -151,3 +151,14 @@ html[data-theme='dark'] .logseq-cloze {
   background-color: rgba(64, 169, 255, 0.2);
   color: #bae7ff;
 }
+
+
+/* Gold sponsor link styling */
+.navbar-sponsor-button {
+  color: #d4af37 !important;
+  font-weight: 600;
+}
+
+.navbar-sponsor-button:hover {
+  color: #ffd700 !important;
+}
