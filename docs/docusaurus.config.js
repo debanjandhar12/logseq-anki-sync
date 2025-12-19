@@ -1,11 +1,7 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
+const lightCodeTheme = require('prism-react-renderer/themes/github');
+const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
-const algoliaAppId = process.env.ALGOLIA_APP_ID ?? 'APP_ID';
-const algoliaApiKey = process.env.ALGOLIA_API_KEY ?? 'SEARCH_API_KEY';
-const algoliaIndexName = process.env.ALGOLIA_INDEX_NAME ?? 'INDEX_NAME';
-
-const config: Config = {
+const config = {
   title: 'Logseq Anki Sync',
   tagline: 'Sync Logseq flashcards to Anki with superpowers',
   favicon: 'img/anki-logo.svg',
@@ -15,7 +11,7 @@ const config: Config = {
   projectName: 'logseq-anki-sync',
   deploymentBranch: 'gh-pages',
   trailingSlash: false,
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
   i18n: {
     defaultLocale: 'en',
@@ -26,22 +22,22 @@ const config: Config = {
       'classic',
       {
         docs: {
-          sidebarPath: './sidebars.ts',
+          sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/debanjandhar12/logseq-anki-sync/tree/main/docs/',
           breadcrumbs: true,
         },
         blog: false,
         theme: {
-          customCss: './src/css/custom.css',
+          customCss: require.resolve('./src/css/custom.css'),
         },
       },
     ],
   ],
   themeConfig: {
     algolia: {
-      appId: algoliaAppId,
-      apiKey: algoliaApiKey,
-      indexName: algoliaIndexName,
+      appId: process.env.ALGOLIA_APP_ID ?? 'APP_ID',
+      apiKey: process.env.ALGOLIA_API_KEY ?? 'SEARCH_API_KEY',
+      indexName: process.env.ALGOLIA_INDEX_NAME ?? 'INDEX_NAME',
       contextualSearch: true,
       searchParameters: {},
       searchPagePath: 'search',
@@ -54,8 +50,8 @@ const config: Config = {
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
+          type: 'doc',
+          docId: 'intro',
           position: 'left',
           label: 'Documentation',
         },
@@ -66,11 +62,6 @@ const config: Config = {
           className: 'navbar-sponsor-button',
         },
         {
-          type: 'html',
-          position: 'right',
-          value: '<a class="github-button" href="https://github.com/debanjandhar12/logseq-anki-sync" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star logseq-anki-sync on GitHub">Star</a>',
-        },
-        {
           href: 'https://github.com/debanjandhar12/logseq-anki-sync',
           position: 'right',
           className: 'header-github-link',
@@ -79,8 +70,8 @@ const config: Config = {
       ],
     },
     prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      theme: lightCodeTheme,
+      darkTheme: darkCodeTheme,
       additionalLanguages: ['bash', 'json'],
     },
     footer: {
@@ -97,29 +88,24 @@ const config: Config = {
               label: 'GitHub Discussions',
               href: 'https://github.com/debanjandhar12/logseq-anki-sync/discussions',
             },
-          ],
-        },
-        {
-          title: 'More',
-          items: [
             {
-              label: 'Logseq Marketplace',
-              href: 'https://hub.logseq.com/plugin/debanjandhar12/logseq-anki-sync',
-            },
-            {
-              label: 'GitHub',
+              label: 'GitHub Project',
               href: 'https://github.com/debanjandhar12/logseq-anki-sync',
             },
           ],
         },
+        {
+          title: 'Support',
+          items: [
+            {
+              label: 'GitHub Sponsors',
+              href: 'https://github.com/sponsors/debanjandhar12',
+            },
+          ],
+        },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Logseq Anki Sync contributors`,
     },
   },
-  scripts: [{
-    src: 'https://buttons.github.io/buttons.js',
-    async: true,
-  }],
 };
 
-export default config;
+module.exports = config;

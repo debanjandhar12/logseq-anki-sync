@@ -5,15 +5,19 @@ description: Mask parts of your notes with cloze deletions.
 sidebar_position: 3
 ---
 
+import LogseqExample from '@site/src/components/LogseqExample';
+
 Cloze cards allow you to hide parts of a sentence or block to test your recall. Logseq Anki Sync supports multiple ways of creating clozes so you can pick the workflow that suits your notes.
 
 ## Anki cloze macro syntax
 
 This is the recommended approach because it maps directly to Anki's native cloze syntax and gives you full control over card numbers.
 
-```md
-{{c2 Japan}} is the capital of {{c1 Japan}} (aka {{c1 Nipon}}).
-```
+<LogseqExample>
+
+- {{c2 Japan}} is the capital of {{c1 Japan}} (aka {{c1 Nipon}}).
+
+</LogseqExample>
 
 | Front | Back |
 | --- | --- |
@@ -26,9 +30,11 @@ Use digits `1-9` to group clozes into cards (`c1`, `c2`, etc.).
 
 Logseq's original cloze syntax is still supported for backwards compatibility.
 
-```md
-Tokyo is the capital of {{cloze Japan}} (aka {{cloze Nipon}}).
-```
+<LogseqExample>
+
+- Tokyo is the capital of {{cloze Japan}} (aka {{cloze Nipon}}).
+
+</LogseqExample>
 
 This produces separate cards for each clozed value but does not allow specifying card numbers, so multiple clozes cannot be grouped onto the same card.
 
@@ -41,12 +47,14 @@ This produces separate cards for each clozed value but does not allow specifying
 
 Use ORG cloze blocks when you want to hide multiple lines together, such as math formulas or full paragraphs.
 
-```md
-The Pythagorean theorem is
-#+BEGIN_CLOZE
-$$c=\sqrt{ a^{2}+b^{2} }$$
-#+END_CLOZE
-```
+<LogseqExample>
+
+- The Pythagorean theorem is
+  #+BEGIN_CLOZE
+  $$c=\sqrt{ a^{2}+b^{2} }$$
+  #+END_CLOZE
+
+</LogseqExample>
 
 | Front | Back |
 | --- | --- |
@@ -56,12 +64,14 @@ $$c=\sqrt{ a^{2}+b^{2} }$$
 
 `replaceCloze` lets you use search-and-replace patterns so you can cloze inside code blocks or math expressions.
 
-```md
-replacecloze:: " 'a^{2}+b^{2}', /(c\^2|c )/gi "
-The Pythagorean theorem is
-$$c =\sqrt{ a^{2}+b^{2} }$$
-$$c^2= a^{2}+b^{2}$$
-```
+<LogseqExample>
+
+- replacecloze:: " 'a^{2}+b^{2}', /(c\^2|c )/gi "
+  The Pythagorean theorem is
+  $$c =\sqrt{ a^{2}+b^{2} }$$
+  $$c^2= a^{2}+b^{2}$$
+
+</LogseqExample>
 
 | Front | Back |
 | --- | --- |

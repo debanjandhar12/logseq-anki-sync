@@ -1,0 +1,153 @@
+/* Custom CSS */
+.logseq-example {
+  background-color: var(--prism-background-color, #f6f8fa);
+  border-radius: var(--ifm-code-border-radius, 0.4rem);
+  padding: 1rem;
+  margin-bottom: var(--ifm-leading, 1rem);
+  position: relative;
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+html[data-theme='dark'] .logseq-example {
+  background-color: var(--prism-background-color, #282a36);
+  border-color: var(--ifm-color-emphasis-200);
+}
+
+/* Base List Reset */
+.logseq-example ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* List Item Container */
+.logseq-example li {
+  position: relative;
+  padding-left: 24px;
+  margin: 4px 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  display: block !important;
+  /* Round corners for the property background */
+  border-radius: 4px;
+}
+
+/* 
+   Property ROW highlight.
+   Applied to LI when it contains a property.
+*/
+.logseq-property-row {
+  background-color: var(--ifm-color-emphasis-200);
+  opacity: 0.9;
+  /* Slightly less opaque for better readability if needed */
+  padding-right: 8px;
+  /* Add some right padding */
+  width: 100%;
+}
+
+html[data-theme='dark'] .logseq-property-row {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Property LINE highlight - wraps just the property line */
+.logseq-property-line {
+  background-color: var(--ifm-color-emphasis-200);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: block;
+  width: 100%;
+}
+
+html[data-theme='dark'] .logseq-property-line {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Bullet Configuration */
+.logseq-example li::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  /* Center at 11px */
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--ifm-color-content);
+  opacity: 0.3;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Hover Effects */
+.logseq-example li:hover::before {
+  opacity: 1;
+  box-shadow: 0 0 0 4px rgba(150, 150, 150, 0.2);
+}
+
+html[data-theme='dark'] .logseq-example li:hover::before {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+}
+
+/* Nested List / Thread Line */
+.logseq-example ul ul {
+  border-left: 1px solid var(--ifm-color-emphasis-200);
+  margin-left: -13px;
+  padding-left: 15px;
+}
+
+/* Copy button styling */
+.logseq-copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  background: white;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 0.4rem;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  color: var(--ifm-color-content);
+}
+
+/* Hover text color in light mode */
+.logseq-example:hover .logseq-copy-btn:hover {
+  color: var(--ifm-color-primary);
+  background: #f0f0f0;
+}
+
+html[data-theme='dark'] .logseq-copy-btn {
+  background: var(--ifm-background-color);
+  color: var(--ifm-color-content);
+}
+
+.logseq-example:hover .logseq-copy-btn,
+.logseq-copy-btn:focus {
+  opacity: 1;
+}
+
+/* Logseq Tag Highlighting */
+.logseq-tag {
+  color: var(--ifm-color-primary);
+  font-weight: 500;
+}
+
+.logseq-tag:hover {
+  opacity: 0.8;
+}
+
+/* Logseq Cloze Styling */
+.logseq-cloze {
+  background-color: #e6f7ff;
+  color: var(--ifm-color-content);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+html[data-theme='dark'] .logseq-cloze {
+  background-color: rgba(64, 169, 255, 0.2);
+  color: #bae7ff;
+}

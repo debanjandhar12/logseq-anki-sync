@@ -5,25 +5,22 @@ description: Create structured cards using tag-based syntax.
 sidebar_position: 1
 ---
 
+import LogseqExample from '@site/src/components/LogseqExample';
+
 Multiline cards allow you to turn a parent block and its children into rich flashcards.
 
 ## Simple multiline card
 
 The easiest way to make a multiline card is to add the `#card` tag to a block.
 
-```md
-SQL commands can be divided into: #card
-```
+<LogseqExample>
 
-- ```md
-  Data Definition Language
-  ```
-- ```md
-  Data Manipulation Language
-  ```
-- ```md
-  Data Control Language
-  ```
+- SQL commands can be divided into: #card
+  - Data Definition Language
+  - Data Manipulation Language
+  - Data Control Language
+
+</LogseqExample>
 
 This produces a note that renders the parent on the front and the children on the back.
 
@@ -35,19 +32,14 @@ This produces a note that renders the parent on the front and the children on th
 
 To generate a separate card for each child bullet, add the `#incremental` tag.
 
-```md
-SQL commands can be divided into: #card #incremental
-```
+<LogseqExample>
 
-- ```md
-  Data Definition Language
-  ```
-- ```md
-  Data Manipulation Language
-  ```
-- ```md
-  Data Control Language
-  ```
+- SQL commands can be divided into: #card #incremental
+  - Data Definition Language
+  - Data Manipulation Language
+  - Data Control Language
+
+</LogseqExample>
 
 Each child becomes its own back side.
 
@@ -61,19 +53,14 @@ Each child becomes its own back side.
 
 Use direction tags to customize the testing direction.
 
-```md
-SQL commands can be divided into: #card #reversed
-```
+<LogseqExample>
 
-- ```md
-  Data Definition Language
-  ```
-- ```md
-  Data Manipulation Language
-  ```
-- ```md
-  Data Control Language
-  ```
+- SQL commands can be divided into: #card #reversed
+  - Data Definition Language
+  - Data Manipulation Language
+  - Data Control Language
+
+</LogseqExample>
 
 | Front | Back |
 | --- | --- |

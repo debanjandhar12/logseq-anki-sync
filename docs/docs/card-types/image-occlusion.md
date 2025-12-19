@@ -5,7 +5,6 @@ description: Create flashcards that hide regions of an image to test your recall
 sidebar_position: 4
 ---
 
-import GifPlayer from '@site/src/components/GifPlayer';
 
 Image Occlusion lets you create cards that hide parts of an image to test your knowledge of that **hidden** information.
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactGifPlayer from 'react-gif-player';
+import BrowserOnly from '@docusaurus/BrowserOnly';
 
 export type GifPlayerProps = {
   gif: string;
@@ -11,7 +11,12 @@ export type GifPlayerProps = {
 const GifPlayer: React.FC<GifPlayerProps> = ({gif, still, alt, caption}) => {
   return (
     <figure className="gif-player">
-      <ReactGifPlayer gif={gif} still={still ?? gif} title={alt} />
+      <BrowserOnly fallback={<img src={still ?? gif} alt={alt} />}>
+        {() => {
+          const ReactGifPlayer = require('react-gif-player').default;
+          return <ReactGifPlayer gif={gif} still={still ?? gif} title={alt} />;
+        }}
+      </BrowserOnly>
       {caption ? <figcaption>{caption}</figcaption> : null}
     </figure>
   );
