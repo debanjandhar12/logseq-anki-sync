@@ -5,7 +5,8 @@
   "scripts": {
     "docusaurus:dev": "docusaurus start",
     "docusaurus:build": "docusaurus build",
-    "docusaurus:serve": "docusaurus serve --build"
+    "docusaurus:serve": "docusaurus serve --build",
+    "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
     "@docusaurus/core": "2.4.3",
