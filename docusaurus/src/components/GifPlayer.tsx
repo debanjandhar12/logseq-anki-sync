@@ -17,7 +17,17 @@ const GifPlayer: React.FC<GifPlayerProps> = ({ gif, still, alt, caption }) => {
   const animationRef = useRef<number | null>(null);
   const [gifDims, setGifDims] = useState({ width: 0, height: 0 });
   const [canvasSupported, setCanvasSupported] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
   const gifUrl = useBaseUrl(gif);
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!frames.length) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const progress = x / rect.width;
+    const targetFrame = Math.floor(progress * frames.length);
+    setCurrentFrameIndex(Math.max(0, Math.min(targetFrame, frames.length - 1)));
+  };
 
   useEffect(() => {
     const canvas = document.createElement('canvas');
@@ -44,6 +54,8 @@ const GifPlayer: React.FC<GifPlayerProps> = ({ gif, still, alt, caption }) => {
     canvas.height = gifDims.height;
   }, [gifDims]);
 
+  const lastRenderedIndexRef = useRef(-1);
+
   useEffect(() => {
     if (!frames.length || !canvasRef.current || !gifDims.width) return;
 
@@ -51,36 +63,66 @@ const GifPlayer: React.FC<GifPlayerProps> = ({ gif, still, alt, caption }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const frame = frames[currentFrameIndex];
-    const dims = frame.dims;
+    const drawFrame = (frame: any) => {
+      const dims = frame.dims;
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = dims.width;
+      tempCanvas.height = dims.height;
+      const tempCtx = tempCanvas.getContext('2d');
 
-    // specific cleanup for first frame or loop restart
-    if (currentFrameIndex === 0) {
+      if (tempCtx) {
+        const frameImageData = tempCtx.createImageData(dims.width, dims.height);
+        frameImageData.data.set(frame.patch);
+        tempCtx.putImageData(frameImageData, 0, 0);
+        ctx.drawImage(tempCanvas, dims.left, dims.top);
+      }
+    };
+
+    const disposeFrame = (frame: any) => {
+      if (frame.disposalType === 2) {
+        ctx.clearRect(frame.dims.left, frame.dims.top, frame.dims.width, frame.dims.height);
+      }
+    };
+
+    // If we're at the same frame as last time (e.g. paused/resumed),
+    // or if we just moved to the immediate next frame, we don't need to rebuild.
+    // However, if we played, the previous cleanup step would have handled disposal.
+    // If we just paused, we do nothing rendering-wise.
+    // If we seeked (index changed non-sequentially), we must rebuild.
+
+    // Check if sequential:
+    // We treat "last + 1" as sequential. 
+    // Also handling case where we might be re-running effect on same frame due to isPlaying toggle.
+    const isSequential = currentFrameIndex === lastRenderedIndexRef.current + 1;
+    const isSameFrame = currentFrameIndex === lastRenderedIndexRef.current;
+
+    if (!isSequential && !isSameFrame) {
+      // Seek or loop reset: rebuild from 0
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i <= currentFrameIndex; i++) {
+        drawFrame(frames[i]);
+        // Apply disposal for all frames leading up to current
+        if (i < currentFrameIndex) {
+          disposeFrame(frames[i]);
+        }
+      }
+    } else if (isSequential) {
+      // Ensure previous frame is disposed
+      if (lastRenderedIndexRef.current >= 0) {
+        disposeFrame(frames[lastRenderedIndexRef.current]);
+      }
+      // Just draw the new frame
+      drawFrame(frames[currentFrameIndex]);
     }
+    // if isSameFrame, we do nothing (canvas is already valid)
 
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = dims.width;
-    tempCanvas.height = dims.height;
-    const tempCtx = tempCanvas.getContext('2d');
-
-    if (tempCtx) {
-      const frameImageData = tempCtx.createImageData(dims.width, dims.height);
-      frameImageData.data.set(frame.patch);
-      tempCtx.putImageData(frameImageData, 0, 0);
-      ctx.drawImage(tempCanvas, dims.left, dims.top);
-    }
+    lastRenderedIndexRef.current = currentFrameIndex;
 
     let timeoutId: number;
     if (isPlaying) {
+      const frame = frames[currentFrameIndex];
       const delay = frame.delay || 100;
       timeoutId = window.setTimeout(() => {
-        // Handle disposal before moving to next frame
-        // disposalType: 2 -> Restore to background value (clear)
-        // disposalType: 3 -> Restore to previous (not implemented, treating as keep)
-        if (frame.disposalType === 2) {
-          ctx.clearRect(dims.left, dims.top, dims.width, dims.height);
-        }
         setCurrentFrameIndex((currentFrameIndex + 1) % frames.length);
       }, delay);
       animationRef.current = timeoutId;
@@ -94,9 +136,14 @@ const GifPlayer: React.FC<GifPlayerProps> = ({ gif, still, alt, caption }) => {
   return (
     <figure className="gif-player" style={{ margin: '1rem 0', position: 'relative' }}>
       {canvasSupported ? (
-        <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+        <div
+          style={{ position: 'relative', display: 'inline-block', width: '100%' }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
           <canvas
             ref={canvasRef}
+            onClick={() => setIsPlaying(!isPlaying)}
             style={{
               maxWidth: '100%',
               height: 'auto',
@@ -119,13 +166,40 @@ const GifPlayer: React.FC<GifPlayerProps> = ({ gif, still, alt, caption }) => {
               cursor: 'pointer',
               fontSize: '14px',
               fontWeight: '500',
-              display: 'flex',
+              display: isHovered ? 'flex' : 'none',
               alignItems: 'center',
               gap: '6px'
             }}
           >
             {isPlaying ? '⏸' : '▶'} {isPlaying ? 'Pause' : 'Play'}
           </button>
+          {isHovered && frames.length > 0 && (
+            <div
+              onClick={handleSeek}
+              style={{
+                position: 'absolute',
+                bottom: '60px',
+                left: '12px',
+                right: '12px',
+                height: '6px',
+                background: 'rgba(0, 0, 0, 0.4)',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+              }}
+            >
+              <div
+                style={{
+                  width: `${((currentFrameIndex + 1) / frames.length) * 100}%`,
+                  height: '100%',
+                  background: '#007acc',
+                  borderRadius: '3px',
+                  transition: 'width 0.1s ease',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                }}
+              />
+            </div>
+          )}
         </div>
       ) : (
         <img

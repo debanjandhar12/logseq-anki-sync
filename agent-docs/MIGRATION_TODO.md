@@ -1,5 +1,5 @@
 - [ ] Improve testing framework - 1
-- [ ] Improve asset handling - 0.2
+- [x] Improve asset handling - 0.2
 - [ ] Rewrite Feature explorer - 1
 - [ ] Find points and fix renderer - 1
 
