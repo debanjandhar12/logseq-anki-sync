@@ -23,6 +23,6 @@ dist/
 .env.production.local
 
 # Docusaurus
-docs/.docusaurus/
-docs/build/
-docs/node_modules/
+docusaurus/.docusaurus/
+docusaurus/build/
+docusaurus/node_modules/

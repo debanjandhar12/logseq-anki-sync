@@ -3,10 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "docusaurus": "docusaurus",
-    "docs:dev": "docusaurus start",
-    "docs:build": "docusaurus build",
-    "docs:serve": "docusaurus serve --build"
+    "docusaurus:dev": "docusaurus start",
+    "docusaurus:build": "docusaurus build",
+    "docusaurus:serve": "docusaurus serve --build"
   },
   "dependencies": {
     "@docusaurus/core": "2.4.3",
