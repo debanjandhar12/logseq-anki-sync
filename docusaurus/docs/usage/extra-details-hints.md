@@ -37,7 +37,7 @@ Both approaches produce the same Anki card:
 
 | Front | Back |
 | --- | --- |
-| ![Extra card front](https://user-images.githubusercontent.com/49021233/182575176-e3b5f8c8-aef8-4cca-aacb-58979a31ec69.png) | ![Extra card back](https://user-images.githubusercontent.com/49021233/182575198-ca2b7720-c6c2-4d61-8e87-f202caddcf85.png) |
+| ![Extra card front](/img/extra-details-front.png) | ![Extra card back](/img/extra-details-back.png) |
 
 ## Adding hints
 
@@ -53,4 +53,4 @@ This renders a prompt showing the hint on the front of the card.
 
 | Front | Back |
 | --- | --- |
-| ![Hint front](https://user-images.githubusercontent.com/49021233/182575326-5a894be8-a28a-4add-b206-333d41537381.png) | ![Hint back](https://user-images.githubusercontent.com/49021233/182575356-20dec0b8-04a4-45df-bcb7-8351b99effb2.png) |
+| ![Hint front](/img/hint-front.png) | ![Hint back](/img/hint-back.png) |

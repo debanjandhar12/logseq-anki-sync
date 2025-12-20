@@ -153,6 +153,27 @@ html[data-theme='dark'] .logseq-cloze {
 }
 
 
+/* Table image sizing */
+table img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Navbar logo sizing */
+.navbar__logo img {
+  height: 28px;
+  padding-top: 2px;
+  margin-right: 0;
+  width: auto;
+}
+
+/* Hide logo on mobile and tablet */
+@media (max-width: 996px) {
+  .navbar__logo {
+    display: none;
+  }
+}
+
 /* Gold sponsor link styling */
 .navbar-sponsor-button {
   color: #d4af37 !important;

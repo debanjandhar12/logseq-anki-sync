@@ -29,8 +29,8 @@ This block generates a note with multiple cards, one for each child bullet.
 
 | Front | Back |
 | --- | --- |
-| ![Swift card front 1](https://user-images.githubusercontent.com/49021233/182573161-24181b2a-2fe9-468d-a2bc-7ee66cfbf7e5.png) | ![Swift card back 1](https://user-images.githubusercontent.com/49021233/182573206-1f37-459b-9f0c-0338189a323e.png) |
-| ![Swift card front 2](https://user-images.githubusercontent.com/49021233/182573230-f63b98c5-fd5d-45d9-8523-d9f7109cd702.png) | ![Swift card back 2](https://user-images.githubusercontent.com/49021233/182573248-f632462b-6b4a-4ea5-89fa-a391d69f5a2f.png) |
+| ![Swift card front 1](/img/swift-arrow-front-1.png) | ![Swift card back 1](/img/swift-arrow-back-1.png) |
+| ![Swift card front 2](/img/swift-arrow-front-2.png) | ![Swift card back 2](/img/swift-arrow-back-2.png) |
 
 ## Tips
 

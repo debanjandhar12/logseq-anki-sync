@@ -21,8 +21,8 @@ This is the recommended approach because it maps directly to Anki's native cloze
 
 | Front | Back |
 | --- | --- |
-| ![Cloze card front 1](https://user-images.githubusercontent.com/49021233/182571281-579c0c00-126c-4737-ac4f-d5671a16f59a.png) | ![Cloze card back 1](https://user-images.githubusercontent.com/49021233/182571309-752030ad-4b7f-4520-b9f9-68dd6256bcd8.png) |
-| ![Cloze card front 2](https://user-images.githubusercontent.com/49021233/182571483-b63d019a-0395-4578-968d-3b8376ef3d64.png) | ![Cloze card back 2](https://user-images.githubusercontent.com/49021233/182571510-05b39c26-d3b1-4153-99f6-1efe28cbdc28.png) |
+| ![Cloze card front 1](/img/cloze-anki-front-1.png) | ![Cloze card back 1](/img/cloze-anki-back-1.png) |
+| ![Cloze card front 2](/img/cloze-anki-front-2.png) | ![Cloze card back 2](/img/cloze-anki-back-2.png) |
 
 Use digits `1-9` to group clozes into cards (`c1`, `c2`, etc.).
 
@@ -40,8 +40,8 @@ This produces separate cards for each clozed value but does not allow specifying
 
 | Front | Back |
 | --- | --- |
-| ![Logseq cloze front 1](https://user-images.githubusercontent.com/49021233/182571968-4a4a8704-ebe1-4cc4-acf4-1277882a0be2.png) | ![Logseq cloze back 1](https://user-images.githubusercontent.com/49021233/182571983-5243c0b3-1a69-4455-86e0-7eefc11224e9.png) |
-| ![Logseq cloze front 2](https://user-images.githubusercontent.com/49021233/182572014-78202e28-0c38-4555-aed7-d60d7fde7d34.png) | ![Logseq cloze back 2](https://user-images.githubusercontent.com/49021233/182572038-a3eceaa5-5fdd-4935-98c3-d410158f2d8c.png) |
+| ![Logseq cloze front 1](/img/cloze-logseq-front-1.png) | ![Logseq cloze back 1](/img/cloze-logseq-back-1.png) |
+| ![Logseq cloze front 2](/img/cloze-logseq-front-2.png) | ![Logseq cloze back 2](/img/cloze-logseq-back-2.png) |
 
 ## ORG CLOZE block syntax
 
@@ -58,7 +58,7 @@ Use ORG cloze blocks when you want to hide multiple lines together, such as math
 
 | Front | Back |
 | --- | --- |
-| ![ORG cloze front](https://user-images.githubusercontent.com/49021233/182572363-2acd54f0-70eb-4d8f-89a6-9b59e5548452.png) | ![ORG cloze back](https://user-images.githubusercontent.com/49021233/182572381-0fdd1c65-175d-4a07-b728-ccea7884394e.png) |
+| ![ORG cloze front](/img/cloze-org-front.png) | ![ORG cloze back](/img/cloze-org-back.png) |
 
 ## `replaceCloze` syntax
 
@@ -75,8 +75,8 @@ Use ORG cloze blocks when you want to hide multiple lines together, such as math
 
 | Front | Back |
 | --- | --- |
-| ![replaceCloze front 1](https://user-images.githubusercontent.com/49021233/182572636-2e050021-7f71-46ba-97d4-c24aa2ea8371.png) | ![replaceCloze back 1](https://user-images.githubusercontent.com/49021233/182572656-1506687f-06af-41fc-886f-7c5ca69cc991.png) |
-| ![replaceCloze front 2](https://user-images.githubusercontent.com/49021233/182572684-429cd32b-96a5-431a-855a-f5921e843658.png) | ![replaceCloze back 2](https://user-images.githubusercontent.com/49021233/182572705-a38af007-20b9-45d9-8954-4465d9fc022a.png) |
+| ![replaceCloze front 1](/img/cloze-replace-front-1.png) | ![replaceCloze back 1](/img/cloze-replace-back-1.png) |
+| ![replaceCloze front 2](/img/cloze-replace-front-2.png) | ![replaceCloze back 2](/img/cloze-replace-back-2.png) |
 
 ## Tips
 

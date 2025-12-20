@@ -13,7 +13,7 @@ Image Occlusion lets you create cards that hide parts of an image to test your k
 The plugin provides an in-built Image Occlusion Editor to make these cards. It can be accessed by right-clicking the bullet of the Logseq block containing an image.
 
 <GifPlayer
-  gif="https://github.com/debanjandhar12/logseq-anki-sync/assets/49021233/c9df02f9-3fa9-495e-9d45-131afba83721"
+  gif="/logseq-anki-sync/img/image-occlusion-editor-demo.gif"
   alt="Image occlusion editor demo"
 />
 
