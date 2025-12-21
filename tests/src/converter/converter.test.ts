@@ -1,7 +1,7 @@
 import "@logseq/libs"
 import * as cheerio from "cheerio";
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
-import { convertToHTMLFile } from "../../src/logseq/LogseqToHtmlConverter";
+import { convertToHTMLFile } from "../../../src/logseq/LogseqToHtmlConverter";
 import {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 
 describe("Basic Markdown Test (no references)", () => {

@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeAll } from 'vitest';
 import {
     getTemplateMediaFiles
-} from '../../src/anki-template/AnkiCardTemplates';
+} from '../../../src/anki-template/AnkiCardTemplates';
 
 describe('Anki Card Templates JavaScript Build Tests', () => {
     let templateMediaFiles: ReturnType<typeof getTemplateMediaFiles>;
