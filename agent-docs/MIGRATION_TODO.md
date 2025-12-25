@@ -80,3 +80,5 @@ Also, add a suggestion section which should mention:
 - Workflow should use lts ubuntu image with node 22
 
 Also, analze current tests and mention actionables for above approach and any differences in ideology.
+-------------------------------
+Please implement agent-docs/TESTING.md workflow and test your implementation with gh act.
