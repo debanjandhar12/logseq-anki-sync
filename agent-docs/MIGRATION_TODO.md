@@ -82,3 +82,7 @@ Also, add a suggestion section which should mention:
 Also, analze current tests and mention actionables for above approach and any differences in ideology.
 -------------------------------
 Please implement agent-docs/TESTING.md workflow and test your implementation with gh act.
+
+For this, I have prepared a sample-test.test.ts and setup.ts is already modified by me. I have also comment out rest of test files as our main purpose is to get sample-test to pass. Rest of files will be uncommented and modified later by ME.
+
+Please focus on creating the testing workflow and getting it to work.

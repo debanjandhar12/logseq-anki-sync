@@ -1,0 +1,181 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: '9'
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Download Logseq
+        run: |
+          wget https://github.com/debanjandhar12/logseq/releases/download/test1/Logseq-linux-x64-0.11.0.AppImage -O logseq.AppImage
+          chmod +x logseq.AppImage
+      
+      - name: Setup Logseq API Server Config
+        run: |
+          mkdir -p ~/.config/Logseq
+          cat > ~/.config/Logseq/configs.edn << EOF
+          {:server/autostart true
+           :server/host "127.0.0.1"
+           :server/port 12315
+           :server/tokens [{:value "${{ secrets.LOGSEQ_API_TOKEN }}"}]}
+          EOF
+      
+      - name: Setup Test Graph
+        run: |
+          mkdir -p ~/logseq/graphs
+          cp -r tests/graphs/LAS_TEST_DB ~/logseq/graphs/
+      
+      - name: Install Xvfb and FUSE
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb fuse libfuse2 libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libappindicator3-1 libsecret-1-0 libgbm1 libasound2 libegl1 libxkbcommon0 libxcb-xinerama0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0
+      
+      - name: Start Logseq
+        run: |
+          ./logseq.AppImage --appimage-extract > /dev/null
+          cd squashfs-root
+          
+          # Test if Logseq binary exists and is executable
+          ls -la ./Logseq
+          file ./Logseq
+          
+          # Try to run Logseq directly first to see immediate errors
+          echo "Testing Logseq binary..."
+          ./Logseq --version 2>&1 || echo "Version check failed"
+          
+          # Start Logseq with xvfb, redirect both stdout and stderr
+          echo "Starting Logseq with xvfb..."
+          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
+            ./Logseq --no-sandbox --disable-gpu --verbose 2>&1 | tee ../logseq.log &
+          LOGSEQ_PID=$!
+          echo $LOGSEQ_PID > ../logseq.pid
+          cd ..
+          
+          # Give it time to start
+          sleep 5
+          
+          # Check if process is running
+          if ! ps -p $LOGSEQ_PID > /dev/null 2>&1; then
+            echo "Logseq process died. Log size: $(wc -c < logseq.log 2>/dev/null || echo 0)"
+            echo "Log contents:"
+            cat logseq.log 2>/dev/null || echo "No log file"
+            echo "Checking squashfs-root for errors..."
+            ls -la squashfs-root/ | head -20
+            exit 1
+          fi
+          
+          # Wait for server to start
+          echo "Waiting for Logseq API server..."
+          timeout 120 bash -c 'until [ -s logseq.log ] && grep -qE "(Server listening|API server|server started|watch-dir|:12315)" logseq.log; do echo "Still waiting... log size: $(wc -c < logseq.log)"; sleep 3; done' || {
+            echo "Timeout waiting for Logseq. Log contents:"
+            cat logseq.log
+            echo "Process status:"
+            ps aux | grep -i logseq || true
+            exit 1
+          }
+          
+          echo "Logseq started successfully"
+          tail -20 logseq.log
+          sleep 5
+      
+      - name: Setup Anki
+        run: |
+          # Install xdg-utils for Anki installer
+          sudo apt-get install -y xdg-utils
+          
+          # Download and install Anki 2.1.66 Qt5 version (more compatible)
+          wget https://github.com/ankitects/anki/releases/download/2.1.66/anki-2.1.66-linux-qt5.tar.zst -O anki.tar.zst
+          tar xaf anki.tar.zst
+          cd anki-2.1.66-linux-qt5
+          sudo ./install.sh
+          cd ..
+      
+      - name: Install AnkiConnect
+        run: |
+          # Install AnkiConnect addon
+          mkdir -p ~/.local/share/Anki2/addons21/2055492159
+          wget https://ankiweb.net/shared/download/2055492159?v=2.1 -O AnkiConnect.ankiaddon
+          unzip AnkiConnect.ankiaddon -d ~/.local/share/Anki2/addons21/2055492159/
+          
+          # Configure AnkiConnect
+          cat > ~/.local/share/Anki2/addons21/2055492159/config.json << 'EOFANKI'
+          {
+              "apiKey": null,
+              "webBindAddress": "0.0.0.0",
+              "webBindPort": 8765,
+              "webCorsOriginList": ["*"]
+          }
+          EOFANKI
+          
+          # Create meta.json
+          cat > ~/.local/share/Anki2/addons21/2055492159/meta.json << 'EOFANKI'
+          {
+            "name": "AnkiConnect",
+            "disabled": false
+          }
+          EOFANKI
+      
+      - name: Start Anki
+        run: |
+          
+          export QT_QPA_PLATFORM=offscreen
+          
+          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
+            /usr/local/share/anki/anki -l en > anki.log 2>&1 &
+          echo $! > anki.pid
+          
+          # Wait for AnkiConnect
+          timeout 60 bash -c 'until curl -s http://localhost:8765 > /dev/null; do sleep 1; done' || {
+            echo "Anki/AnkiConnect failed to start. Log contents:"
+            cat anki.log
+            exit 1
+          }
+          
+          # Verify AnkiConnect
+          curl -X POST http://localhost:8765 -d '{"action":"version","version":6}'
+      
+      - name: Run Tests
+        run: pnpm test --run
+        env:
+          LOGSEQ_API_SERVER: http://127.0.0.1:12315
+          LOGSEQ_API_TOKEN: ${{ secrets.LOGSEQ_API_TOKEN }}
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f logseq.pid ]; then
+            kill $(cat logseq.pid) || true
+          fi
+          if [ -f anki.pid ]; then
+            kill $(cat anki.pid) || true
+          fi
+      
+      - name: Upload Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: |
+            logseq.log
+            anki.log
