@@ -37,9 +37,12 @@ jobs:
           cat > ~/.config/Logseq/configs.edn << EOF
           {:server/autostart true
            :server/host "127.0.0.1"
-           :server/port 12315
-           :server/tokens [{:value "${{ secrets.LOGSEQ_API_TOKEN }}"}]}
+           :server/port "12315"
+           :server/tokens [{:name "", :value "${{ secrets.LOGSEQ_API_TOKEN }}"}]}
           EOF
+          
+          # Ensure .logseq/config exists to satisfy watch-dir
+          mkdir -p ~/.logseq/config
       
       - name: Setup Test Graph
         run: |
@@ -49,7 +52,7 @@ jobs:
       - name: Install Xvfb and FUSE
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb fuse libfuse2 libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libappindicator3-1 libsecret-1-0 libgbm1 libasound2 libegl1 libxkbcommon0 libxcb-xinerama0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0
+          sudo apt-get install -y xvfb fuse libfuse2 libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libappindicator3-1 libsecret-1-0 libgbm1 libasound2 libegl1 libxkbcommon0 libxcb-xinerama0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 dbus dbus-x11 xdg-utils
       
       - name: Start Logseq
         run: |
@@ -60,12 +63,20 @@ jobs:
           ls -la ./Logseq
           file ./Logseq
           
-          # Try to run Logseq directly first to see immediate errors
-          echo "Testing Logseq binary..."
-          ./Logseq --version 2>&1 || echo "Version check failed"
+          # Generate machine ID for dbus
+          sudo mkdir -p /var/lib/dbus
+          sudo dbus-uuidgen > /var/lib/dbus/machine-id
+          mkdir -p /run/dbus
           
           # Start Logseq with xvfb, redirect both stdout and stderr
           echo "Starting Logseq with xvfb..."
+          eval $(dbus-launch --sh-syntax)
+          export DBUS_SESSION_BUS_ADDRESS
+          export DBUS_SESSION_BUS_PID
+          
+          # Start system dbus daemon loosely
+          sudo dbus-daemon --system --fork || true
+
           xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
             ./Logseq --no-sandbox --disable-gpu --verbose 2>&1 | tee ../logseq.log &
           LOGSEQ_PID=$!
@@ -98,65 +109,19 @@ jobs:
           echo "Logseq started successfully"
           tail -20 logseq.log
           sleep 5
-      
-      - name: Setup Anki
-        run: |
-          # Install xdg-utils for Anki installer
-          sudo apt-get install -y xdg-utils
           
-          # Download and install Anki 2.1.66 Qt5 version (more compatible)
-          wget https://github.com/ankitects/anki/releases/download/2.1.66/anki-2.1.66-linux-qt5.tar.zst -O anki.tar.zst
-          tar xaf anki.tar.zst
-          cd anki-2.1.66-linux-qt5
-          sudo ./install.sh
-          cd ..
-      
-      - name: Install AnkiConnect
-        run: |
-          # Install AnkiConnect addon
-          mkdir -p ~/.local/share/Anki2/addons21/2055492159
-          wget https://ankiweb.net/shared/download/2055492159?v=2.1 -O AnkiConnect.ankiaddon
-          unzip AnkiConnect.ankiaddon -d ~/.local/share/Anki2/addons21/2055492159/
-          
-          # Configure AnkiConnect
-          cat > ~/.local/share/Anki2/addons21/2055492159/config.json << 'EOFANKI'
-          {
-              "apiKey": null,
-              "webBindAddress": "0.0.0.0",
-              "webBindPort": 8765,
-              "webCorsOriginList": ["*"]
-          }
-          EOFANKI
-          
-          # Create meta.json
-          cat > ~/.local/share/Anki2/addons21/2055492159/meta.json << 'EOFANKI'
-          {
-            "name": "AnkiConnect",
-            "disabled": false
-          }
-          EOFANKI
-      
-      - name: Start Anki
-        run: |
-          
-          export QT_QPA_PLATFORM=offscreen
-          
-          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
-            /usr/local/share/anki/anki -l en > anki.log 2>&1 &
-          echo $! > anki.pid
-          
-          # Wait for AnkiConnect
-          timeout 60 bash -c 'until curl -s http://localhost:8765 > /dev/null; do sleep 1; done' || {
-            echo "Anki/AnkiConnect failed to start. Log contents:"
-            cat anki.log
+          # Verify API is responding
+          echo "Verifying API endpoint..."
+          timeout 30 bash -c 'until curl -s http://127.0.0.1:12315 > /dev/null 2>&1; do echo "Waiting for API..."; sleep 2; done' || {
+            echo "Logseq API not responding. Log contents:"
+            cat logseq.log
             exit 1
           }
-          
-          # Verify AnkiConnect
-          curl -X POST http://localhost:8765 -d '{"action":"version","version":6}'
+          echo "API is ready"
       
+
       - name: Run Tests
-        run: pnpm test --run
+        run: pnpm vitest run
         env:
           LOGSEQ_API_SERVER: http://127.0.0.1:12315
           LOGSEQ_API_TOKEN: ${{ secrets.LOGSEQ_API_TOKEN }}
@@ -167,15 +132,10 @@ jobs:
           if [ -f logseq.pid ]; then
             kill $(cat logseq.pid) || true
           fi
-          if [ -f anki.pid ]; then
-            kill $(cat anki.pid) || true
-          fi
       
       - name: Upload Logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: test-logs
-          path: |
-            logseq.log
-            anki.log
+          path: logseq.log

@@ -107,59 +107,7 @@ if [ $? -ne 0 ]; then
 fi
 ```
 
-#### 6. Setup Anki and AnkiConnect
-
-**Install Anki:**
-```bash
-wget https://github.com/ankitects/anki/releases/download/25.09/anki-launcher-25.09-linux.tar.zst -O anki.tar.zst
-tar xaf anki.tar.zst
-cd anki-launcher-25.09-linux
-sudo ./install.sh
-cd ..
-```
-
-**Note:** The downloaded filename may vary. Update the filename in subsequent commands accordingly.
-
-**Install AnkiConnect Addon:**
-```bash
-mkdir -p ~/.local/share/Anki2/addons21/2055492159
-wget https://ankiweb.net/shared/download/2055492159?v=2.1 -O AnkiConnect.ankiaddon
-unzip AnkiConnect.ankiaddon -d ~/.local/share/Anki2/addons21/2055492159/
-
-# Configure for CI (allow all connections)
-cat > ~/.local/share/Anki2/addons21/2055492159/config.json << 'EOF'
-{
-    "apiKey": null,
-    "webBindAddress": "0.0.0.0",
-    "webBindPort": 8765,
-    "webCorsOriginList": ["*"]
-}
-EOF
-
-# Create meta.json
-cat > ~/.local/share/Anki2/addons21/2055492159/meta.json << 'EOF'
-{
-  "name": "AnkiConnect",
-  "disabled": false
-}
-EOF
-```
-
-**Start Anki:**
-```bash
-xvfb-run --auto-servernum anki &
-ANKI_PID=$!
-
-# Wait for AnkiConnect
-timeout 30 bash -c 'until curl -s http://localhost:8765 > /dev/null; do sleep 1; done'
-
-# Verify AnkiConnect is responding
-curl -X POST http://localhost:8765 -d '{"action":"version","version":6}'
-```
-
-#### 7. Run Tests
-
-#### 7. Run Tests
+#### 6. Run Tests
 
 ```bash
 pnpm test --run
@@ -171,12 +119,11 @@ pnpm test --run
 - Tests read these from `process.env` via `test/setup.ts`
 - Availability flags (`globalThis.isLogseqAvailable`, `globalThis.isAnkiAvailable`) are set by runtime detection
 
-#### 8. Cleanup
+#### 7. Cleanup
 
 ```bash
 # Kill processes
 kill $LOGSEQ_PID || true
-kill $ANKI_PID || true
 
 # Archive logs (for CI artifacts)
 # Logs: logseq.log
@@ -280,53 +227,6 @@ jobs:
             exit 1
           }
       
-      - name: Setup Anki
-        run: |
-          # Download and install Anki
-          wget https://github.com/ankitects/anki/releases/download/25.09/anki-launcher-25.09-linux.tar.zst -O anki.tar.zst
-          tar xaf anki.tar.zst
-          cd anki-launcher-25.09-linux
-          sudo ./install.sh
-          cd ..
-          
-          # Install AnkiConnect addon
-          mkdir -p ~/.local/share/Anki2/addons21/2055492159
-          wget https://ankiweb.net/shared/download/2055492159?v=2.1 -O AnkiConnect.ankiaddon
-          unzip AnkiConnect.ankiaddon -d ~/.local/share/Anki2/addons21/2055492159/
-          
-          # Configure AnkiConnect
-          cat > ~/.local/share/Anki2/addons21/2055492159/config.json << 'EOFANKI'
-          {
-              "apiKey": null,
-              "webBindAddress": "0.0.0.0",
-              "webBindPort": 8765,
-              "webCorsOriginList": ["*"]
-          }
-          EOFANKI
-          
-          # Create meta.json
-          cat > ~/.local/share/Anki2/addons21/2055492159/meta.json << 'EOFANKI'
-          {
-            "name": "AnkiConnect",
-            "disabled": false
-          }
-          EOFANKI
-      
-      - name: Start Anki
-        run: |
-          xvfb-run --auto-servernum anki > anki.log 2>&1 &
-          echo $! > anki.pid
-          
-          # Wait for AnkiConnect
-          timeout 30 bash -c 'until curl -s http://localhost:8765 > /dev/null; do sleep 1; done' || {
-            echo "Anki/AnkiConnect failed to start. Log contents:"
-            cat anki.log
-            exit 1
-          }
-          
-          # Verify AnkiConnect
-          curl -X POST http://localhost:8765 -d '{"action":"version","version":6}'
-      
       - name: Run Tests
         run: pnpm test --run
         env:
@@ -339,18 +239,13 @@ jobs:
           if [ -f logseq.pid ]; then
             kill $(cat logseq.pid) || true
           fi
-          if [ -f anki.pid ]; then
-            kill $(cat anki.pid) || true
-          fi
       
       - name: Upload Logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: test-logs
-          path: |
-            logseq.log
-            anki.log
+          path: logseq.log
 ```
 
 **Required GitHub Secrets:**
@@ -401,11 +296,9 @@ jobs:
 ### Performance Estimates
 
 - **Logseq Download:** ~2-3 minutes (first run), ~10 seconds (cached)
-- **Anki Download:** ~1-2 minutes (first run), ~5 seconds (cached)
 - **Logseq Startup:** ~10-20 seconds
-- **Anki Startup:** ~5-10 seconds
 - **Test Execution:** ~30-60 seconds (current test suite)
-- **Total CI Time:** ~10-15 minutes per run
+- **Total CI Time:** ~5-10 minutes per run
 
 ## Testing Best Practices
 
@@ -502,11 +395,11 @@ gh act --container-architecture linux/amd64 -P ubuntu-22.04=catthehacker/ubuntu:
 
 ### Future Enhancements
 
-1. **Anki Integration:** Mock AnkiConnect or run Anki in CI for full E2E tests
-2. **Visual Regression Testing:** Screenshot comparison for UI components
-3. **Performance Benchmarks:** Track sync performance over time
-4. **Test Coverage Reports:** Integrate with Codecov or Coveralls
-5. **Automated Graph Updates:** Script to regenerate test graphs from templates
+1. **Visual Regression Testing:** Screenshot comparison for UI components
+2. **Performance Benchmarks:** Track sync performance over time
+3. **Test Coverage Reports:** Integrate with Codecov or Coveralls
+4. **Automated Graph Updates:** Script to regenerate test graphs from templates
+5. **Anki CI Integration:** Investigate alternative approaches for automated Anki testing (e.g., mocking AnkiConnect)
 
 ### Differences from Current Approach
 
@@ -528,42 +421,31 @@ gh act --container-architecture linux/amd64 -P ubuntu-22.04=catthehacker/ubuntu:
 4. **Transparency:** CI logs provide visibility into test execution
 5. **Scalability:** Foundation for expanding test coverage without manual overhead
 
-## Anki and AnkiConnect Setup
+## Anki Testing
 
-Anki and AnkiConnect are set up as part of the main CI workflow (see step 6 in Workflow Steps above).
+**Status:** Manual testing only
 
-### Configuration Details
+Anki integration tests are NOT automated in CI/CD due to technical challenges with running Anki in headless environments. Developers must run Anki-dependent tests manually on their local machines.
 
-**AnkiConnect Default Config:**
-```json
-{
-    "apiKey": null,
-    "apiLogPath": null,
-    "webBindAddress": "127.0.0.1",
-    "webBindPort": 8765,
-    "webCorsOriginList": ["http://localhost"],
-    "ignoreOriginList": []
-}
-```
+### Manual Testing Workflow
 
-**CI Configuration (Modified):**
-- `webBindAddress`: `"0.0.0.0"` - Accept connections from any interface
-- `webCorsOriginList`: `["*"]` - Allow CORS from all origins
-- `apiKey`: `null` - No authentication required
+1. **Install Anki and AnkiConnect** (see Installation section in README.md)
+2. **Start Anki** with AnkiConnect running
+3. **Run tests locally:**
+   ```bash
+   pnpm test --run
+   ```
 
-**Security Note:** Using `"0.0.0.0"` and `"*"` is acceptable in isolated CI environments but should NOT be used in production or on developer machines exposed to networks.
+Tests will automatically detect Anki availability via `globalThis.isAnkiAvailable` and execute Anki-dependent tests when available.
 
-### Testing with Anki
+### Why Manual Testing?
 
-Tests can check if Anki is available and skip if not:
+Despite best efforts, Anki failed to start reliably in GitHub Actions CI environment. Issues encountered:
+- Qt platform compatibility in headless environments
+- AnkiConnect initialization timing issues
+- Resource constraints in containerized runners
 
-```typescript
-test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isAnkiAvailable)('should sync to Anki', async () => {
-  // Test implementation
-});
-```
-
-**Note:** Both `globalThis.isLogseqAvailable` and `globalThis.isAnkiAvailable` are set in `test/setup.ts` using runtime detection.
+**Decision:** Focus CI on Logseq integration testing (which works reliably), and handle Anki testing the same way as Logseq MD graph testing - manually by developers when working on Anki-specific features.
 
 ## logseqAvailable Flag Usage
 
@@ -752,11 +634,11 @@ wget "$ANKI_CONNECT_URL" -O AnkiConnect.ankiaddon
 
 ## Conclusion
 
-The proposed automated testing approach is **highly feasible** and provides significant improvements over the current manual testing workflow. The main trade-offs are:
+The automated testing approach for Logseq integration is **production-ready** and provides significant improvements over manual testing. The main trade-offs are:
 
-- **Pros:** Automation, reproducibility, CI integration, scalability
-- **Cons:** Increased CI time/cost, Logseq version dependency, MD graph limitation
+- **Pros:** Automation, reproducibility, CI integration, scalability for Logseq tests
+- **Cons:** Increased CI time/cost, Logseq version dependency, MD graph limitation, Anki tests remain manual
 
-The benefits far outweigh the costs, especially as the project grows and requires more rigorous testing. The approach is production-ready and can be implemented incrementally without disrupting existing development workflows.
+**Anki Testing:** Due to technical challenges running Anki in headless CI environments, Anki integration tests are handled manually by developers (similar to MD graph testing). This pragmatic approach focuses CI resources on reliable Logseq testing while maintaining full test coverage through manual execution.
 
-**Recommendation:** Proceed with implementation following the phased migration strategy outlined above.
+**Recommendation:** The current implementation successfully automates Logseq DB graph testing in CI. Anki test automation can be revisited in the future if reliable headless solutions emerge.
