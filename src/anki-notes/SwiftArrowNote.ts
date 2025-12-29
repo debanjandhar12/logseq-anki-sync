@@ -4,7 +4,7 @@ import {escapeClozesAndMacroDelimiters, getRandomUnicodeString, safeReplace} fro
 import _ from "lodash";
 import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
-import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHtmlConverter";
+import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHTMLConverterProxy";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 export class SwiftArrowNote extends Note {

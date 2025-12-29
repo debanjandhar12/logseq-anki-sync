@@ -10,7 +10,7 @@ import {
 import _ from "lodash";
 import {LOGSEQ_PLUGIN_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
-import {HTMLFile, convertToHTMLFile} from "../logseq/LogseqToHtmlConverter";
+import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHTMLConverterProxy";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 

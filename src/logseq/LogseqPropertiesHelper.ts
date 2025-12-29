@@ -8,7 +8,7 @@ import { BlockEntity, BlockIdentity, EntityID, PageEntity, PageIdentity } from "
  * This class handles fetching and property prefix stripping automatically.
  */
 export class LogseqPropertiesHelper {
-    private static stripPropertyPrefixes(properties: Record<string, any>): Record<string, any> {
+    public static stripPropertyPrefixes(properties: Record<string, any>): Record<string, any> {
         if (!properties) return properties;
         
         const strippedProperties: Record<string, any> = {};

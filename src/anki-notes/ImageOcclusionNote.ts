@@ -18,7 +18,8 @@ import {
     ORG_PROPERTIES_REGEXP,
 } from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
-import {convertToHTMLFile, HTMLFile, processProperties} from "../logseq/LogseqToHtmlConverter";
+import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHTMLConverterProxy";
+import {processProperties} from "../logseq/LogseqToHtmlConverter";
 import {
     OcclusionData,
     showOcclusionEditor,

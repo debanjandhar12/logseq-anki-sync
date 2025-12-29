@@ -1,6 +1,6 @@
 import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { convertToHTMLFile } from "../../logseq/LogseqToHtmlConverter";
+import { convertToHTMLFile } from "../../logseq/LogseqToHTMLConverterProxy";
 import _ from "lodash";
 
 export class ExtraFieldParser {

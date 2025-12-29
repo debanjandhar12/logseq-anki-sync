@@ -34,7 +34,6 @@ import {LogseqProxy} from "./LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
 import {edn} from "@yellowdig/cljs-tools";
 import path from "path-browserify";
-import objectHash from "../utils/objectHashOptimized";
 import {WindowParentBridge} from "./WindowParentBridge";
 
 const mldocsOptions = {
@@ -56,41 +55,13 @@ export interface HTMLFile {
     tags: Set<string> | Array<string>;
 }
 
-const convertToHTMLFileCache = new Map<string, HTMLFile>();
-if (typeof window !== 'undefined') {
-    WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
-        const { debug } = LogseqProxy.Settings.getPluginSettings();
-        if (debug?.includes("LogseqToHtmlConverter.ts")) {
-            console.log("[LogseqToHtmlConverter] Clearing HTML conversion cache");
-        }
-        convertToHTMLFileCache.clear();
-    });
-}
+
 
 export async function convertToHTMLFile(
     content: string,
     format = "markdown",
     opts: { processRefEmbeds?: boolean; displayTags?: boolean } = { processRefEmbeds: true, displayTags: false }
 ): Promise<HTMLFile> {
-    if (
-        typeof window !== 'undefined' &&
-        convertToHTMLFileCache.has(
-            String(objectHash({
-                content,
-                format,
-                processRefEmbeds: opts.processRefEmbeds,
-                displayTags: opts.displayTags
-            })),
-        )
-    )
-        return convertToHTMLFileCache.get(
-            String(objectHash({
-                content,
-                format,
-                processRefEmbeds: opts.processRefEmbeds,
-                displayTags: opts.displayTags
-            })),
-        );
 
     let resultContent = content.trim(),
         resultAssets = new Set<string>(),
@@ -299,15 +270,6 @@ export async function convertToHTMLFile(
 
     if (debug?.includes("LogseqToHtmlConverter.ts"))
         console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
-    convertToHTMLFileCache.set(
-        String(objectHash({
-            content,
-            format,
-            processRefEmbeds: opts.processRefEmbeds,
-            displayTags: opts.displayTags
-        })),
-        {html: resultContent, assets: resultAssets, tags: resultTags},
-    );
     return {html: resultContent, assets: resultAssets, tags: resultTags};
 }
 

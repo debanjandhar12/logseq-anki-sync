@@ -1,6 +1,6 @@
 import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { convertToHTMLFile } from "../../logseq/LogseqToHtmlConverter";
+import { convertToHTMLFile } from "../../logseq/LogseqToHTMLConverterProxy";
 import { escapeClozesAndMacroDelimiters } from "../../utils/utils";
 import _ from "lodash";
 
