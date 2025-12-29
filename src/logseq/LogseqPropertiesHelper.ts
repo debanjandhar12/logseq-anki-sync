@@ -6,6 +6,8 @@ import { BlockEntity, BlockIdentity, EntityID, PageEntity, PageIdentity } from "
  * In Logseq DB, properties are namespaced (e.g., :user.property/deck-bavZ5684)
  * and must be fetched separately via getBlockProperties/getPageProperties APIs.
  * This class handles fetching and property prefix stripping automatically.
+ * It also appends properties and tags inside content of blocks so that
+ * content behavior is similar to non db version.
  */
 export class LogseqPropertiesHelper {
     public static stripPropertyPrefixes(properties: Record<string, any>): Record<string, any> {
@@ -79,11 +81,29 @@ export class LogseqPropertiesHelper {
         const block = await logseq.Editor.getBlock(srcBlock, opts);
         if (!block) return null;
         
-        const properties = await logseq.Editor.getBlockProperties(block.uuid);
-        if (properties) {
-            const strippedProperties = this.stripPropertyPrefixes(properties);
-            block.properties = { ...strippedProperties, ...block.properties };
-        }
+        const isDbGraph = await logseq.App.checkCurrentIsDbGraph();
+        
+        const processBlock = async (b: BlockEntity) => {
+            if (!b || !b.uuid) return;
+            // Fetch and add properties for parent block and children when includeChildren is true
+            const properties = await logseq.Editor.getBlockProperties(b.uuid);
+            if (properties) {
+                b.properties = { ...this.stripPropertyPrefixes(properties), ...b.properties };
+            }
+            // For db graphs, add properties and tags to content for parent block and children
+            // This is to maintain backward compatibility with markdown version.
+            if (isDbGraph) {
+                const props = Object.entries(b.properties || {})
+                    .filter(([key]) => !key.startsWith('logseq.') && !key.startsWith('id'))
+                    .map(([key, value]) => `${key}:: ${value}`).join('\n');
+                const tags = (b.properties?.tags || []).map(tag => `#${tag}`).join(' ');
+                b.content = (props ? props + '\n' : '') + (b.content || '') + (tags ? ' ' + tags : '');
+            }
+            if (b.children && opts.includeChildren) {
+                for (const child of b.children) await processBlock(child as BlockEntity);
+            }
+        };
+        await processBlock(block);
         
         return block;
     }

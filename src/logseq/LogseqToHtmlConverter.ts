@@ -288,7 +288,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     block_props["hl-type"] = block_props["hl-type"] || block_props["hlType"];
     block_props["hl-page"] = block_props["hl-page"] || block_props["hlPage"];
     block_props["hl-stamp"] = block_props["hl-stamp"] || block_props["hlStamp"];
-    block_props["hl-color"] = block_props["hl-color"] || block_props["hlColor"];
+    block_props["hl-color"] = block_props["hl-color"] || block_props["hlColor"] || block_props["background-color"];
     const annotationSymbolMap = {'yellow':'🟡', 'green':'🟢', 'blue':'🔵', 'red':'🔴', 'purple':'🟣'};
     if (block_props["ls-type"] == "annotation" && block_props["hl-type"] == "area") {
         // Image annotation

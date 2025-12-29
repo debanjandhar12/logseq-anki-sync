@@ -31,7 +31,6 @@ export namespace LogseqProxy {
             let block = null;
             await getLogseqLock.acquireAsync();
             try {
-                // Use helper method to fetch block with properties
                 block = await LogseqPropertiesHelper.getBlock(srcBlock, opts);
             } catch (e) {
                 console.error(e);
