@@ -96,7 +96,7 @@ export class LogseqPropertiesHelper {
                 const props = Object.entries(b.properties || {})
                     .filter(([key]) => !key.startsWith('logseq.') && !key.startsWith('id'))
                     .map(([key, value]) => `${key}:: ${value}`).join('\n');
-                const tags = (b.properties?.tags || []).map(tag => `#${tag}`).join(' ');
+                const tags = (b.properties?.tags || []).map(tag => `#[[${tag}]]`).join(' ');
                 b.content = (props ? props + '\n' : '') + (b.content || '') + (tags ? ' ' + tags : '');
             }
             if (b.children && opts.includeChildren) {

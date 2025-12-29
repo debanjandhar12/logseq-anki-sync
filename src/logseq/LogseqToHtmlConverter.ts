@@ -216,26 +216,29 @@ export async function convertToHTMLFile(
             "Error: Image Found! Image should have been processed by processLink already and be hidden from cheerio.",
         );
     });
-    const graphName = (await logseq.App.getCurrentGraph())?.name;
-    $("a.tag").each(function (i, elm) {
-        // Handle tags
-        let tagName = $(elm).text(),
-            afterText = "";
-        // Handle tags with [[ at start and ]] at end
-        if (tagName.match(/\[\[(.*?)\]\]/)) tagName = tagName.match(/\[\[(.*?)\]\]/)[1];
-        // Sometimes special characters get appended to tag name. Hence, we need to put them after tag.
-        if (tagName.match(new RegExp(`.*?([${specialChars}]+)`, ""))) {
-            afterText = tagName.match(new RegExp(`.*?([${specialChars}]+)`, ""))[1];
-            tagName = tagName.replace(new RegExp(`([${specialChars}]+)$`, ""), "");
-        }
-        // Add tags to resultTags and add logseq page link to the tag
-        resultTags.add(tagName);
-        $(elm).replaceWith(
-            `<a class="tag" data-ref="${tagName}" href="logseq://graph/${encodeURIComponent(
-                graphName,
-            )}?page=${encodeURIComponent(tagName)}">${opts.displayTags ? `#${tagName}` : ''}</a>${afterText}`,
-        );
-    });
+    const $tagElems = $("a.tag");
+    if ($tagElems.length > 0) {
+        const graphName = (await LogseqProxy.App.getCurrentGraph())?.name;
+        $tagElems.each(function (i, elm) {
+            // Handle tags
+            let tagName = $(elm).text(),
+                afterText = "";
+            // Handle tags with [[ at start and ]] at end
+            if (tagName.match(/\[\[(.*?)\]\]/)) tagName = tagName.match(/\[\[(.*?)\]\]/)[1];
+            // Sometimes special characters get appended to tag name. Hence, we need to put them after tag.
+            if (tagName.match(new RegExp(`.*?([${specialChars}]+)`, ""))) {
+                afterText = tagName.match(new RegExp(`.*?([${specialChars}]+)`, ""))[1];
+                tagName = tagName.replace(new RegExp(`([${specialChars}]+)$`, ""), "");
+            }
+            // Add tags to resultTags and add logseq page link to the tag
+            resultTags.add(tagName);
+            $(elm).replaceWith(
+                `<a class="tag" data-ref="${tagName}" href="logseq://graph/${encodeURIComponent(
+                    graphName,
+                )}?page=${encodeURIComponent(tagName)}">${opts.displayTags ? `#${tagName}` : ''}</a>${afterText}`,
+            );
+        });
+    }
     $(".mathblock, .latex-environment").each(function (i, elm) {
         // Handle org math and latex-environment blocks
         let math = $(elm).html();
@@ -288,7 +291,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     block_props["hl-type"] = block_props["hl-type"] || block_props["hlType"];
     block_props["hl-page"] = block_props["hl-page"] || block_props["hlPage"];
     block_props["hl-stamp"] = block_props["hl-stamp"] || block_props["hlStamp"];
-    block_props["hl-color"] = block_props["hl-color"] || block_props["hlColor"] || block_props["background-color"];
+    block_props["hl-color"] = block_props["hl-color"] || block_props["hlColor"];
     const annotationSymbolMap = {'yellow':'🟡', 'green':'🟢', 'blue':'🔵', 'red':'🔴', 'purple':'🟣'};
     if (block_props["ls-type"] == "annotation" && block_props["hl-type"] == "area") {
         // Image annotation
@@ -415,7 +418,7 @@ async function processRefEmbeds(
             const str = getRandomUnicodeString();
             hashmap[str] = `<div class="embed-page">
                         <a href="logseq://graph/${encodeURIComponent(
-                            (await logseq.App.getCurrentGraph())?.name,
+                            (await LogseqProxy.App.getCurrentGraph())?.name,
                         )}?page=${encodeURIComponent(
                             pageName,
                         )}" class="embed-header">${pageName}</a>
@@ -432,7 +435,7 @@ async function processRefEmbeds(
             // Convert page refs
             const str = getRandomUnicodeString();
             hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
-                (await logseq.App.getCurrentGraph())?.name,
+                (await LogseqProxy.App.getCurrentGraph())?.name,
             )}?page=${encodeURIComponent(
                 pageName,
             )}" class="page-reference">${aliasContent}</a>`;
@@ -452,7 +455,7 @@ async function processRefEmbeds(
             }
             const str = getRandomUnicodeString();
             hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
-                (await logseq.App.getCurrentGraph())?.name,
+                (await LogseqProxy.App.getCurrentGraph())?.name,
             )}?page=${encodeURIComponent(pageName)}" class="page-reference">${pageName}</a>`;
             return str;
         },
@@ -465,7 +468,7 @@ async function processRefEmbeds(
             // Convert page refs
             const str = getRandomUnicodeString();
             hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
-                (await logseq.App.getCurrentGraph())?.name,
+                (await LogseqProxy.App.getCurrentGraph())?.name,
             )}?block-id=${encodeURIComponent(
                 blockUUID,
             )}" class="block-ref">${aliasContent}</a>`;
@@ -498,7 +501,7 @@ async function processRefEmbeds(
                     resultAssets.add(element);
                 });
                 hashmap[str] = `<span onclick="window.open('logseq://graph/${encodeURIComponent(
-                    (await logseq.App.getCurrentGraph())?.name,
+                    (await LogseqProxy.App.getCurrentGraph())?.name,
                 )}?block-id=${encodeURIComponent(blockUUID)}')" class="block-ref">${
                     blockRefHTMLFile.html
                 }</span>`;

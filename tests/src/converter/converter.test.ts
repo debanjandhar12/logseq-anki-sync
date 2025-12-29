@@ -64,7 +64,7 @@ describe("Basic Markdown Test (no references)", () => {
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('<code>Hello</code> <code>World</code>');
         });
-        test("Page Ref Rendering", async () => {
+        test.skipIf(!globalThis.isLogseqAvailable)("Page Ref Rendering", async () => {
             const htmlFile = await convertToHTMLFile("Hello [[Ref Test]]", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
@@ -72,7 +72,7 @@ describe("Basic Markdown Test (no references)", () => {
             expect($('a').text()).toBe('Ref Test');
             expect($('a').attr('href')).toBe(`logseq://graph/${graphName}?page=Ref%20Test`);
         });
-        test("Consecutive Page Ref Rendering - https://github.com/debanjandhar12/logseq-anki-sync/issues/101", async () => {
+        test.skipIf(!globalThis.isLogseqAvailable)("Consecutive Page Ref Rendering - https://github.com/debanjandhar12/logseq-anki-sync/issues/101", async () => {
             const htmlFile = await convertToHTMLFile("[[Ref Test]][[Ref Test]] [[Ref Test]],[[Ref Test]]", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
@@ -95,7 +95,7 @@ describe("Basic Markdown Test (no references)", () => {
             expect($('a').text()).toBe('Some notes');
             expect($('a').attr('href')).toBe('marginnote3app://note/8B11CF4A-DE3C-4A71-84G8-ODF5EE2EBO4C');
         });
-        test("Tag Rendering", async () => {
+        test.skipIf(!globalThis.isLogseqAvailable)("Tag Rendering", async () => {
             const htmlFile = await convertToHTMLFile("Hello #World", "markdown", {displayTags: true});
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
@@ -243,35 +243,6 @@ describe("Basic Markdown Test (no references)", () => {
             expect($('video').attr('src')).toEqual('video.mp4');
         });
     });
-    describe("PDF Rendering", () => {
-       test("Basic PDF rendering", async () => {
-              const htmlFile = await convertToHTMLFile("![Linux Slides 1.pdf](../assets/Linux_Slides_1_1673180335043_0.pdf)", "markdown");
-              expect(htmlFile.html.trim()).toMatchSnapshot();
-              // TODO: Add beauty to pdf links and check
-       });
-       test("PDF Text Annotation Rendering", async () => {
-          const htmlFile = await convertToHTMLFile("ls-type::annotation\nhl-page::1\nhl-color::blue\nI am pdf page content", "markdown");
-          expect(htmlFile.html.trim()).toMatchSnapshot();
-          expect(htmlFile.html.trim()).toContain('I am pdf page content');
-          expect(htmlFile.html.trim()).toContain('P1');
-          expect(htmlFile.html.trim()).toContain('🔵');
-       });
-        test("PDF Text Annotation Rendering - no color", async () => {
-            const htmlFile = await convertToHTMLFile("ls-type::annotation\nhl-page::1\nI am pdf page content", "markdown");
-            expect(htmlFile.html.trim()).toMatchSnapshot();
-            expect(htmlFile.html.trim()).toContain('I am pdf page content');
-            expect(htmlFile.html.trim()).toContain('P1');
-            expect(htmlFile.html.trim()).toContain('📌');
-        });
-       test("PDF Image Annotation Rendering", async () => {
-          const htmlFile = await convertToHTMLFile("id::65a22d2c-a245-4a3f-89cc-1b1a7b724abc\nls-type::annotation\nhl-type::area\nhl-page::1\nhl-color::blue\nhl-stamp::1673181377785\n[:span]", "markdown");
-          expect(htmlFile.html.trim()).toMatchSnapshot();
-           expect(htmlFile.assets).toContain('../assets//1_65a22d2c-a245-4a3f-89cc-1b1a7b724abc_1673181377785.png');
-           const $ = cheerio.load(htmlFile.html);
-           expect($('img').attr('src')).toEqual('1_65a22d2c-a245-4a3f-89cc-1b1a7b724abc_1673181377785.png');
-           expect(htmlFile.html.trim()).toContain('🔵');
-       });
-    });
     describe("Latex Rendering", () => {
        test("Inline Latex Rendering", async () => {
               const htmlFile = await convertToHTMLFile("This is inline latex: $\\frac{1}{2}$", "markdown");
@@ -312,6 +283,37 @@ describe("Basic Markdown Test (no references)", () => {
             expect(htmlFile.html.trim()).toMatch(/{{c1::\n(.|\n)*?\n\s*<span>}}<\/span>/g);
             expect($('.hljs').text()).toContain('class Apple;');
         });
+    });
+});
+
+
+describe("PDF Rendering cases", () => {
+    test("Basic PDF rendering", async () => {
+        const htmlFile = await convertToHTMLFile("![Linux Slides 1.pdf](../assets/Linux_Slides_1_1673180335043_0.pdf)", "markdown");
+        expect(htmlFile.html.trim()).toMatchSnapshot();
+        // TODO: Add beauty to pdf links and check
+    });
+    test("PDF Text Annotation Rendering", async () => {
+        const htmlFile = await convertToHTMLFile("ls-type::annotation\nhl-page::1\nhl-color::blue\nI am pdf page content", "markdown");
+        expect(htmlFile.html.trim()).toMatchSnapshot();
+        expect(htmlFile.html.trim()).toContain('I am pdf page content');
+        expect(htmlFile.html.trim()).toContain('P1');
+        expect(htmlFile.html.trim()).toContain('🔵');
+    });
+    test("PDF Text Annotation Rendering - no color", async () => {
+        const htmlFile = await convertToHTMLFile("ls-type::annotation\nhl-page::1\nI am pdf page content", "markdown");
+        expect(htmlFile.html.trim()).toMatchSnapshot();
+        expect(htmlFile.html.trim()).toContain('I am pdf page content');
+        expect(htmlFile.html.trim()).toContain('P1');
+        expect(htmlFile.html.trim()).toContain('📌');
+    });
+    test("PDF Image Annotation Rendering", async () => {
+        const htmlFile = await convertToHTMLFile("id::65a22d2c-a245-4a3f-89cc-1b1a7b724abc\nls-type::annotation\nhl-type::area\nhl-page::1\nhl-color::blue\nhl-stamp::1673181377785\n[:span]", "markdown");
+        expect(htmlFile.html.trim()).toMatchSnapshot();
+        expect(htmlFile.assets).toContain('../assets//1_65a22d2c-a245-4a3f-89cc-1b1a7b724abc_1673181377785.png');
+        const $ = cheerio.load(htmlFile.html);
+        expect($('img').attr('src')).toEqual('1_65a22d2c-a245-4a3f-89cc-1b1a7b724abc_1673181377785.png');
+        expect(htmlFile.html.trim()).toContain('🔵');
     });
 });
 

@@ -221,3 +221,5 @@ exports[`Logseq Block References Rendering > Block Reference Rendering > Basic b
 `;
 
 exports[`Logseq Block References Rendering > Block Reference Rendering > Failed block ref rendering 1`] = `"<span>Block Ref: <span class="failed-block-ref">wrong-block-ref</span></span>"`;
+
+exports[`PDF Rendering cases > Basic PDF rendering 1`] = `"<span><a href="#-2e--2e--2f-assets-2f-Linux_Slides_1_1673180335043_0-2e-pdf">../assets/Linux_Slides_1_1673180335043_0.pdf</a></span>"`;

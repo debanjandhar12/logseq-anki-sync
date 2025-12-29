@@ -171,6 +171,10 @@ export namespace LogseqProxy {
             return false;
         });
 
+        static getCurrentGraph = pMemoize(async () => {
+            return await logseq.App.getCurrentGraph();
+        });
+
         static registeredGraphChangeListeners: Array<(e: any) => void> = [];
         static registerGraphChangeListener(listener: (e: any) => void): void {
             this.registeredGraphChangeListeners.push(listener);
@@ -211,6 +215,7 @@ export namespace LogseqProxy {
             pMemoizeClear(LogseqProxy.Editor.getPage);
             pMemoizeClear(LogseqProxy.Assets.listFilesOfCurrentGraph);
             pMemoizeClear(LogseqProxy.App.checkCurrentIsDbGraph);
+            pMemoizeClear(LogseqProxy.App.getCurrentGraph);
         });
     }
 }

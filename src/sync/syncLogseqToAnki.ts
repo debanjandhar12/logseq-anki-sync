@@ -111,7 +111,7 @@ export class LogseqToAnkiSync {
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification,
     ): Promise<void> {
-        const graphPath = (await logseq.App.getCurrentGraph()).path;
+        const graphPath = (await LogseqProxy.App.getCurrentGraph()).path;
         const operation = new CreateNotesOperation();
         const result = await operation.execute(
             toCreateNotes,
@@ -130,7 +130,7 @@ export class LogseqToAnkiSync {
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification,
     ): Promise<void> {
-        const graphPath = (await logseq.App.getCurrentGraph()).path;
+        const graphPath = (await LogseqProxy.App.getCurrentGraph()).path;
         const operation = new UpdateNotesOperation();
         const result = await operation.execute(
             toUpdateNotes,
@@ -171,7 +171,7 @@ export class LogseqToAnkiSync {
     }
 
     private async getGraphName(): Promise<string> {
-        return (await logseq.App.getCurrentGraph())?.name || "Default";
+        return (await LogseqProxy.App.getCurrentGraph())?.name || "Default";
     }
 
     private getModelName(): string {
