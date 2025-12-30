@@ -317,21 +317,6 @@ describe("PDF Rendering cases", () => {
     });
 });
 
-describe("Complex Markdown / Org Mode Rendering Cases", () => {
-    test("Math inside table", async () => {
-        const htmlFile = await convertToHTMLFile("| Hello | $\\frac{1}{2}$ |", "markdown");
-        expect(htmlFile.html.trim()).toMatchSnapshot();
-        const $ = cheerio.load(htmlFile.html);
-        expect($('table').text()).toContain('\\(\\frac{1}{2}\\)');
-    });
-    test("https://github.com/debanjandhar12/logseq-anki-sync/issues/248", async () => {
-        const htmlFile = await convertToHTMLFile('```mips\nlw $t0, 4($gp) # fetch N\nmult $t0, $t0, $t0 # N*N\nlw $t1, 4($gp) # fetch N\nori $t2, $zero, 3 # 3\nmult $t1, $t1, $t2 # 3*N\nadd $t2, $t0, $t1 # N*N + 3*N\nsw $t2, 0($gp)\n```', "markdown");
-        expect(htmlFile.html.trim()).toMatchSnapshot();
-        const $ = cheerio.load(htmlFile.html);
-        expect($('.hljs').text()).toContain('lw $t0, 4($gp)');
-    });
-});
-
 describe("Logseq Block References Rendering", () => {
     let prevPage : PageEntity | BlockEntity, page : PageEntity;
     beforeEach(async () => {
@@ -404,4 +389,21 @@ describe("Logseq Block References Rendering", () => {
     //         expect($('.embed-page > .children-list').length).toBe(1);
     //     });
     // });
+});
+describe("Markdown cases for DB mode", () => {
+});
+
+describe("Regression Cases", () => {
+    test("Math inside table", async () => {
+        const htmlFile = await convertToHTMLFile("| Hello | $\\frac{1}{2}$ |", "markdown");
+        expect(htmlFile.html.trim()).toMatchSnapshot();
+        const $ = cheerio.load(htmlFile.html);
+        expect($('table').text()).toContain('\\(\\frac{1}{2}\\)');
+    });
+    test("https://github.com/debanjandhar12/logseq-anki-sync/issues/248", async () => {
+        const htmlFile = await convertToHTMLFile('```mips\nlw $t0, 4($gp) # fetch N\nmult $t0, $t0, $t0 # N*N\nlw $t1, 4($gp) # fetch N\nori $t2, $zero, 3 # 3\nmult $t1, $t1, $t2 # 3*N\nadd $t2, $t0, $t1 # N*N + 3*N\nsw $t2, 0($gp)\n```', "markdown");
+        expect(htmlFile.html.trim()).toMatchSnapshot();
+        const $ = cheerio.load(htmlFile.html);
+        expect($('.hljs').text()).toContain('lw $t0, 4($gp)');
+    });
 });

@@ -98,6 +98,7 @@ export class LogseqPropertiesHelper {
                     .map(([key, value]) => `${key}:: ${value}`).join('\n');
                 const tags = (b.properties?.tags || []).map(tag => `#[[${tag}]]`).join(' ');
                 b.content = (props ? props + '\n' : '') + (b.content || '') + (tags ? ' ' + tags : '');
+                b.content = `uuid:: ${b.uuid}\n` + b.content; // add uuid as property too in content
             }
             if (b.children && opts.includeChildren) {
                 for (const child of b.children) await processBlock(child as BlockEntity);

@@ -277,6 +277,7 @@ export async function convertToHTMLFile(
 }
 
 export async function processProperties(resultContent, format = "markdown"): Promise<[string,any]> {
+    const orgianl =resultContent;
     resultContent = safeReplace(resultContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
     const block_props = {};
     resultContent = safeReplace(resultContent, MD_PROPERTIES_REGEXP, (match) => {
@@ -319,6 +320,39 @@ export async function processProperties(resultContent, format = "markdown"): Pro
             console.log(e);
         }
     }
+
+    // Add backward support for assets
+    console.log("block_props", orgianl, block_props);
+    const tags = _.get(block_props, 'tags', '');
+    const type = _.get(block_props, 'type', '');
+    const uuid = _.get(block_props, 'uuid', '');
+    const hasAssetTag =
+        _.isString(tags) &&
+        tags
+            .toLowerCase()
+            .split(',')
+            .map(t => t.trim())
+            .includes('asset');
+    if (hasAssetTag && !_.isEmpty(type) && !_.isEmpty(uuid)) {
+        let assetMarkdown = `![](../assets/${uuid}.${type})`;
+        const resizeMeta = _.get(block_props, 'resize-metadata');
+        if (_.isPlainObject(resizeMeta)) {
+            const width = _.get(resizeMeta, 'width', 0);
+            const height = _.get(resizeMeta, 'height', 0);
+            const metaParts = [];
+            if (_.isNumber(width) && width > 0) {
+                metaParts.push(`:width ${width}`);
+            }
+            if (_.isNumber(height) && height > 0) {
+                metaParts.push(`:height ${height}`);
+            }
+            if (metaParts.length > 0) {
+                assetMarkdown += `\n{${metaParts.join(' ')}}`;
+            }
+        }
+        resultContent = assetMarkdown + '\n' + resultContent;
+    }
+
     return [resultContent, block_props];
 }
 
