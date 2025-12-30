@@ -75,4 +75,46 @@ describe("LogseqPropertiesHelper.stripPropertyPrefixes", () => {
 
         expect(result).toEqual(expectedProperties);
     });
+
+    it("should handle object values without stringifying them in stripPropertyPrefixes", () => {
+        const input = {
+            ":user.property/metadata-xyz": { key: "value", nested: { data: 123 } },
+            ":user.property/simple-abc": "text"
+        };
+
+        const result = LogseqPropertiesHelper.stripPropertyPrefixes(input);
+
+        expect(result).toEqual({
+            metadata: { key: "value", nested: { data: 123 } },
+            simple: "text"
+        });
+    });
+
+    it("should preserve array values that are not tags", () => {
+        const input = {
+            ":user.property/items-xyz": ["item1", "item2", "item3"]
+        };
+
+        const result = LogseqPropertiesHelper.stripPropertyPrefixes(input);
+
+        expect(result).toEqual({
+            items: ["item1", "item2", "item3"]
+        });
+    });
+
+    it("should handle mixed property types including arrays and objects", () => {
+        const input = {
+            ":user.property/list-xyz": ["a", "b", "c"],
+            ":user.property/obj-abc": { key: "value" },
+            ":user.property/text-def": "simple"
+        };
+
+        const result = LogseqPropertiesHelper.stripPropertyPrefixes(input);
+
+        expect(result).toEqual({
+            list: ["a", "b", "c"],
+            obj: { key: "value" },
+            text: "simple"
+        });
+    });
 });

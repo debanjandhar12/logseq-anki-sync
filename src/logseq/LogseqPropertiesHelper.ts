@@ -95,9 +95,13 @@ export class LogseqPropertiesHelper {
             if (isDbGraph) {
                 const props = Object.entries(b.properties || {})
                     .filter(([key]) => !key.startsWith('logseq.') && !key.startsWith('id'))
-                    .map(([key, value]) => `${key}:: ${value}`).join('\n');
-                const tags = (b.properties?.tags || []).map(tag => `#[[${tag}]]`).join(' ');
-                b.content = (props ? props + '\n' : '') + (b.content || '') + (tags ? ' ' + tags : '');
+                    .map(([key, value]) => {
+                        const stringValue = typeof value === 'object' && value !== null 
+                            ? JSON.stringify(value) 
+                            : value;
+                        return `${key}:: ${stringValue}`;
+                    }).join('\n');
+                b.content = (props ? props + '\n' : '') + (b.content || '');
                 b.content = `uuid:: ${b.uuid}\n` + b.content; // add uuid as property too in content
             }
             if (b.children && opts.includeChildren) {

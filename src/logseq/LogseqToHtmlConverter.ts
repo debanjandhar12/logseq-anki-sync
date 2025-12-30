@@ -296,22 +296,27 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     const annotationSymbolMap = {'yellow':'🟡', 'green':'🟢', 'blue':'🔵', 'red':'🔴', 'purple':'🟣'};
     if (block_props["ls-type"] == "annotation" && block_props["hl-type"] == "area") {
         // Image annotation
+        const block_uuid = block_props["id"] || block_props["nid"] || block_props["uuid"];
+        const block = await LogseqProxy.Editor.getBlock(block_uuid);
+        const page = await LogseqProxy.Editor.getPage(block?.page?.id as number | PageIdentity);
+        let hls_img_loc = "error";
         try {
-            const block_uuid = block_props["id"] || block_props["nid"];
-            const block = await LogseqProxy.Editor.getBlock(block_uuid);
-            const page = await LogseqProxy.Editor.getPage(block?.page?.id as number | PageIdentity);
-            const hls_img_loc = `../assets/${(page?.originalName ?? "").replace(
-                "hls__",
-                "",
-            )}/${block_props["hl-page"]}_${block_uuid}_${
-                block_props["hl-stamp"]
-            }.png?imageAnnotationBlockUUID=${block_uuid}`;
+            if (_.get(block, [":logseq.property.pdf/hl-image", "id"])) { // for db graphs
+                const assetBlock = await LogseqProxy.Editor.getBlock(_.get(block, [":logseq.property.pdf/hl-image", "id"]));
+                hls_img_loc = `../assets/${assetBlock.uuid}.${assetBlock.properties.type}`;
+            }
+            else{   // for md graphs
+                hls_img_loc = `../assets/${(page?.originalName ?? "").replace(
+                    "hls__",
+                    "",
+                )}/${block_props["hl-page"]}_${block_uuid}_${
+                    block_props["hl-stamp"]
+                }.png?imageAnnotationBlockUUID=${block_uuid}`;
+            }
             resultContent =
                 `${annotationSymbolMap[block_props["hl-color"]] || '\ud83d\udccc'}**P${block_props["hl-page"]}** <div></div> ![](${hls_img_loc})\n` +
                 resultContent;
-        } catch (e) {
-            console.log(e);
-        }
+        } catch (e) {console.warn(e);}
     } else if (block_props["ls-type"] == "annotation") {
         // Text annotation
         try {
@@ -322,36 +327,38 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     }
 
     // Add backward support for assets
-    console.log("block_props", orgianl, block_props);
-    const tags = _.get(block_props, 'tags', '');
+    const tagsStr = _.get(block_props, 'tags', '');
+    let tags = [];
+    try {tags = JSON.parse(tagsStr)} catch (e) {console.warn(e)}
     const type = _.get(block_props, 'type', '');
     const uuid = _.get(block_props, 'uuid', '');
     const hasAssetTag =
-        _.isString(tags) &&
+        _.isArray(tags) &&
         tags
-            .toLowerCase()
-            .split(',')
-            .map(t => t.trim())
+            .map(t => t.trim().toLowerCase())
             .includes('asset');
     if (hasAssetTag && !_.isEmpty(type) && !_.isEmpty(uuid)) {
         let assetMarkdown = `![](../assets/${uuid}.${type})`;
         const resizeMeta = _.get(block_props, 'resize-metadata');
-        if (_.isPlainObject(resizeMeta)) {
-            const width = _.get(resizeMeta, 'width', 0);
-            const height = _.get(resizeMeta, 'height', 0);
+        let resizeMetaObj = {};
+        try {resizeMetaObj = JSON.parse(resizeMeta)} catch (e) {console.warn(e)}
+        if (_.isPlainObject(resizeMetaObj)) {
+            const width = _.get(resizeMetaObj, 'width', 0);
+            const height = _.get(resizeMetaObj, 'height', 0);
             const metaParts = [];
             if (_.isNumber(width) && width > 0) {
-                metaParts.push(`:width ${width}`);
+                metaParts.push(`:width "${width}"`);
             }
             if (_.isNumber(height) && height > 0) {
-                metaParts.push(`:height ${height}`);
+                metaParts.push(`:height "${height}"`);
             }
             if (metaParts.length > 0) {
-                assetMarkdown += `\n{${metaParts.join(' ')}}`;
+                assetMarkdown += `{${metaParts.join(' ')}}`;
             }
         }
         resultContent = assetMarkdown + '\n' + resultContent;
     }
+    console.log("block_props", orgianl, block_props, resultContent);
 
     return [resultContent, block_props];
 }
