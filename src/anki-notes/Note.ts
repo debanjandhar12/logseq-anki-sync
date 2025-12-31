@@ -32,7 +32,7 @@ export abstract class Note {
         this.format = format;
         this.properties = properties;
         this.page = page;
-        this.page.name = this.page.originalName = getNameFromPage(page); // Unify naming
+        this.page.name = getNameFromPage(page);
         this.tags = tags;
     }
 

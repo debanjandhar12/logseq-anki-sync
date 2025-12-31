@@ -2,6 +2,7 @@ import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../../constants";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
+import getNameFromPage from "../../logseq/getNameFromPage";
 
 export class BreadcrumbAndParentBlockParser {
     static async parse(note: Note, graphName: string): Promise<string> {
@@ -20,14 +21,14 @@ export class BreadcrumbAndParentBlockParser {
 
     private static buildHiddenBreadcrumb(note: Note, graphName: string): string {
         return `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(
-            note.page.originalName
-        )}" class="hidden">${note.page.originalName}</a>`;
+            getNameFromPage(note.page)
+        )}" class="hidden">${getNameFromPage(note.page)}</a>`;
     }
 
     private static buildPageOnlyBreadcrumb(note: Note, graphName: string): string {
         return `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(
-            note.page.originalName
-        )}" title="${note.page.originalName}">${note.page.originalName}</a>`;
+            getNameFromPage(note.page)
+        )}" title="${getNameFromPage(note.page)}">${getNameFromPage(note.page)}</a>`;
     }
 
     private static async buildFullBreadcrumb(note: Note, graphName: string): Promise<string> {

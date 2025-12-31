@@ -35,6 +35,7 @@ import * as hiccupConverter from "@thi.ng/hiccup";
 import {edn} from "@yellowdig/cljs-tools";
 import path from "path-browserify";
 import {WindowParentBridge} from "./WindowParentBridge";
+import getNameFromPage from "./getNameFromPage";
 
 const mldocsOptions = {
     toc: false,
@@ -298,20 +299,24 @@ export async function processProperties(resultContent, format = "markdown"): Pro
         // Image annotation
         const block_uuid = block_props["id"] || block_props["nid"] || block_props["uuid"];
         const block = await LogseqProxy.Editor.getBlock(block_uuid);
-        const page = await LogseqProxy.Editor.getPage(block?.page?.id as number | PageIdentity);
         let hls_img_loc = "error";
         try {
             if (_.get(block, [":logseq.property.pdf/hl-image", "id"])) { // for db graphs
                 const assetBlock = await LogseqProxy.Editor.getBlock(_.get(block, [":logseq.property.pdf/hl-image", "id"]));
-                hls_img_loc = `../assets/${assetBlock.uuid}.${assetBlock.properties.type}`;
+                if (assetBlock) {
+                    hls_img_loc = `../assets/${assetBlock.uuid}.${assetBlock.properties.type}`;
+                }
             }
-            else{   // for md graphs
-                hls_img_loc = `../assets/${(page?.name ?? "").replace(
-                    "hls__",
-                    "",
-                )}/${block_props["hl-page"]}_${block_uuid}_${
-                    block_props["hl-stamp"]
-                }.png?imageAnnotationBlockUUID=${block_uuid}`;
+            else {   // for md graphs
+                const page = await LogseqProxy.Editor.getPage(block?.page?.id as number | PageIdentity);
+                if (page) {
+                    hls_img_loc = `../assets/${(getNameFromPage(page) ?? "").replace(
+                        "hls__",
+                        "",
+                    )}/${block_props["hl-page"]}_${block_uuid}_${
+                        block_props["hl-stamp"]
+                    }.png?imageAnnotationBlockUUID=${block_uuid}`;
+                }
             }
             resultContent =
                 `${annotationSymbolMap[block_props["hl-color"]] || '\ud83d\udccc'}**P${block_props["hl-page"]}** <div></div> ![](${hls_img_loc})\n` +
@@ -369,7 +374,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
         } else {
             const page = await LogseqProxy.Editor.getPage(linkDBId as EntityID);
             if (page) {
-                resultContent = `{{embed [[${page.name}]]}}` + '\n' + resultContent;
+                resultContent = `{{embed [[${getNameFromPage(page)}]]}}` + '\n' + resultContent;
             }
         }
     }

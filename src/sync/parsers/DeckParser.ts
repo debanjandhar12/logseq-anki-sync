@@ -2,6 +2,7 @@ import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { getLogseqBlockPropSafe, splitNamespace } from "../../utils/utils";
 import _ from "lodash";
+import getNameFromPage from "../../logseq/getNameFromPage";
 
 export class DeckParser {
     /**
@@ -85,8 +86,7 @@ export class DeckParser {
     }
 
     private static extractNamespaceDeck(note: Note): string {
-        const pageName = _.get(note, "page.originalName", "") || 
-                        _.get(note, "page.properties.title", "");
+        const pageName = getNameFromPage(note.page);
         const namespaceSegments = splitNamespace(pageName);
         return namespaceSegments.slice(0, -1).join("/");
     }

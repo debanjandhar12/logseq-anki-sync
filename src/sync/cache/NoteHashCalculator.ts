@@ -19,6 +19,7 @@ import _ from "lodash";
 import objectHashOptimized from "../../utils/objectHashOptimized";
 import path from "path-browserify";
 import {ParsedNoteData} from "../types";
+import getNameFromPage from "../../logseq/getNameFromPage";
 
 
 export default class NoteHashCalculator {
@@ -75,7 +76,7 @@ export default class NoteHashCalculator {
         }
 
         // Add additional things  to toHash
-        toHash.push(note.page.originalName);
+        toHash.push(getNameFromPage(note.page));
         const settings = LogseqProxy.Settings.getPluginSettings();
         toHash.push(
             _.omit(settings, [
