@@ -6,6 +6,7 @@ import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHTMLConverterProxy";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
+import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 
 export class SwiftArrowNote extends Note {
     public type = "swift_arrow";
@@ -62,26 +63,24 @@ export class SwiftArrowNote extends Note {
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<SwiftArrowNote[]> {
-        const singleSwiftArrowBlocks = await logseq.DB.datascriptQuery(`
-        [:find (pull ?b [:block/uuid])
+        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: { id: number }}][];
+        const singleSwiftArrowBlocks : DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(`
+        [:find (pull ?b [:block/uuid :block/page])
         :where
         (or
            (and [?b :block/content ?content])
            (and [?b :block/title ?content]))
         [(re-pattern ":(<->|->|<-)") ?regex]
         [(re-find ?regex ?content)]
-        ]`);
-        let blocks: any = [...singleSwiftArrowBlocks];
+        ]`, {suppressErrors: false});
+        let blocks = [...singleSwiftArrowBlocks];
         let notes = await Promise.all(
-            blocks.map(async (block) => {
-                const uuid = getUUIDFromBlock(block[0]);
-                const page = block[0].page
-                    ? await LogseqProxy.Editor.getPage(block[0].page.id)
+            blocks.map(async (b) => {
+                const uuid = getUUIDFromBlock(b[0]);
+                const page = _.get(b[0], 'page')
+                    ? await LogseqProxy.Editor.getPage(b[0].page.id)
                     : {};
-                block = block[0];
-                if (!block.content) {
-                    block = await LogseqProxy.Editor.getBlock(uuid);
-                }
+                let block = await LogseqProxy.Editor.getBlock(uuid);
                 if (block)
                     return new SwiftArrowNote(
                         uuid,

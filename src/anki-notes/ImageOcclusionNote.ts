@@ -26,7 +26,7 @@ import {
     OcclusionElement,
 } from "../ui/pages/OcclusionEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
-import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
+import {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {showSelectionModal} from "../ui";
 
 export type ImageToOcclusionDataHashMap = {[key: string]: OcclusionData};
@@ -168,22 +168,20 @@ export class ImageOcclusionNote extends Note {
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ImageOcclusionNote[]> {
-        let blocks: any = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [:block/uuid])
+        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: { id: number }}][];
+        let blocks : DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(`
+        [:find (pull ?b [:block/uuid :block/page])
         :where
           [?b :block/properties ?p]
           [(get ?p :occlusion)]
         ]`, {suppressErrors: false});
         let notes: (ImageOcclusionNote | false)[] = await Promise.all(
-            blocks.map(async (block) => {
-                const uuid = getUUIDFromBlock(block[0]);
-                const page = block[0].page
-                    ? await LogseqProxy.Editor.getPage(block[0].page.id)
+            blocks.map(async (b) => {
+                const uuid = getUUIDFromBlock(b[0]);
+                const page = _.get(b[0], 'page')
+                    ? await LogseqProxy.Editor.getPage(b[0].page.id)
                     : {};
-                block = block[0];
-                if (!block.content) {
-                    block = await LogseqProxy.Editor.getBlock(uuid);
-                }
+                let block = await LogseqProxy.Editor.getBlock(uuid);
                 if (block)
                     return new ImageOcclusionNote(
                         uuid,
