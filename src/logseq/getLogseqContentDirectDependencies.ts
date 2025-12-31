@@ -6,6 +6,7 @@ import {
 } from "../constants";
 import {LogseqProxy} from "./LogseqProxy";
 import {processProperties} from "./LogseqToHtmlConverter";
+import getUUIDFromBlock from "./getUUIDFromBlock";
 
 export interface BlockDependency {
     type: "Block";
@@ -40,7 +41,7 @@ export default async function getLogseqContentDirectDependencies(
             const queue = [block];
             while (queue.length > 0) {
                 const block = queue.pop();
-                blockDependency.add(block.uuid);
+                blockDependency.add(getUUIDFromBlock(block));
                 if (block.children) {
                     for (const child of block.children) {
                         if (queue.length > 30) break;

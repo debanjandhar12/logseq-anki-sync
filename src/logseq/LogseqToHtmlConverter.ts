@@ -36,6 +36,7 @@ import {edn} from "@yellowdig/cljs-tools";
 import path from "path-browserify";
 import {WindowParentBridge} from "./WindowParentBridge";
 import getNameFromPage from "./getNameFromPage";
+import getUUIDFromBlock from "./getUUIDFromBlock";
 
 const mldocsOptions = {
     toc: false,
@@ -370,7 +371,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     if (linkDBId) {
         const block = await LogseqProxy.Editor.getBlock(linkDBId as EntityID);
         if (block) {
-            resultContent = `{{embed ((${block.uuid}))}}` + '\n' + resultContent;
+            resultContent = `{{embed ((${getUUIDFromBlock(block)}))}}` + '\n' + resultContent;
         } else {
             const page = await LogseqProxy.Editor.getPage(linkDBId as EntityID);
             if (page) {

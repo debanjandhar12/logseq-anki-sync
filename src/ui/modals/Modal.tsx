@@ -2,6 +2,12 @@ import React, {PropsWithChildren} from "../React";
 import FocusTrap from "focus-trap-react";
 import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 
+const focusTrapOptions = {
+    tabbableOptions: {
+        displayCheck: 'none' as const,
+    }
+};
+
 interface ModalProps {
     open: boolean;
     setOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -65,7 +71,7 @@ export function Modal({
     if (!open) return null;
 
     return (
-        <FocusTrap>
+        <FocusTrap focusTrapOptions={focusTrapOptions}>
             <div className={`ui__modal`} style={{zIndex: zDepth === "high" ? 9999 : 999}}>
                 <div className="ui__modal-overlay ease-out duration-300 opacity-100 enter-done">
                     <div className="absolute inset-0 opacity-75"></div>

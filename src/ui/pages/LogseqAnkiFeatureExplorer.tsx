@@ -7,6 +7,7 @@ import {LogseqButton} from "../common/LogseqButton";
 import {BlockContentParser} from "../../logseq/BlockContentParser";
 import {ImageOcclusionNote} from "../../anki-notes/ImageOcclusionNote";
 import _ from "lodash";
+import getNameFromPage from "../../logseq/getNameFromPage";
 
 export async function showLogseqAnkiFeatureExplorer(editingBlockUUID: string): Promise<void> {
     return createModalPromise<void>(
@@ -49,7 +50,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
         (async function () {
             const block = await LogseqPropertiesHelper.getBlock(editingBlockUUID);
             const page = await LogseqPropertiesHelper.getPage(block.page.id);
-            const pageTree = await logseq.Editor.getPageBlocksTree(page.name);
+            const pageTree = await logseq.Editor.getPageBlocksTree(getNameFromPage(page));
             setPageTree(pageTree);
         })();
     }, [forceRefresh]);
@@ -75,12 +76,12 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
         (async function () {
             const block = await LogseqPropertiesHelper.getBlock(editingBlockUUID);
             const page = await LogseqPropertiesHelper.getPage(block.page.id);
-            const parentNamespaces = page.name.split("/");
+            const parentNamespaces = getNameFromPage(page).split("/");
             let namespaceTree = [];
             for (let i = 1; i < parentNamespaces.length; i++) {
                 const namespace = parentNamespaces.slice(0, i).join("/");
                 const namespacePage = await LogseqPropertiesHelper.getPage(namespace);
-                const namespacePageTree = await logseq.Editor.getPageBlocksTree(namespacePage.name);
+                const namespacePageTree = await logseq.Editor.getPageBlocksTree(getNameFromPage(namespacePage));
                 namespaceTree.push({...namespacePage, blocks: namespacePageTree});
             }
             setNamespaceTree(namespaceTree);

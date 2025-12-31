@@ -1,5 +1,6 @@
 import { BlockEntity, BlockIdentity, EntityID, PageEntity, PageIdentity } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
+import getNameFromPage from "./getNameFromPage";
 
 /**
  * Helper class for fetching Logseq blocks and pages with properties attached.
@@ -141,14 +142,14 @@ export class LogseqPropertiesHelper {
         if (typeof srcPage === "number") {
             page = await logseq.Editor.getPage(srcPage);
             if (!page) return null;
-            page = await logseq.Editor.getPage(page.name);
+            page = await logseq.Editor.getPage(getNameFromPage(page));
         } else {
             page = await logseq.Editor.getPage(srcPage);
         }
         
         if (!page) return null;
         
-        const properties = await logseq.Editor.getPageProperties(page.name);
+        const properties = await logseq.Editor.getPageProperties(getNameFromPage(page));
         if (properties) {
             const strippedProperties = this.stripPropertyPrefixes(properties);
             page.properties = { ...strippedProperties, ...page.properties };
@@ -168,7 +169,7 @@ export class LogseqPropertiesHelper {
     ): Promise<BlockEntity[]> {
         if (typeof srcPage === "number") {
             const page = await logseq.Editor.getPage(srcPage);
-            srcPage = page.name;
+            srcPage = getNameFromPage(page);
         }
         
         const blocks = await logseq.Editor.getPageBlocksTree(srcPage);

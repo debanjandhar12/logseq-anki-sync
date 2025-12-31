@@ -3,6 +3,7 @@ import {handleAnkiError} from "../utils/utils";
 import {Addon} from "./Addon";
 import _ from "lodash";
 import {showSelectionModal} from "../ui";
+import getNameFromPage from "../logseq/getNameFromPage";
 
 export class PreviewInAnkiContextMenu extends Addon {
     static _instance: PreviewInAnkiContextMenu;
@@ -44,7 +45,7 @@ export class PreviewInAnkiContextMenu extends Addon {
                 ]);
                 if (selection == null) return;
                 if (selection === 0)
-                    pagesToView = [pagesToView, ...namespacePages.map((page) => page.name)];
+                    pagesToView = [pagesToView, ...namespacePages.map((page) => getNameFromPage(page))];
             }
             await AnkiConnect.guiBrowse(
                 `"note:${modelName}" "Breadcrumb:re:^<a.*>(${pagesToView
