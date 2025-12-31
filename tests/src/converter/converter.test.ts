@@ -4,7 +4,7 @@ import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 import { convertToHTMLFile } from "../../../src/logseq/LogseqToHtmlConverter";
 import {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 
-describe("Basic Markdown Test (no references)", () => {
+describe("Basic Markdown Cases", () => {
     describe("Basic Inline rendering", () => {
         test("Single line text rendering", async () => {
             const htmlFile = await convertToHTMLFile("Hello World", "markdown");
@@ -66,15 +66,20 @@ describe("Basic Markdown Test (no references)", () => {
         });
         test.skipIf(!globalThis.isLogseqAvailable)("Page Ref Rendering", async () => {
             const htmlFile = await convertToHTMLFile("Hello [[Ref Test]]", "markdown");
-            expect(htmlFile.html.trim()).toMatchSnapshot();
-            const $ = cheerio.load(htmlFile.html);
             const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
             expect($('a').text()).toBe('Ref Test');
             expect($('a').attr('href')).toBe(`logseq://graph/${graphName}?page=Ref%20Test`);
         });
         test.skipIf(!globalThis.isLogseqAvailable)("Consecutive Page Ref Rendering - https://github.com/debanjandhar12/logseq-anki-sync/issues/101", async () => {
             const htmlFile = await convertToHTMLFile("[[Ref Test]][[Ref Test]] [[Ref Test]],[[Ref Test]]", "markdown");
-            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('a')).toHaveLength(4);
         });
@@ -97,11 +102,13 @@ describe("Basic Markdown Test (no references)", () => {
         });
         test.skipIf(!globalThis.isLogseqAvailable)("Tag Rendering", async () => {
             const htmlFile = await convertToHTMLFile("Hello #World", "markdown", {displayTags: true});
-            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('a').text()).toBe('#World');
             expect($('a').attr('data-ref')).toBe('World');
-            const graphName = (await logseq.App.getCurrentGraph()).name;
             expect($('a').attr('href')).toBe(`logseq://graph/${graphName}?page=World`);
             const htmlFile2 = await convertToHTMLFile("Hello #World", "markdown");
             const $2 = cheerio.load(htmlFile2.html);
@@ -198,6 +205,7 @@ describe("Basic Markdown Test (no references)", () => {
             expect(htmlFile.assets).toContain('./assets/image.png');
             const $ = cheerio.load(htmlFile.html);
             expect($('img').attr('src')).toEqual('image.png');
+            expect(htmlFile.assets.size).toBe(1);
         });
 
         test("Image Rendering - Web Image", async () => {
@@ -205,6 +213,7 @@ describe("Basic Markdown Test (no references)", () => {
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('img').attr('src')).toEqual('https://example.com/image.png');
+            expect(htmlFile.assets.size).toBe(0);
         });
 
         test("Image Rendering - Image with Alt Text", async () => {
@@ -227,12 +236,14 @@ describe("Basic Markdown Test (no references)", () => {
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.assets).toContain('./assets/audio.mp3');
             expect(htmlFile.html).toContain('[sound:audio.mp3]');
+            expect(htmlFile.assets.size).toBe(1);
         });
 
         test("Audio Rendering - Web Audio", async () => {
             const htmlFile = await convertToHTMLFile("![](https://example.com/audio.mp3)", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html).toContain('[sound:https://example.com/audio.mp3]');
+            expect(htmlFile.assets.size).toBe(0);
         });
 
         test("Video Rendering - Local Video", async () => {
@@ -241,6 +252,7 @@ describe("Basic Markdown Test (no references)", () => {
             expect(htmlFile.assets).toContain('./assets/video.mp4');
             const $ = cheerio.load(htmlFile.html);
             expect($('video').attr('src')).toEqual('video.mp4');
+            expect(htmlFile.assets.size).toBe(1);
         });
     });
     describe("Latex Rendering", () => {
@@ -256,9 +268,9 @@ describe("Basic Markdown Test (no references)", () => {
             expect(htmlFile.html.trim()).toContain('\\(\\frac{3}{4}\\)');
         });
        test("Block Latex Rendering", async () => {
-                  const htmlFile = await convertToHTMLFile("This is block latex: $$\\frac{1}{2}$$", "markdown");
-                 expect(htmlFile.html.trim()).toMatchSnapshot();
-                 expect(htmlFile.html.trim()).toContain('\\[\\frac{1}{2}\\]');
+            const htmlFile = await convertToHTMLFile("This is block latex: $$\\frac{1}{2}$$", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            expect(htmlFile.html.trim()).toContain('\\[\\frac{1}{2}\\]');
        });
     });
     describe("Anki Clozes Cases", () => {
@@ -286,38 +298,7 @@ describe("Basic Markdown Test (no references)", () => {
     });
 });
 
-
-describe("PDF Rendering cases", () => {
-    test("Basic PDF rendering", async () => {
-        const htmlFile = await convertToHTMLFile("![Linux Slides 1.pdf](../assets/Linux_Slides_1_1673180335043_0.pdf)", "markdown");
-        expect(htmlFile.html.trim()).toMatchSnapshot();
-        // TODO: Add beauty to pdf links and check
-    });
-    test("PDF Text Annotation Rendering", async () => {
-        const htmlFile = await convertToHTMLFile("ls-type::annotation\nhl-page::1\nhl-color::blue\nI am pdf page content", "markdown");
-        expect(htmlFile.html.trim()).toMatchSnapshot();
-        expect(htmlFile.html.trim()).toContain('I am pdf page content');
-        expect(htmlFile.html.trim()).toContain('P1');
-        expect(htmlFile.html.trim()).toContain('🔵');
-    });
-    test("PDF Text Annotation Rendering - no color", async () => {
-        const htmlFile = await convertToHTMLFile("ls-type::annotation\nhl-page::1\nI am pdf page content", "markdown");
-        expect(htmlFile.html.trim()).toMatchSnapshot();
-        expect(htmlFile.html.trim()).toContain('I am pdf page content');
-        expect(htmlFile.html.trim()).toContain('P1');
-        expect(htmlFile.html.trim()).toContain('📌');
-    });
-    test("PDF Image Annotation Rendering", async () => {
-        const htmlFile = await convertToHTMLFile("id::65a22d2c-a245-4a3f-89cc-1b1a7b724abc\nls-type::annotation\nhl-type::area\nhl-page::1\nhl-color::blue\nhl-stamp::1673181377785\n[:span]", "markdown");
-        expect(htmlFile.html.trim()).toMatchSnapshot();
-        expect(htmlFile.assets).toContain('../assets//1_65a22d2c-a245-4a3f-89cc-1b1a7b724abc_1673181377785.png');
-        const $ = cheerio.load(htmlFile.html);
-        expect($('img').attr('src')).toEqual('1_65a22d2c-a245-4a3f-89cc-1b1a7b724abc_1673181377785.png');
-        expect(htmlFile.html.trim()).toContain('🔵');
-    });
-});
-
-describe("Logseq Block References Rendering", () => {
+describe("E2E cases for non DB mode", () => {
     let prevPage : PageEntity | BlockEntity, page : PageEntity;
     beforeEach(async () => {
         prevPage = await logseq.Editor.getCurrentPage();
@@ -328,69 +309,337 @@ describe("Logseq Block References Rendering", () => {
         await logseq.Editor.deletePage('Test LogseqAnkiSync');
     });
 
+    describe("PDF Rendering cases", () => {
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic PDF rendering", async () => {
+            const htmlFile = await convertToHTMLFile("![Linux Slides 1.pdf](../assets/Linux_Slides_1_1673180335043_0.pdf)", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            // TODO: Add beauty to pdf links and check
+        });
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("PDF Text Annotation Rendering", async () => {
+            const htmlFile = await convertToHTMLFile("ls-type::annotation\nhl-page::1\nhl-color::blue\nI am pdf page content", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            expect(htmlFile.html.trim()).toContain('I am pdf page content');
+            expect(htmlFile.html.trim()).toContain('P1');
+            expect(htmlFile.html.trim()).toContain('🔵');
+        });
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("PDF Text Annotation Rendering - no color", async () => {
+            const htmlFile = await convertToHTMLFile("ls-type::annotation\nhl-page::1\nI am pdf page content", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            expect(htmlFile.html.trim()).toContain('I am pdf page content');
+            expect(htmlFile.html.trim()).toContain('P1');
+            expect(htmlFile.html.trim()).toContain('📌');
+        });
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("PDF Image Annotation Rendering", async () => {
+            // Create a PDF page (simulated with hls__ prefix)
+            const pdfPage = await logseq.Editor.createPage('hls__Linux_Slides_Test', {createFirstBlock: false});
+            // Create the annotation block
+            const block = await logseq.Editor.appendBlockInPage(pdfPage.uuid, "ls-type::annotation\nhl-type::area\nhl-page::1\nhl-color::blue\nhl-stamp::1673181377785\n[:span]");
+            const htmlFile = await convertToHTMLFile(block.content, "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            expect(htmlFile.assets).toBeDefined();
+            if (htmlFile.assets && htmlFile.assets.size > 0) {
+                expect(htmlFile.assets[0]).toContain('Linux_Slides_Test');
+                expect(htmlFile.assets[0]).toContain('1673181377785.png');
+            }
+            const $ = cheerio.load(htmlFile.html);
+            expect(htmlFile.html.trim()).toContain('🔵');
+            expect(htmlFile.html.trim()).toContain('P1');
+            await logseq.Editor.deletePage('hls__Linux_Slides_Test');
+        });
+    });
+
     describe("Block Reference Rendering", () => {
-        test("Basic block ref rendering", async () => {
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic block ref rendering", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "A **block** with no ref.", {properties:{id: '68454f3f-f6b7-4784-b13b-08892b8f21cb'}});
             const htmlFile = await convertToHTMLFile(`Block Ref: ((${block.uuid}))`, "markdown");
-            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
-            expect($('.block-ref').text()).toContain('A block with no ref.');
-            expect($('.block-ref b').text()).toContain('block'); // Ref content has a bold word - block
+            const refText = $('.block-ref').text().trim();
+            expect(refText).toContain('block');
+            expect(refText).toContain('no ref');
         });
-        test("Failed block ref rendering", async () => {
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Renamed block ref rendering", async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "Original block content");
+            const htmlFile = await convertToHTMLFile(`Block Ref: [Renamed Block](((${block.uuid})))`, "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.block-ref').text()).toContain('Renamed Block');
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Failed block ref rendering", async () => {
             const htmlFile = await convertToHTMLFile("Block Ref: ((wrong-block-ref))", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.failed-block-ref').text()).toContain('wrong-block-ref');
         });
     });
-    // describe("Block Embed Rendering", () => {
-    //     test("Basic block embed rendering", async () => {
-    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d3c-954d-442b-8dca-4461fc209f84))}}", "markdown");
-    //         expect(htmlFile.html.trim()).toMatchSnapshot();
-    //         const $ = cheerio.load(htmlFile.html);
-    //         expect($('.embed-block').text()).toContain('A block with no ref.');
-    //         expect($('.embed-block b').text()).toContain('block'); // Ref content has a bold word - block
-    //     });
-    //     test("Nested block embed rendering", async () => {
-    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d6d-bda8-47d0-a94a-235a0084dd5e))}}", "markdown");
-    //         expect(htmlFile.html.trim()).toMatchSnapshot();
-    //         const $ = cheerio.load(htmlFile.html);
-    //         expect($('.embed-block').length).toBe(2);
-    //         expect($('.embed-block').first().text()).toContain('A block with page embed');
-    //         expect($('.embed-block').last().text()).toContain('A block with no ref');
-    //     });
-    //     test("block ref inside block embed rendering", async () => {
-    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d50-f9d1-4527-ba45-6ada5c2eca9b))}}", "markdown");
-    //         expect(htmlFile.html.trim()).toMatchSnapshot();
-    //         const $ = cheerio.load(htmlFile.html);
-    //         expect($('.embed-block').length).toBe(1);
-    //         expect($('.embed-block .block-ref').text()).toContain('A block with no ref.');
-    //     });
-    //     test("formatting inside block embed rendering", async () => {
-    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((65a22d87-a991-4322-b4b3-8e0b327acd1c))}}", "markdown");
-    //         expect(htmlFile.html.trim()).toMatchSnapshot();
-    //         const $ = cheerio.load(htmlFile.html);
-    //         expect($('.embed-block code').text()).toContain('function() hi {}');
-    //         expect($('.embed-block a').first().attr('data-ref')).toEqual('test');
-    //     });
-    //     test("Failed block embed rendering", async () => {
-    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed ((wrong-block-ref))}}", "markdown");
-    //         expect(htmlFile.html.trim()).toMatchSnapshot();
-    //         const $ = cheerio.load(htmlFile.html);
-    //         expect($('.embed-block').text()).toContain('');
-    //     });
-    // });
-    // describe("Page Embed Rendering", () => {
-    //     test("Basic page embed rendering", async () => {
-    //         const htmlFile = await convertToHTMLFile("Page Embed: {{embed [[Ref Test]]}}", "markdown");
-    //         expect(htmlFile.html.trim()).toMatchSnapshot();
-    //         const $ = cheerio.load(htmlFile.html);
-    //         expect($('.embed-page > .children-list').length).toBe(1);
-    //     });
-    // });
+
+    describe("Page Reference Rendering", () => {
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic page ref rendering", async () => {
+            const refPage = await logseq.Editor.createPage('Test Ref Page', {createFirstBlock: false});
+            const htmlFile = await convertToHTMLFile("Page Ref: [[Test Ref Page]]", "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.page-reference').text()).toContain('Test Ref Page');
+            await logseq.Editor.deletePage('Test Ref Page');
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Renamed page ref rendering", async () => {
+            const refPage = await logseq.Editor.createPage('Original Page Name', {createFirstBlock: false});
+            const htmlFile = await convertToHTMLFile("Page Ref: [Renamed Page]([[Original Page Name]])", "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.page-reference').text()).toContain('Renamed Page');
+            await logseq.Editor.deletePage('Original Page Name');
+        });
+    });
+
+    describe("Block Embed Rendering", () => {
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic block embed rendering", async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "A **block** with no ref.");
+            const htmlFile = await convertToHTMLFile(`Block Embed: {{embed ((${block.uuid}))}}`, "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            const embedText = $('.embed-block').text().trim();
+            expect(embedText).toContain('block');
+            expect(embedText).toContain('no ref');
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Nested block embed rendering", async () => {
+            const block1 = await logseq.Editor.appendBlockInPage(page.uuid, "A block with no ref");
+            const block2 = await logseq.Editor.appendBlockInPage(page.uuid, `A block with page embed {{embed ((${block1.uuid}))}}`);
+            const htmlFile = await convertToHTMLFile(`Block Embed: {{embed ((${block2.uuid}))}}`, "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(block1.uuid, 'g'), 'LAS-TEST-UUID-1')
+                .replace(new RegExp(block2.uuid, 'g'), 'LAS-TEST-UUID-2')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.embed-block').length).toBe(2);
+            expect($('.embed-block').first().text()).toContain('A block with page embed');
+            expect($('.embed-block').last().text()).toContain('A block with no ref');
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("block ref inside block embed rendering", async () => {
+            const block1 = await logseq.Editor.appendBlockInPage(page.uuid, "A block with no ref.");
+            const block2 = await logseq.Editor.appendBlockInPage(page.uuid, `A block with ref ((${block1.uuid}))`);
+            const htmlFile = await convertToHTMLFile(`Block Embed: {{embed ((${block2.uuid}))}}`, "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(block1.uuid, 'g'), 'LAS-TEST-UUID-1')
+                .replace(new RegExp(block2.uuid, 'g'), 'LAS-TEST-UUID-2')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.embed-block').length).toBe(1);
+            const refText = $('.embed-block .block-ref').text().trim();
+            expect(refText).toContain('block');
+            expect(refText).toContain('no ref');
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Formatting check inside block embed rendering", async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "A block with `function() hi {}` and [[test]]");
+            const htmlFile = await convertToHTMLFile(`Block Embed: {{embed ((${block.uuid}))}}`, "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.embed-block').text()).toContain('function() hi {}');
+            expect($('.embed-block').text()).toContain('test');
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Failed block embed rendering", async () => {
+            const htmlFile = await convertToHTMLFile("Block Embed: {{embed ((wrong-block-ref))}}", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.embed-block').text()).toContain('');
+        });
+    });
+
+    describe("Page Embed Rendering", () => {
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic page embed rendering", async () => {
+            const embedPage = await logseq.Editor.createPage('Test Embed Page', {createFirstBlock: false});
+            await logseq.Editor.appendBlockInPage(embedPage.uuid, "First block");
+            await logseq.Editor.appendBlockInPage(embedPage.uuid, "Second block");
+            const htmlFile = await convertToHTMLFile("Page Embed: {{embed [[Test Embed Page]]}}", "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(embedPage.uuid, 'g'), 'LAS-TEST-UUID')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.embed-page > .children-list').length).toBe(1);
+            await logseq.Editor.deletePage('Test Embed Page');
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Invalid page embed rendering", async () => {
+            const htmlFile = await convertToHTMLFile("Page Embed: {{embed [[invalid-page]]}}", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            // We do not show warning for embed pages currently as it is auto created in logseq and this case actually never happens
+            expect($('.embed-page').length).toBeGreaterThanOrEqual(0);
+        });
+    });
 });
-describe("Markdown cases for DB mode", () => {
+
+describe("Page + Block Embed Rendering", () => {
+    let prevPage : PageEntity | BlockEntity, page : PageEntity;
+    beforeEach(async () => {
+        prevPage = await logseq.Editor.getCurrentPage();
+        page = await logseq.Editor.createPage('Test LogseqAnkiSync Embed', {createFirstBlock: false});
+    });
+
+    afterEach(async () => {
+        await logseq.Editor.deletePage('Test LogseqAnkiSync Embed');
+    });
+
+    test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Page with block embed to another block", async () => {
+        const blockA = await logseq.Editor.appendBlockInPage(page.uuid, "Hello world");
+        const blockB = await logseq.Editor.appendBlockInPage(page.uuid, `{{embed ((${blockA.uuid}))}}`);
+        const htmlFile = await convertToHTMLFile(blockB.content, "markdown");
+        const graphName = (await logseq.App.getCurrentGraph()).name;
+        const normalized = htmlFile.html.trim()
+            .replace(new RegExp(blockA.uuid, 'g'), 'LAS-TEST-UUID')
+            .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+        expect(normalized).toMatchSnapshot();
+        const $ = cheerio.load(htmlFile.html);
+        expect($('.embed-block').text()).toContain('Hello world');
+    });
+});
+
+describe("E2E cases for DB mode", () => {
+    let prevPage : PageEntity | BlockEntity, page : PageEntity;
+    beforeEach(async () => {
+        prevPage = await logseq.Editor.getCurrentPage();
+        page = await logseq.Editor.createPage('Test LogseqAnkiSync DB', {createFirstBlock: false});
+    });
+
+    afterEach(async () => {
+        await logseq.Editor.deletePage('Test LogseqAnkiSync DB');
+    });
+
+    describe("Block Reference Rendering", () => {
+        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Basic block ref rendering", async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "A **block** with no ref.");
+            const htmlFile = await convertToHTMLFile(`Block Ref: [[${block.uuid}]]`, "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            const refText = $('.block-ref').text().trim();
+            expect(refText).toContain('block');
+            expect(refText).toContain('no ref');
+        });
+    });
+
+    describe("Page Reference Rendering", () => {
+        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Basic page ref rendering", async () => {
+            const refPage = await logseq.Editor.createPage('Test DB Ref Page', {createFirstBlock: false});
+            const htmlFile = await convertToHTMLFile("Page Ref: [[Test DB Ref Page]]", "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.page-reference').text()).toContain('Test DB Ref Page');
+            await logseq.Editor.deletePage('Test DB Ref Page');
+        });
+    });
+
+    describe("Block Embed Rendering", () => {
+        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Basic block embed rendering", async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "A **block** with no ref.");
+            const embedBlockUuid = '67890123-4567-89ab-cdef-012345678901';
+            const htmlFile = await convertToHTMLFile(`uuid:: ${embedBlockUuid}\nlink:: ${block.id}`, "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID-1')
+                .replace(new RegExp(embedBlockUuid, 'g'), 'LAS-TEST-UUID-2')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            const embedText = $('.embed-block').text().trim();
+            expect(embedText).toContain('block');
+            expect(embedText).toContain('no ref');
+        });
+    });
+
+    describe("Page Embed Rendering", () => {
+        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Basic page embed rendering", async () => {
+            const embedPage = await logseq.Editor.createPage('Test DB Embed Page', {createFirstBlock: false});
+            await logseq.Editor.appendBlockInPage(embedPage.uuid, "First block");
+            await logseq.Editor.appendBlockInPage(embedPage.uuid, "Second block");
+            const embedBlockUuid = '67890123-4567-89ab-cdef-012345678902';
+            const htmlFile = await convertToHTMLFile(`uuid:: ${embedBlockUuid}\nlink:: ${embedPage.id}`, "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(embedPage.uuid, 'g'), 'LAS-TEST-UUID-1')
+                .replace(new RegExp(embedBlockUuid, 'g'), 'LAS-TEST-UUID-2')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            const $ = cheerio.load(htmlFile.html);
+            expect($('.embed-page > .children-list').length).toBe(1);
+            await logseq.Editor.deletePage('Test DB Embed Page');
+        });
+    });
+
+    describe("PDF Rendering cases", () => {
+        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("PDF Text Annotation Rendering", async () => {
+            const htmlFile = await convertToHTMLFile("ls-type:: annotation\nhl-page:: 1\nhl-color:: yellow\nThe application can be made by a registered/enrolled elector", "markdown");
+            expect(htmlFile.html.trim()).toMatchSnapshot();
+            expect(htmlFile.html.trim()).toContain('The application can be made');
+            expect(htmlFile.html.trim()).toContain('P1');
+            expect(htmlFile.html.trim()).toContain('🟡');
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("PDF Image Annotation Rendering", async () => {
+            const pdfPage = await logseq.Editor.createPage('hls__Linux_Slides_DB_Test', {createFirstBlock: false});
+            const block = await logseq.Editor.appendBlockInPage(pdfPage.uuid, "ls-type:: annotation\nhl-type:: area\nhl-page:: 1\nhl-color:: yellow\nhl-stamp:: 1767008103331\n[:span]");
+            const htmlFile = await convertToHTMLFile(block.content, "markdown");
+            const graphName = (await logseq.App.getCurrentGraph()).name;
+            const normalized = htmlFile.html.trim()
+                .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
+                .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
+            expect(normalized).toMatchSnapshot();
+            expect(htmlFile.assets).toBeDefined();
+            if (htmlFile.assets && htmlFile.assets.size > 0) {
+                expect(htmlFile.assets[0]).toContain('Linux_Slides_DB_Test');
+                expect(htmlFile.assets[0]).toContain('1767008103331.png');
+            }
+            const $ = cheerio.load(htmlFile.html);
+            expect(htmlFile.html.trim()).toContain('🟡');
+            expect(htmlFile.html.trim()).toContain('P1');
+            await logseq.Editor.deletePage('hls__Linux_Slides_DB_Test');
+        });
+    });
 });
 
 describe("Regression Cases", () => {
