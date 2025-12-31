@@ -1,6 +1,6 @@
 import hljs from "highlight.js";
 import "@logseq/libs";
-import { PageIdentity } from "@logseq/libs/dist/LSPlugin";
+import {EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import * as cheerio from "cheerio";
 import {
     decodeHTMLEntities,
@@ -306,7 +306,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
                 hls_img_loc = `../assets/${assetBlock.uuid}.${assetBlock.properties.type}`;
             }
             else{   // for md graphs
-                hls_img_loc = `../assets/${(page?.originalName ?? "").replace(
+                hls_img_loc = `../assets/${(page?.name ?? "").replace(
                     "hls__",
                     "",
                 )}/${block_props["hl-page"]}_${block_uuid}_${
@@ -327,7 +327,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     }
 
     // Add backward support for assets
-    const tagsStr = _.get(block_props, 'tags', '');
+    const tagsStr = _.get(block_props, 'tags', '[]');
     let tags = [];
     try {tags = JSON.parse(tagsStr)} catch (e) {console.warn(e)}
     const type = _.get(block_props, 'type', '');
@@ -357,6 +357,21 @@ export async function processProperties(resultContent, format = "markdown"): Pro
             }
         }
         resultContent = assetMarkdown + '\n' + resultContent;
+    }
+
+    // Add backward support for node embed
+    const link = _.get(block_props, 'link');
+    const linkDBId = _.toInteger(link);
+    if (linkDBId) {
+        const block = await LogseqProxy.Editor.getBlock(linkDBId as EntityID);
+        if (block) {
+            resultContent = `{{embed ((${block.uuid}))}}` + '\n' + resultContent;
+        } else {
+            const page = await LogseqProxy.Editor.getPage(linkDBId as EntityID);
+            if (page) {
+                resultContent = `{{embed [[${page.name}]]}}` + '\n' + resultContent;
+            }
+        }
     }
     console.log("block_props", orgianl, block_props, resultContent);
 
@@ -487,12 +502,18 @@ async function processRefEmbeds(
     resultContent = await safeReplaceAsync(
         resultContent,
         LOGSEQ_PAGE_REF_REGEXP,
-        async (match, pageName) => {
+        async (match, pageName : string) => {
             // Convert page refs
             if (format == "org" && encodeURI(pageName).match(isImage_REGEXP)) {
                 return `![](${pageName})`;
             } else if (format == "org" && encodeURI(pageName).match(isWebURL_REGEXP)) {
                 return `${pageName}`;
+            } else if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
+                const possibleBlockUUID = pageName;
+                const possibleBlock = await LogseqProxy.Editor.getBlock(possibleBlockUUID);
+                if (possibleBlock) {
+                    return `((${possibleBlock.uuid}))`;
+                }
             }
             const str = getRandomUnicodeString();
             hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(

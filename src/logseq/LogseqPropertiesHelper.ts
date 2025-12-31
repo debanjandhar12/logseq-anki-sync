@@ -1,4 +1,5 @@
 import { BlockEntity, BlockIdentity, EntityID, PageEntity, PageIdentity } from "@logseq/libs/dist/LSPlugin";
+import _ from "lodash";
 
 /**
  * Helper class for fetching Logseq blocks and pages with properties attached.
@@ -103,13 +104,15 @@ export class LogseqPropertiesHelper {
                     }).join('\n');
                 b.content = (props ? props + '\n' : '') + (b.content || '');
                 b.content = `uuid:: ${b.uuid}\n` + b.content; // add uuid as property too in content
+                if (_.get(b, 'link.id')) {
+                    b.content = `link:: ${_.get(b, 'link.id')}\n` + b.content; // add link as property too in content
+                }
             }
             if (b.children && opts.includeChildren) {
                 for (const child of b.children) await processBlock(child as BlockEntity);
             }
         };
         await processBlock(block);
-        
         return block;
     }
 

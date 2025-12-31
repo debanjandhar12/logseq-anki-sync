@@ -59,7 +59,7 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
 ## Best Practices
 
 - **Code Organization:** Keep related functionality within appropriate module directories
-- **Logseq API:** Always use LogseqProxy instead of direct @logseq/libs calls for caching and synchronization safety
+- **Logseq API:** Always use LogseqProxy instead of direct @logseq/libs calls for caching and synchronization safety. However, do not use this inside LogseqPropertiesHelper.ts.
 - **Property Access:** Use `LogseqPropertiesHelper` for block/page property access:
   - For cached access during sync: Use `LogseqProxy.Editor.getBlock()` / `getPage()` (properties included automatically)
   - For fresh, non-cached data: Use `LogseqPropertiesHelper.getBlock()` / `getPage()` from `src/logseq/logseqPropertiesHelper.ts`

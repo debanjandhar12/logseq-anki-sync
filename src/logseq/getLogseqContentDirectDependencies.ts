@@ -2,9 +2,10 @@ import {BlockEntity, BlockPageName, BlockUUID} from "@logseq/libs/dist/LSPlugin"
 import {
     LOGSEQ_BLOCK_REF_REGEXP,
     LOGSEQ_EMBDED_PAGE_REGEXP,
-    LOGSEQ_EMBDED_BLOCK_REGEXP,
+    LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_PAGE_REF_REGEXP,
 } from "../constants";
 import {LogseqProxy} from "./LogseqProxy";
+import {processProperties} from "./LogseqToHtmlConverter";
 
 export interface BlockDependency {
     type: "Block";
@@ -21,6 +22,9 @@ export default async function getLogseqContentDirectDependencies(
     content: string,
     format = "markdown",
 ): Promise<DependencyEntity[]> {
+    if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
+        [content] = await processProperties(content, format);
+    }
     if (content === null || content === undefined) return [];
     const blockDependency: Set<BlockUUID> = new Set();
     const pageDependency: Set<BlockPageName> = new Set();
@@ -50,6 +54,12 @@ export default async function getLogseqContentDirectDependencies(
     // Add dependencies due to LOGSEQ_BLOCK_REF_REGEXP
     while ((match = LOGSEQ_BLOCK_REF_REGEXP.exec(content))) {
         blockDependency.add(match[1]);
+    }
+
+    // Add block dependencies due to LOGSEQ_PAGE_REF_REGEXP (in DB ver page ref and block ref has same syntax)
+    while ((match = LOGSEQ_PAGE_REF_REGEXP.exec(content))) {
+        if (match[1].length == 36)  // uuid are 36 chars in length
+            blockDependency.add(match[1]);
     }
 
     // Add dependencies due to LOGSEQ_EMBDED_PAGE_REGEXP
