@@ -69,6 +69,45 @@ export class LogseqPropertiesHelper {
     }
 
     /**
+     * Processes a block by fetching and attaching properties, and updating content for DB graphs
+     */
+    private static async processBlock(b: BlockEntity, isDbGraph: boolean, includeChildren: boolean = false): Promise<void> {
+        if (!b || !b.uuid) return;
+        
+        const properties = await logseq.Editor.getBlockProperties(b.uuid);
+        if (properties) {
+            b.properties = { ...this.stripPropertyPrefixes(properties), ...b.properties };
+            if (b.properties["tags"] && typeof b.properties["tags"] === "string") {
+                b.properties["tags"] = b.properties["tags"].split(",").map((t: string) => t.trim()).filter((t: string) => t);
+            }
+            if (!b.properties.uuid) b.properties.uuid = b.uuid;
+        }
+        
+        if (isDbGraph) {
+            const props = Object.entries(b.properties || {})
+                .filter(([key]) => !key.startsWith('logseq.') && !key.startsWith('id'))
+                .map(([key, value]) => {
+                    const stringValue = typeof value === 'object' && value !== null 
+                        ? JSON.stringify(value) 
+                        : value;
+                    return `${key}:: ${stringValue}`;
+                }).join('\n');
+            b.content = (props ? props + '\n' : '') + (b.content || '');
+            b.content = `uuid:: ${b.uuid}\n` + b.content;
+            if (_.get(b, 'link.id')) {
+                b.content = `link:: ${_.get(b, 'link.id')}\n` + b.content;
+                b.properties.link = _.get(b, 'link.id');
+            }
+        }
+        
+        if (b.children && includeChildren) {
+            for (const child of b.children) {
+                await this.processBlock(child as BlockEntity, isDbGraph, includeChildren);
+            }
+        }
+    }
+
+    /**
      * Fetches a block with properties attached (non-cached, fresh data)
      *
      * @param srcBlock - Block UUID or entity ID
@@ -82,37 +121,9 @@ export class LogseqPropertiesHelper {
         const block = await logseq.Editor.getBlock(srcBlock, opts);
         if (!block) return null;
         
-        const isDbGraph = await logseq.App.checkCurrentIsDbGraph();
+        const isDbGraph = !!(await logseq.App.checkCurrentIsDbGraph());
+        await this.processBlock(block, isDbGraph, opts.includeChildren);
         
-        const processBlock = async (b: BlockEntity) => {
-            if (!b || !b.uuid) return;
-            // Fetch and add properties for parent block and children when includeChildren is true
-            const properties = await logseq.Editor.getBlockProperties(b.uuid);
-            if (properties) {
-                b.properties = { ...this.stripPropertyPrefixes(properties), ...b.properties };
-            }
-            // For db graphs, add properties and tags to content for parent block and children
-            // This is to maintain backward compatibility with markdown version.
-            if (isDbGraph) {
-                const props = Object.entries(b.properties || {})
-                    .filter(([key]) => !key.startsWith('logseq.') && !key.startsWith('id'))
-                    .map(([key, value]) => {
-                        const stringValue = typeof value === 'object' && value !== null 
-                            ? JSON.stringify(value) 
-                            : value;
-                        return `${key}:: ${stringValue}`;
-                    }).join('\n');
-                b.content = (props ? props + '\n' : '') + (b.content || '');
-                b.content = `uuid:: ${b.uuid}\n` + b.content; // add uuid as property too in content
-                if (_.get(b, 'link.id')) {
-                    b.content = `link:: ${_.get(b, 'link.id')}\n` + b.content; // add link as property too in content
-                }
-            }
-            if (b.children && opts.includeChildren) {
-                for (const child of b.children) await processBlock(child as BlockEntity);
-            }
-        };
-        await processBlock(block);
         return block;
     }
 
@@ -144,5 +155,31 @@ export class LogseqPropertiesHelper {
         }
         
         return page;
+    }
+
+    /**
+     * Fetches page blocks tree with properties attached (non-cached, fresh data)
+     * 
+     * @param srcPage - Page name or entity ID
+     * @returns Array of blocks with properties attached
+     */
+    static async getPageBlocksTree(
+        srcPage: PageIdentity | EntityID
+    ): Promise<BlockEntity[]> {
+        if (typeof srcPage === "number") {
+            const page = await logseq.Editor.getPage(srcPage);
+            srcPage = page.name;
+        }
+        
+        const blocks = await logseq.Editor.getPageBlocksTree(srcPage);
+        if (!blocks) return [];
+        
+        const isDbGraph = !!(await logseq.App.checkCurrentIsDbGraph());
+        
+        for (const block of blocks) {
+            await this.processBlock(block as BlockEntity, isDbGraph, true);
+        }
+        
+        return blocks;
     }
 }

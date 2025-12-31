@@ -59,14 +59,10 @@ export namespace LogseqProxy {
 
         static async getPageBlocksTree(srcPage: PageIdentity | EntityID, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}): Promise<BlockEntity[]> {
             srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
-            let pageBlockTree = null;
+            let pageBlockTree = [];
             await getLogseqLock.acquireAsync();
             try {
-                if (typeof srcPage === "number") {
-                    let page = await logseq.Editor.getPage(srcPage);
-                    srcPage = page.name;
-                }
-                pageBlockTree = await logseq.Editor.getPageBlocksTree(srcPage);
+                pageBlockTree = await LogseqPropertiesHelper.getPageBlocksTree(srcPage);
             } catch (e) {
                 console.error(e);
                 if (!opts.suppressErrors) throw e;

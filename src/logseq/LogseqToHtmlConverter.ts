@@ -304,7 +304,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
             if (_.get(block, [":logseq.property.pdf/hl-image", "id"])) { // for db graphs
                 const assetBlock = await LogseqProxy.Editor.getBlock(_.get(block, [":logseq.property.pdf/hl-image", "id"]));
                 if (assetBlock) {
-                    hls_img_loc = `../assets/${assetBlock.uuid}.${assetBlock.properties.type}`;
+                    hls_img_loc = `../assets/${assetBlock.uuid}.${assetBlock.properties.type}?imageAnnotationBlockUUID=${block_uuid}`;
                 }
             }
             else {   // for md graphs
