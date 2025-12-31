@@ -169,7 +169,7 @@ export class ImageOcclusionNote extends Note {
 
     public static async getNotesFromLogseqBlocks(): Promise<ImageOcclusionNote[]> {
         let blocks: any = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [*])
+        [:find (pull ?b [:block/uuid])
         :where
           [?b :block/properties ?p]
           [(get ?p :occlusion)]

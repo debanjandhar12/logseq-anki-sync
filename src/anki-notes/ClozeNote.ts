@@ -218,7 +218,7 @@ export class ClozeNote extends Note {
         const clozeRegex = /{{(c[1-9]|cloze[1-9]?) .*}}/;
         const clozePattern = clozeRegex.source.replace(/\\/g, "\\\\");
         const macroCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [*])
+        [:find (pull ?b [:block/uuid])
         :where
         (or
            (and [?b :block/content ?content])
@@ -228,7 +228,7 @@ export class ClozeNote extends Note {
         ]`, {suppressErrors: false});
         // Get blocks with .replacecloze or replacecloze property
         const replaceCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [*])
+        [:find (pull ?b [:block/uuid])
         :where
           [?b :block/properties ?p]
           (or
@@ -238,7 +238,7 @@ export class ClozeNote extends Note {
         ]`, {suppressErrors: false});
         // Get blocks with org cloze
         const orgCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [*])
+        [:find (pull ?b [:block/uuid])
         :where
         (or
            (and [?b :block/content ?content])

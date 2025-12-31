@@ -63,7 +63,7 @@ export class SwiftArrowNote extends Note {
 
     public static async getNotesFromLogseqBlocks(): Promise<SwiftArrowNote[]> {
         const singleSwiftArrowBlocks = await logseq.DB.datascriptQuery(`
-        [:find (pull ?b [*])
+        [:find (pull ?b [:block/uuid])
         :where
         (or
            (and [?b :block/content ?content])

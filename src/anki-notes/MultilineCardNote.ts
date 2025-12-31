@@ -194,19 +194,19 @@ export class MultilineCardNote extends Note {
         otherNotes: Array<Note>,
     ): Promise<MultilineCardNote[]> {
         const logseqCard_blocks = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [*])
+        [:find (pull ?b [:block/uuid])
         :where
         [?p :block/name "card"]
         [?b :block/refs ?p]
         ]`, {suppressErrors: false});
         const flashCard_blocks = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [*])
+        [:find (pull ?b [:block/uuid])
         :where
         [?p :block/name "flashcard"]
         [?b :block/refs ?p]
         ]`, {suppressErrors: false});
         let logseqCardGroup_blocks = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [*])
+        [:find (pull ?b [:block/uuid])
         :where
         [?r :block/name "card-group"]
         [?p :block/refs ?r]
