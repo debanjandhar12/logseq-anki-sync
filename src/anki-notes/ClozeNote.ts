@@ -215,39 +215,50 @@ export class ClozeNote extends Note {
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ClozeNote[]> {
+        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: { id: number }}][];
         // Get blocks with Anki or Logseq cloze macro syntax
         const clozeRegex = /{{(c[1-9]|cloze[1-9]?) .*}}/;
         const clozePattern = clozeRegex.source.replace(/\\/g, "\\\\");
-        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: { id: number }}][];
         const macroCloze_blocks : DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [:block/uuid :block/page])
-        :where
-        (or
-           (and [?b :block/content ?content])
-           (and [?b :block/title ?content]))
-        [(re-pattern "${clozePattern}") ?regex]
-        [(re-find ?regex ?content)]
-        ]`, {suppressErrors: false});
-        // Get blocks with .replacecloze or replacecloze property
-        const replaceCloze_blocks : DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [:block/uuid :block/page])
-        :where
-          [?b :block/properties ?p]
-          (or
-            [(get ?p :replacecloze)]
-            [(get ?p :.replacecloze)]
-          )
-        ]`, {suppressErrors: false});
-        // Get blocks with org cloze
-        const orgCloze_blocks : DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [:block/uuid :block/page])
-        :where
-        (or
-           (and [?b :block/content ?content])
-           (and [?b :block/title ?content]))
-        [(re-pattern "#\\\\+BEGIN_(CLOZE)( .*)?\\\\n((.|\\\\n)*?)#\\\\+END_\\\\1") ?regex]
-        [(re-find ?regex ?content)]
-        ]`, {suppressErrors: false});
+        [:find (pull ?b [:block/uuid :block/page])                                                                                                                    
+         :where                                                                                                                                                       
+         [(re-pattern "${clozePattern}") ?regex]                                                                                                                      
+         (or                                                                                                                                                          
+           (and [?b :block/content ?content]                                                                                                                          
+                [(re-find ?regex ?content)])                                                                                                                          
+           (and [?b :block/title ?content]                                                                                                                            
+                [(re-find ?regex ?content)]))]`, {suppressErrors: false});
+        // Get blocks with or replacecloze property and org mode cloze
+        let replaceCloze_blocks : DatascriptQueryResult = [];
+        let orgCloze_blocks : DatascriptQueryResult = [];
+        if (!await LogseqProxy.App.checkCurrentIsDbGraph()) {
+            replaceCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
+                [:find (pull ?b [:block/uuid :block/page])
+                :where
+                  [?b :block/properties ?p]
+                  [(get ?p :replacecloze)]
+                ]`, {suppressErrors: false});
+            orgCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
+            [:find (pull ?b [:block/uuid :block/page])                                                                                                                
+             :where                                                                                                                                                   
+             [(re-pattern "#\\\\+BEGIN_(CLOZE)( .*)?\\\\n((.|\\\\n)*?)#\\\\+END_\\\\1") ?regex]                                                                       
+             (or                                                                                                                                                      
+               (and [?b :block/content ?content]                                                                                                                      
+                    [(re-find ?regex ?content)])                                                                                                                      
+               (and [?b :block/title ?content]                                                                                                                        
+                    [(re-find ?regex ?content)]))]`, {suppressErrors: false});
+        } else {
+            replaceCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
+                [:find (pull ?b [:block/uuid :block/page])
+                :where
+                  [?prop-e :block/tags :logseq.class/Property]
+                  [?prop-e :db/ident ?prop]
+                  [(name ?prop) ?prop-name]
+                  [(clojure.string/ends-with? ?prop-name "replacecloze")]
+                  [?b ?prop _]
+                ]`, {suppressErrors: false});
+        }
+
         let blocks = [...macroCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
         let notes = await Promise.all(
             blocks.map(async (b) => {

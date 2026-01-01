@@ -65,14 +65,14 @@ export class SwiftArrowNote extends Note {
     public static async getNotesFromLogseqBlocks(): Promise<SwiftArrowNote[]> {
         type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: { id: number }}][];
         const singleSwiftArrowBlocks : DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [:block/uuid :block/page])
-        :where
-        (or
-           (and [?b :block/content ?content])
-           (and [?b :block/title ?content]))
-        [(re-pattern ":(<->|->|<-)") ?regex]
-        [(re-find ?regex ?content)]
-        ]`, {suppressErrors: false});
+        [:find (pull ?b [:block/uuid :block/page])                                                                                                                    
+         :where                                                                                                                                                       
+         [(re-pattern ":(<->|->|<-)") ?regex]                                                                                                                         
+         (or                                                                                                                                                          
+           (and [?b :block/content ?content]                                                                                                                          
+                [(re-find ?regex ?content)])                                                                                                                          
+           (and [?b :block/title ?content]                                                                                                                            
+                [(re-find ?regex ?content)]))]`, {suppressErrors: false});
         let blocks = [...singleSwiftArrowBlocks];
         let notes = await Promise.all(
             blocks.map(async (b) => {

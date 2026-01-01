@@ -193,29 +193,55 @@ export class MultilineCardNote extends Note {
     public static async getNotesFromLogseqBlocks(
         otherNotes: Array<Note>,
     ): Promise<MultilineCardNote[]> {
-        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: { id: number }}][];
-        const logseqCard_blocks : DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [:block/uuid :block/page])
-        :where
-        [?p :block/name "card"]
-        [?b :block/refs ?p]
-        ]`, {suppressErrors: false});
-        const flashCard_blocks : DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [:block/uuid :block/page])
-        :where
-        [?p :block/name "flashcard"]
-        [?b :block/refs ?p]
-        ]`, {suppressErrors: false});
-        let logseqCardGroup_blocks : DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [:block/uuid :block/page])
-        :where
-        [?r :block/name "card-group"]
-        [?p :block/refs ?r]
-        [?b :block/parent ?p]
-        ]`, {suppressErrors: false});
+        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: { id: number }; parent: { id: number }}][];
+        let logseqCard_blocks : DatascriptQueryResult = [];
+        let flashCard_blocks : DatascriptQueryResult = [];
+        let logseqCardGroup_blocks : DatascriptQueryResult = [];
+        if (!await LogseqProxy.App.checkCurrentIsDbGraph()) {
+            logseqCard_blocks = await LogseqProxy.DB.datascriptQuery(`
+                [:find (pull ?b [:block/uuid :block/page :block/parent])
+                :where
+                [?p :block/name "card"]
+                [?b :block/refs ?p]
+                ]`, {suppressErrors: false});
+            flashCard_blocks = await LogseqProxy.DB.datascriptQuery(`
+                [:find (pull ?b [:block/uuid :block/page :block/parent])
+                :where
+                [?p :block/name "flashcard"]
+                [?b :block/refs ?p]
+                ]`, {suppressErrors: false});
+            logseqCardGroup_blocks = await LogseqProxy.DB.datascriptQuery(`
+                [:find (pull ?b [:block/uuid :block/page :block/parent])
+                :where
+                [?r :block/name "card-group"]
+                [?p :block/refs ?r]
+                [?b :block/parent ?p]
+                ]`, {suppressErrors: false});
+        } else {
+            logseqCard_blocks = await LogseqProxy.DB.datascriptQuery(`
+                [:find (pull ?b [:block/uuid :block/page :block/parent])
+                :where
+                [?p :block/name "card"]
+                [?b :block/tags ?p]
+                ]`, {suppressErrors: false});
+            flashCard_blocks = await LogseqProxy.DB.datascriptQuery(`
+                [:find (pull ?b [:block/uuid :block/page :block/parent])
+                :where
+                [?p :block/name "flashcard"]
+                [?b :block/tags ?p]
+                ]`, {suppressErrors: false});
+            logseqCardGroup_blocks = await LogseqProxy.DB.datascriptQuery(`
+                [:find (pull ?b [:block/uuid :block/page :block/parent])
+                :where
+                [?r :block/name "card-group"]
+                [?p :block/tags ?r]
+                [?b :block/parent ?p]
+                ]`, {suppressErrors: false});
+        }
         logseqCardGroup_blocks = await Promise.all(
             logseqCardGroup_blocks.map(async (block) => {
                 const uuid = getUUIDFromBlock(block[0]);
+                console.log(block[0]);
                 const parent = block[0].parent.id;
                 const parentBlock = await LogseqProxy.Editor.getBlock(parent);
                 const tags = _.get(parentBlock, "properties.tags", []) as string[];

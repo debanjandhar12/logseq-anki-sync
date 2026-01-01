@@ -169,12 +169,26 @@ export class ImageOcclusionNote extends Note {
 
     public static async getNotesFromLogseqBlocks(): Promise<ImageOcclusionNote[]> {
         type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: { id: number }}][];
-        let blocks : DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(`
-        [:find (pull ?b [:block/uuid :block/page])
-        :where
-          [?b :block/properties ?p]
-          [(get ?p :occlusion)]
-        ]`, {suppressErrors: false});
+        let blocks : DatascriptQueryResult = [];
+        if (!await LogseqProxy.App.checkCurrentIsDbGraph()) {
+            blocks = await LogseqProxy.DB.datascriptQuery(`
+                [:find (pull ?b [:block/uuid :block/page])
+                :where
+                  [?b :block/properties ?p]
+                  [(get ?p :occlusion)]
+                ]`, {suppressErrors: false});
+        }
+        else {
+            blocks = await LogseqProxy.DB.datascriptQuery(`
+                [:find (pull ?b [:block/uuid :block/page])
+                :where
+                  [?prop-e :block/tags :logseq.class/Property]
+                  [?prop-e :db/ident ?prop]
+                  [(name ?prop) ?prop-name]
+                  [(clojure.string/ends-with? ?prop-name "occlusion")]
+                  [?b ?prop _]
+                ]`, {suppressErrors: false});
+        }
         let notes: (ImageOcclusionNote | false)[] = await Promise.all(
             blocks.map(async (b) => {
                 const uuid = getUUIDFromBlock(b[0]);
