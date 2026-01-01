@@ -50,7 +50,8 @@ const addPageNode = async (pageName: BlockPageName) => {
     if (graph.hasNode(pageName + "Page")) return;
     const page = await LogseqProxy.Editor.getPage(pageName);
     const toHash = [];
-    toHash.push([_.get(page, "updatedAt", "")]); // A Page has no dependencies, so we just hash the updatedAt timestamp
+    toHash.push([_.get(page, "updatedAt", "")]);
+    // TODO: consider adding refs as dependencies
     graph.addNode(pageName + "Page", objectHashOptimized(toHash));
 };
 
@@ -75,8 +76,10 @@ const addBlockNode = async (blockUUID : BlockUUID) => {
     graph.dependenciesOf(blockUUID + "Block").forEach((dependency) => {
         toHash.push(graph.getNodeData(dependency));
     });
+    console.log(block);
     toHash.push([
         _.get(blockPage, "updatedAt", ""),
+        _.get(block, "updatedAt", ""),
         _.get(block, "content", "").length,
         _.get(block, "parent.id", ""),
         _.get(block, "page.id", ""),
