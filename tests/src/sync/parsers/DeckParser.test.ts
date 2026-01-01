@@ -83,6 +83,7 @@ describe("DeckParser E2E Tests", () => {
             expect(deck).toBe("Child Deck");
         });
 
+        // TODO: Fix this
         test.skip("Namespace page deck inheritance - LogseqProxy.Editor.getPage returns null for namespace parent", async () => {
             // This test fails because LogseqProxy.Editor.getPage returns null when trying to fetch
             // the parent namespace page by ID. This appears to be a limitation of the memoization
@@ -129,7 +130,7 @@ describe("DeckParser E2E Tests", () => {
         });
 
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Parent block deck inheritance in DB mode", async () => {
-            const parentBlock = await logseq.Editor.appendBlockInPage(page.uuid, "deck:: Deck\nParent content");
+            const parentBlock = await logseq.Editor.appendBlockInPage(page.uuid, "Parent content", {properties:{deck:"Deck"}});
             const childBlock = await logseq.Editor.insertBlock(parentBlock.uuid, "Child content");
             
             const note = new MultilineCardNote(childBlock.uuid, childBlock.content, childBlock.format, childBlock.properties, page);
@@ -139,8 +140,8 @@ describe("DeckParser E2E Tests", () => {
         });
 
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Child block deck overrides parent in DB mode", async () => {
-            const parentBlock = await logseq.Editor.appendBlockInPage(page.uuid, "deck:: Parent Deck\nParent content");
-            const childBlock = await logseq.Editor.insertBlock(parentBlock.uuid, "deck:: Child Deck\nChild content");
+            const parentBlock = await logseq.Editor.appendBlockInPage(page.uuid, "Parent content", {properties:{deck: "Parent Deck"}});
+            const childBlock = await logseq.Editor.insertBlock(parentBlock.uuid, "Child content", {properties:{deck: "Child Deck"}});
             
             const note = new MultilineCardNote(childBlock.uuid, childBlock.content, childBlock.format, childBlock.properties, page);
             const deck = await DeckParser.parse(note);

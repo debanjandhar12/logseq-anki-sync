@@ -57,7 +57,7 @@ export namespace LogseqProxy {
             return page;
         }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
 
-        static async getPageBlocksTree(srcPage: PageIdentity | EntityID, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}): Promise<BlockEntity[]> {
+        static getPageBlocksTree = pMemoize(async (srcPage: PageIdentity | EntityID, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}): Promise<BlockEntity[]> => {
             srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
             let pageBlockTree = [];
             await getLogseqLock.acquireAsync();
@@ -70,7 +70,7 @@ export namespace LogseqProxy {
                 getLogseqLock.release();
             }
             return pageBlockTree;
-        }
+        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
 
         static async upsertBlockProperty(block: BlockIdentity,
             key: string, value: any, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}) {
@@ -205,10 +205,11 @@ export namespace LogseqProxy {
         WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
             const { debug } = LogseqProxy.Settings.getPluginSettings();
             if (debug?.includes("LogseqProxy.ts")) {
-                console.log("[LogseqProxy] Clearing memoization caches for getBlock, getPage, listFilesOfCurrentGraph, and checkCurrentIsDbGraph");
+                console.log("[LogseqProxy] Clearing memoization caches for getBlock, getPage, getPageBlocksTree, listFilesOfCurrentGraph, and checkCurrentIsDbGraph");
             }
             pMemoizeClear(LogseqProxy.Editor.getBlock);
             pMemoizeClear(LogseqProxy.Editor.getPage);
+            pMemoizeClear(LogseqProxy.Editor.getPageBlocksTree);
             pMemoizeClear(LogseqProxy.Assets.listFilesOfCurrentGraph);
             pMemoizeClear(LogseqProxy.App.checkCurrentIsDbGraph);
             pMemoizeClear(LogseqProxy.App.getCurrentGraph);
