@@ -48,7 +48,7 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
 
 **Running Tests:**
 - `pnpm test --run` - Run all tests
-- `pnpm test converter.test.ts --run` - Run specific test file
+- `pnpm test LogseqToHtmlConverter.test.ts --run` - Run specific test file
 - `pnpm test -t "test case name" --run` - Run specific test case
 
 **Testing Approach:**

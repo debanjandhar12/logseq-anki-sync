@@ -439,7 +439,7 @@ async execute(operation: string): Promise<any> {
 **Location:** Test directory
 
 **Current Tests:**
-- `converter/converter.test.ts` - Comprehensive HTML conversion tests
+- `converter/LogseqToHtmlConverter.test.ts` - Comprehensive HTML conversion tests
 - `anki-template/AnkiCardTemplates.test.ts`
 - `logseq/LogseqPropertiesHelper.test.ts`
 - `compareAnswer/compareAnswer.test.ts`

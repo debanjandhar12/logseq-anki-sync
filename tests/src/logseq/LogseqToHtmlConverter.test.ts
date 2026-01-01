@@ -655,4 +655,8 @@ describe("Regression Cases", () => {
         const $ = cheerio.load(htmlFile.html);
         expect($('.hljs').text()).toContain('lw $t0, 4($gp)');
     });
+    test("https://github.com/debanjandhar12/logseq-anki-sync/discussions/89#discussioncomment-13399053", async () => {
+        const htmlFile = await convertToHTMLFile("{{c1:: $\\frac{1}{\\sqrt{2}}$}}", "markdown");
+        expect(htmlFile.html.trim()).toMatchSnapshot();
+    });
 });

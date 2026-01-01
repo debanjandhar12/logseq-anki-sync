@@ -1,7 +1,9 @@
-- [ ] Improve testing framework - 1
+- [ ] Improve testing for anki ops, parsers in sync, caching
 - [x] Improve asset handling - 0.2
 - [ ] Rewrite Feature explorer - 1
-- [ ] Find points and fix renderer - 1
+- [x] Find points and fix renderer - 1
+- [ ] Fix queries based on properties
+- [ ] Complete writing docs
 
 Notes:
 - Need to remove hide Occlusion Data in db version or maybe upgrade?
@@ -13,6 +15,10 @@ Good Links:
 - https://discuss.logseq.com/t/logseq-db-unofficial-faq/32508/11?u=danzu
 - https://discuss.logseq.com/t/logseq-db-changelog/30013/31?u=danzu
 - https://github.com/logseq/docs/blob/master/db-version-changes.md
+
+Breaking changes:
+- .replaceclose property is no longer supported. Use replacecloze instead.
+- Removed LogseqAnkiFeatureExplorer temporarily.
 
 
 /home/debanjand/logseq/graphs/ <- use for db graphs setup?
