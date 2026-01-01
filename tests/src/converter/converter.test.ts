@@ -302,7 +302,7 @@ describe("E2E cases for non DB mode", () => {
     let prevPage : PageEntity | BlockEntity, page : PageEntity;
     beforeEach(async () => {
         prevPage = await logseq.Editor.getCurrentPage();
-        page = await logseq.Editor.createPage('Test LogseqAnkiSync', {createFirstBlock: false});
+        page = await logseq.Editor.createPage('Test LogseqAnkiSync', {}, {createFirstBlock: false});
     });
 
     afterEach(async () => {
@@ -331,7 +331,7 @@ describe("E2E cases for non DB mode", () => {
         });
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("PDF Image Annotation Rendering", async () => {
             // Create a PDF page (simulated with hls__ prefix)
-            const pdfPage = await logseq.Editor.createPage('hls__Linux_Slides_Test', {createFirstBlock: false});
+            const pdfPage = await logseq.Editor.createPage('hls__Linux_Slides_Test', {}, {createFirstBlock: false});
             // Create the annotation block
             const block = await logseq.Editor.appendBlockInPage(pdfPage.uuid, "ls-type::annotation\nhl-type::area\nhl-page::1\nhl-color::blue\nhl-stamp::1673181377785\n[:span]");
             const htmlFile = await convertToHTMLFile(block.content, "markdown");
@@ -389,7 +389,7 @@ describe("E2E cases for non DB mode", () => {
 
     describe("Page Reference Rendering", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic page ref rendering", async () => {
-            const refPage = await logseq.Editor.createPage('Test Ref Page', {createFirstBlock: false});
+            const refPage = await logseq.Editor.createPage('Test Ref Page', {}, {createFirstBlock: false});
             const htmlFile = await convertToHTMLFile("Page Ref: [[Test Ref Page]]", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
@@ -401,7 +401,7 @@ describe("E2E cases for non DB mode", () => {
         });
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Renamed page ref rendering", async () => {
-            const refPage = await logseq.Editor.createPage('Original Page Name', {createFirstBlock: false});
+            const refPage = await logseq.Editor.createPage('Original Page Name', {}, {createFirstBlock: false});
             const htmlFile = await convertToHTMLFile("Page Ref: [Renamed Page]([[Original Page Name]])", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
@@ -484,7 +484,7 @@ describe("E2E cases for non DB mode", () => {
 
     describe("Page Embed Rendering", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic page embed rendering", async () => {
-            const embedPage = await logseq.Editor.createPage('Test Embed Page', {createFirstBlock: false});
+            const embedPage = await logseq.Editor.createPage('Test Embed Page', {}, {createFirstBlock: false});
             await logseq.Editor.appendBlockInPage(embedPage.uuid, "First block");
             await logseq.Editor.appendBlockInPage(embedPage.uuid, "Second block");
             const htmlFile = await convertToHTMLFile("Page Embed: {{embed [[Test Embed Page]]}}", "markdown");
@@ -512,7 +512,7 @@ describe("Page + Block Embed Rendering", () => {
     let prevPage : PageEntity | BlockEntity, page : PageEntity;
     beforeEach(async () => {
         prevPage = await logseq.Editor.getCurrentPage();
-        page = await logseq.Editor.createPage('Test LogseqAnkiSync Embed', {createFirstBlock: false});
+        page = await logseq.Editor.createPage('Test LogseqAnkiSync Embed', {}, {createFirstBlock: false});
     });
 
     afterEach(async () => {
@@ -537,7 +537,7 @@ describe("E2E cases for DB mode", () => {
     let prevPage : PageEntity | BlockEntity, page : PageEntity;
     beforeEach(async () => {
         prevPage = await logseq.Editor.getCurrentPage();
-        page = await logseq.Editor.createPage('Test LogseqAnkiSync DB', {createFirstBlock: false});
+        page = await logseq.Editor.createPage('Test LogseqAnkiSync DB', {}, {createFirstBlock: false});
     });
 
     afterEach(async () => {
@@ -562,7 +562,7 @@ describe("E2E cases for DB mode", () => {
 
     describe("Page Reference Rendering", () => {
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Basic page ref rendering", async () => {
-            const refPage = await logseq.Editor.createPage('Test DB Ref Page', {createFirstBlock: false});
+            const refPage = await logseq.Editor.createPage('Test DB Ref Page', {}, {createFirstBlock: false});
             const htmlFile = await convertToHTMLFile("Page Ref: [[Test DB Ref Page]]", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
@@ -594,7 +594,7 @@ describe("E2E cases for DB mode", () => {
 
     describe("Page Embed Rendering", () => {
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Basic page embed rendering", async () => {
-            const embedPage = await logseq.Editor.createPage('Test DB Embed Page', {createFirstBlock: false});
+            const embedPage = await logseq.Editor.createPage('Test DB Embed Page', {}, {createFirstBlock: false});
             await logseq.Editor.appendBlockInPage(embedPage.uuid, "First block");
             await logseq.Editor.appendBlockInPage(embedPage.uuid, "Second block");
             const embedBlockUuid = '67890123-4567-89ab-cdef-012345678902';
@@ -621,7 +621,7 @@ describe("E2E cases for DB mode", () => {
         });
 
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("PDF Image Annotation Rendering", async () => {
-            const pdfPage = await logseq.Editor.createPage('hls__Linux_Slides_DB_Test', {createFirstBlock: false});
+            const pdfPage = await logseq.Editor.createPage('hls__Linux_Slides_DB_Test', {}, {createFirstBlock: false});
             const block = await logseq.Editor.appendBlockInPage(pdfPage.uuid, "ls-type:: annotation\nhl-type:: area\nhl-page:: 1\nhl-color:: yellow\nhl-stamp:: 1767008103331\n[:span]");
             const htmlFile = await convertToHTMLFile(block.content, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
