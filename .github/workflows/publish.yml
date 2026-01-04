@@ -27,6 +27,9 @@ jobs:
             - name: Install dependencies
               run: pnpm install
 
+            - name: Run tests
+              run: pnpm test --run --reporter=verbose --reporter=json --outputFile=test-report.json
+
             - name: Build
               id: build
               run: |
@@ -63,3 +66,13 @@ jobs:
                   asset_path: ./${{ steps.package.outputs.package_name }}.zip
                   asset_name: ${{ steps.package.outputs.package_name }}-v${{ steps.package.outputs.package_version }}.zip
                   asset_content_type: application/zip
+
+            - name: Upload test report
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ./test-report.json
+                  asset_name: test-report.json
+                  asset_content_type: application/json
