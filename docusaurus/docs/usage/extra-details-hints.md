@@ -1,17 +1,17 @@
 ---
 id: extra-details-hints
 title: Extra Details & Hints
-description: Add explanations, mnemonics, and hints to your notes.
-sidebar_position: 1
+description: Add explanations and hints to cards
+discussion: "92"
 ---
 
 import LogseqExample from '@site/src/components/LogseqExample';
 
-Logseq Anki Sync lets you enrich cards with additional explanations or hints using block properties or ORG macros.
+Add supporting information to your flashcards using block properties.
 
-## Extra details with block properties
+## Extra Details
 
-Use the `extra::` property to append supporting text to the back of a card.
+Use `extra::` property to add explanations that appear on the back of cards:
 
 <LogseqExample>
 
@@ -21,27 +21,17 @@ Use the `extra::` property to append supporting text to the back of a card.
 
 </LogseqExample>
 
-## Extra details with ORG blocks
-
-<LogseqExample>
-
-- Periodic Table - Period 3 :-&gt;
-  Na Mg Al Si P S Cl Ar
-  #+BEGIN_EXTRA
-  Mnemonics: \*\*Na\*\*tive \*\*M\*\*a**g**pies \*\*Al\*\*ways \*\*Si\*\*t \*\*P\*\*eacefully \*\*S\*\*earching \*\*Cl\*\*ear \*\*Ar\*\*eas
-  #+END_EXTRA
-
-</LogseqExample>
-
-Both approaches produce the same Anki card:
+This produces the following card:
 
 | Front | Back |
 | --- | --- |
 | ![Extra card front](/img/extra-details-front.png) | ![Extra card back](/img/extra-details-back.png) |
 
-## Adding hints
+This above property supported by all card types.
 
-Hints are not officially supported in Logseq Anki Sync yet, but you can mimic them by using Anki's cloze hint syntax.
+## Hints
+
+It is possible to add hints to front size of cloze cards using this syntax:
 
 <LogseqExample>
 
@@ -49,7 +39,7 @@ Hints are not officially supported in Logseq Anki Sync yet, but you can mimic th
 
 </LogseqExample>
 
-This renders a prompt showing the hint on the front of the card.
+This produces the following card:
 
 | Front | Back |
 | --- | --- |

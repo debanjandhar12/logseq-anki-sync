@@ -8,6 +8,13 @@
   border: 1px solid var(--ifm-color-emphasis-200);
 }
 
+/* Style bold text in LogseqExample to look like headings */
+.logseq-example strong {
+  font-size: 1.25rem;
+  display: block;
+  margin: 0.5rem 0 0.5rem 0;
+}
+
 html[data-theme='dark'] .logseq-example {
   background-color: var(--prism-background-color, #282a36);
   border-color: var(--ifm-color-emphasis-200);

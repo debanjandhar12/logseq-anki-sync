@@ -1,0 +1,54 @@
+name: Deploy Docusaurus to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'docusaurus/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'pnpm'
+          cache-dependency-path: docusaurus/pnpm-lock.yaml
+      
+      - name: Install dependencies
+        run: cd docusaurus && pnpm install --frozen-lockfile
+      
+      - name: Build
+        run: cd docusaurus && pnpm run docusaurus:build
+      
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docusaurus/build
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

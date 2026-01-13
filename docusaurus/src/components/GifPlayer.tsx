@@ -168,7 +168,8 @@ const GifPlayer: React.FC<GifPlayerProps> = ({ gif, still, alt, caption }) => {
               fontWeight: '500',
               display: isHovered ? 'flex' : 'none',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              userSelect: 'none'
             }}
           >
             {isPlaying ? '⏸' : '▶'} {isPlaying ? 'Pause' : 'Play'}

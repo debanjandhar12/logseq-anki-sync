@@ -1,27 +1,44 @@
 ---
 id: image-occlusion
 title: Image Occlusion Cards
-description: Create flashcards that hide regions of an image to test your recall.
-sidebar_position: 4
+description: Hide regions of images to test recall
+discussion: "125"
 ---
 
+Image Occlusion creates flashcards that mask parts of an image.
 
-Image Occlusion lets you create cards that hide parts of an image to test your knowledge of that **hidden** information.
+## Creating Cards
 
-## Creating Image Occlusion cards
-
-The plugin provides an in-built Image Occlusion Editor to make these cards. It can be accessed by right-clicking the bullet of the Logseq block containing an image.
+Right-click any Logseq block containing an image to open the Image Occlusion Editor:
 
 <GifPlayer
   gif="/logseq-anki-sync/img/image-occlusion-editor-demo.gif"
   alt="Image occlusion editor demo"
 />
 
-In Logseq Anki Sync, image occlusion behaves like cloze deletion but for images. Each occlusion has an ID, and occlusions with the same ID will be **hidden** together.
+By default, only the tested region is masked. This can be changed by enabling "Hide all, test one" in settings to mask all regions:
 
-### Common FAQ
+![](/img/hide-all-test-one.png)
+
+## Testing two masked regions together
+
+To test multiple regions together, assign them the same cloze ID:
+![](/img/img_occ_same_id.png)
+
+## FAQ
 
 <details>
-  <summary>Where is occlusion information stored in Logseq?</summary>
-  <div>The occlusion information is stored in the <code>occlusion</code> block property as a base64 string. Deleting this property will cause the occlusion card to be deleted.</div>
+  <summary>Where is occlusion data stored?</summary>
+  <div>In the <code>occlusion</code> block property as base64. Deleting this property removes the card.</div>
+  <summary>How do I hide the occlusion property in Logseq?</summary>
+  <div>Enable the "Hide Occlusion Data" addon in plugin settings.</div>
 </details>
+
+<details>
+  <summary>How do I hide the occlusion property in Logseq?</summary>
+  <div>Enable the "Hide Occlusion Data" addon in plugin settings.</div>
+</details>
+
+## Tips
+
+- Use `extra::` to add mnemonics

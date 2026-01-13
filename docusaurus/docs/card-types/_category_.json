@@ -1,9 +1,7 @@
 {
   "label": "Card Types",
-  "position": 2,
   "link": {
     "type": "generated-index",
-    "title": "Card Types Overview",
-    "description": "Learn how to create different flashcard styles with Logseq Anki Sync."
+    "title": "Card Types Overview"
   }
 }

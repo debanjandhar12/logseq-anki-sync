@@ -1,21 +1,21 @@
 ---
 id: swift-arrow
 title: Swift Arrow Cards
-description: Author directional cards with minimal syntax.
-sidebar_position: 2
+description: Quick directional cards with minimal syntax
+discussion: "91"
 ---
 
 import LogseqExample from '@site/src/components/LogseqExample';
 
-Swift Arrow cards are designed for quickly capturing relationships or descriptions. They are easiest to set up when the plugin setting `includeParentContent` is enabled (`Logseq → Settings → Plugin Settings → Logseq Anki Sync`).
+Swift Arrow cards are designed to quickly capturing relationships or descriptions.
 
 ## Syntax
 
-You can create Swift cards by adding arrow markers at the end of lines:
+Use arrows in child blocks to create cards:
 
-- `:->` — forward card (front → back)
-- `:<-` — reverse card (back → front)
-- `:<->` — bidirectional card (both directions)
+- `:->` — forward (front → back)
+- `:<-` — reverse (back → front)
+- `:<->` — bidirectional (both directions)
 
 <LogseqExample>
 
@@ -25,7 +25,7 @@ You can create Swift cards by adding arrow markers at the end of lines:
 
 </LogseqExample>
 
-This block generates a note with multiple cards, one for each child bullet.
+This creates multiple cards, one for each child block:
 
 | Front | Back |
 | --- | --- |
@@ -34,5 +34,4 @@ This block generates a note with multiple cards, one for each child bullet.
 
 ## Tips
 
-- Combine Swift syntax with properties like `deck::` or `tags::` to route cards to specific decks.
-- Use `extra::` to provide additional hints or mnemonics (see [Extra Details & Hints](../usage/extra-details-hints)).
+- Use `extra::` to provide mnemonics (see [Extra Details & Hints](../usage/extra-details-hints)).

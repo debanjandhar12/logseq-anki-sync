@@ -1,21 +1,26 @@
 ---
 title: Overview
-description: Get started with Logseq Anki Sync and learn how the docs are organized.
-sidebar_position: 1
+description: Get started with Logseq Anki Sync
 ---
 
 # Welcome
 
-Logseq Anki Sync brings your Logseq flashcards to Anki with features like image occlusion, occlusion on PDF annotations, incremental cards, and advanced hashing for blazing-fast syncs.
+Logseq Anki Sync brings your Logseq flashcards to Anki. It extends Logseq's flashcard syntax with powerful features such as **incremental cards, image occlusion, PDF annotation occlusion, etc**.
 
-Use this documentation to explore supported card types, understand deck terminology, and master advanced workflows.
+<GifPlayer
+gif="/logseq-anki-sync/img/basic-reversed-card-demo.gif"
+alt="Image occlusion editor demo"
+/>
 
-## Quick navigation
+## Documentation
 
-- **Card Types** — Learn how to author multiline, cloze, Swift Arrow, and image occlusion cards.
-- **Usage Guides** — Configure decks, hints, and metadata to keep your notes organized.
-- **Advanced** — Customize Anki templates or dig deeper into plugin internals.
+- **[Card Types](./card-types/multiline.md)** - Learn different card formats
+- **[Usage](./usage/extra-details-hints.md)** - Basic usage guide
+- **[Advanced](./advanced/custom-css.md)** - Advanced Customization options
 
-Looking for the plugin? Visit the [GitHub repository](https://github.com/debanjandhar12/logseq-anki-sync).
+## Resources
+
+- [GitHub Repository](https://github.com/debanjandhar12/logseq-anki-sync)
+- [Report Issues](https://github.com/debanjandhar12/logseq-anki-sync/issues)
 
 Need help? Create a discussion or file an issue on GitHub.

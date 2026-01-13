@@ -3,7 +3,7 @@
 - [ ] Rewrite Feature explorer - 1
 - [x] Find points and fix renderer - 1
 - [ ] Fix queries based on properties
-- [ ] Complete writing docs
+- [x] Complete writing docs
 
 Notes:
 - Need to remove hide Occlusion Data in db version or maybe upgrade?
