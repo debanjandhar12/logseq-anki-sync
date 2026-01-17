@@ -85,12 +85,22 @@ export namespace LogseqProxy {
             }
         }
 
-        static async createPageSilentlyIfNotExists(pageName: string) {
+        static async createTagSilentlyIfNotExists(tagName: string) {
             await getLogseqLock.acquireAsync();
             try {
-                let page = await logseq.Editor.getPage(pageName);
-                if (page == null) {
-                    await logseq.Editor.createPage(pageName, {}, {redirect: false});
+                // Handle both DB ver and File ver
+                // In File ver, tags are same as pages
+                // In DB ver, internally tags are pages
+                // with a tag #Tag but api wise considered different
+                const isDb = await logseq.App.checkCurrentIsDbGraph();
+                const exists = isDb
+                    ? await logseq.Editor.getTag(tagName)
+                    : await logseq.Editor.getPage(tagName);
+
+                if (!exists) {
+                    isDb
+                        ? await logseq.Editor.createTag(tagName)
+                        : await logseq.Editor.createPage(tagName, {}, { redirect: false });
                 }
             } catch (e) {
                 console.error(e);

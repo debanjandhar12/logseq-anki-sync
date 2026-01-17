@@ -40,7 +40,7 @@ export class ClozeNote extends Note {
                 opacity: .3;
             }
         `);
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("type-in");
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("type-in");
 
         const { hideClozeMarcosUntilHoverInLogseq } = LogseqProxy.Settings.getPluginSettings();
         if (hideClozeMarcosUntilHoverInLogseq) {

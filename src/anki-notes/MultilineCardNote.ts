@@ -47,6 +47,9 @@ export class MultilineCardNote extends Note {
             ["editor/clear-current-slash"],
         ]);
         logseq.provideStyle(`
+            .page-reference[data-ref=card], a[data-ref=card] {
+                opacity: .3;
+            }
             .page-reference[data-ref=flashcard], a[data-ref=flashcard] {
                 opacity: .3;
             }
@@ -72,15 +75,16 @@ export class MultilineCardNote extends Note {
                 opacity: .3;
             }
         `);
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("card-group");
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("flashcard");
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("forward");
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("reversed");
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("bidirectional");
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("incremental");
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("hide-all-test-one");
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("card");
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("card-group");
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("flashcard");
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("forward");
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("reversed");
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("bidirectional");
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("incremental");
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("hide-all-test-one");
         for (let i = 1; i <= 9; i++) {
-            LogseqProxy.Editor.createPageSilentlyIfNotExists(`depth-${i}`);
+            LogseqProxy.Editor.createTagSilentlyIfNotExists(`depth-${i}`);
         }
     };
 

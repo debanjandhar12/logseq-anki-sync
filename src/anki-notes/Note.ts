@@ -68,9 +68,15 @@ export abstract class Note {
             .anki_only {
                 display: none;
             }
+            .page-reference[data-ref=hide-all-card-parent], a[data-ref=hide-all-card-parent] {
+                opacity: .3;
+            }
+            .page-reference[data-ref=hide-when-card-parent], a[data-ref=hide-when-card-parent] {
+                opacity: .3;
+            }
         `);
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("hide-all-card-parent"); // TODO: relocate this
-        LogseqProxy.Editor.createPageSilentlyIfNotExists("hide-when-card-parent"); // TODO: relocate this
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("hide-all-card-parent");
+        LogseqProxy.Editor.createTagSilentlyIfNotExists("hide-when-card-parent");
         // TODO: Add EXTRA, ANKI_ONLY here
     };
 
@@ -120,11 +126,6 @@ export abstract class Note {
                                 parentNamespaceID = parentNamespacePage?.namespace?.id ?? null;
                             }
                         } catch (e) { console.error(e); }
-                    }
-
-                    // TODO: Remove line 126-129 after a few releases
-                    if (note.tags.includes("no-anki-sync")) {
-                        isAnkiSyncDisabled = true;
                     }
 
                     if(isAnkiSyncDisabled === true) return null;
