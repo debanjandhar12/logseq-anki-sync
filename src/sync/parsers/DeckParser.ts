@@ -3,6 +3,7 @@ import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { getLogseqBlockPropSafe, splitNamespace } from "../../utils/utils";
 import _ from "lodash";
 import getNameFromPage from "../../logseq/getNameFromPage";
+import {LOGSEQ_PAGE_REF_REGEXP} from "../../constants";
 
 export class DeckParser {
     /**
@@ -98,6 +99,7 @@ export class DeckParser {
 
     private static normalizeDeck(deck: any): string {
         if (typeof deck !== "string") deck = deck[0];
+        deck = deck.replace(LOGSEQ_PAGE_REF_REGEXP, "$1"); // Handle direct [[Page Name]] as deck value in db versions
         return splitNamespace(deck).join("::");
     }
 }

@@ -4,6 +4,8 @@ import { convertToHTMLFile } from "../../logseq/LogseqToHTMLConverterProxy";
 import _ from "lodash";
 
 export class ExtraFieldParser {
+    // Parses extra in current block and page props
+    // For multiline cards, extra in child blocks is handled in MultilineCardNote.ts
     static async parse(note: Note, assets: Set<string>): Promise<string> {
         let extra = _.get(note, "properties.extra") || 
                     _.get(note, "page.properties.extra") || "";
