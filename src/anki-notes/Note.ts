@@ -1,11 +1,11 @@
 import "@logseq/libs";
-import {LazyAnkiNoteManager} from "../anki-connect/LazyAnkiNoteManager";
-import {HTMLFile} from "../logseq/LogseqToHtmlConverter";
-import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
+import { LazyAnkiNoteManager } from "../anki-connect/LazyAnkiNoteManager";
+import { HTMLFile } from "../logseq/LogseqToHtmlConverter";
+import { DependencyEntity } from "../logseq/getLogseqContentDirectDependencies";
 import _ from "lodash";
-import {LogseqProxy} from "../logseq/LogseqProxy";
-import {getLogseqBlockPropSafe} from "../utils/utils";
-import {PageEntity} from "@logseq/libs/dist/LSPlugin";
+import { LogseqProxy } from "../logseq/LogseqProxy";
+import { getLogseqBlockPropSafe } from "../utils/utils";
+import { PageEntity } from "@logseq/libs/dist/LSPlugin";
 import getNameFromPage from "../logseq/getNameFromPage";
 
 export abstract class Note {
@@ -53,14 +53,14 @@ export abstract class Note {
             (note) => note.fields["uuid-type"].value == `${this.uuid}-${this.type}`,
         );
         if (filteredankiNotesArr.length == 0) this.ankiId = null;
-        else this.ankiId = typeof filteredankiNotesArr[0].noteId === 'number' 
-            ? filteredankiNotesArr[0].noteId 
+        else this.ankiId = typeof filteredankiNotesArr[0].noteId === 'number'
+            ? filteredankiNotesArr[0].noteId
             : parseInt(filteredankiNotesArr[0].noteId);
         return this.ankiId;
     }
 
     public getBlockDependencies(): DependencyEntity[] {
-        return [this.uuid].map((block) => ({type: "Block", value: block}) as DependencyEntity);
+        return [this.uuid].map((block) => ({ type: "Block", value: block }) as DependencyEntity);
     }
 
     public static initLogseqOperations = () => {
@@ -77,9 +77,9 @@ export abstract class Note {
         `);
         LogseqProxy.Editor.createTagSilentlyIfNotExists("hide-all-card-parent");
         LogseqProxy.Editor.createTagSilentlyIfNotExists("hide-when-card-parent");
-        LogseqProxy.Editor.registerProperty("tags", {type: "node", cardinality: "many", hide: false});
-        LogseqProxy.Editor.registerProperty("deck", {type: "default", cardinality: "one", hide: false});
-        LogseqProxy.Editor.registerProperty("disable-anki-sync", {type: "checkbox", cardinality: "one", hide: false});
+        LogseqProxy.Editor.registerProperty("tags", { type: "node", cardinality: "many", hide: false });
+        LogseqProxy.Editor.registerProperty("deck", { type: "default", cardinality: "one", hide: false });
+        LogseqProxy.Editor.registerProperty("disable-anki-sync", { type: "checkbox", cardinality: "one", hide: false });
         // TODO: Add EXTRA, ANKI_ONLY here
     };
 
@@ -96,8 +96,8 @@ export abstract class Note {
                 newNotes.map(async (note) => {
                     let isAnkiSyncDisabled = null;
                     try {
-                        let parentBlockUUID : string | number = note.uuid;
-                        while(parentBlockUUID != null) {
+                        let parentBlockUUID: string | number = note.uuid;
+                        while (parentBlockUUID != null) {
                             const parentBlock = await LogseqProxy.Editor.getBlock(parentBlockUUID);
                             if (parentBlock == null) break;
                             if ([true, "true"].includes(getLogseqBlockPropSafe(parentBlock, 'properties.disable-anki-sync'))) {
@@ -114,24 +114,24 @@ export abstract class Note {
 
                     if (isAnkiSyncDisabled === null) {
                         try {
-                            let parentNamespaceID : number = note.page.id;
-                            while(parentNamespaceID != null) {
-                                const parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
-                                if (parentNamespacePage == null) break;
-                                if ([true, "true"].includes(getLogseqBlockPropSafe(parentNamespacePage, 'properties.disable-anki-sync'))) {
+                            // Check parents for disable-anki-sync prop
+                            const parents = await LogseqProxy.Editor.getParentNamespacePages(note.page);
+                            const hierarchy = [note.page, ...parents];
+
+                            for (const page of hierarchy) {
+                                if ([true, "true"].includes(getLogseqBlockPropSafe(page, 'properties.disable-anki-sync'))) {
                                     isAnkiSyncDisabled = true;
                                     break;
                                 }
-                                else if ([false, "false"].includes(getLogseqBlockPropSafe(parentNamespacePage, 'properties.disable-anki-sync'))) {
+                                else if ([false, "false"].includes(getLogseqBlockPropSafe(page, 'properties.disable-anki-sync'))) {
                                     isAnkiSyncDisabled = false;
                                     break;
                                 }
-                                parentNamespaceID = parentNamespacePage?.namespace?.id ?? null;
                             }
                         } catch (e) { console.error(e); }
                     }
 
-                    if(isAnkiSyncDisabled === true) return null;
+                    if (isAnkiSyncDisabled === true) return null;
                     return note;
                 }),
             )

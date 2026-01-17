@@ -1,5 +1,5 @@
 import ohm from "ohm-js";
-import _, {isArray} from "lodash";
+import _, { isArray } from "lodash";
 import replaceAsync from "string-replace-async";
 import "@logseq/libs";
 import { WindowParentBridge } from "../logseq/WindowParentBridge";
@@ -11,7 +11,7 @@ import {
     specialChars,
     WARNING_ICON,
 } from "../constants";
-import {ActionNotification} from "../ui/common/ActionNotification";
+import { ActionNotification } from "../ui/common/ActionNotification";
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
@@ -59,15 +59,15 @@ export function string_to_arr(str: string): any {
             a.semanticOperation();
             c.semanticOperation();
         },
-        emptyListOf() {},
+        emptyListOf() { },
         _iter(...a) {
             for (const b of a) b.semanticOperation();
         },
-        separator(a, b, c) {},
+        separator(a, b, c) { },
         StrOrRegex(a) {
             a.semanticOperation();
         },
-        _terminal() {},
+        _terminal() { },
         Regex(a, b, c, d) {
             r.push(regexPraser(this.sourceString));
         },
@@ -155,28 +155,7 @@ export function handleAnkiError(msg: string): void {
             break;
     }
 }
-export function splitNamespace(str: string) {
-    const original = str;
-    // Find all matches of \[\[.*\]\]
-    const matches = str.match(/\[\[.*?\]\]/g);
-    // Replace all matches with a random string
-    const randomStrings = [];
-    if (matches && isArray(matches)) {
-        for (const match of matches) {
-            randomStrings.push(getRandomUnicodeString());
-            str = str.replace(match, randomStrings[randomStrings.length - 1]);
-        }
-    }
-    // Split the string
-    const parts = str.split("/");
-    // Replace the random strings with the original matches
-    for (let i = 0; i < parts.length; i++) {
-        for (let j = 0; j < randomStrings.length; j++) {
-            parts[i] = parts[i].replace(randomStrings[j], matches[j]);
-        }
-    }
-    return parts;
-}
+
 
 // This is required to deal with properties with "-" in them
 export function getLogseqBlockPropSafe<T = any>(obj: any, path: string, defaultValue: T = null as T): T {

@@ -58,7 +58,9 @@ export class LogseqToAnkiSync {
             });
             console.error(e);
         }
-        LogseqToAnkiSync.isSyncing = false;
+        finally {
+            LogseqToAnkiSync.isSyncing = false;
+        }
     }
 
     private async performSync(): Promise<void> {

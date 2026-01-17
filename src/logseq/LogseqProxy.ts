@@ -18,6 +18,8 @@ import pMemoize, {pMemoizeClear} from "p-memoize";
 import objectHashOptimized from "../utils/objectHashOptimized";
 import {WindowParentBridge} from "./WindowParentBridge";
 import { LogseqPropertiesHelper } from "./LogseqPropertiesHelper";
+import {LogseqNamespaceHelper} from "./LogseqNamespaceHelper";
+import getNameFromPage from "./getNameFromPage";
 
 const getLogseqLock = new AwaitLock();
 
@@ -70,6 +72,56 @@ export namespace LogseqProxy {
                 getLogseqLock.release();
             }
             return pageBlockTree;
+        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
+
+        static getParentNamespacePages = pMemoize(async (
+            page: PageEntity | null | undefined,
+            opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
+        ): Promise<PageEntity[]> => {
+            if (!page) return [];
+            await getLogseqLock.acquireAsync();
+            try {
+                return await LogseqNamespaceHelper.getParentNamespacePages(page);
+            } catch (e) {
+                console.error(e);
+                if (!opts.suppressErrors) throw e;
+            } finally {
+                getLogseqLock.release();
+            }
+            return [];
+        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
+
+        static getFullPageName = pMemoize(async (
+            page: PageEntity | null | undefined,
+            opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
+        ): Promise<string> => {
+            if (!page) return "";
+            await getLogseqLock.acquireAsync();
+            try {
+                const isDb = await LogseqProxy.App.checkCurrentIsDbGraph();
+                const baseName = getNameFromPage(page) || "";
+
+                if (!isDb) {
+                    return baseName;
+                }
+
+                const parents = await LogseqProxy.Editor.getParentNamespacePages(page);
+                if (parents.length === 0) {
+                    return baseName;
+                }
+
+                const segments = [
+                    ...parents.reverse().map(p => getNameFromPage(p)),
+                    baseName
+                ];
+                return segments.filter(s => !!s).join("/");
+            } catch (e) {
+                console.error(e);
+                if (!opts.suppressErrors) throw e;
+            } finally {
+                getLogseqLock.release();
+            }
+            return "";
         }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
 
         static async upsertBlockProperty(block: BlockIdentity,
@@ -228,11 +280,13 @@ export namespace LogseqProxy {
         WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
             const { debug } = LogseqProxy.Settings.getPluginSettings();
             if (debug?.includes("LogseqProxy.ts")) {
-                console.log("[LogseqProxy] Clearing memoization caches for getBlock, getPage, getPageBlocksTree, listFilesOfCurrentGraph, and checkCurrentIsDbGraph");
+                console.log("[LogseqProxy] Clearing memoization caches for getBlock, getPage, getPageBlocksTree, namespace helpers, listFilesOfCurrentGraph, and checkCurrentIsDbGraph");
             }
             pMemoizeClear(LogseqProxy.Editor.getBlock);
             pMemoizeClear(LogseqProxy.Editor.getPage);
             pMemoizeClear(LogseqProxy.Editor.getPageBlocksTree);
+            pMemoizeClear(LogseqProxy.Editor.getParentNamespacePages);
+            pMemoizeClear(LogseqProxy.Editor.getFullPageName);
             pMemoizeClear(LogseqProxy.Assets.listFilesOfCurrentGraph);
             pMemoizeClear(LogseqProxy.App.checkCurrentIsDbGraph);
             pMemoizeClear(LogseqProxy.App.getCurrentGraph);

@@ -33,12 +33,11 @@ export class TagParser {
 
     private static async collectTagsFromNamespaceHierarchy(note: Note, tags: string[]): Promise<string[]> {
         try {
-            let parentNamespaceID: number = _.get(note, "page.id", null);
-            while (parentNamespaceID != null) {
-                const parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
-                const pageTags = getCaseInsensitive(parentNamespacePage, "properties.tags", []);
+            const parents = await LogseqProxy.Editor.getParentNamespacePages(note.page);
+            const hierarchy = [note.page, ...parents];
+            for (const page of hierarchy) {
+                const pageTags = getCaseInsensitive(page, "properties.tags", []);
                 tags = [...tags, ...pageTags];
-                parentNamespaceID = _.get(parentNamespacePage, "namespace.id", null);
             }
         } catch (e) {
             console.error("[TagParser] Error collecting tags from namespace hierarchy:", e);

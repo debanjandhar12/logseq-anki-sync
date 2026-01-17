@@ -6,11 +6,11 @@
  * 3. Some properties of the page where block is located
  */
 
-import {Note} from "../../anki-notes/Note";
+import { Note } from "../../anki-notes/Note";
 import pkg from "../../../package.json";
-import {LogseqProxy} from "../../logseq/LogseqProxy";
+import { LogseqProxy } from "../../logseq/LogseqProxy";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
-import {DependencyEntity} from "../../logseq/getLogseqContentDirectDependencies";
+import { DependencyEntity } from "../../logseq/getLogseqContentDirectDependencies";
 import {
     getBlockHash,
     getPageHash,
@@ -18,7 +18,7 @@ import {
 import _ from "lodash";
 import objectHashOptimized from "../../utils/objectHashOptimized";
 import path from "path-browserify";
-import {ParsedNoteData} from "../types";
+import { ParsedNoteData } from "../types";
 import getNameFromPage from "../../logseq/getNameFromPage";
 
 
@@ -68,11 +68,10 @@ export default class NoteHashCalculator {
 
 
         // Add namespace dependencies
-        let parentNamespaceID = _.get(note, "page.namespace.id");
-        while (parentNamespaceID != null) {
-            const parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
-            toHash.push(await getPageHash(getNameFromPage(parentNamespacePage)));
-            parentNamespaceID = _.get(parentNamespacePage, "namespace.id");
+        const parentPages = await LogseqProxy.Editor.getParentNamespacePages(note.page);
+        for (const parentPage of parentPages) {
+            toHash.push(await getPageHash(getNameFromPage(parentPage))); // passing LogseqProxy.Editor.getFullPageName won't work.. will be buggy
+            // TODO: Pages can have same name now in db ver but different id... maybe switch to id bassed hashing?
         }
 
         // Add additional things  to toHash
@@ -97,7 +96,7 @@ export default class NoteHashCalculator {
         tags = tags.filter((tag: string) => tag.toLowerCase() != "marked"); // Also remove marked
         const assetsArray = Array.from(assets).sort();
         tags.sort();
-        
+
         // Get asset modified times and include them in hash calculation
         const assetModifiedTimeMap = await this.getAssetModifiedTimeMap();
         const assetsWithModifiedTime = assetsArray.map((assetPath: string) => {
@@ -106,7 +105,7 @@ export default class NoteHashCalculator {
             console.log(filename, assetPath, 'modifiedTime', modifiedTime);
             return modifiedTime;
         });
-        
+
         toHash.push([
             html.trim(),
             assetsWithModifiedTime,

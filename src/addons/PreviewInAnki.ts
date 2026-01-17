@@ -1,9 +1,10 @@
 import * as AnkiConnect from "../anki-connect/AnkiConnect";
-import {handleAnkiError} from "../utils/utils";
-import {Addon} from "./Addon";
+import { handleAnkiError } from "../utils/utils";
+import { Addon } from "./Addon";
 import _ from "lodash";
-import {showSelectionModal} from "../ui";
+import { showSelectionModal } from "../ui";
 import getNameFromPage from "../logseq/getNameFromPage";
+import { LogseqNamespaceHelper } from "../logseq/LogseqNamespaceHelper";
 
 export class PreviewInAnkiContextMenu extends Addon {
     static _instance: PreviewInAnkiContextMenu;
@@ -31,25 +32,33 @@ export class PreviewInAnkiContextMenu extends Addon {
         }
     }
 
-    private async previewPageNotesInAnki({page}) {
+    private async previewPageNotesInAnki({ page }) {
         try {
-            const namespacePages = await logseq.Editor.getPagesFromNamespace(page);
+            const namespacePages = await LogseqNamespaceHelper.getNamespaceDescendants(page);
             let pagesToView = [page];
             await AnkiConnect.requestPermission();
             let graphName = _.get(await logseq.App.getCurrentGraph(), "name") || "Default";
             let modelName = `${graphName}Model`.replace(/\s/g, "_");
             if (namespacePages.length > 0) {
                 let selection = await showSelectionModal([
-                    {name: "Preview cards from this namespace in anki"},
-                    {name: "Preview cards from this page in anki"},
+                    { name: "Preview cards from this namespace in anki" },
+                    { name: "Preview cards from this page in anki" },
                 ]);
                 if (selection == null) return;
-                if (selection === 0)
-                    pagesToView = [pagesToView, ...namespacePages.map((page) => getNameFromPage(page))];
+                if (selection === 0) {
+                    const namespacePageNames = await Promise.all(
+                        namespacePages.map((page) => LogseqNamespaceHelper.getFullPageName(page))
+                    );
+                    pagesToView = [pagesToView, ...namespacePageNames];
+                }
             }
             await AnkiConnect.guiBrowse(
                 `"note:${modelName}" "Breadcrumb:re:^<a.*>(${pagesToView
-                    .map((page) => _.escapeRegExp(page).replaceAll('"', '\\"'))
+                    .map((page) => {
+                        const pageName = typeof page === 'string' ? page : getNameFromPage(page);
+                        // Use strict regex escape if needed, but original used _.escapeRegExp(page)
+                        return _.escapeRegExp(pageName).replaceAll('"', '\\"')
+                    })
                     .join("|")})</a>.*$"`,
             );
         } catch (e) {
