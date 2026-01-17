@@ -10,48 +10,16 @@ export class DeckParser {
      * Resolves the deck name for a note following the hierarchy:
      * 1. Block hierarchy (traverse up looking for deck property)
      * 2. Namespace hierarchy (traverse up looking for deck property)
-     * 3. Namespace as deck (if useNamespaceAsDefaultDeck is true)
-     * 4. Default deck from settings
+     * 3. Current page name
      */
     static async parse(note: Note): Promise<string> {
-        const useNamespaceAsDefault = await this.resolveUseNamespaceFlag(note);
-        
         let deck = await this.findDeckInBlockHierarchy(note);
         if (deck !== null) return this.normalizeDeck(deck);
 
         deck = await this.findDeckInNamespaceHierarchy(note);
         if (deck !== null) return this.normalizeDeck(deck);
 
-        if (useNamespaceAsDefault) {
-            deck = this.extractNamespaceDeck(note);
-            if (deck) return this.normalizeDeck(deck);
-        }
-
-        return this.normalizeDeck(this.getDefaultDeck());
-    }
-
-    private static async resolveUseNamespaceFlag(note: Note): Promise<boolean> {
-        try {
-            let parentNamespaceID: number = note.page.id;
-            while (parentNamespaceID != null) {
-                const parentNamespacePage = await LogseqProxy.Editor.getPage(parentNamespaceID);
-                if (!parentNamespacePage) break;
-
-                const propValue = getLogseqBlockPropSafe(
-                    parentNamespacePage,
-                    "properties.use-namespace-as-default-deck"
-                );
-                if ([true, "true"].includes(propValue)) return true;
-                if ([false, "false"].includes(propValue)) return false;
-
-                parentNamespaceID = _.get(parentNamespacePage, "namespace.id", null);
-            }
-        } catch (e) {
-            console.error("[DeckParser] Error resolving useNamespaceFlag:", e);
-        }
-
-        const { useNamespaceAsDefaultDeck } = LogseqProxy.Settings.getPluginSettings();
-        return useNamespaceAsDefaultDeck;
+        return this.normalizeDeck(this.getDefaultDeck(note));
     }
 
     private static async findDeckInBlockHierarchy(note: Note): Promise<string | null> {
@@ -59,7 +27,6 @@ export class DeckParser {
             let parentBlockUUID: string | number = note.uuid;
             while (parentBlockUUID != null) {
                 const parentBlock = await LogseqProxy.Editor.getBlock(parentBlockUUID);
-                console.log('parentBlock', parentBlock);
                 const deck = getLogseqBlockPropSafe(parentBlock, "properties.deck");
                 if (deck != null) return deck;
                 parentBlockUUID = _.get(parentBlock, "parent.id", null);
@@ -86,15 +53,8 @@ export class DeckParser {
         return null;
     }
 
-    private static extractNamespaceDeck(note: Note): string {
-        const pageName = getNameFromPage(note.page);
-        const namespaceSegments = splitNamespace(pageName);
-        return namespaceSegments.slice(0, -1).join("/");
-    }
-
-    private static getDefaultDeck(): string {
-        const { defaultDeck } = LogseqProxy.Settings.getPluginSettings();
-        return defaultDeck || "Default";
+    private static getDefaultDeck(note: Note): string {
+        return getNameFromPage(note.page);
     }
 
     private static normalizeDeck(deck: any): string {

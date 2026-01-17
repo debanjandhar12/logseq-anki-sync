@@ -10,8 +10,6 @@ export interface PluginSettings {
     disabled: boolean;
     breadcrumbDisplay?: "Dont show breadcrumb" | "Show Page name only" | "Show Page name and parent blocks context";
     includeParentContent?: boolean;
-    useNamespaceAsDefaultDeck?: boolean;
-    defaultDeck?: string;
     renderClozeMarcosInLogseq?: boolean;
     hideClozeMarcosUntilHoverInLogseq?: boolean;
     addonsList?: string[];
@@ -56,21 +54,6 @@ export const addSettingsToLogseq = () => {
             default: true,
             title: "Include parent content in cards? (Recommended: Enabled)",
             description: "When enabled, the parent blocks content will be shown in the card.",
-        },
-        {
-            key: "useNamespaceAsDefaultDeck",
-            type: "boolean",
-            default: true,
-            title: "Use namespace as default deck if possible? (Recommended: Enabled)",
-            description: "When enabled, the namespace of the page will be set as deck when no deck property is specified.<br/><sub>For example, if a note is in page 'Japanese/Verbs', the deck will be set as 'Japanese'.</sub>",
-        },
-        {
-            key: "defaultDeck",
-            type: "string",
-            title: "Default Deck:",
-            description:
-                "The default deck to use for cards when no deck property is specified.<br/> If <code>use-namespace-as-default-deck</code> is enabled, this will be used as the default deck only when page is not in any namespace.",
-            default: "Default",
         },
         {
             key: "logseqSideSettingsHeading",

@@ -5,23 +5,6 @@ import { MultilineCardNote } from "../../../../src/anki-notes/MultilineCardNote"
 import {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import { LogseqProxy } from "../../../../src/logseq/LogseqProxy";
 
-// Mock settings
-vi.mock('../../../../src/logseq/LogseqProxy', async () => {
-    const actual = await vi.importActual<typeof import('../../../../src/logseq/LogseqProxy')>('../../../../src/logseq/LogseqProxy');
-    return {
-        ...actual,
-        LogseqProxy: {
-            ...actual.LogseqProxy,
-            Settings: {
-                getPluginSettings: () => ({
-                    defaultDeck: 'Default',
-                    useNamespaceAsDefaultDeck: false
-                })
-            }
-        }
-    };
-});
-
 describe("DeckParser E2E Tests", () => {
     describe("File Mode Deck Resolution", () => {
         let prevPage: PageEntity | BlockEntity, page: PageEntity;
@@ -81,6 +64,27 @@ describe("DeckParser E2E Tests", () => {
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Child Deck");
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Default to current page name when no deck specified", async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
+            
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page);
+            const deck = await DeckParser.parse(note);
+            
+            expect(deck).toBe("Test DeckParser");
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Default to current page name with namespace", async () => {
+            const namespacedPage = await logseq.Editor.createPage('Geography/Japan', {}, {createFirstBlock: false});
+            const block = await logseq.Editor.appendBlockInPage(namespacedPage.uuid, "Test content");
+            
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, namespacedPage);
+            const deck = await DeckParser.parse(note);
+            
+            expect(deck).toBe("Geography::Japan");
+            
+            await logseq.Editor.deletePage('Geography/Japan');
         });
 
         // TODO: Fix this
@@ -147,6 +151,15 @@ describe("DeckParser E2E Tests", () => {
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Child Deck");
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Default to current page name when no deck specified in DB mode", async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
+            
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page);
+            const deck = await DeckParser.parse(note);
+            
+            expect(deck).toBe("Test DeckParser DB");
         });
     });
 });

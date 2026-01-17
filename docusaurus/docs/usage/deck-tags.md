@@ -21,7 +21,7 @@ Use the `deck` property to specify where cards should be stored:
 
 </LogseqExample>
 
-When there is no deck property in current block, parent block, page properties, or namespace page properties, then card gets created in your default deck (configured in plugin settings).
+When there is no deck property in the current block, parent block, page properties, or namespace page properties, the card is created in a deck named after the current page name.
 
 ## Property Specificity Rules
 
@@ -37,7 +37,7 @@ The plugin follows a specificity hierarchy when determining deck placement. Prop
 
 </LogseqExample>
 
-The card goes to `Japanese Geography` deck.
+The card goes to the `Japanese Geography` deck.
 
 ### 2. Parent Block-Level Properties
 
@@ -50,7 +50,7 @@ The card goes to `Japanese Geography` deck.
 
 </LogseqExample>
 
-The card goes to `World Geography` deck.
+The card goes to the `World Geography` deck.
 
 ### 3. Page Properties
 
@@ -69,14 +69,18 @@ Properties defined in the first block of a page apply to all cards on that page:
 
 </LogseqExample>
 
-Japan capital card goes to `World Geography` deck (as defined in page properties) and France capital card one goes to `France Geography` deck (overridden by current block property).
+The Japan capital card goes to the `World Geography` deck (as defined in page properties) and the France capital card one goes to the `France Geography` deck (overridden by the current block property).
 
-### 4. Page Namespace Fallback
+### 4. Namespace Properties
 
-If no deck property is found in current block, parent block, or page property, the plugin uses the page's namespace:
+If no deck property is found in the current block, parent block, or page properties, the plugin will look for a `deck` property in the namespace pages.
 
-- Page `Tutorial/Getting Started` → `Tutorial` deck
-- Page `Getting Started` (no namespace) → Default deck
+### 5. Current Page Name (Default)
+
+If no deck property is found anywhere, the deck is named after the current page.
+
+- Page `Tutorial/Getting Started` → `Tutorial::Getting Started` deck
+- Page `Getting Started` (no namespace) → `Getting Started` deck
 
 ## Setting Tags with Properties
 

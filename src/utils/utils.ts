@@ -148,6 +148,11 @@ export function handleAnkiError(msg: string): void {
                 timeout: 5000,
             });
             break;
+        default:
+            logseq.UI.showMsg(msg, "error", {
+                timeout: 5000,
+            });
+            break;
     }
 }
 export function splitNamespace(str: string) {

@@ -17,9 +17,10 @@ Good Links:
 - https://github.com/logseq/docs/blob/master/db-version-changes.md
 
 Breaking changes:
-- .replaceclose property is no longer supported. Use replacecloze instead.
+- .replacecloze property is no longer supported. Use replacecloze (without dot at beginning) instead.
 - Removed LogseqAnkiFeatureExplorer temporarily.
 - Removed #no-anki-sync (was marked for removal in v6.3.1), please use disable-anki-sync prop instead.
+- The `defaultDeck` and `useNamespaceAsDefaultDeck` settings have been removed. The default deck is now derived from the current page name.
 
 /home/debanjand/logseq/graphs/ <- use for db graphs setup?
 
