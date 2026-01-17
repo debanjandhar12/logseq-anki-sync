@@ -41,6 +41,7 @@ export class ClozeNote extends Note {
             }
         `);
         LogseqProxy.Editor.createTagSilentlyIfNotExists("type-in");
+        LogseqProxy.Editor.registerProperty("replacecloze", {type: "default", cardinality: "one", hide: false});
 
         const { hideClozeMarcosUntilHoverInLogseq } = LogseqProxy.Settings.getPluginSettings();
         if (hideClozeMarcosUntilHoverInLogseq) {

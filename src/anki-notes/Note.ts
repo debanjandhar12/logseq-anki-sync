@@ -77,6 +77,9 @@ export abstract class Note {
         `);
         LogseqProxy.Editor.createTagSilentlyIfNotExists("hide-all-card-parent");
         LogseqProxy.Editor.createTagSilentlyIfNotExists("hide-when-card-parent");
+        LogseqProxy.Editor.registerProperty("tags", {type: "node", cardinality: "many", hide: false});
+        LogseqProxy.Editor.registerProperty("deck", {type: "default", cardinality: "one", hide: false});
+        LogseqProxy.Editor.registerProperty("disable-anki-sync", {type: "checkbox", cardinality: "one", hide: false});
         // TODO: Add EXTRA, ANKI_ONLY here
     };
 

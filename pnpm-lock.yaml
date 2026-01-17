@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@logseq/libs':
-        specifier: ^0.2.10
-        version: 0.2.10
+        specifier: ^0.2.11
+        version: 0.2.11
       '@thi.ng/hiccup':
         specifier: ^4.2.29
         version: 4.3.3
@@ -1136,8 +1136,8 @@ packages:
   '@logseq/libs@0.0.15':
     resolution: {integrity: sha512-Z4YrYGfu8Y3s9LTqVnPGkxlO+KZtP1YalH/A63zYgxP61cV5QtKlnHWNcjsKxsD5CkaSL4MlSN4mf7wNx/Fm0A==}
 
-  '@logseq/libs@0.2.10':
-    resolution: {integrity: sha512-kSJjEvPC7Np2TaZLBOwYeOQ/Q0aLPXCy0jjZpQmk8youfQa4HBvZV4voarKM591DdxxuE3lcfJ7blhzeQXYFuA==}
+  '@logseq/libs@0.2.11':
+    resolution: {integrity: sha512-ysHymel/lJ+aNJfT/nGdqZ3SGfUn9J02VWFgrTnS6Jw2eAVKDEUChoayBEE1YYafqd0yd7rGYQ4Hb8QiLfbCtg==}
 
   '@mapbox/node-pre-gyp@1.0.11':
     resolution: {integrity: sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ==}
@@ -5364,7 +5364,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@logseq/libs@0.2.10':
+  '@logseq/libs@0.2.11':
     dependencies:
       csstype: 3.1.0
       debug: 4.3.4
@@ -5658,7 +5658,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/typescript-estree': 5.62.0(typescript@5.4.5)
       '@typescript-eslint/utils': 5.62.0(eslint@8.57.0)(typescript@5.4.5)
-      debug: 4.3.4
+      debug: 4.4.3
       eslint: 8.57.0
       tsutils: 3.21.0(typescript@5.4.5)
     optionalDependencies:
@@ -5672,7 +5672,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 5.62.0
       '@typescript-eslint/visitor-keys': 5.62.0
-      debug: 4.3.4
+      debug: 4.4.3
       globby: 11.1.0
       is-glob: 4.0.3
       semver: 7.6.0

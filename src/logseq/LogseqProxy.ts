@@ -9,7 +9,7 @@ import {
     BlockUUID,
     EntityID,
     PageEntity,
-    PageIdentity,
+    PageIdentity, PropertySchema,
     SettingSchemaDesc,
 } from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
@@ -102,6 +102,19 @@ export namespace LogseqProxy {
                         ? await logseq.Editor.createTag(tagName)
                         : await logseq.Editor.createPage(tagName, {}, { redirect: false });
                 }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                getLogseqLock.release();
+            }
+        }
+
+        static async registerProperty(key: string, schema?: Partial<PropertySchema>) {
+            await getLogseqLock.acquireAsync();
+            try {
+                const isDb = await logseq.App.checkCurrentIsDbGraph();
+                if (!isDb) return; // upsertProperty does not work in non db version
+                await logseq.Editor.upsertProperty(key, schema);
             } catch (e) {
                 console.error(e);
             } finally {
