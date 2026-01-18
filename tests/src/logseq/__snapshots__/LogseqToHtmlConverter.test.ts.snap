@@ -208,9 +208,15 @@ exports[`E2E cases for DB mode > PDF Rendering cases > PDF Text Annotation Rende
 
 exports[`E2E cases for DB mode > Page Embed Rendering > Basic page embed rendering 1`] = `
 "<span><div class="embed-page">
-                        <a href="logseq://graph/LAS-TEST-GRAPH?page=test%20db%20embed%20page" class="embed-header">test db embed page</a>
+                        <a href="logseq://graph/LAS-TEST-GRAPH?page=Test%20DB%20Embed%20Page" class="embed-header">Test DB Embed Page</a>
                         
 <ul class="children-list">
+<li class="children ">
+      <span>First block</span>
+    </li>
+<li class="children ">
+      <span>Second block</span>
+    </li>
 <li class="children ">
       <span>First block</span>
     </li>

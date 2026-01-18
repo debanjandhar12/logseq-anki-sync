@@ -39,7 +39,7 @@ describe("ExtraFieldParser E2E Tests", () => {
                 properties: { extra: "Extra **bold** content" }
             });
             
-            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page);
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page.id);
             const assets = new Set<string>();
             const extra = await ExtraFieldParser.parse(note, assets);
             

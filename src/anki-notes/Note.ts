@@ -5,15 +5,13 @@ import { DependencyEntity } from "../logseq/getLogseqContentDirectDependencies";
 import _ from "lodash";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import { getLogseqBlockPropSafe } from "../utils/utils";
-import { PageEntity } from "@logseq/libs/dist/LSPlugin";
-import getNameFromPage from "../logseq/getNameFromPage";
 
 export abstract class Note {
     public uuid: string;
     public content: string;
     public format: string;
     public properties: any;
-    public page: any;
+    public pageId: number;
     public type: string;
     public ankiId: number;
     public tags: string[];
@@ -24,15 +22,14 @@ export abstract class Note {
         content: string,
         format: string,
         properties: any,
-        page: PageEntity,
+        pageId: number,
         tags: string[],
     ) {
         this.uuid = uuid;
         this.content = content;
         this.format = format;
         this.properties = properties;
-        this.page = page;
-        this.page.name = getNameFromPage(page);
+        this.pageId = pageId;
         this.tags = tags;
     }
 
@@ -115,8 +112,9 @@ export abstract class Note {
                     if (isAnkiSyncDisabled === null) {
                         try {
                             // Check parents for disable-anki-sync prop
-                            const parents = await LogseqProxy.Editor.getParentNamespacePages(note.page);
-                            const hierarchy = [note.page, ...parents];
+                            const page = await LogseqProxy.Editor.getPage(note.pageId);
+                            const parents = await LogseqProxy.Editor.getParentNamespacePages(page);
+                            const hierarchy = [page, ...parents];
 
                             for (const page of hierarchy) {
                                 if ([true, "true"].includes(getLogseqBlockPropSafe(page, 'properties.disable-anki-sync'))) {

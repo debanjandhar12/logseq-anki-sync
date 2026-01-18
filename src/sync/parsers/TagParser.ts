@@ -33,8 +33,9 @@ export class TagParser {
 
     private static async collectTagsFromNamespaceHierarchy(note: Note, tags: string[]): Promise<string[]> {
         try {
-            const parents = await LogseqProxy.Editor.getParentNamespacePages(note.page);
-            const hierarchy = [note.page, ...parents];
+            const page = await LogseqProxy.Editor.getPage(note.pageId);
+            const parents = await LogseqProxy.Editor.getParentNamespacePages(page);
+            const hierarchy = [page, ...parents];
             for (const page of hierarchy) {
                 const pageTags = getCaseInsensitive(page, "properties.tags", []);
                 tags = [...tags, ...pageTags];

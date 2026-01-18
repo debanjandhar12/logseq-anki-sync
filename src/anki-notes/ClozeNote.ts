@@ -23,10 +23,10 @@ export class ClozeNote extends Note {
         content: string,
         format: string,
         properties: any,
-        page: any,
+        pageId: number,
         tags: string[],
     ) {
-        super(uuid, content, format, properties, page, tags);
+        super(uuid, content, format, properties, pageId, tags);
     }
 
     public static initLogseqOperations = () => {
@@ -264,9 +264,9 @@ export class ClozeNote extends Note {
         let notes = await Promise.all(
             blocks.map(async (b) => {
                 const uuid = getUUIDFromBlock(b[0]);
-                const page = b[0].page
-                    ? await LogseqProxy.Editor.getPage(b[0].page.id)
-                    : {};
+                const pageId = b[0].page?.id;
+                if (!pageId) return null;
+                
                 let block = await LogseqProxy.Editor.getBlock(uuid);
                 if (block)
                     return new ClozeNote(
@@ -274,7 +274,7 @@ export class ClozeNote extends Note {
                         block.content,
                         block.format,
                         block.properties || {},
-                        page,
+                        pageId,
                         (block.properties?.tags ?? []) as string[],
                     );
                 else {

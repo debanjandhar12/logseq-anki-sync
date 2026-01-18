@@ -66,16 +66,16 @@ export default class NoteHashCalculator {
             else if (dep.type == "Page") toHash.push(await getPageHash(dep.value));
         }
 
-
-        // Add namespace dependencies
-        const parentPages = await LogseqProxy.Editor.getParentNamespacePages(note.page);
+        // Add namespace dependencies using page ID
+        const page = await LogseqProxy.Editor.getPage(note.pageId);
+        const parentPages = await LogseqProxy.Editor.getParentNamespacePages(page);
         for (const parentPage of parentPages) {
-            toHash.push(await getPageHash(getNameFromPage(parentPage))); // passing LogseqProxy.Editor.getFullPageName won't work.. will be buggy
-            // TODO: Pages can have same name now in db ver but different id... maybe switch to id bassed hashing?
+            toHash.push(await getPageHash(parentPage.id));
         }
 
-        // Add additional things  to toHash
-        toHash.push(getNameFromPage(note.page));
+        // Add additional things to toHash
+        toHash.push(getNameFromPage(page));
+        
         const settings = LogseqProxy.Settings.getPluginSettings();
         toHash.push(
             _.omit(settings, [

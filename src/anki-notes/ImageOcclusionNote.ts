@@ -39,10 +39,10 @@ export class ImageOcclusionNote extends Note {
         content: string,
         format: string,
         properties: any,
-        page: any,
+        pageId: number,
         tags: string[] = [],
     ) {
-        super(uuid, content, format, properties, page, tags);
+        super(uuid, content, format, properties, pageId, tags);
     }
 
     public static initLogseqOperations = () => {
@@ -193,9 +193,9 @@ export class ImageOcclusionNote extends Note {
         let notes: (ImageOcclusionNote | false)[] = await Promise.all(
             blocks.map(async (b) => {
                 const uuid = getUUIDFromBlock(b[0]);
-                const page = _.get(b[0], 'page')
-                    ? await LogseqProxy.Editor.getPage(b[0].page.id)
-                    : {};
+                const pageId = _.get(b[0], 'page.id');
+                if (!pageId) return null;
+                
                 let block = await LogseqProxy.Editor.getBlock(uuid);
                 if (block)
                     return new ImageOcclusionNote(
@@ -203,7 +203,7 @@ export class ImageOcclusionNote extends Note {
                         block.content,
                         block.format,
                         block.properties || {},
-                        page,
+                        pageId,
                         _.get(block, "properties.tags", []) as string[],
                     );
                 else {

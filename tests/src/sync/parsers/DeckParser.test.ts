@@ -23,7 +23,7 @@ describe("DeckParser E2E Tests", () => {
                 properties: { deck: "[[Parent Deck/Child Deck]]" }
             });
             
-            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page);
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page.id);
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Parent Deck::Child Deck");
@@ -34,7 +34,7 @@ describe("DeckParser E2E Tests", () => {
                 properties: { deck: "Parent Deck/Child Deck" }
             });
             
-            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page);
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page.id);
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Parent Deck::Child Deck");
@@ -46,7 +46,7 @@ describe("DeckParser E2E Tests", () => {
             });
             const childBlock = await logseq.Editor.insertBlock(parentBlock.uuid, "Child content");
             
-            const note = new MultilineCardNote(childBlock.uuid, childBlock.content, childBlock.format, childBlock.properties, page);
+            const note = new MultilineCardNote(childBlock.uuid, childBlock.content, childBlock.format, childBlock.properties, page.id);
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Deck");
@@ -60,7 +60,7 @@ describe("DeckParser E2E Tests", () => {
                 properties: { deck: "Child Deck" }
             });
             
-            const note = new MultilineCardNote(childBlock.uuid, childBlock.content, childBlock.format, childBlock.properties, page);
+            const note = new MultilineCardNote(childBlock.uuid, childBlock.content, childBlock.format, childBlock.properties, page.id);
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Child Deck");
@@ -69,7 +69,7 @@ describe("DeckParser E2E Tests", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Default to current page name when no deck specified", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
             
-            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page);
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page.id);
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Test DeckParser");
@@ -79,7 +79,7 @@ describe("DeckParser E2E Tests", () => {
             const namespacedPage = await logseq.Editor.createPage('Geography/Japan', {}, {createFirstBlock: false});
             const block = await logseq.Editor.appendBlockInPage(namespacedPage.uuid, "Test content");
             
-            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, namespacedPage);
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, namespacedPage.id);
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Geography::Japan");
@@ -110,7 +110,7 @@ describe("DeckParser E2E Tests", () => {
             // Refresh childPage to get namespace info
             const freshChildPage = await logseq.Editor.getPage(childPage.uuid);
             
-            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, freshChildPage);
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, freshChildPage.id);
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Parent Namespaced Page");
@@ -137,7 +137,7 @@ describe("DeckParser E2E Tests", () => {
             const parentBlock = await logseq.Editor.appendBlockInPage(page.uuid, "Parent content", {properties:{deck:"Deck"}});
             const childBlock = await logseq.Editor.insertBlock(parentBlock.uuid, "Child content");
             
-            const note = new MultilineCardNote(childBlock.uuid, childBlock.content, childBlock.format, childBlock.properties, page);
+            const note = new MultilineCardNote(childBlock.uuid, childBlock.content, childBlock.format, childBlock.properties, page.id);
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Deck");
@@ -147,7 +147,7 @@ describe("DeckParser E2E Tests", () => {
             const parentBlock = await logseq.Editor.appendBlockInPage(page.uuid, "Parent content", {properties:{deck: "Parent Deck"}});
             const childBlock = await logseq.Editor.insertBlock(parentBlock.uuid, "Child content", {properties:{deck: "Child Deck"}});
             
-            const note = new MultilineCardNote(childBlock.uuid, childBlock.content, childBlock.format, childBlock.properties, page);
+            const note = new MultilineCardNote(childBlock.uuid, childBlock.content, childBlock.format, childBlock.properties, page.id);
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Child Deck");
@@ -156,7 +156,7 @@ describe("DeckParser E2E Tests", () => {
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Default to current page name when no deck specified in DB mode", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
             
-            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page);
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page.id);
             const deck = await DeckParser.parse(note);
             
             expect(deck).toBe("Test DeckParser DB");

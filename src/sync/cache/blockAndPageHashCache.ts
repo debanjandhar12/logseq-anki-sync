@@ -34,25 +34,32 @@ const removeBlockNode = (blockUUID : BlockUUID) => {
     graph.removeNode(blockUUID + "Block");
 };
 
-const removePageNode = (pageName: BlockPageName) => {
-    pageName = pageName.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+const removePageNode = (pageIdentifier: BlockPageName | number) => {
+    const pageKey = typeof pageIdentifier === 'number' 
+        ? `${pageIdentifier}PageById`
+        : `${pageIdentifier.toLowerCase()}Page`;
 
-    if (!graph.hasNode(pageName + "Page")) return;
-    graph.dependantsOf(pageName + "Page").forEach((dependant) => {
+    if (!graph.hasNode(pageKey)) return;
+    graph.dependantsOf(pageKey).forEach((dependant) => {
         graph.removeNode(dependant);
     });
-    graph.removeNode(pageName + "Page");
+    graph.removeNode(pageKey);
 };
 
-const addPageNode = async (pageName: BlockPageName) => {
-    pageName = pageName.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+const addPageNode = async (pageIdentifier: BlockPageName | number) => {
+    const pageKey = typeof pageIdentifier === 'number' 
+        ? `${pageIdentifier}PageById`
+        : `${pageIdentifier.toLowerCase()}Page`;
 
-    if (graph.hasNode(pageName + "Page")) return;
-    const page = await LogseqProxy.Editor.getPage(pageName);
+    if (graph.hasNode(pageKey)) return;
+    
+    const page = await LogseqProxy.Editor.getPage(pageIdentifier);
+    if (!page) return;
+    
     const toHash = [];
-    toHash.push([_.get(page, "updatedAt", "")]);
+    toHash.push([_.get(page, "updatedAt", ""), page.id]);
     // TODO: consider adding refs as dependencies
-    graph.addNode(pageName + "Page", objectHashOptimized(toHash));
+    graph.addNode(pageKey, objectHashOptimized(toHash));
 };
 
 const addBlockNode = async (blockUUID : BlockUUID) => {
@@ -70,7 +77,13 @@ const addBlockNode = async (blockUUID : BlockUUID) => {
     for (const dependency of directDependencies) {
         if (dependency.type === "Block") await addBlockNode(dependency.value);
         else if (dependency.type === "Page") await addPageNode(dependency.value);
-        graph.addDependency(blockUUID + "Block", dependency.value.toLowerCase() + dependency.type);
+        
+        const depKey = dependency.type === "Block" 
+            ? dependency.value.toLowerCase() + "Block"
+            : (typeof dependency.value === 'number' 
+                ? `${dependency.value}PageById`
+                : dependency.value.toLowerCase() + "Page");
+        graph.addDependency(blockUUID + "Block", depKey);
     }
     const toHash = [];
     graph.dependenciesOf(blockUUID + "Block").forEach((dependency) => {
@@ -95,11 +108,13 @@ export const getBlockHash = async (blockUUID) => {
     return graph.getNodeData(blockUUID + "Block");
 };
 
-export const getPageHash = async (pageName) => {
-    pageName = pageName.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+export const getPageHash = async (pageIdentifier: BlockPageName | number) => {
+    const pageKey = typeof pageIdentifier === 'number' 
+        ? `${pageIdentifier}PageById`
+        : `${pageIdentifier.toLowerCase()}Page`;
 
-    await addPageNode(pageName);
-    return graph.getNodeData(pageName + "Page");
+    await addPageNode(pageIdentifier);
+    return graph.getNodeData(pageKey);
 };
 
 // -- Maintain Cache State by using DB.onChanged --

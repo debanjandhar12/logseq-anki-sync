@@ -16,11 +16,11 @@ export class MultilineCardNote extends Note {
         content: string,
         format: string,
         properties: any,
-        page: any,
+        pageId: number,
         tags: string[] = [],
         children: any = [],
     ) {
-        super(uuid, content, format, properties, page, tags);
+        super(uuid, content, format, properties, pageId, tags);
         this.children = children;
     }
 
@@ -261,9 +261,9 @@ export class MultilineCardNote extends Note {
         let notes = await Promise.all(
             blocks.map(async (b) => {
                 const uuid = getUUIDFromBlock(b[0]);
-                const page = b[0].page
-                    ? await LogseqProxy.Editor.getPage(b[0].page.id)
-                    : {};
+                const pageId = b[0].page?.id;
+                if (!pageId) return null;
+                
                 const tagsFromParentCardGroup = _.get(b[0], "tagsFromParentCardGroup", []);
                 let block = await LogseqProxy.Editor.getBlock(uuid, {
                     includeChildren: true,
@@ -275,7 +275,7 @@ export class MultilineCardNote extends Note {
                         block.content,
                         block.format,
                         block.properties || {},
-                        page,
+                        pageId,
                         // Apply tags in parent card group block - #168
                         blockTags && blockTags.length > 0 ? blockTags : tagsFromParentCardGroup,
                         block.children,

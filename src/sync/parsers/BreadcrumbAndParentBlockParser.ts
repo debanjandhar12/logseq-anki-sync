@@ -9,30 +9,34 @@ export class BreadcrumbAndParentBlockParser {
         const { breadcrumbDisplay } = LogseqProxy.Settings.getPluginSettings();
         
         if (!breadcrumbDisplay.includes("Show Page name")) {
-            return this.buildHiddenBreadcrumb(note, graphName);
+            return await this.buildHiddenBreadcrumb(note, graphName);
         }
 
         if (breadcrumbDisplay === "Show Page name and parent blocks context") {
             return await this.buildFullBreadcrumb(note, graphName);
         }
 
-        return this.buildPageOnlyBreadcrumb(note, graphName);
+        return await this.buildPageOnlyBreadcrumb(note, graphName);
     }
 
-    private static buildHiddenBreadcrumb(note: Note, graphName: string): string {
+    private static async buildHiddenBreadcrumb(note: Note, graphName: string): Promise<string> {
+        const page = await LogseqProxy.Editor.getPage(note.pageId);
+        const pageName = getNameFromPage(page);
         return `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(
-            getNameFromPage(note.page)
-        )}" class="hidden">${getNameFromPage(note.page)}</a>`;
+            pageName
+        )}" class="hidden">${pageName}</a>`;
     }
 
-    private static buildPageOnlyBreadcrumb(note: Note, graphName: string): string {
+    private static async buildPageOnlyBreadcrumb(note: Note, graphName: string): Promise<string> {
+        const page = await LogseqProxy.Editor.getPage(note.pageId);
+        const pageName = getNameFromPage(page);
         return `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(
-            getNameFromPage(note.page)
-        )}" title="${getNameFromPage(note.page)}">${getNameFromPage(note.page)}</a>`;
+            pageName
+        )}" title="${pageName}">${pageName}</a>`;
     }
 
     private static async buildFullBreadcrumb(note: Note, graphName: string): Promise<string> {
-        let breadcrumb = this.buildPageOnlyBreadcrumb(note, graphName);
+        let breadcrumb = await this.buildPageOnlyBreadcrumb(note, graphName);
         
         try {
             const parentBlocks = await this.collectParentBlocks(note);

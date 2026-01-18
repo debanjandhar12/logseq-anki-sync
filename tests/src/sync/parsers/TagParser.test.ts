@@ -87,7 +87,7 @@ describe("TagParser E2E Tests", () => {
             });
             
             const freshChildPage = await logseq.Editor.getPage(childPage.uuid);
-            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, freshChildPage);
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, freshChildPage.id);
             const tags = await TagParser.parse(note, []);
             
             expect(tags).toHaveLength(2);

@@ -14,13 +14,20 @@ export class DeckParser {
      */
     static async parse(note: Note): Promise<string> {
         let deck = await this.findDeckInBlockHierarchy(note);
-        if (deck !== null) return this.normalizeDeck(deck, note.page);
+        if (deck !== null) {
+            const page = await LogseqProxy.Editor.getPage(note.pageId);
+            return this.normalizeDeck(deck, page);
+        }
 
         deck = await this.findDeckInNamespaceHierarchy(note);
-        if (deck !== null) return this.normalizeDeck(deck, note.page);
+        if (deck !== null) {
+            const page = await LogseqProxy.Editor.getPage(note.pageId);
+            return this.normalizeDeck(deck, page);
+        }
 
-        const defaultDeck = await this.getDefaultDeck(note.page);
-        return this.normalizeDeck(defaultDeck, note.page);
+        const defaultDeck = await this.getDefaultDeck(note.pageId);
+        const page = await LogseqProxy.Editor.getPage(note.pageId);
+        return this.normalizeDeck(defaultDeck, page);
     }
 
     private static async findDeckInBlockHierarchy(note: Note): Promise<string | null> {
@@ -40,8 +47,9 @@ export class DeckParser {
 
     private static async findDeckInNamespaceHierarchy(note: Note): Promise<string | null> {
         try {
-            const parents = await LogseqProxy.Editor.getParentNamespacePages(note.page);
-            const hierarchy = [note.page, ...parents];
+            const page = await LogseqProxy.Editor.getPage(note.pageId);
+            const parents = await LogseqProxy.Editor.getParentNamespacePages(page);
+            const hierarchy = [page, ...parents];
             for (const page of hierarchy) {
                 const deck = getLogseqBlockPropSafe(page, "properties.deck");
                 if (deck != null) return deck;
@@ -52,7 +60,8 @@ export class DeckParser {
         return null;
     }
 
-    private static async getDefaultDeck(page: any): Promise<string> {
+    private static async getDefaultDeck(pageId: number): Promise<string> {
+        const page = await LogseqProxy.Editor.getPage(pageId);
         return await LogseqProxy.Editor.getFullPageName(page);
     }
 
