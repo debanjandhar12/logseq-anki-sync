@@ -1,7 +1,7 @@
 import "@logseq/libs"
 import * as cheerio from "cheerio";
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
-import { convertToHTMLFile } from "../../../src/logseq/LogseqToHtmlConverter";
+import {convertToHTMLFile, processProperties} from "../../../src/logseq/LogseqToHtmlConverter";
 import {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 
 describe("Basic Markdown Cases", () => {
@@ -25,6 +25,17 @@ describe("Basic Markdown Cases", () => {
             const htmlFile = await convertToHTMLFile("This *italic* and this _italic_ too.", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('This <i>italic</i> and this <i>italic</i> too.');
+        });
+        test("Property parsing should work and removed from HTML content", async () => {
+            const content = "logseq.text-color:: green\nHello World\nbackground-color:: red";
+            const htmlFile = await convertToHTMLFile(content, "markdown");
+            const [, block_props] = await processProperties(content, "markdown");
+            expect(htmlFile.html).toContain("Hello World");
+            expect(block_props['logseq.text-color']).not.toBeNull();
+            expect(block_props['logseq.text-color']).toContain("green");
+            expect(block_props['background-color']).not.toBeNull();
+            expect(block_props['background-color']).toContain("red");
+            expect(htmlFile.html).not.toContain("background-color::");
         });
         test("HTML Rendering", async () => {
             const htmlFile = await convertToHTMLFile("Hello <b>World</b>", "markdown");
@@ -658,5 +669,10 @@ describe("Regression Cases", () => {
     test("https://github.com/debanjandhar12/logseq-anki-sync/discussions/89#discussioncomment-13399053", async () => {
         const htmlFile = await convertToHTMLFile("{{c1:: $\\frac{1}{\\sqrt{2}}$}}", "markdown");
         expect(htmlFile.html.trim()).toMatchSnapshot();
+    });
+    test("Swift cloze rendering with numbered list - https://github.com/debanjandhar12/logseq-anki-sync/issues/326", async () => {
+        const htmlFile = await convertToHTMLFile("{{c2::test 3}} :<-> {{c1::test}}\nlogseq.order-list-type:: number", "markdown");
+        expect(htmlFile.html).toContain("{{c2::test 3}}");
+        expect(htmlFile.html).toContain("{{c1::test}}");
     });
 });
