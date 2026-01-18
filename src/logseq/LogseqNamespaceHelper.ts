@@ -1,22 +1,25 @@
 import { PageEntity } from "@logseq/libs/dist/LSPlugin";
-import { LogseqProxy } from "./LogseqProxy";
 import _ from "lodash";
 import getNameFromPage from "./getNameFromPage";
-import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
+import { LogseqPropertiesHelper } from "./LogseqPropertiesHelper";
+import { LogseqProxy } from "./LogseqProxy";
 
 export class LogseqNamespaceHelper {
+    protected static async getPage(pageId: number): Promise<PageEntity | null> {
+        return await LogseqPropertiesHelper.getPage(pageId);
+    }
     /**
      * Gets the parent page of a given page.
      * Handles both DB version (page.parent) and File version (page.namespace.id).
      */
     static async getParentPage(page: PageEntity): Promise<PageEntity | null> {
-        let parentId = _.get(page, "parent");
+        let parentId = _.get(page, "parent.id");
         if (parentId == null) {
             parentId = _.get(page, "namespace.id");
         }
 
         if (parentId != null && parentId !== page.id) {
-            return await LogseqPropertiesHelper.getPage(parentId as number);
+            return await this.getPage(parentId as number);
         }
         return null;
     }
@@ -52,5 +55,11 @@ export class LogseqNamespaceHelper {
     static async getNamespaceDescendants(page: PageEntity): Promise<PageEntity[]> {
         // TBU: Implement this for preview anki addon.. does not work currently
         return await logseq.Editor.getPagesFromNamespace(getNameFromPage(page));
+    }
+}
+
+export class LogseqNamespaceHelperProxy extends LogseqNamespaceHelper {
+    protected static async getPage(pageId: number): Promise<PageEntity | null> {
+        return await LogseqProxy.Editor.getPage(pageId);
     }
 }

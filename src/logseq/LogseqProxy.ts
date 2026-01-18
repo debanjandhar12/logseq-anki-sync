@@ -18,7 +18,7 @@ import pMemoize, {pMemoizeClear} from "p-memoize";
 import objectHashOptimized from "../utils/objectHashOptimized";
 import {WindowParentBridge} from "./WindowParentBridge";
 import { LogseqPropertiesHelper } from "./LogseqPropertiesHelper";
-import {LogseqNamespaceHelper} from "./LogseqNamespaceHelper";
+import { LogseqNamespaceHelperProxy } from "./LogseqNamespaceHelper";
 import getNameFromPage from "./getNameFromPage";
 
 const getLogseqLock = new AwaitLock();
@@ -79,14 +79,13 @@ export namespace LogseqProxy {
             opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
         ): Promise<PageEntity[]> => {
             if (!page) return [];
-            await getLogseqLock.acquireAsync();
+            // we do not acquire lock here as LogseqNamespaceHelperProxy.getParentNamespacePages
+            // uses LogseqProxy.Editor.getPage which has separate lock
             try {
-                return await LogseqNamespaceHelper.getParentNamespacePages(page);
+                return await LogseqNamespaceHelperProxy.getParentNamespacePages(page);
             } catch (e) {
                 console.error(e);
                 if (!opts.suppressErrors) throw e;
-            } finally {
-                getLogseqLock.release();
             }
             return [];
         }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
