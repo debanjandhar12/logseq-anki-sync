@@ -26,6 +26,7 @@ export class LogseqNamespaceHelper {
 
     /**
      * Gets the full chain of ancestor pages (parent, grandparent, etc.).
+     * Works with both logseq db version and File version.
      * Ordered from immediate parent to root.
      */
     static async getParentNamespacePages(page: PageEntity): Promise<PageEntity[]> {

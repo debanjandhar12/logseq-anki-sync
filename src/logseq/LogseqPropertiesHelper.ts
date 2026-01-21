@@ -121,8 +121,9 @@ export class LogseqPropertiesHelper {
     ): Promise<BlockEntity | null> {
         const block = await logseq.Editor.getBlock(srcBlock, opts);
         if (!block) return null;
-        
-        const isDbGraph = !!(await logseq.App.checkCurrentIsDbGraph());
+
+        let isDbGraph = false;
+        try {isDbGraph = await logseq.App.checkCurrentIsDbGraph() as boolean;} catch {}
         await this.processBlock(block, isDbGraph, opts.includeChildren);
         
         return block;
@@ -137,24 +138,21 @@ export class LogseqPropertiesHelper {
     static async getPage(
         srcPage: PageIdentity | EntityID
     ): Promise<PageEntity | null> {
-        let page: PageEntity | null = null;
-        
-        if (typeof srcPage === "number") {
-            page = await logseq.Editor.getPage(srcPage);
-            if (!page) return null;
-            page = await logseq.Editor.getPage(getNameFromPage(page));
-        } else {
-            page = await logseq.Editor.getPage(srcPage);
-        }
+        let page: PageEntity | null = await logseq.Editor.getPage(srcPage);
         
         if (!page) return null;
-        
-        const properties = await logseq.Editor.getPageProperties(getNameFromPage(page));
-        if (properties) {
-            const strippedProperties = this.stripPropertyPrefixes(properties);
-            page.properties = { ...strippedProperties, ...page.properties };
+
+        let isDbGraph = false;
+        try {isDbGraph = await logseq.App.checkCurrentIsDbGraph() as boolean;} catch {}
+
+        if (isDbGraph) {
+            const properties = await logseq.Editor.getPageProperties(page.id);
+            if (properties) {
+                const strippedProperties = this.stripPropertyPrefixes(properties);
+                page.properties = { ...strippedProperties, ...page.properties };
+            }
         }
-        
+
         return page;
     }
 
@@ -174,9 +172,10 @@ export class LogseqPropertiesHelper {
         
         const blocks = await logseq.Editor.getPageBlocksTree(srcPage);
         if (!blocks) return [];
-        
-        const isDbGraph = !!(await logseq.App.checkCurrentIsDbGraph());
-        
+
+        let isDbGraph = false;
+        try {isDbGraph = await logseq.App.checkCurrentIsDbGraph() as boolean;} catch {}
+
         for (const block of blocks) {
             await this.processBlock(block as BlockEntity, isDbGraph, true);
         }

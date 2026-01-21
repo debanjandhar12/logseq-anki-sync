@@ -143,7 +143,7 @@ export namespace LogseqProxy {
                 // In File ver, tags are same as pages
                 // In DB ver, internally tags are pages
                 // with a tag #Tag but api wise considered different
-                const isDb = await logseq.App.checkCurrentIsDbGraph();
+                const isDb = await LogseqProxy.App.checkCurrentIsDbGraph();
                 const exists = isDb
                     ? await logseq.Editor.getTag(tagName)
                     : await logseq.Editor.getPage(tagName);
@@ -163,7 +163,7 @@ export namespace LogseqProxy {
         static async registerProperty(key: string, schema?: Partial<PropertySchema>) {
             await getLogseqLock.acquireAsync();
             try {
-                const isDb = await logseq.App.checkCurrentIsDbGraph();
+                const isDb = await LogseqProxy.App.checkCurrentIsDbGraph();
                 if (!isDb) return; // upsertProperty does not work in non db version
                 await logseq.Editor.upsertProperty(key, schema);
             } catch (e) {
