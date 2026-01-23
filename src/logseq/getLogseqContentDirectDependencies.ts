@@ -57,12 +57,6 @@ export default async function getLogseqContentDirectDependencies(
         blockDependency.add(match[1]);
     }
 
-    // Add block dependencies due to LOGSEQ_PAGE_REF_REGEXP (in DB ver page ref and block ref has same syntax)
-    while ((match = LOGSEQ_PAGE_REF_REGEXP.exec(content))) {
-        if (match[1].length == 36)  // uuid are 36 chars in length
-            blockDependency.add(match[1]);
-    }
-
     // Add dependencies due to LOGSEQ_EMBDED_PAGE_REGEXP
     while ((match = LOGSEQ_EMBDED_PAGE_REGEXP.exec(content))) {
         pageDependency.add(match[1]);

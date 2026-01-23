@@ -76,6 +76,9 @@ describe("Basic Markdown Cases", () => {
             expect(htmlFile.html.trim()).toContain('<code>Hello</code> <code>World</code>');
         });
         test.skipIf(!globalThis.isLogseqAvailable)("Page Ref Rendering", async () => {
+            // Create the page that will be referenced
+            await logseq.Editor.createPage('Ref Test', {}, {createFirstBlock: false});
+            
             const htmlFile = await convertToHTMLFile("Hello [[Ref Test]]", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
@@ -84,8 +87,14 @@ describe("Basic Markdown Cases", () => {
             const $ = cheerio.load(htmlFile.html);
             expect($('a').text()).toBe('Ref Test');
             expect($('a').attr('href')).toBe(`logseq://graph/${graphName}?page=Ref%20Test`);
+            
+            // Cleanup
+            await logseq.Editor.deletePage('Ref Test');
         });
         test.skipIf(!globalThis.isLogseqAvailable)("Consecutive Page Ref Rendering - https://github.com/debanjandhar12/logseq-anki-sync/issues/101", async () => {
+            // Create the page that will be referenced
+            await logseq.Editor.createPage('Ref Test', {}, {createFirstBlock: false});
+            
             const htmlFile = await convertToHTMLFile("[[Ref Test]][[Ref Test]] [[Ref Test]],[[Ref Test]]", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
@@ -93,6 +102,9 @@ describe("Basic Markdown Cases", () => {
             expect(normalized).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('a')).toHaveLength(4);
+            
+            // Cleanup
+            await logseq.Editor.deletePage('Ref Test');
         });
         test("Https / Http URL Rendering", async () => {
             const htmlFile = await convertToHTMLFile("Hello [World](https://example.com) https://example.com http://example.com", "markdown");

@@ -4,7 +4,7 @@ import NoteHashCalculator from "../../../../src/sync/cache/NoteHashCalculator";
 import { MultilineCardNote } from "../../../../src/anki-notes/MultilineCardNote";
 import {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import type { ParsedNoteData } from "../../../../src/sync/types";
-import { init as initBlockPageHashCache } from "../../../../src/sync/cache/blockAndPageHashCache";
+import { init as initBlockPageHashCache } from "../../../../src/sync/cache/BlockAndPageHashCache";
 import { LogseqProxy } from "../../../../src/logseq/LogseqProxy";
 import { WindowParentBridge } from "../../../../src/logseq/WindowParentBridge";
 

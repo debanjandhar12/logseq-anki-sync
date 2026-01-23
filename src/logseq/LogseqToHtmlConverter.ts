@@ -57,8 +57,6 @@ export interface HTMLFile {
     tags: Set<string> | Array<string>;
 }
 
-
-
 export async function convertToHTMLFile(
     content: string,
     format = "markdown",
@@ -279,7 +277,6 @@ export async function convertToHTMLFile(
 }
 
 export async function processProperties(resultContent, format = "markdown"): Promise<[string,any]> {
-    const orgianl =resultContent;
     resultContent = safeReplace(resultContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
     const block_props = {};
     resultContent = safeReplace(resultContent, MD_PROPERTIES_REGEXP, (match) => {
@@ -287,6 +284,66 @@ export async function processProperties(resultContent, format = "markdown"): Pro
         const [key, value] = match.split("::");
         block_props[key.trim()] = value.trim();
         return "";
+    });
+
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_PAGE_REGEXP, async (match, pageName) => {
+        try {
+            // Convert page ref syntax to standard internal representation: [[page-uuid]]
+            const page = await LogseqProxy.Editor.getPage(pageName);
+            if (page) {
+                const uuid = getUUIDFromBlock(page);
+                if (uuid) {
+                    return match.replace(pageName, uuid);
+                }
+            }
+        } catch (e) {}
+        return match;
+    });
+
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_PAGE_REF_REGEXP, async (match, pageName) => {
+        // Convert org mode stuff (for some reason logseq devs thought using [[]] for assets is great idea)
+        if (format == "org" && encodeURI(pageName).match(isImage_REGEXP)) {
+            return `![](${pageName})`; // this is actually an image
+        }
+        if (format == "org" && encodeURI(pageName).match(isWebURL_REGEXP)) {
+            return `${pageName}`; // this is actually a web URL
+        }
+
+        // In DB graphs, check if this is actually a block UUID (not a page name)
+        if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
+            if (pageName.length === 36) { // Check if it's a UUID
+                const possibleBlock = await LogseqProxy.Editor.getBlock(pageName);
+                if (possibleBlock) {
+                    return `((${possibleBlock.uuid}))`; // Convert to block ref
+                }
+            }
+        }
+        
+        try {
+            // Convert page ref syntax to standard internal representation: [[page-uuid]]
+            const page = await LogseqProxy.Editor.getPage(pageName);
+            if (page) {
+                const uuid = getUUIDFromBlock(page);
+                if (uuid) {
+                    return `[[${uuid}]]`;
+                }
+            }
+        } catch (e) {}
+        return `[[${pageName}]]`;
+    });
+
+    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_RENAMED_PAGE_REF_REGEXP, async (match, aliasContent, pageName) => {
+        try {
+            // Convert page ref syntax to standard internal representation: [alias]([[page-uuid]])
+            const page = await LogseqProxy.Editor.getPage(pageName);
+            if (page) {
+                const uuid = getUUIDFromBlock(page);
+                if (uuid) {
+                    return `[${aliasContent}]([[${uuid}]])`;
+                }
+            }
+        } catch (e) {}
+        return match;
     });
 
     // Add support for pdf annotation
@@ -371,16 +428,17 @@ export async function processProperties(resultContent, format = "markdown"): Pro
     if (linkDBId) {
         const block = await LogseqProxy.Editor.getBlock(linkDBId as EntityID);
         if (block) {
-            resultContent = `{{embed ((${getUUIDFromBlock(block)}))}}` + '\n' + resultContent;
+            const blockUUID = getUUIDFromBlock(block);
+            if (blockUUID) {
+                resultContent = `{{embed ((${blockUUID}))}}` + '\n' + resultContent;
+            }
         } else {
             const page = await LogseqProxy.Editor.getPage(linkDBId as EntityID);
             if (page) {
-                // TODO: page name is not unique in db ver and can cause issue with caching
-                resultContent = `{{embed [[${getNameFromPage(page)}]]}}` + '\n' + resultContent;
+                resultContent = `{{embed [[${page.uuid}]]}}` + '\n' + resultContent;
             }
         }
     }
-    console.log("block_props", orgianl, block_props, resultContent);
 
     return [resultContent, block_props];
 }
@@ -445,9 +503,11 @@ async function processRefEmbeds(
     resultContent = await safeReplaceAsync(
         resultContent,
         LOGSEQ_EMBDED_PAGE_REGEXP,
-        async (match, pageName) => {
+        async (match, pageUUID) => {
             // Convert page embed
             let pageTree = [];
+            const pageName = await getPageNameFromUUID(pageUUID);
+
             const getPageContentHTML = async (children: any, level = 0): Promise<string> => {
                 if (level >= 100) return "";
                 let result = `\n<ul class="children-list">`;
@@ -460,11 +520,12 @@ async function processRefEmbeds(
                     blockContentHTMLFile.assets.forEach((element) => {
                         resultAssets.add(element);
                     });
-                    if (child.children.length > 0)
+                    if (child.children && child.children.length > 0) {
                         blockContentHTMLFile.html += await getPageContentHTML(
                             child.children,
                             level + 1,
                         );
+                    }
 
                     result += blockContentHTMLFile.html;
                     result += `</li>`;
@@ -473,7 +534,7 @@ async function processRefEmbeds(
                 return result;
             };
             try {
-                pageTree = await LogseqProxy.Editor.getPageBlocksTree(pageName);
+                pageTree = await LogseqProxy.Editor.getPageBlocksTree(pageUUID);
             } catch (e) {
                 console.warn(e);
             }
@@ -494,8 +555,9 @@ async function processRefEmbeds(
     resultContent = await safeReplaceAsync(
         resultContent,
         LOGSEQ_RENAMED_PAGE_REF_REGEXP,
-        async (match, aliasContent, pageName) => {
-            // Convert page refs
+        async (match, aliasContent, pageUUID) => {
+            const pageName = await getPageNameFromUUID(pageUUID);
+            
             const str = getRandomUnicodeString();
             hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
                 (await LogseqProxy.App.getCurrentGraph())?.name,
@@ -509,23 +571,13 @@ async function processRefEmbeds(
     resultContent = await safeReplaceAsync(
         resultContent,
         LOGSEQ_PAGE_REF_REGEXP,
-        async (match, pageName : string) => {
-            // Convert page refs
-            if (format == "org" && encodeURI(pageName).match(isImage_REGEXP)) {
-                return `![](${pageName})`;
-            } else if (format == "org" && encodeURI(pageName).match(isWebURL_REGEXP)) {
-                return `${pageName}`;
-            } else if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
-                const possibleBlockUUID = pageName;
-                const possibleBlock = await LogseqProxy.Editor.getBlock(possibleBlockUUID);
-                if (possibleBlock) {
-                    return `((${possibleBlock.uuid}))`;
-                }
-            }
+        async (match, pageUUID : string) => {
+            const displayName = await getPageNameFromUUID(pageUUID);
+            
             const str = getRandomUnicodeString();
             hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
                 (await LogseqProxy.App.getCurrentGraph())?.name,
-            )}?page=${encodeURIComponent(pageName)}" class="page-reference">${pageName}</a>`;
+            )}?page=${encodeURIComponent(displayName)}" class="page-reference">${displayName}</a>`;
             return str;
         },
     );
@@ -600,15 +652,10 @@ async function hideRefEmbeds(resultContent, resultAssets, hashmap, format): Prom
     resultContent = await safeReplaceAsync(
         resultContent,
         LOGSEQ_PAGE_REF_REGEXP,
-        async (match, pageName) => {
-            // Convert page refs
-            if (format == "org" && encodeURI(pageName).match(isImage_REGEXP)) {
-                return `![](${pageName})`;
-            } else if (format == "org" && encodeURI(pageName).match(isWebURL_REGEXP)) {
-                return `${pageName}`;
-            }
+        async (match, pageUUID) => {
+            const displayName = await getPageNameFromUUID(pageUUID);
             const str = getRandomUnicodeString();
-            hashmap[str] = `<a class="page-reference">${pageName}</a>`;
+            hashmap[str] = `<a class="page-reference">${displayName}</a>`;
             return str;
         },
     );
@@ -852,4 +899,18 @@ async function processLink(
         ...new TextEncoder().encode(content),
         ...resultUTF8.subarray(end_pos),
     ]);
+}
+
+
+/**
+ * Helper function to get page name from UUID. Falls back to UUID if page not found.
+ */
+async function getPageNameFromUUID(pageUUID: string): Promise<string> {
+    try {
+        const page = await LogseqProxy.Editor.getPage(pageUUID);
+        if (page) {
+            return getNameFromPage(page) || pageUUID;
+        }
+    } catch (e) {}
+    return pageUUID;
 }
