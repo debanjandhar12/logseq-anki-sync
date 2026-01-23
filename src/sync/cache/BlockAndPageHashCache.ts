@@ -57,7 +57,10 @@ const addPageNode = async (pageIdentifier: BlockPageName | number) => {
     if (!page) return;
     
     const toHash = [];
-    toHash.push([_.get(page, "updatedAt", ""), page.id]);
+    toHash.push([_.get(page, "updatedAt", ""),
+        _.get(page, "parent.id", "") || _.get(page, "namespace.id", ""),
+        page.id
+        ]);
     // TODO: consider adding refs as dependencies
     graph.addNode(pageKey, objectHashOptimized(toHash));
 };

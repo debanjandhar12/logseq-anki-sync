@@ -230,7 +230,7 @@ import {ANKI_ICON} from "./constants";
 ### 4.1 Cache Clearing Strategy
 
 **Severity:** Medium  
-**Location:** `LogseqProxy.ts`, `LogseqToHtmlConverter.ts`, `blockAndPageHashCache.ts`
+**Location:** `LogseqProxy.ts`, `LogseqToHtmlConverter.ts`, `BlockAndPageHashCache.ts`
 
 **Issue:** Multiple caches clear on 'syncLogseqToAnkiComplete' event. This is good, but the clearing happens in multiple places listening to the same event.
 

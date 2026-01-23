@@ -14,7 +14,7 @@ import { DependencyEntity } from "../../logseq/getLogseqContentDirectDependencie
 import {
     getBlockHash,
     getPageHash,
-} from "./blockAndPageHashCache";
+} from "./BlockAndPageHashCache";
 import _ from "lodash";
 import objectHashOptimized from "../../utils/objectHashOptimized";
 import path from "path-browserify";

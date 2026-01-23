@@ -9,7 +9,7 @@ import {LogseqProxy} from "./logseq/LogseqProxy";
 import {AddonRegistry} from "./addons/AddonRegistry";
 import {SwiftArrowNote} from "./anki-notes/SwiftArrowNote";
 import {ImageOcclusionNote} from "./anki-notes/ImageOcclusionNote";
-import { blockAndPageHashCache } from "./sync/cache";
+import { BlockAndPageHashCache } from "./sync/cache";
 import {Buffer} from "buffer/";
 import {Note} from "./anki-notes/Note";
 import {showButtonModal} from "./ui";
@@ -64,7 +64,7 @@ function main(baseInfo: LSPluginBaseInfo) {
         }
     });
     LogseqProxy.init();
-    blockAndPageHashCache.init();
+    BlockAndPageHashCache.init();
     Note.initLogseqOperations();
     ClozeNote.initLogseqOperations();
     MultilineCardNote.initLogseqOperations();

@@ -467,7 +467,7 @@ When writing properties via `upsertBlockProperty()`:
    - Profile sync operation before and after changes
 
 3. **Dependency hash cache validation:**
-   - Verify `blockAndPageHashCache.ts` still works correctly
+   - Verify `BlockAndPageHashCache.ts` still works correctly
    - Check if property structure changes affect hash calculation
    - Ensure transitive dependencies still invalidate properly
 

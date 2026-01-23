@@ -32,7 +32,7 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
 - Direct API calls are needed outside LogseqProxy
 - LogseqProxy automatically uses these internally for cached access
 
-**Dependency Hash Cache:** `blockAndPageHashCache.ts` maintains a dependency graph tracking block references, page embeds, and transitive dependencies. Each block's hash includes all dependency hashes plus metadata (page updatedAt, content length, parent/left ids). When a block changes, all dependent blocks' hashes automatically invalidate. Cache clears after sync via 'syncLogseqToAnkiComplete' event.
+**Dependency Hash Cache:** `BlockAndPageHashCache.ts` maintains a dependency graph tracking block references, page embeds, and transitive dependencies. Each block's hash includes all dependency hashes plus metadata (page updatedAt, content length, parent/left ids). When a block changes, all dependent blocks' hashes automatically invalidate. Cache clears after sync via 'syncLogseqToAnkiComplete' event.
 
 **Syncing System:** `syncLogseqToAnki.ts` uses `NoteHashCalculator` to compute note hashes from dependency hashes + plugin settings + Anki fields. Only notes with changed hashes trigger re-rendering and Anki updates.
 

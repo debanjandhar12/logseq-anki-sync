@@ -62,7 +62,7 @@ src/sync/
 │   └── ParentContentParser.ts   # Parent content inclusion logic
 ├── cache/
 │   ├── index.ts                 # Re-export cache utilities
-│   ├── blockAndPageHashCache.ts # Dependency graph and hash caching
+│   ├── BlockAndPageHashCache.ts # Dependency graph and hash caching
 │   └── NoteHashCalculator.ts    # Note hash calculation using cache
 └── types.ts                     # Shared types
 ```
@@ -1072,7 +1072,7 @@ After the main refactoring phases, organize cache-related files:
 ```
 src/sync/cache/
 ├── index.ts
-├── blockAndPageHashCache.ts
+├── BlockAndPageHashCache.ts
 └── NoteHashCalculator.ts
 ```
 

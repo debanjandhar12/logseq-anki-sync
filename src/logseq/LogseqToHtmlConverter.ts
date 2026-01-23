@@ -375,6 +375,7 @@ export async function processProperties(resultContent, format = "markdown"): Pro
         } else {
             const page = await LogseqProxy.Editor.getPage(linkDBId as EntityID);
             if (page) {
+                // TODO: page name is not unique in db ver and can cause issue with caching
                 resultContent = `{{embed [[${getNameFromPage(page)}]]}}` + '\n' + resultContent;
             }
         }

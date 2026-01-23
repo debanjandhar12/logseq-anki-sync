@@ -1,2 +1,2 @@
 export { default as NoteHashCalculator } from "./NoteHashCalculator";
-export * as blockAndPageHashCache from "./blockAndPageHashCache";
+export * as BlockAndPageHashCache from "./BlockAndPageHashCache";

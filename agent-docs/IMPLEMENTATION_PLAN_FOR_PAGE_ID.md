@@ -13,7 +13,7 @@ This document outlines the plan to refactor the Logseq Anki Sync plugin to use p
     *   `NoteHashCalculator.ts`: Which uses page information for hash calculation.
     *   `DeckParser.ts`: Which resolves deck names based on page hierarchy.
     *   `LogseqProxy.ts` & `LogseqPropertiesHelper.ts`: The core wrappers around the Logseq API.
-    *   `blockAndPageHashCache.ts`: Caching mechanism that uses page names as keys.
+    *   `BlockAndPageHashCache.ts`: Caching mechanism that uses page names as keys.
 
 ## 3. Proposed Solution Strategy
 
@@ -39,7 +39,7 @@ The migration will be executed in three phases to ensure a structured and low-ri
     *   Update logic to use `note.pageId` to fetch page details for hashing, ensuring the hash is based on a unique identifier.
 2.  **`DeckParser.ts`:**
     *   Refactor `findDeckInNamespaceHierarchy` and `getDefaultDeck` to operate using `note.pageId`. This involves fetching the page entity via its ID and then traversing its namespace hierarchy.
-3.  **`blockAndPageHashCache.ts`:**
+3.  **`BlockAndPageHashCache.ts`:**
     *   Change the caching key for pages from `pageName` to `pageId`. The functions `addPageNode` and `getPageHash` will need to be updated to accept `pageId`.
 4.  **Other Components:**
     *   Review and refactor `LogseqToHtmlConverter.ts` and any other component identified in the initial search that relies on page names for lookups.
@@ -71,7 +71,7 @@ The migration will be executed in three phases to ensure a structured and low-ri
 -   [ ] **Phase 2: Refactor Dependent Services**
     -   [ ] Update `NoteHashCalculator.ts` to use `note.pageId`.
     -   [ ] Update `DeckParser.ts` to use `note.pageId`.
-    -   [ ] Update `blockAndPageHashCache.ts` to use `pageId` as cache keys.
+    -   [ ] Update `BlockAndPageHashCache.ts` to use `pageId` as cache keys.
     -   [ ] Investigate and document limitations for `PreviewInAnki.ts`.
 -   [ ] **Phase 3: Data Source and Instantiation**
     -   [ ] Modify `syncLogseqToAnki.ts` to correctly extract `block.page.id` when creating `Note` instances.
