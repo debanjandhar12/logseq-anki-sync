@@ -12,6 +12,18 @@ import getNameFromPage from "./getNameFromPage";
  * content behavior is similar to non db version.
  */
 export class LogseqPropertiesHelper {
+    /**
+     * Checks if the current graph is a DB graph.
+     * Returns false if the check fails (for backward compatibility with older Logseq versions).
+     * Override this in LogseqPropertiesHelperProxy to use cached version.
+     */
+    protected static async checkCurrentIsDbGraph(): Promise<boolean> {
+        try {
+            return await logseq.App.checkCurrentIsDbGraph() as boolean;
+        } catch {
+            return false;
+        }
+    }
     public static stripPropertyPrefixes(properties: Record<string, any>): Record<string, any> {
         if (!properties) return properties;
         
@@ -122,8 +134,7 @@ export class LogseqPropertiesHelper {
         const block = await logseq.Editor.getBlock(srcBlock, opts);
         if (!block) return null;
 
-        let isDbGraph = false;
-        try {isDbGraph = await logseq.App.checkCurrentIsDbGraph() as boolean;} catch {}
+        const isDbGraph = await this.checkCurrentIsDbGraph();
         await this.processBlock(block, isDbGraph, opts.includeChildren);
         
         return block;
@@ -142,8 +153,7 @@ export class LogseqPropertiesHelper {
         
         if (!page) return null;
 
-        let isDbGraph = false;
-        try {isDbGraph = await logseq.App.checkCurrentIsDbGraph() as boolean;} catch {}
+        const isDbGraph = await this.checkCurrentIsDbGraph();
 
         if (isDbGraph) {
             const properties = await logseq.Editor.getPageProperties(page.id);
@@ -173,13 +183,23 @@ export class LogseqPropertiesHelper {
         const blocks = await logseq.Editor.getPageBlocksTree(srcPage);
         if (!blocks) return [];
 
-        let isDbGraph = false;
-        try {isDbGraph = await logseq.App.checkCurrentIsDbGraph() as boolean;} catch {}
+        const isDbGraph = await this.checkCurrentIsDbGraph();
 
         for (const block of blocks) {
             await this.processBlock(block as BlockEntity, isDbGraph, true);
         }
         
         return blocks;
+    }
+}
+
+/**
+ * Proxy version that uses cached LogseqProxy.App.checkCurrentIsDbGraph.
+ * Use this when working within the sync system where caching is beneficial.
+ */
+export class LogseqPropertiesHelperProxy extends LogseqPropertiesHelper {
+    protected static async checkCurrentIsDbGraph(): Promise<boolean> {
+        const { LogseqProxy } = await import("./LogseqProxy");
+        return Boolean(await LogseqProxy.App.checkCurrentIsDbGraph());
     }
 }

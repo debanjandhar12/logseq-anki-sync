@@ -1,7 +1,3 @@
-/***
- * This is a cached + syncronization-safe logseq api wrapper.
- * Fixes the following issues: #58
- * */
 import "@logseq/libs";
 import {
     BlockEntity,
@@ -17,9 +13,14 @@ import { PluginSettings } from "../settings";
 import pMemoize, {pMemoizeClear} from "p-memoize";
 import objectHashOptimized from "../utils/objectHashOptimized";
 import {WindowParentBridge} from "./WindowParentBridge";
-import { LogseqPropertiesHelper } from "./LogseqPropertiesHelper";
+import { LogseqPropertiesHelperProxy } from "./LogseqPropertiesHelper";
 import { LogseqNamespaceHelperProxy } from "./LogseqNamespaceHelper";
 import getNameFromPage from "./getNameFromPage";
+
+/***
+ * This is a cached + syncronization-safe logseq api wrapper.
+ * Fixes the following issues: #58
+ * */
 
 const getLogseqLock = new AwaitLock();
 
@@ -33,7 +34,7 @@ export namespace LogseqProxy {
             let block = null;
             await getLogseqLock.acquireAsync();
             try {
-                block = await LogseqPropertiesHelper.getBlock(srcBlock, opts);
+                block = await LogseqPropertiesHelperProxy.getBlock(srcBlock, opts);
             } catch (e) {
                 console.error(e);
                 if (!opts.suppressErrors) throw e;
@@ -49,7 +50,7 @@ export namespace LogseqProxy {
             await getLogseqLock.acquireAsync();
             try {
                 // Use helper method to fetch page with properties
-                page = await LogseqPropertiesHelper.getPage(srcPage);
+                page = await LogseqPropertiesHelperProxy.getPage(srcPage);
             } catch (e) {
                 console.error(e);
                 if (!opts.suppressErrors) throw e;
@@ -64,7 +65,7 @@ export namespace LogseqProxy {
             let pageBlockTree = [];
             await getLogseqLock.acquireAsync();
             try {
-                pageBlockTree = await LogseqPropertiesHelper.getPageBlocksTree(srcPage);
+                pageBlockTree = await LogseqPropertiesHelperProxy.getPageBlocksTree(srcPage);
             } catch (e) {
                 console.error(e);
                 if (!opts.suppressErrors) throw e;
