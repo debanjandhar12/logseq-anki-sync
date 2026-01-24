@@ -401,7 +401,7 @@ export class LogseqToHtmlConverter {
                 try {
                     const block = await this.getBlock(blockUUID);
                     if (!block || !block.uuid) throw new Error("Block not found: " + blockUUID);
-                    let preprocessResult = await LogseqContentPreprocessor.preprocess(block?.content || "", block?.format || "markdown");
+                    let preprocessResult = await this.preprocess(block?.content || "", block?.format || "markdown");
                     let block_content = preprocessResult.content;
                     let block_props = preprocessResult.properties || {};
                     let block_content_first_line = getFirstNonEmptyLine(block_content).trim();

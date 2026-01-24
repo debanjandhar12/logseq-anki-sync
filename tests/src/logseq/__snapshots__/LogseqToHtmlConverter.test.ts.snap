@@ -287,14 +287,14 @@ exports[`E2E cases for non DB mode > Block Reference Rendering > Renamed block r
 exports[`E2E cases for non DB mode > PDF Rendering cases > Basic PDF rendering 1`] = `"<span><a href="#-2e--2e--2f-assets-2f-Linux_Slides_1_1673180335043_0-2e-pdf">../assets/Linux_Slides_1_1673180335043_0.pdf</a></span>"`;
 
 exports[`E2E cases for non DB mode > PDF Rendering cases > PDF Image Annotation Rendering 1`] = `
-"<span>�<b>P1</b> <div></div> <a href="#error">error</a>
+"<span>🔵<b>P1</b> <div></div> <a href="#error">error</a>
         <br>
 <span></span></span>"
 `;
 
 exports[`E2E cases for non DB mode > PDF Rendering cases > PDF Text Annotation Rendering - no color 1`] = `"<span>📌<b>P1</b> I am pdf page content</span>"`;
 
-exports[`E2E cases for non DB mode > PDF Rendering cases > PDF Text Annotation Rendering 1`] = `"<span>�<b>P1</b> I am pdf page content</span>"`;
+exports[`E2E cases for non DB mode > PDF Rendering cases > PDF Text Annotation Rendering 1`] = `"<span>🔵<b>P1</b> I am pdf page content</span>"`;
 
 exports[`E2E cases for non DB mode > Page Embed Rendering > Basic page embed rendering 1`] = `
 "<span>Page Embed: <div class="embed-page"><a href="logseq://graph/LAS-TEST-GRAPH?page=Test%20Embed%20Page" class="embed-header">Test Embed Page</a>

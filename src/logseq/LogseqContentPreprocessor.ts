@@ -267,7 +267,7 @@ export class LogseqContentPreprocessor {
         const annotationSymbolMap: Record<string, string> = {
             yellow: "🟡",
             green: "🟢",
-            blue: "�",
+            blue: "🔵",
             red: "🔴",
             purple: "🟣",
         };
