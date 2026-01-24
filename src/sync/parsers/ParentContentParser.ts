@@ -1,6 +1,6 @@
 import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { convertToHTMLFile } from "../../logseq/LogseqToHTMLConverterProxy";
+import { LogseqToHtmlConverterProxy } from "../../logseq/LogseqToHtmlConverter";
 import { escapeClozesAndMacroDelimiters } from "../../utils/utils";
 import _ from "lodash";
 
@@ -61,7 +61,7 @@ export class ParentContentParser {
         let newHtml = "";
 
         for (const parentBlock of parentBlocks) {
-            const parentBlockConverted = await convertToHTMLFile(parentBlock.content, parentBlock.format);
+            const parentBlockConverted = await LogseqToHtmlConverterProxy.convertToHTMLFile(parentBlock.content, parentBlock.format);
             
             if (parentBlock.hiddenParent) {
                 newHtml += `<span class="hidden-parent">${parentBlockConverted.html}</span>`;

@@ -10,7 +10,7 @@ import {
 import _ from "lodash";
 import {LOGSEQ_PLUGIN_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
-import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHTMLConverterProxy";
+import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 
@@ -81,7 +81,7 @@ export class ClozeNote extends Note {
                         );
                         const { renderClozeMarcosInLogseq } = LogseqProxy.Settings.getPluginSettings();
                         if (renderClozeMarcosInLogseq)
-                            content = (await convertToHTMLFile(content, "markdown", {displayTags: true, processRefEmbeds: false})).html;
+                            content = (await LogseqToHtmlConverterProxy.convertToHTMLFile(content, "markdown", {displayTags: true, processRefEmbeds: false})).html;
                         // if parent element has class macro
                         if (cloze.parentElement.classList.contains("macro"))
                             cloze.parentElement.style.display = "initial";
@@ -212,7 +212,7 @@ export class ClozeNote extends Note {
         // --- Add back the removed logseq properties ---
         clozedContent = removedLogseqProperties + clozedContent;
 
-        return convertToHTMLFile(clozedContent, this.format);
+        return LogseqToHtmlConverterProxy.convertToHTMLFile(clozedContent, this.format);
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ClozeNote[]> {

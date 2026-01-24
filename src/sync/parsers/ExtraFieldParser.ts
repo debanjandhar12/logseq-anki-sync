@@ -1,6 +1,6 @@
 import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { convertToHTMLFile } from "../../logseq/LogseqToHTMLConverterProxy";
+import { LogseqToHtmlConverterProxy } from "../../logseq/LogseqToHtmlConverter";
 import _ from "lodash";
 
 export class ExtraFieldParser {
@@ -15,7 +15,7 @@ export class ExtraFieldParser {
         }
 
         const format = (await LogseqProxy.Editor.getBlock(note.uuid)).format;
-        const converted = await convertToHTMLFile(extra, format);
+        const converted = await LogseqToHtmlConverterProxy.convertToHTMLFile(extra, format);
 
         converted.assets.forEach((asset) => assets.add(asset));
 

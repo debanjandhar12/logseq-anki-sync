@@ -18,7 +18,7 @@ import {
     ORG_PROPERTIES_REGEXP,
 } from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
-import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHTMLConverterProxy";
+import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
 import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import {
     OcclusionData,
@@ -165,7 +165,7 @@ export class ImageOcclusionNote extends Note {
         <div id="imgToOcclusionDataHashMap">${JSON.stringify(imgToOcclusionDataHashMap)}</div>
         <img id="localImgBasePath" src="_logseq_anki_sync.css"></img>
         </div>`;
-        return convertToHTMLFile(clozedContent, this.format);
+        return LogseqToHtmlConverterProxy.convertToHTMLFile(clozedContent, this.format);
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ImageOcclusionNote[]> {

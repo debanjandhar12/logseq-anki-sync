@@ -1,7 +1,7 @@
 import {Note} from "./Note";
 import "@logseq/libs";
 import _ from "lodash";
-import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHTMLConverterProxy";
+import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
 import {escapeClozesAndMacroDelimiters, safeReplace} from "../utils/utils";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
@@ -123,7 +123,7 @@ export class MultilineCardNote extends Note {
         this.content = escapeClozesAndMacroDelimiters(this.content);
 
         // Render the parent block and add to clozedContent
-        const parentBlockHTMLFile = await convertToHTMLFile(this.content, this.format);
+        const parentBlockHTMLFile = await LogseqToHtmlConverterProxy.convertToHTMLFile(this.content, this.format);
         parentBlockHTMLFile.assets.forEach((asset) => clozedContentAssets.add(asset));
         if (direction == "<->" || direction == "<-")
             // Insert cloze braces depending upon direction else simply add parent block html to clozedContent
@@ -148,7 +148,7 @@ export class MultilineCardNote extends Note {
                 if (childExtra) {
                     sanitizedChildContent += `\n<div class="extra">${childExtra}</div>`;
                 }
-                const sanitizedChildHTMLFile = await convertToHTMLFile(
+                const sanitizedChildHTMLFile = await LogseqToHtmlConverterProxy.convertToHTMLFile(
                     sanitizedChildContent,
                     child.format,
                 );

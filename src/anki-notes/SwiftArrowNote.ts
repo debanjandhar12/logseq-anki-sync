@@ -4,7 +4,7 @@ import {escapeClozesAndMacroDelimiters, getRandomUnicodeString, safeReplace} fro
 import _ from "lodash";
 import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
-import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHTMLConverterProxy";
+import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 
@@ -59,7 +59,7 @@ export class SwiftArrowNote extends Note {
         clozedContent = clozedContent.replaceAll(startDoubleBracket, "{{c");
         clozedContent = clozedContent.replaceAll(doubleSemicolon, "::");
         clozedContent = clozedContent.replaceAll(endDoubleBracket, "}}");
-        return convertToHTMLFile(clozedContent, this.format);
+        return LogseqToHtmlConverterProxy.convertToHTMLFile(clozedContent, this.format);
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<SwiftArrowNote[]> {

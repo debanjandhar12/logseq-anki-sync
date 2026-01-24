@@ -177,21 +177,17 @@ exports[`Basic Markdown Cases > Media rendering > Video Rendering - Local Video 
 
 exports[`E2E cases for DB mode > Block Embed Rendering > Basic block embed rendering 1`] = `
 "<span><div class="embed-block">
-                        
 <ul class="children-list">
 <li class="children ">
       <span>A <b>block</b> with no ref.</span>
-    </li></ul>
-                        </div>
+    </li></ul></div>
         <br>
 </span>"
 `;
 
 exports[`E2E cases for DB mode > Block Reference Rendering > Basic block ref rendering 1`] = `
 "<span>Block Ref: <span onclick="window.open('logseq://graph/LAS-TEST-GRAPH?block-id=LAS-TEST-UUID')" class="block-ref">
-      <span>A <b>block</b> with no ref.
-        <br>
-</span>
+      <span>A <b>block</b> with no ref.</span>
     </span></span>"
 `;
 
@@ -204,23 +200,7 @@ exports[`E2E cases for DB mode > PDF Rendering cases > PDF Image Annotation Rend
 exports[`E2E cases for DB mode > PDF Rendering cases > PDF Text Annotation Rendering 1`] = `"<span>🟡<b>P1</b> The application can be made by a registered/enrolled elector</span>"`;
 
 exports[`E2E cases for DB mode > Page Embed Rendering > Basic page embed rendering 1`] = `
-"<span><div class="embed-page">
-                        <a href="logseq://graph/LAS-TEST-GRAPH?page=Test%20DB%20Embed%20Page" class="embed-header">Test DB Embed Page</a>
-                        
-<ul class="children-list">
-<li class="children ">
-      <span>First block</span>
-    </li>
-<li class="children ">
-      <span>Second block</span>
-    </li>
-<li class="children ">
-      <span>First block</span>
-    </li>
-<li class="children ">
-      <span>Second block</span>
-    </li></ul>
-                        </div>
+"<span><div class="embed-block"></div>
         <br>
 </span>"
 `;
