@@ -33,21 +33,7 @@ import * as hiccupConverter from "@thi.ng/hiccup";
 import {edn} from "@yellowdig/cljs-tools";
 import path from "path-browserify";
 import getNameFromPage from "./getNameFromPage";
-import {LogseqContentPreprocessor, LogseqContentPreprocessorProxy} from "./LogseqContentPreprocessor";
-
-/**
- * Flag to determine which preprocessor to use.
- * Set to true when called through LogseqToHTMLConverterProxy (cached version).
- */
-let useProxyPreprocessor = false;
-
-/**
- * Internal function to set the preprocessor mode.
- * Called by LogseqToHTMLConverterProxy to enable cached preprocessing.
- */
-export function setUseProxyPreprocessor(value: boolean) {
-    useProxyPreprocessor = value;
-}
+import {LogseqContentPreprocessor, type PreprocessResult} from "./LogseqContentPreprocessor";
 
 const mldocsOptions = {
     toc: false,
@@ -68,10 +54,16 @@ export interface HTMLFile {
     tags: Set<string> | Array<string>;
 }
 
+/**
+ * Type for the preprocessor function - allows dependency injection
+ */
+type PreprocessorFunction = (content: string, format: "markdown" | "org") => Promise<PreprocessResult>;
+
 export async function convertToHTMLFile(
     content: string,
     format = "markdown",
-    opts: { processRefEmbeds?: boolean; displayTags?: boolean } = { processRefEmbeds: true, displayTags: false }
+    opts: { processRefEmbeds?: boolean; displayTags?: boolean } = { processRefEmbeds: true, displayTags: false },
+    preprocessor: PreprocessorFunction = LogseqContentPreprocessor.preprocess.bind(LogseqContentPreprocessor)
 ): Promise<HTMLFile> {
 
     let resultContent = content.trim(),
@@ -82,9 +74,7 @@ export async function convertToHTMLFile(
         console.log("--Start Converting--\nOriginal:", resultContent);
 
     // Preprocess content to normalize format (DB/MD/Org -> internal format)
-    // Use proxy version if called through LogseqToHTMLConverterProxy (for caching)
-    const Preprocessor = useProxyPreprocessor ? LogseqContentPreprocessorProxy : LogseqContentPreprocessor;
-    const preprocessResult = await Preprocessor.preprocess(
+    const preprocessResult = await preprocessor(
         resultContent,
         format as "markdown" | "org"
     );

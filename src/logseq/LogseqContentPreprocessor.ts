@@ -1,6 +1,8 @@
 import "@logseq/libs";
 import {EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
+import pMemoize, {pMemoizeClear} from "p-memoize";
+import objectHashOptimized from "../utils/objectHashOptimized";
 import {
     LOGSEQ_EMBDED_PAGE_REGEXP,
     LOGSEQ_PAGE_REF_REGEXP,
@@ -433,4 +435,18 @@ export class LogseqContentPreprocessorProxy extends LogseqContentPreprocessor {
         const { LogseqProxy } = await import("./LogseqProxy");
         return await LogseqProxy.Editor.getBlock(srcBlock);
     }
+
+    static preprocess = pMemoize(
+        async (content: string, format: "markdown" | "org" = "markdown"): Promise<PreprocessResult> => {
+            // Call parent preprocess which will use our overridden methods (LogseqProxy)
+            return await super.preprocess(content, format);
+        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
+}
+
+if (typeof window !== 'undefined') {
+    import("./WindowParentBridge").then(({ WindowParentBridge }) => {
+        WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
+            pMemoizeClear(LogseqContentPreprocessorProxy.preprocess);
+        });
+    });
 }
