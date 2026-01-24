@@ -32,6 +32,7 @@ import * as hiccupConverter from "@thi.ng/hiccup";
 import {edn} from "@yellowdig/cljs-tools";
 import path from "path-browserify";
 import getNameFromPage from "./getNameFromPage";
+import getIDFromPage from "./getIDFromPage";
 import {LogseqContentPreprocessor} from "./LogseqContentPreprocessor";
 import pMemoize, {pMemoizeClear} from "p-memoize";
 import objectHashOptimized from "../utils/objectHashOptimized";
@@ -307,9 +308,9 @@ export class LogseqToHtmlConverter {
         resultContent = await safeReplaceAsync(
             resultContent,
             LOGSEQ_EMBDED_PAGE_REGEXP,
-            async (match, pageUUID) => {
+            async (match, pageId) => {
                 let pageTree = [];
-                const pageName = await this.getPageNameFromUUID(pageUUID);
+                const pageName = await this.getPageNameFromID(pageId);
 
                 const getPageContentHTML = async (children: any, level = 0): Promise<string> => {
                     if (level >= 100) return "";
@@ -333,7 +334,7 @@ export class LogseqToHtmlConverter {
                 };
                 
                 try {
-                    pageTree = await this.getPageBlocksTree(pageUUID);
+                    pageTree = await this.getPageBlocksTree(pageId);
                 } catch (e) {
                     console.warn(e);
                 }
@@ -348,8 +349,8 @@ export class LogseqToHtmlConverter {
         resultContent = await safeReplaceAsync(
             resultContent,
             LOGSEQ_RENAMED_PAGE_REF_REGEXP,
-            async (match, aliasContent, pageUUID) => {
-                const pageName = await this.getPageNameFromUUID(pageUUID);
+            async (match, aliasContent, pageId) => {
+                const pageName = await this.getPageNameFromID(pageId);
                 const str = getRandomUnicodeString();
                 const graphName = (await this.getCurrentGraph())?.name;
                 hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(pageName)}" class="page-reference">${aliasContent}</a>`;
@@ -360,8 +361,8 @@ export class LogseqToHtmlConverter {
         resultContent = await safeReplaceAsync(
             resultContent,
             LOGSEQ_PAGE_REF_REGEXP,
-            async (match, pageUUID: string) => {
-                const displayName = await this.getPageNameFromUUID(pageUUID);
+            async (match, pageId: string) => {
+                const displayName = await this.getPageNameFromID(pageId);
                 const str = getRandomUnicodeString();
                 const graphName = (await this.getCurrentGraph())?.name;
                 hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(displayName)}" class="page-reference">${displayName}</a>`;
@@ -436,8 +437,8 @@ export class LogseqToHtmlConverter {
         resultContent = await safeReplaceAsync(
             resultContent,
             LOGSEQ_PAGE_REF_REGEXP,
-            async (match, pageUUID) => {
-                const displayName = await this.getPageNameFromUUID(pageUUID);
+            async (match, pageId) => {
+                const displayName = await this.getPageNameFromID(pageId);
                 const str = getRandomUnicodeString();
                 hashmap[str] = `<a class="page-reference">${displayName}</a>`;
                 return str;
@@ -590,16 +591,16 @@ export class LogseqToHtmlConverter {
     }
 
     /**
-     * Helper to get page name from UUID
+     * Helper to get page name from ID
      */
-    private static async getPageNameFromUUID(pageUUID: string): Promise<string> {
+    private static async getPageNameFromID(pageId: string | number): Promise<string> {
         try {
-            const page = await this.getPage(pageUUID);
+            const page = await this.getPage(pageId);
             if (page) {
-                return getNameFromPage(page) || pageUUID;
+                return getNameFromPage(page) || String(pageId);
             }
         } catch (e) {}
-        return pageUUID;
+        return String(pageId);
     }
 
     /**

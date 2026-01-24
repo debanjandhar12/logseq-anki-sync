@@ -5,8 +5,7 @@
  * This way, hash will change when we need to re-render the block.
  * Primarily, we can avoid LogseqToHtmlConverter if block hash has not changed.
  * 
- * IMPORTANT: Only pass block UUIDs and page UUIDs to the functions of this service.
- * LogseqContentPreprocessor ensures all page references in content are converted to UUIDs.
+ * IMPORTANT: Only pass block UUIDs and page IDs to the functions of this service.
  */
 import {DepGraph} from "dependency-graph";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
@@ -33,23 +32,23 @@ const removeBlockNode = (blockUUID : BlockUUID) => {
     graph.removeNode(blockUUID + "Block");
 };
 
-const removePageNode = (pageUUID: BlockUUID) => {
-    pageUUID = pageUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+const removePageNode = (pageId: number | string) => {
+    const pageKey = String(pageId).toLowerCase() + "Page"; // Convert to lowercase to avoid case sensitivity issues
 
-    if (!graph.hasNode(pageUUID + "Page")) return;
-    graph.dependantsOf(pageUUID + "Page").forEach((dependant) => {
+    if (!graph.hasNode(pageKey)) return;
+    graph.dependantsOf(pageKey).forEach((dependant) => {
         graph.removeNode(dependant);
     });
-    graph.removeNode(pageUUID + "Page");
+    graph.removeNode(pageKey);
 };
 
-const addPageNode = async (pageUUID: BlockUUID) => {
-    pageUUID = pageUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+const addPageNode = async (pageId: number | string) => {
+    const pageKey = String(pageId).toLowerCase() + "Page"; // Convert to lowercase to avoid case sensitivity issues
 
-    if (graph.hasNode(pageUUID + "Page")) return;
+    if (graph.hasNode(pageKey)) return true;
     
-    const page = await LogseqProxy.Editor.getPage(pageUUID);
-    if (!page) return;
+    const page = await LogseqProxy.Editor.getPage(pageId);
+    if (!page) return false;
     
     const toHash = [];
     toHash.push([_.get(page, "updatedAt", ""),
@@ -57,7 +56,8 @@ const addPageNode = async (pageUUID: BlockUUID) => {
         page.id
         ]);
     // TODO: consider adding refs as dependencies
-    graph.addNode(pageUUID + "Page", objectHashOptimized(toHash));
+    graph.addNode(pageKey, objectHashOptimized(toHash));
+    return true;
 };
 
 const addBlockNode = async (blockUUID : BlockUUID) => {
@@ -73,13 +73,21 @@ const addBlockNode = async (blockUUID : BlockUUID) => {
         _.get(block, "format", ""),
     );
     for (const dependency of directDependencies) {
-        if (dependency.type === "Block") await addBlockNode(dependency.value);
-        else if (dependency.type === "Page") await addPageNode(dependency.value);
+        let nodeCreated = false;
+        if (dependency.type === "Block") {
+            await addBlockNode(dependency.value);
+            nodeCreated = graph.hasNode(dependency.value.toLowerCase() + "Block");
+        } else if (dependency.type === "Page") {
+            nodeCreated = await addPageNode(dependency.value);
+        }
         
-        const depKey = dependency.type === "Block" 
-            ? dependency.value.toLowerCase() + "Block"
-            : dependency.value.toLowerCase() + "Page";
-        graph.addDependency(blockUUID + "Block", depKey);
+        // Only add dependency if the node was successfully created
+        if (nodeCreated) {
+            const depKey = dependency.type === "Block" 
+                ? dependency.value.toLowerCase() + "Block"
+                : String(dependency.value).toLowerCase() + "Page";
+            graph.addDependency(blockUUID + "Block", depKey);
+        }
     }
     const toHash = [];
     graph.dependenciesOf(blockUUID + "Block").forEach((dependency) => {
@@ -104,11 +112,11 @@ export const getBlockHash = async (blockUUID) => {
     return graph.getNodeData(blockUUID + "Block");
 };
 
-export const getPageHash = async (pageUUID: BlockUUID) => {
-    pageUUID = pageUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
+export const getPageHash = async (pageId: number | string) => {
+    const pageKey = String(pageId).toLowerCase() + "Page"; // Convert to lowercase to avoid case sensitivity issues
 
-    await addPageNode(pageUUID);
-    return graph.getNodeData(pageUUID + "Page");
+    await addPageNode(pageId);
+    return graph.getNodeData(pageKey);
 };
 
 // -- Maintain Cache State by using DB.onChanged --

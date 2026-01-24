@@ -13,6 +13,7 @@ import {
 import {safeReplace, safeReplaceAsync} from "../utils/utils";
 import getNameFromPage from "./getNameFromPage";
 import getUUIDFromBlock from "./getUUIDFromBlock";
+import getIDFromPage from "./getIDFromPage";
 
 /**
  * INTERNAL FORMAT SPECIFICATION
@@ -30,19 +31,19 @@ import getUUIDFromBlock from "./getUUIDFromBlock";
  * 
  * INTERNAL FORMAT TARGET:
  * 
- * 1. PAGE REFERENCES: [[page-uuid]]
- *    - All page names are resolved to their UUID equivalents
- *    - Example: [[My Page]] → [[65f3a2b1-4c8d-4e9a-8f2b-1a2b3c4d5e6f]]
- *    - Rationale: UUIDs are stable across renames, work in all graph modes
+ * 1. PAGE REFERENCES: [[page-id]]
+ *    - All page names are resolved to their ID equivalents
+ *    - Example: [[My Page]] → [[12345]]
+ *    - Rationale: IDs are stable across renames, work in all graph modes
  * 
- * 2. PAGE EMBEDS: {{embed [[page-uuid]]}}
- *    - Page names in embeds are resolved to UUIDs
- *    - Example: {{embed [[My Page]]}} → {{embed [[65f3a2b1-...]]}}
+ * 2. PAGE EMBEDS: {{embed [[page-id]]}}
+ *    - Page names in embeds are resolved to IDs
+ *    - Example: {{embed [[My Page]]}} → {{embed [[12345]]}}
  *    - Rationale: Consistent with page references, enables dependency tracking
  * 
- * 3. RENAMED PAGE REFERENCES: [alias]([[page-uuid]])
- *    - Alias text is preserved, page name resolved to UUID
- *    - Example: [My Alias]([[My Page]]) → [My Alias]([[65f3a2b1-...]])
+ * 3. RENAMED PAGE REFERENCES: [alias]([[page-id]])
+ *    - Alias text is preserved, page name resolved to ID
+ *    - Example: [My Alias]([[My Page]]) → [My Alias]([[12345]])
  *    - Rationale: Display name stays user-friendly, link is stable
  * 
  * 4. BLOCK REFERENCES (DB MODE SPECIAL CASE): ((block-uuid))
@@ -68,8 +69,8 @@ import getUUIDFromBlock from "./getUUIDFromBlock";
  * 
  * 8. NODE EMBED BACKWARD COMPATIBILITY (DB MODE):
  *    - Blocks with link property (DB ID)
- *    - Converts to: {{embed ((block-uuid))}} or {{embed [[page-uuid]]}}
- *    - Example: link:12345 → {{embed ((65f3a2b1-...))}}
+ *    - Converts to: {{embed ((block-uuid))}} or {{embed [[page-id]]}}
+ *    - Example: link:12345 → {{embed ((65f3a2b1-...))}} or {{embed [[12345]]}}
  *    - Rationale: DB mode uses link property for embeds, need standard syntax
  */
 
@@ -141,8 +142,8 @@ export class LogseqContentPreprocessor {
     }
 
     /**
-     * Normalizes page embeds to use UUIDs instead of page names.
-     * Example: {{embed [[My Page]]}} → {{embed [[page-uuid]]}}
+     * Normalizes page embeds to use IDs instead of page names.
+     * Example: {{embed [[My Page]]}} → {{embed [[page-id]]}}
      */
     private static async normalizePageEmbeds(content: string): Promise<string> {
         return await safeReplaceAsync(
@@ -152,9 +153,9 @@ export class LogseqContentPreprocessor {
                 try {
                     const page = await this.getPage(pageName);
                     if (page) {
-                        const uuid = getUUIDFromBlock(page);
-                        if (uuid) {
-                            return match.replace(pageName, uuid);
+                        const pageId = getIDFromPage(page);
+                        if (pageId) {
+                            return match.replace(pageName, String(pageId));
                         }
                     }
                 } catch (e) {
@@ -166,9 +167,9 @@ export class LogseqContentPreprocessor {
     }
 
     /**
-     * Normalizes page references to use UUIDs instead of page names.
+     * Normalizes page references to use IDs instead of page names.
      * Also handles DB mode special case where [[uuid]] might be a block reference.
-     * Example: [[My Page]] → [[page-uuid]]
+     * Example: [[My Page]] → [[page-id]]
      * DB mode: [[block-uuid]] → ((block-uuid))
      */
     private static async normalizePageReferences(
@@ -201,13 +202,13 @@ export class LogseqContentPreprocessor {
                     }
                 }
 
-                // Standard case: Convert page name to UUID
+                // Standard case: Convert page name to ID
                 try {
                     const page = await this.getPage(pageName);
                     if (page) {
-                        const uuid = getUUIDFromBlock(page);
-                        if (uuid) {
-                            return `[[${uuid}]]`;
+                        const pageId = getIDFromPage(page);
+                        if (pageId) {
+                            return `[[${pageId}]]`;
                         }
                     }
                 } catch (e) {
@@ -220,8 +221,8 @@ export class LogseqContentPreprocessor {
     }
 
     /**
-     * Normalizes renamed page references to use UUIDs.
-     * Example: [My Alias]([[My Page]]) → [My Alias]([[page-uuid]])
+     * Normalizes renamed page references to use IDs.
+     * Example: [My Alias]([[My Page]]) → [My Alias]([[page-id]])
      */
     private static async normalizeRenamedPageReferences(content: string): Promise<string> {
         return await safeReplaceAsync(
@@ -231,9 +232,9 @@ export class LogseqContentPreprocessor {
                 try {
                     const page = await this.getPage(pageName);
                     if (page) {
-                        const uuid = getUUIDFromBlock(page);
-                        if (uuid) {
-                            return `[${aliasContent}]([[${uuid}]])`;
+                        const pageId = getIDFromPage(page);
+                        if (pageId) {
+                            return `[${aliasContent}]([[${pageId}]])`;
                         }
                     }
                 } catch (e) {
@@ -382,7 +383,10 @@ export class LogseqContentPreprocessor {
             } else {
                 const page = await this.getPage(linkDBId as EntityID);
                 if (page) {
-                    resultContent = `{{embed [[${page.uuid}]]}}` + "\n" + resultContent;
+                    const pageId = getIDFromPage(page);
+                    if (pageId) {
+                        resultContent = `{{embed [[${pageId}]]}}` + "\n" + resultContent;
+                    }
                 }
             }
         }

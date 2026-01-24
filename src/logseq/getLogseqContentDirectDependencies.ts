@@ -7,6 +7,7 @@ import {
 import {LogseqProxy} from "./LogseqProxy";
 import {LogseqContentPreprocessorProxy} from "./LogseqContentPreprocessor";
 import getUUIDFromBlock from "./getUUIDFromBlock";
+import getIDFromPage from "./getIDFromPage";
 
 export interface BlockDependency {
     type: "Block";
@@ -15,7 +16,7 @@ export interface BlockDependency {
 
 export interface PageDependency {
     type: "Page";
-    value: BlockUUID; // Page UUID after preprocessing
+    value: number | string; // Page ID after preprocessing
 }
 
 export type DependencyEntity = BlockDependency | PageDependency;
@@ -33,7 +34,7 @@ export default async function getLogseqContentDirectDependencies(
     }
     if (content === null || content === undefined) return [];
     const blockDependency: Set<BlockUUID> = new Set();
-    const pageDependency: Set<BlockUUID> = new Set(); // Page UUIDs after preprocessing
+    const pageDependency: Set<number | string> = new Set(); // Page IDs after preprocessing
 
     //  Add dependencies due to LOGSEQ_EMBDED_BLOCK_REGEXP
     let match;
@@ -62,9 +63,30 @@ export default async function getLogseqContentDirectDependencies(
         blockDependency.add(match[1]);
     }
 
-    // Add dependencies due to LOGSEQ_EMBDED_PAGE_REGEXP
+    // Add dependencies due to LOGSEQ_EMBDED_PAGE_REGEXP (now contains page IDs)
     while ((match = LOGSEQ_EMBDED_PAGE_REGEXP.exec(content))) {
-        pageDependency.add(match[1]);
+        const pageId = match[1];
+        pageDependency.add(pageId);
+        
+        // Also add all blocks in the page as dependencies
+        try {
+            const pageBlocksTree = await LogseqProxy.Editor.getPageBlocksTree(pageId);
+            if (pageBlocksTree) {
+                const queue = [...pageBlocksTree];
+                while (queue.length > 0) {
+                    const block = queue.pop();
+                    blockDependency.add(getUUIDFromBlock(block));
+                    if (block.children) {
+                        for (const child of block.children) {
+                            if (queue.length > 30) break;
+                            queue.push(child as BlockEntity);
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to get page blocks for dependency tracking:", e);
+        }
     }
 
     return [
