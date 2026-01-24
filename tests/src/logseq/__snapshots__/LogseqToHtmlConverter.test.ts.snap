@@ -173,10 +173,7 @@ exports[`Basic Markdown Cases > Media rendering > Image Rendering - Local Image 
 
 exports[`Basic Markdown Cases > Media rendering > Image Rendering - Web Image 1`] = `"<span><img src="https://example.com/image.png"   /></span>"`;
 
-exports[`Basic Markdown Cases > Media rendering > Video Rendering - Local Video 1`] = `
-"<span><video src="video.mp4" 
-                        controlsList="nodownload" controls></video></span>"
-`;
+exports[`Basic Markdown Cases > Media rendering > Video Rendering - Local Video 1`] = `"<span><video src="video.mp4" controlsList="nodownload" controls></video></span>"`;
 
 exports[`E2E cases for DB mode > Block Embed Rendering > Basic block embed rendering 1`] = `
 "<span><div class="embed-block">

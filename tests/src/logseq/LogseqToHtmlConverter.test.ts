@@ -1,7 +1,8 @@
 import "@logseq/libs"
 import * as cheerio from "cheerio";
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
-import {convertToHTMLFile, processProperties} from "../../../src/logseq/LogseqToHtmlConverter";
+import {convertToHTMLFile} from "../../../src/logseq/LogseqToHtmlConverter";
+import {LogseqContentPreprocessor} from "../../../src/logseq/LogseqContentPreprocessor";
 import {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 
 describe("Basic Markdown Cases", () => {
@@ -29,12 +30,12 @@ describe("Basic Markdown Cases", () => {
         test("Property parsing should work and removed from HTML content", async () => {
             const content = "logseq.text-color:: green\nHello World\nbackground-color:: red";
             const htmlFile = await convertToHTMLFile(content, "markdown");
-            const [, block_props] = await processProperties(content, "markdown");
+            const preprocessResult = await LogseqContentPreprocessor.preprocess(content, "markdown");
             expect(htmlFile.html).toContain("Hello World");
-            expect(block_props['logseq.text-color']).not.toBeNull();
-            expect(block_props['logseq.text-color']).toContain("green");
-            expect(block_props['background-color']).not.toBeNull();
-            expect(block_props['background-color']).toContain("red");
+            expect(preprocessResult.properties['logseq.text-color']).not.toBeNull();
+            expect(preprocessResult.properties['logseq.text-color']).toContain("green");
+            expect(preprocessResult.properties['background-color']).not.toBeNull();
+            expect(preprocessResult.properties['background-color']).toContain("red");
             expect(htmlFile.html).not.toContain("background-color::");
         });
         test("HTML Rendering", async () => {

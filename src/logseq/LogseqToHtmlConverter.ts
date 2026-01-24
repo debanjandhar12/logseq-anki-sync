@@ -28,12 +28,13 @@ import {
     isAudio_REGEXP,
     isVideo_REGEXP
 } from "../constants";
-import {LogseqProxy} from "./LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
 import {edn} from "@yellowdig/cljs-tools";
 import path from "path-browserify";
 import getNameFromPage from "./getNameFromPage";
-import {LogseqContentPreprocessor, type PreprocessResult} from "./LogseqContentPreprocessor";
+import {LogseqContentPreprocessor} from "./LogseqContentPreprocessor";
+import pMemoize, {pMemoizeClear} from "p-memoize";
+import objectHashOptimized from "../utils/objectHashOptimized";
 
 const mldocsOptions = {
     toc: false,
@@ -55,720 +56,649 @@ export interface HTMLFile {
 }
 
 /**
- * Type for the preprocessor function - allows dependency injection
+ * Base class for converting Logseq content to HTML for Anki cards.
+ * Uses direct logseq API calls (no caching).
+ * 
+ * For cached version during sync operations, use LogseqToHtmlConverterProxy.
  */
-type PreprocessorFunction = (content: string, format: "markdown" | "org") => Promise<PreprocessResult>;
-
-export async function convertToHTMLFile(
-    content: string,
-    format = "markdown",
-    opts: { processRefEmbeds?: boolean; displayTags?: boolean } = { processRefEmbeds: true, displayTags: false },
-    preprocessor: PreprocessorFunction = LogseqContentPreprocessor.preprocess.bind(LogseqContentPreprocessor)
-): Promise<HTMLFile> {
-
-    let resultContent = content.trim(),
-        resultAssets = new Set<string>(),
-        resultTags = new Set<string>();
-    const { debug } = LogseqProxy.Settings.getPluginSettings();
-    if (debug?.includes("LogseqToHtmlConverter.ts"))
-        console.log("--Start Converting--\nOriginal:", resultContent);
-
-    // Preprocess content to normalize format (DB/MD/Org -> internal format)
-    const preprocessResult = await preprocessor(
-        resultContent,
-        format as "markdown" | "org"
-    );
-    resultContent = preprocessResult.content;
-    const block_props = preprocessResult.properties;
-    
-    if (debug?.includes("LogseqToHtmlConverter.ts"))
-        console.log("After preprocessing:", resultContent);
-
-    if (format == "org") {
-        mldocsOptions.format = "Org";
-    } else mldocsOptions.format = "Markdown";
-
-    // --- Hacky fix for inline html support and {{c\d+:: content}} marcos using hashmap ---
-    const hashmap = {};
-
-    // Put all anki cloze marcos in hashmap
-    resultContent = resultContent.replace(ANKI_CLOZE_REGEXP, (match, g1, g2, g3, ...arg) => {
-        const strFront = getRandomUnicodeString() + " "; // fix: #104
-        const strBack = getRandomUnicodeString();
-
-        // TODO: fix the 3 hacks! First, find whether the cloze starts from the beginning of the line using index of and iterating backwards until '\n'. Then, apply these hacks accordingly.
-        // bug fix: new line if cloze starts with code block
-        const first_line = g3.split("\n").shift();
-        if (first_line.match(/^(```|~~~)/)) g3 = `\n${g3}`;
-
-        // bug fix: cloze end charecters }} getting deleted after code / org block ends. Hence, add newline after them.
-        const last_line = g3.split("\n").pop();
-        if (last_line.match(/^(```|~~~)/) || last_line.match(/^#\+/)) g3 = `${g3}\n`;
-
-        // fix: if there is a newline before cloze, we need to add new line after hash charecters of math block and org blocks
-        const charecter_before_match = resultContent.substring(
-            resultContent.indexOf(match) - 1,
-            resultContent.indexOf(match),
-        );
-        if (
-            (charecter_before_match == "\n" || charecter_before_match == "") &&
-            (g3.match(/^\s*?\$\$/g) || g3.match(/^\s*?#\+/g))
-        )
-            g3 = `\n${g3}`;
-        hashmap[strFront] = g1;
-        hashmap[strFront.trim()] = g1; // fix: sometimes the end space of hash gets removed
-        hashmap[strBack] = "}}";
-        return `${strFront}${g3}${strBack}`;
-    });
-
-    // Put all html content in hashmap
-    let parsedJson = Mldoc.parseInlineJson(
-        resultContent,
-        JSON.stringify({...mldocsOptions, parse_outline_only: true}),
-        JSON.stringify({}),
-    );
-    try {
-        parsedJson = JSON.parse(parsedJson);
-    } catch {
-        parsedJson = [];
+export class LogseqToHtmlConverter {
+    /**
+     * Protected methods that can be overridden in proxy class for caching.
+     */
+    protected static async getCurrentGraph() {
+        return await logseq.App.getCurrentGraph();
     }
-    let resultUTF8 = new TextEncoder().encode(resultContent); // Convert to utf8 array as mldocs outputs position according to utf8 https://github.com/logseq/mldoc/issues/120
-    for (let i = parsedJson.length - 1; i >= 0; i--) {
-        // node's start_pos is bound to be larger than next item's end_pos due to how Mldoc.parseInlineJson works
-        const node = parsedJson[i];
-        if (node[node.length - 1]["start_pos"] == null) continue;
-        if (node[0][0] == null) continue;
 
-        const type = node[0][0];
-        const start_pos = node[node.length - 1]["start_pos"];
-        const end_pos = node[node.length - 1]["end_pos"];
-        switch (type) {
-            case "Raw_Html":
-            case "Inline_Html":
-                resultUTF8 = await processInlineHTML(
-                    node,
-                    start_pos,
-                    end_pos,
-                    resultContent,
-                    resultAssets,
-                    resultUTF8,
-                    hashmap,
-                );
-                break;
-            case "Raw_Hiccup":
-            case "Inline_Hiccup":
-                resultUTF8 = await processInlineHiccup(
-                    node,
-                    start_pos,
-                    end_pos,
-                    resultContent,
-                    resultUTF8,
-                    hashmap,
-                );
-                break;
-            case "Link":
-                resultUTF8 = await processLink(
-                    node,
-                    start_pos,
-                    end_pos,
-                    resultContent,
-                    resultAssets,
-                    resultUTF8,
-                    hashmap,
-                    format,
-                );
-                break;
-        }
+    protected static async getBlock(srcBlock: string, opts?: any) {
+        return await logseq.Editor.getBlock(srcBlock, opts);
     }
-    resultContent = new TextDecoder().decode(resultUTF8);
-    if (debug?.includes("LogseqToHtmlConverter.ts"))
-        console.log("After replacing errorinous terms:", resultContent);
 
-    // Process the block & page refs + embeds
-    if (opts.processRefEmbeds)
-        resultContent = await processRefEmbeds(
+    protected static async getPage(srcPage: any) {
+        return await logseq.Editor.getPage(srcPage);
+    }
+
+    protected static async getPageBlocksTree(srcPage: any) {
+        return await logseq.Editor.getPageBlocksTree(srcPage);
+    }
+
+    protected static getPluginSettings() {
+        return logseq.settings;
+    }
+
+    /**
+     * Main conversion method: converts Logseq content to HTML.
+     */
+    static async convertToHTMLFile(
+        content: string,
+        format = "markdown",
+        opts: { processRefEmbeds?: boolean; displayTags?: boolean } = { processRefEmbeds: true, displayTags: false }
+    ): Promise<HTMLFile> {
+        let resultContent = content.trim(),
+            resultAssets = new Set<string>(),
+            resultTags = new Set<string>();
+        const settings = this.getPluginSettings() as any;
+        const debug = settings?.debug;
+        if (debug?.includes("LogseqToHtmlConverter.ts"))
+            console.log("--Start Converting--\nOriginal:", resultContent);
+
+        // Preprocess content to normalize format (DB/MD/Org -> internal format)
+        const preprocessResult = await LogseqContentPreprocessor.preprocess(
             resultContent,
-            resultAssets,
-            resultTags,
-            hashmap,
-            format,
+            format as "markdown" | "org"
         );
-    else resultContent = await hideRefEmbeds(resultContent, resultAssets, hashmap, format);
+        resultContent = preprocessResult.content;
+        const block_props = preprocessResult.properties;
+        
+        if (debug?.includes("LogseqToHtmlConverter.ts"))
+            console.log("After preprocessing:", resultContent);
 
-    // Render the markdown
-    resultContent = Mldoc.export(
-        "html",
-        resultContent,
-        JSON.stringify(mldocsOptions),
-        JSON.stringify({}),
-    );
-    // Render images and and codes
-    const $ = cheerio.load(resultContent, {decodeEntities: false});
-    $("pre code").each(function (i, elm) {
-        // Syntax hightlight block code (block codes are preceded by pre)
-        $(elm).addClass("hljs");
+        if (format == "org") {
+            mldocsOptions.format = "Org";
+        } else mldocsOptions.format = "Markdown";
+
+        // --- Hacky fix for inline html support and {{c\d+:: content}} marcos using hashmap ---
+        const hashmap = {};
+
+        // Put all anki cloze marcos in hashmap
+        resultContent = resultContent.replace(ANKI_CLOZE_REGEXP, (match, g1, g2, g3, ...arg) => {
+            const strFront = getRandomUnicodeString() + " "; // fix: #104
+            const strBack = getRandomUnicodeString();
+
+            // TODO: fix the 3 hacks! First, find whether the cloze starts from the beginning of the line using index of and iterating backwards until '\n'. Then, apply these hacks accordingly.
+            // bug fix: new line if cloze starts with code block
+            const first_line = g3.split("\n").shift();
+            if (first_line.match(/^(```|~~~)/)) g3 = `\n${g3}`;
+
+            // bug fix: cloze end charecters }} getting deleted after code / org block ends. Hence, add newline after them.
+            const last_line = g3.split("\n").pop();
+            if (last_line.match(/^(```|~~~)/) || last_line.match(/^#\+/)) g3 = `${g3}\n`;
+
+            // fix: if there is a newline before cloze, we need to add new line after hash charecters of math block and org blocks
+            const charecter_before_match = resultContent.substring(
+                resultContent.indexOf(match) - 1,
+                resultContent.indexOf(match),
+            );
+            if (
+                (charecter_before_match == "\n" || charecter_before_match == "") &&
+                (g3.match(/^\s*?\$\$/g) || g3.match(/^\s*?#\+/g))
+            )
+                g3 = `\n${g3}`;
+            hashmap[strFront] = g1;
+            hashmap[strFront.trim()] = g1; // fix: sometimes the end space of hash gets removed
+            hashmap[strBack] = "}}";
+            return `${strFront}${g3}${strBack}`;
+        });
+
+        // Put all html content in hashmap
+        let parsedJson = Mldoc.parseInlineJson(
+            resultContent,
+            JSON.stringify({...mldocsOptions, parse_outline_only: true}),
+            JSON.stringify({}),
+        );
         try {
-            if (elm.attribs["data-lang"]) {
-                $(elm).html(
-                    hljs
-                        .highlight(elm.attribs["data-lang"], $(elm).text())
-                        .value.replace(/\n$/, "").replace(/::/g, '<span>&#58;</span><span>&#58;</span>'),
+            parsedJson = JSON.parse(parsedJson);
+        } catch {
+            parsedJson = [];
+        }
+        let resultUTF8 = new TextEncoder().encode(resultContent);
+        for (let i = parsedJson.length - 1; i >= 0; i--) {
+            const node = parsedJson[i];
+            if (node[node.length - 1]["start_pos"] == null) continue;
+            if (node[0][0] == null) continue;
+
+            const type = node[0][0];
+            const start_pos = node[node.length - 1]["start_pos"];
+            const end_pos = node[node.length - 1]["end_pos"];
+            switch (type) {
+                case "Raw_Html":
+                case "Inline_Html":
+                    resultUTF8 = await this.processInlineHTML(
+                        node, start_pos, end_pos, resultContent, resultAssets, resultUTF8, hashmap
+                    );
+                    break;
+                case "Raw_Hiccup":
+                case "Inline_Hiccup":
+                    resultUTF8 = await this.processInlineHiccup(
+                        node, start_pos, end_pos, resultContent, resultUTF8, hashmap
+                    );
+                    break;
+                case "Link":
+                    resultUTF8 = await this.processLink(
+                        node, start_pos, end_pos, resultContent, resultAssets, resultUTF8, hashmap, format
+                    );
+                    break;
+            }
+        }
+        resultContent = new TextDecoder().decode(resultUTF8);
+        if (debug?.includes("LogseqToHtmlConverter.ts"))
+            console.log("After replacing errorinous terms:", resultContent);
+
+        // Process the block & page refs + embeds
+        if (opts.processRefEmbeds)
+            resultContent = await this.processRefEmbeds(
+                resultContent, resultAssets, resultTags, hashmap, format
+            );
+        else 
+            resultContent = await this.hideRefEmbeds(resultContent, resultAssets, hashmap, format);
+
+        // Render the markdown
+        resultContent = Mldoc.export(
+            "html",
+            resultContent,
+            JSON.stringify(mldocsOptions),
+            JSON.stringify({}),
+        );
+        
+        // Render images and codes
+        const $ = cheerio.load(resultContent, {decodeEntities: false});
+        $("pre code").each(function (i, elm) {
+            $(elm).addClass("hljs");
+            try {
+                if (elm.attribs["data-lang"]) {
+                    $(elm).html(
+                        hljs.highlight(elm.attribs["data-lang"], $(elm).text())
+                            .value.replace(/\n$/, "").replace(/::/g, '<span>&#58;</span><span>&#58;</span>')
+                    );
+                } else {
+                    $(elm).html(
+                        hljs.highlightAuto($(elm).html())
+                            .value.replace(/\n$/, "").replace(/::/g, '<span>&#58;</span><span>&#58;</span>')
+                    );
+                }
+            } catch (e) {
+                console.warn(e);
+            }
+        });
+        
+        $("img").each(function (i, elm) {
+            console.warn("Error: Image Found! Image should have been processed by processLink already and be hidden from cheerio.");
+        });
+        
+        const $tagElems = $("a.tag");
+        if ($tagElems.length > 0) {
+            const graphName = (await this.getCurrentGraph())?.name;
+            $tagElems.each(function (i, elm) {
+                let tagName = $(elm).text(), afterText = "";
+                if (tagName.match(/\[\[(.*?)\]\]/)) tagName = tagName.match(/\[\[(.*?)\]\]/)[1];
+                if (tagName.match(new RegExp(`.*?([${specialChars}]+)`, ""))) {
+                    afterText = tagName.match(new RegExp(`.*?([${specialChars}]+)`, ""))[1];
+                    tagName = tagName.replace(new RegExp(`([${specialChars}]+)$`, ""), "");
+                }
+                resultTags.add(tagName);
+                $(elm).replaceWith(
+                    `<a class="tag" data-ref="${tagName}" href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(tagName)}">${opts.displayTags ? `#${tagName}` : ''}</a>${afterText}`
                 );
-            } else $(elm).html(hljs.highlightAuto($(elm).html()).value.replace(/\n$/, "").replace(/::/g, '<span>&#58;</span><span>&#58;</span>'));
+            });
+        }
+
+        $(".mathblock, .latex-environment").each(function (i, elm) {
+            let math = $(elm).html();
+            math = math.replace(ORG_MATH_BLOCK_REGEXP, "$1");
+            math = math.replace(MD_MATH_BLOCK_REGEXP, "$1");
+            $(elm).html(`\\[ ${math} \\]`);
+        });
+        
+        $("p").each(function (i, elm) {
+            $(elm).replaceWith(`<span>${$(elm).html()}</span>`);
+        });
+        
+        $("div.important, div.caution, div.pinned, div.tip, div.note, div.warning").each(function (i, elm) {
+            $(elm).html(`<div style="display: revert">${$(elm).html()}</div>`);
+        });
+        
+        if (block_props["background-color"]) {
+            $("span:first-child").addClass(`block-highlight-${block_props["background-color"]}`);
+        }
+        
+        resultContent = decodeHTMLEntities(decodeHTMLEntities($("#content ul li").html() || ""));
+        if (debug?.includes("LogseqToHtmlConverter.ts"))
+            console.log("After Mldoc.export:", resultContent);
+
+        // Bring back inline html content and clozes from hashmap
+        for (const key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]);
+        for (const key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]);
+
+        if (debug?.includes("LogseqToHtmlConverter.ts"))
+            console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
+        
+        return {html: resultContent, assets: resultAssets, tags: resultTags};
+    }
+
+    /**
+     * Process block and page references/embeds
+     */
+    private static async processRefEmbeds(
+        resultContent: string,
+        resultAssets: Set<string>,
+        resultTags: Set<string>,
+        hashmap: Record<string, string>,
+        format: string,
+    ): Promise<string> {
+        let block;
+        resultContent = await safeReplaceAsync(
+            resultContent,
+            LOGSEQ_EMBDED_BLOCK_REGEXP,
+            async (match, g1) => {
+                const getBlockEmbedContentHTML = async (children: any, level = 0): Promise<string> => {
+                    if (level >= 100) return "";
+                    let result = `\n<ul class="children-list">`;
+                    for (const child of children) {
+                        result += `\n<li class="children ${child?.properties?.['logseq.orderListType'] === "number" ? 'numbered' : ''}">`;
+                        const block_content = escapeClozesAndMacroDelimiters(child?.content) || "";
+                        const format = child?.format || "markdown";
+                        const blockContentHTMLFile = await this.convertToHTMLFile(block_content, format);
+                        blockContentHTMLFile.assets.forEach((element) => {
+                            resultAssets.add(element);
+                        });
+                        if (child.children.length > 0)
+                            blockContentHTMLFile.html += await getBlockEmbedContentHTML(child.children, level + 1);
+                        result += blockContentHTMLFile.html;
+                        result += `</li>`;
+                    }
+                    result += `</ul>`;
+                    return result;
+                };
+
+                try {
+                    block = await this.getBlock(g1, {includeChildren: true});
+                } catch (e) {
+                    console.warn(e);
+                }
+                const str = getRandomUnicodeString();
+                hashmap[str] = `<div class="embed-block">${block ? await getBlockEmbedContentHTML([block]) : ""}</div>`;
+                return str;
+            },
+        );
+
+        resultContent = await safeReplaceAsync(
+            resultContent,
+            LOGSEQ_EMBDED_PAGE_REGEXP,
+            async (match, pageUUID) => {
+                let pageTree = [];
+                const pageName = await this.getPageNameFromUUID(pageUUID);
+
+                const getPageContentHTML = async (children: any, level = 0): Promise<string> => {
+                    if (level >= 100) return "";
+                    let result = `\n<ul class="children-list">`;
+                    for (const child of children) {
+                        result += `\n<li class="children ${child?.properties?.['logseq.orderListType'] === "number" ? 'numbered' : ''}">`;
+                        const block_content = escapeClozesAndMacroDelimiters(child?.content) || "";
+                        const format = child?.format || "markdown";
+                        const blockContentHTMLFile = await this.convertToHTMLFile(block_content, format);
+                        blockContentHTMLFile.assets.forEach((element) => {
+                            resultAssets.add(element);
+                        });
+                        if (child.children && child.children.length > 0) {
+                            blockContentHTMLFile.html += await getPageContentHTML(child.children, level + 1);
+                        }
+                        result += blockContentHTMLFile.html;
+                        result += `</li>`;
+                    }
+                    result += `</ul>`;
+                    return result;
+                };
+                
+                try {
+                    pageTree = await this.getPageBlocksTree(pageUUID);
+                } catch (e) {
+                    console.warn(e);
+                }
+
+                const str = getRandomUnicodeString();
+                const graphName = (await this.getCurrentGraph())?.name;
+                hashmap[str] = `<div class="embed-page"><a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(pageName)}" class="embed-header">${pageName}</a>${await getPageContentHTML(pageTree)}</div>`;
+                return str;
+            },
+        );
+
+        resultContent = await safeReplaceAsync(
+            resultContent,
+            LOGSEQ_RENAMED_PAGE_REF_REGEXP,
+            async (match, aliasContent, pageUUID) => {
+                const pageName = await this.getPageNameFromUUID(pageUUID);
+                const str = getRandomUnicodeString();
+                const graphName = (await this.getCurrentGraph())?.name;
+                hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(pageName)}" class="page-reference">${aliasContent}</a>`;
+                return str;
+            },
+        );
+
+        resultContent = await safeReplaceAsync(
+            resultContent,
+            LOGSEQ_PAGE_REF_REGEXP,
+            async (match, pageUUID: string) => {
+                const displayName = await this.getPageNameFromUUID(pageUUID);
+                const str = getRandomUnicodeString();
+                const graphName = (await this.getCurrentGraph())?.name;
+                hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(displayName)}" class="page-reference">${displayName}</a>`;
+                return str;
+            },
+        );
+
+        resultContent = await safeReplaceAsync(
+            resultContent,
+            LOGSEQ_RENAMED_BLOCK_REF_REGEXP,
+            async (match, aliasContent, blockUUID) => {
+                const str = getRandomUnicodeString();
+                const graphName = (await this.getCurrentGraph())?.name;
+                hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(graphName)}?block-id=${encodeURIComponent(blockUUID)}" class="block-ref">${aliasContent}</a>`;
+                return str;
+            },
+        );
+
+        resultContent = await safeReplaceAsync(
+            resultContent,
+            LOGSEQ_BLOCK_REF_REGEXP,
+            async (match, blockUUID) => {
+                const str = getRandomUnicodeString();
+                try {
+                    const block = await this.getBlock(blockUUID);
+                    let block_content = block?.content;
+                    const block_props = block?.properties;
+                    
+                    let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
+                    block_content_first_line = escapeClozesAndMacroDelimiters(block_content_first_line);
+                    
+                    let blockRef_content = block_content_first_line;
+                    for (const [prop, value] of Object.entries(block_props))
+                        blockRef_content += `\n${prop}:: ${value}`;
+                    
+                    const blockRefHTMLFile = await this.convertToHTMLFile(blockRef_content, block?.format);
+                    blockRefHTMLFile.assets.forEach((element) => {
+                        resultAssets.add(element);
+                    });
+                    const graphName = (await this.getCurrentGraph())?.name;
+                    hashmap[str] = `<span onclick="window.open('logseq://graph/${encodeURIComponent(graphName)}?block-id=${encodeURIComponent(blockUUID)}')" class="block-ref">${blockRefHTMLFile.html}</span>`;
+                } catch (e) {
+                    console.warn(e);
+                    hashmap[str] = `<span class="failed-block-ref">${blockUUID}</span>`;
+                }
+                return str;
+            },
+        );
+
+        return resultContent;
+    }
+
+    /**
+     * Hide references and embeds (don't expand them)
+     */
+    private static async hideRefEmbeds(
+        resultContent: string,
+        resultAssets: Set<string>,
+        hashmap: Record<string, string>,
+        format: string
+    ): Promise<string> {
+        resultContent = await safeReplaceAsync(
+            resultContent,
+            LOGSEQ_BLOCK_REF_REGEXP,
+            async (match, blockUUID) => {
+                const str = getRandomUnicodeString();
+                hashmap[str] = match;
+                return str;
+            },
+        );
+        
+        resultContent = await safeReplaceAsync(
+            resultContent,
+            LOGSEQ_PAGE_REF_REGEXP,
+            async (match, pageUUID) => {
+                const displayName = await this.getPageNameFromUUID(pageUUID);
+                const str = getRandomUnicodeString();
+                hashmap[str] = `<a class="page-reference">${displayName}</a>`;
+                return str;
+            },
+        );
+        
+        return resultContent;
+    }
+
+    /**
+     * Process inline HTML
+     */
+    private static async processInlineHTML(
+        node: any,
+        start_pos: number,
+        end_pos: number,
+        resultContent: string,
+        resultAssets: Set<string>,
+        resultUTF8: Uint8Array,
+        hashmap: Record<string, string>,
+    ): Promise<Uint8Array> {
+        const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
+        if (content != node[0][1]) {
+            console.error("Error: content mismatch html", content, resultContent.substring(start_pos, end_pos));
+        }
+        const str = getRandomUnicodeString();
+        hashmap[str] = content;
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
+    }
+
+    /**
+     * Process inline Hiccup
+     */
+    private static async processInlineHiccup(
+        node: any,
+        start_pos: number,
+        end_pos: number,
+        resultContent: string,
+        resultUTF8: Uint8Array,
+        hashmap: Record<string, string>,
+    ): Promise<Uint8Array> {
+        const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
+        if (content != node[0][1]) {
+            console.error("Error: content mismatch hiccup", content, resultContent.substring(start_pos, end_pos));
+        }
+        const str = getRandomUnicodeString();
+        hashmap[str] = hiccupConverter.serialize(edn.decode(content));
+        return new Uint8Array([
+            ...resultUTF8.subarray(0, start_pos),
+            ...new TextEncoder().encode(str),
+            ...resultUTF8.subarray(end_pos),
+        ]);
+    }
+
+    /**
+     * Process links (images, audio, video, etc.)
+     */
+    private static async processLink(
+        node: any,
+        start_pos: number,
+        end_pos: number,
+        resultContent: string,
+        resultAssets: Set<string>,
+        resultUTF8: Uint8Array,
+        hashmap: Record<string, string>,
+        format: string,
+    ): Promise<Uint8Array> {
+        const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
+        const link_type = node[0][1]?.url?.[0];
+        const link_url = node[0][1]?.url?.[1];
+        let metadata;
+        try {
+            metadata = await edn.decode(node[0][1].metadata);
         } catch (e) {
             console.warn(e);
         }
-    });
-    $("img").each(function (i, elm) {
-        // Handle images
-        console.warn(
-            "Error: Image Found! Image should have been processed by processLink already and be hidden from cheerio.",
-        );
-    });
-    const $tagElems = $("a.tag");
-    if ($tagElems.length > 0) {
-        const graphName = (await LogseqProxy.App.getCurrentGraph())?.name;
-        $tagElems.each(function (i, elm) {
-            // Handle tags
-            let tagName = $(elm).text(),
-                afterText = "";
-            // Handle tags with [[ at start and ]] at end
-            if (tagName.match(/\[\[(.*?)\]\]/)) tagName = tagName.match(/\[\[(.*?)\]\]/)[1];
-            // Sometimes special characters get appended to tag name. Hence, we need to put them after tag.
-            if (tagName.match(new RegExp(`.*?([${specialChars}]+)`, ""))) {
-                afterText = tagName.match(new RegExp(`.*?([${specialChars}]+)`, ""))[1];
-                tagName = tagName.replace(new RegExp(`([${specialChars}]+)$`, ""), "");
-            }
-            // Add tags to resultTags and add logseq page link to the tag
-            resultTags.add(tagName);
-            $(elm).replaceWith(
-                `<a class="tag" data-ref="${tagName}" href="logseq://graph/${encodeURIComponent(
-                    graphName,
-                )}?page=${encodeURIComponent(tagName)}">${opts.displayTags ? `#${tagName}` : ''}</a>${afterText}`,
-            );
-        });
-    }
-    $(".mathblock, .latex-environment").each(function (i, elm) {
-        // Handle org math and latex-environment blocks
-        let math = $(elm).html();
-        // Remove all types of math braces in math
-        math = math.replace(ORG_MATH_BLOCK_REGEXP, "$1");
-        math = math.replace(MD_MATH_BLOCK_REGEXP, "$1");
+        const link_full_text = node[0][1]?.full_text;
+        const link_label_type = node[0][1]?.label?.[0]?.[0];
+        const link_label_text = node[0][1]?.label?.[0]?.[1];
 
-        // Add block math braces in math
-        $(elm).html(`\\[ ${math} \\]`);
-    });
-    // Change all p tags to span tags
-    $("p").each(function (i, elm) {
-        $(elm).replaceWith(`<span>${$(elm).html()}</span>`);
-    });
-    // Fix #126 - Revert the `display: flex` for some org blocks which are made flex in _logseq_anki_sync.scss by adding a new child div with `display: revert`
-    $("div.important, div.caution, div.pinned, div.tip, div.note, div.warning").each(
-        function (i, elm) {
-            $(elm).html(`<div style="display: revert">${$(elm).html()}</div>`);
-        },
-    );
-    // Add block highlight to first span
-    if (block_props["background-color"]) {
-        $("span:first-child").addClass(`block-highlight-${block_props["background-color"]}`);
-    }
-    resultContent = decodeHTMLEntities(decodeHTMLEntities($("#content ul li").html() || ""));
-    if (debug?.includes("LogseqToHtmlConverter.ts"))
-        console.log("After Mldoc.export:", resultContent);
-
-    // Bring back inline html content and clozes from hashmap
-    for (const key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]);
-    for (const key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]); // fix: sometimes the end space of hash gets removed (actual fix require this to be repeated len(keys) times instead of 2)
-
-    if (debug?.includes("LogseqToHtmlConverter.ts"))
-        console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
-    return {html: resultContent, assets: resultAssets, tags: resultTags};
-}
-
-/**
- * @deprecated Use LogseqContentPreprocessor.preprocess() instead.
- * This function is kept for backward compatibility with tests.
- */
-export async function processProperties(resultContent: string, format = "markdown"): Promise<[string, any]> {
-    const result = await LogseqContentPreprocessor.preprocess(
-        resultContent,
-        format as "markdown" | "org"
-    );
-    return [result.content, result.properties];
-}
-
-async function processRefEmbeds(
-    resultContent,
-    resultAssets,
-    resultTags,
-    hashmap,
-    format,
-): Promise<string> {
-    let block;
-    resultContent = await safeReplaceAsync(
-        resultContent,
-        LOGSEQ_EMBDED_BLOCK_REGEXP,
-        async (match, g1) => {
-            // Convert block embed
-            const getBlockEmbedContentHTML = async (
-                children: any,
-                level = 0,
-            ): Promise<string> => {
-                if (level >= 100) return "";
-                let result = `\n<ul class="children-list">`;
-                for (const child of children) {
-                    result += `\n<li class="children ${child?.properties?.['logseq.orderListType'] === "number" ? 'numbered' : ''}">`;
-                    // block.content.replace(ANKI_CLOZE_REGEXP, "$3").replace(/(?<!{{embed [^}\n]*?)}}/g, "} } ") || "";
-                    const block_content =
-                        escapeClozesAndMacroDelimiters(child?.content) || "";
-                    const format = child?.format || "markdown";
-                    const blockContentHTMLFile = await convertToHTMLFile(block_content, format);
-                    blockContentHTMLFile.assets.forEach((element) => {
-                        resultAssets.add(element);
-                    });
-                    if (child.children.length > 0)
-                        blockContentHTMLFile.html += await getBlockEmbedContentHTML(
-                            child.children,
-                            level + 1,
-                        );
-
-                    result += blockContentHTMLFile.html;
-                    result += `</li>`;
-                }
-                result += `</ul>`;
-                return result;
-            };
-
-            try {
-                block = await LogseqProxy.Editor.getBlock(g1, {
-                    includeChildren: true,
-                });
-            } catch (e) {
-                console.warn(e);
-            }
+        // Image Display
+        if (link_type == "Search" && link_url.match(isImage_REGEXP) && !content.match(isWebURL_REGEXP) && link_full_text.startsWith("!")) {
             const str = getRandomUnicodeString();
-            hashmap[str] = `<div class="embed-block">
-                        ${block ? await getBlockEmbedContentHTML([block]) : ""}
-                        </div>`;
-            return str;
-        },
-    );
-
-    resultContent = await safeReplaceAsync(
-        resultContent,
-        LOGSEQ_EMBDED_PAGE_REGEXP,
-        async (match, pageUUID) => {
-            // Convert page embed
-            let pageTree = [];
-            const pageName = await getPageNameFromUUID(pageUUID);
-
-            const getPageContentHTML = async (children: any, level = 0): Promise<string> => {
-                if (level >= 100) return "";
-                let result = `\n<ul class="children-list">`;
-                for (const child of children) {
-                    result += `\n<li class="children ${child?.properties?.['logseq.orderListType'] === "number" ? 'numbered' : ''}">`;
-                    const block_content =
-                        escapeClozesAndMacroDelimiters(child?.content) || "";
-                    const format = child?.format || "markdown";
-                    const blockContentHTMLFile = await convertToHTMLFile(block_content, format);
-                    blockContentHTMLFile.assets.forEach((element) => {
-                        resultAssets.add(element);
-                    });
-                    if (child.children && child.children.length > 0) {
-                        blockContentHTMLFile.html += await getPageContentHTML(
-                            child.children,
-                            level + 1,
-                        );
-                    }
-
-                    result += blockContentHTMLFile.html;
-                    result += `</li>`;
-                }
-                result += `</ul>`;
-                return result;
-            };
-            try {
-                pageTree = await LogseqProxy.Editor.getPageBlocksTree(pageUUID);
-            } catch (e) {
-                console.warn(e);
-            }
-
-            const str = getRandomUnicodeString();
-            hashmap[str] = `<div class="embed-page">
-                        <a href="logseq://graph/${encodeURIComponent(
-                            (await LogseqProxy.App.getCurrentGraph())?.name,
-                        )}?page=${encodeURIComponent(
-                            pageName,
-                        )}" class="embed-header">${pageName}</a>
-                        ${await getPageContentHTML(pageTree)}
-                        </div>`;
-            return str;
-        },
-    );
-
-    resultContent = await safeReplaceAsync(
-        resultContent,
-        LOGSEQ_RENAMED_PAGE_REF_REGEXP,
-        async (match, aliasContent, pageUUID) => {
-            const pageName = await getPageNameFromUUID(pageUUID);
-            
-            const str = getRandomUnicodeString();
-            hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
-                (await LogseqProxy.App.getCurrentGraph())?.name,
-            )}?page=${encodeURIComponent(
-                pageName,
-            )}" class="page-reference">${aliasContent}</a>`;
-            return str;
-        },
-    );
-
-    resultContent = await safeReplaceAsync(
-        resultContent,
-        LOGSEQ_PAGE_REF_REGEXP,
-        async (match, pageUUID : string) => {
-            const displayName = await getPageNameFromUUID(pageUUID);
-            
-            const str = getRandomUnicodeString();
-            hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
-                (await LogseqProxy.App.getCurrentGraph())?.name,
-            )}?page=${encodeURIComponent(displayName)}" class="page-reference">${displayName}</a>`;
-            return str;
-        },
-    );
-
-    resultContent = await safeReplaceAsync(
-        resultContent,
-        LOGSEQ_RENAMED_BLOCK_REF_REGEXP,
-        async (match, aliasContent, blockUUID) => {
-            // Convert page refs
-            const str = getRandomUnicodeString();
-            hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(
-                (await LogseqProxy.App.getCurrentGraph())?.name,
-            )}?block-id=${encodeURIComponent(
-                blockUUID,
-            )}" class="block-ref">${aliasContent}</a>`;
-            return str;
-        },
-    );
-
-    resultContent = await safeReplaceAsync(
-        resultContent,
-        LOGSEQ_BLOCK_REF_REGEXP,
-        async (match, blockUUID) => {
-            // Convert block refs
-            const str = getRandomUnicodeString();
-            try {
-                const block = await LogseqProxy.Editor.getBlock(blockUUID);
-                let block_content = block?.content;
-                const block_props = block?.properties;
-                
-                // Get first non-empty line and escape clozes
-                let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
-                block_content_first_line = escapeClozesAndMacroDelimiters(block_content_first_line);
-                
-                // Reconstruct content with properties for preprocessing
-                let blockRef_content = block_content_first_line;
-                for (const [prop, value] of Object.entries(block_props))
-                    blockRef_content += `\n${prop}:: ${value}`;
-                
-                // Convert to HTML (preprocessor will handle property stripping)
-                const blockRefHTMLFile = await convertToHTMLFile(
-                    blockRef_content,
-                    block?.format,
-                );
-                blockRefHTMLFile.assets.forEach((element) => {
-                    resultAssets.add(element);
-                });
-                hashmap[str] = `<span onclick="window.open('logseq://graph/${encodeURIComponent(
-                    (await LogseqProxy.App.getCurrentGraph())?.name,
-                )}?block-id=${encodeURIComponent(blockUUID)}')" class="block-ref">${
-                    blockRefHTMLFile.html
-                }</span>`;
-            } catch (e) {
-                // Block not found
-                console.warn(e);
-                hashmap[str] = `<span class="failed-block-ref">${blockUUID}</span>`;
-            }
-            return str;
-        },
-    );
-
-    return resultContent;
-}
-
-async function hideRefEmbeds(resultContent, resultAssets, hashmap, format): Promise<string> {
-    resultContent = await safeReplaceAsync(
-        resultContent,
-        LOGSEQ_BLOCK_REF_REGEXP,
-        async (match, blockUUID) => {
-            // Convert block refs
-            const str = getRandomUnicodeString();
-            hashmap[str] = match;
-            return str;
-        },
-    );
-    resultContent = await safeReplaceAsync(
-        resultContent,
-        LOGSEQ_PAGE_REF_REGEXP,
-        async (match, pageUUID) => {
-            const displayName = await getPageNameFromUUID(pageUUID);
-            const str = getRandomUnicodeString();
-            hashmap[str] = `<a class="page-reference">${displayName}</a>`;
-            return str;
-        },
-    );
-    return resultContent;
-}
-
-async function processInlineHTML(
-    node,
-    start_pos,
-    end_pos,
-    resultContent,
-    resultAssets,
-    resultUTF8,
-    hashmap,
-) {
-    const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
-    if (content != node[0][1]) {
-        console.error(
-            "Error: content mismatch html",
-            content,
-            resultContent.substring(start_pos, end_pos),
-        );
-    }
-    const str = getRandomUnicodeString();
-    hashmap[str] = content;
-    return new Uint8Array([
-        ...resultUTF8.subarray(0, start_pos),
-        ...new TextEncoder().encode(str),
-        ...resultUTF8.subarray(end_pos),
-    ]);
-}
-
-async function processInlineHiccup(
-    node,
-    start_pos,
-    end_pos,
-    resultContent,
-    resultUTF8,
-    hashmap,
-) {
-    const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
-    if (content != node[0][1]) {
-        console.error(
-            "Error: content mismatch hiccup",
-            content,
-            resultContent.substring(start_pos, end_pos),
-        );
-    }
-    const str = getRandomUnicodeString();
-    hashmap[str] = hiccupConverter.serialize(edn.decode(content));
-    return new Uint8Array([
-        ...resultUTF8.subarray(0, start_pos),
-        ...new TextEncoder().encode(str),
-        ...resultUTF8.subarray(end_pos),
-    ]);
-}
-
-async function processLink(
-    node,
-    start_pos,
-    end_pos,
-    resultContent,
-    resultAssets,
-    resultUTF8,
-    hashmap,
-    format,
-) {
-    const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
-    const link_type = node[0][1]?.url?.[0];
-    const link_url = node[0][1]?.url?.[1];
-    let metadata;
-    try {
-        metadata = await edn.decode(node[0][1].metadata);
-    } catch (e) {
-        console.warn(e);
-    }
-    const link_full_text = node[0][1]?.full_text;
-    const link_label_type = node[0][1]?.label?.[0]?.[0];
-    const link_label_text = node[0][1]?.label?.[0]?.[1];
-    // Image Display
-    if (
-        link_type == "Search" &&
-        link_url.match(isImage_REGEXP) &&
-        !content.match(isWebURL_REGEXP) &&
-        link_full_text.startsWith("!")
-    ) {
-        const str = getRandomUnicodeString();
-        hashmap[str] = `<img src="${path.basename(link_url).split("?")[0]}" ${
-            link_label_text ? `alt="${link_label_text}"` : ``
-        } ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${
-            metadata && metadata.height ? `height="${metadata.height}"` : ``
-        }/>`;
-        resultAssets.add(link_url.split("?")[0]);
-        return new Uint8Array([
-            ...resultUTF8.subarray(0, start_pos),
-            ...new TextEncoder().encode(str),
-            ...resultUTF8.subarray(end_pos),
-        ]);
-    }
-    if (
-        link_type == "Complex" &&
-        link_url.link.match(isImage_REGEXP) &&
-        (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))
-    ) {
-        const str = getRandomUnicodeString();
-        hashmap[str] = `<img src="${link_url.protocol}://${link_url.link.split("?")[0]}" ${
-            link_label_text ? `alt="${link_label_text}"` : ``
-        } ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${
-            metadata && metadata.height ? `height="${metadata.height}"` : ``
-        }/>`;
-        return new Uint8Array([
-            ...resultUTF8.subarray(0, start_pos),
-            ...new TextEncoder().encode(str),
-            ...resultUTF8.subarray(end_pos),
-        ]);
-    }
-    if (
-        format == "org" &&
-        link_type == "Page_ref" &&
-        link_url.match(isImage_REGEXP) &&
-        !link_url.match(isWebURL_REGEXP)
-    ) {
-        const str = getRandomUnicodeString();
-        hashmap[str] = `<img src="${path.basename(link_url).split("?")[0]}" />`;
-        resultAssets.add(link_url.split("?")[0]);
-        return new Uint8Array([
-            ...resultUTF8.subarray(0, start_pos),
-            ...new TextEncoder().encode(str),
-            ...resultUTF8.subarray(end_pos),
-        ]);
-    }
-
-    // Audio Display
-    if (
-        link_type == "Search" &&
-        link_url.match(isAudio_REGEXP) &&
-        !content.match(isWebURL_REGEXP) &&
-        link_full_text.startsWith("!")
-    ) {
-        const str = getRandomUnicodeString();
-        hashmap[str] = `[sound:${path.basename(link_url).split("?")[0]}]`;
-        resultAssets.add(link_url.split("?")[0]);
-        return new Uint8Array([
-            ...resultUTF8.subarray(0, start_pos),
-            ...new TextEncoder().encode(str),
-            ...resultUTF8.subarray(end_pos),
-        ]);
-    }
-    if (
-        link_type == "Complex" &&
-        link_url.link.match(isAudio_REGEXP) &&
-        (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))
-    ) {
-        const str = getRandomUnicodeString();
-        hashmap[str] = `[sound:${link_url.protocol}://${link_url.link.split("?")[0]}]`;
-        return new Uint8Array([
-            ...resultUTF8.subarray(0, start_pos),
-            ...new TextEncoder().encode(str),
-            ...resultUTF8.subarray(end_pos),
-        ]);
-    }
-    if (
-        format == "org" &&
-        link_type == "Page_ref" &&
-        link_url.match(isAudio_REGEXP) &&
-        !link_url.match(isWebURL_REGEXP)
-    ) {
-        const str = getRandomUnicodeString();
-        hashmap[str] = `[sound:${path.basename(link_url).split("?")[0]}]`;
-        resultAssets.add(link_url.split("?")[0]);
-        return new Uint8Array([
-            ...resultUTF8.subarray(0, start_pos),
-            ...new TextEncoder().encode(str),
-            ...resultUTF8.subarray(end_pos),
-        ]);
-    }
-
-    // Video Display
-    if (
-        link_type == "Search" &&
-        link_url.match(isVideo_REGEXP) &&
-        !content.match(isWebURL_REGEXP) &&
-        link_full_text.startsWith("!")
-    ) {
-        const str = getRandomUnicodeString();
-        hashmap[str] = `<video src="${path.basename(link_url).split("?")[0]}" 
-                        controlsList="nodownload" controls></video>`;
-        resultAssets.add(link_url.split("?")[0]);
-        return new Uint8Array([
-            ...resultUTF8.subarray(0, start_pos),
-            ...new TextEncoder().encode(str),
-            ...resultUTF8.subarray(end_pos),
-        ]);
-    }
-    if (
-        link_type == "Complex" &&
-        link_url.link.match(isVideo_REGEXP) &&
-        (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))
-    ) {
-        const str = getRandomUnicodeString();
-        hashmap[str] = `<video src="${link_url.protocol}://${link_url.link.split("?")[0]}" 
-                        controlsList="nodownload" controls></video>`;
-        return new Uint8Array([
-            ...resultUTF8.subarray(0, start_pos),
-            ...new TextEncoder().encode(str),
-            ...resultUTF8.subarray(end_pos),
-        ]);
-    }
-    if (
-        format == "org" &&
-        link_type == "Page_ref" &&
-        link_url.match(isVideo_REGEXP) &&
-        !link_url.match(isWebURL_REGEXP)
-    ) {
-        const str = getRandomUnicodeString();
-        hashmap[str] = `<video src="${path.basename(link_url).split("?")[0]}" 
-                        controlsList="nodownload" controls></video>`;
-        resultAssets.add(link_url.split("?")[0]);
-        return new Uint8Array([
-            ...resultUTF8.subarray(0, start_pos),
-            ...new TextEncoder().encode(str),
-            ...resultUTF8.subarray(end_pos),
-        ]);
-    }
-
-    // Fix #74
-    if (link_type == "Complex" && link_url.protocol && link_label_type == "Plain") {
-        const str = getRandomUnicodeString();
-        hashmap[
-            str
-        ] = `<a href="${link_url.protocol}://${link_url.link}">${link_label_text}</a>`;
-        return new Uint8Array([
-            ...resultUTF8.subarray(0, start_pos),
-            ...new TextEncoder().encode(str),
-            ...resultUTF8.subarray(end_pos),
-        ]);
-    }
-
-    return new Uint8Array([
-        ...resultUTF8.subarray(0, start_pos),
-        ...new TextEncoder().encode(content),
-        ...resultUTF8.subarray(end_pos),
-    ]);
-}
-
-
-/**
- * Helper function to get page name from UUID. Falls back to UUID if page not found.
- */
-async function getPageNameFromUUID(pageUUID: string): Promise<string> {
-    try {
-        const page = await LogseqProxy.Editor.getPage(pageUUID);
-        if (page) {
-            return getNameFromPage(page) || pageUUID;
+            hashmap[str] = `<img src="${path.basename(link_url).split("?")[0]}" ${link_label_text ? `alt="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+            resultAssets.add(link_url.split("?")[0]);
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
         }
-    } catch (e) {}
-    return pageUUID;
+        if (link_type == "Complex" && link_url.link.match(isImage_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
+            const str = getRandomUnicodeString();
+            hashmap[str] = `<img src="${link_url.protocol}://${link_url.link.split("?")[0]}" ${link_label_text ? `alt="${link_label_text}"` : ``} ${metadata && metadata.width ? `width="${metadata.width}"` : ``} ${metadata && metadata.height ? `height="${metadata.height}"` : ``}/>`;
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+        if (format == "org" && link_type == "Page_ref" && link_url.match(isImage_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
+            const str = getRandomUnicodeString();
+            hashmap[str] = `<img src="${path.basename(link_url).split("?")[0]}" />`;
+            resultAssets.add(link_url.split("?")[0]);
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+
+        // Audio Display
+        if (link_type == "Search" && link_url.match(isAudio_REGEXP) && !content.match(isWebURL_REGEXP) && link_full_text.startsWith("!")) {
+            const str = getRandomUnicodeString();
+            hashmap[str] = `[sound:${path.basename(link_url).split("?")[0]}]`;
+            resultAssets.add(link_url.split("?")[0]);
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+        if (link_type == "Complex" && link_url.link.match(isAudio_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
+            const str = getRandomUnicodeString();
+            hashmap[str] = `[sound:${link_url.protocol}://${link_url.link.split("?")[0]}]`;
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+        if (format == "org" && link_type == "Page_ref" && link_url.match(isAudio_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
+            const str = getRandomUnicodeString();
+            hashmap[str] = `[sound:${path.basename(link_url).split("?")[0]}]`;
+            resultAssets.add(link_url.split("?")[0]);
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+
+        // Video Display
+        if (link_type == "Search" && link_url.match(isVideo_REGEXP) && !content.match(isWebURL_REGEXP) && link_full_text.startsWith("!")) {
+            const str = getRandomUnicodeString();
+            hashmap[str] = `<video src="${path.basename(link_url).split("?")[0]}" controlsList="nodownload" controls></video>`;
+            resultAssets.add(link_url.split("?")[0]);
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+        if (link_type == "Complex" && link_url.link.match(isVideo_REGEXP) && (format == "org" || link_full_text.match(MD_IMAGE_EMBEDED_REGEXP))) {
+            const str = getRandomUnicodeString();
+            hashmap[str] = `<video src="${link_url.protocol}://${link_url.link.split("?")[0]}" controlsList="nodownload" controls></video>`;
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+        if (format == "org" && link_type == "Page_ref" && link_url.match(isVideo_REGEXP) && !link_url.match(isWebURL_REGEXP)) {
+            const str = getRandomUnicodeString();
+            hashmap[str] = `<video src="${path.basename(link_url).split("?")[0]}" controlsList="nodownload" controls></video>`;
+            resultAssets.add(link_url.split("?")[0]);
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+
+        // Fix #74
+        if (link_type == "Complex" && link_url.protocol && link_label_type == "Plain") {
+            const str = getRandomUnicodeString();
+            hashmap[str] = `<a href="${link_url.protocol}://${link_url.link}">${link_label_text}</a>`;
+            return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(str), ...resultUTF8.subarray(end_pos)]);
+        }
+
+        return new Uint8Array([...resultUTF8.subarray(0, start_pos), ...new TextEncoder().encode(content), ...resultUTF8.subarray(end_pos)]);
+    }
+
+    /**
+     * Helper to get page name from UUID
+     */
+    private static async getPageNameFromUUID(pageUUID: string): Promise<string> {
+        try {
+            const page = await this.getPage(pageUUID);
+            if (page) {
+                return getNameFromPage(page) || pageUUID;
+            }
+        } catch (e) {}
+        return pageUUID;
+    }
 }
+
+/**
+ * Proxy version that uses cached LogseqProxy methods and LogseqContentPreprocessorProxy.
+ * Use this during sync operations where caching is beneficial.
+ */
+export class LogseqToHtmlConverterProxy extends LogseqToHtmlConverter {
+    protected static async getCurrentGraph() {
+        const { LogseqProxy } = await import("./LogseqProxy");
+        return await LogseqProxy.App.getCurrentGraph();
+    }
+
+    protected static async getBlock(srcBlock: string, opts?: any) {
+        const { LogseqProxy } = await import("./LogseqProxy");
+        return await LogseqProxy.Editor.getBlock(srcBlock, opts);
+    }
+
+    protected static async getPage(srcPage: any) {
+        const { LogseqProxy } = await import("./LogseqProxy");
+        return await LogseqProxy.Editor.getPage(srcPage);
+    }
+
+    protected static async getPageBlocksTree(srcPage: any) {
+        const { LogseqProxy } = await import("./LogseqProxy");
+        return await LogseqProxy.Editor.getPageBlocksTree(srcPage);
+    }
+
+    protected static getPluginSettings() {
+        const { LogseqProxy } = require("./LogseqProxy");
+        return LogseqProxy.Settings.getPluginSettings();
+    }
+
+    /**
+     * Cached version of convertToHTMLFile with memoization.
+     */
+    static convertToHTMLFile = pMemoize(
+        async (
+            content: string,
+            format = "markdown",
+            opts: { processRefEmbeds?: boolean; displayTags?: boolean } = { processRefEmbeds: true, displayTags: false }
+        ): Promise<HTMLFile> => {
+            // Use LogseqContentPreprocessorProxy for cached preprocessing
+            const { LogseqContentPreprocessorProxy } = await import("./LogseqContentPreprocessor");
+            const preprocessResult = await LogseqContentPreprocessorProxy.preprocess(
+                content.trim(),
+                format as "markdown" | "org"
+            );
+            
+            // Temporarily override the base class preprocessor behavior
+            const originalPreprocess = LogseqContentPreprocessor.preprocess;
+            LogseqContentPreprocessor.preprocess = LogseqContentPreprocessorProxy.preprocess.bind(LogseqContentPreprocessorProxy);
+            
+            try {
+                return await super.convertToHTMLFile(content, format, opts);
+            } finally {
+                LogseqContentPreprocessor.preprocess = originalPreprocess;
+            }
+        },
+        {
+            cacheKey: (args) => objectHashOptimized(args)
+        }
+    );
+}
+
+// Initialize cache clearing on sync complete
+if (typeof window !== 'undefined') {
+    import("./WindowParentBridge").then(({ WindowParentBridge }) => {
+        WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
+            pMemoizeClear(LogseqToHtmlConverterProxy.convertToHTMLFile);
+        });
+    });
+}
+
+// Backward compatibility: export function that uses base class (non-cached)
+export const convertToHTMLFile = LogseqToHtmlConverter.convertToHTMLFile.bind(LogseqToHtmlConverter);
