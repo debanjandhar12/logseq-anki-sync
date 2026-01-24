@@ -32,8 +32,8 @@ const removeBlockNode = (blockUUID : BlockUUID) => {
     graph.removeNode(blockUUID + "Block");
 };
 
-const removePageNode = (pageId: number | string) => {
-    const pageKey = String(pageId).toLowerCase() + "Page"; // Convert to lowercase to avoid case sensitivity issues
+const removePageNode = (pageId: number) => {
+    const pageKey = pageId + "PageById";
 
     if (!graph.hasNode(pageKey)) return;
     graph.dependantsOf(pageKey).forEach((dependant) => {
@@ -42,8 +42,8 @@ const removePageNode = (pageId: number | string) => {
     graph.removeNode(pageKey);
 };
 
-const addPageNode = async (pageId: number | string) => {
-    const pageKey = String(pageId).toLowerCase() + "Page"; // Convert to lowercase to avoid case sensitivity issues
+const addPageNode = async (pageId: number) => {
+    const pageKey = pageId + "PageById";
 
     if (graph.hasNode(pageKey)) return true;
     
@@ -85,7 +85,7 @@ const addBlockNode = async (blockUUID : BlockUUID) => {
         if (nodeCreated) {
             const depKey = dependency.type === "Block" 
                 ? dependency.value.toLowerCase() + "Block"
-                : String(dependency.value).toLowerCase() + "Page";
+                : dependency.value + "PageById";
             graph.addDependency(blockUUID + "Block", depKey);
         }
     }
@@ -112,8 +112,8 @@ export const getBlockHash = async (blockUUID) => {
     return graph.getNodeData(blockUUID + "Block");
 };
 
-export const getPageHash = async (pageId: number | string) => {
-    const pageKey = String(pageId).toLowerCase() + "Page"; // Convert to lowercase to avoid case sensitivity issues
+export const getPageHash = async (pageId: number) => {
+    const pageKey = pageId + "PageById";
 
     await addPageNode(pageId);
     return graph.getNodeData(pageKey);

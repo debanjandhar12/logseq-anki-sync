@@ -595,7 +595,8 @@ export class LogseqToHtmlConverter {
      */
     private static async getPageNameFromID(pageId: string | number): Promise<string> {
         try {
-            const page = await this.getPage(pageId);
+            const numericPageId = typeof pageId === 'string' ? parseInt(pageId, 10) : pageId;
+            const page = await this.getPage(numericPageId);
             if (page) {
                 return getNameFromPage(page) || String(pageId);
             }

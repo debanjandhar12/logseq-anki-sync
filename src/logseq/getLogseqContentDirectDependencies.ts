@@ -16,7 +16,7 @@ export interface BlockDependency {
 
 export interface PageDependency {
     type: "Page";
-    value: number | string; // Page ID after preprocessing
+    value: number; // Page ID
 }
 
 export type DependencyEntity = BlockDependency | PageDependency;
@@ -34,7 +34,7 @@ export default async function getLogseqContentDirectDependencies(
     }
     if (content === null || content === undefined) return [];
     const blockDependency: Set<BlockUUID> = new Set();
-    const pageDependency: Set<number | string> = new Set(); // Page IDs after preprocessing
+    const pageDependency: Set<number> = new Set();
 
     //  Add dependencies due to LOGSEQ_EMBDED_BLOCK_REGEXP
     let match;
@@ -63,30 +63,16 @@ export default async function getLogseqContentDirectDependencies(
         blockDependency.add(match[1]);
     }
 
-    // Add dependencies due to LOGSEQ_EMBDED_PAGE_REGEXP (now contains page IDs)
+    // Add dependencies due to LOGSEQ_EMBDED_PAGE_REGEXP
     while ((match = LOGSEQ_EMBDED_PAGE_REGEXP.exec(content))) {
-        const pageId = match[1];
+        const pageIdStr = match[1];
+        const pageId = parseInt(pageIdStr, 10);
+
+        const isValidNumber = !isNaN(pageId) && Number.isInteger(pageId);
+        if (!isValidNumber) continue;
+
         pageDependency.add(pageId);
-        
-        // Also add all blocks in the page as dependencies
-        try {
-            const pageBlocksTree = await LogseqProxy.Editor.getPageBlocksTree(pageId);
-            if (pageBlocksTree) {
-                const queue = [...pageBlocksTree];
-                while (queue.length > 0) {
-                    const block = queue.pop();
-                    blockDependency.add(getUUIDFromBlock(block));
-                    if (block.children) {
-                        for (const child of block.children) {
-                            if (queue.length > 30) break;
-                            queue.push(child as BlockEntity);
-                        }
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn("Failed to get page blocks for dependency tracking:", e);
-        }
+        // TODO: Add all blocks in the page as dependencies if req
     }
 
     return [

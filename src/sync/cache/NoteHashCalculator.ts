@@ -46,6 +46,7 @@ export default class NoteHashCalculator {
         // Only consider parent content if includeParentContent is true
         // No need to consider parent content for breadcrumbs as
         // we use the page updatedAt timestamp in hash
+        // This is req since otherwise on property value change of parent block, hash won't change.
         let parentID = (await LogseqProxy.Editor.getBlock(note.uuid)).parent.id;
         let parent = null;
         const { includeParentContent } = LogseqProxy.Settings.getPluginSettings();
@@ -66,13 +67,13 @@ export default class NoteHashCalculator {
             else if (dep.type == "Page") toHash.push(await getPageHash(dep.value));
         }
 
-        // Add namespace dependencies using page UUID
+        // Add namespace dependencies
         const page = await LogseqProxy.Editor.getPage(note.pageId);
         const parentPages = await LogseqProxy.Editor.getParentNamespacePages(page);
         for (const parentPage of parentPages) {
-            const pageUUID = getUUIDFromBlock(parentPage);
-            if (pageUUID) {
-                toHash.push(await getPageHash(pageUUID));
+            const pageId = parentPage.id;
+            if (pageId && typeof pageId === 'number') {
+                toHash.push(await getPageHash(pageId));
             }
         }
 
