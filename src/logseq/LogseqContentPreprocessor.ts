@@ -14,6 +14,8 @@ import {safeReplace, safeReplaceAsync} from "../utils/utils";
 import getNameFromPage from "./getNameFromPage";
 import getUUIDFromBlock from "./getUUIDFromBlock";
 import getIDFromPage from "./getIDFromPage";
+import {WindowParentBridge} from "./WindowParentBridge";
+import {LogseqProxy} from "./LogseqProxy";
 
 /**
  * INTERNAL FORMAT SPECIFICATION
@@ -420,17 +422,14 @@ export class LogseqContentPreprocessor {
  */
 export class LogseqContentPreprocessorProxy extends LogseqContentPreprocessor {
     protected static async checkCurrentIsDbGraph(): Promise<boolean> {
-        const { LogseqProxy } = await import("./LogseqProxy");
         return Boolean(await LogseqProxy.App.checkCurrentIsDbGraph());
     }
 
     protected static async getPage(srcPage: PageIdentity | EntityID) {
-        const { LogseqProxy } = await import("./LogseqProxy");
         return await LogseqProxy.Editor.getPage(srcPage);
     }
 
     protected static async getBlock(srcBlock: string) {
-        const { LogseqProxy } = await import("./LogseqProxy");
         return await LogseqProxy.Editor.getBlock(srcBlock);
     }
 
@@ -442,9 +441,7 @@ export class LogseqContentPreprocessorProxy extends LogseqContentPreprocessor {
 }
 
 if (typeof window !== 'undefined') {
-    import("./WindowParentBridge").then(({ WindowParentBridge }) => {
-        WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
-            pMemoizeClear(LogseqContentPreprocessorProxy.preprocess);
-        });
+    WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
+        pMemoizeClear(LogseqContentPreprocessorProxy.preprocess);
     });
 }

@@ -1,6 +1,7 @@
 import { BlockEntity, BlockIdentity, EntityID, PageEntity, PageIdentity } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import getNameFromPage from "./getNameFromPage";
+import {LogseqProxy} from "./LogseqProxy";
 
 /**
  * Helper class for fetching Logseq blocks and pages with properties attached.
@@ -199,7 +200,6 @@ export class LogseqPropertiesHelper {
  */
 export class LogseqPropertiesHelperProxy extends LogseqPropertiesHelper {
     protected static async checkCurrentIsDbGraph(): Promise<boolean> {
-        const { LogseqProxy } = await import("./LogseqProxy");
         return Boolean(await LogseqProxy.App.checkCurrentIsDbGraph());
     }
 }

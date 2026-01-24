@@ -33,9 +33,12 @@ import {edn} from "@yellowdig/cljs-tools";
 import path from "path-browserify";
 import getNameFromPage from "./getNameFromPage";
 import getIDFromPage from "./getIDFromPage";
-import {LogseqContentPreprocessor} from "./LogseqContentPreprocessor";
+import {LogseqContentPreprocessor, LogseqContentPreprocessorProxy} from "./LogseqContentPreprocessor";
 import pMemoize, {pMemoizeClear} from "p-memoize";
 import objectHashOptimized from "../utils/objectHashOptimized";
+import {LogseqProxy} from "./LogseqProxy";
+import {PluginSettings} from "../settings";
+import {WindowParentBridge} from "./WindowParentBridge";
 
 const mldocsOptions = {
     toc: false,
@@ -624,7 +627,7 @@ export class LogseqToHtmlConverter {
     }
 
     protected static getPluginSettings() {
-        return logseq.settings;
+        return logseq.settings as PluginSettings;
     }
 }
 
@@ -634,27 +637,22 @@ export class LogseqToHtmlConverter {
  */
 export class LogseqToHtmlConverterProxy extends LogseqToHtmlConverter {
     protected static async getCurrentGraph() {
-        const { LogseqProxy } = await import("./LogseqProxy");
         return await LogseqProxy.App.getCurrentGraph();
     }
 
     protected static async getBlock(srcBlock: string, opts?: any) {
-        const { LogseqProxy } = await import("./LogseqProxy");
         return await LogseqProxy.Editor.getBlock(srcBlock, opts);
     }
 
     protected static async getPage(srcPage: any) {
-        const { LogseqProxy } = await import("./LogseqProxy");
         return await LogseqProxy.Editor.getPage(srcPage);
     }
 
     protected static async getPageBlocksTree(srcPage: any) {
-        const { LogseqProxy } = await import("./LogseqProxy");
         return await LogseqProxy.Editor.getPageBlocksTree(srcPage);
     }
 
     protected static getPluginSettings() {
-        const { LogseqProxy } = require("./LogseqProxy");
         return LogseqProxy.Settings.getPluginSettings();
     }
 
@@ -669,7 +667,6 @@ export class LogseqToHtmlConverterProxy extends LogseqToHtmlConverter {
     ): Promise<HTMLFile> {
         // Override the preprocessor temporarily to use the proxy version
         const originalPreprocess = LogseqContentPreprocessor.preprocess;
-        const { LogseqContentPreprocessorProxy } = await import("./LogseqContentPreprocessor");
         LogseqContentPreprocessor.preprocess = LogseqContentPreprocessorProxy.preprocess.bind(LogseqContentPreprocessorProxy);
         
         try {
@@ -688,9 +685,7 @@ export class LogseqToHtmlConverterProxy extends LogseqToHtmlConverter {
 
 // Initialize cache clearing on sync complete
 if (typeof window !== 'undefined') {
-    import("./WindowParentBridge").then(({ WindowParentBridge }) => {
-        WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
-            pMemoizeClear(LogseqToHtmlConverterProxy.convertToHTMLFile);
-        });
+    WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
+        pMemoizeClear(LogseqToHtmlConverterProxy.convertToHTMLFile);
     });
 }
