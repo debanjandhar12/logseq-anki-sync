@@ -139,7 +139,7 @@ export class LogseqToHtmlConverter {
         } catch {
             parsedJson = [];
         }
-        let resultUTF8 = new TextEncoder().encode(resultContent);
+        let resultUTF8: Uint8Array = new TextEncoder().encode(resultContent);
         for (let i = parsedJson.length - 1; i >= 0; i--) {
             const node = parsedJson[i];
             if (node[node.length - 1]["start_pos"] == null) continue;
