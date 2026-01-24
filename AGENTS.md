@@ -65,7 +65,7 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
   - For fresh, non-cached data: Use `LogseqPropertiesHelper.getBlock()` / `getPage()` from `src/logseq/logseqPropertiesHelper.ts`
   - Never call `logseq.Editor.getBlock()` / `getPage()` directly - properties won't be fetched/stripped properly
 - **Tag Access:** Use `block.properties.tags` to access logseq tags array from a logseq block
-- **HTML Conversion:** Use LogseqToHTMLConverterProxy.ts instead of calling LogseqToHTMLConverter.ts directly
+- **HTML Conversion:** Use `LogseqToHtmlConverterProxy` for sync operations (cached), `LogseqToHtmlConverter` for UI operations (non-cached). Same pattern applies to `LogseqContentPreprocessorProxy` vs `LogseqContentPreprocessor`. Proxy classes extend base classes, override protected methods to use LogseqProxy, and add pMemoize caching that clears on 'syncLogseqToAnkiComplete' event
 - **Parent Window Access:** Always use WindowParentBridge instead of direct `window.parent` access for iframe communication. WindowParentBridge provides type-safe, testable access to parent window objects (Logseq API, AnkiConnect, Fabric.js, DOM elements, etc.)
 - **Settings Access:** Use `LogseqProxy.Settings.getPluginSettings()` instead of `logseq.settings`
 - **React Imports:** Import React/ReactDOM from `ui/React.ts` and `ui/ReactDOM.ts`, not directly from npm packages

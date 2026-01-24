@@ -57,34 +57,8 @@ export interface HTMLFile {
 
 /**
  * Base class for converting Logseq content to HTML for Anki cards.
- * Uses direct logseq API calls (no caching).
- * 
- * For cached version during sync operations, use LogseqToHtmlConverterProxy.
  */
 export class LogseqToHtmlConverter {
-    /**
-     * Protected methods that can be overridden in proxy class for caching.
-     */
-    protected static async getCurrentGraph() {
-        return await logseq.App.getCurrentGraph();
-    }
-
-    protected static async getBlock(srcBlock: string, opts?: any) {
-        return await logseq.Editor.getBlock(srcBlock, opts);
-    }
-
-    protected static async getPage(srcPage: any) {
-        return await logseq.Editor.getPage(srcPage);
-    }
-
-    protected static async getPageBlocksTree(srcPage: any) {
-        return await logseq.Editor.getPageBlocksTree(srcPage);
-    }
-
-    protected static getPluginSettings() {
-        return logseq.settings;
-    }
-
     /**
      * Main conversion method: converts Logseq content to HTML.
      */
@@ -627,6 +601,29 @@ export class LogseqToHtmlConverter {
         } catch (e) {}
         return pageUUID;
     }
+
+    /**
+     * Protected methods that can be overridden in proxy class for caching.
+     */
+    protected static async getCurrentGraph() {
+        return await logseq.App.getCurrentGraph();
+    }
+
+    protected static async getBlock(srcBlock: string, opts?: any) {
+        return await logseq.Editor.getBlock(srcBlock, opts);
+    }
+
+    protected static async getPage(srcPage: any) {
+        return await logseq.Editor.getPage(srcPage);
+    }
+
+    protected static async getPageBlocksTree(srcPage: any) {
+        return await logseq.Editor.getPageBlocksTree(srcPage);
+    }
+
+    protected static getPluginSettings() {
+        return logseq.settings;
+    }
 }
 
 /**
@@ -684,10 +681,7 @@ export class LogseqToHtmlConverterProxy extends LogseqToHtmlConverter {
 
     static convertToHTMLFile = pMemoize(
         LogseqToHtmlConverterProxy.convertToHTMLFileUncached.bind(LogseqToHtmlConverterProxy),
-        {
-            cacheKey: (args) => objectHashOptimized(args)
-        }
-    );
+        {cacheKey: (args) => objectHashOptimized(args)});
 }
 
 // Initialize cache clearing on sync complete

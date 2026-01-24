@@ -80,31 +80,6 @@ export interface PreprocessResult {
 
 export class LogseqContentPreprocessor {
     /**
-     * Override this in LogseqContentPreprocessorProxy to use cached version.
-     */
-    protected static async checkCurrentIsDbGraph(): Promise<boolean> {
-        try {
-            return await logseq.App.checkCurrentIsDbGraph() as boolean;
-        } catch {
-            return false;
-        }
-    }
-
-    /**
-     * Override this in LogseqContentPreprocessorProxy to use cached version.
-     */
-    protected static async getPage(srcPage: PageIdentity | EntityID) {
-        return await logseq.Editor.getPage(srcPage);
-    }
-
-    /**
-     * Override this in LogseqContentPreprocessorProxy to use cached version.
-     */
-    protected static async getBlock(srcBlock: string) {
-        return await logseq.Editor.getBlock(srcBlock);
-    }
-
-    /**
      * Preprocesses Logseq content from any format (DB/MD/Org) to internal format.
      * 
      * @param content - Raw Logseq block content
@@ -413,6 +388,25 @@ export class LogseqContentPreprocessor {
         }
 
         return resultContent;
+    }
+
+    /**
+     * Protected methods that can be overridden in proxy class for caching.
+     */
+    protected static async checkCurrentIsDbGraph(): Promise<boolean> {
+        try {
+            return await logseq.App.checkCurrentIsDbGraph() as boolean;
+        } catch {
+            return false;
+        }
+    }
+
+    protected static async getPage(srcPage: PageIdentity | EntityID) {
+        return await logseq.Editor.getPage(srcPage);
+    }
+
+    protected static async getBlock(srcBlock: string) {
+        return await logseq.Editor.getBlock(srcBlock);
     }
 }
 

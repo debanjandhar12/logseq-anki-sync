@@ -8,11 +8,8 @@
  */
 import {DepGraph} from "dependency-graph";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
-import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import getLogseqContentDirectDependencies from "../../logseq/getLogseqContentDirectDependencies";
 import _ from "lodash";
-import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../../constants";
-import {getFirstNonEmptyLine} from "../../utils/utils";
 import {BlockPageName, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import objectHashOptimized from "../../utils/objectHashOptimized";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
