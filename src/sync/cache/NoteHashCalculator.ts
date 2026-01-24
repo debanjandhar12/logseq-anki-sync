@@ -66,11 +66,14 @@ export default class NoteHashCalculator {
             else if (dep.type == "Page") toHash.push(await getPageHash(dep.value));
         }
 
-        // Add namespace dependencies using page ID
+        // Add namespace dependencies using page UUID
         const page = await LogseqProxy.Editor.getPage(note.pageId);
         const parentPages = await LogseqProxy.Editor.getParentNamespacePages(page);
         for (const parentPage of parentPages) {
-            toHash.push(await getPageHash(parentPage.id));
+            const pageUUID = getUUIDFromBlock(parentPage);
+            if (pageUUID) {
+                toHash.push(await getPageHash(pageUUID));
+            }
         }
 
         // Add additional things to toHash

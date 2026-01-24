@@ -15,7 +15,7 @@ export interface BlockDependency {
 
 export interface PageDependency {
     type: "Page";
-    value: BlockPageName;
+    value: BlockUUID; // Page UUID after preprocessing
 }
 
 export type DependencyEntity = BlockDependency | PageDependency;
@@ -33,7 +33,7 @@ export default async function getLogseqContentDirectDependencies(
     }
     if (content === null || content === undefined) return [];
     const blockDependency: Set<BlockUUID> = new Set();
-    const pageDependency: Set<BlockPageName> = new Set();
+    const pageDependency: Set<BlockUUID> = new Set(); // Page UUIDs after preprocessing
 
     //  Add dependencies due to LOGSEQ_EMBDED_BLOCK_REGEXP
     let match;
