@@ -7,7 +7,7 @@ import {
 import {LogseqProxy} from "./LogseqProxy";
 import {LogseqContentPreprocessorProxy} from "./LogseqContentPreprocessor";
 import getUUIDFromBlock from "./getUUIDFromBlock";
-import getIDFromPage from "./getIDFromPage";
+import {safeParseInt} from "../utils/utils";
 
 export interface BlockDependency {
     type: "Block";
@@ -66,9 +66,9 @@ export default async function getLogseqContentDirectDependencies(
     // Add dependencies due to LOGSEQ_EMBDED_PAGE_REGEXP
     while ((match = LOGSEQ_EMBDED_PAGE_REGEXP.exec(content))) {
         const pageIdStr = match[1];
-        const pageId = parseInt(pageIdStr, 10);
+        const pageId = safeParseInt(pageIdStr);
 
-        const isValidNumber = !isNaN(pageId) && Number.isInteger(pageId);
+        const isValidNumber = typeof pageId === 'number' && !isNaN(pageId) && Number.isInteger(pageId);
         if (!isValidNumber) continue;
 
         pageDependency.add(pageId);

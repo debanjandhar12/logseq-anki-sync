@@ -279,3 +279,26 @@ export function getCaseInsensitive<T = any>(obj: any, path: string | string[], d
     }
     return target;
 }
+
+/**
+ * Safely parses a value to a number. If parsing fails or results in NaN,
+ * returns the original value instead of throwing an error.
+ * 
+ * @param value - The value to parse (string, number, or any)
+ * @param radix - Optional radix for parseInt (default: 10)
+ * @returns Parsed number if successful, otherwise the original value
+ */
+export function safeParseInt<T = any>(value: T, radix: number = 10): number | T {
+    if (typeof value === 'number') {
+        return value;
+    }
+    
+    if (typeof value === 'string') {
+        const parsed = parseInt(value, radix);
+        if (!isNaN(parsed) && Number.isInteger(parsed)) {
+            return parsed;
+        }
+    }
+    
+    return value;
+}
