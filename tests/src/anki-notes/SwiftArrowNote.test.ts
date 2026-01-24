@@ -7,11 +7,13 @@ describe("SwiftArrowNote E2E Tests", () => {
     let page: PageEntity;
     
     beforeEach(async () => {
-        page = await logseq.Editor.createPage('Test SwiftArrowNote E2E', {}, {createFirstBlock: false});
+        page = await logseq.Editor.createPage('Test SwiftArrowNote E2E', {}, {redirect: false, createFirstBlock: false});
+        await new Promise(resolve => setTimeout(resolve, 100));
     });
 
     afterEach(async () => {
         await logseq.Editor.deletePage('Test SwiftArrowNote E2E');
+        await new Promise(resolve => setTimeout(resolve, 100));
     });
 
     test.skipIf(!globalThis.isLogseqAvailable)("Creates notes for all arrow directions", async () => {
@@ -21,6 +23,7 @@ describe("SwiftArrowNote E2E Tests", () => {
         await logseq.Editor.appendBlockInPage(page.uuid, "Front :-> Back");
         await logseq.Editor.appendBlockInPage(page.uuid, "Front :<- Back");
         await logseq.Editor.appendBlockInPage(page.uuid, "Front :<-> Back");
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const finalNotes = await SwiftArrowNote.getNotesFromLogseqBlocks();
         expect(finalNotes.length).toBe(initialCount + 3);

@@ -7,11 +7,13 @@ describe("MultilineCardNote E2E Tests", () => {
     let page: PageEntity;
     
     beforeEach(async () => {
-        page = await logseq.Editor.createPage('Test MultilineCardNote E2E', {}, {createFirstBlock: false});
+        page = await logseq.Editor.createPage('Test MultilineCardNote E2E', {}, {redirect: false, createFirstBlock: false});
+        await new Promise(resolve => setTimeout(resolve, 100));
     });
 
     afterEach(async () => {
         await logseq.Editor.deletePage('Test MultilineCardNote E2E');
+        await new Promise(resolve => setTimeout(resolve, 100));
     });
 
     test.skipIf(!globalThis.isLogseqAvailable)("Creates note with #card tag", async () => {
@@ -20,6 +22,7 @@ describe("MultilineCardNote E2E Tests", () => {
 
         const parentBlock = await logseq.Editor.appendBlockInPage(page.uuid, "Parent #card");
         await logseq.Editor.insertBlock(parentBlock.uuid, "Child");
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const finalNotes = await MultilineCardNote.getNotesFromLogseqBlocks([]);
         expect(finalNotes.length).toBe(initialCount + 1);
@@ -31,6 +34,7 @@ describe("MultilineCardNote E2E Tests", () => {
 
         const parentBlock = await logseq.Editor.appendBlockInPage(page.uuid, "Parent #flashcard");
         await logseq.Editor.insertBlock(parentBlock.uuid, "Child");
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const finalNotes = await MultilineCardNote.getNotesFromLogseqBlocks([]);
         expect(finalNotes.length).toBe(initialCount + 1);
@@ -47,6 +51,7 @@ describe("MultilineCardNote E2E Tests", () => {
         
         const card2Parent = await logseq.Editor.insertBlock(rootBlock.uuid, "Parent Card 2 #card-group");
         await logseq.Editor.insertBlock(card2Parent.uuid, "Child Card 2");
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const finalNotes = await MultilineCardNote.getNotesFromLogseqBlocks([]);
         expect(finalNotes.length).toBe(initialCount + 2);

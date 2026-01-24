@@ -7,11 +7,13 @@ describe("ImageOcclusionNote E2E Tests", () => {
     let page: PageEntity;
     
     beforeEach(async () => {
-        page = await logseq.Editor.createPage('Test ImageOcclusionNote E2E', {}, {createFirstBlock: false});
+        page = await logseq.Editor.createPage('Test ImageOcclusionNote E2E', {}, {redirect: false, createFirstBlock: false});
+        await new Promise(resolve => setTimeout(resolve, 100));
     });
 
     afterEach(async () => {
         await logseq.Editor.deletePage('Test ImageOcclusionNote E2E');
+        await new Promise(resolve => setTimeout(resolve, 100));
     });
 
     test.skipIf(!globalThis.isLogseqAvailable)("Creates note with occlusion property", async () => {
@@ -23,6 +25,7 @@ describe("ImageOcclusionNote E2E Tests", () => {
                 occlusion: "eyIuLi9hc3NldHMvaW1hZ2VfMTc2NzI2MTkzMzEwNl8wLnBuZyI6eyJjb25maWciOnt9LCJlbGVtZW50cyI6W3sibGVmdCI6NjQuMDA3ODEyNSwidG9wIjozNi45Nywid2lkdGgiOjg4LjAxNTYyNTAwMDAwMDAxLCJoZWlnaHQiOjI3Ljk0LCJhbmdsZSI6MCwiY0lkIjoxfV19fQ==" 
             }
         });
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const finalNotes = await ImageOcclusionNote.getNotesFromLogseqBlocks();
         expect(finalNotes.length).toBe(initialCount + 1);

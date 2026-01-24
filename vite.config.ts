@@ -132,6 +132,13 @@ export default defineConfig(({ command, mode }) => {
             },
             environment: 'jsdom',
             env: {...env, NODE_ENV: mode},
+            pool: 'forks',
+            poolOptions: {
+                forks: {
+                    singleFork: true,
+                },
+            },
+            fileParallelism: false,
         }
     };
 });
