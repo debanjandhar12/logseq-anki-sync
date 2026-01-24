@@ -19,7 +19,7 @@ import {
 } from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {convertToHTMLFile, HTMLFile} from "../logseq/LogseqToHTMLConverterProxy";
-import {processProperties} from "../logseq/LogseqToHtmlConverter";
+import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import {
     OcclusionData,
     showOcclusionEditor,
@@ -250,7 +250,13 @@ export class ImageOcclusionNote extends Note {
     // -- Helper functions --
     public static async getImagesInBlockOrNote(block: any): Promise<string[]> {
         let block_content = block.content;
-        [block_content] = await processProperties(block_content); // Process pdf properties
+        // Preprocess to extract PDF properties and normalize format
+        const preprocessResult = await LogseqContentPreprocessor.preprocess(
+            block_content,
+            block.format || "markdown"
+        );
+        block_content = preprocessResult.content;
+        
         block_content = await safeReplaceAsync(
             block_content,
             LOGSEQ_BLOCK_REF_REGEXP,
@@ -283,10 +289,12 @@ export class ImageOcclusionNote extends Note {
                         : "";
                     block_ref_content_first_line =
                         block_ref_props_str + "\n" + block_ref_content_first_line;
-                    [block_ref_content_first_line] = await processProperties(
+                    // Preprocess to extract PDF properties and normalize format
+                    const refPreprocessResult = await LogseqContentPreprocessor.preprocess(
                         block_ref_content_first_line,
-                    ); // Process pdf properties
-                    return block_ref_content_first_line;
+                        block_ref?.format || "markdown"
+                    );
+                    return refPreprocessResult.content;
                 } catch (e) {
                     console.warn(e);
                 }

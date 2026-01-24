@@ -1,6 +1,5 @@
 import hljs from "highlight.js";
 import "@logseq/libs";
-import {EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import * as cheerio from "cheerio";
 import {
     decodeHTMLEntities,
@@ -23,20 +22,18 @@ import {
     LOGSEQ_PAGE_REF_REGEXP,
     LOGSEQ_RENAMED_BLOCK_REF_REGEXP,
     MD_MATH_BLOCK_REGEXP,
-    MD_PROPERTIES_REGEXP,
     ORG_MATH_BLOCK_REGEXP,
-    ORG_PROPERTIES_REGEXP,
     specialChars,
     LOGSEQ_RENAMED_PAGE_REF_REGEXP,
-    isAudio_REGEXP, isVideo_REGEXP
+    isAudio_REGEXP,
+    isVideo_REGEXP
 } from "../constants";
 import {LogseqProxy} from "./LogseqProxy";
 import * as hiccupConverter from "@thi.ng/hiccup";
 import {edn} from "@yellowdig/cljs-tools";
 import path from "path-browserify";
-import {WindowParentBridge} from "./WindowParentBridge";
 import getNameFromPage from "./getNameFromPage";
-import getUUIDFromBlock from "./getUUIDFromBlock";
+import {LogseqContentPreprocessor} from "./LogseqContentPreprocessor";
 
 const mldocsOptions = {
     toc: false,
@@ -70,10 +67,16 @@ export async function convertToHTMLFile(
     if (debug?.includes("LogseqToHtmlConverter.ts"))
         console.log("--Start Converting--\nOriginal:", resultContent);
 
-    let block_props;
-    [resultContent, block_props] = await processProperties(resultContent, format);
+    // Preprocess content to normalize format (DB/MD/Org -> internal format)
+    const preprocessResult = await LogseqContentPreprocessor.preprocess(
+        resultContent,
+        format as "markdown" | "org"
+    );
+    resultContent = preprocessResult.content;
+    const block_props = preprocessResult.properties;
+    
     if (debug?.includes("LogseqToHtmlConverter.ts"))
-        console.log("After processing embeded:", resultContent);
+        console.log("After preprocessing:", resultContent);
 
     if (format == "org") {
         mldocsOptions.format = "Org";
@@ -276,171 +279,16 @@ export async function convertToHTMLFile(
     return {html: resultContent, assets: resultAssets, tags: resultTags};
 }
 
-export async function processProperties(resultContent, format = "markdown"): Promise<[string,any]> {
-    resultContent = safeReplace(resultContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
-    const block_props = {};
-    resultContent = safeReplace(resultContent, MD_PROPERTIES_REGEXP, (match) => {
-        //Remove md properties
-        const [key, value] = match.split("::");
-        block_props[key.trim()] = value.trim();
-        return "";
-    });
-
-    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_EMBDED_PAGE_REGEXP, async (match, pageName) => {
-        try {
-            // Convert page ref syntax to standard internal representation: [[page-uuid]]
-            const page = await LogseqProxy.Editor.getPage(pageName);
-            if (page) {
-                const uuid = getUUIDFromBlock(page);
-                if (uuid) {
-                    return match.replace(pageName, uuid);
-                }
-            }
-        } catch (e) {}
-        return match;
-    });
-
-    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_PAGE_REF_REGEXP, async (match, pageName) => {
-        // Convert org mode stuff (for some reason logseq devs thought using [[]] for assets is great idea)
-        if (format == "org" && encodeURI(pageName).match(isImage_REGEXP)) {
-            return `![](${pageName})`; // this is actually an image
-        }
-        if (format == "org" && encodeURI(pageName).match(isWebURL_REGEXP)) {
-            return `${pageName}`; // this is actually a web URL
-        }
-
-        // In DB graphs, check if this is actually a block UUID (not a page name)
-        if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
-            if (pageName.length === 36) { // Check if it's a UUID
-                const possibleBlock = await LogseqProxy.Editor.getBlock(pageName);
-                if (possibleBlock) {
-                    return `((${possibleBlock.uuid}))`; // Convert to block ref
-                }
-            }
-        }
-        
-        try {
-            // Convert page ref syntax to standard internal representation: [[page-uuid]]
-            const page = await LogseqProxy.Editor.getPage(pageName);
-            if (page) {
-                const uuid = getUUIDFromBlock(page);
-                if (uuid) {
-                    return `[[${uuid}]]`;
-                }
-            }
-        } catch (e) {}
-        return `[[${pageName}]]`;
-    });
-
-    resultContent = await safeReplaceAsync(resultContent, LOGSEQ_RENAMED_PAGE_REF_REGEXP, async (match, aliasContent, pageName) => {
-        try {
-            // Convert page ref syntax to standard internal representation: [alias]([[page-uuid]])
-            const page = await LogseqProxy.Editor.getPage(pageName);
-            if (page) {
-                const uuid = getUUIDFromBlock(page);
-                if (uuid) {
-                    return `[${aliasContent}]([[${uuid}]])`;
-                }
-            }
-        } catch (e) {}
-        return match;
-    });
-
-    // Add support for pdf annotation
-    block_props["ls-type"] = block_props["ls-type"] || block_props["lsType"];
-    block_props["hl-type"] = block_props["hl-type"] || block_props["hlType"];
-    block_props["hl-page"] = block_props["hl-page"] || block_props["hlPage"];
-    block_props["hl-stamp"] = block_props["hl-stamp"] || block_props["hlStamp"];
-    block_props["hl-color"] = block_props["hl-color"] || block_props["hlColor"];
-    const annotationSymbolMap = {'yellow':'🟡', 'green':'🟢', 'blue':'🔵', 'red':'🔴', 'purple':'🟣'};
-    if (block_props["ls-type"] == "annotation" && block_props["hl-type"] == "area") {
-        // Image annotation
-        const block_uuid = block_props["id"] || block_props["nid"] || block_props["uuid"];
-        const block = await LogseqProxy.Editor.getBlock(block_uuid);
-        let hls_img_loc = "error";
-        try {
-            if (_.get(block, [":logseq.property.pdf/hl-image", "id"])) { // for db graphs
-                const assetBlock = await LogseqProxy.Editor.getBlock(_.get(block, [":logseq.property.pdf/hl-image", "id"]));
-                if (assetBlock) {
-                    hls_img_loc = `../assets/${assetBlock.uuid}.${assetBlock.properties.type}?imageAnnotationBlockUUID=${block_uuid}`;
-                }
-            }
-            else {   // for md graphs
-                const page = await LogseqProxy.Editor.getPage(block?.page?.id as number | PageIdentity);
-                if (page) {
-                    hls_img_loc = `../assets/${(getNameFromPage(page) ?? "").replace(
-                        "hls__",
-                        "",
-                    )}/${block_props["hl-page"]}_${block_uuid}_${
-                        block_props["hl-stamp"]
-                    }.png?imageAnnotationBlockUUID=${block_uuid}`;
-                }
-            }
-            resultContent =
-                `${annotationSymbolMap[block_props["hl-color"]] || '\ud83d\udccc'}**P${block_props["hl-page"]}** <div></div> ![](${hls_img_loc})\n` +
-                resultContent;
-        } catch (e) {console.warn(e);}
-    } else if (block_props["ls-type"] == "annotation") {
-        // Text annotation
-        try {
-            resultContent = `${annotationSymbolMap[block_props["hl-color"]] || '\ud83d\udccc'}**P${block_props["hl-page"]}** ` + resultContent;
-        } catch (e) {
-            console.log(e);
-        }
-    }
-
-    // Add backward support for assets
-    const tagsStr = _.get(block_props, 'tags', '[]');
-    let tags = [];
-    try {tags = JSON.parse(tagsStr)} catch (e) {console.warn(e)}
-    const type = _.get(block_props, 'type', '');
-    const uuid = _.get(block_props, 'uuid', '');
-    const hasAssetTag =
-        _.isArray(tags) &&
-        tags
-            .map(t => t.trim().toLowerCase())
-            .includes('asset');
-    if (hasAssetTag && !_.isEmpty(type) && !_.isEmpty(uuid)) {
-        let assetMarkdown = `![](../assets/${uuid}.${type})`;
-        const resizeMeta = _.get(block_props, 'resize-metadata');
-        let resizeMetaObj = {};
-        try {resizeMetaObj = JSON.parse(resizeMeta)} catch (e) {console.warn(e)}
-        if (_.isPlainObject(resizeMetaObj)) {
-            const width = _.get(resizeMetaObj, 'width', 0);
-            const height = _.get(resizeMetaObj, 'height', 0);
-            const metaParts = [];
-            if (_.isNumber(width) && width > 0) {
-                metaParts.push(`:width "${width}"`);
-            }
-            if (_.isNumber(height) && height > 0) {
-                metaParts.push(`:height "${height}"`);
-            }
-            if (metaParts.length > 0) {
-                assetMarkdown += `{${metaParts.join(' ')}}`;
-            }
-        }
-        resultContent = assetMarkdown + '\n' + resultContent;
-    }
-
-    // Add backward support for node embed
-    const link = _.get(block_props, 'link');
-    const linkDBId = _.toInteger(link);
-    if (linkDBId) {
-        const block = await LogseqProxy.Editor.getBlock(linkDBId as EntityID);
-        if (block) {
-            const blockUUID = getUUIDFromBlock(block);
-            if (blockUUID) {
-                resultContent = `{{embed ((${blockUUID}))}}` + '\n' + resultContent;
-            }
-        } else {
-            const page = await LogseqProxy.Editor.getPage(linkDBId as EntityID);
-            if (page) {
-                resultContent = `{{embed [[${page.uuid}]]}}` + '\n' + resultContent;
-            }
-        }
-    }
-
-    return [resultContent, block_props];
+/**
+ * @deprecated Use LogseqContentPreprocessor.preprocess() instead.
+ * This function is kept for backward compatibility with tests.
+ */
+export async function processProperties(resultContent: string, format = "markdown"): Promise<[string, any]> {
+    const result = await LogseqContentPreprocessor.preprocess(
+        resultContent,
+        format as "markdown" | "org"
+    );
+    return [result.content, result.properties];
 }
 
 async function processRefEmbeds(
@@ -607,13 +455,17 @@ async function processRefEmbeds(
                 const block = await LogseqProxy.Editor.getBlock(blockUUID);
                 let block_content = block?.content;
                 const block_props = block?.properties;
-                block_content = safeReplace(block_content, MD_PROPERTIES_REGEXP, "");
-                block_content = safeReplace(block_content, ORG_PROPERTIES_REGEXP, "");
+                
+                // Get first non-empty line and escape clozes
                 let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
                 block_content_first_line = escapeClozesAndMacroDelimiters(block_content_first_line);
+                
+                // Reconstruct content with properties for preprocessing
                 let blockRef_content = block_content_first_line;
                 for (const [prop, value] of Object.entries(block_props))
                     blockRef_content += `\n${prop}:: ${value}`;
+                
+                // Convert to HTML (preprocessor will handle property stripping)
                 const blockRefHTMLFile = await convertToHTMLFile(
                     blockRef_content,
                     block?.format,

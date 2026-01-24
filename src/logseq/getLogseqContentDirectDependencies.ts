@@ -5,7 +5,7 @@ import {
     LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_PAGE_REF_REGEXP,
 } from "../constants";
 import {LogseqProxy} from "./LogseqProxy";
-import {processProperties} from "./LogseqToHtmlConverter";
+import {LogseqContentPreprocessor} from "./LogseqContentPreprocessor";
 import getUUIDFromBlock from "./getUUIDFromBlock";
 
 export interface BlockDependency {
@@ -23,8 +23,13 @@ export default async function getLogseqContentDirectDependencies(
     content: string,
     format = "markdown",
 ): Promise<DependencyEntity[]> {
+    // Normalize content to our internal format
     if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
-        [content] = await processProperties(content, format);
+        const preprocessResult = await LogseqContentPreprocessor.preprocess(
+            content,
+            format as "markdown" | "org"
+        );
+        content = preprocessResult.content;
     }
     if (content === null || content === undefined) return [];
     const blockDependency: Set<BlockUUID> = new Set();
