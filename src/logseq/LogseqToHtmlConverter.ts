@@ -374,36 +374,6 @@ export class LogseqToHtmlConverter {
                 const str = getRandomUnicodeString();
                 const graphName = (await this.getCurrentGraph())?.name;
                 
-                // In DB mode, [[uuid]] might reference a block, not a page
-                // Check if this is a block UUID first
-                const isDbGraph = await this.checkCurrentIsDbGraph();
-                if (isDbGraph) {
-                    try {
-                        const block = await this.getBlock(pageIdStr);
-                        if (block) {
-                            // This is a block reference in DB mode
-                            let block_content = block?.content;
-                            const block_props = block?.properties || {};
-                            
-                            let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
-                            block_content_first_line = escapeClozesAndMacroDelimiters(block_content_first_line);
-                            
-                            let blockRef_content = block_content_first_line;
-                            for (const [prop, value] of Object.entries(block_props))
-                                blockRef_content += `\n${prop}:: ${value}`;
-                            
-                            const blockRefHTMLFile = await this.convertToHTMLFile(blockRef_content, block?.format);
-                            blockRefHTMLFile.assets.forEach((element) => {
-                                resultAssets.add(element);
-                            });
-                            hashmap[str] = `<span onclick="window.open('logseq://graph/${encodeURIComponent(graphName)}?block-id=${encodeURIComponent(pageIdStr)}')" class="block-ref">${blockRefHTMLFile.html}</span>`;
-                            return str;
-                        }
-                    } catch (e) {
-                        // Not a block, continue to page reference handling
-                    }
-                }
-                
                 // Handle as page reference
                 const pageId = safeParseInt(pageIdStr);
                 const displayName = await this.getPageNameFromID(pageId);
@@ -430,9 +400,10 @@ export class LogseqToHtmlConverter {
                 const str = getRandomUnicodeString();
                 try {
                     const block = await this.getBlock(blockUUID);
-                    let block_content = block?.content;
-                    const block_props = block?.properties || {};
-                    
+                    if (!block || !block.uuid) throw new Error("Block not found: " + blockUUID);
+                    let preprocessResult = await LogseqContentPreprocessor.preprocess(block?.content || "", block?.format || "markdown");
+                    let block_content = preprocessResult.content;
+                    let block_props = preprocessResult.properties || {};
                     let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
                     block_content_first_line = escapeClozesAndMacroDelimiters(block_content_first_line);
                     

@@ -266,35 +266,17 @@ export class ImageOcclusionNote extends Note {
                     // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
                     // Use helper method to get fresh block with properties
                     const block_ref = await LogseqPropertiesHelper.getBlock(blockUUID);
-                    let block_ref_content = _.get(block_ref, "content");
-                    const block_ref_props = _.get(block_ref, "properties");
-                    block_ref_content = safeReplace(
-                        block_ref_content,
-                        MD_PROPERTIES_REGEXP,
-                        "",
-                    );
-                    block_ref_content = safeReplace(
-                        block_ref_content,
-                        ORG_PROPERTIES_REGEXP,
-                        "",
-                    );
-                    let block_ref_content_first_line =
-                        getFirstNonEmptyLine(block_ref_content).trim();
-                    const block_ref_props_str = block_ref_props
-                        ? Object.keys(block_ref_props)
-                              .map((key) => {
-                                  return `${key}::${block_ref_props[key]}`;
-                              })
-                              .join("\n")
-                        : "";
-                    block_ref_content_first_line =
-                        block_ref_props_str + "\n" + block_ref_content_first_line;
-                    // Preprocess to extract PDF properties and normalize format
-                    const refPreprocessResult = await LogseqContentPreprocessor.preprocess(
-                        block_ref_content_first_line,
-                        block_ref?.format || "markdown"
-                    );
-                    return refPreprocessResult.content;
+                    let preprocessResult = await LogseqContentPreprocessor.preprocess(block_ref?.content || "", block_ref?.format || "markdown");
+                    let block_content = preprocessResult.content;
+                    let block_props = preprocessResult.properties || {};
+                    let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
+                    block_content_first_line = escapeClozesAndMacroDelimiters(block_content_first_line);
+
+                    let blockRef_content = block_content_first_line;
+                    for (const [prop, value] of Object.entries(block_props))
+                        blockRef_content += `\n${prop}:: ${value}`;
+
+                    return getFirstNonEmptyLine(blockRef_content);
                 } catch (e) {
                     console.warn(e);
                 }
