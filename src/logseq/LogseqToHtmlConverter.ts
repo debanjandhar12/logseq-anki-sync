@@ -291,7 +291,7 @@ export class LogseqToHtmlConverter {
                         blockContentHTMLFile.assets.forEach((element) => {
                             resultAssets.add(element);
                         });
-                        if (child.children.length > 0)
+                        if (child.children && child.children.length > 0)
                             blockContentHTMLFile.html += await getBlockEmbedContentHTML(child.children, level + 1);
                         result += blockContentHTMLFile.html;
                         result += `</li>`;

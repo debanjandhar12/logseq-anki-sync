@@ -30,6 +30,8 @@ export function regexPraser(input: string): RegExp {
 }
 
 export function escapeClozesAndMacroDelimiters(input: string): string {
+    if (!input) return "";
+
     return input
         .replace(LOGSEQ_PLUGIN_CLOZE_REGEXP, `<span class="anki-cloze-from-another-note" style="white-space: initial;" title="c$1 - $2">$2</span>`)
         .replace(ANKI_CLOZE_REGEXP, "$3")
