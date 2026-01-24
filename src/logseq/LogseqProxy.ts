@@ -235,7 +235,10 @@ export namespace LogseqProxy {
     export class App {
         static checkCurrentIsDbGraph = pMemoize(async () => {
             try {
-                return await logseq.App.checkCurrentIsDbGraph()
+                const value = await logseq.App.checkCurrentIsDbGraph();
+                if (typeof value === 'boolean') {
+                    return value;
+                }
             } catch (e) {}
             return false;
         });

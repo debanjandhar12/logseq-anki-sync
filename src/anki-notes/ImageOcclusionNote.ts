@@ -191,7 +191,7 @@ export class ImageOcclusionNote extends Note {
                 ]`, {suppressErrors: false});
         }
         let notes: (ImageOcclusionNote | false)[] = await Promise.all(
-            blocks.map(async (b) => {
+            (blocks || []).map(async (b) => {
                 const uuid = getUUIDFromBlock(b[0]);
                 const pageId = _.get(b[0], 'page.id');
                 if (!pageId) return null;

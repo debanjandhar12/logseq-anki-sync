@@ -280,6 +280,7 @@ export class LogseqToHtmlConverter {
             async (match, g1) => {
                 const getBlockEmbedContentHTML = async (children: any, level = 0): Promise<string> => {
                     if (level >= 100) return "";
+                    if (!Array.isArray(children) || children.length === 0) return "";
                     let result = `\n<ul class="children-list">`;
                     for (const child of children) {
                         result += `\n<li class="children ${child?.properties?.['logseq.orderListType'] === "number" ? 'numbered' : ''}">`;
@@ -319,6 +320,7 @@ export class LogseqToHtmlConverter {
 
                 const getPageContentHTML = async (children: any, level = 0): Promise<string> => {
                     if (level >= 100) return "";
+                    if (!Array.isArray(children) || children.length === 0) return "";
                     let result = `\n<ul class="children-list">`;
                     for (const child of children) {
                         result += `\n<li class="children ${child?.properties?.['logseq.orderListType'] === "number" ? 'numbered' : ''}">`;
@@ -368,10 +370,42 @@ export class LogseqToHtmlConverter {
             resultContent,
             LOGSEQ_PAGE_REF_REGEXP,
             async (match, pageIdStr: string) => {
-                const pageId = safeParseInt(pageIdStr);
-                const displayName = await this.getPageNameFromID(pageId);
                 const str = getRandomUnicodeString();
                 const graphName = (await this.getCurrentGraph())?.name;
+                
+                // In DB mode, [[uuid]] might reference a block, not a page
+                // Check if this is a block UUID first
+                const isDbGraph = await this.checkCurrentIsDbGraph();
+                if (isDbGraph) {
+                    try {
+                        const block = await this.getBlock(pageIdStr);
+                        if (block) {
+                            // This is a block reference in DB mode
+                            let block_content = block?.content;
+                            const block_props = block?.properties || {};
+                            
+                            let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
+                            block_content_first_line = escapeClozesAndMacroDelimiters(block_content_first_line);
+                            
+                            let blockRef_content = block_content_first_line;
+                            for (const [prop, value] of Object.entries(block_props))
+                                blockRef_content += `\n${prop}:: ${value}`;
+                            
+                            const blockRefHTMLFile = await this.convertToHTMLFile(blockRef_content, block?.format);
+                            blockRefHTMLFile.assets.forEach((element) => {
+                                resultAssets.add(element);
+                            });
+                            hashmap[str] = `<span onclick="window.open('logseq://graph/${encodeURIComponent(graphName)}?block-id=${encodeURIComponent(pageIdStr)}')" class="block-ref">${blockRefHTMLFile.html}</span>`;
+                            return str;
+                        }
+                    } catch (e) {
+                        // Not a block, continue to page reference handling
+                    }
+                }
+                
+                // Handle as page reference
+                const pageId = safeParseInt(pageIdStr);
+                const displayName = await this.getPageNameFromID(pageId);
                 hashmap[str] = `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(displayName)}" class="page-reference">${displayName}</a>`;
                 return str;
             },
@@ -623,6 +657,14 @@ export class LogseqToHtmlConverter {
         return await logseq.App.getCurrentGraph();
     }
 
+    protected static async checkCurrentIsDbGraph() {
+        try {
+            return await logseq.App.checkCurrentIsDbGraph() as boolean;
+        } catch {
+            return false;
+        }
+    }
+
     protected static async getBlock(srcBlock: string, opts?: any) {
         return await logseq.Editor.getBlock(srcBlock, opts);
     }
@@ -654,6 +696,10 @@ export class LogseqToHtmlConverterProxy extends LogseqToHtmlConverter {
 
     protected static async getCurrentGraph() {
         return await LogseqProxy.App.getCurrentGraph();
+    }
+
+    protected static async checkCurrentIsDbGraph() {
+        return Boolean(await LogseqProxy.App.checkCurrentIsDbGraph());
     }
 
     protected static async getBlock(srcBlock: string, opts?: any) {

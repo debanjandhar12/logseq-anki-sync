@@ -93,9 +93,9 @@ const addBlockNode = async (blockUUID : BlockUUID) => {
     graph.dependenciesOf(blockUUID + "Block").forEach((dependency) => {
         toHash.push(graph.getNodeData(dependency));
     });
-    console.log(block);
     toHash.push([
         _.get(blockPage, "updatedAt", ""),
+        _.get(block, "properties", ""),
         _.get(block, "updatedAt", ""),
         _.get(block, "content", "").length,
         _.get(block, "parent.id", ""),

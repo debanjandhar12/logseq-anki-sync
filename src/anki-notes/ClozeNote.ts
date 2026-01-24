@@ -260,7 +260,11 @@ export class ClozeNote extends Note {
                 ]`, {suppressErrors: false});
         }
 
-        let blocks = [...macroCloze_blocks, ...replaceCloze_blocks, ...orgCloze_blocks];
+        let blocks = [
+            ...(macroCloze_blocks || []), 
+            ...(replaceCloze_blocks || []), 
+            ...(orgCloze_blocks || [])
+        ];
         let notes = await Promise.all(
             blocks.map(async (b) => {
                 const uuid = getUUIDFromBlock(b[0]);

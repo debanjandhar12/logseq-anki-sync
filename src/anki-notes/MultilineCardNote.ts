@@ -207,40 +207,40 @@ export class MultilineCardNote extends Note {
                 :where
                 [?p :block/name "card"]
                 [?b :block/refs ?p]
-                ]`, {suppressErrors: false});
+                ]`, {suppressErrors: false}) || [];
             flashCard_blocks = await LogseqProxy.DB.datascriptQuery(`
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?p :block/name "flashcard"]
                 [?b :block/refs ?p]
-                ]`, {suppressErrors: false});
+                ]`, {suppressErrors: false}) || [];
             logseqCardGroup_blocks = await LogseqProxy.DB.datascriptQuery(`
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?r :block/name "card-group"]
                 [?p :block/refs ?r]
                 [?b :block/parent ?p]
-                ]`, {suppressErrors: false});
+                ]`, {suppressErrors: false}) || [];
         } else {
             logseqCard_blocks = await LogseqProxy.DB.datascriptQuery(`
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?p :block/name "card"]
                 [?b :block/tags ?p]
-                ]`, {suppressErrors: false});
+                ]`, {suppressErrors: false}) || [];
             flashCard_blocks = await LogseqProxy.DB.datascriptQuery(`
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?p :block/name "flashcard"]
                 [?b :block/tags ?p]
-                ]`, {suppressErrors: false});
+                ]`, {suppressErrors: false}) || [];
             logseqCardGroup_blocks = await LogseqProxy.DB.datascriptQuery(`
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?r :block/name "card-group"]
                 [?p :block/tags ?r]
                 [?b :block/parent ?p]
-                ]`, {suppressErrors: false});
+                ]`, {suppressErrors: false}) || [];
         }
         logseqCardGroup_blocks = await Promise.all(
             logseqCardGroup_blocks.map(async (block) => {
@@ -254,9 +254,9 @@ export class MultilineCardNote extends Note {
             }),
         );
         let blocks = [
-            ...logseqCard_blocks,
-            ...flashCard_blocks,
-            ...logseqCardGroup_blocks,
+            ...(logseqCard_blocks || []),
+            ...(flashCard_blocks || []),
+            ...(logseqCardGroup_blocks || []),
         ];
         let notes = await Promise.all(
             blocks.map(async (b) => {

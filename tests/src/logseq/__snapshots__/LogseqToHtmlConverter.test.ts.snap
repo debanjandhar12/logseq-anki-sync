@@ -191,6 +191,16 @@ exports[`E2E cases for DB mode > Block Reference Rendering > Basic block ref ren
     </span></span>"
 `;
 
+exports[`E2E cases for DB mode > Block Reference Rendering > Basic block ref rendering 2`] = `"<span>Hello <a href="logseq://graph/LAS-TEST-GRAPH?page=Ref%20Test" class="page-reference">Ref Test</a></span>"`;
+
+exports[`E2E cases for DB mode > Block Reference Rendering > Basic block ref rendering 3`] = `"<span><a href="logseq://graph/LAS-TEST-GRAPH?page=Ref%20Test" class="page-reference">Ref Test</a><a href="logseq://graph/LAS-TEST-GRAPH?page=Ref%20Test" class="page-reference">Ref Test</a> <a href="logseq://graph/LAS-TEST-GRAPH?page=Ref%20Test" class="page-reference">Ref Test</a>,<a href="logseq://graph/LAS-TEST-GRAPH?page=Ref%20Test" class="page-reference">Ref Test</a></span>"`;
+
+exports[`E2E cases for DB mode > Block Reference Rendering > Basic block ref rendering 4`] = `
+"<span>Block Ref: <span onclick="window.open('logseq://graph/LAS-TEST-GRAPH?block-id=LAS-TEST-UUID')" class="block-ref">
+      <span>A *<b>block</b>* with no ref.</span>
+    </span></span>"
+`;
+
 exports[`E2E cases for DB mode > PDF Rendering cases > PDF Image Annotation Rendering 1`] = `
 "<span>🟡<b>P1</b> <div></div> <a href="#error">error</a>
         <br>
@@ -206,6 +216,84 @@ exports[`E2E cases for DB mode > Page Embed Rendering > Basic page embed renderi
 `;
 
 exports[`E2E cases for DB mode > Page Reference Rendering > Basic page ref rendering 1`] = `"<span>Page Ref: <a href="logseq://graph/LAS-TEST-GRAPH?page=Test%20DB%20Ref%20Page" class="page-reference">Test DB Ref Page</a></span>"`;
+
+exports[`E2E cases for non DB mode > Block Embed Rendering > Basic block embed rendering 1`] = `
+"<span>Block Embed: <div class="embed-block">
+<ul class="children-list">
+<li class="children ">
+      <span>A *<b>block</b>* with no ref.</span>
+    </li></ul></div></span>"
+`;
+
+exports[`E2E cases for non DB mode > Block Embed Rendering > Formatting check inside block embed rendering 1`] = `
+"<span>Block Embed: <div class="embed-block">
+<ul class="children-list">
+<li class="children ">
+      <span>A block with \`function() hi {}\` and <a href="logseq://graph/LAS-TEST-GRAPH?page=test" class="page-reference">test</a></span>
+    </li></ul></div></span>"
+`;
+
+exports[`E2E cases for non DB mode > Block Embed Rendering > Nested block embed rendering 1`] = `
+"<span>Block Embed: <div class="embed-block">
+<ul class="children-list">
+<li class="children ">
+      <span>A block with page embed <div class="embed-block">
+<ul class="children-list">
+<li class="children ">
+      <span>A block with no ref</span>
+    </li></ul></div></span>
+    </li></ul></div></span>"
+`;
+
+exports[`E2E cases for non DB mode > Block Embed Rendering > block ref inside block embed rendering 1`] = `
+"<span>Block Embed: <div class="embed-block">
+<ul class="children-list">
+<li class="children ">
+      <span>A block with ref <span onclick="window.open('logseq://graph/LAS-TEST-GRAPH?block-id=LAS-TEST-UUID-1')" class="block-ref">
+      <span>A block with no ref.</span>
+    </span></span>
+    </li></ul></div></span>"
+`;
+
+exports[`E2E cases for non DB mode > Block Reference Rendering > Basic block ref rendering 1`] = `
+"<span>Block Ref: <span onclick="window.open('logseq://graph/LAS-TEST-GRAPH?block-id=LAS-TEST-UUID')" class="block-ref">
+      <span>A *<b>block</b>* with no ref.
+        <br>
+</span>
+    </span></span>"
+`;
+
+exports[`E2E cases for non DB mode > Block Reference Rendering > Failed block ref rendering 1`] = `"<span>Block Ref: <span class="failed-block-ref">wrong-block-ref</span></span>"`;
+
+exports[`E2E cases for non DB mode > Block Reference Rendering > Renamed block ref rendering 1`] = `"<span>Block Ref: <a href="logseq://graph/LAS-TEST-GRAPH?block-id=LAS-TEST-UUID" class="block-ref">Renamed Block</a></span>"`;
+
+exports[`E2E cases for non DB mode > PDF Rendering cases > Basic PDF rendering 1`] = `"<span><a href="#-2e--2e--2f-assets-2f-Linux_Slides_1_1673180335043_0-2e-pdf">../assets/Linux_Slides_1_1673180335043_0.pdf</a></span>"`;
+
+exports[`E2E cases for non DB mode > PDF Rendering cases > PDF Image Annotation Rendering 1`] = `
+"<span>�<b>P1</b> <div></div> <a href="#error">error</a>
+        <br>
+<span></span></span>"
+`;
+
+exports[`E2E cases for non DB mode > PDF Rendering cases > PDF Text Annotation Rendering - no color 1`] = `"<span>📌<b>P1</b> I am pdf page content</span>"`;
+
+exports[`E2E cases for non DB mode > PDF Rendering cases > PDF Text Annotation Rendering 1`] = `"<span>�<b>P1</b> I am pdf page content</span>"`;
+
+exports[`E2E cases for non DB mode > Page Embed Rendering > Basic page embed rendering 1`] = `"<span>Page Embed: <div class="embed-page"><a href="logseq://graph/LAS-TEST-GRAPH?page=Test%20Embed%20Page" class="embed-header">Test Embed Page</a></div></span>"`;
+
+exports[`E2E cases for non DB mode > Page Embed Rendering > Invalid page embed rendering 1`] = `"<span>Page Embed: <div class="embed-page"><a href="logseq://graph/TestMDG?page=invalid-page" class="embed-header">invalid-page</a></div></span>"`;
+
+exports[`E2E cases for non DB mode > Page Reference Rendering > Basic page ref rendering 1`] = `"<span>Page Ref: <a href="logseq://graph/LAS-TEST-GRAPH?page=Test%20Ref%20Page" class="page-reference">Test Ref Page</a></span>"`;
+
+exports[`E2E cases for non DB mode > Page Reference Rendering > Renamed page ref rendering 1`] = `"<span>Page Ref: <a href="logseq://graph/LAS-TEST-GRAPH?page=Original%20Page%20Name" class="page-reference">Renamed Page</a></span>"`;
+
+exports[`Page + Block Embed Rendering > Page with block embed to another block 1`] = `
+"<span><div class="embed-block">
+<ul class="children-list">
+<li class="children ">
+      <span>Hello world</span>
+    </li></ul></div></span>"
+`;
 
 exports[`Regression Cases > Math inside table 1`] = `
 "<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">

@@ -18,7 +18,8 @@ try {
   
   // Check if current graph is DB graph
   // @ts-ignore
-  globalThis.isLogseqCurrentIsDBGraph = await logseq.App.checkCurrentIsDbGraph();
+  const isDBGraphAPIResponse = await logseq.App.checkCurrentIsDbGraph();
+  globalThis.isLogseqCurrentIsDBGraph = typeof isDBGraphAPIResponse === 'boolean' ? isDBGraphAPIResponse : false;
 } catch {
   globalThis.isLogseqAvailable = false;
   globalThis.isLogseqCurrentIsDBGraph = false;

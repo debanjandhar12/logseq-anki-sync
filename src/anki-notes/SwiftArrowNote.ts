@@ -73,7 +73,7 @@ export class SwiftArrowNote extends Note {
                 [(re-find ?regex ?content)])                                                                                                                          
            (and [?b :block/title ?content]                                                                                                                            
                 [(re-find ?regex ?content)]))]`, {suppressErrors: false});
-        let blocks = [...singleSwiftArrowBlocks];
+        let blocks = [...(singleSwiftArrowBlocks || [])];
         let notes = await Promise.all(
             blocks.map(async (b) => {
                 const uuid = getUUIDFromBlock(b[0]);

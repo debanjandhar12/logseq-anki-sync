@@ -30,9 +30,11 @@ export default class NoteHashCalculator {
         const assetModifiedTimeMap = new Map<string, number>();
         try {
             const files = await LogseqProxy.Assets.listFilesOfCurrentGraph();
-            for (const file of files) {
-                const filename = path.basename(file.path);
-                assetModifiedTimeMap.set(filename, file.modifiedTime);
+            if (Array.isArray(files)) {
+                for (const file of files) {
+                    const filename = path.basename(file.path);
+                    assetModifiedTimeMap.set(filename, file.modifiedTime);
+                }
             }
         } catch (e) {
             console.error("[NoteHashCalculator] Error getting asset modified times:", e);
