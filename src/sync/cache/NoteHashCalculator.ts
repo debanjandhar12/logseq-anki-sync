@@ -108,7 +108,6 @@ export default class NoteHashCalculator {
         const assetsWithModifiedTime = assetsArray.map((assetPath: string) => {
             const filename = path.basename(assetPath);
             const modifiedTime = assetModifiedTimeMap.get(filename) || 0;
-            console.log(filename, assetPath, 'modifiedTime', modifiedTime);
             return modifiedTime;
         });
 

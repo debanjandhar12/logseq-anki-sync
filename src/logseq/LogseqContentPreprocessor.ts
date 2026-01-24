@@ -300,17 +300,13 @@ export class LogseqContentPreprocessor {
 
                 const symbol = annotationSymbolMap[hlColor] || "📌";
                 return `${symbol}**P${hlPage}** <div></div> ![](${hlsImgLoc})\n${content}`;
-            } catch (e) {
-                console.warn(e);
-            }
+            } catch (e) {}
         } else if (lsType === "annotation") {
             // Text annotation
             try {
                 const symbol = annotationSymbolMap[hlColor] || "📌";
                 return `${symbol}**P${hlPage}** ${content}`;
-            } catch (e) {
-                console.warn(e);
-            }
+            } catch (e) {}
         }
 
         return content;
@@ -331,9 +327,7 @@ export class LogseqContentPreprocessor {
         let tags: string[] = [];
         try {
             tags = JSON.parse(tagsStr);
-        } catch (e) {
-            console.warn(e);
-        }
+        } catch (e) {}
 
         const type = _.get(properties, "type", "");
         const uuid = _.get(properties, "uuid", "");
@@ -348,9 +342,7 @@ export class LogseqContentPreprocessor {
             let resizeMetaObj: Record<string, any> = {};
             try {
                 resizeMetaObj = JSON.parse(resizeMeta);
-            } catch (e) {
-                console.warn(e);
-            }
+            } catch (e) {}
 
             if (_.isPlainObject(resizeMetaObj)) {
                 const width = _.get(resizeMetaObj, "width", 0);
@@ -436,15 +428,19 @@ export class LogseqContentPreprocessorProxy extends LogseqContentPreprocessor {
         return await LogseqProxy.Editor.getBlock(srcBlock);
     }
 
-    static preprocess = pMemoize(
+    // Private memoized implementation - accessed by event listener below
+    private static readonly _preprocessMemoized = pMemoize(
         async (content: string, format: "markdown" | "org" = "markdown"): Promise<PreprocessResult> => {
-            // Call parent preprocess which will use our overridden methods (LogseqProxy)
-            return await super.preprocess(content, format);
+            return await LogseqContentPreprocessor.preprocess.call(LogseqContentPreprocessorProxy, content, format);
         }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
+
+    static async preprocess(content: string, format: "markdown" | "org" = "markdown"): Promise<PreprocessResult> {
+        return await this._preprocessMemoized(content, format);
+    }
 }
 
 if (typeof window !== 'undefined') {
     WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
-        pMemoizeClear(LogseqContentPreprocessorProxy.preprocess);
+        pMemoizeClear((LogseqContentPreprocessorProxy as any)._preprocessMemoized);
     });
 }

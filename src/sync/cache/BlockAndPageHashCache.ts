@@ -11,7 +11,7 @@ import {DepGraph} from "dependency-graph";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 import getLogseqContentDirectDependencies from "../../logseq/getLogseqContentDirectDependencies";
 import _ from "lodash";
-import {BlockUUID} from "@logseq/libs/dist/LSPlugin";
+import {BlockUUID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import objectHashOptimized from "../../utils/objectHashOptimized";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
@@ -67,7 +67,7 @@ const addBlockNode = async (blockUUID : BlockUUID) => {
     graph.addNode(blockUUID + "Block");
     const block = await LogseqProxy.Editor.getBlock(blockUUID);
     if (!block) return;
-    const blockPage = await LogseqProxy.Editor.getPage(block.page.id);
+    const blockPage = await LogseqProxy.Editor.getPage(_.get(block, "page.id", "") as PageIdentity);
     const directDependencies = await getLogseqContentDirectDependencies(
         _.get(block, "content", ""),
         _.get(block, "format", ""),
