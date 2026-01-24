@@ -692,6 +692,3 @@ if (typeof window !== 'undefined') {
         });
     });
 }
-
-// Backward compatibility: export function that uses base class (non-cached)
-export const convertToHTMLFile = LogseqToHtmlConverter.convertToHTMLFile.bind(LogseqToHtmlConverter);

@@ -1,35 +1,35 @@
 import "@logseq/libs"
 import * as cheerio from "cheerio";
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
-import {convertToHTMLFile} from "../../../src/logseq/LogseqToHtmlConverter";
+import {LogseqToHtmlConverter} from "../../../src/logseq/LogseqToHtmlConverter";
 import {LogseqContentPreprocessor} from "../../../src/logseq/LogseqContentPreprocessor";
 import {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 
 describe("Basic Markdown Cases", () => {
     describe("Basic Inline rendering", () => {
         test("Single line text rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Hello World", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Hello World", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('Hello World');
         });
         test("Multiline text rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Hello\nWorld", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Hello\nWorld", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toMatch(/Hello(\s|\n)*<br\/?>(\s|\n)*World/g);
         });
         test("Bold Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("This **bold** and this __bold__ too.", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("This **bold** and this __bold__ too.", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('This <b>bold</b> and this <b>bold</b> too.');
         });
         test("Italic Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("This *italic* and this _italic_ too.", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("This *italic* and this _italic_ too.", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('This <i>italic</i> and this <i>italic</i> too.');
         });
         test("Property parsing should work and removed from HTML content", async () => {
             const content = "logseq.text-color:: green\nHello World\nbackground-color:: red";
-            const htmlFile = await convertToHTMLFile(content, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(content, "markdown");
             const preprocessResult = await LogseqContentPreprocessor.preprocess(content, "markdown");
             expect(htmlFile.html).toContain("Hello World");
             expect(preprocessResult.properties['logseq.text-color']).not.toBeNull();
@@ -39,18 +39,18 @@ describe("Basic Markdown Cases", () => {
             expect(htmlFile.html).not.toContain("background-color::");
         });
         test("HTML Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Hello <b>World</b>", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Hello <b>World</b>", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('Hello <b>World</b>');
         });
         test("Hiccup Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Hello [:b World]", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Hello [:b World]", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('b').text()).toBe('World');
         });
         test("Admonition Rendering - Important", async () => {
-            const htmlFile = await convertToHTMLFile(`#+BEGIN_IMPORTANT
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`#+BEGIN_IMPORTANT
             Hello World.
             #+END_IMPORTANT`, "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
@@ -59,20 +59,20 @@ describe("Basic Markdown Cases", () => {
         });
         test("Admonition Rendering - Quote", async () => {
             // This is deprecated in db version but kept for backward compatibility
-            const htmlFile = await convertToHTMLFile(`> Hello World.`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`> Hello World.`, "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('blockquote').text()).toContain('Hello World.');
         });
         test("logseq block highlight / coloring", async () => {
-            const htmlFile = await convertToHTMLFile(`background-color:: red\nHello World.`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`background-color:: red\nHello World.`, "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('span').text()).toContain('Hello World.');
             expect($('span').hasClass('block-highlight-red')).toBe(true);
         });
         test("Code Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("``Hello`` `World`", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("``Hello`` `World`", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('<code>Hello</code> <code>World</code>');
         });
@@ -80,7 +80,7 @@ describe("Basic Markdown Cases", () => {
             // Create the page that will be referenced
             await logseq.Editor.createPage('Ref Test', {}, {createFirstBlock: false});
             
-            const htmlFile = await convertToHTMLFile("Hello [[Ref Test]]", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Hello [[Ref Test]]", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
@@ -96,7 +96,7 @@ describe("Basic Markdown Cases", () => {
             // Create the page that will be referenced
             await logseq.Editor.createPage('Ref Test', {}, {createFirstBlock: false});
             
-            const htmlFile = await convertToHTMLFile("[[Ref Test]][[Ref Test]] [[Ref Test]],[[Ref Test]]", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("[[Ref Test]][[Ref Test]] [[Ref Test]],[[Ref Test]]", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
@@ -108,7 +108,7 @@ describe("Basic Markdown Cases", () => {
             await logseq.Editor.deletePage('Ref Test');
         });
         test("Https / Http URL Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Hello [World](https://example.com) https://example.com http://example.com", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Hello [World](https://example.com) https://example.com http://example.com", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('a')).toHaveLength(3);
@@ -118,14 +118,14 @@ describe("Basic Markdown Cases", () => {
             expect($('a').last().attr('href')).toBe('http://example.com');
         });
         test("MarginNote URL Parsing - https://github.com/debanjandhar12/logseq-anki-sync/issues/74", async () => {
-            const htmlFile = await convertToHTMLFile("[Some notes](marginnote3app://note/8B11CF4A-DE3C-4A71-84G8-ODF5EE2EBO4C)", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("[Some notes](marginnote3app://note/8B11CF4A-DE3C-4A71-84G8-ODF5EE2EBO4C)", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('a').text()).toBe('Some notes');
             expect($('a').attr('href')).toBe('marginnote3app://note/8B11CF4A-DE3C-4A71-84G8-ODF5EE2EBO4C');
         });
         test.skipIf(!globalThis.isLogseqAvailable)("Tag Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Hello #World", "markdown", {displayTags: true});
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Hello #World", "markdown", {displayTags: true});
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
@@ -134,7 +134,7 @@ describe("Basic Markdown Cases", () => {
             expect($('a').text()).toBe('#World');
             expect($('a').attr('data-ref')).toBe('World');
             expect($('a').attr('href')).toBe(`logseq://graph/${graphName}?page=World`);
-            const htmlFile2 = await convertToHTMLFile("Hello #World", "markdown");
+            const htmlFile2 = await LogseqToHtmlConverter.convertToHTMLFile("Hello #World", "markdown");
             const $2 = cheerio.load(htmlFile2.html);
             expect($2('a').text()).toBe('');
             expect($2('a').attr('data-ref')).toBe('World');
@@ -142,25 +142,25 @@ describe("Basic Markdown Cases", () => {
     });
     describe("Code Block rendering", () => {
         test("Inline Code Block", async () => {
-            const htmlFile = await convertToHTMLFile("`function hello() { console.log('Hello World'); }`", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("`function hello() { console.log('Hello World'); }`", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('code').text()).toContain('function hello() { console.log(\'Hello World\'); }');
         });
         test("Basic Code Block", async () => {
-            const htmlFile = await convertToHTMLFile("```\nfunction hello() {\n  console.log(`Hello World`);\n}\n```", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("```\nfunction hello() {\n  console.log(`Hello World`);\n}\n```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
         });
         test("Basic Code Block with ~~~ syntax", async () => {
-            const htmlFile = await convertToHTMLFile("~~~\nfunction hello() {\n  console.log(`Hello World`);\n}\n~~~", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("~~~\nfunction hello() {\n  console.log(`Hello World`);\n}\n~~~", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
         });
         test("Two Basic Code Block - one after another", async () => {
-            const htmlFile = await convertToHTMLFile("Test:\n```\nfunction hello() {\n  console.log(`Hello World`);\n}\n```\n```\nfunction hello() {\n  console.log(`Hello World`);\n}\n```", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Test:\n```\nfunction hello() {\n  console.log(`Hello World`);\n}\n```\n```\nfunction hello() {\n  console.log(`Hello World`);\n}\n```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs')).toHaveLength(2);
@@ -168,46 +168,46 @@ describe("Basic Markdown Cases", () => {
             expect($('.hljs').last().text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
         });
         test("Code Block with spacing", async () => {
-            const htmlFile = await convertToHTMLFile("   ```\nfunction hello() {\n  console.log(`Hello World`);\n}\n\t ```", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("   ```\nfunction hello() {\n  console.log(`Hello World`);\n}\n\t ```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
         });
         test("Code Block with character first line", async () => {
-            const htmlFile = await convertToHTMLFile("randomchar ```\nfunction hello() {\n  console.log(`Hello World`);\n}\n\t ```", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("randomchar ```\nfunction hello() {\n  console.log(`Hello World`);\n}\n\t ```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').length).toBe(0);
         });
         test("Everything after codeblock start line should be ignored", async () => {
-            const htmlFile = await convertToHTMLFile("   ```js randomchar\nfunction hello() {\n  console.log(`Hello World`);\n}\n```", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("   ```js randomchar\nfunction hello() {\n  console.log(`Hello World`);\n}\n```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
             expect(htmlFile.html).not.toContain('randomchar');
         });
         test("Everything after codeblock end line should be ignored", async () => {
-            const htmlFile = await convertToHTMLFile("```\nfunction hello() {\n  console.log(`Hello World`);\n}\n``` randomchar\nOk", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("```\nfunction hello() {\n  console.log(`Hello World`);\n}\n``` randomchar\nOk", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').text()).toContain('function hello() {\n  console.log(`Hello World`);\n}');
             expect(htmlFile.html).not.toContain('randomchar');
         });
         test("Codeblock end line before should not have nonspace char before", async () => {
-            const htmlFile = await convertToHTMLFile("   ```\nfunction hello() {\n  console.log(`Hello World`);\n}\nrandomchar\t ```", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("   ```\nfunction hello() {\n  console.log(`Hello World`);\n}\nrandomchar\t ```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').length).toBe(0);
         });
         test("Sql with < char should not render &lt; #269 #79", async () => {
-            const htmlFile = await convertToHTMLFile("```sql\nselect * from users where id < 1\n```", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("```sql\nselect * from users where id < 1\n```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').length).toBe(1);
             expect($('.hljs').text()).not.toContain('&lt;');
         });
         test("HTML codeblocks works correctly #269", async () => {
-            const htmlFile = await convertToHTMLFile("```html\n<!DOCTYPE html>\n```", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("```html\n<!DOCTYPE html>\n```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').length).toBe(1);
@@ -216,7 +216,7 @@ describe("Basic Markdown Cases", () => {
     });
     describe("Block Math rendering", () => {
        test("Math with arrow - https://github.com/debanjandhar12/logseq-anki-sync/issues/24", async () => {
-           const htmlFile = await convertToHTMLFile("$$<a,b>$$", "markdown");
+           const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("$$<a,b>$$", "markdown");
            expect(htmlFile.html.trim()).toMatchSnapshot();
            const $ = cheerio.load(htmlFile.html);
            expect($('.mathblock').html()).toContain('&lt;a,b&gt;');
@@ -224,7 +224,7 @@ describe("Basic Markdown Cases", () => {
     });
     describe("Media rendering", () => {
         test("Image Rendering - Local Image", async () => {
-            const htmlFile = await convertToHTMLFile("![](./assets/image.png)", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("![](./assets/image.png)", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.assets).toContain('./assets/image.png');
             const $ = cheerio.load(htmlFile.html);
@@ -233,7 +233,7 @@ describe("Basic Markdown Cases", () => {
         });
 
         test("Image Rendering - Web Image", async () => {
-            const htmlFile = await convertToHTMLFile("![](https://example.com/image.png)", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("![](https://example.com/image.png)", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('img').attr('src')).toEqual('https://example.com/image.png');
@@ -241,14 +241,14 @@ describe("Basic Markdown Cases", () => {
         });
 
         test("Image Rendering - Image with Alt Text", async () => {
-            const htmlFile = await convertToHTMLFile('![Alt Text](https://example.com/image.png)', "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile('![Alt Text](https://example.com/image.png)', "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('img').attr('alt')).toEqual('Alt Text');
         });
 
         test("Image Rendering - Image with Width and Height", async () => {
-            const htmlFile = await convertToHTMLFile('![Alt Text](https://example.com/image.png){:width "100" :height "200"}', "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile('![Alt Text](https://example.com/image.png){:width "100" :height "200"}', "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('img').attr('width')).toEqual('100');
@@ -256,7 +256,7 @@ describe("Basic Markdown Cases", () => {
         });
 
         test("Audio Rendering - Local Audio", async () => {
-            const htmlFile = await convertToHTMLFile("![](./assets/audio.mp3)", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("![](./assets/audio.mp3)", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.assets).toContain('./assets/audio.mp3');
             expect(htmlFile.html).toContain('[sound:audio.mp3]');
@@ -264,14 +264,14 @@ describe("Basic Markdown Cases", () => {
         });
 
         test("Audio Rendering - Web Audio", async () => {
-            const htmlFile = await convertToHTMLFile("![](https://example.com/audio.mp3)", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("![](https://example.com/audio.mp3)", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html).toContain('[sound:https://example.com/audio.mp3]');
             expect(htmlFile.assets.size).toBe(0);
         });
 
         test("Video Rendering - Local Video", async () => {
-            const htmlFile = await convertToHTMLFile("![](./assets/video.mp4)", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("![](./assets/video.mp4)", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.assets).toContain('./assets/video.mp4');
             const $ = cheerio.load(htmlFile.html);
@@ -281,39 +281,39 @@ describe("Basic Markdown Cases", () => {
     });
     describe("Latex Rendering", () => {
        test("Inline Latex Rendering", async () => {
-              const htmlFile = await convertToHTMLFile("This is inline latex: $\\frac{1}{2}$", "markdown");
+              const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("This is inline latex: $\\frac{1}{2}$", "markdown");
                 expect(htmlFile.html.trim()).toMatchSnapshot();
                 expect(htmlFile.html.trim()).toContain('\\(\\frac{1}{2}\\)');
        });
         test("Two Inline Latex Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("This is consecutive math: $\\frac{1}{2}$ $\\frac{3}{4}$", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("This is consecutive math: $\\frac{1}{2}$ $\\frac{3}{4}$", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('\\(\\frac{1}{2}\\)');
             expect(htmlFile.html.trim()).toContain('\\(\\frac{3}{4}\\)');
         });
        test("Block Latex Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("This is block latex: $$\\frac{1}{2}$$", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("This is block latex: $$\\frac{1}{2}$$", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('\\[\\frac{1}{2}\\]');
        });
     });
     describe("Anki Clozes Cases", () => {
         test("Math inside table with clozes", async () => {
-            const htmlFile = await convertToHTMLFile("| $\\frac{1}{ {{c2::2}} }$ | {{c1::$\\frac{1}{2}$}} |", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("| $\\frac{1}{ {{c2::2}} }$ | {{c1::$\\frac{1}{2}$}} |", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('table').text()).toContain('\\(\\frac{1}{ {{c2::2}} }\\)');
             expect($('table').text()).toContain('\\(\\frac{1}{2}\\)');
         });
         test("Clozes inside code", async () => {
-            const htmlFile = await convertToHTMLFile("```\n{{c1 class}} Apple;\n```", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("```\n{{c1 class}} Apple;\n```", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.hljs').text()).toContain('{{c1 class}}');
             expect($('.hljs').text()).toContain('Apple');
         });
         test("Clozes on code block", async () => {
-            const htmlFile = await convertToHTMLFile("{{c1::```\nclass Apple;\n```}}", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("{{c1::```\nclass Apple;\n```}}", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect(htmlFile.html.trim()).toMatch(/{{c1::\n(.|\n)*?\n\s*<span>}}<\/span>/g);
@@ -335,19 +335,19 @@ describe("E2E cases for non DB mode", () => {
 
     describe("PDF Rendering cases", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic PDF rendering", async () => {
-            const htmlFile = await convertToHTMLFile("![Linux Slides 1.pdf](../assets/Linux_Slides_1_1673180335043_0.pdf)", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("![Linux Slides 1.pdf](../assets/Linux_Slides_1_1673180335043_0.pdf)", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             // TODO: Add beauty to pdf links and check
         });
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("PDF Text Annotation Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("ls-type::annotation\nhl-page::1\nhl-color::blue\nI am pdf page content", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("ls-type::annotation\nhl-page::1\nhl-color::blue\nI am pdf page content", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('I am pdf page content');
             expect(htmlFile.html.trim()).toContain('P1');
             expect(htmlFile.html.trim()).toContain('🔵');
         });
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("PDF Text Annotation Rendering - no color", async () => {
-            const htmlFile = await convertToHTMLFile("ls-type::annotation\nhl-page::1\nI am pdf page content", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("ls-type::annotation\nhl-page::1\nI am pdf page content", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('I am pdf page content');
             expect(htmlFile.html.trim()).toContain('P1');
@@ -358,7 +358,7 @@ describe("E2E cases for non DB mode", () => {
             const pdfPage = await logseq.Editor.createPage('hls__Linux_Slides_Test', {}, {createFirstBlock: false});
             // Create the annotation block
             const block = await logseq.Editor.appendBlockInPage(pdfPage.uuid, "ls-type::annotation\nhl-type::area\nhl-page::1\nhl-color::blue\nhl-stamp::1673181377785\n[:span]");
-            const htmlFile = await convertToHTMLFile(block.content, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(block.content, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
@@ -379,7 +379,7 @@ describe("E2E cases for non DB mode", () => {
     describe("Block Reference Rendering", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic block ref rendering", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "A **block** with no ref.", {properties:{id: '68454f3f-f6b7-4784-b13b-08892b8f21cb'}});
-            const htmlFile = await convertToHTMLFile(`Block Ref: ((${block.uuid}))`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`Block Ref: ((${block.uuid}))`, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
@@ -393,7 +393,7 @@ describe("E2E cases for non DB mode", () => {
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Renamed block ref rendering", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "Original block content");
-            const htmlFile = await convertToHTMLFile(`Block Ref: [Renamed Block](((${block.uuid})))`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`Block Ref: [Renamed Block](((${block.uuid})))`, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
@@ -404,7 +404,7 @@ describe("E2E cases for non DB mode", () => {
         });
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Failed block ref rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Block Ref: ((wrong-block-ref))", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Block Ref: ((wrong-block-ref))", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.failed-block-ref').text()).toContain('wrong-block-ref');
@@ -414,7 +414,7 @@ describe("E2E cases for non DB mode", () => {
     describe("Page Reference Rendering", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic page ref rendering", async () => {
             const refPage = await logseq.Editor.createPage('Test Ref Page', {}, {createFirstBlock: false});
-            const htmlFile = await convertToHTMLFile("Page Ref: [[Test Ref Page]]", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Page Ref: [[Test Ref Page]]", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
@@ -426,7 +426,7 @@ describe("E2E cases for non DB mode", () => {
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Renamed page ref rendering", async () => {
             const refPage = await logseq.Editor.createPage('Original Page Name', {}, {createFirstBlock: false});
-            const htmlFile = await convertToHTMLFile("Page Ref: [Renamed Page]([[Original Page Name]])", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Page Ref: [Renamed Page]([[Original Page Name]])", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
@@ -440,7 +440,7 @@ describe("E2E cases for non DB mode", () => {
     describe("Block Embed Rendering", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Basic block embed rendering", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "A **block** with no ref.");
-            const htmlFile = await convertToHTMLFile(`Block Embed: {{embed ((${block.uuid}))}}`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`Block Embed: {{embed ((${block.uuid}))}}`, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
@@ -455,7 +455,7 @@ describe("E2E cases for non DB mode", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Nested block embed rendering", async () => {
             const block1 = await logseq.Editor.appendBlockInPage(page.uuid, "A block with no ref");
             const block2 = await logseq.Editor.appendBlockInPage(page.uuid, `A block with page embed {{embed ((${block1.uuid}))}}`);
-            const htmlFile = await convertToHTMLFile(`Block Embed: {{embed ((${block2.uuid}))}}`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`Block Embed: {{embed ((${block2.uuid}))}}`, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(block1.uuid, 'g'), 'LAS-TEST-UUID-1')
@@ -471,7 +471,7 @@ describe("E2E cases for non DB mode", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("block ref inside block embed rendering", async () => {
             const block1 = await logseq.Editor.appendBlockInPage(page.uuid, "A block with no ref.");
             const block2 = await logseq.Editor.appendBlockInPage(page.uuid, `A block with ref ((${block1.uuid}))`);
-            const htmlFile = await convertToHTMLFile(`Block Embed: {{embed ((${block2.uuid}))}}`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`Block Embed: {{embed ((${block2.uuid}))}}`, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(block1.uuid, 'g'), 'LAS-TEST-UUID-1')
@@ -487,7 +487,7 @@ describe("E2E cases for non DB mode", () => {
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Formatting check inside block embed rendering", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "A block with `function() hi {}` and [[test]]");
-            const htmlFile = await convertToHTMLFile(`Block Embed: {{embed ((${block.uuid}))}}`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`Block Embed: {{embed ((${block.uuid}))}}`, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
@@ -499,7 +499,7 @@ describe("E2E cases for non DB mode", () => {
         });
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Failed block embed rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Block Embed: {{embed ((wrong-block-ref))}}", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Block Embed: {{embed ((wrong-block-ref))}}", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             expect($('.embed-block').text()).toContain('');
@@ -511,7 +511,7 @@ describe("E2E cases for non DB mode", () => {
             const embedPage = await logseq.Editor.createPage('Test Embed Page', {}, {createFirstBlock: false});
             await logseq.Editor.appendBlockInPage(embedPage.uuid, "First block");
             await logseq.Editor.appendBlockInPage(embedPage.uuid, "Second block");
-            const htmlFile = await convertToHTMLFile("Page Embed: {{embed [[Test Embed Page]]}}", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Page Embed: {{embed [[Test Embed Page]]}}", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(embedPage.uuid, 'g'), 'LAS-TEST-UUID')
@@ -523,7 +523,7 @@ describe("E2E cases for non DB mode", () => {
         });
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Invalid page embed rendering", async () => {
-            const htmlFile = await convertToHTMLFile("Page Embed: {{embed [[invalid-page]]}}", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Page Embed: {{embed [[invalid-page]]}}", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             const $ = cheerio.load(htmlFile.html);
             // We do not show warning for embed pages currently as it is auto created in logseq and this case actually never happens
@@ -546,7 +546,7 @@ describe("Page + Block Embed Rendering", () => {
     test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Page with block embed to another block", async () => {
         const blockA = await logseq.Editor.appendBlockInPage(page.uuid, "Hello world");
         const blockB = await logseq.Editor.appendBlockInPage(page.uuid, `{{embed ((${blockA.uuid}))}}`);
-        const htmlFile = await convertToHTMLFile(blockB.content, "markdown");
+        const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(blockB.content, "markdown");
         const graphName = (await logseq.App.getCurrentGraph()).name;
         const normalized = htmlFile.html.trim()
             .replace(new RegExp(blockA.uuid, 'g'), 'LAS-TEST-UUID')
@@ -571,7 +571,7 @@ describe("E2E cases for DB mode", () => {
     describe("Block Reference Rendering", () => {
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Basic block ref rendering", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "A **block** with no ref.");
-            const htmlFile = await convertToHTMLFile(`Block Ref: [[${block.uuid}]]`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`Block Ref: [[${block.uuid}]]`, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
@@ -587,7 +587,7 @@ describe("E2E cases for DB mode", () => {
     describe("Page Reference Rendering", () => {
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Basic page ref rendering", async () => {
             const refPage = await logseq.Editor.createPage('Test DB Ref Page', {}, {createFirstBlock: false});
-            const htmlFile = await convertToHTMLFile("Page Ref: [[Test DB Ref Page]]", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("Page Ref: [[Test DB Ref Page]]", "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(graphName, 'g'), 'LAS-TEST-GRAPH');
@@ -602,7 +602,7 @@ describe("E2E cases for DB mode", () => {
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Basic block embed rendering", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "A **block** with no ref.");
             const embedBlockUuid = '67890123-4567-89ab-cdef-012345678901';
-            const htmlFile = await convertToHTMLFile(`uuid:: ${embedBlockUuid}\nlink:: ${block.id}`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`uuid:: ${embedBlockUuid}\nlink:: ${block.id}`, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID-1')
@@ -622,7 +622,7 @@ describe("E2E cases for DB mode", () => {
             await logseq.Editor.appendBlockInPage(embedPage.uuid, "First block");
             await logseq.Editor.appendBlockInPage(embedPage.uuid, "Second block");
             const embedBlockUuid = '67890123-4567-89ab-cdef-012345678902';
-            const htmlFile = await convertToHTMLFile(`uuid:: ${embedBlockUuid}\nlink:: ${embedPage.id}`, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(`uuid:: ${embedBlockUuid}\nlink:: ${embedPage.id}`, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(embedPage.uuid, 'g'), 'LAS-TEST-UUID-1')
@@ -637,7 +637,7 @@ describe("E2E cases for DB mode", () => {
 
     describe("PDF Rendering cases", () => {
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("PDF Text Annotation Rendering", async () => {
-            const htmlFile = await convertToHTMLFile("ls-type:: annotation\nhl-page:: 1\nhl-color:: yellow\nThe application can be made by a registered/enrolled elector", "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("ls-type:: annotation\nhl-page:: 1\nhl-color:: yellow\nThe application can be made by a registered/enrolled elector", "markdown");
             expect(htmlFile.html.trim()).toMatchSnapshot();
             expect(htmlFile.html.trim()).toContain('The application can be made');
             expect(htmlFile.html.trim()).toContain('P1');
@@ -647,7 +647,7 @@ describe("E2E cases for DB mode", () => {
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("PDF Image Annotation Rendering", async () => {
             const pdfPage = await logseq.Editor.createPage('hls__Linux_Slides_DB_Test', {}, {createFirstBlock: false});
             const block = await logseq.Editor.appendBlockInPage(pdfPage.uuid, "ls-type:: annotation\nhl-type:: area\nhl-page:: 1\nhl-color:: yellow\nhl-stamp:: 1767008103331\n[:span]");
-            const htmlFile = await convertToHTMLFile(block.content, "markdown");
+            const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(block.content, "markdown");
             const graphName = (await logseq.App.getCurrentGraph()).name;
             const normalized = htmlFile.html.trim()
                 .replace(new RegExp(block.uuid, 'g'), 'LAS-TEST-UUID')
@@ -668,23 +668,23 @@ describe("E2E cases for DB mode", () => {
 
 describe("Regression Cases", () => {
     test("Math inside table", async () => {
-        const htmlFile = await convertToHTMLFile("| Hello | $\\frac{1}{2}$ |", "markdown");
+        const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("| Hello | $\\frac{1}{2}$ |", "markdown");
         expect(htmlFile.html.trim()).toMatchSnapshot();
         const $ = cheerio.load(htmlFile.html);
         expect($('table').text()).toContain('\\(\\frac{1}{2}\\)');
     });
     test("https://github.com/debanjandhar12/logseq-anki-sync/issues/248", async () => {
-        const htmlFile = await convertToHTMLFile('```mips\nlw $t0, 4($gp) # fetch N\nmult $t0, $t0, $t0 # N*N\nlw $t1, 4($gp) # fetch N\nori $t2, $zero, 3 # 3\nmult $t1, $t1, $t2 # 3*N\nadd $t2, $t0, $t1 # N*N + 3*N\nsw $t2, 0($gp)\n```', "markdown");
+        const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile('```mips\nlw $t0, 4($gp) # fetch N\nmult $t0, $t0, $t0 # N*N\nlw $t1, 4($gp) # fetch N\nori $t2, $zero, 3 # 3\nmult $t1, $t1, $t2 # 3*N\nadd $t2, $t0, $t1 # N*N + 3*N\nsw $t2, 0($gp)\n```', "markdown");
         expect(htmlFile.html.trim()).toMatchSnapshot();
         const $ = cheerio.load(htmlFile.html);
         expect($('.hljs').text()).toContain('lw $t0, 4($gp)');
     });
     test("https://github.com/debanjandhar12/logseq-anki-sync/discussions/89#discussioncomment-13399053", async () => {
-        const htmlFile = await convertToHTMLFile("{{c1:: $\\frac{1}{\\sqrt{2}}$}}", "markdown");
+        const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("{{c1:: $\\frac{1}{\\sqrt{2}}$}}", "markdown");
         expect(htmlFile.html.trim()).toMatchSnapshot();
     });
     test("Swift cloze rendering with numbered list - https://github.com/debanjandhar12/logseq-anki-sync/issues/326", async () => {
-        const htmlFile = await convertToHTMLFile("{{c2::test 3}} :<-> {{c1::test}}\nlogseq.order-list-type:: number", "markdown");
+        const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile("{{c2::test 3}} :<-> {{c1::test}}\nlogseq.order-list-type:: number", "markdown");
         expect(htmlFile.html).toContain("{{c2::test 3}}");
         expect(htmlFile.html).toContain("{{c1::test}}");
     });

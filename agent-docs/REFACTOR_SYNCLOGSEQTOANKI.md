@@ -395,7 +395,7 @@ export class ExtraFieldParser {
         }
 
         const format = (await LogseqProxy.Editor.getBlock(note.uuid)).format;
-        const converted = await convertToHTMLFile(extra, format);
+        const converted = await LogseqToHtmlConverter.convertToHTMLFile(extra, format);
 
         // Add extra assets to the main asset set
         converted.assets.forEach((asset) => assets.add(asset));
