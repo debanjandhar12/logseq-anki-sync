@@ -311,7 +311,8 @@ export class LogseqToHtmlConverter {
         resultContent = await safeReplaceAsync(
             resultContent,
             LOGSEQ_EMBDED_PAGE_REGEXP,
-            async (match, pageId) => {
+            async (match, pageIdStr) => {
+                const pageId = parseInt(pageIdStr);
                 let pageTree = [];
                 const pageName = await this.getPageNameFromID(pageId);
 
@@ -352,7 +353,8 @@ export class LogseqToHtmlConverter {
         resultContent = await safeReplaceAsync(
             resultContent,
             LOGSEQ_RENAMED_PAGE_REF_REGEXP,
-            async (match, aliasContent, pageId) => {
+            async (match, aliasContent, pageIdStr) => {
+                const pageId = parseInt(pageIdStr);
                 const pageName = await this.getPageNameFromID(pageId);
                 const str = getRandomUnicodeString();
                 const graphName = (await this.getCurrentGraph())?.name;
@@ -364,7 +366,8 @@ export class LogseqToHtmlConverter {
         resultContent = await safeReplaceAsync(
             resultContent,
             LOGSEQ_PAGE_REF_REGEXP,
-            async (match, pageId: string) => {
+            async (match, pageIdStr: string) => {
+                const pageId = parseInt(pageIdStr);
                 const displayName = await this.getPageNameFromID(pageId);
                 const str = getRandomUnicodeString();
                 const graphName = (await this.getCurrentGraph())?.name;
@@ -440,7 +443,8 @@ export class LogseqToHtmlConverter {
         resultContent = await safeReplaceAsync(
             resultContent,
             LOGSEQ_PAGE_REF_REGEXP,
-            async (match, pageId) => {
+            async (match, pageIdStr) => {
+                const pageId = parseInt(pageIdStr);
                 const displayName = await this.getPageNameFromID(pageId);
                 const str = getRandomUnicodeString();
                 hashmap[str] = `<a class="page-reference">${displayName}</a>`;
@@ -596,7 +600,7 @@ export class LogseqToHtmlConverter {
     /**
      * Helper to get page name from ID
      */
-    private static async getPageNameFromID(pageId: string | number): Promise<string> {
+    private static async getPageNameFromID(pageId: number): Promise<string> {
         try {
             const numericPageId = typeof pageId === 'string' ? parseInt(pageId, 10) : pageId;
             const page = await this.getPage(numericPageId);
