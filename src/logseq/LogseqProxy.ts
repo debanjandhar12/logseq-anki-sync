@@ -96,7 +96,7 @@ export namespace LogseqProxy {
             opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
         ): Promise<string> => {
             if (!page) return "";
-            await getLogseqLock.acquireAsync();
+            // we do not acquire lock here as we call methods that have separate lock
             try {
                 const isDb = await LogseqProxy.App.checkCurrentIsDbGraph();
                 const baseName = getNameFromPage(page) || "";
@@ -118,8 +118,6 @@ export namespace LogseqProxy {
             } catch (e) {
                 console.error(e);
                 if (!opts.suppressErrors) throw e;
-            } finally {
-                getLogseqLock.release();
             }
             return "";
         }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});

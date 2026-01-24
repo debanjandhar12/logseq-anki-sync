@@ -80,7 +80,7 @@ export class LogseqToHtmlConverter {
             console.log("--Start Converting--\nOriginal:", resultContent);
 
         // Preprocess content to normalize format (DB/MD/Org -> internal format)
-        const preprocessResult = await LogseqContentPreprocessor.preprocess(
+        const preprocessResult = await this.preprocess(
             resultContent,
             format as "markdown" | "org"
         );
@@ -610,6 +610,10 @@ export class LogseqToHtmlConverter {
     /**
      * Protected methods that can be overridden in proxy class for caching.
      */
+    protected static async preprocess(content: string, format: "markdown" | "org") {
+        return await LogseqContentPreprocessor.preprocess(content, format);
+    }
+
     protected static async getCurrentGraph() {
         return await logseq.App.getCurrentGraph();
     }
@@ -636,6 +640,13 @@ export class LogseqToHtmlConverter {
  * Use this during sync operations where caching is beneficial.
  */
 export class LogseqToHtmlConverterProxy extends LogseqToHtmlConverter {
+    /**
+     * Override preprocess to use the proxy version
+     */
+    protected static async preprocess(content: string, format: "markdown" | "org") {
+        return await LogseqContentPreprocessorProxy.preprocess(content, format);
+    }
+
     protected static async getCurrentGraph() {
         return await LogseqProxy.App.getCurrentGraph();
     }
@@ -658,28 +669,15 @@ export class LogseqToHtmlConverterProxy extends LogseqToHtmlConverter {
 
     /**
      * Cached version of convertToHTMLFile with memoization.
-     * Overrides preprocessing to use LogseqContentPreprocessorProxy.
      */
-    static async convertToHTMLFileUncached(
-        content: string,
-        format = "markdown",
-        opts: { processRefEmbeds?: boolean; displayTags?: boolean } = { processRefEmbeds: true, displayTags: false }
-    ): Promise<HTMLFile> {
-        // Override the preprocessor temporarily to use the proxy version
-        const originalPreprocess = LogseqContentPreprocessor.preprocess;
-        LogseqContentPreprocessor.preprocess = LogseqContentPreprocessorProxy.preprocess.bind(LogseqContentPreprocessorProxy);
-        
-        try {
-            // Call parent's convertToHTMLFile which will use our overridden protected methods
-            return await super.convertToHTMLFile.call(this, content, format, opts);
-        } finally {
-            // Restore original preprocessor
-            LogseqContentPreprocessor.preprocess = originalPreprocess;
-        }
-    }
-
     static convertToHTMLFile = pMemoize(
-        LogseqToHtmlConverterProxy.convertToHTMLFileUncached.bind(LogseqToHtmlConverterProxy),
+        async (
+            content: string,
+            format = "markdown",
+            opts: { processRefEmbeds?: boolean; displayTags?: boolean } = { processRefEmbeds: true, displayTags: false }
+        ): Promise<HTMLFile> => {
+            return await super.convertToHTMLFile.call(LogseqToHtmlConverterProxy, content, format, opts);
+        },
         {cacheKey: (args) => objectHashOptimized(args)});
 }
 
