@@ -33,7 +33,21 @@ import * as hiccupConverter from "@thi.ng/hiccup";
 import {edn} from "@yellowdig/cljs-tools";
 import path from "path-browserify";
 import getNameFromPage from "./getNameFromPage";
-import {LogseqContentPreprocessor} from "./LogseqContentPreprocessor";
+import {LogseqContentPreprocessor, LogseqContentPreprocessorProxy} from "./LogseqContentPreprocessor";
+
+/**
+ * Flag to determine which preprocessor to use.
+ * Set to true when called through LogseqToHTMLConverterProxy (cached version).
+ */
+let useProxyPreprocessor = false;
+
+/**
+ * Internal function to set the preprocessor mode.
+ * Called by LogseqToHTMLConverterProxy to enable cached preprocessing.
+ */
+export function setUseProxyPreprocessor(value: boolean) {
+    useProxyPreprocessor = value;
+}
 
 const mldocsOptions = {
     toc: false,
@@ -68,7 +82,9 @@ export async function convertToHTMLFile(
         console.log("--Start Converting--\nOriginal:", resultContent);
 
     // Preprocess content to normalize format (DB/MD/Org -> internal format)
-    const preprocessResult = await LogseqContentPreprocessor.preprocess(
+    // Use proxy version if called through LogseqToHTMLConverterProxy (for caching)
+    const Preprocessor = useProxyPreprocessor ? LogseqContentPreprocessorProxy : LogseqContentPreprocessor;
+    const preprocessResult = await Preprocessor.preprocess(
         resultContent,
         format as "markdown" | "org"
     );

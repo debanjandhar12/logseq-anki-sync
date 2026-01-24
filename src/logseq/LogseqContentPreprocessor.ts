@@ -9,7 +9,6 @@ import {
     ORG_PROPERTIES_REGEXP,
 } from "../constants";
 import {safeReplace, safeReplaceAsync} from "../utils/utils";
-import {LogseqProxy} from "./LogseqProxy";
 import getNameFromPage from "./getNameFromPage";
 import getUUIDFromBlock from "./getUUIDFromBlock";
 
@@ -78,6 +77,31 @@ export interface PreprocessResult {
 }
 
 export class LogseqContentPreprocessor {
+    /**
+     * Override this in LogseqContentPreprocessorProxy to use cached version.
+     */
+    protected static async checkCurrentIsDbGraph(): Promise<boolean> {
+        try {
+            return await logseq.App.checkCurrentIsDbGraph() as boolean;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Override this in LogseqContentPreprocessorProxy to use cached version.
+     */
+    protected static async getPage(srcPage: PageIdentity | EntityID) {
+        return await logseq.Editor.getPage(srcPage);
+    }
+
+    /**
+     * Override this in LogseqContentPreprocessorProxy to use cached version.
+     */
+    protected static async getBlock(srcBlock: string) {
+        return await logseq.Editor.getBlock(srcBlock);
+    }
+
     /**
      * Preprocesses Logseq content from any format (DB/MD/Org) to internal format.
      * 
@@ -149,7 +173,7 @@ export class LogseqContentPreprocessor {
             LOGSEQ_EMBDED_PAGE_REGEXP,
             async (match, pageName) => {
                 try {
-                    const page = await LogseqProxy.Editor.getPage(pageName);
+                    const page = await this.getPage(pageName);
                     if (page) {
                         const uuid = getUUIDFromBlock(page);
                         if (uuid) {
@@ -189,11 +213,11 @@ export class LogseqContentPreprocessor {
                     }
                 }
 
-                // DB mode block ref using page ref syntax case: Check if [[uuid]] is actually a block reference
-                if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
+                // DB mode special case: Check if [[uuid]] is actually a block reference
+                if (await this.checkCurrentIsDbGraph()) {
                     if (pageName.length === 36) {
                         // Might be a UUID
-                        const possibleBlock = await LogseqProxy.Editor.getBlock(pageName);
+                        const possibleBlock = await this.getBlock(pageName);
                         if (possibleBlock) {
                             return `((${possibleBlock.uuid}))`; // Convert to block ref
                         }
@@ -202,7 +226,7 @@ export class LogseqContentPreprocessor {
 
                 // Standard case: Convert page name to UUID
                 try {
-                    const page = await LogseqProxy.Editor.getPage(pageName);
+                    const page = await this.getPage(pageName);
                     if (page) {
                         const uuid = getUUIDFromBlock(page);
                         if (uuid) {
@@ -228,7 +252,7 @@ export class LogseqContentPreprocessor {
             LOGSEQ_RENAMED_PAGE_REF_REGEXP,
             async (match, aliasContent, pageName) => {
                 try {
-                    const page = await LogseqProxy.Editor.getPage(pageName);
+                    const page = await this.getPage(pageName);
                     if (page) {
                         const uuid = getUUIDFromBlock(page);
                         if (uuid) {
@@ -245,6 +269,7 @@ export class LogseqContentPreprocessor {
 
     /**
      * Applies PDF annotation formatting based on properties.
+     * Prepends visual indicators and page numbers to annotation content.
      */
     private static async applyPdfAnnotations(
         content: string,
@@ -261,7 +286,7 @@ export class LogseqContentPreprocessor {
         const annotationSymbolMap: Record<string, string> = {
             yellow: "🟡",
             green: "🟢",
-            blue: "🔵",
+            blue: "�",
             red: "🔴",
             purple: "🟣",
         };
@@ -269,13 +294,13 @@ export class LogseqContentPreprocessor {
         if (lsType === "annotation" && hlType === "area") {
             // Image annotation
             const blockUuid = properties["id"] || properties["nid"] || properties["uuid"];
-            const block = await LogseqProxy.Editor.getBlock(blockUuid);
+            const block = await this.getBlock(blockUuid);
             let hlsImgLoc = "error";
 
             try {
                 if (_.get(block, [":logseq.property.pdf/hl-image", "id"])) {
                     // DB graphs
-                    const assetBlock = await LogseqProxy.Editor.getBlock(
+                    const assetBlock = await this.getBlock(
                         _.get(block, [":logseq.property.pdf/hl-image", "id"])
                     );
                     if (assetBlock) {
@@ -283,7 +308,7 @@ export class LogseqContentPreprocessor {
                     }
                 } else {
                     // MD graphs
-                    const page = await LogseqProxy.Editor.getPage(block?.page?.id as number | PageIdentity);
+                    const page = await this.getPage(block?.page?.id as number | PageIdentity);
                     if (page) {
                         hlsImgLoc = `../assets/${(getNameFromPage(page) ?? "").replace(
                             "hls__",
@@ -371,14 +396,14 @@ export class LogseqContentPreprocessor {
         const linkDBId = _.toInteger(link);
 
         if (linkDBId) {
-            const block = await LogseqProxy.Editor.getBlock(linkDBId as EntityID);
+            const block = await this.getBlock(linkDBId as any);
             if (block) {
                 const blockUUID = getUUIDFromBlock(block);
                 if (blockUUID) {
                     resultContent = `{{embed ((${blockUUID}))}}` + "\n" + resultContent;
                 }
             } else {
-                const page = await LogseqProxy.Editor.getPage(linkDBId as EntityID);
+                const page = await this.getPage(linkDBId as EntityID);
                 if (page) {
                     resultContent = `{{embed [[${page.uuid}]]}}` + "\n" + resultContent;
                 }
@@ -386,5 +411,26 @@ export class LogseqContentPreprocessor {
         }
 
         return resultContent;
+    }
+}
+
+/**
+ * Proxy version that uses cached LogseqProxy methods.
+ * Use this when working within the sync system where caching is beneficial.
+ */
+export class LogseqContentPreprocessorProxy extends LogseqContentPreprocessor {
+    protected static async checkCurrentIsDbGraph(): Promise<boolean> {
+        const { LogseqProxy } = await import("./LogseqProxy");
+        return Boolean(await LogseqProxy.App.checkCurrentIsDbGraph());
+    }
+
+    protected static async getPage(srcPage: PageIdentity | EntityID) {
+        const { LogseqProxy } = await import("./LogseqProxy");
+        return await LogseqProxy.Editor.getPage(srcPage);
+    }
+
+    protected static async getBlock(srcBlock: string) {
+        const { LogseqProxy } = await import("./LogseqProxy");
+        return await LogseqProxy.Editor.getBlock(srcBlock);
     }
 }

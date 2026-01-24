@@ -5,7 +5,7 @@ import {
     LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_PAGE_REF_REGEXP,
 } from "../constants";
 import {LogseqProxy} from "./LogseqProxy";
-import {LogseqContentPreprocessor} from "./LogseqContentPreprocessor";
+import {LogseqContentPreprocessorProxy} from "./LogseqContentPreprocessor";
 import getUUIDFromBlock from "./getUUIDFromBlock";
 
 export interface BlockDependency {
@@ -25,7 +25,7 @@ export default async function getLogseqContentDirectDependencies(
 ): Promise<DependencyEntity[]> {
     // Normalize content to our internal format
     if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
-        const preprocessResult = await LogseqContentPreprocessor.preprocess(
+        const preprocessResult = await LogseqContentPreprocessorProxy.preprocess(
             content,
             format as "markdown" | "org"
         );
