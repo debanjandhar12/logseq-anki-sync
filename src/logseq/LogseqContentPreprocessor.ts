@@ -16,6 +16,7 @@ import getUUIDFromBlock from "./getUUIDFromBlock";
 import getIDFromPage from "./getIDFromPage";
 import {WindowParentBridge} from "./WindowParentBridge";
 import {LogseqProxy} from "./LogseqProxy";
+import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 
 /**
  * INTERNAL FORMAT SPECIFICATION
@@ -401,18 +402,20 @@ export class LogseqContentPreprocessor {
      */
     protected static async checkCurrentIsDbGraph(): Promise<boolean> {
         try {
-            return await logseq.App.checkCurrentIsDbGraph() as boolean;
-        } catch {
-            return false;
-        }
+            const value = await logseq.App.checkCurrentIsDbGraph();
+            if (typeof value === 'boolean') {
+                return value;
+            }
+        } catch (e) {}
+        return false;
     }
 
     protected static async getPage(srcPage: PageIdentity | EntityID) {
-        return await logseq.Editor.getPage(srcPage);
+        return await LogseqPropertiesHelper.getPage(srcPage);
     }
 
     protected static async getBlock(srcBlock: string) {
-        return await logseq.Editor.getBlock(srcBlock);
+        return await LogseqPropertiesHelper.getBlock(srcBlock);
     }
 }
 

@@ -40,6 +40,7 @@ import objectHashOptimized from "../utils/objectHashOptimized";
 import {LogseqProxy} from "./LogseqProxy";
 import {PluginSettings} from "../settings";
 import {WindowParentBridge} from "./WindowParentBridge";
+import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 
 const mldocsOptions = {
     toc: false,
@@ -666,15 +667,15 @@ export class LogseqToHtmlConverter {
     }
 
     protected static async getBlock(srcBlock: string, opts?: any) {
-        return await logseq.Editor.getBlock(srcBlock, opts);
+        return await LogseqPropertiesHelper.getBlock(srcBlock, opts);
     }
 
     protected static async getPage(srcPage: any) {
-        return await logseq.Editor.getPage(srcPage);
+        return await LogseqPropertiesHelper.getPage(srcPage);
     }
 
     protected static async getPageBlocksTree(srcPage: any) {
-        return await logseq.Editor.getPageBlocksTree(srcPage);
+        return await LogseqPropertiesHelper.getPageBlocksTree(srcPage);
     }
 
     protected static getPluginSettings() {
