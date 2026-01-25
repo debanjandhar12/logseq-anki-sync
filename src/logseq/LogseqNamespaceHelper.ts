@@ -13,7 +13,7 @@ export class LogseqNamespaceHelper {
      * Handles both DB version (page.parent) and File version (page.namespace.id).
      */
     static async getParentPage(page: PageEntity): Promise<PageEntity | null> {
-        let parentId = _.get(page, "parent.id");
+        let parentId = _.get(page, "parent.id") || _.get(page, "parent");
         if (parentId == null) {
             parentId = _.get(page, "namespace.id");
         }

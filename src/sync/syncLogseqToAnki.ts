@@ -339,7 +339,6 @@ export class LogseqToAnkiSync {
         await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager, syncNotificationObj);
         await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncNotificationObj);
         
-        // Execute suspend/unsuspend task if enabled
         if (syncOverwriteList?.includes("Suspended")) {
             await this.suspendUnsuspendNotes(
                 [...toCreateNotes, ...toUpdateNotes],

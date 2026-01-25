@@ -3,6 +3,7 @@ import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import * as AnkiConnect from "../../anki-connect/AnkiConnect";
 import { ProgressNotification } from "../../ui";
 import { SuspendUnsuspendPropertyParser } from "../parsers/SuspendUnsuspendPropertyParser";
+import { AnkiNoteCache } from "../../anki-connect/internal/AnkiNoteCache";
 
 export class SuspendUnsuspendNotesTask {
     async execute(
@@ -10,6 +11,9 @@ export class SuspendUnsuspendNotesTask {
         ankiNoteManager: LazyAnkiNoteManager,
         progressNotification: ProgressNotification
     ): Promise<{ suspended: number, unsuspended: number }> {
+        const freshCache = new AnkiNoteCache();
+        await freshCache.buildNoteInfoMap(ankiNoteManager.modelName); // Build fresh cache to include newly created notes
+
         const cardsToSuspend: number[] = [];
         const cardsToUnsuspend: number[] = [];
 
@@ -22,7 +26,7 @@ export class SuspendUnsuspendNotesTask {
 
                 if (shouldSuspend === null) continue;
 
-                const cardIds = this.getCardIdsForNote(ankiId, ankiNoteManager);
+                const cardIds = this.getCardIdsForNote(ankiId, freshCache);
                 
                 if (shouldSuspend === true) {
                     cardsToSuspend.push(...cardIds);
@@ -53,8 +57,8 @@ export class SuspendUnsuspendNotesTask {
         };
     }
 
-    private getCardIdsForNote(ankiId: number, ankiNoteManager: LazyAnkiNoteManager): number[] {
-        const noteInfo = ankiNoteManager.noteInfoMap.get(ankiId);
+    private getCardIdsForNote(ankiId: number, cache: AnkiNoteCache): number[] {
+        const noteInfo = cache.getNoteInfo(ankiId);
         if (!noteInfo || !noteInfo.cards) {
             return [];
         }

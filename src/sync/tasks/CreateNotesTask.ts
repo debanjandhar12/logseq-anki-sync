@@ -36,7 +36,7 @@ export class CreateNotesTask {
             const type = uuidtype.split("-").slice(-1)[0];
             const note = _.find(notes, { uuid: uuid, type: type });
             if (note) {
-                note["ankiId"] = successfulNote["ankiId"];
+                note.ankiId = successfulNote.ankiId;
             }
         }
 

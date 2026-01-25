@@ -1,83 +1,58 @@
 import { Note } from "../../anki-notes/Note";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { getCaseInsensitive } from "../../utils/utils";
+import { getLogseqBlockPropSafe } from "../../utils/utils";
 import _ from "lodash";
 
 export class SuspendUnsuspendPropertyParser {
     /**
-     * Resolves the suspend-anki-card property for a note.
-     * Resolution order:
-     * 1. Current block properties
-     * 2. Parent block properties (traversing up)
-     * 3. Page properties
-     * 4. Namespace parent pages (traversing up)
+     * Resolves the suspend-anki-card property for a note following the hierarchy:
+     * 1. Block hierarchy (traverse up looking for suspend-anki-card property)
+     * 2. Namespace hierarchy (traverse up looking for suspend-anki-card property)
+     * 3. Return null (do nothing)
      * 
      * @param note The note to check
      * @returns true to suspend, false to unsuspend, null to do nothing
      */
     static async parse(note: Note): Promise<boolean | null> {
-        // Check current block property
-        const blockProperty = getCaseInsensitive(note.properties, "suspend-anki-card", undefined);
-        if (blockProperty !== undefined) {
-            return this.normalizeValue(blockProperty);
+        let suspendValue = await this.findSuspendInBlockHierarchy(note);
+        if (suspendValue !== null) {
+            return suspendValue;
         }
 
-        // Traverse parent blocks
-        const parentBlockValue = await this.checkParentBlocks(note);
-        if (parentBlockValue !== null) {
-            return parentBlockValue;
-        }
-
-        // Check page and namespace hierarchy
-        const pageValue = await this.checkPageHierarchy(note);
-        if (pageValue !== null) {
-            return pageValue;
+        suspendValue = await this.findSuspendInNamespaceHierarchy(note);
+        if (suspendValue !== null) {
+            return suspendValue;
         }
 
         return null;
     }
 
-    private static async checkParentBlocks(note: Note): Promise<boolean | null> {
+    private static async findSuspendInBlockHierarchy(note: Note): Promise<boolean | null> {
         try {
             let parentBlockUUID: string | number = note.uuid;
-            const visited = new Set<string | number>();
-
             while (parentBlockUUID != null) {
-                if (visited.has(parentBlockUUID)) break;
-                visited.add(parentBlockUUID);
-
                 const parentBlock = await LogseqProxy.Editor.getBlock(parentBlockUUID);
-                if (!parentBlock) break;
-
-                const property = getCaseInsensitive(parentBlock, "properties.suspend-anki-card", undefined);
-                if (property !== undefined) {
-                    return this.normalizeValue(property);
-                }
-
+                const suspendValue = getLogseqBlockPropSafe(parentBlock, "properties.suspend-anki-card");
+                if (suspendValue != null) return this.normalizeValue(suspendValue);
                 parentBlockUUID = _.get(parentBlock, "parent.id", null);
             }
         } catch (e) {
-            console.error("[SuspendUnsuspendPropertyParser] Error checking parent blocks:", e);
+            console.error("[SuspendUnsuspendPropertyParser] Error finding suspend-anki-card in block hierarchy:", e);
         }
         return null;
     }
 
-    private static async checkPageHierarchy(note: Note): Promise<boolean | null> {
+    private static async findSuspendInNamespaceHierarchy(note: Note): Promise<boolean | null> {
         try {
             const page = await LogseqProxy.Editor.getPage(note.pageId);
-            if (!page) return null;
-
             const parents = await LogseqProxy.Editor.getParentNamespacePages(page);
             const hierarchy = [page, ...parents];
-
             for (const currentPage of hierarchy) {
-                const property = getCaseInsensitive(currentPage, "properties.suspend-anki-card", undefined);
-                if (property !== undefined) {
-                    return this.normalizeValue(property);
-                }
+                const suspendValue = getLogseqBlockPropSafe(currentPage, "properties.suspend-anki-card");
+                if (suspendValue != null) return this.normalizeValue(suspendValue);
             }
         } catch (e) {
-            console.error("[SuspendUnsuspendPropertyParser] Error checking page hierarchy:", e);
+            console.error("[SuspendUnsuspendPropertyParser] Error finding suspend-anki-card in namespace hierarchy:", e);
         }
         return null;
     }
