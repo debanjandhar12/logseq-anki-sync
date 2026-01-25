@@ -177,8 +177,6 @@ export const addSettingsToLogseq = () => {
             }
             if (!newSettings.syncOverwriteList.includes("Suspended")) {
                 logseq.UI.showMsg("Suspended overwrite is now disabled. The suspend-anki-card property will no longer work.", "warning");
-            } else {
-                logseq.UI.showMsg("Suspended overwrite is now enabled. The suspend-anki-card property will work again.", "success");
             }
         }
     });
