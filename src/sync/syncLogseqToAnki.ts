@@ -59,6 +59,7 @@ export class LogseqToAnkiSync {
             console.error(e);
         }
         finally {
+            this.completeSyncCleanup();
             LogseqToAnkiSync.isSyncing = false;
         }
     }
@@ -86,11 +87,8 @@ export class LogseqToAnkiSync {
             toDeleteNotesOriginal,
             notes
         );
-        
-        if (!confirmation) {
-            this.completeSyncCleanup();
-            return;
-        }
+
+        if (!confirmation) return;
 
         const { toCreateNotes, toUpdateNotes, toDeleteNotes } = confirmation;
         const results = await this.executeSyncPlan(toCreateNotes, toUpdateNotes, toDeleteNotes, ankiNoteManager);

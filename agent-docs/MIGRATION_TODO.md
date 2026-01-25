@@ -18,8 +18,8 @@ Good Links:
 
 Breaking changes:
 - .replacecloze property is no longer supported. Use replacecloze (without dot at beginning) instead.
-- Removed LogseqAnkiFeatureExplorer temporarily.
-- Removed #no-anki-sync (was marked for removal in v6.3.1), please use #disable-anki-sync or #suspend-anki-card prop instead.
+- Removed LogseqAnkiFeatureExplorer since it is deemed to no longer be required. Logseq DB provided autocomplete, choice values etc for properties makeing it easier for user to discover features.
+- Removed #no-anki-sync (was marked for removal in v6.3.1), please use disable-anki-sync or suspend-anki-card prop instead.
 - The `defaultDeck` and `useNamespaceAsDefaultDeck` settings have been removed. The default deck is now derived from the current page name.
 
 /home/debanjand/logseq/graphs/ <- use for db graphs setup?
