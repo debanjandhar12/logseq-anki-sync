@@ -3,6 +3,7 @@ import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import { ProgressNotification } from "../../ui";
 import { ParsedNoteData } from "../types";
 import { NoteHashCalculator } from "../cache";
+import { parseNote } from "../parsers/NoteParser";
 import path from "path-browserify";
 import _ from "lodash";
 
@@ -10,16 +11,16 @@ export class CreateNotesTask {
     async execute(
         notes: Note[],
         modelName: string,
+        graphName: string,
         graphPath: string,
         ankiNoteManager: LazyAnkiNoteManager,
-        parseNote: (note: Note) => Promise<ParsedNoteData>,
         progressNotification: ProgressNotification
     ): Promise<{ succeeded: Note[], failed: { [key: string]: Error } }> {
         const failedCreated: { [key: string]: Error } = {};
 
         for (const note of notes) {
             try {
-                await this.createNote(note, modelName, graphPath, ankiNoteManager, parseNote);
+                await this.createNote(note, modelName, graphName, graphPath, ankiNoteManager);
             } catch (e) {
                 console.error(e);
                 failedCreated[`${note.uuid}-${note.type}`] = e;
@@ -56,11 +57,11 @@ export class CreateNotesTask {
     private async createNote(
         note: Note,
         modelName: string,
+        graphName: string,
         graphPath: string,
-        ankiNoteManager: LazyAnkiNoteManager,
-        parseNote: (note: Note) => Promise<ParsedNoteData>
+        ankiNoteManager: LazyAnkiNoteManager
     ): Promise<void> {
-        const [html, assets, deck, breadcrumb, tags, extra] = await parseNote(note);
+        const [html, assets, deck, breadcrumb, tags, extra] = await parseNote(note, graphName);
         const dependencyHash = await NoteHashCalculator.getHash(note, [
             html,
             assets,

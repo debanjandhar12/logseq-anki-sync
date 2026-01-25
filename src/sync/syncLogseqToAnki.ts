@@ -28,7 +28,6 @@ import {ActionNotification} from "../ui/common/ActionNotification";
 import {showSyncSelectionDialog} from "../ui";
 import {showSyncResultDialog} from "../ui";
 import { WindowParentBridge } from "../logseq/WindowParentBridge";
-import { parseNote } from "./parsers";
 import { CreateNotesTask } from "./tasks/CreateNotesTask";
 import { UpdateNotesTask } from "./tasks/UpdateNotesTask";
 import { DeleteNotesTask } from "./tasks/DeleteNotesTask";
@@ -117,9 +116,9 @@ export class LogseqToAnkiSync {
         const result = await task.execute(
             toCreateNotes,
             this.modelName,
+            this.graphName,
             graphPath,
             ankiNoteManager,
-            (note) => this.parseNote(note),
             syncNotificationObj
         );
         Object.assign(failedCreated, result.failed);
@@ -136,9 +135,9 @@ export class LogseqToAnkiSync {
         const result = await task.execute(
             toUpdateNotes,
             this.modelName,
+            this.graphName,
             graphPath,
             ankiNoteManager,
-            (note) => this.parseNote(note),
             syncNotificationObj
         );
         Object.assign(failedUpdated, result.failed);
@@ -177,12 +176,6 @@ export class LogseqToAnkiSync {
             syncNotificationObj
         );
         console.log(`[SuspendUnsuspend] Suspended ${result.suspended} cards, Unsuspended ${result.unsuspended} cards`);
-    }
-
-    private async parseNote(
-        note: Note,
-    ): Promise<ParsedNoteData> {
-        return await parseNote(note, this.graphName);
     }
 
     private async getGraphName(): Promise<string> {

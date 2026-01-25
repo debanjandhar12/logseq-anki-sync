@@ -3,6 +3,7 @@ import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import { ProgressNotification } from "../../ui";
 import { ParsedNoteData } from "../types";
 import { NoteHashCalculator } from "../cache";
+import { parseNote } from "../parsers/NoteParser";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import path from "path-browserify";
 
@@ -10,16 +11,16 @@ export class UpdateNotesTask {
     async execute(
         notes: Note[],
         modelName: string,
+        graphName: string,
         graphPath: string,
         ankiNoteManager: LazyAnkiNoteManager,
-        parseNote: (note: Note) => Promise<ParsedNoteData>,
         progressNotification: ProgressNotification
     ): Promise<{ succeeded: Note[], failed: { [key: string]: Error } }> {
         const failedUpdated: { [key: string]: Error } = {};
 
         for (const note of notes) {
             try {
-                await this.updateNote(note, modelName, graphPath, ankiNoteManager, parseNote);
+                await this.updateNote(note, modelName, graphName, graphPath, ankiNoteManager);
             } catch (e) {
                 console.error(e);
                 failedUpdated[`${note.uuid}-${note.type}`] = e;
@@ -40,9 +41,9 @@ export class UpdateNotesTask {
     private async updateNote(
         note: Note,
         modelName: string,
+        graphName: string,
         graphPath: string,
-        ankiNoteManager: LazyAnkiNoteManager,
-        parseNote: (note: Note) => Promise<ParsedNoteData>
+        ankiNoteManager: LazyAnkiNoteManager
     ): Promise<void> {
         const ankiId = note.getAnkiId();
         const ankiNodeInfo = ankiNoteManager.noteInfoMap.get(ankiId);
@@ -79,7 +80,7 @@ export class UpdateNotesTask {
             return;
         }
 
-        const [html, assets, deck, breadcrumb, tags, extra] = await parseNote(note);
+        const [html, assets, deck, breadcrumb, tags, extra] = await parseNote(note, graphName);
         dependencyHash = await NoteHashCalculator.getHash(note, [
             html,
             assets,
