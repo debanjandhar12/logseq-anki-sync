@@ -225,3 +225,17 @@ export async function guiBrowse(query: string): Promise<any> {
         query: query,
     });
 }
+
+export async function suspend(cards: number[]): Promise<any> {
+    if (cards.length === 0) return;
+    return await invoke("suspend", {
+        cards: cards,
+    });
+}
+
+export async function unsuspend(cards: number[]): Promise<any> {
+    if (cards.length === 0) return;
+    return await invoke("unsuspend", {
+        cards: cards,
+    });
+}

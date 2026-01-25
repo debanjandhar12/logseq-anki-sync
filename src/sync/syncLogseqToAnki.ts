@@ -32,6 +32,7 @@ import { parseNote } from "./parsers";
 import { CreateNotesTask } from "./tasks/CreateNotesTask";
 import { UpdateNotesTask } from "./tasks/UpdateNotesTask";
 import { DeleteNotesTask } from "./tasks/DeleteNotesTask";
+import { SuspendUnsuspendNotesTask } from "./tasks/SuspendUnsuspendNotesTask";
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -162,6 +163,20 @@ export class LogseqToAnkiSync {
             syncNotificationObj
         );
         Object.assign(failedDeleted, result.failed);
+    }
+
+    private async suspendUnsuspendNotes(
+        notes: Note[],
+        ankiNoteManager: LazyAnkiNoteManager,
+        syncNotificationObj: ProgressNotification,
+    ): Promise<void> {
+        const task = new SuspendUnsuspendNotesTask();
+        const result = await task.execute(
+            notes,
+            ankiNoteManager,
+            syncNotificationObj
+        );
+        console.log(`[SuspendUnsuspend] Suspended ${result.suspended} cards, Unsuspended ${result.unsuspended} cards`);
     }
 
     private async parseNote(
@@ -316,15 +331,29 @@ export class LogseqToAnkiSync {
         const twentyPercent = Math.ceil(
             (toCreateNotes.length + toUpdateNotes.length + toDeleteNotes.length) / 20
         );
+        
+        // Add 1 for suspend/unsuspend task if enabled
+        const { syncOverwriteList } = LogseqProxy.Settings.getPluginSettings();
+        const suspendTaskIncrement = syncOverwriteList?.includes("Suspended") ? 1 : 0;
+        
         const syncNotificationObj = new ProgressNotification(
             "Syncing logseq notes to anki...",
-            toCreateNotes.length + toUpdateNotes.length + toDeleteNotes.length + twentyPercent + 1,
+            toCreateNotes.length + toUpdateNotes.length + toDeleteNotes.length + twentyPercent + 1 + suspendTaskIncrement,
             "anki"
         );
 
         await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager, syncNotificationObj);
         await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager, syncNotificationObj);
         await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncNotificationObj);
+        
+        // Execute suspend/unsuspend task if enabled
+        if (syncOverwriteList?.includes("Suspended")) {
+            await this.suspendUnsuspendNotes(
+                [...toCreateNotes, ...toUpdateNotes],
+                ankiNoteManager,
+                syncNotificationObj
+            );
+        }
         
         syncNotificationObj.updateMessage("Syncing logseq assets to anki...");
         await this.updateAssets(ankiNoteManager);

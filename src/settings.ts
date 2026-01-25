@@ -14,7 +14,7 @@ export interface PluginSettings {
     hideClozeMarcosUntilHoverInLogseq?: boolean;
     addonsList?: string[];
     ankiFieldOptions?: ("furigana" | "kana" | "kanji" | "tts" | "tags" | "rtl")[];
-    overwriteList?: string[];
+    syncOverwriteList?: string[];
     debug?: ("syncLogseqToAnki.ts" | "LogseqProxy.ts" | "LogseqToHtmlConverter.ts" | "LazyAnkiNoteManager.ts" | "blockAndPageHashCache.ts")[];
     skipOnDependencyHashMatch?: boolean;
     lastWelcomeVersion?: string;
@@ -97,7 +97,7 @@ export const addSettingsToLogseq = () => {
             default: null,
         },
         {
-            key: "overwriteList",
+            key: "syncOverwriteList",
             type: "enum",
             default: ["Content", "Deck", "Tags", "Suspended"],
             title: "Overwrite following on every sync: (Recommended: All)",
@@ -162,20 +162,20 @@ export const addSettingsToLogseq = () => {
         }
 
         // Handle overwriting list
-        if (!_.isEqual(newSettings.overwriteList, oldSettings.overwriteList)) {
-            if (!newSettings.overwriteList.includes("Content")) {
+        if (!_.isEqual(newSettings.syncOverwriteList, oldSettings.syncOverwriteList)) {
+            if (!newSettings.syncOverwriteList.includes("Content")) {
                 logseq.UI.showMsg("Content overwrite cannot be disabled atm.", "warning");
-                logseq.updateSettings({ overwriteList: ["Content", ...newSettings.overwriteList] });
+                logseq.updateSettings({ syncOverwriteList: ["Content", ...newSettings.syncOverwriteList] });
             }
-            if (!newSettings.overwriteList.includes("Deck")) {
+            if (!newSettings.syncOverwriteList.includes("Deck")) {
                 logseq.UI.showMsg("Deck overwrite cannot be disabled atm.", "warning");
-                logseq.updateSettings({ overwriteList: ["Deck", ...newSettings.overwriteList] });
+                logseq.updateSettings({ syncOverwriteList: ["Deck", ...newSettings.syncOverwriteList] });
             }
-            if (!newSettings.overwriteList.includes("Tags")) {
+            if (!newSettings.syncOverwriteList.includes("Tags")) {
                 logseq.UI.showMsg("Tags overwrite cannot be disabled atm.", "warning");
-                logseq.updateSettings({ overwriteList: ["Tags", ...newSettings.overwriteList] });
+                logseq.updateSettings({ syncOverwriteList: ["Tags", ...newSettings.syncOverwriteList] });
             }
-            if (!newSettings.overwriteList.includes("Suspended")) {
+            if (!newSettings.syncOverwriteList.includes("Suspended")) {
                 logseq.UI.showMsg("Suspended overwrite is now disabled. The suspend-anki-card property will no longer work.", "warning");
             } else {
                 logseq.UI.showMsg("Suspended overwrite is now enabled. The suspend-anki-card property will work again.", "success");

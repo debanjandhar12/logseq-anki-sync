@@ -5,7 +5,7 @@ Rename the existing `overwriteList` setting to `syncOverwriteList` and implement
 
 ## 2. Current Situation
 - **Settings**: The plugin currently uses `overwriteList` in `src/settings.ts` to determine which fields (Content, Deck, Tags, Suspended) are overwritten during sync.
-- **Sync Process**: The sync logic resides mainly in `src/sync/syncLogseqToAnki.ts` and uses various operations. It currently lacks a dedicated step for updating suspension status based on block properties.
+- **Sync Process**: The sync logic resides mainly in `src/sync/syncLogseqToAnki.ts` and uses various tasks (high-level) which call lower-level LazyAnkiManager operations. It currently lacks a dedicated step for updating suspended unsuspended status based on block properties.
 - **Anki Integration**: The `AnkiConnect` wrapper needs methods to support `suspend` and `unsuspend` actions.
 
 ## 3. Requirements
@@ -46,27 +46,54 @@ Rename the existing `overwriteList` setting to `syncOverwriteList` and implement
   - `suspend(cards: number[])`: Invokes the `suspend` action.
   - `unsuspend(cards: number[])`: Invokes the `unsuspend` action.
 
-### 4.3 Create New Sync Task
+### 4.3 Create New parser called SuspendUnsuspendPropertyParser.ts
+- **File**: `src/sync/parsers/SuspendUnsuspendPropertyParser.ts` (New File)
+- **Class**: `SuspendUnsuspendPropertyParser`
+- **Method**: `static async parse(note: Note): Promise<boolean | null>`
+- **Logic**:
+  1. **Block Property**: Check `note.properties["suspend-anki-card"]`. If boolean, return it.
+  2. **Parent Block Traversal**:
+     - Use `LogseqProxy.Editor.getBlock` to traverse up `note.uuid` parents.
+     - Check `suspend-anki-card` on each parent. Return if found.
+  3. **Page Property**:
+     - Get page using `note.pageId`.
+     - Check property on page. Return if found.
+  4. **Namespace Traversal**:
+     - Use `LogseqProxy.Editor.getParentNamespacePages(page)`.
+     - Check property on each namespace parent. Return if found.
+  5. **Default**: Return `null` if not found.
+
+### 4.4 Add SuspendUnsuspendPropertyParser to NoteParser.ts
+- **File**: `src/sync/parsers/NoteParser.ts`
+- **Action**:
+  - Import `SuspendUnsuspendPropertyParser`.
+  - In `parseNote` function, call `const shouldSuspend = await SuspendUnsuspendPropertyParser.parse(note);`.
+  - Return `shouldSuspend` as the last element of the `ParsedNoteData` tuple.
+- **File**: `src/sync/types.ts`
+  - Update `ParsedNoteData` type definition to include `shouldSuspend: boolean | null` at index 6.
+
+### 4.5 Create New Sync Task
 - **File**: `src/sync/tasks/SuspendUnsuspendNotesTask.ts` (New File)
-- **Goal**: Handle the logic for property resolution and suspension updates.
-- **Architecture**:
-  - Create a class `SuspendNotesOperation`.
-  - Implement an `execute` method that accepts the list of notes and `ankiNoteManager`.
-  - **Property Resolution Helper**: Implement a standalone or private helper function within this file (NOT in `Note.ts`) to traverse the block/page hierarchy and resolve the `suspend-anki-card` value for a given note.
-  - **Execution Flow**:
-    1. Initialize empty arrays: `cardsToSuspend` and `cardsToUnsuspend`.
-    2. Iterate through all valid notes.
-    3. For each note, resolve the suspend property.
-    4. If a value is found (true/false), retrieve the corresponding Anki Card IDs.
-    5. Add IDs to the respective array.
-    6. Call `AnkiConnect.suspend(cardsToSuspend)`.
-    7. Call `AnkiConnect.unsuspend(cardsToUnsuspend)`.
+- **Class**: `SuspendUnsuspendNotesTask`
+- **Method**: `execute(notes: Note[], ankiNoteManager: LazyAnkiNoteManager, progressNotification: ProgressNotification)`
+- **Logic**:
+  1. Initialize `cardsToSuspend: number[] = []` and `cardsToUnsuspend: number[] = []`.
+  2. Iterate through `notes`.
+  3. For each note:
+     - Call `SuspendUnsuspendPropertyParser.parse(note)` (or reuse parsed data if passed).
+     - If `true`: Get Anki Card IDs via `ankiNoteManager` and push to `cardsToSuspend`.
+     - If `false`: Get Anki Card IDs and push to `cardsToUnsuspend`.
+  4. **Batch Execute**:
+     - If `cardsToSuspend` not empty: `await AnkiConnect.suspend(cardsToSuspend)`.
+     - If `cardsToUnsuspend` not empty: `await AnkiConnect.unsuspend(cardsToUnsuspend)`.
+  5. specific Log messages for debugging ("Suspending X cards", etc.).
 
-### 4.4 Integrate into Sync Workflow
+### 4.6 Integrate into Sync Workflow
 - **File**: `src/sync/syncLogseqToAnki.ts`
-- **Action**: Check `syncOverwriteList` for the "Suspended" option.
-- **Integration**: If enabled, instantiate and execute `SuspendUnsuspendNotesTask` after delete task and before asset. Allocate 5% of progress for this task.
-
-### 4.5 Register Property
-- **File**: `src/anki-notes/Note.ts`
-- **Action**: Register `suspend-anki-card` in `initLogseqOperations` solely for Logseq UI integration (making it a selectable property), without adding business logic to the class.
+- **Action**: In `executeSyncPlan`:
+  1. Check `syncOverwriteList` (new setting name) for `"Suspended"`.
+  2. If present:
+     - Instantiate `SuspendUnsuspendNotesTask`.
+     - Execute it passsing `[...toCreateNotes, ...toUpdateNotes]`.
+     - **Location**: Place this call **after** `deleteNotes` and **before** `updateAssets`.
+  3. Manage Progress: Ensure `progressNotification` total count includes this step (allocate ~5% or fixed increment).
