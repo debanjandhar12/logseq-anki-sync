@@ -8,6 +8,10 @@ import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConver
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 
+import { createLogger, LoggerCategory } from "../utils/logger";
+
+const logger = createLogger(LoggerCategory.AnkiNotes);
+
 export class SwiftArrowNote extends Note {
     public type = "swift_arrow";
 
@@ -30,7 +34,7 @@ export class SwiftArrowNote extends Note {
         // Remove logseq properties as it might cause problems during cloze creation
         clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, ""); //Remove md properties
         clozedContent = safeReplace(clozedContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
-        console.log(clozedContent);
+        logger.info(clozedContent);
 
         // --- Add clozes ---
         const endDoubleBracket = getRandomUnicodeString();
@@ -95,7 +99,7 @@ export class SwiftArrowNote extends Note {
                 }
             }),
         );
-        console.log("SwiftArrowNote Blocks Loaded");
+        logger.info("SwiftArrowNote Blocks Loaded");
         notes = await Note.removeUnwantedNotes(notes);
         notes = _.filter(notes, (note) => {
             // Remove notes that do not genetate any clozes

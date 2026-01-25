@@ -6,6 +6,10 @@ import {waitForElement} from "../utils/waitForElement";
 import {Notification} from "./Notification";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.Others);
+
 export async function ActionNotification(
     btns: {name: string; func: Function}[],
     msg: string,
@@ -51,7 +55,7 @@ export async function ActionNotification(
         } catch (e) {
             logseq.UI.closeMsg(uniqueNotificationId);
             await logseq.UI.showMsg(msg, "success");
-            console.log(e);
+            logger.info(e);
             reject(e);
         }
     });

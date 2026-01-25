@@ -2,6 +2,10 @@ import {Mldoc} from "mldoc";
 import {isAudio_REGEXP, isImage_REGEXP, isVideo_REGEXP } from "../constants";
 import _ from "lodash";
 
+import { createLogger, LoggerCategory } from "../utils/logger";
+
+const logger = createLogger(LoggerCategory.Others);
+
 export class BlockContentParser {
     private static async _find(blockContent : string, blockContentFormat: "org" | 'Org' | 'Markdown',findType: 'link' | 'html' | 'hiccup' | 'img' | 'audio' | 'video' | 'inline_code' | 'code' | 'inline_math' | 'math' | 'tag') {
         const mldocsOptions = {
@@ -33,7 +37,7 @@ export class BlockContentParser {
             parsedJson = JSON.parse(parsedJson);
         } catch {
             parsedJson = [];
-            console.log("Error parsing block content");
+            logger.info("Error parsing block content");
             logseq.UI.showMsg("LogseqWrapper.BlockContentParser.forEach: Error parsing block content", "error");
         }
 

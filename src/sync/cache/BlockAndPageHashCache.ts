@@ -15,6 +15,10 @@ import {BlockUUID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import objectHashOptimized from "../../utils/objectHashOptimized";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.SyncCacheLayer);
+
 let graph = new DepGraph();
 
 // -- Hash Dependency Graph --
@@ -122,10 +126,7 @@ export const getPageHash = async (pageId: number) => {
 // -- Maintain Cache State by using DB.onChanged --
 export const init = () => {
     WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
-        const { debug } = LogseqProxy.Settings.getPluginSettings();
-        if (debug?.includes("blockAndPageHashCache.ts")) {
-            console.log("[blockAndPageHashCache] Clearing dependency graph cache");
-        }
+        logger.info("Clearing dependency graph cache");
         clearGraph();
     });
 }

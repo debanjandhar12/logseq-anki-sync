@@ -4,6 +4,10 @@ import _ from "lodash";
 import {CreateLineDisplay, UpdateLineDisplay} from "./SyncSelectionDialog";
 import { createModalPromise, Modal, ModalHeader, useModal } from "../";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.Others);
+
 export async function showSyncResultDialog(
     createdNotes: Array<any>,
     updatedNotes: Array<any>,
@@ -155,7 +159,7 @@ const SyncResultDialogComponent: React.FC<{
                                     <a style={{fontSize: '14px', marginLeft: '5px'}} onClick={
                                         () => {
                                             const error = failedCreated[noteUuidTypeStr];
-                                            console.log(`Error object for ${noteUuidTypeStr}:`, error);
+                                            logger.info(`Error object for ${noteUuidTypeStr}:`, error);
                                             const errorMessage = `Error: ${error?.message}\n\nStack trace:\n${error?.stack}`;
                                             logseq.UI.showMsg(errorMessage, 'warning', {timeout: 0});
                                         }
@@ -187,7 +191,7 @@ const SyncResultDialogComponent: React.FC<{
                                     The ${Object.keys(failedDeleted).length} notes failed to delete
                                     <a style={{fontSize: '14px', marginLeft: '5px'}} onClick={
                                         () => {
-                                            console.log(`Error object for all failed deletes:`, failedDeleted);
+                                            logger.info(`Error object for all failed deletes:`, failedDeleted);
                                             const errorMessage = `${JSON.stringify(failedDeleted)}`;
                                             logseq.UI.showMsg(errorMessage, 'warning', {timeout: 0});
                                         }
@@ -254,7 +258,7 @@ const SyncResultDialogComponent: React.FC<{
                                     <a style={{fontSize: '14px', marginLeft: '5px'}} onClick={
                                         () => {
                                             const error = failedUpdated[noteUuidTypeStr];
-                                            console.log(`Error object for ${noteUuidTypeStr}:`, error);
+                                            logger.info(`Error object for ${noteUuidTypeStr}:`, error);
                                             const errorMessage = `Error: ${error?.message}\n\nStack trace:\n${error?.stack}`;
                                             logseq.UI.showMsg(errorMessage, 'warning', {timeout: 0});
                                         }

@@ -4,6 +4,9 @@ import * as AnkiConnect from "../../anki-connect/AnkiConnect";
 import { ProgressNotification } from "../../ui";
 import { SuspendUnsuspendPropertyParser } from "../parsers/SuspendUnsuspendPropertyParser";
 import { AnkiNoteCache } from "../../anki-connect/internal/AnkiNoteCache";
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.SyncInternal);
 
 export class SuspendUnsuspendNotesTask {
     async execute(
@@ -34,18 +37,18 @@ export class SuspendUnsuspendNotesTask {
                     cardsToUnsuspend.push(...cardIds);
                 }
             } catch (e) {
-                console.error(`[SuspendUnsuspendNotesTask] Error processing note ${note.uuid}:`, e);
+                logger.error(`Error processing note ${note.uuid}`, e);
             }
         }
 
         // Batch execute suspend/unsuspend operations
         if (cardsToSuspend.length > 0) {
-            console.log(`[SuspendUnsuspendNotesTask] Suspending ${cardsToSuspend.length} cards`);
+            logger.info(`Suspending ${cardsToSuspend.length} cards`);
             await AnkiConnect.suspend(cardsToSuspend);
         }
 
         if (cardsToUnsuspend.length > 0) {
-            console.log(`[SuspendUnsuspendNotesTask] Unsuspending ${cardsToUnsuspend.length} cards`);
+            logger.info(`Unsuspending ${cardsToUnsuspend.length} cards`);
             await AnkiConnect.unsuspend(cardsToUnsuspend);
         }
 

@@ -42,6 +42,10 @@ import {PluginSettings} from "../settings";
 import {WindowParentBridge} from "./WindowParentBridge";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 
+import { createLogger, LoggerCategory } from "../utils/logger";
+
+const logger = createLogger(LoggerCategory.LogseqContentConverter);
+
 const mldocsOptions = {
     toc: false,
     heading_number: false,
@@ -76,10 +80,8 @@ export class LogseqToHtmlConverter {
         let resultContent = content.trim(),
             resultAssets = new Set<string>(),
             resultTags = new Set<string>();
-        const settings = this.getPluginSettings() as any;
-        const debug = settings?.debug;
-        if (debug?.includes("LogseqToHtmlConverter.ts"))
-            console.log("--Start Converting--\nOriginal:", resultContent);
+        
+        logger.info("Start converting", { originalLength: resultContent.length });
 
         // Preprocess content to normalize format (DB/MD/Org -> internal format)
         const preprocessResult = await this.preprocess(
@@ -89,8 +91,7 @@ export class LogseqToHtmlConverter {
         resultContent = preprocessResult.content;
         const block_props = preprocessResult.properties;
         
-        if (debug?.includes("LogseqToHtmlConverter.ts"))
-            console.log("After preprocessing:", resultContent);
+        logger.info("After preprocessing", { contentLength: resultContent.length });
 
         if (format == "org") {
             mldocsOptions.format = "Org";
@@ -170,8 +171,7 @@ export class LogseqToHtmlConverter {
             }
         }
         resultContent = new TextDecoder().decode(resultUTF8);
-        if (debug?.includes("LogseqToHtmlConverter.ts"))
-            console.log("After replacing errorinous terms:", resultContent);
+        logger.info("After replacing erroneous terms", { contentLength: resultContent.length });
 
         // Process the block & page refs + embeds
         if (opts.processRefEmbeds)
@@ -206,12 +206,12 @@ export class LogseqToHtmlConverter {
                     );
                 }
             } catch (e) {
-                console.warn(e);
+                logger.warn(e);
             }
         });
         
         $("img").each(function (i, elm) {
-            console.warn("Error: Image Found! Image should have been processed by processLink already and be hidden from cheerio.");
+            logger.warn("Error: Image Found! Image should have been processed by processLink already and be hidden from cheerio.");
         });
         
         const $tagElems = $("a.tag");
@@ -251,15 +251,13 @@ export class LogseqToHtmlConverter {
         }
         
         resultContent = decodeHTMLEntities(decodeHTMLEntities($("#content ul li").html() || ""));
-        if (debug?.includes("LogseqToHtmlConverter.ts"))
-            console.log("After Mldoc.export:", resultContent);
+        logger.info("After Mldoc.export", { contentLength: resultContent.length });
 
         // Bring back inline html content and clozes from hashmap
         for (const key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]);
         for (const key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]);
 
-        if (debug?.includes("LogseqToHtmlConverter.ts"))
-            console.log("After bringing back errorinous terms:", resultContent, "\n---End---");
+        logger.info("Conversion complete", { contentLength: resultContent.length });
         
         return {html: resultContent, assets: resultAssets, tags: resultTags};
     }
@@ -303,7 +301,7 @@ export class LogseqToHtmlConverter {
                 try {
                     block = await this.getBlock(g1, {includeChildren: true});
                 } catch (e) {
-                    console.warn(e);
+                    logger.warn(e);
                 }
                 const str = getRandomUnicodeString();
                 hashmap[str] = `<div class="embed-block">${block ? await getBlockEmbedContentHTML([block]) : ""}</div>`;
@@ -344,7 +342,7 @@ export class LogseqToHtmlConverter {
                 try {
                     pageTree = await this.getPageBlocksTree(pageId);
                 } catch (e) {
-                    console.warn(e);
+                    logger.warn(e);
                 }
 
                 const str = getRandomUnicodeString();
@@ -418,7 +416,7 @@ export class LogseqToHtmlConverter {
                     const graphName = (await this.getCurrentGraph())?.name;
                     hashmap[str] = `<span onclick="window.open('logseq://graph/${encodeURIComponent(graphName)}?block-id=${encodeURIComponent(blockUUID)}')" class="block-ref">${blockRefHTMLFile.html}</span>`;
                 } catch (e) {
-                    console.warn(e);
+                    logger.warn(e);
                     hashmap[str] = `<span class="failed-block-ref">${blockUUID}</span>`;
                 }
                 return str;
@@ -476,7 +474,7 @@ export class LogseqToHtmlConverter {
     ): Promise<Uint8Array> {
         const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
         if (content != node[0][1]) {
-            console.error("Error: content mismatch html", content, resultContent.substring(start_pos, end_pos));
+            logger.error("Error: content mismatch html", content, resultContent.substring(start_pos, end_pos));
         }
         const str = getRandomUnicodeString();
         hashmap[str] = content;
@@ -500,7 +498,7 @@ export class LogseqToHtmlConverter {
     ): Promise<Uint8Array> {
         const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
         if (content != node[0][1]) {
-            console.error("Error: content mismatch hiccup", content, resultContent.substring(start_pos, end_pos));
+            logger.error("Error: content mismatch hiccup", content, resultContent.substring(start_pos, end_pos));
         }
         const str = getRandomUnicodeString();
         hashmap[str] = hiccupConverter.serialize(edn.decode(content));
@@ -531,7 +529,7 @@ export class LogseqToHtmlConverter {
         try {
             metadata = await edn.decode(node[0][1].metadata);
         } catch (e) {
-            console.warn(e);
+            logger.warn(e);
         }
         const link_full_text = node[0][1]?.full_text;
         const link_label_type = node[0][1]?.label?.[0]?.[0];

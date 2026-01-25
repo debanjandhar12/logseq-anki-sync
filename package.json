@@ -41,7 +41,8 @@
         "react-dom": "17.0.2",
         "sass": "^1.68.0",
         "string-replace-async": "^3.0.2",
-        "tesseract.js": "^5.0.3"
+        "tesseract.js": "^5.0.3",
+        "consola": "^3.4.2"
     },
     "devDependencies": {
         "@babel/core": "^7.0.0",

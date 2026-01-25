@@ -1,7 +1,9 @@
 import { AnkiActionQueue } from "../internal/AnkiActionQueue";
 import { DeleteNotesResult, OperationFailure } from "../types";
-import { LogseqProxy } from "../../logseq/LogseqProxy";
+import { createLogger, LoggerCategory } from "../../utils/logger";
 import _ from "lodash";
+
+const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
 export class DeleteNoteOperation {
     private queue: AnkiActionQueue = new AnkiActionQueue();
@@ -16,10 +18,7 @@ export class DeleteNoteOperation {
     }
 
     async execute(): Promise<DeleteNotesResult> {
-        const { debug } = LogseqProxy.Settings.getPluginSettings();
-        if (debug.includes("LazyAnkiNoteManager.ts")) {
-            console.log("[DeleteNoteOperation] ankiIdQueue:", this.ankiIdQueue);
-        }
+        logger.info("Executing delete notes operation", this.queue);
 
         const result = await this.queue.execute();
 
@@ -41,6 +40,7 @@ export class DeleteNoteOperation {
         this.queue.clear();
         this.ankiIdQueue = [];
 
+        logger.info("Delete notes operation completed", { successfulNotes, failedNotes });
         return { successfulNotes, failedNotes };
     }
 }

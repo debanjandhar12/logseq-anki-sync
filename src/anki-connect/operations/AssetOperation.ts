@@ -1,7 +1,10 @@
 import * as AnkiConnect from "../AnkiConnect";
 import { AnkiAction } from "../types";
 import { WindowParentBridge } from "../../logseq/WindowParentBridge";
+import { createLogger, LoggerCategory } from "../../utils/logger";
 import _ from "lodash";
+
+const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
 interface AssetParams {
     filename: string;
@@ -18,6 +21,7 @@ export class AssetOperation {
 
     async execute(): Promise<void> {
         try {
+            logger.info("Executing asset operation", this.queue);
             const uniqueAssets = _.uniqBy(this.queue, "filename");
             const batches = _.chunk(uniqueAssets, this.BATCH_SIZE);
             const allStoreActions: AnkiAction[] = [];
@@ -52,9 +56,9 @@ export class AssetOperation {
             }
 
             this.queue = [];
-            console.log("Assets Stored:", allStoreActions, storeResults);
+            logger.info("Asset stored successfully", storeResults);
         } catch (e) {
-            console.error("[AssetOperation] Error storing assets:", e);
+            logger.error("Error storing assets", e);
         }
     }
 

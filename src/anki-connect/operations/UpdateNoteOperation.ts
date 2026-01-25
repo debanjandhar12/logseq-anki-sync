@@ -1,8 +1,10 @@
 import { AnkiActionQueue } from "../internal/AnkiActionQueue";
 import { AnkiNoteCache } from "../internal/AnkiNoteCache";
 import { AnkiNoteFields, UpdateNotesResult, OperationFailure } from "../types";
-import { LogseqProxy } from "../../logseq/LogseqProxy";
+import { createLogger, LoggerCategory } from "../../utils/logger";
 import _ from "lodash";
+
+const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
 export class UpdateNoteOperation {
     private queue: AnkiActionQueue = new AnkiActionQueue();
@@ -19,7 +21,7 @@ export class UpdateNoteOperation {
     ): void {
         const noteinfo = this.cache.getNoteInfo(ankiId);
         if (!noteinfo) {
-            console.error(`[UpdateNoteOperation] Note ${ankiId} not found in cache`);
+            logger.error(`Note ${ankiId} not found in cache`);
             return;
         }
 
@@ -64,15 +66,11 @@ export class UpdateNoteOperation {
         let needsFieldUpdate = false;
         for (const key in fields) {
             if (noteinfo.fields[key as keyof typeof fields]?.value !== fields[key as keyof typeof fields]) {
-                const { debug } = LogseqProxy.Settings.getPluginSettings();
-                if (debug.includes("LazyAnkiNoteManager.ts")) {
-                    console.log(
-                        "[UpdateNoteOperation] Difference found:",
-                        key,
-                        noteinfo.fields[key as keyof typeof fields]?.value,
-                        fields[key as keyof typeof fields]
-                    );
-                }
+                logger.info("Field difference found", {
+                    key,
+                    oldValue: noteinfo.fields[key as keyof typeof fields]?.value,
+                    newValue: fields[key as keyof typeof fields]
+                });
                 needsFieldUpdate = true;
                 break;
             }
@@ -95,16 +93,11 @@ export class UpdateNoteOperation {
     }
 
     async execute(): Promise<UpdateNotesResult> {
-        const { debug } = LogseqProxy.Settings.getPluginSettings();
-        if (debug.includes("LazyAnkiNoteManager.ts")) {
-            console.log("[UpdateNoteOperation] queue:", this.queue);
-        }
+        logger.info("Executing update notes operation", this.queue);
 
         const result = await this.queue.execute();
 
-        if (debug.includes("LazyAnkiNoteManager.ts")) {
-            console.log("[UpdateNoteOperation] result:", result);
-        }
+        logger.info("Update notes operation completed", { resultCount: result.length });
 
         const successfulNotes: string[] = [];
         const failedNotes: OperationFailure[] = [];
@@ -124,6 +117,7 @@ export class UpdateNoteOperation {
         this.queue.clear();
         this.uuidTypeQueue = [];
 
+        logger.info("Update notes operation completed", { successfulNotes, failedNotes });
         return { successfulNotes, failedNotes };
     }
 }

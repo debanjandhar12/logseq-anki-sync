@@ -3,6 +3,10 @@ import {LogseqProxy} from "../logseq/LogseqProxy";
 import { waitForElement } from './utils/waitForElement';
 import { WindowParentBridge } from "../logseq/WindowParentBridge";
 
+import { createLogger, LoggerCategory } from "../utils/logger";
+
+const logger = createLogger(LoggerCategory.Others);
+
 export class UI {
     public static init() {
         logseq.provideStyle(`
@@ -133,7 +137,7 @@ export class UI {
                 });
                 div.remove();
             } catch (e) {
-                console.log(e);
+                logger.info(e);
             }
         };
 

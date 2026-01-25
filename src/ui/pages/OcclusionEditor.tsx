@@ -16,6 +16,10 @@ import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.Others);
+
 if (!WindowParentBridge.hasFabric()) {
     const fabricScript = WindowParentBridge.createElement("script");
     fabricScript.innerHTML = fabric;
@@ -273,7 +277,7 @@ const OcclusionEditorComponent: React.FC<{
         const onKeydown = (e: KeyboardEvent) => {
             if (!fabricRef || !open) return;
             if (e.key === "Escape" && fabricRef.current.getActiveObjects().length > 0) {
-                console.log(fabricRef);
+                logger.info(fabricRef);
                 fabricRef.current.discardActiveObjects();
                 fabricRef.current.renderAll();
                 e.preventDefault();
@@ -414,7 +418,7 @@ const OcclusionEditorComponent: React.FC<{
             });
             await worker.setParameters({tessedit_pageseg_mode: PSM.SPARSE_TEXT});
             const ret = await worker.recognize(imgEl.src);
-            console.log(ret);
+            logger.info(ret);
             let counter = 0;
             if (!ret.data.confidence || ret.data.confidence < 40)
                 throw new Error("AI failed to recognize the image");

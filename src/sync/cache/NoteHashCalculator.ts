@@ -11,6 +11,7 @@ import pkg from "../../../package.json";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import { DependencyEntity } from "../../logseq/getLogseqContentDirectDependencies";
+import { createLogger, LoggerCategory } from "../../utils/logger";
 import {
     getBlockHash,
     getPageHash,
@@ -20,6 +21,8 @@ import objectHashOptimized from "../../utils/objectHashOptimized";
 import path from "path-browserify";
 import { ParsedNoteData } from "../types";
 import getNameFromPage from "../../logseq/getNameFromPage";
+
+const logger = createLogger(LoggerCategory.SyncCacheLayer);
 
 
 export default class NoteHashCalculator {
@@ -37,7 +40,7 @@ export default class NoteHashCalculator {
                 }
             }
         } catch (e) {
-            console.error("[NoteHashCalculator] Error getting asset modified times:", e);
+            logger.error("Error getting asset modified times", e);
         }
         return assetModifiedTimeMap;
     }

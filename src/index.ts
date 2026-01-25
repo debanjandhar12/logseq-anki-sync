@@ -19,6 +19,10 @@ import pkg from "./../package.json";
 import { WindowParentBridge } from "./logseq/WindowParentBridge";
 
 
+import { createLogger, LoggerCategory } from "./utils/logger";
+
+const logger = createLogger(LoggerCategory.Others);
+
 function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
     const syncLogseqToAnki = async function () {
@@ -108,4 +112,4 @@ function main(baseInfo: LSPluginBaseInfo) {
 }
 
 // Bootstrap
-logseq.ready(main).catch(console.error);
+logseq.ready(main).catch((e) => logger.error("Failed to initialize plugin", e));

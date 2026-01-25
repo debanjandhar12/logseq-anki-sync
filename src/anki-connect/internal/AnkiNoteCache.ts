@@ -2,6 +2,10 @@ import * as AnkiConnect from "../AnkiConnect";
 import { AnkiNoteInfo } from "../types";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
+
 export class AnkiNoteCache {
     private noteInfoMap: Map<number, AnkiNoteInfo> = new Map();
     private mediaInfo: Set<string> = new Set();
@@ -27,20 +31,14 @@ export class AnkiNoteCache {
             this.noteInfoMap.set(note.noteId, { ...note, deck });
         }
 
-        const { debug } = LogseqProxy.Settings.getPluginSettings();
-        if (debug.includes("LazyAnkiNoteManager.ts")) {
-            console.debug("[AnkiNoteCache] noteInfoMap:", this.noteInfoMap);
-        }
+        logger.debug("noteInfoMap built", this.noteInfoMap);
     }
 
     async buildMediaInfo(): Promise<void> {
         const mediaFileNames = await AnkiConnect.invoke("getMediaFilesNames", {});
         this.mediaInfo = new Set(mediaFileNames);
         
-        const { debug } = LogseqProxy.Settings.getPluginSettings();
-        if (debug.includes("LazyAnkiNoteManager.ts")) {
-            console.debug("[AnkiNoteCache] mediaInfo:", this.mediaInfo);
-        }
+        logger.debug("mediaInfo built", this.mediaInfo);
     }
 
     getNoteInfo(ankiId: number): AnkiNoteInfo | undefined {

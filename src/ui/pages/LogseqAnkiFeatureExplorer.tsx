@@ -9,6 +9,10 @@ import {ImageOcclusionNote} from "../../anki-notes/ImageOcclusionNote";
 import _ from "lodash";
 import getNameFromPage from "../../logseq/getNameFromPage";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.Others);
+
 export async function showLogseqAnkiFeatureExplorer(editingBlockUUID: string): Promise<void> {
     return createModalPromise<void>(
         (props) => (
@@ -959,7 +963,7 @@ const PropFeature: React.FC<{
         await logseq.Editor.updateBlock(editingBlockUUID, block.content+'...'); // Force logseq to update the block cache
         await logseq.Editor.updateBlock(editingBlockUUID, block.content);
         setForceRefresh(p => p+1);
-        console.log("Updated prop value", value);
+        logger.info("Updated prop value", value);
     }
 
     const updatePropValueDebounced = useCallback(_.debounce(updatePropValue, 500), [editingBlockUUID, propName]);

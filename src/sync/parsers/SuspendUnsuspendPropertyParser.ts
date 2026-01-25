@@ -3,6 +3,10 @@ import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { getLogseqBlockPropSafe } from "../../utils/utils";
 import _ from "lodash";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.SyncInternal);
+
 export class SuspendUnsuspendPropertyParser {
     /**
      * Resolves the suspend-anki-card property for a note following the hierarchy:
@@ -37,7 +41,7 @@ export class SuspendUnsuspendPropertyParser {
                 parentBlockUUID = _.get(parentBlock, "parent.id", null);
             }
         } catch (e) {
-            console.error("[SuspendUnsuspendPropertyParser] Error finding suspend-anki-card in block hierarchy:", e);
+            logger.error("[SuspendUnsuspendPropertyParser] Error finding suspend-anki-card in block hierarchy:", e);
         }
         return null;
     }
@@ -52,7 +56,7 @@ export class SuspendUnsuspendPropertyParser {
                 if (suspendValue != null) return this.normalizeValue(suspendValue);
             }
         } catch (e) {
-            console.error("[SuspendUnsuspendPropertyParser] Error finding suspend-anki-card in namespace hierarchy:", e);
+            logger.error("[SuspendUnsuspendPropertyParser] Error finding suspend-anki-card in namespace hierarchy:", e);
         }
         return null;
     }

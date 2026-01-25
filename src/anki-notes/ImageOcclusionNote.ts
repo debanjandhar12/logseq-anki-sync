@@ -29,6 +29,10 @@ import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {showSelectionModal} from "../ui";
 
+import { createLogger, LoggerCategory } from "../utils/logger";
+
+const logger = createLogger(LoggerCategory.AnkiNotes);
+
 export type ImageToOcclusionDataHashMap = {[key: string]: OcclusionData};
 
 export class ImageOcclusionNote extends Note {
@@ -79,12 +83,12 @@ export class ImageOcclusionNote extends Note {
                     ).toString(),
                 ),
             );
-        console.log(imgToOcclusionDataHashMap);
+        logger.info(imgToOcclusionDataHashMap);
         imgToOcclusionDataHashMap = ImageOcclusionNote.migratePdfImages(
             imgToOcclusionDataHashMap,
             block_images,
         );
-        console.log(imgToOcclusionDataHashMap);
+        logger.info(imgToOcclusionDataHashMap);
         let selectedImage = null;
         let selectedImageIdx =
             block_images.length == 1
@@ -121,7 +125,7 @@ export class ImageOcclusionNote extends Note {
                         "base64",
                     ) != fetchedBlock.properties?.occlusion
                 ) {
-                    console.log(imgToOcclusionDataHashMap, Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
+                    logger.info(imgToOcclusionDataHashMap, Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
                         "base64",
                     ));
                     await LogseqProxy.Editor.upsertBlockProperty(
@@ -211,7 +215,7 @@ export class ImageOcclusionNote extends Note {
                 }
             }),
         );
-        console.log("ImageOcclusionNote Loaded", notes);
+        logger.info("ImageOcclusionNote Loaded", notes);
         notes = await Note.removeUnwantedNotes(notes as ImageOcclusionNote[]);
         notes = await Promise.all(
             _.map(notes, async (note: ImageOcclusionNote) => {
@@ -278,7 +282,7 @@ export class ImageOcclusionNote extends Note {
 
                     return getFirstNonEmptyLine(blockRef_content);
                 } catch (e) {
-                    console.warn(e);
+                    logger.warn(e);
                 }
                 return match;
             },
@@ -313,7 +317,7 @@ export class ImageOcclusionNote extends Note {
                     try {
                         imageURLParams = new URLSearchParams(image.split("?")[1]);
                     } catch (e) {}
-                    console.log(image, imageURLParams.get("imageAnnotationBlockUUID"));
+                    logger.info(image, imageURLParams.get("imageAnnotationBlockUUID"));
                     if (
                         imageURLParams.get("imageAnnotationBlockUUID") &&
                         key.includes(imageURLParams.get("imageAnnotationBlockUUID"))
@@ -327,7 +331,7 @@ export class ImageOcclusionNote extends Note {
                     imgToOcclusionDataHashMap[k];
             }
         });
-        console.log(
+        logger.info(
             "migratePdfImages",
             imgToOcclusionDataHashMap,
             newImgToOcclusionDataHashMap,

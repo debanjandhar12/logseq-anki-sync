@@ -8,6 +8,10 @@ import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
+import { createLogger, LoggerCategory } from "../utils/logger";
+
+const logger = createLogger(LoggerCategory.AnkiNotes);
+
 export class MultilineCardNote extends Note {
     public type = "multiline_card";
     public children: any[];
@@ -245,7 +249,6 @@ export class MultilineCardNote extends Note {
         logseqCardGroup_blocks = await Promise.all(
             logseqCardGroup_blocks.map(async (block) => {
                 const uuid = getUUIDFromBlock(block[0]);
-                console.log(block[0]);
                 const parent = block[0].parent.id;
                 const parentBlock = await LogseqProxy.Editor.getBlock(parent);
                 const tags = _.get(parentBlock, "properties.tags", []) as string[];
@@ -285,7 +288,7 @@ export class MultilineCardNote extends Note {
                 }
             }),
         );
-        console.log("MultilineCardNote Loaded");
+        logger.info("MultilineCardNote Loaded");
         notes = await Note.removeUnwantedNotes(notes) as MultilineCardNote[];
         notes = _.filter(notes, (note) => {
             // Retain only blocks whose children count > 0 or direction is expictly specifed or no other note type is being generated from that block

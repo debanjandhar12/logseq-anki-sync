@@ -1,6 +1,10 @@
 import React from "../../React";
 import { UI } from "../../UI";
 
+import { createLogger, LoggerCategory } from "../../../utils/logger";
+
+const logger = createLogger(LoggerCategory.Others);
+
 export interface ModalPromiseOptions {
     mountPath?: string;
     errorMessage?: string;
@@ -45,7 +49,7 @@ export async function createModalPromise<T>(
             );
         } catch (e) {
             await logseq.UI.showMsg(errorMessage, "error");
-            console.log(e);
+            logger.info(e);
             reject(e);
         }
     });

@@ -7,6 +7,10 @@ import { parseNote } from "../parsers/NoteParser";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import path from "path-browserify";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.SyncInternal);
+
 export class UpdateNotesTask {
     async execute(
         notes: Note[],
@@ -22,7 +26,7 @@ export class UpdateNotesTask {
             try {
                 await this.updateNote(note, modelName, graphName, graphPath, ankiNoteManager);
             } catch (e) {
-                console.error(e);
+                logger.error(e);
                 failedUpdated[`${note.uuid}-${note.type}`] = e;
             }
             progressNotification.increment();
@@ -30,7 +34,7 @@ export class UpdateNotesTask {
 
         const updateResult = await ankiNoteManager.executeUpdateNotes();
         for (const failure of updateResult.failedNotes) {
-            console.error(failure.error);
+            logger.error(failure.error);
             failedUpdated[failure.identifier] = failure.error;
         }
 
@@ -97,10 +101,7 @@ export class UpdateNotesTask {
             );
         });
 
-        const { debug } = LogseqProxy.Settings.getPluginSettings();
-        if (debug.includes("syncLogseqToAnki.ts")) {
-            console.log(`dependencyHash mismatch for note with id ${note.uuid}-${note.type}`);
-        }
+        logger.info(`dependencyHash mismatch for note with id ${note.uuid}-${note.type}`);
 
         ankiNoteManager.updateNote(
             ankiId,

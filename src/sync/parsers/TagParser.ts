@@ -3,6 +3,10 @@ import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { getCaseInsensitive } from "../../utils/utils";
 import _ from "lodash";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.SyncInternal);
+
 export class TagParser {
     static async parse(note: Note, initialTags: string[]): Promise<string[]> {
         let tags = [...initialTags];
@@ -26,7 +30,7 @@ export class TagParser {
                 parentBlockUUID = _.get(parentBlock, "parent.id", null);
             }
         } catch (e) {
-            console.error("[TagParser] Error collecting tags from block hierarchy:", e);
+            logger.error("[TagParser] Error collecting tags from block hierarchy:", e);
         }
         return tags;
     }
@@ -41,7 +45,7 @@ export class TagParser {
                 tags = [...tags, ...pageTags];
             }
         } catch (e) {
-            console.error("[TagParser] Error collecting tags from namespace hierarchy:", e);
+            logger.error("[TagParser] Error collecting tags from namespace hierarchy:", e);
         }
         return tags;
     }

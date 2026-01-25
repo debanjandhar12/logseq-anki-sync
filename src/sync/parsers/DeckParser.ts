@@ -5,6 +5,10 @@ import _ from "lodash";
 import getNameFromPage from "../../logseq/getNameFromPage";
 import { LOGSEQ_PAGE_REF_REGEXP } from "../../constants";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.SyncInternal);
+
 export class DeckParser {
     /**
      * Resolves the deck name for a note following the hierarchy:
@@ -40,7 +44,7 @@ export class DeckParser {
                 parentBlockUUID = _.get(parentBlock, "parent.id", null);
             }
         } catch (e) {
-            console.error("[DeckParser] Error finding deck in block hierarchy:", e);
+            logger.error("[DeckParser] Error finding deck in block hierarchy:", e);
         }
         return null;
     }
@@ -55,7 +59,7 @@ export class DeckParser {
                 if (deck != null) return deck;
             }
         } catch (e) {
-            console.error("[DeckParser] Error finding deck in namespace hierarchy:", e);
+            logger.error("[DeckParser] Error finding deck in namespace hierarchy:", e);
         }
         return null;
     }

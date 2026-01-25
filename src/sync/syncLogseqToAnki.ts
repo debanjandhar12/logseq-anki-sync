@@ -32,6 +32,9 @@ import { CreateNotesTask } from "./tasks/CreateNotesTask";
 import { UpdateNotesTask } from "./tasks/UpdateNotesTask";
 import { DeleteNotesTask } from "./tasks/DeleteNotesTask";
 import { SuspendUnsuspendNotesTask } from "./tasks/SuspendUnsuspendNotesTask";
+import { createLogger, LoggerCategory } from "../utils/logger";
+
+const logger = createLogger(LoggerCategory.SyncMain);
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -44,7 +47,7 @@ export class LogseqToAnkiSync {
         //     return;
         // }
         if (LogseqToAnkiSync.isSyncing) {
-            console.log(`Syncing already in process...`);
+            logger.info("Syncing already in process");
             return;
         }
         LogseqToAnkiSync.isSyncing = true;
@@ -56,7 +59,7 @@ export class LogseqToAnkiSync {
                 key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`,
                 template: ``,
             });
-            console.error(e);
+            logger.error("Sync failed", e);
         }
         finally {
             this.completeSyncCleanup();
@@ -67,9 +70,8 @@ export class LogseqToAnkiSync {
     private async performSync(): Promise<void> {
         this.graphName = await this.getGraphName();
         this.modelName = this.getModelName();
-        console.log(
-            `%cStarting Logseq to Anki Sync V${pkg.version} for graph ${this.graphName}`,
-            "color: green; font-size: 1.5em;"
+        logger.success(
+            `Starting Logseq to Anki Sync V${pkg.version} for graph ${this.graphName}`
         );
 
         await this.setupAnkiModel();
@@ -175,7 +177,7 @@ export class LogseqToAnkiSync {
             ankiNoteManager,
             syncNotificationObj
         );
-        console.log(`[SuspendUnsuspend] Suspended ${result.suspended} cards, Unsuspended ${result.unsuspended} cards`);
+        logger.info(`Suspended ${result.suspended} cards, Unsuspended ${result.unsuspended} cards`);
     }
 
     private async getGraphName(): Promise<string> {
@@ -237,7 +239,7 @@ export class LogseqToAnkiSync {
                 try {
                     await LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid);
                 } catch (e) {
-                    console.error(e);
+                    logger.error("Failed to persist block ID", e);
                 }
             }
         }
@@ -296,7 +298,11 @@ export class LogseqToAnkiSync {
         }
 
         const { toCreateNotes, toUpdateNotes, toDeleteNotes } = noteSelection;
-        console.log("toCreateNotes", toCreateNotes, "toUpdateNotes", toUpdateNotes, "toDeleteNotes", toDeleteNotes);
+        logger.info("Sync plan created", { 
+            toCreate: toCreateNotes.length, 
+            toUpdate: toUpdateNotes.length, 
+            toDelete: toDeleteNotes.length 
+        });
 
         if (toCreateNotes.length == 0 && toUpdateNotes.length == 0 && toDeleteNotes.length >= 10) {
             const confirm_msg = `<b class="text-red-600">This will delete all your notes in anki that are generated from this graph.</b><br/>Are you sure you want to continue?`;
@@ -353,11 +359,9 @@ export class LogseqToAnkiSync {
         await AnkiConnect.invoke("reloadCollection", {});
         syncNotificationObj.increment();
 
-        console.log(
-            "syncLogseqToAnki() Time Taken:",
-            (performance.now() - start_time).toFixed(2),
-            "ms"
-        );
+        logger.info("Sync completed", {
+            timeTaken: `${(performance.now() - start_time).toFixed(2)}ms`
+        });
 
         return { toCreateNotes, toUpdateNotes, toDeleteNotes, failedCreated, failedUpdated, failedDeleted };
     }
@@ -396,7 +400,12 @@ export class LogseqToAnkiSync {
         if (Object.keys(failedDeleted).length > 0)
             summery += `\nFailed Deleted: ${Object.keys(failedDeleted).length} `;
 
-        console.log(toCreateNotes, toUpdateNotes, toDeleteNotes);
+        logger.info("Sync summary", {
+            created: toCreateNotes,
+            updated: toUpdateNotes,
+            deleted: toDeleteNotes
+        });
+        
         ActionNotification(
             [
                 {
@@ -420,14 +429,14 @@ export class LogseqToAnkiSync {
                 : SUCCESS_ICON
         );
         
-        console.log(summery);
-        if (Object.keys(failedCreated).length > 0) console.error("\nFailed Created:", failedCreated);
-        if (Object.keys(failedUpdated).length > 0) console.error("\nFailed Updated:", failedUpdated);
-        if (Object.keys(failedDeleted).length > 0) console.error("\nFailed Deleted:", failedDeleted);
+        logger.info(summery);
+        if (Object.keys(failedCreated).length > 0) logger.error("Failed Created", failedCreated);
+        if (Object.keys(failedUpdated).length > 0) logger.error("Failed Updated", failedUpdated);
+        if (Object.keys(failedDeleted).length > 0) logger.error("Failed Deleted", failedDeleted);
     }
 
     private completeSyncCleanup(): void {
         WindowParentBridge.dispatchLogseqAnkiSyncEvent("syncLogseqToAnkiComplete");
-        console.log("Sync Aborted by user!");
+        logger.info("Sync cleanup completed");
     }
 }

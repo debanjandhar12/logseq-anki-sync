@@ -4,6 +4,7 @@ import { WindowParentBridge } from "./logseq/WindowParentBridge";
 import {AddonRegistry} from "./addons/AddonRegistry";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {DONATE_ICON} from "./constants";
+import { updateLoggerLevels } from "./utils/logger";
 
 // Type definitions for plugin settings
 export interface PluginSettings {
@@ -15,7 +16,18 @@ export interface PluginSettings {
     addonsList?: string[];
     ankiFieldOptions?: ("furigana" | "kana" | "kanji" | "tts" | "tags" | "rtl")[];
     syncOverwriteList?: string[];
-    debug?: ("syncLogseqToAnki.ts" | "LogseqProxy.ts" | "LogseqToHtmlConverter.ts" | "LazyAnkiNoteManager.ts" | "blockAndPageHashCache.ts")[];
+    debug?: (
+        "Anki Connect" | 
+        "Lazy Anki Note Manager" | 
+        "Lazy Anki Note Manager Internal" | 
+        "Anki Notes" | 
+        "Logseq Wrappers" | 
+        "Sync Cache Layer" | 
+        "Logseq Content Converter" | 
+        "Sync Main" | 
+        "Sync Internal" | 
+        "Others"
+    )[];
     skipOnDependencyHashMatch?: boolean;
     lastWelcomeVersion?: string;
 }
@@ -131,16 +143,21 @@ export const addSettingsToLogseq = () => {
             key: "debug",
             type: "enum",
             default: [],
-            title: "Enable debugging? (Recommended: None)",
+            title: "Enable info-level logging for categories? (Recommended: None)",
             enumChoices: [
-                "syncLogseqToAnki.ts",
-                "LogseqProxy.ts",
-                "LogseqToHtmlConverter.ts",
-                "LazyAnkiNoteManager.ts",
-                "blockAndPageHashCache.ts",
+                "Anki Connect",
+                "Lazy Anki Note Manager",
+                "Lazy Anki Note Manager Internal",
+                "Anki Notes",
+                "Logseq Wrappers",
+                "Sync Cache Layer",
+                "Logseq Content Converter",
+                "Sync Main",
+                "Sync Internal",
+                "Others",
             ],
             enumPicker: "checkbox",
-            description: "Select the files to enable debugging for.",
+            description: "Select the categories to enable info-level logging for. Warnings and errors are always shown.",
         },
     ];
     LogseqProxy.Settings.useSettingsSchema(settingsTemplate);
@@ -159,6 +176,11 @@ export const addSettingsToLogseq = () => {
         }
         else if (!_.isEqual(newSettings.hideClozeMarcosUntilHoverInLogseq, oldSettings.hideClozeMarcosUntilHoverInLogseq)) {
             WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
+        }
+
+        // Handle debug category changes - update logger levels
+        if (!_.isEqual(newSettings.debug, oldSettings.debug)) {
+            updateLoggerLevels();
         }
 
         // Handle overwriting list

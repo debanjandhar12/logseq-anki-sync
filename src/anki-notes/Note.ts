@@ -5,6 +5,9 @@ import { DependencyEntity } from "../logseq/getLogseqContentDirectDependencies";
 import _ from "lodash";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import { getLogseqBlockPropSafe } from "../utils/utils";
+import { createLogger, LoggerCategory } from "../utils/logger";
+
+const logger = createLogger(LoggerCategory.AnkiNotes);
 
 export abstract class Note {
     public uuid: string;
@@ -108,7 +111,7 @@ export abstract class Note {
                             }
                             parentBlockUUID = parentBlock?.parent?.id ?? null;
                         }
-                    } catch (e) { console.error(e); }
+                    } catch (e) { logger.error(e); }
 
                     if (isAnkiSyncDisabled === null) {
                         try {
@@ -127,7 +130,7 @@ export abstract class Note {
                                     break;
                                 }
                             }
-                        } catch (e) { console.error(e); }
+                        } catch (e) { logger.error(e); }
                     }
 
                     if (isAnkiSyncDisabled === true) return null;

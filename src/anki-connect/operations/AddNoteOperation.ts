@@ -3,7 +3,10 @@ import { AnkiActionQueue } from "../internal/AnkiActionQueue";
 import { AnkiNoteFields, AddNotesResult, OperationFailure, AnkiIdUuidPair } from "../types";
 import { ANKI_CLOZE_REGEXP } from "../../constants";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
+import { createLogger, LoggerCategory } from "../../utils/logger";
 import _ from "lodash";
+
+const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
 export class AddNoteOperation {
     private queue1: AnkiActionQueue = new AnkiActionQueue();
@@ -57,10 +60,7 @@ export class AddNoteOperation {
     }
 
     async execute(): Promise<AddNotesResult> {
-        const { debug } = LogseqProxy.Settings.getPluginSettings();
-        if (debug.includes("LazyAnkiNoteManager.ts")) {
-            console.log("[AddNoteOperation] uuidTypeQueue2:", this.uuidTypeQueue2);
-        }
+        logger.info("Executing add notes operation", this.queue1, this.queue2);
 
         // Execute queue 1: Create notes with dummy content (required to do this due to anki bug where note creation fails otherwise)
         const result1 = await this.queue1.execute();
@@ -128,6 +128,7 @@ export class AddNoteOperation {
         this.uuidTypeQueue1 = [];
         this.uuidTypeQueue2 = [];
 
+        logger.info("Add notes operation completed", { successfulNotes, failedNotes });
         return {
             successfulNotes,
             failedNotes,

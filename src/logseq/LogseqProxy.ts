@@ -17,6 +17,10 @@ import { LogseqPropertiesHelperProxy } from "./LogseqPropertiesHelper";
 import { LogseqNamespaceHelperProxy } from "./LogseqNamespaceHelper";
 import getNameFromPage from "./getNameFromPage";
 
+import { createLogger, LoggerCategory } from "../utils/logger";
+
+const logger = createLogger(LoggerCategory.LogseqWrappers);
+
 /***
  * This is a cached + syncronization-safe logseq api wrapper.
  * Fixes the following issues: #58
@@ -36,7 +40,7 @@ export namespace LogseqProxy {
             try {
                 block = await LogseqPropertiesHelperProxy.getBlock(srcBlock, opts);
             } catch (e) {
-                console.error(e);
+                logger.error(e);
                 if (!opts.suppressErrors) throw e;
             } finally {
                 getLogseqLock.release();
@@ -52,7 +56,7 @@ export namespace LogseqProxy {
                 // Use helper method to fetch page with properties
                 page = await LogseqPropertiesHelperProxy.getPage(srcPage);
             } catch (e) {
-                console.error(e);
+                logger.error(e);
                 if (!opts.suppressErrors) throw e;
             } finally {
                 getLogseqLock.release();
@@ -67,7 +71,7 @@ export namespace LogseqProxy {
             try {
                 pageBlockTree = await LogseqPropertiesHelperProxy.getPageBlocksTree(srcPage);
             } catch (e) {
-                console.error(e);
+                logger.error(e);
                 if (!opts.suppressErrors) throw e;
             } finally {
                 getLogseqLock.release();
@@ -85,7 +89,7 @@ export namespace LogseqProxy {
             try {
                 return await LogseqNamespaceHelperProxy.getParentNamespacePages(page);
             } catch (e) {
-                console.error(e);
+                logger.error(e);
                 if (!opts.suppressErrors) throw e;
             }
             return [];
@@ -116,7 +120,7 @@ export namespace LogseqProxy {
                 ];
                 return segments.filter(s => !!s).join("/");
             } catch (e) {
-                console.error(e);
+                logger.error(e);
                 if (!opts.suppressErrors) throw e;
             }
             return "";
@@ -128,7 +132,7 @@ export namespace LogseqProxy {
             try {
                 await logseq.Editor.upsertBlockProperty(block, key, value);
             } catch (e) {
-                console.error(e);
+                logger.error(e);
                 if (!opts.suppressErrors) throw e;
             } finally {
                 getLogseqLock.release();
@@ -153,7 +157,7 @@ export namespace LogseqProxy {
                         : await logseq.Editor.createPage(tagName, {}, { redirect: false });
                 }
             } catch (e) {
-                console.error(e);
+                logger.error(e);
             } finally {
                 getLogseqLock.release();
             }
@@ -166,7 +170,7 @@ export namespace LogseqProxy {
                 if (!isDb) return; // upsertProperty does not work in non db version
                 await logseq.Editor.upsertProperty(key, schema);
             } catch (e) {
-                console.error(e);
+                logger.error(e);
             } finally {
                 getLogseqLock.release();
             }
@@ -180,7 +184,7 @@ export namespace LogseqProxy {
             try {
                 result = await logseq.DB.datascriptQuery(query);
             } catch (e) {
-                console.error(e);
+                logger.error(e);
                 if (!opts.suppressErrors) throw e;
             } finally {
                 getLogseqLock.release();
@@ -225,7 +229,7 @@ export namespace LogseqProxy {
             try {
                 files = await logseq.Assets.listFilesOfCurrentGraph(exts);
             } catch (e) {
-                console.error(e);
+                logger.error(e);
             } finally {
                 getLogseqLock.release();
             }
@@ -279,10 +283,7 @@ export namespace LogseqProxy {
             }
         });
         WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
-            const { debug } = LogseqProxy.Settings.getPluginSettings();
-            if (debug?.includes("LogseqProxy.ts")) {
-                console.log("[LogseqProxy] Clearing memoization caches for getBlock, getPage, getPageBlocksTree, namespace helpers, listFilesOfCurrentGraph, and checkCurrentIsDbGraph");
-            }
+            logger.info("Clearing memoization caches for getBlock, getPage, getPageBlocksTree, namespace helpers, listFilesOfCurrentGraph, and checkCurrentIsDbGraph");
             pMemoizeClear(LogseqProxy.Editor.getBlock);
             pMemoizeClear(LogseqProxy.Editor.getPage);
             pMemoizeClear(LogseqProxy.Editor.getPageBlocksTree);

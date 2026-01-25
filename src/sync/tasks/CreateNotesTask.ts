@@ -1,5 +1,8 @@
 import { Note } from "../../anki-notes/Note";
 import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.SyncInternal);
 import { ProgressNotification } from "../../ui";
 import { ParsedNoteData } from "../types";
 import { NoteHashCalculator } from "../cache";
@@ -22,7 +25,7 @@ export class CreateNotesTask {
             try {
                 await this.createNote(note, modelName, graphName, graphPath, ankiNoteManager);
             } catch (e) {
-                console.error(e);
+                logger.error("Failed to create note", e);
                 failedCreated[`${note.uuid}-${note.type}`] = e;
             }
             progressNotification.increment();
@@ -41,13 +44,13 @@ export class CreateNotesTask {
         }
 
         for (const failure of addResult.failedNotes) {
-            console.error(failure.error);
+            logger.error("Failed to add note", failure.error);
             failedCreated[failure.identifier] = failure.error;
         }
 
         const secondAddResult = await ankiNoteManager.executeAddNotes();
         for (const failure of secondAddResult.failedNotes) {
-            console.error(failure.error);
+            logger.error("Failed to add note (second attempt)", failure.error);
         }
 
         const succeeded = notes.filter(n => !failedCreated[`${n.uuid}-${n.type}`]);

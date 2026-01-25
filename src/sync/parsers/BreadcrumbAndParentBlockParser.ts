@@ -4,6 +4,10 @@ import { ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP } from "../../constants";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
 import getNameFromPage from "../../logseq/getNameFromPage";
 
+import { createLogger, LoggerCategory } from "../../utils/logger";
+
+const logger = createLogger(LoggerCategory.SyncInternal);
+
 export class BreadcrumbAndParentBlockParser {
     static async parse(note: Note, graphName: string): Promise<string> {
         const { breadcrumbDisplay } = LogseqProxy.Settings.getPluginSettings();
@@ -49,7 +53,7 @@ export class BreadcrumbAndParentBlockParser {
                 }">${firstLine}</a>`;
             }
         } catch (e) {
-            console.error("[BreadcrumbAndParentBlockParser] Error building full breadcrumb:", e);
+            logger.error("[BreadcrumbAndParentBlockParser] Error building full breadcrumb:", e);
         }
 
         return breadcrumb;
