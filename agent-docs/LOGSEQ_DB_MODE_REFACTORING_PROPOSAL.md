@@ -33,7 +33,7 @@ This document proposes a comprehensive refactoring strategy to make the converte
    - Uses `LogseqProxy.Assets.listFilesOfCurrentGraph()` to get all assets
    - This API may not work or return different results in DB mode
 
-4. **Asset Path Construction for Anki** (UpdateNotesOperation.ts:76, CreateNotesOperation.ts:76)
+4. **Asset Path Construction for Anki** (UpdateNotesTask.ts:76, CreateNotesTask.ts:76)
    ```typescript
    path.join(graphPath, path.resolve(asset))
    ```
@@ -547,12 +547,12 @@ async function processRefEmbeds(
 
 ### Phase 4: Refactor Sync Operations
 
-#### 4.1 Update CreateNotesOperation
+#### 4.1 Update CreateNotesTask
 
 ```typescript
-// src/sync/operations/CreateNotesOperation.ts
+// src/sync/operations/CreateNotesTask.ts
 
-export class CreateNotesOperation {
+export class CreateNotesTask {
     async execute(
         notes: Note[],
         modelName: string,
@@ -582,12 +582,12 @@ export class CreateNotesOperation {
 }
 ```
 
-#### 4.2 Update UpdateNotesOperation
+#### 4.2 Update UpdateNotesTask
 
 ```typescript
-// src/sync/operations/UpdateNotesOperation.ts
+// src/sync/operations/UpdateNotesTask.ts
 
-export class UpdateNotesOperation {
+export class UpdateNotesTask {
     async execute(
         notes: Note[],
         modelName: string,
@@ -596,7 +596,7 @@ export class UpdateNotesOperation {
         parseNote: (note: Note) => Promise<ParsedNoteData>,
         progressNotification: ProgressNotification
     ): Promise<OperationResult> {
-        // Similar changes as CreateNotesOperation
+        // Similar changes as CreateNotesTask
         // Use assetResolver.resolveAssetForAnki() instead of path.join
     }
 }
@@ -630,7 +630,7 @@ export class LogseqToAnkiSync {
         syncNotificationObj: ProgressNotification,
     ): Promise<void> {
         // Pass assetResolver instead of graphPath
-        const operation = new CreateNotesOperation();
+        const operation = new CreateNotesTask();
         const result = await operation.execute(
             toCreateNotes,
             this.modelName,
@@ -765,8 +765,8 @@ export abstract class Note {
 - [ ] Test Files mode still works correctly
 
 ### Phase 3: Refactor Sync Operations (Week 5)
-- [ ] Update `CreateNotesOperation` to accept `IAssetResolver`
-- [ ] Update `UpdateNotesOperation` to accept `IAssetResolver`
+- [ ] Update `CreateNotesTask` to accept `IAssetResolver`
+- [ ] Update `UpdateNotesTask` to accept `IAssetResolver`
 - [ ] Update `LogseqToAnkiSync` to use asset resolver
 - [ ] Update `NoteHashCalculator` to use asset resolver
 - [ ] Test end-to-end sync in Files mode

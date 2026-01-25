@@ -29,9 +29,9 @@ import {showSyncSelectionDialog} from "../ui";
 import {showSyncResultDialog} from "../ui";
 import { WindowParentBridge } from "../logseq/WindowParentBridge";
 import { parseNote } from "./parsers";
-import { CreateNotesOperation } from "./operations/CreateNotesOperation";
-import { UpdateNotesOperation } from "./operations/UpdateNotesOperation";
-import { DeleteNotesOperation } from "./operations/DeleteNotesOperation";
+import { CreateNotesTask } from "./tasks/CreateNotesTask";
+import { UpdateNotesTask } from "./tasks/UpdateNotesTask";
+import { DeleteNotesTask } from "./tasks/DeleteNotesTask";
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -112,8 +112,8 @@ export class LogseqToAnkiSync {
         syncNotificationObj: ProgressNotification,
     ): Promise<void> {
         const graphPath = (await LogseqProxy.App.getCurrentGraph()).path;
-        const operation = new CreateNotesOperation();
-        const result = await operation.execute(
+        const task = new CreateNotesTask();
+        const result = await task.execute(
             toCreateNotes,
             this.modelName,
             graphPath,
@@ -131,8 +131,8 @@ export class LogseqToAnkiSync {
         syncNotificationObj: ProgressNotification,
     ): Promise<void> {
         const graphPath = (await LogseqProxy.App.getCurrentGraph()).path;
-        const operation = new UpdateNotesOperation();
-        const result = await operation.execute(
+        const task = new UpdateNotesTask();
+        const result = await task.execute(
             toUpdateNotes,
             this.modelName,
             graphPath,
@@ -155,8 +155,8 @@ export class LogseqToAnkiSync {
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification,
     ) {
-        const operation = new DeleteNotesOperation();
-        const result = await operation.execute(
+        const task = new DeleteNotesTask();
+        const result = await task.execute(
             toDeleteNotes,
             ankiNoteManager,
             syncNotificationObj

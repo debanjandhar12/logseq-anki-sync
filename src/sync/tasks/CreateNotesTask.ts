@@ -6,7 +6,7 @@ import { NoteHashCalculator } from "../cache";
 import path from "path-browserify";
 import _ from "lodash";
 
-export class CreateNotesOperation {
+export class CreateNotesTask {
     async execute(
         notes: Note[],
         modelName: string,

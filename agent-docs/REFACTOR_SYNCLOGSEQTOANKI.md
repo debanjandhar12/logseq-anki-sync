@@ -49,9 +49,9 @@ Combine the best of modular and object-oriented approaches:
 src/sync/
 ├── syncLogseqToAnki.ts          # Main orchestrator (~150 lines)
 ├── operations/
-│   ├── CreateNotesOperation.ts  # Handles note creation with error tracking
-│   ├── UpdateNotesOperation.ts  # Handles note updates with hash comparison
-│   └── DeleteNotesOperation.ts  # Handles note deletion
+│   ├── CreateNotesTask.ts  # Handles note creation with error tracking
+│   ├── UpdateNotesTask.ts  # Handles note updates with hash comparison
+│   └── DeleteNotesTask.ts  # Handles note deletion
 ├── parsers/
 │   ├── index.ts                 # Re-export all parsers
 │   ├── NoteParser.ts            # Main parsing coordinator
@@ -539,9 +539,9 @@ Move create/update/delete logic into operation classes that encapsulate error tr
 src/sync/
 ├── syncLogseqToAnki.ts          # Simplified by delegating to operations
 ├── operations/
-│   ├── CreateNotesOperation.ts
-│   ├── UpdateNotesOperation.ts
-│   └── DeleteNotesOperation.ts
+│   ├── CreateNotesTask.ts
+│   ├── UpdateNotesTask.ts
+│   └── DeleteNotesTask.ts
 └── parsers/
     └── ...
 ```
@@ -549,7 +549,7 @@ src/sync/
 #### Example Implementation
 
 ```typescript
-// operations/CreateNotesOperation.ts
+// operations/CreateNotesTask.ts
 import { Note } from "../../anki-notes/Note";
 import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import { ProgressNotification } from "../../ui";
@@ -558,7 +558,7 @@ import NoteHashCalculator from "../NoteHashCalculator";
 import path from "path-browserify";
 import _ from "lodash";
 
-export class CreateNotesOperation {
+export class CreateNotesTask {
     async execute(
         notes: Note[],
         modelName: string,
@@ -655,7 +655,7 @@ export class CreateNotesOperation {
 ```
 
 ```typescript
-// operations/UpdateNotesOperation.ts
+// operations/UpdateNotesTask.ts
 import { Note } from "../../anki-notes/Note";
 import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import { ProgressNotification } from "../../ui";
@@ -664,7 +664,7 @@ import NoteHashCalculator from "../NoteHashCalculator";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import path from "path-browserify";
 
-export class UpdateNotesOperation {
+export class UpdateNotesTask {
     async execute(
         notes: Note[],
         modelName: string,
@@ -793,11 +793,11 @@ export class UpdateNotesOperation {
 ```
 
 ```typescript
-// operations/DeleteNotesOperation.ts
+// operations/DeleteNotesTask.ts
 import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import { ProgressNotification } from "../../ui";
 
-export class DeleteNotesOperation {
+export class DeleteNotesTask {
     async execute(
         noteIds: number[],
         ankiNoteManager: LazyAnkiNoteManager,
@@ -825,16 +825,16 @@ export class DeleteNotesOperation {
 #### Changes to syncLogseqToAnki.ts
 ```typescript
 // Replace createNotes(), updateNotes(), deleteNotes() with:
-import { CreateNotesOperation } from "./operations/CreateNotesOperation";
-import { UpdateNotesOperation } from "./operations/UpdateNotesOperation";
-import { DeleteNotesOperation } from "./operations/DeleteNotesOperation";
+import { CreateNotesTask } from "./operations/CreateNotesTask";
+import { UpdateNotesTask } from "./operations/UpdateNotesTask";
+import { DeleteNotesTask } from "./operations/DeleteNotesTask";
 
 private async performSync(): Promise<void> {
     // ... existing setup code ...
 
-    const createOp = new CreateNotesOperation();
-    const updateOp = new UpdateNotesOperation();
-    const deleteOp = new DeleteNotesOperation();
+    const createOp = new CreateNotesTask();
+    const updateOp = new UpdateNotesTask();
+    const deleteOp = new DeleteNotesTask();
 
     const createResult = await createOp.execute(
         toCreateNotes,
@@ -1005,12 +1005,12 @@ describe('DeckParser', () => {
     });
 });
 
-// tests/sync/operations/UpdateNotesOperation.test.ts
-describe('UpdateNotesOperation', () => {
+// tests/sync/operations/UpdateNotesTask.test.ts
+describe('UpdateNotesTask', () => {
     it('should skip re-parsing when hash matches', async () => {
         const mockNote = createMockNote({ /* ... */ });
         const mockManager = createMockAnkiNoteManager(/* ... */);
-        const operation = new UpdateNotesOperation();
+        const operation = new UpdateNotesTask();
         
         const result = await operation.execute(/* ... */);
         

@@ -6,7 +6,7 @@ import { NoteHashCalculator } from "../cache";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import path from "path-browserify";
 
-export class UpdateNotesOperation {
+export class UpdateNotesTask {
     async execute(
         notes: Note[],
         modelName: string,

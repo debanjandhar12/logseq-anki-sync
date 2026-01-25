@@ -1,7 +1,7 @@
 import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import { ProgressNotification } from "../../ui";
 
-export class DeleteNotesOperation {
+export class DeleteNotesTask {
     async execute(
         noteIds: number[],
         ankiNoteManager: LazyAnkiNoteManager,

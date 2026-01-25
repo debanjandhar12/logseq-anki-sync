@@ -72,26 +72,4 @@ export class LazyAnkiNoteManager {
     async executeAssets(): Promise<void> {
         await this.assetOperation.execute();
     }
-
-    /**
-     * @deprecated Use executeAddNotes, executeUpdateNotes, executeDeleteNotes, or executeAssets instead
-     */
-    async execute(operation: string): Promise<any> {
-        switch (operation) {
-            case "addNotes":
-                const addResult = await this.executeAddNotes();
-                return [addResult.successfulNotes, addResult.failedNotes];
-            case "updateNotes":
-                const updateResult = await this.executeUpdateNotes();
-                return updateResult.failedNotes;
-            case "deleteNotes":
-                const deleteResult = await this.executeDeleteNotes();
-                return deleteResult.failedNotes;
-            case "storeAssets":
-                await this.executeAssets();
-                return [];
-            default:
-                throw new Error(`Unknown operation: ${operation}`);
-        }
-    }
 }
