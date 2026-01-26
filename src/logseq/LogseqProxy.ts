@@ -81,16 +81,17 @@ export namespace LogseqProxy {
 
         static getParentNamespacePages = pMemoize(async (
             page: PageEntity | null | undefined,
-            opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
+            opts: Partial<{suppressErrors: boolean; includeLibrary: boolean}> = {suppressErrors: true, includeLibrary: true}
         ): Promise<PageEntity[]> => {
             if (!page) return [];
             // we do not acquire lock here as LogseqNamespaceHelperProxy.getParentNamespacePages
             // uses LogseqProxy.Editor.getPage which has separate lock
+            const { suppressErrors = true, includeLibrary = true } = opts;
             try {
-                return await LogseqNamespaceHelperProxy.getParentNamespacePages(page);
+                return await LogseqNamespaceHelperProxy.getParentNamespacePages(page, { includeLibrary });
             } catch (e) {
                 logger.error(e);
-                if (!opts.suppressErrors) throw e;
+                if (!suppressErrors) throw e;
             }
             return [];
         }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});

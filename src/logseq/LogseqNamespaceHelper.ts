@@ -28,8 +28,15 @@ export class LogseqNamespaceHelper {
      * Gets the full chain of ancestor pages (parent, grandparent, etc.).
      * Works with both logseq db version and File version.
      * Ordered from immediate parent to root.
+     * @param page The page to get ancestors for
+     * @param opts Options for the query
+     * @param opts.includeLibrary Whether to include Library pages in the hierarchy (default: true)
      */
-    static async getParentNamespacePages(page: PageEntity): Promise<PageEntity[]> {
+    static async getParentNamespacePages(
+        page: PageEntity,
+        opts: Partial<{ includeLibrary: boolean }> = { includeLibrary: true }
+    ): Promise<PageEntity[]> {
+        const { includeLibrary = true } = opts;
         const parents: PageEntity[] = [];
         const visited = new Set<number>();
         if (page.id) visited.add(page.id);
@@ -38,7 +45,7 @@ export class LogseqNamespaceHelper {
         while (true) {
             const parent = await this.getParentPage(current);
             if (!parent) break;
-            if (getNameFromPage(parent)?.toLowerCase() === "library") break;
+            if (!includeLibrary && getNameFromPage(parent)?.toLowerCase() === "library") break;
 
             // Cycle detection and self-check
             if (parent.id && visited.has(parent.id)) break;
