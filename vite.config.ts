@@ -72,11 +72,13 @@ function staticFileSyncTransformPlugin() {
     };
 }
 
-function bundleJSStringPlugin() {
+function bundleJSStringPlugin(mode: string) {
     return {
         name: "bundleJSStringPlugin",
         async transform(code, id) {
             if (id.endsWith(".js?string")) {
+                const isProd = mode === 'production';
+                const testLogLevel = process.env.VITE_TEST_LOG_LEVEL;
                 const result = await build({
                     stdin: {
                         contents: code,
@@ -89,6 +91,12 @@ function bundleJSStringPlugin() {
                     //format: 'cjs',
                     platform: "browser",
                     write: false,
+                    define: {
+                        'import.meta.env.PROD': JSON.stringify(isProd),
+                        'import.meta.env.MODE': JSON.stringify(mode),
+                        'import.meta.env.VITEST': JSON.stringify(mode === 'test'),
+                        'import.meta.env.VITE_TEST_LOG_LEVEL': testLogLevel ? JSON.stringify(testLogLevel) : 'undefined',
+                    },
                 });
                 return {
                     code: `export default ${JSON.stringify(result.outputFiles[0].text)};`,
@@ -108,7 +116,7 @@ export default defineConfig(({ command, mode }) => {
             mode === 'development' && reactPlugin(), // for dev only
             nodePolyfills(),
             staticFileSyncTransformPlugin(),
-            bundleJSStringPlugin(),
+            bundleJSStringPlugin(mode),
         ],
         define: {
             'process.env': JSON.stringify({...env, NODE_ENV: mode}),
