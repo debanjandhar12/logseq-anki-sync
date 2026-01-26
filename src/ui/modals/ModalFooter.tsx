@@ -75,56 +75,54 @@ export const DialogModalFooter: React.FC<{
 }) => {
     return (
         <div
-            className="mt-5 sm:mt-4 sm:flex"
+            className="mt-1 sm:flex sm:flex-row-reverse"
             style={{
                 borderTop: "1px solid var(--ls-border-color)",
                 padding: "2px",
                 alignItems: "center",
             }}
         >
+            {onConfirm && (
+                <LogseqButton
+                    isFullWidth={true}
+                    depth={1}
+                    onClick={onConfirm}
+                    color="primary"
+                >
+                    <span
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <span>{confirmText}</span>
+                        <span
+                            className="opacity-80 ui__button-shortcut-key"
+                            style={{ marginLeft: "2px" }}
+                        >
+                            ⏎
+                        </span>
+                    </span>
+                </LogseqButton>
+            )}
+            {onCancel && (
+                <LogseqButton
+                    isFullWidth={true}
+                    depth={1}
+                    onClick={onCancel}
+                >
+                    {cancelText}
+                </LogseqButton>
+            )}
             {children && (
                 <div
                     className="hidden md-block"
-                    style={{ flexGrow: "1", marginLeft: "12px" }}
+                    style={{ flexGrow: 1, marginRight: "auto" }}
                 >
                     {children}
                 </div>
             )}
-            <div className="sm:flex sm:flex-row-reverse">
-                {onConfirm && (
-                    <LogseqButton
-                        isFullWidth={true}
-                        depth={1}
-                        onClick={onConfirm}
-                        color="primary"
-                    >
-                        <span
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <span>{confirmText}</span>
-                            <span
-                                className="opacity-80 ui__button-shortcut-key"
-                                style={{ marginLeft: "2px" }}
-                            >
-                                ⏎
-                            </span>
-                        </span>
-                    </LogseqButton>
-                )}
-                {onCancel && (
-                    <LogseqButton
-                        isFullWidth={true}
-                        depth={1}
-                        onClick={onCancel}
-                    >
-                        {cancelText}
-                    </LogseqButton>
-                )}
-            </div>
         </div>
     );
 };
