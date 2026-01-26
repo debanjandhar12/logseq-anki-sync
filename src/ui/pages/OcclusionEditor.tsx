@@ -12,7 +12,6 @@ import {
 } from "../../constants";
 import {Modal, useModal, createModalPromise} from "../";
 import {LogseqButton} from "../common/LogseqButton";
-import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
 import { UI } from "../UI";
@@ -21,10 +20,11 @@ import { createLogger, LoggerCategory } from "../../utils/logger";
 
 const logger = createLogger(LoggerCategory.Others);
 
-if (!WindowParentBridge.hasFabric()) {
-    const fabricScript = WindowParentBridge.createElement("script");
+// Load Fabric.js in the current window context (shadow DOM) instead of parent window
+if (typeof window !== 'undefined' && !(window as any).fabric) {
+    const fabricScript = document.createElement("script");
     fabricScript.innerHTML = fabric;
-    WindowParentBridge.getBody().appendChild(fabricScript);
+    document.body.appendChild(fabricScript);
 }
 
 export type OcclusionElement = {
@@ -82,7 +82,7 @@ const OcclusionEditorComponent: React.FC<{
     const fabricRef = React.useRef<any>();
     const canvasRef = React.useRef(null);
     const cidSelectorRef = React.useRef(null);
-    const [imgEl, setImgEl] = React.useState(WindowParentBridge.createImage());
+    const [imgEl, setImgEl] = React.useState(document.createElement('img'));
     const handleConfirm = () => {
         const newOcclusionElements = fabricRef.current.getObjects().map((obj) => {
             // https://github.com/fabricjs/fabric.js/issues/801#issuecomment-218116910
@@ -110,7 +110,7 @@ const OcclusionEditorComponent: React.FC<{
 
     React.useEffect(() => {
         const initFabric = async () => {
-            fabricRef.current = new (WindowParentBridge.getFabric() as any).Canvas(canvasRef.current, {
+            fabricRef.current = new ((window as any).fabric).Canvas(canvasRef.current, {
                 stateful: true,
             });
             fabricRef.current.selection = false; // disable group selection
@@ -119,11 +119,18 @@ const OcclusionEditorComponent: React.FC<{
             // Load the image and then add the occlusion rectangles
             imgEl.setAttribute("crossOrigin", "anonymous");
             const graphPath = (await logseq.App.getCurrentGraph()).path;
-            imgEl.src = isWebURL_REGEXP.test(imgURL)
-                ? imgURL
-                : encodeURI(path.join(graphPath, path.resolve(imgURL)));
+            
+            // Use Logseq's asset API for local files to avoid CORS issues
+            if (isWebURL_REGEXP.test(imgURL)) {
+                imgEl.src = imgURL;
+            } else {
+                const fullPath = path.join(graphPath, path.resolve(imgURL));
+                // Use Logseq's asset API to get a proper URL
+                imgEl.src = await logseq.Assets.makeUrl(fullPath);
+            }
+            
             imgEl.onload = function () {
-                const img = new (WindowParentBridge.getFabric() as any).Image(imgEl);
+                const img = new ((window as any).fabric).Image(imgEl);
                 const appRoot = document.getElementById('app');
                 const canvasWidth = Math.min(
                     imgEl.width,
@@ -131,7 +138,7 @@ const OcclusionEditorComponent: React.FC<{
                 );
                 const canvasHeight = Math.min(
                     imgEl.height,
-                    WindowParentBridge.getBodyDimensions().height - 340,
+                    document.body.clientHeight - 340,
                 );
                 const scale = Number(
                     Math.min(
@@ -250,7 +257,7 @@ const OcclusionEditorComponent: React.FC<{
         };
 
         fabricRef.current.on("selection:created", (e) => {
-            const fabricLib = WindowParentBridge.getFabric();
+            const fabricLib = (window as any).fabric;
             if (fabricRef.current.getActiveObjects().length > 1) {
                 fabricLib.Group.prototype.lockScalingX = true;
                 fabricLib.Group.prototype.lockScalingY = true;
@@ -289,7 +296,7 @@ const OcclusionEditorComponent: React.FC<{
             }
             if (e.ctrlKey && e.key === "a") {
                 fabricRef.current.discardActiveObject();
-                var sel = new (WindowParentBridge.getFabric() as any).ActiveSelection(
+                var sel = new ((window as any).fabric).ActiveSelection(
                     fabricRef.current.getObjects(),
                     {
                         canvas: fabricRef.current,
@@ -689,7 +696,7 @@ export function createOcclusionRectEl(
     angle = 0,
     cId = 1,
 ) {
-    const rect = new (WindowParentBridge.getFabric() as any).Rect({
+    const rect = new ((window as any).fabric).Rect({
         fill: "#FFEBA2",
         stroke: "#000",
         strokeWidth: 1,
@@ -701,12 +708,12 @@ export function createOcclusionRectEl(
         originX: "center",
         originY: "center",
     });
-    const text = new (WindowParentBridge.getFabric() as any).Text(`${cId}`, {
+    const text = new ((window as any).fabric).Text(`${cId}`, {
         originX: "center",
         originY: "center",
     });
     text.scaleToHeight(height);
-    const group = new (WindowParentBridge.getFabric() as any).Group([rect, text], {
+    const group = new ((window as any).fabric).Group([rect, text], {
         left: left,
         top: top,
         width: width,
