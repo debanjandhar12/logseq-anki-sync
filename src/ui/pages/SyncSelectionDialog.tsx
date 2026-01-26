@@ -7,6 +7,7 @@ import {LogseqDropdownMenu} from "../common/LogseqDropdownMenu";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
 import { createModalPromise, ModalHeader, DialogModalFooter, useModal } from "../";
+import { UI } from "../UI";
 
 export async function showSyncSelectionDialog(
     toCreateNotes: Array<any>,
@@ -46,10 +47,9 @@ const SyncSelectionDialogComponent: React.FC<{
         } | null,
     ) => void;
     reject: Function;
-    onClose: () => void;
-}> = ({toCreateNotes, toUpdateNotes, toDeleteNotes, resolve, reject, onClose}) => {
+}> = ({toCreateNotes, toUpdateNotes, toDeleteNotes, resolve, reject}) => {
     const { open, setOpen, returnResult } = useModal(resolve, {
-        onClose,
+        onClose: () => UI.hideModal(),
         enableEscapeKey: false, // We'll handle this manually
         enableEnterKey: false,  // We'll handle this manually
         defaultResult: null,
@@ -244,9 +244,9 @@ const SyncSelectionDialogComponent: React.FC<{
     );
 
     React.useEffect(() => {
-        if (open) WindowParentBridge.addEventListener("keydown", onKeydown);
+        if (open) document.addEventListener("keydown", onKeydown);
         return () => {
-            WindowParentBridge.removeEventListener("keydown", onKeydown);
+            document.removeEventListener("keydown", onKeydown);
         };
     }, [open]);
 
@@ -278,8 +278,8 @@ const SyncSelectionDialogComponent: React.FC<{
     }, [skipOnHashMatch]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false}>
-            <div className="of-plugins pb-2" style={{margin: '-2rem'}}>
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} hasCloseButton={false}>
+            <div className="of-plugins pb-2" style={{margin: '0rem'}}>
                 <ModalHeader
                     title="Proceed sync with anki?"
                     icon={ANKI_ICON}
@@ -294,7 +294,7 @@ const SyncSelectionDialogComponent: React.FC<{
                 </ModalHeader>
                 <div
                     className="sm:flex sm:items-start"
-                    style={{maxHeight: "70vh", overflowY: "auto", overflowX: "hidden"}}>
+                    style={{maxHeight: "60vh", overflowY: "auto", overflowX: "hidden"}}>
                     <div
                         className="mt-3 sm:mt-0 ml-4 mr-4 flex"
                         style={{width: "100%", flexDirection: "column"}}>

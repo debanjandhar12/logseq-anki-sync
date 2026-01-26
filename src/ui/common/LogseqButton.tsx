@@ -24,25 +24,26 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
                                                         title,
                                                     }) => {
     let classNameString =
-        "ui__button inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium transition-colors ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
-    classNameString += ` ui__button-depth-${depth} `;
+        "inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
 
+    // Color variants using Tailwind color aliases
     if (color === "primary" || color == "default") {
-        classNameString += " bg-primary/90 hover:bg-primary/100 active:opacity-90 text-primary-foreground as-classic";
+        classNameString += " bg-primary hover:bg-primary/90 text-white";
     } else if (color === "secondary") {
-        classNameString += " bg-background hover:bg-accent active:opacity-80 as-outline border";
+        classNameString += " bg-tertiary-background hover:bg-quaternary-background border border-border text-text";
     } else if (color === "failed") {
-        classNameString += " bg-destructive/90 hover:bg-destructive/100 active:opacity-90 text-destructive-foreground as-destructive";
+        classNameString += " bg-red-600 hover:bg-red-700 text-white";
     } else if (color === "success") {
-        classNameString += " bg-primary/90 hover:bg-primary/100 active:opacity-90 text-primary-foreground as-classic primary-green";
+        classNameString += " bg-green-600 hover:bg-green-700 text-white";
     } else if (color === "ghost") {
-        classNameString += " hover:bg-secondary/70 hover:text-secondary-foreground active:opacity-80 as-ghost";
+        classNameString += " hover:bg-tertiary-background hover:opacity-90 text-text";
     } else if (color === "link") {
-        classNameString += " text-primary underline-offset-4 hover:underline active:opacity-80 as-link";
+        classNameString += " text-primary underline-offset-4 hover:underline";
     } else if (color === "outline-link") {
-        classNameString += " anki_ui_link_button active:opacity-90 border bg-background";
+        classNameString += " bg-transparent border border-border opacity-80 hover:opacity-100";
     }
 
+    // Size variants
     if (size === "xs") {
         classNameString += " px-2 py-1 text-xs rounded h-6";
     }

@@ -1,6 +1,6 @@
 import React, {PropsWithChildren} from "../React";
 import FocusTrap from "focus-trap-react";
-import { WindowParentBridge } from "../../logseq/WindowParentBridge";
+import { UI } from "../UI";
 
 const focusTrapOptions = {
     tabbableOptions: {
@@ -28,20 +28,35 @@ export function Modal({
     hasCloseButton = true,
     className = "",
 }: PropsWithChildren<ModalProps>) {
-    React.useEffect(() => {
-        if (!open && onClose) {
+    // Handle close - calls setOpen(false), onClose callback, and UI.hideModal()
+    const handleClose = React.useCallback(() => {
+        setOpen(false);
+        if (onClose) {
             onClose();
         }
-    }, [open]);
+        UI.hideModal();
+    }, [setOpen, onClose]);
+
     let style = {};
     if (size === "large") {
         style = {...style, width: "90vw"};
     }
 
+    // Handle keyboard events
     const onKeydown = React.useCallback((e: KeyboardEvent) => {
         if (!open) return;
+        
+        // Escape key closes modal
+        if (e.key === "Escape") {
+            handleClose();
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
+        }
+        
+        // Arrow keys for scrolling
         if (e.key === "ArrowDown") {
-            let divWithScrollbar = Array.from(WindowParentBridge.querySelectorAll('.ui__modal div')).filter(div => {
+            let divWithScrollbar = Array.from(document.querySelectorAll('.overflow-y-auto')).filter(div => {
                 return div.scrollHeight > div.clientHeight;
             })[0];
             if (divWithScrollbar) {
@@ -51,7 +66,7 @@ export function Modal({
             e.stopImmediatePropagation();
         }
         else if (e.key === "ArrowUp") {
-            let divWithScrollbar = Array.from(WindowParentBridge.querySelectorAll('.ui__modal div')).filter(div => {
+            let divWithScrollbar = Array.from(document.querySelectorAll('.overflow-y-auto')).filter(div => {
                 return div.scrollHeight > div.clientHeight;
             })[0];
             if (divWithScrollbar) {
@@ -60,30 +75,59 @@ export function Modal({
             e.preventDefault();
             e.stopImmediatePropagation();
         }
-    }, []);
+    }, [open, handleClose]);
+
+    // Set up keyboard event listeners
     React.useEffect(() => {
-        if (open) WindowParentBridge.addEventListener("keydown", onKeydown);
-        return () => {
-            WindowParentBridge.removeEventListener("keydown", onKeydown);
-        };
+        if (open) {
+            document.addEventListener("keydown", onKeydown);
+            return () => {
+                document.removeEventListener("keydown", onKeydown);
+            };
+        }
     }, [open, onKeydown]);
+
+    // Handle click outside to close
+    React.useEffect(() => {
+        if (!open) return;
+        
+        const handleClickOutside = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            // Check if click is on the overlay (has bg-black/50 class)
+            if (target.classList.contains('bg-black/50')) {
+                handleClose();
+            }
+        };
+        
+        document.addEventListener('click', handleClickOutside);
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [open, handleClose]);
 
     if (!open) return null;
 
     return (
         <FocusTrap focusTrapOptions={focusTrapOptions}>
-            <div className={`ui__modal`} style={{zIndex: zDepth === "high" ? 9999 : 999}}>
-                <div className="ui__modal-overlay ease-out duration-300 opacity-100 enter-done">
-                    <div className="absolute inset-0 opacity-75"></div>
-                </div>
-                <div className="ui__modal-panel transform transition-all sm:min-w-lg sm ease-out duration-300 opacity-100 translate-y-0 sm:scale-100 enter-done">
+            <div 
+                className="fixed inset-0 flex items-center justify-center p-4"
+                style={{zIndex: zDepth === "high" ? 9999 : 999}}
+            >
+                {/* Overlay */}
+                <div className="fixed inset-0 bg-black/50" />
+                
+                {/* Modal Panel */}
+                <div 
+                    className="relative bg-secondary-background border border-border rounded-md shadow-lg z-10"
+                    style={size === "large" ? {width: "90vw"} : {width: "60vw"}}
+                >
                     {hasCloseButton && (
                         <div className="absolute top-0 right-0 pt-2 pr-2">
                             <button
                                 aria-label="Close"
                                 type="button"
-                                className="ui__modal-close opacity-60 hover:opacity-100"
-                                onClick={() => setOpen(false)}>
+                                className="text-gray-400 hover:text-gray-600 opacity-60 hover:opacity-100 transition-opacity cursor-pointer bg-transparent border-none"
+                                onClick={handleClose}>
                                 <svg
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -98,7 +142,7 @@ export function Modal({
                             </button>
                         </div>
                     )}
-                    <div className={`panel-content ${className}`} style={style}>
+                    <div className={`max-h-[80vh] ${className}`}>
                         {children}
                     </div>
                 </div>

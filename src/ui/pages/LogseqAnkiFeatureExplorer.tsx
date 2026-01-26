@@ -8,6 +8,7 @@ import {BlockContentParser} from "../../logseq/BlockContentParser";
 import {ImageOcclusionNote} from "../../anki-notes/ImageOcclusionNote";
 import _ from "lodash";
 import getNameFromPage from "../../logseq/getNameFromPage";
+import { UI } from "../UI";
 
 import { createLogger, LoggerCategory } from "../../utils/logger";
 
@@ -30,11 +31,9 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
     editingBlockUUID: string;
     resolve: (value: void) => void;
     reject: (error: any) => void;
-    onClose: () => void;
-    uiKey: string;
-}> = ({editingBlockUUID, resolve, reject, onClose, uiKey}) => {
+}> = ({editingBlockUUID, resolve, reject}) => {
     const { open, setOpen, handleCancel } = useModal<void>(resolve, {
-        onClose,
+        onClose: () => UI.hideModal(),
         enableEscapeKey: true,
         enableEnterKey: false
     });
@@ -122,7 +121,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
 
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false}>
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} hasCloseButton={false}>
             <div className="of-plugins pb-2" style={{margin: '-2rem'}}>
                 <div className="absolute top-0 right-0 pt-2 pr-2">
                     <button

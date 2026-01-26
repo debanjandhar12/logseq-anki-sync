@@ -1,5 +1,4 @@
 import React from "../../React";
-import { WindowParentBridge } from "../../../logseq/WindowParentBridge";
 
 export interface UseModalOptions<T = any> {
     onClose?: () => void;
@@ -71,7 +70,7 @@ export function useModal<T = any>(
         }
     }, [open, onClose]);
 
-    // Handle keyboard events
+    // Handle keyboard events in plugin's own document
     React.useEffect(() => {
         if (!open) return;
 
@@ -89,9 +88,9 @@ export function useModal<T = any>(
             }
         };
 
-        WindowParentBridge.addEventListener("keydown", onKeydown);
+        document.addEventListener("keydown", onKeydown);
         return () => {
-            WindowParentBridge.removeEventListener("keydown", onKeydown);
+            document.removeEventListener("keydown", onKeydown);
         };
     }, [open, handleConfirm, handleCancel, enableEscapeKey, enableEnterKey]);
 

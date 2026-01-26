@@ -15,6 +15,7 @@ import {LogseqButton} from "../common/LogseqButton";
 import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
+import { UI } from "../UI";
 
 import { createLogger, LoggerCategory } from "../../utils/logger";
 
@@ -69,11 +70,9 @@ const OcclusionEditorComponent: React.FC<{
     occlusionConfig: OcclusionConfig;
     resolve: (value: OcclusionData | boolean) => void;
     reject: Function;
-    onClose: () => void;
-    uiKey: string;
-}> = ({imgURL, occlusionElements, occlusionConfig, resolve, reject, onClose, uiKey}) => {
+}> = ({imgURL, occlusionElements, occlusionConfig, resolve, reject}) => {
     const { open, setOpen, handleCancel: modalHandleCancel, returnResult } = useModal<OcclusionData | boolean>(resolve, {
-        onClose,
+        onClose: () => UI.hideModal(),
         enableEscapeKey: false, // We'll handle Escape key manually due to complex interactions
         enableEnterKey: false   // We'll handle Enter key manually
     });
@@ -125,9 +124,10 @@ const OcclusionEditorComponent: React.FC<{
                 : encodeURI(path.join(graphPath, path.resolve(imgURL)));
             imgEl.onload = function () {
                 const img = new (WindowParentBridge.getFabric() as any).Image(imgEl);
+                const appRoot = document.getElementById('app');
                 const canvasWidth = Math.min(
                     imgEl.width,
-                    WindowParentBridge.getElementById(uiKey)?.clientWidth - 160 || 800,
+                    appRoot?.clientWidth - 160 || 800,
                 );
                 const canvasHeight = Math.min(
                     imgEl.height,
@@ -369,11 +369,11 @@ const OcclusionEditorComponent: React.FC<{
                 }
             }
         };
-        WindowParentBridge.addEventListener("keydown", onKeydown, {
+        document.addEventListener("keydown", onKeydown, {
             capture: true,
         });
         return () => {
-            WindowParentBridge.removeEventListener("keydown", onKeydown, {capture: true});
+            document.removeEventListener("keydown", onKeydown, {capture: true});
         };
     }, [fabricRef, open]);
 
@@ -495,10 +495,10 @@ const OcclusionEditorComponent: React.FC<{
         <Modal
             open={open}
             setOpen={setOpen}
-            onClose={onClose}
+            onClose={() => UI.hideModal()}
             hasCloseButton={false}
             size={"large"}>
-            <div className="of-plugins" style={{margin: '-2rem'}}>
+            <div className="of-plugins" style={{margin: '0rem'}}>
                 <div className="absolute top-0 right-0 pt-2 pr-3">
                     <a href="https://github.com/sponsors/debanjandhar12">
                         <img alt="Donate" style={{height: "1.4rem"}} src={DONATE_ICON} />

@@ -91,6 +91,9 @@ function bundleJSStringPlugin(mode: string) {
                     //format: 'cjs',
                     platform: "browser",
                     write: false,
+                    loader: {
+                        '.css': 'empty', // Ignore CSS imports in bundled JS strings
+                    },
                     define: {
                         'import.meta.env.PROD': JSON.stringify(isProd),
                         'import.meta.env.MODE': JSON.stringify(mode),
@@ -129,6 +132,14 @@ export default defineConfig(({ command, mode }) => {
             sourcemap: true,
             target: "modules",
             minify: "esbuild",
+        },
+        css: {
+            postcss: {
+                plugins: [
+                    require('tailwindcss'),
+                    require('autoprefixer'),
+                ],
+            },
         },
         test: {
             include: ['**/*.test.ts'],

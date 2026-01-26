@@ -3,6 +3,7 @@ import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
 import {CreateLineDisplay, UpdateLineDisplay} from "./SyncSelectionDialog";
 import { createModalPromise, Modal, ModalHeader, useModal } from "../";
+import { UI } from "../UI";
 
 import { createLogger, LoggerCategory } from "../../utils/logger";
 
@@ -56,7 +57,6 @@ const SyncResultDialogComponent: React.FC<{
     failedDeleted: { [key: string]: Error };
     resolve: (value: any) => void;
     reject: (error: any) => void;
-    onClose: () => void;
 }> = ({
     createdNotes,
     updatedNotes,
@@ -66,10 +66,9 @@ const SyncResultDialogComponent: React.FC<{
     failedDeleted,
     resolve,
     reject,
-    onClose,
 }) => {
     const { open, setOpen } = useModal(resolve, {
-        onClose,
+        onClose: () => UI.hideModal(),
         enableEscapeKey: true,
         defaultResult: null,
     });
@@ -84,8 +83,8 @@ const SyncResultDialogComponent: React.FC<{
     }, []);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={onClose} hasCloseButton={false}>
-            <div className="of-plugins pb-2" style={{margin: '-2rem'}}>
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} hasCloseButton={false}>
+            <div className="of-plugins pb-2" style={{margin: '0rem'}}>
                 <ModalHeader
                     title="Sync Result Details"
                     icon={ANKI_ICON}
@@ -94,7 +93,7 @@ const SyncResultDialogComponent: React.FC<{
                 />
                 <div
                     className="sm:flex sm:items-start"
-                    style={{maxHeight: "70vh", overflowY: "auto", overflowX: "hidden"}}>
+                    style={{maxHeight: "60vh", overflowY: "auto", overflowX: "hidden"}}>
                     <div
                         className="mt-3 sm:mt-0 ml-4 mr-4 flex"
                         style={{width: "100%", flexDirection: "column"}}>

@@ -1,9 +1,9 @@
 import React from "../../React";
 import { Modal } from "../Modal";
-import { WindowParentBridge } from "../../../logseq/WindowParentBridge";
 import { useModal } from "../hooks/useModal";
 import { LogseqButton } from "../../common/LogseqButton";
 import { createModalPromise } from "../utils/createModalPromise";
+import { UI } from "../../UI";
 
 export interface SelectionModalItem {
     name: string;
@@ -16,7 +16,6 @@ export interface SelectionModalProps {
     enableKeySelect?: boolean;
     resolve: (value: number | null) => void;
     reject: (error: any) => void;
-    onClose: () => void;
 }
 
 const SelectionModalComponent: React.FC<SelectionModalProps> = ({
@@ -25,12 +24,11 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
     enableKeySelect = false,
     resolve,
     reject,
-    onClose,
 }) => {
     const [displayItems, setDisplayItems] = React.useState(items);
     
     const { open, setOpen, returnResult } = useModal<number | null>(resolve, {
-        onClose,
+        onClose: () => UI.hideModal(),
         enableEscapeKey: true,
         defaultResult: null,
     });
@@ -79,9 +77,9 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
             }
         };
 
-        WindowParentBridge.addEventListener("keydown", onKeydown);
+        document.addEventListener("keydown", onKeydown);
         return () => {
-            WindowParentBridge.removeEventListener("keydown", onKeydown);
+            document.removeEventListener("keydown", onKeydown);
         };
     }, [open, items, enableKeySelect, handleSelection]);
 
@@ -92,7 +90,7 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
     }, [open, returnResult]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={onClose} zDepth="high">
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} zDepth="high">
             {message && <h1 className="mb-4 text-2xl p-1">{message}</h1>}
             {displayItems.map((item, index) => (
                 <LogseqButton

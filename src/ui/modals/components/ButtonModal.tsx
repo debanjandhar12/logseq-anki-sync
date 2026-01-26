@@ -1,10 +1,10 @@
 import React from "../../React";
 import { Modal } from "../Modal";
-import { WindowParentBridge } from "../../../logseq/WindowParentBridge";
 import { useModal } from "../hooks/useModal";
 import { SimpleModalHeader } from "../ModalHeader";
 import { LogseqButton } from "../../common/LogseqButton";
 import { createModalPromise } from "../utils/createModalPromise";
+import { UI } from "../../UI";
 
 export interface ButtonModalButton {
     name: string;
@@ -17,7 +17,6 @@ export interface ButtonModalProps {
     buttons: ButtonModalButton[];
     resolve: (value: number | false) => void;
     reject: (error: any) => void;
-    onClose: () => void;
 }
 
 const ButtonModalComponent: React.FC<ButtonModalProps> = ({
@@ -25,10 +24,9 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     buttons,
     resolve,
     reject,
-    onClose,
 }) => {
     const { open, setOpen, returnResult } = useModal<number | false>(resolve, {
-        onClose,
+        onClose: () => UI.hideModal(),
         enableEscapeKey: true,
     });
 
@@ -46,9 +44,9 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
             }
         };
 
-        WindowParentBridge.addEventListener("keydown", onKeydown);
+        document.addEventListener("keydown", onKeydown);
         return () => {
-            WindowParentBridge.removeEventListener("keydown", onKeydown);
+            document.removeEventListener("keydown", onKeydown);
         };
     }, [open, returnResult]);
 
@@ -59,7 +57,7 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     }, [open, returnResult]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={onClose} zDepth="high">
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} zDepth="high">
             <div className="ui__confirm-modal is-">
                 <SimpleModalHeader title={message} />
                 <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">

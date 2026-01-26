@@ -4,6 +4,7 @@ import { useModal } from "../hooks/useModal";
 import { SimpleModalHeader } from "../ModalHeader";
 import { ModalFooter } from "../ModalFooter";
 import { createModalPromise } from "../utils/createModalPromise";
+import { UI } from "../../UI";
 
 export interface ConfirmModalProps {
     message: string;
@@ -11,7 +12,6 @@ export interface ConfirmModalProps {
     cancelText?: string;
     resolve: (value: boolean) => void;
     reject: (error: any) => void;
-    onClose: () => void;
 }
 
 const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
@@ -20,17 +20,16 @@ const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
     cancelText = "Cancel",
     resolve,
     reject,
-    onClose,
 }) => {
     const { open, setOpen, handleConfirm, handleCancel } = useModal<boolean>(resolve, {
-        onClose,
+        onClose: () => UI.hideModal(),
         enableEscapeKey: true,
         enableEnterKey: true,
         defaultResult: true,
     });
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={onClose} zDepth="high">
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} zDepth="high">
             <div className="ui__confirm-modal is-">
                 <SimpleModalHeader title={message} />
                 <ModalFooter

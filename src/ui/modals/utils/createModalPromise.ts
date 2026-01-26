@@ -8,6 +8,7 @@ const logger = createLogger(LoggerCategory.Others);
 export interface ModalPromiseOptions {
     mountPath?: string;
     errorMessage?: string;
+    position?: { left: number; top: number };
 }
 
 /**
@@ -17,35 +18,25 @@ export async function createModalPromise<T>(
     ComponentFactory: (props: {
         resolve: (value: T) => void;
         reject: (error: any) => void;
-        onClose: () => void;
-        uiKey: string;
         [key: string]: any;
     }) => React.ReactElement,
     componentProps: Record<string, any> = {},
     options: ModalPromiseOptions = {}
 ): Promise<T> {
     const {
-        mountPath = '#root main',
-        errorMessage = 'Failed to open modal'
+        errorMessage = 'Failed to open modal',
+        position
     } = options;
 
     return new Promise<T>(async (resolve, reject) => {
         try {
-            const { key, onClose } = await UI.getEventHandlersForMountedReactComponent(
-                await logseq.Editor.newBlockUUID()
-            );
-            const boundOnClose = onClose.bind(this);
-
-            await UI.mountReactComponentInLogseq(
-                key,
-                mountPath,
+            await UI.showModal(
                 ComponentFactory({
                     resolve,
                     reject,
-                    onClose: boundOnClose,
-                    uiKey: key,
                     ...componentProps,
-                })
+                }),
+                position
             );
         } catch (e) {
             await logseq.UI.showMsg(errorMessage, "error");
