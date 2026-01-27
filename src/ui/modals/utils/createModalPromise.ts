@@ -8,7 +8,6 @@ const logger = createLogger(LoggerCategory.Others);
 export interface ModalPromiseOptions {
     mountPath?: string;
     errorMessage?: string;
-    position?: { left: number; top: number };
 }
 
 /**
@@ -24,8 +23,7 @@ export async function createModalPromise<T>(
     options: ModalPromiseOptions = {}
 ): Promise<T> {
     const {
-        errorMessage = 'Failed to open modal',
-        position
+        errorMessage = 'Failed to open modal'
     } = options;
 
     return new Promise<T>(async (resolve, reject) => {
@@ -35,8 +33,7 @@ export async function createModalPromise<T>(
                     resolve,
                     reject,
                     ...componentProps,
-                }),
-                position
+                })
             );
         } catch (e) {
             await logseq.UI.showMsg(errorMessage, "error");

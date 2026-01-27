@@ -1,5 +1,4 @@
 import './styles/main.css';
-import React from './React';
 import ReactDOM from './ReactDOM';
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import { waitForElement } from './utils/waitForElement';
@@ -12,6 +11,7 @@ const logger = createLogger(LoggerCategory.Others);
 export class UI {
     private static appRoot: HTMLElement | null = null;
     private static isVisible: boolean = false;
+    private static openModalCount: number = 0;
 
     public static init() {
         this.loadThemeVariables();// Initialize theme variables
@@ -101,7 +101,7 @@ export class UI {
         }
     }
 
-    public static async showModal(component: React.ReactElement, position?: { left: number; top: number }) {
+    public static async showModal(component: React.ReactElement) {
         try {
             // Get app root
             this.appRoot = document.getElementById('app');
@@ -109,17 +109,14 @@ export class UI {
                 throw new Error('App root element not found');
             }
 
-            // Clear any previous positioning
-            this.appRoot.style.position = '';
-            this.appRoot.style.left = '';
-            this.appRoot.style.top = '';
-            this.appRoot.style.transform = '';
-
             // Render component
             ReactDOM.render(component, this.appRoot);
 
-            // Show the UI
-            logseq.showMainUI();
+            // Increment modal count and show UI if this is the first modal
+            this.openModalCount++;
+            if (this.openModalCount === 1) {
+                logseq.showMainUI();
+            }
 
             // Verify UI is visible
             setTimeout(() => {
@@ -136,25 +133,20 @@ export class UI {
 
     public static hideModal() {
         try {
-            // Hide the UI
-            logseq.hideMainUI({ restoreEditingCursor: true });
+            // Decrement modal count
+            this.openModalCount = Math.max(0, this.openModalCount - 1);
             
-            // Unmount React component
-            if (this.appRoot) {
-                ReactDOM.unmountComponentAtNode(this.appRoot);
+            // Only hide UI if all modals are closed
+            if (this.openModalCount === 0) {
+                logseq.hideMainUI({ restoreEditingCursor: true });
+                
+                // Unmount React component
+                if (this.appRoot) {
+                    ReactDOM.unmountComponentAtNode(this.appRoot);
+                }
             }
         } catch (error) {
             logger.error('Failed to hide modal:', error);
-        }
-    }
-
-    public static async getCursorPosition(): Promise<{ left: number; top: number; rect: any } | null> {
-        try {
-            const pos = await logseq.Editor.getEditingCursorPosition();
-            return pos || null;
-        } catch (error) {
-            logger.warn('Failed to get cursor position:', error);
-            return null;
         }
     }
 
