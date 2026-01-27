@@ -279,7 +279,7 @@ const SyncSelectionDialogComponent: React.FC<{
 
     return (
         <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} hasCloseButton={false}>
-            <div className="of-plugins pb-2" style={{margin: '0rem'}}>
+            <div style={{margin: '0rem'}}>
                 <ModalHeader
                     title="Proceed sync with anki?"
                     icon={ANKI_ICON}

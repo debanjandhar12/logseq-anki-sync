@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useCallback, useRef} from "../React";
 import _ from "lodash";
-import fabric from "fabric/dist/fabric.js?string";
+import { fabric } from "fabric";
 import path from "path-browserify";
 import {
     ADD_OCCLUSION_ICON,
@@ -19,13 +19,6 @@ import { UI } from "../UI";
 import { createLogger, LoggerCategory } from "../../utils/logger";
 
 const logger = createLogger(LoggerCategory.Others);
-
-// Load Fabric.js in the current window context (shadow DOM) instead of parent window
-if (typeof window !== 'undefined' && !(window as any).fabric) {
-    const fabricScript = document.createElement("script");
-    fabricScript.innerHTML = fabric;
-    document.body.appendChild(fabricScript);
-}
 
 export type OcclusionElement = {
     left: number;
@@ -109,8 +102,10 @@ const OcclusionEditorComponent: React.FC<{
     };
 
     React.useEffect(() => {
+        let isMounted = true;
+        
         const initFabric = async () => {
-            fabricRef.current = new ((window as any).fabric).Canvas(canvasRef.current, {
+            fabricRef.current = new fabric.Canvas(canvasRef.current, {
                 stateful: true,
             });
             fabricRef.current.selection = false; // disable group selection
@@ -130,7 +125,12 @@ const OcclusionEditorComponent: React.FC<{
             }
             
             imgEl.onload = function () {
-                const img = new ((window as any).fabric).Image(imgEl);
+                // Check if component is still mounted before proceeding
+                if (!isMounted || !fabricRef.current) {
+                    return;
+                }
+                
+                const img = new fabric.Image(imgEl);
                 const appRoot = document.getElementById('app');
                 const canvasWidth = Math.min(
                     imgEl.width,
@@ -174,10 +174,19 @@ const OcclusionEditorComponent: React.FC<{
                 fabricRef.current.renderAll();
             };
         };
+        
         const disposeFabric = () => {
-            fabricRef.current.dispose();
+            isMounted = false;
+            // Clear the image onload handler to prevent it from firing after disposal
+            imgEl.onload = null;
+            if (fabricRef.current) {
+                fabricRef.current.dispose();
+                fabricRef.current = null;
+            }
         };
+        
         initFabric();
+        
         return () => {
             disposeFabric();
         };
@@ -257,20 +266,15 @@ const OcclusionEditorComponent: React.FC<{
         };
 
         fabricRef.current.on("selection:created", (e) => {
-            const fabricLib = (window as any).fabric;
             if (fabricRef.current.getActiveObjects().length > 1) {
-                fabricLib.Group.prototype.lockScalingX = true;
-                fabricLib.Group.prototype.lockScalingY = true;
-                fabricLib.Group.prototype.lockRotation = true;
-                // fabricLib.Group.prototype.lockMovementX = true;
-                // fabricLib.Group.prototype.lockMovementY = true;
+                fabric.Group.prototype.lockScalingX = true;
+                fabric.Group.prototype.lockScalingY = true;
+                fabric.Group.prototype.lockRotation = true;
                 fabricRef.current.renderAll();
             } else {
-                fabricLib.Group.prototype.lockScalingX = false;
-                fabricLib.Group.prototype.lockScalingY = false;
-                fabricLib.Group.prototype.lockRotation = false;
-                // fabricLib.Group.prototype.lockMovementX = false;
-                // fabricLib.Group.prototype.lockMovementY = false;
+                fabric.Group.prototype.lockScalingX = false;
+                fabric.Group.prototype.lockScalingY = false;
+                fabric.Group.prototype.lockRotation = false;
                 fabricRef.current.renderAll();
             }
         });
@@ -296,7 +300,7 @@ const OcclusionEditorComponent: React.FC<{
             }
             if (e.ctrlKey && e.key === "a") {
                 fabricRef.current.discardActiveObject();
-                var sel = new ((window as any).fabric).ActiveSelection(
+                var sel = new fabric.ActiveSelection(
                     fabricRef.current.getObjects(),
                     {
                         canvas: fabricRef.current,
@@ -696,7 +700,7 @@ export function createOcclusionRectEl(
     angle = 0,
     cId = 1,
 ) {
-    const rect = new ((window as any).fabric).Rect({
+    const rect = new fabric.Rect({
         fill: "#FFEBA2",
         stroke: "#000",
         strokeWidth: 1,
@@ -708,12 +712,12 @@ export function createOcclusionRectEl(
         originX: "center",
         originY: "center",
     });
-    const text = new ((window as any).fabric).Text(`${cId}`, {
+    const text = new fabric.Text(`${cId}`, {
         originX: "center",
         originY: "center",
     });
     text.scaleToHeight(height);
-    const group = new ((window as any).fabric).Group([rect, text], {
+    const group = new fabric.Group([rect, text], {
         left: left,
         top: top,
         width: width,

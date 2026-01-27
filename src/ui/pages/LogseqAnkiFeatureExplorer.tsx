@@ -122,7 +122,7 @@ const LogseqAnkiFeatureExplorerComponent: React.FC<{
 
     return (
         <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} hasCloseButton={false}>
-            <div className="of-plugins pb-2" style={{margin: '-2rem'}}>
+            <div style={{margin: '0rem'}}>
                 <div className="absolute top-0 right-0 pt-2 pr-2">
                     <button
                         aria-label="Close"
