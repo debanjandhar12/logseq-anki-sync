@@ -30,6 +30,10 @@ export const LogseqCheckbox: FC<LogseqCheckboxProps> = ({
                 disabled={disabled}
                 checked={checked}
                 className="form-checkbox h-4 w-4 transition duration-150 ease-in-out"
+                style={{
+                    borderRadius: 'calc(var(--radius) - 4px)',
+                    accentColor: 'var(--primary)'
+                }}
                 onChange={onChange}
                 ref={checkboxRef}
             />

@@ -7,9 +7,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Use CSS variables for theme colors
-        'primary': 'var(--ls-active-primary-color)',
-        'background': 'var(--ls-primary-background-color)',
+        'button-background': 'var(--ls-button-background)',
+        'primary-background': 'var(--ls-primary-background-color)',
         'secondary-background': 'var(--ls-secondary-background-color)',
         'tertiary-background': 'var(--ls-tertiary-background-color)',
         'quaternary-background': 'var(--ls-quaternary-background-color)',
@@ -19,6 +18,7 @@ module.exports = {
         'text': 'var(--ls-primary-text-color)',
         'secondary-text': 'var(--ls-secondary-text-color)',
         'highlight': 'var(--ls-block-highlight-color)',
+        'menu-hover': 'var(--ls-menu-hover-color)',
       },
     },
   },

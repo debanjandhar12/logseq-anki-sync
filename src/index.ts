@@ -23,7 +23,7 @@ import { createLogger, LoggerCategory } from "./utils/logger";
 
 const logger = createLogger(LoggerCategory.Others);
 
-function main(baseInfo: LSPluginBaseInfo) {
+async function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
     const syncLogseqToAnki = async function () {
         await new LogseqToAnkiSync().sync();
@@ -88,7 +88,7 @@ function main(baseInfo: LSPluginBaseInfo) {
     const { lastWelcomeVersion } = LogseqProxy.Settings.getPluginSettings();
     if (lastWelcomeVersion &&
         lastWelcomeVersion !== pkg.version) {
-        (async () => {
+        await (async () => {
             await new Promise(resolve => setTimeout(resolve, 1000));    // wait logseq's react to load
             await showButtonModal(
                 `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span> 

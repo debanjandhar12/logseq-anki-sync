@@ -6,7 +6,7 @@ export interface ModalFooterProps {
     onCancel?: () => void;
     confirmText?: string;
     cancelText?: string;
-    confirmColor?: "primary" | "secondary" | "outline-link";
+    confirmColor?: "primary" | "outline-link";
     showConfirm?: boolean;
     showCancel?: boolean;
     confirmShortcut?: string;
@@ -52,7 +52,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
                 </LogseqButton>
             )}
             {showCancel && onCancel && (
-                <LogseqButton isFullWidth={true} onClick={onCancel}>
+                <LogseqButton color={"ghost"} isFullWidth={true} onClick={onCancel}>
                     {cancelText}
                 </LogseqButton>
             )}
@@ -108,6 +108,7 @@ export const DialogModalFooter: React.FC<{
             )}
             {onCancel && (
                 <LogseqButton
+                    color={"outline-link"}
                     isFullWidth={true}
                     depth={1}
                     onClick={onCancel}

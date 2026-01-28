@@ -8,7 +8,7 @@ type LogseqButtonProps = {
     disabled?: boolean;
     depth?: number;
     title?: string;
-    color?: "primary" | "default" | "secondary" |"success" | "failed" | "ghost" | "link" | "outline-link";
+    color?: "primary" | "default" |"success" | "failed" | "ghost" | "link" | "outline-link";
     size?: "xs" | "sm" | "md" | "lg";
 };
 
@@ -17,20 +17,18 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
                                                         onClick,
                                                         icon,
                                                         isFullWidth,
-                                                        color = "secondary",
+                                                        color = "primary",
                                                         disabled,
                                                         size = "md",
                                                         depth = 0,
                                                         title,
                                                     }) => {
     let classNameString =
-        "inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
+        "ui__button inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
 
     // Color variants using Tailwind color aliases
     if (color === "primary" || color == "default") {
-        classNameString += " bg-primary hover:bg-primary/90 text-white";
-    } else if (color === "secondary") {
-        classNameString += " bg-tertiary-background hover:bg-quaternary-background border border-border text-text";
+        classNameString += " bg-button-background hover:opacity-90 text-white";
     } else if (color === "failed") {
         classNameString += " bg-red-600 hover:bg-red-700 text-white";
     } else if (color === "success") {

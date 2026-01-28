@@ -459,8 +459,8 @@ const SyncSelectionDialogComponent: React.FC<{
 
 // Utils
 export const AnkiLink = ({ankiId = null}) => {
-    const hoverStyle = {color: "var(--ctp-link-text-hover-color)"};
-    const normalStyle = {color: "inherit"};
+    const hoverStyle = {backgroundColor: "var(--ls-secondary-border-color)", borderRadius: "2px"};
+    const normalStyle = {backgroundColor: "inherit", borderRadius: "2px"};
     const [style, setStyle] = React.useState(normalStyle);
 
     const onMouseOver = () => setStyle(hoverStyle);
@@ -489,6 +489,7 @@ export const AnkiLink = ({ankiId = null}) => {
                 padding: 0,
                 height: "auto",
                 userSelect: "text",
+                cursor: "pointer",
             }}>
             <i className={"anki-icon"} />
             <span>{children}</span>
@@ -497,8 +498,8 @@ export const AnkiLink = ({ankiId = null}) => {
 };
 
 export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string}) => {
-    const hoverStyle = {color: "var(--ctp-link-text-hover-color)"};
-    const normalStyle = {color: "inherit"};
+    const hoverStyle = {backgroundColor: "var(--ls-secondary-border-color)", borderRadius: "2px"};
+    const normalStyle = {backgroundColor: "inherit", borderRadius: "2px"};
     const [style, setStyle] = React.useState(normalStyle);
 
     const onMouseOver = () => setStyle(hoverStyle);
@@ -524,6 +525,7 @@ export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string})
                 padding: 0,
                 height: "auto",
                 userSelect: "text",
+                cursor: "pointer",
             }}
             onClick={onClickHandler}>
             <i className={"logseq-icon"} />

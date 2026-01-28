@@ -132,3 +132,23 @@ body {
     display: block !important;
   }
 }
+
+/* Scrollbar styles - applied globally to all scrollable elements */
+::-webkit-scrollbar {
+  background-color: var(--lx-gray-02, var(--ls-scrollbar-background-color, var(--rx-gray-02, #f1f1f1)));
+  height: 8px;
+  width: var(--ls-scrollbar-width, 6px);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--lx-gray-05, var(--ls-scrollbar-foreground-color, var(--rx-gray-05, #c1c1c1)));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--lx-gray-06, var(--ls-scrollbar-thumb-hover-color, var(--rx-gray-06, #a8a8a8)));
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

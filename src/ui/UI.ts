@@ -12,6 +12,7 @@ export class UI {
     private static appRoot: HTMLElement | null = null;
     private static isVisible: boolean = false;
     private static openModalCount: number = 0;
+    private static currentModalComponent: React.ReactElement | null = null;
 
     public static init() {
         this.loadThemeVariables();// Initialize theme variables
@@ -28,28 +29,55 @@ export class UI {
                 this.loadThemeVariables();
             }
         });
+
+        // Listen for HMR updates to re-render current modal
+        if (import.meta.hot) {
+            import.meta.hot.accept(() => {
+                if (this.currentModalComponent && this.openModalCount > 0 && this.appRoot) {
+                    // Re-render the current modal with the updated component
+                    ReactDOM.render(this.currentModalComponent, this.appRoot);
+                }
+            });
+        }
     }
 
     private static async loadThemeVariables() {
+        // Core theme variables used by Tailwind (see tailwind.config.js)
         const props = [
+            // Background colors
             '--ls-primary-background-color',
             '--ls-secondary-background-color',
             '--ls-tertiary-background-color',
             '--ls-quaternary-background-color',
-            '--ls-active-primary-color',
-            '--ls-active-secondary-color',
+            
+            // Primary colors
+            '--ls-button-background',
+            '--secondary',
+            '--tertiary',
+            '--primary',
+            '--radius',
+            
+            // Border colors
             '--ls-border-color',
             '--ls-secondary-border-color',
             '--ls-tertiary-border-color',
+            
+            // Text colors
             '--ls-primary-text-color',
             '--ls-secondary-text-color',
+            
+            // Block/UI colors
             '--ls-block-highlight-color',
             '--ls-block-bullet-border-color',
             '--ls-block-bullet-color',
             '--ls-guideline-color',
             '--ls-menu-hover-color',
+            
+            // Opacity
             '--ls-primary-text-opacity',
             '--ls-secondary-text-opacity',
+            
+            // Semantic text colors
             '--ls-title-text-color',
             '--ls-link-text-color',
             '--ls-link-text-hover-color',
@@ -57,6 +85,8 @@ export class UI {
             '--ls-link-ref-text-hover-color',
             '--ls-tag-text-color',
             '--ls-tag-text-hover-color',
+            
+            // Component-specific colors
             '--ls-slide-background-color',
             '--ls-block-properties-background-color',
             '--ls-page-properties-background-color',
@@ -65,9 +95,14 @@ export class UI {
             '--ls-page-blockquote-border-color',
             '--ls-page-inline-code-color',
             '--ls-page-inline-code-bg-color',
+            
+            // Scrollbar
             '--ls-scrollbar-foreground-color',
             '--ls-scrollbar-background-color',
             '--ls-scrollbar-thumb-hover-color',
+            '--ls-scrollbar-width',
+            
+            // Misc
             '--ls-head-text-color',
             '--ls-cloze-text-color',
             '--ls-icon-color',
@@ -75,6 +110,8 @@ export class UI {
             '--ls-search-icon-color',
             '--ls-a-chosen-bg',
             '--ls-right-sidebar-code-bg-color',
+            
+            // Level colors
             '--color-level-1',
             '--color-level-2',
             '--color-level-3',
@@ -109,6 +146,9 @@ export class UI {
                 throw new Error('App root element not found');
             }
 
+            // Store the current modal component for HMR
+            this.currentModalComponent = component;
+
             // Render component
             ReactDOM.render(component, this.appRoot);
 
@@ -139,6 +179,9 @@ export class UI {
             // Only hide UI if all modals are closed
             if (this.openModalCount === 0) {
                 logseq.hideMainUI({ restoreEditingCursor: true });
+                
+                // Clear the current modal component reference
+                this.currentModalComponent = null;
                 
                 // Unmount React component
                 if (this.appRoot) {
