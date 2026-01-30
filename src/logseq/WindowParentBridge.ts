@@ -290,5 +290,9 @@ export class WindowParentBridge {
 
 // Auto-initialize with window.parent if in browser environment
 if (typeof window !== 'undefined' && typeof window.parent !== 'undefined') {
-    WindowParentBridge.init(window.parent);
+    let canAccessHostScope = false;
+    try {
+        canAccessHostScope = window.parent.addEventListener !== null;
+    } catch {}
+    WindowParentBridge.init(canAccessHostScope ? window.parent : window);
 }
