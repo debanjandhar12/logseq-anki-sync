@@ -11,7 +11,7 @@ import {
     specialChars,
     WARNING_ICON,
 } from "../constants";
-import { ActionNotification } from "../ui/common/ActionNotification";
+import { ActionNotification } from "../ui/notifications/ActionNotification";
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {

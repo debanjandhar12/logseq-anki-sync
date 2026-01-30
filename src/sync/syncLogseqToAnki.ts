@@ -24,7 +24,7 @@ import {showConfirmModal} from "../ui";
 import {ImageOcclusionNote} from "../anki-notes/ImageOcclusionNote";
 import { NoteHashCalculator } from "./cache";
 import {CancelablePromise} from "cancelable-promise";
-import {ActionNotification} from "../ui/common/ActionNotification";
+import { ActionNotification } from "../ui/notifications/ActionNotification";
 import {showSyncSelectionDialog} from "../ui";
 import {showSyncResultDialog} from "../ui";
 import { WindowParentBridge } from "../logseq/WindowParentBridge";

@@ -31,7 +31,8 @@ export { showLogseqAnkiFeatureExplorer, ImageOcclusionFeature } from "./pages/Lo
 export { showOcclusionEditor } from "./pages/OcclusionEditor";
 export type { OcclusionElement, OcclusionConfig, OcclusionData } from "./pages/OcclusionEditor";
 
-export { ProgressNotification } from "./pages/ProgressNotification";
+export { ProgressNotification } from "./notifications/ProgressNotification";
+export { ActionNotification } from "./notifications/ActionNotification";
 
 export { showSyncResultDialog } from "./pages/SyncResultDialog";
 
