@@ -202,8 +202,7 @@ export const addSettingsToLogseq = () => {
             }
         }
     });
-    const style = document.createElement("style");
-    style.innerHTML = `
+    logseq.provideStyle(`
         [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner h2 code {
             display: none;
         }
@@ -211,7 +210,5 @@ export const addSettingsToLogseq = () => {
         [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="donationHeading"].heading-item {
             border: none;
         }
-    `;
-    WindowParentBridge.getHead().appendChild(style);
-    logseq.provideStyle(style.innerHTML);   // This is in case above appendChild doesn't work
+    `);
 };

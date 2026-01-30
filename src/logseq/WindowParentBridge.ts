@@ -97,25 +97,6 @@ export class WindowParentBridge {
     }
 
     /**
-     * Get the Fabric.js library from parent window
-     */
-    static getFabric(): any {
-        const parent = this.getParentWindow();
-        if (!(parent as any).fabric) {
-            throw new Error('Fabric.js not available on parent window');
-        }
-        return (parent as any).fabric;
-    }
-
-    /**
-     * Check if Fabric.js is available on parent window
-     */
-    static hasFabric(): boolean {
-        if (!this.isInitialized()) return false;
-        return !!(this.parentWindow as any).fabric;
-    }
-
-    /**
      * Get the LSPluginCore for plugin management
      */
     static getLSPluginCore(): any {
@@ -145,21 +126,6 @@ export class WindowParentBridge {
      */
     static getFetch(): typeof fetch {
         return this.getParentWindow().fetch.bind(this.parentWindow);
-    }
-
-    /**
-     * Get the Image constructor from parent window
-     */
-    static getImageConstructor(): typeof Image {
-        return (this.getParentWindow() as any).Image;
-    }
-
-    /**
-     * Create a new Image instance from parent window
-     */
-    static createImage(): HTMLImageElement {
-        const ImageConstructor = this.getImageConstructor();
-        return new ImageConstructor();
     }
 
     /**
@@ -274,17 +240,6 @@ export class WindowParentBridge {
     static reloadPlugin(pluginId: string): void {
         const core = this.getLSPluginCore();
         core.reload([pluginId]);
-    }
-
-    /**
-     * Get client dimensions of parent document body
-     */
-    static getBodyDimensions(): { width: number; height: number } {
-        const body = this.getBody();
-        return {
-            width: body.clientWidth,
-            height: body.clientHeight
-        };
     }
 }
 
