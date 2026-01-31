@@ -18,7 +18,7 @@ const sidebars = {
       items: [
         'usage/deck-tags',
         'usage/extra-details-hints',
-        'usage/selectively-disable-sync',
+        'usage/suspend-and-disable-sync',
         'usage/type-in-answer-tag',
         'usage/hiding-parent-blocks',
       ],
