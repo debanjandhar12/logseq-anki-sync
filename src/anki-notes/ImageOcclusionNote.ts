@@ -294,6 +294,7 @@ export class ImageOcclusionNote extends Note {
                 return block_image;
             },
         );
+        console.log('block_images', block_images);
         block_images = _.uniq(block_images);
         block_images = _.filter(block_images, (image) => image.trim() != "");
         return block_images;
@@ -310,7 +311,7 @@ export class ImageOcclusionNote extends Note {
                 .sort()
                 .reverse()
                 .find((key) => {
-                    if (key == image && imgToOcclusionDataHashMap[image]) {
+                    if (image.startsWith(key) && imgToOcclusionDataHashMap[key]) {
                         return true;
                     }
                     let imageURLParams: any = new Map();
@@ -333,6 +334,7 @@ export class ImageOcclusionNote extends Note {
         });
         logger.info(
             "migratePdfImages",
+            block_images,
             imgToOcclusionDataHashMap,
             newImgToOcclusionDataHashMap,
         );

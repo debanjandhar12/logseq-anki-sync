@@ -2,6 +2,7 @@ import './styles/main.css';
 import ReactDOM from './ReactDOM';
 
 import { createLogger, LoggerCategory } from "../utils/logger";
+import {LogseqProxy} from "../logseq/LogseqProxy";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -46,6 +47,7 @@ export class UI {
     }
 
     public static init() {
+        logseq.hideMainUI({restoreEditingCursor: true}); // Hide main ui on plugin load
         this.loadThemeVariables();// Initialize theme variables
         
         // Listen for theme changes
@@ -74,6 +76,11 @@ export class UI {
                 }
             });
         }
+
+        // Hide main ui on plugin unload
+        LogseqProxy.App.registerPluginUnloadListener(() => {
+            logseq.hideMainUI({restoreEditingCursor: true});
+        });
     }
 
     private static async loadThemeVariables() {

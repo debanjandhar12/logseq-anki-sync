@@ -257,9 +257,9 @@ export namespace LogseqProxy {
             this.registeredGraphChangeListeners.push(listener);
         }
 
-        static registerPluginUnloadListeners: Array<() => void> = [];
+        static registeredPluginUnloadListeners: Array<() => void> = [];
         static registerPluginUnloadListener(listener: () => void): void {
-            this.registerPluginUnloadListeners.push(listener);
+            this.registeredPluginUnloadListeners.push(listener);
         }
     }
     export function init() {
@@ -279,7 +279,7 @@ export namespace LogseqProxy {
             }
         });
         logseq.beforeunload(async () => {
-            for (const listener of LogseqProxy.App.registerPluginUnloadListeners) {
+            for (const listener of LogseqProxy.App.registeredPluginUnloadListeners) {
                 listener();
             }
         });

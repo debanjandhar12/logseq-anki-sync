@@ -19,7 +19,7 @@ import pkg from "./../package.json";
 import { WindowParentBridge } from "./logseq/WindowParentBridge";
 
 
-import { createLogger, LoggerCategory } from "./utils/logger";
+import {createLogger, LoggerCategory, updateLoggerLevels} from "./utils/logger";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -59,6 +59,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
       </a>
     `,
     });
+    updateLoggerLevels();
     addSettingsToLogseq();
 
     // Init various modules
