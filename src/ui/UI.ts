@@ -8,11 +8,45 @@ import { createLogger, LoggerCategory } from "../utils/logger";
 
 const logger = createLogger(LoggerCategory.Others);
 
+interface ModalStackEntry {
+    id: string;
+    component: React.ReactElement;
+    containerElement: HTMLElement;
+}
+
+/**
+ * UI Manager for Logseq Anki Sync Plugin
+ * 
+ * Manages modal display with proper stacking support. Multiple modals can be open
+ * simultaneously, each in its own container with proper z-index layering.
+ * 
+ * **Modal Stack Architecture:**
+ * - Each modal gets a unique ID and dedicated DOM container
+ * - Modals stack with increasing z-index (1000, 1010, 1020, etc.)
+ *
+ */
 export class UI {
     private static appRoot: HTMLElement | null = null;
     private static isVisible: boolean = false;
-    private static openModalCount: number = 0;
-    private static currentModalComponent: React.ReactElement | null = null;
+    private static modalStack: ModalStackEntry[] = [];
+    private static modalIdCounter: number = 0;
+
+    /**
+     * Reset UI state - useful for testing
+     * @internal
+     */
+    public static _resetForTesting() {
+        // Clean up modals without triggering logseq.hideMainUI
+        this.modalStack.forEach(entry => {
+            if (entry.containerElement.parentNode) {
+                entry.containerElement.parentNode.removeChild(entry.containerElement);
+            }
+        });
+        this.modalStack = [];
+        this.modalIdCounter = 0;
+        this.isVisible = false;
+        this.appRoot = null;
+    }
 
     public static init() {
         this.loadThemeVariables();// Initialize theme variables
@@ -30,14 +64,16 @@ export class UI {
             }
         });
 
-        // Listen for HMR updates to re-render current modal
+        // Listen for HMR updates to re-render all modals in the stack
         // @ts-ignore - Vite will replace this
         if (import.meta && import.meta.hot) {
             // @ts-ignore - Vite will replace this
             import.meta.hot.accept(() => {
-                if (this.currentModalComponent && this.openModalCount > 0 && this.appRoot) {
-                    // Re-render the current modal with the updated component
-                    ReactDOM.render(this.currentModalComponent, this.appRoot);
+                if (this.modalStack.length > 0 && this.appRoot) {
+                    // Re-render all modals in the stack with updated components
+                    this.modalStack.forEach(entry => {
+                        ReactDOM.render(entry.component, entry.containerElement);
+                    });
                 }
             });
         }
@@ -140,23 +176,57 @@ export class UI {
         }
     }
 
-    public static async showModal(component: React.ReactElement) {
+    /**
+     * Display a modal component
+     * 
+     * Creates a dedicated container for the modal and adds it to the modal stack.
+     * Multiple modals can be open simultaneously with proper z-index layering.
+     * 
+     * @param component - React component to render as modal
+     * @returns Promise resolving to unique modal ID
+     * @throws Error if app root element is not found
+     * 
+     * @example
+     * ```typescript
+     * const modalId = await UI.showModal(<MyModal />);
+     * // Later, close this specific modal
+     * UI.hideModal(modalId);
+     * ```
+     */
+    public static async showModal(component: React.ReactElement): Promise<string> {
         try {
-            // Get app root
+            // Get or create app root
             this.appRoot = document.getElementById('app');
             if (!this.appRoot) {
                 throw new Error('App root element not found');
             }
 
-            // Store the current modal component for HMR
-            this.currentModalComponent = component;
+            // Generate unique modal ID
+            const modalId = `modal-${++this.modalIdCounter}`;
 
-            // Render component
-            ReactDOM.render(component, this.appRoot);
+            // Create a container for this modal
+            const containerElement = document.createElement('div');
+            containerElement.id = modalId;
+            containerElement.style.position = 'absolute';
+            containerElement.style.inset = '0';
+            containerElement.style.zIndex = String(1000 + this.modalStack.length * 10);
+            
+            // Add container to app root
+            this.appRoot.appendChild(containerElement);
 
-            // Increment modal count and show UI if this is the first modal
-            this.openModalCount++;
-            if (this.openModalCount === 1) {
+            // Add to modal stack
+            const entry: ModalStackEntry = {
+                id: modalId,
+                component,
+                containerElement,
+            };
+            this.modalStack.push(entry);
+
+            // Render component in its container
+            ReactDOM.render(component, containerElement);
+
+            // Show UI if this is the first modal
+            if (this.modalStack.length === 1) {
                 logseq.showMainUI();
             }
 
@@ -166,6 +236,8 @@ export class UI {
                     logger.warn('UI may not be visible after showMainUI()');
                 }
             }, 100);
+
+            return modalId;
         } catch (error) {
             logger.error('Failed to show modal:', error);
             logseq.UI.showMsg('Failed to show plugin UI. Please try again.', 'error');
@@ -173,25 +245,85 @@ export class UI {
         }
     }
 
-    public static hideModal() {
+    /**
+     * Hide a modal
+     * 
+     * If modalId is provided, removes that specific modal from the stack.
+     * If modalId is omitted, removes the most recently opened modal (top of stack).
+     * 
+     * The Logseq UI is hidden only when all modals are closed.
+     * 
+     * @param modalId - Optional ID of specific modal to close
+     * 
+     * @example
+     * ```typescript
+     * // Close most recent modal
+     * UI.hideModal();
+     * 
+     * // Close specific modal
+     * UI.hideModal('modal-123');
+     * ```
+     */
+    public static hideModal(modalId?: string) {
         try {
-            // Decrement modal count
-            this.openModalCount = Math.max(0, this.openModalCount - 1);
-            
-            // Only hide UI if all modals are closed
-            if (this.openModalCount === 0) {
-                logseq.hideMainUI({ restoreEditingCursor: true });
-                
-                // Clear the current modal component reference
-                this.currentModalComponent = null;
-                
-                // Unmount React component
-                if (this.appRoot) {
-                    ReactDOM.unmountComponentAtNode(this.appRoot);
+            if (this.modalStack.length === 0) {
+                logger.warn('hideModal called but modal stack is empty');
+                return;
+            }
+
+            let entryToRemove: ModalStackEntry | undefined;
+
+            if (modalId) {
+                // Remove specific modal by ID
+                const index = this.modalStack.findIndex(entry => entry.id === modalId);
+                if (index === -1) {
+                    logger.warn(`Modal with ID ${modalId} not found in stack`);
+                    return;
                 }
+                entryToRemove = this.modalStack[index];
+                this.modalStack.splice(index, 1);
+            } else {
+                // Remove the top modal (most recent)
+                entryToRemove = this.modalStack.pop();
+            }
+
+            if (entryToRemove) {
+                // Unmount React component
+                ReactDOM.unmountComponentAtNode(entryToRemove.containerElement);
+                
+                // Remove container from DOM
+                if (entryToRemove.containerElement.parentNode) {
+                    entryToRemove.containerElement.parentNode.removeChild(entryToRemove.containerElement);
+                }
+            }
+
+            // Hide UI if all modals are closed
+            if (this.modalStack.length === 0) {
+                logseq.hideMainUI({ restoreEditingCursor: true });
             }
         } catch (error) {
             logger.error('Failed to hide modal:', error);
+        }
+    }
+
+    /**
+     * Get the number of currently open modals
+     */
+    public static getModalCount(): number {
+        return this.modalStack.length;
+    }
+
+    /**
+     * Close all modals at once
+     */
+    public static closeAllModals() {
+        try {
+            // Close modals in reverse order (top to bottom)
+            while (this.modalStack.length > 0) {
+                this.hideModal();
+            }
+        } catch (error) {
+            logger.error('Failed to close all modals:', error);
         }
     }
 }

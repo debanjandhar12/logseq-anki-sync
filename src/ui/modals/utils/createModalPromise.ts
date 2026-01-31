@@ -10,6 +10,10 @@ export interface ModalPromiseOptions {
     errorMessage?: string;
 }
 
+interface ModalPromiseContext {
+    modalId: string | null;
+}
+
 /**
  * A standardized modal promise wrapper that handles mounting/unmounting
  */
@@ -17,6 +21,7 @@ export async function createModalPromise<T>(
     ComponentFactory: (props: {
         resolve: (value: T) => void;
         reject: (error: any) => void;
+        modalContext?: ModalPromiseContext;
         [key: string]: any;
     }) => React.ReactElement,
     componentProps: Record<string, any> = {},
@@ -27,14 +32,18 @@ export async function createModalPromise<T>(
     } = options;
 
     return new Promise<T>(async (resolve, reject) => {
+        const modalContext: ModalPromiseContext = { modalId: null };
+        
         try {
-            await UI.showModal(
+            const modalId = await UI.showModal(
                 ComponentFactory({
                     resolve,
                     reject,
+                    modalContext,
                     ...componentProps,
                 })
             );
+            modalContext.modalId = modalId;
         } catch (e) {
             await logseq.UI.showMsg(errorMessage, "error");
             logger.info(e);

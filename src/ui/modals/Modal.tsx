@@ -107,11 +107,16 @@ export function Modal({
 
     if (!open) return null;
 
+    // Calculate z-index based on modal depth (number of modals currently open)
+    const modalDepth = UI.getModalCount();
+    const baseZIndex = zDepth === "high" ? 9999 : 1000;
+    const calculatedZIndex = baseZIndex + (modalDepth * 10);
+
     return (
         <FocusTrap focusTrapOptions={focusTrapOptions}>
             <div 
                 className="fixed inset-0 flex items-center justify-center p-4"
-                style={{zIndex: zDepth === "high" ? 9999 : 999}}
+                style={{zIndex: calculatedZIndex}}
             >
                 {/* Overlay */}
                 <div className="fixed inset-0 bg-black/50" />
