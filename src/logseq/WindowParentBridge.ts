@@ -249,5 +249,7 @@ if (typeof window !== 'undefined' && typeof window.parent !== 'undefined') {
     try {
         canAccessHostScope = window.parent.addEventListener !== null;
     } catch {}
+    // When host scope is not available, we are forced to use the current window
+    // This may cause bugs but thats ok - we will run in compatibility mode
     WindowParentBridge.init(canAccessHostScope ? window.parent : window);
 }

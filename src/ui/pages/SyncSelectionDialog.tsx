@@ -8,6 +8,8 @@ import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
 import { createModalPromise, ModalHeader, DialogModalFooter, useModal } from "../";
 import { UI } from "../UI";
+import { LogseqProxy } from "../../logseq/LogseqProxy";
+import { LogseqContentPreprocessor } from "../../logseq/LogseqContentPreprocessor";
 
 export async function showSyncSelectionDialog(
     toCreateNotes: Array<any>,
@@ -501,6 +503,37 @@ export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string})
     const hoverStyle = {backgroundColor: "var(--ls-secondary-border-color)", borderRadius: "2px"};
     const normalStyle = {backgroundColor: "inherit", borderRadius: "2px"};
     const [style, setStyle] = React.useState(normalStyle);
+    const [displayText, setDisplayText] = React.useState(uuid);
+    const [blockContent, setBlockContent] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        const fetchBlockContent = async () => {
+            try {
+                const block = await LogseqProxy.Editor.getBlock(uuid);
+                if (block && block.content) {
+                    // Preprocess content using LogseqContentPreprocessor
+                    const format = block.format || "markdown";
+                    const { content: preprocessedContent } = await LogseqContentPreprocessor.preprocess(
+                        block.content,
+                        format
+                    );
+
+                    setBlockContent(preprocessedContent); // for title
+
+                    const cleanedContent = preprocessedContent.replace(/\s+/g, " ").trim();
+                    const truncated = _.truncate(cleanedContent, { length: 34, omission: "..." });
+                    setDisplayText(truncated); // for display
+                } else {
+                    // Fallback to UUID if block or content is not available
+                    setDisplayText(uuid);
+                }
+            } catch (error) {
+                // On fetch failure, show UUID
+                setDisplayText(uuid);
+            }
+        };
+        fetchBlockContent();
+    }, [uuid]);
 
     const onMouseOver = () => setStyle(hoverStyle);
     const onMouseOut = () => setStyle(normalStyle);
@@ -513,12 +546,16 @@ export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string})
         }
     };
 
+    const titleText = blockContent
+        ? `Block UUID: ${uuid}\nContent: ${blockContent}`
+        : `Block UUID: ${uuid}`;
+
     return (
         <a
             onMouseOver={onMouseOver}
             onMouseOut={onMouseOut}
             className="inline-flex flex-row items-center button"
-            title={"Logseq Block: " + uuid}
+            title={titleText}
             style={{
                 ...style,
                 display: "inline-flex",
@@ -529,7 +566,7 @@ export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string})
             }}
             onClick={onClickHandler}>
             <i className={"logseq-icon"} />
-            <span>{uuid}</span>
+            <span>{displayText}</span>
         </a>
     );
 };

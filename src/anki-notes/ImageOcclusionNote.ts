@@ -294,7 +294,6 @@ export class ImageOcclusionNote extends Note {
                 return block_image;
             },
         );
-        console.log('block_images', block_images);
         block_images = _.uniq(block_images);
         block_images = _.filter(block_images, (image) => image.trim() != "");
         return block_images;
