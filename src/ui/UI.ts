@@ -69,6 +69,10 @@ export class UI {
             // @ts-ignore - Vite will replace this
             import.meta.hot.accept(() => {
                 if (this.modalStack.length > 0 && this.appRoot) {
+                    // Ensure the main UI is visible before re-rendering
+                    if (!this.isVisible) {
+                        logseq.showMainUI();
+                    }
                     // Re-render all modals in the stack with updated components
                     this.modalStack.forEach(entry => {
                         ReactDOM.render(entry.component, entry.containerElement);
