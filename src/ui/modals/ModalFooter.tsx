@@ -52,7 +52,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
                 </LogseqButton>
             )}
             {showCancel && onCancel && (
-                <LogseqButton color={"ghost"} isFullWidth={true} onClick={onCancel}>
+                <LogseqButton color={"outline-link"} isFullWidth={true} onClick={onCancel}>
                     {cancelText}
                 </LogseqButton>
             )}

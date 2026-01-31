@@ -164,7 +164,11 @@ export class UI {
             '--color-level-3',
             '--color-level-4',
             '--color-level-5',
-            '--color-level-6'
+            '--color-level-6',
+            
+            // Gray colors for shortcut keys
+            '--lx-gray-06-alpha',
+            '--rx-gray-06-alpha'
         ];
 
         try {

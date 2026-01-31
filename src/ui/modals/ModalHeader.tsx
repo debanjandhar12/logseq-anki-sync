@@ -69,10 +69,8 @@ export const SimpleModalHeader: React.FC<{ title: string; onClose?: () => void }
 }) => {
     return (
         <div className="sm:flex sm:items-start">
-            <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                <h2 className="headline text-lg leading-6 font-medium">
-                    {title}
-                </h2>
+            <div className="text-center sm:mt-0 sm:ml-4 sm:text-left">
+                <h2 className="headline mt-4 text-lg leading-6 font-medium" dangerouslySetInnerHTML={{ __html: title }} />
                 <label className="sublabel">
                     <h3 className="subline text-gray-400"></h3>
                 </label>

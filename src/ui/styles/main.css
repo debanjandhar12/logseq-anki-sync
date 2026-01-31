@@ -152,3 +152,28 @@ body {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* Shortcut key styles for selection modal */
+.reveal .ui__button-shortcut-key,
+.ui__button-shortcut-key {
+  align-items: center;
+  justify-content: center;
+}
+
+.ui__button-shortcut-key {
+  background-color: var(--lx-gray-06-alpha, var(--rx-gray-06-alpha, rgba(128, 128, 128, 0.15)));
+  border-radius: 0.25rem;
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 400;
+  height: 1.25rem;
+  line-height: 1rem;
+  width: 1.25rem;
+  color: inherit;
+}
+
+/* Keyboard shortcut wrapper */
+.keyboard-shortcut {
+  display: inline-flex;
+  margin-left: auto;
+}

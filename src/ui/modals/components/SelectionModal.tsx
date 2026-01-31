@@ -56,7 +56,7 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
                     if (i + 1 >= 1 && i + 1 <= 9) {
                         return {
                             ...item,
-                            name: `${item.name}<span class="keyboard-shortcut px-3"><div class="opacity-80 ui__button-shortcut-key" style="margin-left: 2px;">${i + 1}</div></span>`,
+                            name: `${item.name}<span class="keyboard-shortcut px-3" style="margin-left: auto;"><div class="opacity-80 ui__button-shortcut-key" style="margin-left: 2px;">${i + 1}</div></span>`,
                         };
                     }
                     return item;
@@ -109,6 +109,7 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
+                            flex: 1,
                         }}
                         dangerouslySetInnerHTML={{ __html: item.name }}
                     />
