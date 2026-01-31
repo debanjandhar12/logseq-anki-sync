@@ -15,6 +15,7 @@ import {LogseqButton} from "../common/LogseqButton";
 import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
 import { UI } from "../UI";
+import { createOcclusionRectEl } from "../../utils/occlusionUtils";
 
 import { createLogger, LoggerCategory } from "../../utils/logger";
 
@@ -103,7 +104,7 @@ const OcclusionEditorComponent: React.FC<{
 
     React.useEffect(() => {
         let isMounted = true;
-        
+
         const initFabric = async () => {
             fabricRef.current = new fabric.Canvas(canvasRef.current, {
                 stateful: true,
@@ -114,7 +115,7 @@ const OcclusionEditorComponent: React.FC<{
             // Load the image and then add the occlusion rectangles
             imgEl.setAttribute("crossOrigin", "anonymous");
             const graphPath = (await logseq.App.getCurrentGraph()).path;
-            
+
             // Use Logseq's asset API for local files to avoid CORS issues
             if (isWebURL_REGEXP.test(imgURL)) {
                 imgEl.src = imgURL;
@@ -123,13 +124,13 @@ const OcclusionEditorComponent: React.FC<{
                 // Use Logseq's asset API to get a proper URL
                 imgEl.src = await logseq.Assets.makeUrl(fullPath);
             }
-            
+
             imgEl.onload = function () {
                 // Check if component is still mounted before proceeding
                 if (!isMounted || !fabricRef.current) {
                     return;
                 }
-                
+
                 const img = new fabric.Image(imgEl);
                 const appRoot = document.getElementById('app');
                 const canvasWidth = Math.min(
@@ -162,6 +163,7 @@ const OcclusionEditorComponent: React.FC<{
 
                 occlusionElements.forEach((obj) => {
                     const occlusionEl = createOcclusionRectEl(
+                        fabric,
                         obj.left,
                         obj.top,
                         obj.width,
@@ -174,7 +176,7 @@ const OcclusionEditorComponent: React.FC<{
                 fabricRef.current.renderAll();
             };
         };
-        
+
         const disposeFabric = () => {
             isMounted = false;
             // Clear the image onload handler to prevent it from firing after disposal
@@ -184,9 +186,9 @@ const OcclusionEditorComponent: React.FC<{
                 fabricRef.current = null;
             }
         };
-        
+
         initFabric();
-        
+
         return () => {
             disposeFabric();
         };
@@ -399,6 +401,7 @@ const OcclusionEditorComponent: React.FC<{
                 0.11 * imgEl.height,
         };
         const occlusionEl = createOcclusionRectEl(
+            fabric,
             randomLocation.x,
             randomLocation.y,
             0.22 * imgEl.width,
@@ -463,18 +466,18 @@ const OcclusionEditorComponent: React.FC<{
                     const objActualTop = matrix[5];
                     const objActualLeft = matrix[4];
                     if (doRectsCollide(
-                            {
-                                top: paragraph.bbox.y0,
-                                left: paragraph.bbox.x0,
-                                width: width,
-                                height: height,
-                            },
-                            {
-                                top: objActualTop - (obj.height * obj.scaleY) / 2,
-                                left: objActualLeft - (obj.width * obj.scaleX) / 2,
-                                width: obj.width * obj.scaleX,
-                                height: obj.height * obj.scaleY,
-                            })) {
+                        {
+                            top: paragraph.bbox.y0,
+                            left: paragraph.bbox.x0,
+                            width: width,
+                            height: height,
+                        },
+                        {
+                            top: objActualTop - (obj.height * obj.scaleY) / 2,
+                            left: objActualLeft - (obj.width * obj.scaleX) / 2,
+                            width: obj.width * obj.scaleX,
+                            height: obj.height * obj.scaleY,
+                        })) {
                         intersects = true;
                         break;
                     }
@@ -482,6 +485,7 @@ const OcclusionEditorComponent: React.FC<{
                 if (intersects) continue;
 
                 const occlusionEl = createOcclusionRectEl(
+                    fabric,
                     paragraph.bbox.x0 + width / 2,
                     paragraph.bbox.y0 + height / 2,
                     width,
@@ -691,40 +695,3 @@ const OcclusionEditorComponent: React.FC<{
         </Modal>
     );
 };
-
-export function createOcclusionRectEl(
-    left = 0,
-    top = 0,
-    width = 80,
-    height = 40,
-    angle = 0,
-    cId = 1,
-) {
-    const rect = new fabric.Rect({
-        fill: "#FFEBA2",
-        stroke: "#000",
-        strokeWidth: 1,
-        strokeUniform: true,
-        noScaleCache: false,
-        opacity: 0.8,
-        width: width,
-        height: height,
-        originX: "center",
-        originY: "center",
-    });
-    const text = new fabric.Text(`${cId}`, {
-        originX: "center",
-        originY: "center",
-    });
-    text.scaleToHeight(height);
-    const group = new fabric.Group([rect, text], {
-        left: left,
-        top: top,
-        width: width,
-        height: height,
-        originX: "center",
-        originY: "center",
-        angle: angle,
-    });
-    return group;
-}

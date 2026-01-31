@@ -13,12 +13,14 @@ export function compareAnswer(expected, provided) {
 }
 
 function prepareExpected(expected) {
+    if (expected == null) return "";
     let withoutNewlines = expected.replace(/\r?\n/g, " ");
     let withoutOuterWhitespace = withoutNewlines.trim();
     return normalizeToNFC(withoutOuterWhitespace);
 }
 
 function prepareProvided(provided) {
+    if (provided == null) return "";
     let withoutOuterWhitespace = provided.trim();
     return normalizeToNFC(withoutOuterWhitespace);
 }

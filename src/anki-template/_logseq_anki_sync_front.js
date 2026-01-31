@@ -2,8 +2,8 @@
  * This files contains the js for the front side of anki cards.
  */
 import {fabric} from "fabric";
-import {createOcclusionRectEl} from "../ui/pages/OcclusionEditor";
 import path from "path-browserify";
+import { createOcclusionRectEl } from "../utils/occlusionUtils";
 
 const onLoadHandler = () => {
     if (!document.getElementsByClassName("anki-card-front-side")[0]) {
@@ -81,6 +81,7 @@ function handleImageOcclusion() {
             if (occlusionElem.cId == currentClozeId) {
                 canvasList.forEach((canvas) => {
                     let occlusion = createOcclusionRectEl(
+                        fabric,
                         occlusionElem.left,
                         occlusionElem.top,
                         occlusionElem.width,
@@ -98,6 +99,7 @@ function handleImageOcclusion() {
             ) {
                 canvasList.forEach((canvas) => {
                     let occlusion = createOcclusionRectEl(
+                        fabric,
                         occlusionElem.left,
                         occlusionElem.top,
                         occlusionElem.width,
