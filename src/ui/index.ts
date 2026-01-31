@@ -26,7 +26,7 @@ export { showSelectionModal } from "./modals/components/SelectionModal";
 export type { SelectionModalProps, SelectionModalItem } from "./modals/components/SelectionModal";
 
 // Pages exports
-export { showLogseqAnkiFeatureExplorer, ImageOcclusionFeature } from "./pages/LogseqAnkiFeatureExplorer";
+export { showLogseqAnkiFeatureExplorer } from "./pages/LogseqAnkiFeatureExplorer";
 
 export { showOcclusionEditor } from "./pages/OcclusionEditor";
 export type { OcclusionElement, OcclusionConfig, OcclusionData } from "./pages/OcclusionEditor";

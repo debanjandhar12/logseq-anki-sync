@@ -31,7 +31,9 @@ export class UI {
         });
 
         // Listen for HMR updates to re-render current modal
-        if (import.meta.hot) {
+        // @ts-ignore - Vite will replace this
+        if (import.meta && import.meta.hot) {
+            // @ts-ignore - Vite will replace this
             import.meta.hot.accept(() => {
                 if (this.currentModalComponent && this.openModalCount > 0 && this.appRoot) {
                     // Re-render the current modal with the updated component
@@ -191,45 +193,5 @@ export class UI {
         } catch (error) {
             logger.error('Failed to hide modal:', error);
         }
-    }
-
-    public static async getEventHandlersForMountedReactComponent(key: string) {
-        let onClose = async () => {
-            try {
-                const div = WindowParentBridge.getElementById(key);
-                if (!div) return;
-                ReactDOM.unmountComponentAtNode(div);
-                logseq.provideUI({
-                    key: key,
-                    path: "#root main",
-                    template: "",
-                    reset: true,
-                    replace: true,
-                    close: "outside"
-                });
-                div.remove();
-            } catch (e) {
-                logger.info(e);
-            }
-        };
-
-        return {key, onClose};
-    }
-
-    public static async mountReactComponentInLogseq(key: string, path: string, component: React.ReactElement) {
-        // Random key to avoid conflicts
-        logseq.provideUI({
-            key: key,
-            path: path,
-            close: "outside",
-            template: `<div id="${key}"></div>`
-        });
-
-        // Wait for the element to be mounted
-        await waitForElement(`//div[@id='${key}']`, 10000, WindowParentBridge.getDocument());
-        const { onClose } = await this.getEventHandlersForMountedReactComponent(key);
-        LogseqProxy.App.registerPluginUnloadListener(onClose);
-
-        ReactDOM.render(component, WindowParentBridge.getElementById(key));
     }
 }
