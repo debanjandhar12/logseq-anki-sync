@@ -94,16 +94,18 @@ export class ImageOcclusionNote extends Note {
             block_images.length == 1
                 ? 0
                 : await showSelectionModal(
-                    block_images.map((image) => {
-                        return {
-                            name: image,
-                            icon: `<img class="px-4" height="48" width="64" src="${
-                                image.match(isWebURL_REGEXP)
-                                    ? image
-                                    : WindowParentBridge.makeAssetUrl(image)
-                            }"></img>`,
-                        };
-                    }),
+                    await Promise.all(
+                        block_images.map(async (image) => {
+                            return {
+                                name: image,
+                                icon: `<img class="px-4" height="48" width="64" src="${
+                                    image.match(isWebURL_REGEXP)
+                                        ? image
+                                        : await WindowParentBridge.makeAssetUrl(image)
+                                }"></img>`,
+                            };
+                        }),
+                    ),
                     {message: "Select Image for occlusion", enableKeySelect: true}
                 );
         if (selectedImageIdx != null) selectedImage = block_images[selectedImageIdx];

@@ -112,10 +112,9 @@ export class WindowParentBridge {
      * @param path - The asset path to convert
      * @returns The full asset URL or the original path if API unavailable
      */
-    static makeAssetUrl(path: string): string {
+    static async makeAssetUrl(path: string): Promise<string> {
         try {
-            const logseqAPI = this.getInternalLogseqAPI();
-            return logseqAPI?.Assets?.makeUrl?.(path) || (logseqAPI as any)?.api?.make_asset_url?.(path) || path;
+            return await logseq.Assets.makeUrl(path) || path;
         } catch {
             return path;
         }
