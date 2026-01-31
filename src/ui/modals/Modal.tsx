@@ -1,6 +1,7 @@
 import React, {PropsWithChildren} from "../React";
 import FocusTrap from "focus-trap-react";
 import { UI } from "../UI";
+import { WindowBridge } from "../../logseq/WindowBridge";
 
 const focusTrapOptions = {
     tabbableOptions: {
@@ -56,7 +57,7 @@ export function Modal({
         
         // Arrow keys for scrolling
         if (e.key === "ArrowDown") {
-            let divWithScrollbar = Array.from(document.querySelectorAll('.overflow-y-auto')).filter(div => {
+            let divWithScrollbar = Array.from(WindowBridge.querySelectorAll('.overflow-y-auto')).filter(div => {
                 return div.scrollHeight > div.clientHeight;
             })[0];
             if (divWithScrollbar) {
@@ -66,7 +67,7 @@ export function Modal({
             e.stopImmediatePropagation();
         }
         else if (e.key === "ArrowUp") {
-            let divWithScrollbar = Array.from(document.querySelectorAll('.overflow-y-auto')).filter(div => {
+            let divWithScrollbar = Array.from(WindowBridge.querySelectorAll('.overflow-y-auto')).filter(div => {
                 return div.scrollHeight > div.clientHeight;
             })[0];
             if (divWithScrollbar) {
@@ -80,9 +81,9 @@ export function Modal({
     // Set up keyboard event listeners
     React.useEffect(() => {
         if (open) {
-            document.addEventListener("keydown", onKeydown);
+            WindowBridge.addDocumentEventListener("keydown", onKeydown);
             return () => {
-                document.removeEventListener("keydown", onKeydown);
+                WindowBridge.removeDocumentEventListener("keydown", onKeydown);
             };
         }
     }, [open, onKeydown]);
@@ -99,9 +100,9 @@ export function Modal({
             }
         };
         
-        document.addEventListener('click', handleClickOutside);
+        WindowBridge.addDocumentEventListener('click', handleClickOutside);
         return () => {
-            document.removeEventListener('click', handleClickOutside);
+            WindowBridge.removeDocumentEventListener('click', handleClickOutside);
         };
     }, [open, handleClose]);
 

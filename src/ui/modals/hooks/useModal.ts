@@ -1,4 +1,5 @@
 import React from "../../React";
+import { WindowBridge } from "../../../logseq/WindowBridge";
 
 export interface UseModalOptions<T = any> {
     onClose?: () => void;
@@ -88,9 +89,9 @@ export function useModal<T = any>(
             }
         };
 
-        document.addEventListener("keydown", onKeydown);
+        WindowBridge.addDocumentEventListener("keydown", onKeydown);
         return () => {
-            document.removeEventListener("keydown", onKeydown);
+            WindowBridge.removeDocumentEventListener("keydown", onKeydown);
         };
     }, [open, handleConfirm, handleCancel, enableEscapeKey, enableEnterKey]);
 

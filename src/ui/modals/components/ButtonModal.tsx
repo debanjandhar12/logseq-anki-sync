@@ -5,6 +5,7 @@ import { SimpleModalHeader } from "../ModalHeader";
 import { LogseqButton } from "../../common/LogseqButton";
 import { createModalPromise } from "../utils/createModalPromise";
 import { UI } from "../../UI";
+import { WindowBridge } from "../../../logseq/WindowBridge";
 
 export interface ButtonModalButton {
     name: string;
@@ -44,9 +45,9 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
             }
         };
 
-        document.addEventListener("keydown", onKeydown);
+        WindowBridge.addDocumentEventListener("keydown", onKeydown);
         return () => {
-            document.removeEventListener("keydown", onKeydown);
+            WindowBridge.removeDocumentEventListener("keydown", onKeydown);
         };
     }, [open, returnResult]);
 

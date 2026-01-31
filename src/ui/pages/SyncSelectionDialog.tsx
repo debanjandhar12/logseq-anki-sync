@@ -10,6 +10,7 @@ import { createModalPromise, ModalHeader, DialogModalFooter, useModal } from "..
 import { UI } from "../UI";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { LogseqContentPreprocessor } from "../../logseq/LogseqContentPreprocessor";
+import { WindowBridge } from "../../logseq/WindowBridge";
 
 export async function showSyncSelectionDialog(
     toCreateNotes: Array<any>,
@@ -246,9 +247,9 @@ const SyncSelectionDialogComponent: React.FC<{
     );
 
     React.useEffect(() => {
-        if (open) document.addEventListener("keydown", onKeydown);
+        if (open) WindowBridge.addDocumentEventListener("keydown", onKeydown);
         return () => {
-            document.removeEventListener("keydown", onKeydown);
+            WindowBridge.removeDocumentEventListener("keydown", onKeydown);
         };
     }, [open]);
 

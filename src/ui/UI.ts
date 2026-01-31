@@ -3,6 +3,7 @@ import ReactDOM from './ReactDOM';
 
 import { createLogger, LoggerCategory } from "../utils/logger";
 import {LogseqProxy} from "../logseq/LogseqProxy";
+import { WindowBridge } from "../logseq/WindowBridge";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -174,7 +175,7 @@ export class UI {
                 return;
             }
             
-            const style = document.body.style;
+            const style = WindowBridge.getBody().style;
             Object.entries(vals).forEach(([k, v]) => {
                 style.setProperty(k, v as string);
             });
@@ -204,7 +205,7 @@ export class UI {
     public static async showModal(component: React.ReactElement): Promise<string> {
         try {
             // Get or create app root
-            this.appRoot = document.getElementById('app');
+            this.appRoot = WindowBridge.getElementById('app');
             if (!this.appRoot) {
                 throw new Error('App root element not found');
             }
@@ -213,7 +214,7 @@ export class UI {
             const modalId = `modal-${++this.modalIdCounter}`;
 
             // Create a container for this modal
-            const containerElement = document.createElement('div');
+            const containerElement = WindowBridge.createElement('div');
             containerElement.id = modalId;
             containerElement.style.position = 'absolute';
             containerElement.style.inset = '0';

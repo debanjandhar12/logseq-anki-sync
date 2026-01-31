@@ -16,6 +16,7 @@ import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
 import { UI } from "../UI";
 import { createOcclusionRectEl } from "../../utils/occlusionUtils";
+import { WindowBridge } from "../../logseq/WindowBridge";
 
 import { createLogger, LoggerCategory } from "../../utils/logger";
 
@@ -76,7 +77,7 @@ const OcclusionEditorComponent: React.FC<{
     const fabricRef = React.useRef<any>();
     const canvasRef = React.useRef(null);
     const cidSelectorRef = React.useRef(null);
-    const [imgEl, setImgEl] = React.useState(document.createElement('img'));
+    const [imgEl, setImgEl] = React.useState(WindowBridge.createElement('img'));
     const handleConfirm = () => {
         const newOcclusionElements = fabricRef.current.getObjects().map((obj) => {
             // https://github.com/fabricjs/fabric.js/issues/801#issuecomment-218116910
@@ -132,14 +133,14 @@ const OcclusionEditorComponent: React.FC<{
                 }
 
                 const img = new fabric.Image(imgEl);
-                const appRoot = document.getElementById('app');
+                const appRoot = WindowBridge.getElementById('app');
                 const canvasWidth = Math.min(
                     imgEl.width,
                     appRoot?.clientWidth - 160 || 800,
                 );
                 const canvasHeight = Math.min(
                     imgEl.height,
-                    document.body.clientHeight - 340,
+                    WindowBridge.getBody().clientHeight - 340,
                 );
                 const scale = Number(
                     Math.min(
@@ -382,11 +383,11 @@ const OcclusionEditorComponent: React.FC<{
                 }
             }
         };
-        document.addEventListener("keydown", onKeydown, {
+        WindowBridge.addDocumentEventListener("keydown", onKeydown, {
             capture: true,
         });
         return () => {
-            document.removeEventListener("keydown", onKeydown, {capture: true});
+            WindowBridge.removeDocumentEventListener("keydown", onKeydown, {capture: true});
         };
     }, [fabricRef, open]);
 

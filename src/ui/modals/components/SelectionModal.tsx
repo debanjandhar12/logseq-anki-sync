@@ -4,6 +4,7 @@ import { useModal } from "../hooks/useModal";
 import { LogseqButton } from "../../common/LogseqButton";
 import { createModalPromise } from "../utils/createModalPromise";
 import { UI } from "../../UI";
+import { WindowBridge } from "../../../logseq/WindowBridge";
 
 export interface SelectionModalItem {
     name: string;
@@ -77,9 +78,9 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
             }
         };
 
-        document.addEventListener("keydown", onKeydown);
+        WindowBridge.addDocumentEventListener("keydown", onKeydown);
         return () => {
-            document.removeEventListener("keydown", onKeydown);
+            WindowBridge.removeDocumentEventListener("keydown", onKeydown);
         };
     }, [open, items, enableKeySelect, handleSelection]);
 
