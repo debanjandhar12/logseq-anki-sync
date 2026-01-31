@@ -10,17 +10,16 @@ const logger = createLogger(LoggerCategory.SyncInternal);
 
 export class BreadcrumbAndParentBlockParser {
     static async parse(note: Note, graphName: string): Promise<string> {
-        const { breadcrumbDisplay } = LogseqProxy.Settings.getPluginSettings();
-        
-        if (!breadcrumbDisplay.includes("Show Page name")) {
+        const { breadcrumbDisplayOptions } = LogseqProxy.Settings.getPluginSettings();
+        const options = breadcrumbDisplayOptions || [];
+
+        // If no breadcrumb options selected, return hidden breadcrumb
+        if (options.length === 0 || !options.includes("Page name")) {
             return await this.buildHiddenBreadcrumb(note, graphName);
         }
 
-        if (breadcrumbDisplay === "Show Page name and parent blocks context") {
-            return await this.buildFullBreadcrumb(note, graphName);
-        }
-
-        return await this.buildPageOnlyBreadcrumb(note, graphName);
+        // Build breadcrumb based on selected options
+        return await this.buildBreadcrumb(note, graphName, options);
     }
 
     private static async buildHiddenBreadcrumb(note: Note, graphName: string): Promise<string> {
@@ -31,32 +30,85 @@ export class BreadcrumbAndParentBlockParser {
         )}" class="hidden">${pageName}</a>`;
     }
 
-    private static async buildPageOnlyBreadcrumb(note: Note, graphName: string): Promise<string> {
+    private static async buildBreadcrumb(
+        note: Note, 
+        graphName: string, 
+        options: string[]
+    ): Promise<string> {
         const page = await LogseqProxy.Editor.getPage(note.pageId);
-        const pageName = getNameFromPage(page);
-        return `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(
-            pageName
-        )}" title="${pageName}">${pageName}</a>`;
-    }
-
-    private static async buildFullBreadcrumb(note: Note, graphName: string): Promise<string> {
-        let breadcrumb = await this.buildPageOnlyBreadcrumb(note, graphName);
         
-        try {
-            const parentBlocks = await this.collectParentBlocks(note);
-            for (const parentBlock of parentBlocks) {
-                const firstLine = parentBlock.content.split("\n")[0];
-                breadcrumb += ` > <a href="logseq://graph/${encodeURIComponent(
-                    graphName
-                )}?block-id=${encodeURIComponent(parentBlock.uuid)}" title="${
-                    parentBlock.content
-                }">${firstLine}</a>`;
+        // Get the display name for the page link
+        let displayName: string;
+        let fullPageName: string;
+
+        if (options.includes("Page namespace")) {
+            // Get full page name with namespace (handles both DB and File versions)
+            fullPageName = await this.getFullPageNameWithNamespace(page);
+            displayName = fullPageName;
+        } else {
+            // For file version of logseq, we need to extract just the page name without namespace
+            const rawName = getNameFromPage(page);
+            const isFileVersion = rawName?.includes("/");
+            if (isFileVersion) {
+                // In file version, page name contains namespace (e.g., "Parent/Child")
+                // Extract just the last segment
+                displayName = rawName.split("/").pop() || rawName;
+            } else {
+                displayName = rawName;
             }
-        } catch (e) {
-            logger.error("[BreadcrumbAndParentBlockParser] Error building full breadcrumb:", e);
+            fullPageName = displayName;
+        }
+
+        let breadcrumb = `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(
+            fullPageName
+        )}" title="${displayName}">${displayName}</a>`;
+
+        // Add parent blocks if enabled
+        if (options.includes("Parent blocks")) {
+            try {
+                const parentBlocks = await this.collectParentBlocks(note);
+                for (const parentBlock of parentBlocks) {
+                    const firstLine = parentBlock.content.split("\n")[0];
+                    breadcrumb += ` > <a href="logseq://graph/${encodeURIComponent(
+                        graphName
+                    )}?block-id=${encodeURIComponent(parentBlock.uuid)}" title="${
+                        parentBlock.content
+                    }">${firstLine}</a>`;
+                }
+            } catch (e) {
+                logger.error("[BreadcrumbAndParentBlockParser] Error adding parent blocks to breadcrumb:", e);
+            }
         }
 
         return breadcrumb;
+    }
+
+    /**
+     * Gets the full page name including namespace for DB version.
+     * For file version, the page name already contains namespace.
+     */
+    private static async getFullPageNameWithNamespace(page: any): Promise<string> {
+        const baseName = getNameFromPage(page) || "";
+        
+        // In file version, page.name already contains namespace (e.g., "Parent/Child")
+        // In DB version, we need to build the namespace from parent pages
+        const isFileVersion = baseName?.includes("/");
+        
+        if (isFileVersion) {
+            return baseName;
+        }
+
+        // DB version: build namespace from parent pages
+        const parents = await LogseqProxy.Editor.getParentNamespacePages(page);
+        if (parents.length === 0) {
+            return baseName;
+        }
+
+        const segments = [
+            ...parents.reverse().map(p => getNameFromPage(p)),
+            baseName
+        ];
+        return segments.filter(s => !!s).join("/");
     }
 
     private static async collectParentBlocks(note: Note): Promise<Array<{content: string, uuid: string}>> {

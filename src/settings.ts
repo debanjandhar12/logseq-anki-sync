@@ -9,7 +9,7 @@ import { updateLoggerLevels } from "./utils/logger";
 // Type definitions for plugin settings
 export interface PluginSettings {
     disabled: boolean;
-    breadcrumbDisplay?: "Dont show breadcrumb" | "Show Page name only" | "Show Page name and parent blocks context";
+    breadcrumbDisplayOptions?: ("Page name" | "Page namespace" | "Parent blocks")[];
     includeParentContent?: boolean;
     renderClozeMarcosInLogseq?: boolean;
     hideClozeMarcosUntilHoverInLogseq?: boolean;
@@ -49,17 +49,17 @@ export const addSettingsToLogseq = () => {
             default: null,
         },
         {
-            key: "breadcrumbDisplay",
+            key: "breadcrumbDisplayOptions",
             type: "enum",
-            default: "Show Page name only",
-            title: "What to display in the breadcrumb? (Recommended: Show Page name only)",
-            description: "Choose what to display in the Anki card breadcrumb.",
+            default: ["Page name"],
+            title: "What to display in the breadcrumb? (Recommended: Page name only)",
+            description: "Choose what to display in the Anki card breadcrumb. Page namespace requires page name to be enabled.",
             enumChoices: [
-                "Dont show breadcrumb",
-                "Show Page name only",
-                "Show Page name and parent blocks context",
+                "Page name",
+                "Page namespace",
+                "Parent blocks",
             ],
-            enumPicker: "select",
+            enumPicker: "checkbox",
         },
         {
             key: "includeParentContent",
@@ -199,6 +199,17 @@ export const addSettingsToLogseq = () => {
             }
             if (!newSettings.syncOverwriteList.includes("Suspended")) {
                 logseq.UI.showMsg("Suspended overwrite is now disabled. The suspend-anki-card property will no longer work.", "warning");
+            }
+        }
+
+        if (!_.isEqual(newSettings.breadcrumbDisplayOptions, oldSettings.breadcrumbDisplayOptions)) {
+            // Page namespace requires page name to be enabled
+            if (newSettings.breadcrumbDisplayOptions?.includes("Page namespace") && 
+                !newSettings.breadcrumbDisplayOptions?.includes("Page name")) {
+                logseq.UI.showMsg("Page namespace requires page name to be enabled. Enabling page name.", "warning");
+                logseq.updateSettings({ 
+                    breadcrumbDisplayOptions: ["Page name", ...newSettings.breadcrumbDisplayOptions] 
+                });
             }
         }
     });
