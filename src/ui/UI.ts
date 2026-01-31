@@ -1,8 +1,5 @@
 import './styles/main.css';
 import ReactDOM from './ReactDOM';
-import {LogseqProxy} from "../logseq/LogseqProxy";
-import { waitForElement } from './utils/waitForElement';
-import { WindowParentBridge } from "../logseq/WindowParentBridge";
 
 import { createLogger, LoggerCategory } from "../utils/logger";
 

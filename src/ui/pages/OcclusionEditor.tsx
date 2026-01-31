@@ -687,6 +687,7 @@ const OcclusionEditorComponent: React.FC<{
                     <LogseqButton
                         isFullWidth={true}
                         depth={1}
+                        color={"outline-link"}
                         onClick={() => handleCancel()}>
                         Cancel
                     </LogseqButton>
