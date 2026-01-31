@@ -57,6 +57,7 @@ const SyncResultDialogComponent: React.FC<{
     failedDeleted: { [key: string]: Error };
     resolve: (value: any) => void;
     reject: (error: any) => void;
+    modalContext?: { modalId: string | null };
 }> = ({
     createdNotes,
     updatedNotes,
@@ -66,11 +67,13 @@ const SyncResultDialogComponent: React.FC<{
     failedDeleted,
     resolve,
     reject,
+    modalContext,
 }) => {
     const { open, setOpen } = useModal(resolve, {
-        onClose: () => UI.hideModal(),
+        onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         defaultResult: null,
+        modalId: modalContext?.modalId,
     });
 
     const [graphName, setGraphName] = useState("");
@@ -83,7 +86,7 @@ const SyncResultDialogComponent: React.FC<{
     }, []);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} hasCloseButton={false}>
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} hasCloseButton={false}>
             <div style={{margin: '0rem'}}>
                 <ModalHeader
                     title="Sync Result Details"

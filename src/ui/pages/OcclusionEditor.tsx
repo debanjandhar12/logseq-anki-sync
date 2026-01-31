@@ -65,11 +65,13 @@ const OcclusionEditorComponent: React.FC<{
     occlusionConfig: OcclusionConfig;
     resolve: (value: OcclusionData | boolean) => void;
     reject: Function;
-}> = ({imgURL, occlusionElements, occlusionConfig, resolve, reject}) => {
+    modalContext?: { modalId: string | null };
+}> = ({imgURL, occlusionElements, occlusionConfig, resolve, reject, modalContext}) => {
     const { open, setOpen, handleCancel: modalHandleCancel, returnResult } = useModal<OcclusionData | boolean>(resolve, {
-        onClose: () => UI.hideModal(),
+        onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false, // We'll handle Escape key manually due to complex interactions
-        enableEnterKey: false   // We'll handle Enter key manually
+        enableEnterKey: false,   // We'll handle Enter key manually
+        modalId: modalContext?.modalId,
     });
     const [occlusionConfigState, setOcclusionConfigState] = React.useState<OcclusionConfig>(
         occlusionConfig || {},
@@ -511,7 +513,7 @@ const OcclusionEditorComponent: React.FC<{
         <Modal
             open={open}
             setOpen={setOpen}
-            onClose={() => UI.hideModal()}
+            onClose={() => UI.hideModal(modalContext?.modalId)}
             hasCloseButton={false}
             size={"large"}>
             <div className="of-plugins" style={{margin: '0rem'}}>

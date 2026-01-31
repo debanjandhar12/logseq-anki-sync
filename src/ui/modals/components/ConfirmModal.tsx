@@ -12,6 +12,7 @@ export interface ConfirmModalProps {
     cancelText?: string;
     resolve: (value: boolean) => void;
     reject: (error: any) => void;
+    modalContext?: { modalId: string | null };
 }
 
 const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
@@ -20,16 +21,18 @@ const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
     cancelText = "Cancel",
     resolve,
     reject,
+    modalContext,
 }) => {
     const { open, setOpen, handleConfirm, handleCancel } = useModal<boolean>(resolve, {
-        onClose: () => UI.hideModal(),
+        onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         enableEnterKey: true,
         defaultResult: true,
+        modalId: modalContext?.modalId,
     });
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} zDepth="high">
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} zDepth="high">
             <div className="ui__confirm-modal is-">
                 <SimpleModalHeader title={message} />
                 <ModalFooter

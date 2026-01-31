@@ -17,6 +17,7 @@ export interface SelectionModalProps {
     enableKeySelect?: boolean;
     resolve: (value: number | null) => void;
     reject: (error: any) => void;
+    modalContext?: { modalId: string | null };
 }
 
 const SelectionModalComponent: React.FC<SelectionModalProps> = ({
@@ -25,13 +26,15 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
     enableKeySelect = false,
     resolve,
     reject,
+    modalContext,
 }) => {
     const [displayItems, setDisplayItems] = React.useState(items);
     
     const { open, setOpen, returnResult } = useModal<number | null>(resolve, {
-        onClose: () => UI.hideModal(),
+        onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         defaultResult: null,
+        modalId: modalContext?.modalId,
     });
 
     const handleSelection = React.useCallback(
@@ -91,7 +94,7 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
     }, [open, returnResult]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} zDepth="high">
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} zDepth="high">
             {message && <h1 className="mb-4 text-2xl p-1">{message}</h1>}
             {displayItems.map((item, index) => (
                 <LogseqButton

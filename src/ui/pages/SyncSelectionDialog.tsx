@@ -50,12 +50,14 @@ const SyncSelectionDialogComponent: React.FC<{
         } | null,
     ) => void;
     reject: Function;
-}> = ({toCreateNotes, toUpdateNotes, toDeleteNotes, resolve, reject}) => {
+    modalContext?: { modalId: string | null };
+}> = ({toCreateNotes, toUpdateNotes, toDeleteNotes, resolve, reject, modalContext}) => {
     const { open, setOpen, returnResult } = useModal(resolve, {
-        onClose: () => UI.hideModal(),
+        onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false, // We'll handle this manually
         enableEnterKey: false,  // We'll handle this manually
         defaultResult: null,
+        modalId: modalContext?.modalId,
     });
     const [toCreateNotesSelection, setToCreateNotesSelection] = useState(
         new Array(toCreateNotes.length).fill(true),
@@ -281,7 +283,7 @@ const SyncSelectionDialogComponent: React.FC<{
     }, [skipOnHashMatch]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} hasCloseButton={false}>
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} hasCloseButton={false}>
             <div style={{margin: '0rem'}}>
                 <ModalHeader
                     title="Proceed sync with anki?"

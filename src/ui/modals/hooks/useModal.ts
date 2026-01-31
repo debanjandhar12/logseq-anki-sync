@@ -8,6 +8,7 @@ export interface UseModalOptions<T = any> {
     defaultResult?: T;
     enableEscapeKey?: boolean;
     enableEnterKey?: boolean;
+    modalId?: string | null;
 }
 
 export interface UseModalReturn<T = any> {
@@ -32,6 +33,7 @@ export function useModal<T = any>(
         defaultResult,
         enableEscapeKey = true,
         enableEnterKey = false,
+        modalId,
     } = options;
 
     const [open, setOpen] = React.useState(true);

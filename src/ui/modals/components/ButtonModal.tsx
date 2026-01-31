@@ -18,6 +18,7 @@ export interface ButtonModalProps {
     buttons: ButtonModalButton[];
     resolve: (value: number | false) => void;
     reject: (error: any) => void;
+    modalContext?: { modalId: string | null };
 }
 
 const ButtonModalComponent: React.FC<ButtonModalProps> = ({
@@ -25,10 +26,12 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     buttons,
     resolve,
     reject,
+    modalContext,
 }) => {
     const { open, setOpen, returnResult } = useModal<number | false>(resolve, {
-        onClose: () => UI.hideModal(),
+        onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
+        modalId: modalContext?.modalId,
     });
 
     // Custom keyboard handling for numbered buttons
@@ -58,7 +61,7 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     }, [open, returnResult]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal()} zDepth="high">
+        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} zDepth="high">
             <div className="ui__confirm-modal is-">
                 <SimpleModalHeader title={message} />
                 <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
