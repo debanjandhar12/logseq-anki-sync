@@ -65,10 +65,16 @@ function handleImageOcclusion() {
     let imgToOcclusionDataHashMap = JSON.parse(
         document.getElementById("imgToOcclusionDataHashMap").innerHTML,
     );
+
+    // Check for hide-all-test-one tag
+    let hideAllTestOne = false;
+    const tagsEl = document.getElementById('tags');
+    if (tagsEl) {
+        hideAllTestOne = tagsEl.getAttribute('tags_name').split(' ').includes('hide-all-test-one');
+    }
+
     for (let image in imgToOcclusionDataHashMap) {
         let occlusionElements = imgToOcclusionDataHashMap[image].elements;
-        let occlusionConfig = imgToOcclusionDataHashMap[image].config;
-        console.log(occlusionConfig);
         occlusionElements.forEach((occlusionElem) => {
             let canvasList =
                 imgToCanvasListHashMap[localImgBasePath + "/" + path.basename(image)] ||
@@ -95,7 +101,7 @@ function handleImageOcclusion() {
                 });
             } else if (
                 occlusionElem.cId != currentClozeId &&
-                occlusionConfig.hideAllTestOne == true
+                hideAllTestOne
             ) {
                 canvasList.forEach((canvas) => {
                     let occlusion = createOcclusionRectEl(

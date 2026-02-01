@@ -86,7 +86,6 @@ export class MultilineCardNote extends Note {
         LogseqProxy.Editor.createTagSilentlyIfNotExists("reversed");
         LogseqProxy.Editor.createTagSilentlyIfNotExists("bidirectional");
         LogseqProxy.Editor.createTagSilentlyIfNotExists("incremental");
-        LogseqProxy.Editor.createTagSilentlyIfNotExists("hide-all-test-one");
         for (let i = 1; i <= 9; i++) {
             LogseqProxy.Editor.createTagSilentlyIfNotExists(`depth-${i}`);
         }

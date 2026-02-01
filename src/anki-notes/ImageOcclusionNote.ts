@@ -22,6 +22,7 @@ import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConver
 import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import {
     OcclusionData,
+    OcclusionConfig,
     showOcclusionEditor,
     OcclusionElement,
 } from "../ui/pages/OcclusionEditor";
@@ -111,6 +112,7 @@ export class ImageOcclusionNote extends Note {
         if (selectedImageIdx != null) selectedImage = block_images[selectedImageIdx];
         if (selectedImage) {
             selectedImage = (selectedImage as string).split("?")[0];
+            const blockTags = _.get(fetchedBlock, "properties.tags", []) as string[];
             const newOcclusionData = await showOcclusionEditor(
                 selectedImage,
                 _.get(
@@ -118,7 +120,12 @@ export class ImageOcclusionNote extends Note {
                     "elements",
                     [],
                 ) as OcclusionElement[],
-                {},
+                _.get(
+                    imgToOcclusionDataHashMap[selectedImage],
+                    "config",
+                    {},
+                ) as OcclusionConfig,
+                blockTags,
             );
             if (newOcclusionData && typeof newOcclusionData == "object") {
                 imgToOcclusionDataHashMap[selectedImage] = newOcclusionData;
@@ -138,6 +145,17 @@ export class ImageOcclusionNote extends Note {
                         ),
                     );
                 }
+
+                // Handle tag updates for hide-all-test-one
+                const blockUUID = getUUIDFromBlock(fetchedBlock);
+                const tag = await logseq.Editor.getTag("hide-all-test-one");
+                if (tag) {
+                    if (newOcclusionData.tags.includes("hide-all-test-one")) {
+                        await logseq.Editor.addBlockTag(blockUUID, tag.uuid);
+                    } else {
+                        await logseq.Editor.removeBlockTag(blockUUID, tag.uuid);
+                    }
+                }
             }
         }
     }
@@ -153,6 +171,10 @@ export class ImageOcclusionNote extends Note {
             imgToOcclusionDataHashMap,
             block_images,
         );
+
+        // Check for hide-all-test-one tag on the block
+        const hasHideAllTestOneTag = this.tags.includes("hide-all-test-one");
+
         const clozes = new Set();
         for (const image in imgToOcclusionDataHashMap) {
             const occlusionElements = imgToOcclusionDataHashMap[image].elements;
@@ -350,10 +372,15 @@ export class ImageOcclusionNote extends Note {
                 newHashMap[key] = {
                     elements: value,
                     config: {},
+                    tags: [],
                 };
             } else if (typeof value == "object" && value !== null && "elements" in value && Array.isArray((value as any).elements)) {
-                // New format.
-                newHashMap[key] = value as OcclusionData;
+                // New format - ensure tags property exists
+                const occlusionData = value as OcclusionData;
+                if (!occlusionData.tags) {
+                    occlusionData.tags = [];
+                }
+                newHashMap[key] = occlusionData;
             }
         }
         return newHashMap;

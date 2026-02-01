@@ -32,18 +32,21 @@ export type OcclusionElement = {
 };
 
 export type OcclusionConfig = {
-    hideAllTestOne?: boolean;
+    // hideAllTestOne is now controlled via #hide-all-test-one tag
+    // This type is kept for possible future user-defined config options
 };
 
 export type OcclusionData = {
     config: OcclusionConfig;
     elements: Array<OcclusionElement>;
+    tags: string[];
 };
 
 export async function showOcclusionEditor(
     imgURL: string,
     occlusionElements: Array<OcclusionElement>,
     occlusionConfig: OcclusionConfig,
+    blockTags: string[] = [],
 ): Promise<OcclusionData | boolean> {
     return createModalPromise<OcclusionData | boolean>(
         (props) => (
@@ -51,6 +54,7 @@ export async function showOcclusionEditor(
                 imgURL={imgURL}
                 occlusionElements={occlusionElements}
                 occlusionConfig={occlusionConfig}
+                blockTags={blockTags}
                 {...props}
             />
         ),
@@ -63,19 +67,18 @@ const OcclusionEditorComponent: React.FC<{
     imgURL: string;
     occlusionElements: Array<OcclusionElement>;
     occlusionConfig: OcclusionConfig;
+    blockTags: string[];
     resolve: (value: OcclusionData | boolean) => void;
     reject: Function;
     modalContext?: { modalId: string | null };
-}> = ({imgURL, occlusionElements, occlusionConfig, resolve, reject, modalContext}) => {
+}> = ({imgURL, occlusionElements, occlusionConfig, blockTags, resolve, reject, modalContext}) => {
     const { open, setOpen, handleCancel: modalHandleCancel, returnResult } = useModal<OcclusionData | boolean>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false, // We'll handle Escape key manually due to complex interactions
         enableEnterKey: false,   // We'll handle Enter key manually
         modalId: modalContext?.modalId,
     });
-    const [occlusionConfigState, setOcclusionConfigState] = React.useState<OcclusionConfig>(
-        occlusionConfig || {},
-    );
+    const [tags, setTags] = React.useState<string[]>(blockTags);
     const fabricRef = React.useRef<any>();
     const canvasRef = React.useRef(null);
     const cidSelectorRef = React.useRef(null);
@@ -96,9 +99,11 @@ const OcclusionEditorComponent: React.FC<{
                 cId: parseInt(obj._objects[1].text),
             };
         });
+
         returnResult({
-            config: occlusionConfigState,
+            config: occlusionConfig,
             elements: newOcclusionElements,
+            tags: tags,
         });
     };
     const handleCancel = () => {
@@ -609,13 +614,14 @@ const OcclusionEditorComponent: React.FC<{
                         <LogseqButton color={"default"} size={"sm"} icon={SETTINGS_ICON} />
                         <div className={"image-occlusion-menu"}>
                             <LogseqCheckbox
-                                checked={occlusionConfigState.hideAllTestOne}
-                                onChange={(e) =>
-                                    setOcclusionConfigState({
-                                        ...occlusionConfigState,
-                                        hideAllTestOne: e.target.checked,
-                                    })
-                                }>
+                                checked={tags.includes("hide-all-test-one")}
+                                onChange={(e) => {
+                                    if (e.target.checked) {
+                                        setTags([...tags, "hide-all-test-one"]);
+                                    } else {
+                                        setTags(tags.filter(t => t !== "hide-all-test-one"));
+                                    }
+                                }}>
                                 Hide All, Test One (
                                 <abbr title="When enabled, hides all occlusions including the one being tested during anki review.">
                                     ?
