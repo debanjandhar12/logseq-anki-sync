@@ -86,7 +86,8 @@ export class CreateNotesTask {
             modelName,
             {
                 "uuid-type": `${note.uuid}-${note.type}`,
-                uuid: note.uuid,
+                "Logseq Block UUID": note.uuid,
+                "Logseq Page Id": note.pageId.toString(),
                 Text: html,
                 Extra: extra,
                 Breadcrumb: breadcrumb,

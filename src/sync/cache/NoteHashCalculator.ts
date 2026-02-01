@@ -1,9 +1,10 @@
 /**
- * This class is responsible for calculating the hash of a note using the uuid of note's block dependencies.
+ * This class is responsible for calculating the hash of a note using the Logseq Block UUID of note's block dependencies.
  * In order to calculate the hash of a note, other than note's complete block dependencies, it also considers:
  * 1. Current / Future anki Fields (passed as argument)
  * 2. Current Plugin Settings and Version
  * 3. Some properties of the page where block is located
+ * 4. Logseq Page Id field
  */
 
 import { Note } from "../../anki-notes/Note";
@@ -57,10 +58,10 @@ export default class NoteHashCalculator {
         const { includeParentContent } = LogseqProxy.Settings.getPluginSettings();
         if (includeParentContent) {
             while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
-                const blockUUID = getUUIDFromBlock(parent) || parent.parent.id;
+                const logseqBlockUUID = getUUIDFromBlock(parent) || parent.parent.id;
                 dependencies.push({
                     type: "Block",
-                    value: blockUUID,
+                    value: logseqBlockUUID,
                 });
                 parentID = parent.parent.id;
             }
@@ -84,6 +85,9 @@ export default class NoteHashCalculator {
 
         // Add additional things to toHash
         toHash.push(getNameFromPage(page));
+        
+        // Include Logseq Page Id in hash calculation
+        toHash.push(note.pageId);
         
         const settings = LogseqProxy.Settings.getPluginSettings();
         toHash.push(

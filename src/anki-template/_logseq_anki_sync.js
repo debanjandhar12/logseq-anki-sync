@@ -13,13 +13,13 @@ window.scrollToClozeElement = () => {
     console.log("Scrolled to cloze element");
 };
 
-window.openBlockInLogseq = (uuid) => {
-    if (uuid == null || uuid == "") return;
+window.openBlockInLogseq = (logseqBlockUUID) => {
+    if (logseqBlockUUID == null || logseqBlockUUID == "") return;
     let element = document.getElementsByClassName("breadcrumb2")[0];
     // javascript get first child link element
     let page_link = element.getElementsByTagName("a")[0];
     let block_link = document.createElement("a");
-    block_link.href = `${page_link.href.match(/logseq:\/\/graph\/.*\?/)}block-id=${uuid}`;
+    block_link.href = `${page_link.href.match(/logseq:\/\/graph\/.*\?/)}block-id=${logseqBlockUUID}`;
     block_link.click();
 };
 

@@ -4,6 +4,7 @@ import { Addon } from "./Addon";
 import _ from "lodash";
 import { showSelectionModal } from "../ui";
 import getNameFromPage from "../logseq/getNameFromPage";
+import getIDFromPage from "../logseq/getIDFromPage";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import { LogseqNamespaceHelper } from "../logseq/LogseqNamespaceHelper";
 
@@ -27,7 +28,7 @@ export class PreviewInAnkiContextMenu extends Addon {
     private async previewBlockNotesInAnki(...blocks) {
         try {
             await AnkiConnect.requestPermission();
-            await AnkiConnect.guiBrowse("uuid:" + blocks[0].uuid);
+            await AnkiConnect.guiBrowse(`"Logseq Block UUID:${blocks[0].uuid}"`);
         } catch (e) {
             handleAnkiError(e.toString());
         }
@@ -52,14 +53,9 @@ export class PreviewInAnkiContextMenu extends Addon {
                         pagesToView = [...pagesToView, ...namespacePages];
                     }
                 }
+                const pageIds = pagesToView.map(page => getIDFromPage(page)).filter(id => id != null);
                 await AnkiConnect.guiBrowse(
-                    `"note:${modelName}" "Breadcrumb:re:^<a.*>(${pagesToView
-                        .map((pageObj) => {
-                            const pageName = getNameFromPage(pageObj);
-                            // Use strict regex escape if needed, but original used _.escapeRegExp(page)
-                            return _.escapeRegExp(pageName).replaceAll('"', '\\"')
-                        })
-                        .join("|")})</a>.*$"`,
+                    `"note:${modelName}" "Logseq Page Id:${pageIds.join(" OR ")}"`,
                 );
             }
         } catch (e) {

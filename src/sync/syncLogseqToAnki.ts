@@ -190,9 +190,9 @@ export class LogseqToAnkiSync {
 
     private async setupAnkiModel(): Promise<void> {
         await AnkiConnect.requestPermission();
-        await AnkiConnect.createModel(
+        await AnkiConnect.upsertModel(
             this.modelName,
-            ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"],
+            ["uuid-type", "Logseq Block UUID", "Logseq Page Id", "Text", "Extra", "Breadcrumb", "Config"],
             getTemplateFront(),
             getTemplateBack(),
             getTemplateMediaFiles()

@@ -4,7 +4,8 @@
 
 export interface AnkiNoteFields {
     'uuid-type': string;    // contains ${logseq_block_uuid}-${note_type}
-    uuid: string;
+    'Logseq Block UUID': string;
+    'Logseq Page Id': string;
     Text: string;
     Extra: string;
     Breadcrumb: string;
