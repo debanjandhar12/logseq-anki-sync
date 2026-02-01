@@ -1,15 +1,11 @@
-- [ ] Improve testing for anki ops, parsers in sync, caching
+- [x] Improve testing for anki ops, parsers in sync, caching
 - [x] Improve asset handling - 0.2
-- [ ] Rewrite Feature explorer - 1
 - [x] Find points and fix renderer - 1
-- [ ] Fix queries based on properties
+- [x] Fix queries based on properties
 - [x] Complete writing docs
-
-Notes:
-- Need to remove hide Occlusion Data in db version or maybe upgrade?
-
-Known issues:
-- Focus trap in uis dont work...
+- [ ] Check converter result
+- [ ] Test from MD of old plugin to new plugin
+- [ ] Add Awesome Logseq Anki Sync page.
 
 Good Links:
 - https://discuss.logseq.com/t/logseq-db-unofficial-faq/32508/11?u=danzu
@@ -18,9 +14,18 @@ Good Links:
 
 Breaking changes:
 - .replacecloze property is no longer supported. Use replacecloze (without dot at beginning) instead.
-- Removed LogseqAnkiFeatureExplorer since it is deemed to no longer be required. Logseq DB provided autocomplete, choice values etc for properties makeing it easier for user to discover features.
+- Removed LogseqAnkiFeatureExplorer since it is deemed to no longer be required. Logseq DB provided autocomplete, choice values etc for properties making it easier for user to discover features. Hence, feature explored was deemed to not be required anymore.
 - Removed #no-anki-sync (was marked for removal in v6.3.1), please use disable-anki-sync or suspend-anki-card prop instead.
-- The `defaultDeck` and `useNamespaceAsDefaultDeck` settings have been removed. The default deck is now derived from the current page name.
+- The `defaultDeck` and `useNamespaceAsDefaultDeck` settings have been removed. The default deck is now derived from the current page name by default.
+- Moved oclussion config from hide-all-test-one to #hide-all-test-one tag for unification. The checkbox needs to be manually enabled for those cards again.
+- Removed logseq active cache as it was very buggy and high maintaince.
+- Extra from page properties is no longer recognized.
+
+New features:
+- Added suspend-anki-card property.
+- Added User Controlled Fields.
+- Enhanced Breadcrumb settings.
+- Moved most of ui to shadow dom - reduces lag in ui.
 
 /home/debanjand/logseq/graphs/ <- use for db graphs setup?
 

@@ -9,6 +9,9 @@ export interface AnkiNoteFields {
     Text: string;
     Extra: string;
     Breadcrumb: string;
+    'User Controlled Field (Front)'?: string;
+    'User Controlled Field (Back)'?: string;
+    'User Controlled Field (Both)'?: string;
     Config: string;
 }
 

@@ -192,7 +192,7 @@ export class LogseqToAnkiSync {
         await AnkiConnect.requestPermission();
         await AnkiConnect.upsertModel(
             this.modelName,
-            ["uuid-type", "Logseq Block UUID", "Logseq Page Id", "Text", "Extra", "Breadcrumb", "Config"],
+            ["uuid-type", "Logseq Block UUID", "Logseq Page Id", "Text", "Extra", "Breadcrumb", "User Controlled Field (Front)", "User Controlled Field (Back)",  "User Controlled Field (Both)", "Config"],
             getTemplateFront(),
             getTemplateBack(),
             getTemplateMediaFiles()

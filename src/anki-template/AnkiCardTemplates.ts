@@ -37,6 +37,8 @@ function getTemplate() {
 export function getTemplateFront() {
     return `<script src="_logseq_anki_sync_front.js" type='text/javascript' async=false defer=false></script>
         ${getTemplate()}
+        {{#User Controlled Field (Front)}}<div class="user-controlled-field-front">{{User Controlled Field (Front)}}</div>{{/User Controlled Field (Front)}}
+        {{#User Controlled Field (Both)}}<div class="user-controlled-field-both">{{User Controlled Field (Both)}}</div>{{/User Controlled Field (Both)}}
         <span style="display: none" class="anki-card-front-side"></span>
         <link rel="stylesheet" href="_logseq_anki_sync_front.css">`;
 }
@@ -44,6 +46,8 @@ export function getTemplateFront() {
 export function getTemplateBack() {
     return `<script src="_logseq_anki_sync_back.js" type='text/javascript' async=false defer=false></script>
         ${getTemplate()}
+        {{#User Controlled Field (Back)}}<div class="user-controlled-field-back">{{User Controlled Field (Back)}}</div>{{/User Controlled Field (Back)}}
+        {{#User Controlled Field (Both)}}<div class="user-controlled-field-both">{{User Controlled Field (Both)}}</div>{{/User Controlled Field (Both)}}
         <span style="display: none" class="anki-card-back-side"></span>
         <link rel="stylesheet" href="_logseq_anki_sync_back.css">`;
 }

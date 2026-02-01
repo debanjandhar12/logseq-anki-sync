@@ -28,6 +28,7 @@ const sidebars = {
       type: 'category',
       label: 'Advanced',
       items: [
+        'advanced/sync-behavior',
         'advanced/custom-css',
       ],
     },
