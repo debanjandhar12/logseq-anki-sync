@@ -21,6 +21,7 @@ const sidebars = {
         'usage/suspend-and-disable-sync',
         'usage/type-in-answer-tag',
         'usage/hiding-parent-blocks',
+        'usage/hide-all-test-one',
       ],
     },
     {
