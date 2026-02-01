@@ -31,6 +31,7 @@ import {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {showSelectionModal} from "../ui";
 
 import { createLogger, LoggerCategory } from "../utils/logger";
+import {appendExtraToHtmlFile} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
@@ -193,7 +194,11 @@ export class ImageOcclusionNote extends Note {
         <div id="imgToOcclusionDataHashMap">${JSON.stringify(imgToOcclusionDataHashMap)}</div>
         <img id="localImgBasePath" src="_logseq_anki_sync.css"></img>
         </div>`;
-        return LogseqToHtmlConverterProxy.convertToHTMLFile(clozedContent, this.format);
+
+        const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(clozedContent, this.format);
+
+        // --- Add extra property content (non-indented) ---
+        return appendExtraToHtmlFile(result, _.get(await LogseqProxy.Editor.getBlock(this.uuid), "properties.extra") as string, this.format, true);
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ImageOcclusionNote[]> {

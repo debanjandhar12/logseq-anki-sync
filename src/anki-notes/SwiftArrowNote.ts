@@ -9,6 +9,7 @@ import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 
 import { createLogger, LoggerCategory } from "../utils/logger";
+import {appendExtraToHtmlFile} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
@@ -63,7 +64,11 @@ export class SwiftArrowNote extends Note {
         clozedContent = clozedContent.replaceAll(startDoubleBracket, "{{c");
         clozedContent = clozedContent.replaceAll(doubleSemicolon, "::");
         clozedContent = clozedContent.replaceAll(endDoubleBracket, "}}");
-        return LogseqToHtmlConverterProxy.convertToHTMLFile(clozedContent, this.format);
+
+        const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(clozedContent, this.format);
+
+        // --- Add extra property content (non-indented) ---
+        return appendExtraToHtmlFile(result, _.get(await LogseqProxy.Editor.getBlock(this.uuid), "properties.extra") as string, this.format, true);
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<SwiftArrowNote[]> {

@@ -3,7 +3,6 @@ import { ParsedNoteData } from "../types";
 import { DeckParser } from "./DeckParser";
 import { BreadcrumbAndParentBlockParser } from "./BreadcrumbAndParentBlockParser";
 import { TagParser } from "./TagParser";
-import { ExtraFieldParser } from "./ExtraFieldParser";
 import { ParentContentParser } from "./ParentContentParser";
 
 export async function parseNote(note: Note, graphName: string): Promise<ParsedNoteData> {
@@ -20,7 +19,5 @@ export async function parseNote(note: Note, graphName: string): Promise<ParsedNo
 
     const collectedTags = await TagParser.parse(note, Array.from(parentResult.tags));
 
-    const extra = await ExtraFieldParser.parse(note, assets);
-
-    return [html, assets, deck, breadcrumb, collectedTags, extra];
+    return [html, assets, deck, breadcrumb, collectedTags];
 }

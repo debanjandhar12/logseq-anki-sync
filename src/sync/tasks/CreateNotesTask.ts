@@ -64,14 +64,13 @@ export class CreateNotesTask {
         graphPath: string,
         ankiNoteManager: LazyAnkiNoteManager
     ): Promise<void> {
-        const [html, assets, deck, breadcrumb, tags, extra] = await parseNote(note, graphName);
+        const [html, assets, deck, breadcrumb, tags] = await parseNote(note, graphName);
         const dependencyHash = await NoteHashCalculator.getHash(note, [
             html,
             assets,
             deck,
             breadcrumb,
             tags,
-            extra,
         ]);
 
         assets.forEach((asset) => {
@@ -89,7 +88,6 @@ export class CreateNotesTask {
                 "Logseq Block UUID": note.uuid,
                 "Logseq Page Id": note.pageId.toString(),
                 Text: html,
-                Extra: extra,
                 Breadcrumb: breadcrumb,
                 Config: JSON.stringify({
                     dependencyHash,

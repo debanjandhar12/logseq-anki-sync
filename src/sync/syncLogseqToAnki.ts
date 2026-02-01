@@ -192,7 +192,7 @@ export class LogseqToAnkiSync {
         await AnkiConnect.requestPermission();
         await AnkiConnect.upsertModel(
             this.modelName,
-            ["uuid-type", "Logseq Block UUID", "Logseq Page Id", "Text", "Extra", "Breadcrumb", "User Controlled Field (Front)", "User Controlled Field (Back)",  "User Controlled Field (Both)", "Config"],
+            ["uuid-type", "Logseq Block UUID", "Logseq Page Id", "Text", "Breadcrumb", "User Controlled Field (Front)", "User Controlled Field (Back)",  "User Controlled Field (Both)", "Config"],
             getTemplateFront(),
             getTemplateBack(),
             getTemplateMediaFiles()
@@ -280,7 +280,7 @@ export class LogseqToAnkiSync {
             buildNoteHashes = new CancelablePromise(async (resolve, reject, onCancel) => {
                 await new Promise((resolve) => setTimeout(resolve, 10000));
                 for (const note of notes) {
-                    await NoteHashCalculator.getHash(note, ["", new Set([]), "", "", [], ""]);
+                    await NoteHashCalculator.getHash(note, ["", new Set([]), "", "", []]);
                     if (buildNoteHashes.isCanceled()) break;
                 }
             });

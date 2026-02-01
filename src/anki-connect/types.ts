@@ -7,7 +7,6 @@ export interface AnkiNoteFields {
     'Logseq Block UUID': string;
     'Logseq Page Id': string;
     Text: string;
-    Extra: string;
     Breadcrumb: string;
     'User Controlled Field (Front)'?: string;
     'User Controlled Field (Back)'?: string;

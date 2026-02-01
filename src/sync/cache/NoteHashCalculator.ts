@@ -104,7 +104,7 @@ export default class NoteHashCalculator {
         toHash.push(pkg.version);
 
         // Add additional things from ankiFields to toHash
-        let [html, assets, deck, breadcrumb, tags, extra] = ankiFields;
+        let [html, assets, deck, breadcrumb, tags] = ankiFields;
         tags = tags.filter((tag: string) => tag.toLowerCase() != "leech"); // Remove leech from tags arr
         tags = tags.filter((tag: string) => tag.toLowerCase() != "marked"); // Also remove marked
         const assetsArray = Array.from(assets).sort();
@@ -124,7 +124,6 @@ export default class NoteHashCalculator {
             deck ? deck.trim().toLowerCase() : "",
             breadcrumb.trim(),
             tags,
-            extra.trim(),
         ]);
 
         // Return hash

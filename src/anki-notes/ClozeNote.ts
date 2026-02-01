@@ -13,6 +13,7 @@ import {LogseqProxy} from "../logseq/LogseqProxy";
 import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
+import {appendExtraToHtmlFile} from "./NoteUtils";
 
 
 export class ClozeNote extends Note {
@@ -212,7 +213,10 @@ export class ClozeNote extends Note {
         // --- Add back the removed logseq properties ---
         clozedContent = removedLogseqProperties + clozedContent;
 
-        return LogseqToHtmlConverterProxy.convertToHTMLFile(clozedContent, this.format);
+        const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(clozedContent, this.format);
+
+        // --- Add extra property content (non-indented) ---
+        return appendExtraToHtmlFile(result, _.get(await LogseqProxy.Editor.getBlock(this.uuid), "properties.extra") as string, this.format, true);
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ClozeNote[]> {

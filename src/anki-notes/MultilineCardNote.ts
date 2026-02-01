@@ -7,6 +7,7 @@ import {LogseqProxy} from "../logseq/LogseqProxy";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
+import { appendExtraToHtmlFile } from "./NoteUtils";
 
 import { createLogger, LoggerCategory } from "../utils/logger";
 
@@ -147,17 +148,17 @@ export class MultilineCardNote extends Note {
                 childrenListHTML += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">`;
                 const childContent = _.get(child, "content", "");
                 let sanitizedChildContent = escapeClozesAndMacroDelimiters(childContent);
-                const childExtra = _.get(child, "properties.extra");
-                if (childExtra) {
-                    sanitizedChildContent += `\n<div class="extra">${childExtra}</div>`;
-                }
                 const sanitizedChildHTMLFile = await LogseqToHtmlConverterProxy.convertToHTMLFile(
                     sanitizedChildContent,
                     child.format,
                 );
-                let sanitizedChildHTML = sanitizedChildHTMLFile.html;
-                const sanitizedChildAssets = sanitizedChildHTMLFile.assets;
-                sanitizedChildAssets.forEach((asset) => childrenListAssets.add(asset));
+                const sanitizedChildHTMLFileWithExtra = await appendExtraToHtmlFile(
+                    sanitizedChildHTMLFile,
+                    _.get(child, "properties.extra"),
+                    child.format
+                );
+                let sanitizedChildHTML = sanitizedChildHTMLFileWithExtra.html;
+                sanitizedChildHTMLFileWithExtra.assets.forEach((asset) => childrenListAssets.add(asset));
                 if (child.children.length > 0) {
                     const allChildrenHTMLFile = await getChildrenListHTMLFile(
                         child.children,
@@ -190,11 +191,13 @@ export class MultilineCardNote extends Note {
         if (this.children.length == 0 && (direction == "<->" || direction == "->"))
             clozedContent += `{{c${cloze_id}::}}`; // #16
 
-        return {
+        // --- Add extra property content for parent block (non-indented) ---
+        const result: HTMLFile = {
             html: clozedContent,
             assets: clozedContentAssets,
             tags: parentBlockHTMLFile.tags,
         };
+        return appendExtraToHtmlFile(result, _.get(await LogseqProxy.Editor.getBlock(this.uuid), "properties.extra") as string, this.format, true);
     }
 
     public static async getNotesFromLogseqBlocks(

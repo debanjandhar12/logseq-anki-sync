@@ -7,13 +7,12 @@
  * This is the intermediate format returned by parseNote() and used in hash calculation.
  * 
  * Tuple structure:
- * [html, assets, deck, breadcrumb, tags, extra]
+ * [html, assets, deck, breadcrumb, tags]
  */
 export type ParsedNoteData = [
     html: string,
     assets: Set<string>,
     deck: string,
     breadcrumb: string,
-    tags: string[],
-    extra: string
+    tags: string[]
 ];

@@ -53,13 +53,12 @@ export class UpdateNotesTask {
         const ankiNodeInfo = ankiNoteManager.noteInfoMap.get(ankiId);
         
         const oldConfig = this.parseConfig(ankiNodeInfo.fields.Config.value);
-        const [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags, oldExtra] = [
+        const [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags] = [
             ankiNodeInfo.fields.Text.value,
             oldConfig.assets,
             ankiNodeInfo.deck,
             ankiNodeInfo.fields.Breadcrumb.value,
             ankiNodeInfo.tags,
-            ankiNodeInfo.fields.Extra.value,
         ];
 
         let dependencyHash = await NoteHashCalculator.getHash(note, [
@@ -68,7 +67,6 @@ export class UpdateNotesTask {
             oldDeck,
             oldBreadcrumb,
             oldTags,
-            oldExtra,
         ]);
 
         const { skipOnDependencyHashMatch } = LogseqProxy.Settings.getPluginSettings();
@@ -84,14 +82,13 @@ export class UpdateNotesTask {
             return;
         }
 
-        const [html, assets, deck, breadcrumb, tags, extra] = await parseNote(note, graphName);
+        const [html, assets, deck, breadcrumb, tags] = await parseNote(note, graphName);
         dependencyHash = await NoteHashCalculator.getHash(note, [
             html,
             assets,
             deck,
             breadcrumb,
             tags,
-            extra,
         ]);
 
         assets.forEach((asset) => {
@@ -112,7 +109,6 @@ export class UpdateNotesTask {
                 "Logseq Block UUID": note.uuid,
                 "Logseq Page Id": note.pageId.toString(),
                 Text: html,
-                Extra: extra,
                 Breadcrumb: breadcrumb,
                 Config: JSON.stringify({
                     dependencyHash,

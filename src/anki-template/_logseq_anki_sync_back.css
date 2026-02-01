@@ -1,6 +1,11 @@
 /***
-* This files contains the css for the back side of anki cards. 
+* This files contains the css for the back side of anki cards.
 */
 .extra {
     display: block;
+}
+
+.extra-block {
+    margin-top: 1rem;
+    margin-left: -1.8rem;
 }
