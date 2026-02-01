@@ -3,9 +3,14 @@
 - [x] Find points and fix renderer - 1
 - [x] Fix queries based on properties
 - [x] Complete writing docs
+----------------------
+- [ ] Improve tags with added props and include direction to #flashcard?
 - [ ] Check converter result
 - [ ] Test from MD of old plugin to new plugin
 - [ ] Add Awesome Logseq Anki Sync page.
+- [ ] Use graph config to display cloze in logseq
+- [ ] Unify way for firstLine stuff (along with refs, image etc).. consider using title attr
+- [ ] Fix Preview in Anki for pages
 
 Good Links:
 - https://discuss.logseq.com/t/logseq-db-unofficial-faq/32508/11?u=danzu
