@@ -98,7 +98,7 @@ export namespace LogseqProxy {
 
         static getFullPageName = pMemoize(async (
             page: PageEntity | null | undefined,
-            opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
+            opts: Partial<{suppressErrors: boolean, includeLibrary : boolean}> = {suppressErrors: true, includeLibrary: true }
         ): Promise<string> => {
             if (!page) return "";
             // we do not acquire lock here as we call methods that have separate lock
@@ -110,7 +110,7 @@ export namespace LogseqProxy {
                     return baseName;
                 }
 
-                const parents = await LogseqProxy.Editor.getParentNamespacePages(page);
+                const parents = await LogseqProxy.Editor.getParentNamespacePages(page, { includeLibrary: opts.includeLibrary });
                 if (parents.length === 0) {
                     return baseName;
                 }

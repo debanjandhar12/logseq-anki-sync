@@ -26,7 +26,7 @@ export class DeckParser {
             return this.normalizeDeck(deck);
         }
 
-        const defaultDeck = await this.getDefaultDeck(note.pageId);
+        const defaultDeck = await this.getDefaultDeck(note.pageId); // Default Deck = Page Name with namespace of note
         return this.normalizeDeck(defaultDeck);
     }
 
@@ -48,7 +48,7 @@ export class DeckParser {
     private static async findDeckInNamespaceHierarchy(note: Note): Promise<string | null> {
         try {
             const page = await LogseqProxy.Editor.getPage(note.pageId);
-            const parents = await LogseqProxy.Editor.getParentNamespacePages(page, { includeLibrary: false });
+            const parents = await LogseqProxy.Editor.getParentNamespacePages(page);
             const hierarchy = [page, ...parents];
             for (const page of hierarchy) {
                 const deck = getLogseqBlockPropSafe(page, "properties.deck");
@@ -62,7 +62,7 @@ export class DeckParser {
 
     private static async getDefaultDeck(pageId: number): Promise<string> {
         const page = await LogseqProxy.Editor.getPage(pageId);
-        return await LogseqProxy.Editor.getFullPageName(page);
+        return await LogseqProxy.Editor.getFullPageName(page, {includeLibrary: false});
     }
 
     private static async normalizeDeck(deck: any): Promise<string> {
