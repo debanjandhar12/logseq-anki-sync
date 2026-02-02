@@ -13,6 +13,7 @@ import { PluginSettings } from "../settings";
 import pMemoize, {pMemoizeClear} from "p-memoize";
 import objectHashOptimized from "../utils/objectHashOptimized";
 import {WindowParentBridge} from "./WindowParentBridge";
+import { LogseqAppInfoFetcher } from "./LogseqAppInfoFetcher";
 import { LogseqPropertiesHelperProxy } from "./LogseqPropertiesHelper";
 import { LogseqNamespaceHelperProxy } from "./LogseqNamespaceHelper";
 import getNameFromPage from "./getNameFromPage";
@@ -239,13 +240,7 @@ export namespace LogseqProxy {
     }
     export class App {
         static checkCurrentIsDbGraph = pMemoize(async () => {
-            try {
-                const value = await logseq.App.checkCurrentIsDbGraph();
-                if (typeof value === 'boolean') {
-                    return value;
-                }
-            } catch (e) {}
-            return false;
+            return await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
         });
 
         static getCurrentGraph = pMemoize(async () => {

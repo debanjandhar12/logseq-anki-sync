@@ -1,4 +1,5 @@
 import "@logseq/libs";
+import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 
 /**
  * WindowParentBridge - Abstraction layer for communication with Logseq parent window
@@ -244,10 +245,7 @@ export class WindowParentBridge {
 
 // Auto-initialize with window.parent if in browser environment
 if (typeof window !== 'undefined' && typeof window.parent !== 'undefined') {
-    let canAccessHostScope = false;
-    try {
-        canAccessHostScope = window.parent.addEventListener !== null;
-    } catch {}
+    const canAccessHostScope = LogseqAppInfoFetcher.checkHostAccess(window.parent);
     // When host scope is not available, we are forced to use the current window
     // This may cause bugs but thats ok - we will run in compatibility mode
     WindowParentBridge.init(canAccessHostScope ? window.parent : window);

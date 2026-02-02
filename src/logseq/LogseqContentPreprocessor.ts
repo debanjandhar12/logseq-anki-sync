@@ -15,6 +15,7 @@ import getNameFromPage from "./getNameFromPage";
 import getUUIDFromBlock from "./getUUIDFromBlock";
 import getIDFromPage from "./getIDFromPage";
 import {WindowParentBridge} from "./WindowParentBridge";
+import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqProxy} from "./LogseqProxy";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 
@@ -393,13 +394,7 @@ export class LogseqContentPreprocessor {
      * Protected methods that can be overridden in proxy class for caching.
      */
     protected static async checkCurrentIsDbGraph(): Promise<boolean> {
-        try {
-            const value = await logseq.App.checkCurrentIsDbGraph();
-            if (typeof value === 'boolean') {
-                return value;
-            }
-        } catch (e) {}
-        return false;
+        return await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
     }
 
     protected static async getPage(srcPage: PageIdentity | EntityID) {

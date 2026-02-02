@@ -1,6 +1,7 @@
 import { BlockEntity, BlockIdentity, EntityID, PageEntity, PageIdentity } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import getNameFromPage from "./getNameFromPage";
+import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqProxy} from "./LogseqProxy";
 
 /**
@@ -19,11 +20,7 @@ export class LogseqPropertiesHelper {
      * Override this in LogseqPropertiesHelperProxy to use cached version.
      */
     protected static async checkCurrentIsDbGraph(): Promise<boolean> {
-        try {
-            return await logseq.App.checkCurrentIsDbGraph() as boolean;
-        } catch {
-            return false;
-        }
+        return await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
     }
     public static stripPropertyPrefixes(properties: Record<string, any>): Record<string, any> {
         if (!properties) return properties;

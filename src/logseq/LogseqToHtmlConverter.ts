@@ -38,6 +38,7 @@ import {LogseqContentPreprocessor, LogseqContentPreprocessorProxy} from "./Logse
 import pMemoize, {pMemoizeClear} from "p-memoize";
 import objectHashOptimized from "../utils/objectHashOptimized";
 import {LogseqProxy} from "./LogseqProxy";
+import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {PluginSettings} from "../settings";
 import {WindowParentBridge} from "./WindowParentBridge";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
@@ -627,14 +628,6 @@ export class LogseqToHtmlConverter {
         return await logseq.App.getCurrentGraph();
     }
 
-    protected static async checkCurrentIsDbGraph() {
-        try {
-            return await logseq.App.checkCurrentIsDbGraph() as boolean;
-        } catch {
-            return false;
-        }
-    }
-
     protected static async getBlock(srcBlock: string, opts?: any) {
         return await LogseqPropertiesHelper.getBlock(srcBlock, opts);
     }
@@ -666,10 +659,6 @@ export class LogseqToHtmlConverterProxy extends LogseqToHtmlConverter {
 
     protected static async getCurrentGraph() {
         return await LogseqProxy.App.getCurrentGraph();
-    }
-
-    protected static async checkCurrentIsDbGraph() {
-        return Boolean(await LogseqProxy.App.checkCurrentIsDbGraph());
     }
 
     protected static async getBlock(srcBlock: string, opts?: any) {
