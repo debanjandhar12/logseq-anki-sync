@@ -114,11 +114,15 @@ export class WindowParentBridge {
      * @returns The full asset URL or the original path if API unavailable
      */
     static async makeAssetUrl(path: string): Promise<string> {
-        try {
-            return await logseq.Assets.makeUrl(path) || path;
-        } catch {
-            return path;
+        if (path.startsWith('memory')) {    // In web db ver, all images are memory link, those does not work properly with makeUrl
+            path = path.replace(/^memory:\/[^/]+\/?/, '.');
         }
+
+        let result = null;
+        try {
+            result = await logseq.Assets.makeUrl(path);
+        } catch {}
+        return result || path;
     }
 
     /**

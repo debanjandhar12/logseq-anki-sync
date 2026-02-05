@@ -19,6 +19,7 @@ import { createOcclusionRectEl } from "../../utils/occlusionUtils";
 import { WindowBridge } from "../../logseq/WindowBridge";
 
 import { createLogger, LoggerCategory } from "../../utils/logger";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -130,7 +131,7 @@ const OcclusionEditorComponent: React.FC<{
             } else {
                 const fullPath = path.join(graphPath, path.resolve(imgURL));
                 // Use Logseq's asset API to get a proper URL
-                imgEl.src = await logseq.Assets.makeUrl(fullPath);
+                imgEl.src = await WindowParentBridge.makeAssetUrl(fullPath);
             }
 
             imgEl.onload = function () {
