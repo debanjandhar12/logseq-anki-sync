@@ -4,7 +4,7 @@ import {ClozeNote} from "./anki-notes/ClozeNote";
 import {MultilineCardNote} from "./anki-notes/MultilineCardNote";
 import {LogseqToAnkiSync} from "./sync/syncLogseqToAnki";
 import {addSettingsToLogseq} from "./settings";
-import {ANKI_ICON} from "./constants";
+import {ANKI_ICON, GITHUB_ICON, HEART_ICON} from "./constants";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {AddonRegistry} from "./addons/AddonRegistry";
 import {SwiftArrowNote} from "./anki-notes/SwiftArrowNote";
@@ -92,18 +92,30 @@ async function main(baseInfo: LSPluginBaseInfo) {
         await (async () => {
             await new Promise(resolve => setTimeout(resolve, 1000));    // wait logseq's react to load
             await showButtonModal(
-                `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span> 
-                                    <br/><small class="px-2">Update is installed successfully. </small>
-                                    <br /><br /><small class="px-2" style="display: block">This patch contains minor bug fixes.</small>`,
+                `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span>
+                <div style="overflow-y: auto; margin-top: 10px; border: 1px solid var(--ls-border-color); border-radius: 4px;">
+                    <iframe src="https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}" style="width: 100%; height: 100%; min-height: 400px; border: none;"></iframe>
+                </div>`,
                 [
                     {
-                        name: "Read Release Notes",
+                        name: "Donate",
+                        f: () => {
+                            window.open(
+                                `https://github.com/sponsors/debanjandhar12`,
+                            );
+                        },
+                        closeOnClick: false,
+                        icon: HEART_ICON,
+                    },
+                    {
+                        name: "Open in GitHub",
                         f: () => {
                             window.open(
                                 `https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}`,
                             );
                         },
                         closeOnClick: false,
+                        icon: GITHUB_ICON,
                     },
                 ],
             )

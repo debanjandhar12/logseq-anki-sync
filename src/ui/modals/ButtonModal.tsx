@@ -11,6 +11,7 @@ export interface ButtonModalButton {
     name: string;
     f: Function;
     closeOnClick?: boolean;
+    icon?: string;
 }
 
 export interface ButtonModalProps {
@@ -77,6 +78,7 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
                                 }
                             }}
                         >
+                            {btn.icon && <span dangerouslySetInnerHTML={{ __html: btn.icon }} style={{ marginRight: '6px', display: 'inline-flex', alignItems: 'center' }} />}
                             {btn.name}
                         </LogseqButton>
                     ))}
