@@ -1,5 +1,5 @@
 // Base modal component
-export { Modal } from "./modals/Modal";
+export { Modal } from "./modals/core/Modal";
 
 // Hooks
 export { useModal } from "./modals/hooks/useModal";
@@ -10,20 +10,20 @@ export { createModalPromise } from "./modals/utils/createModalPromise";
 export type { ModalPromiseOptions } from "./modals/utils/createModalPromise";
 
 // Components
-export { ModalHeader, SimpleModalHeader } from "./modals/ModalHeader";
-export type { ModalHeaderProps } from "./modals/ModalHeader";
+export { ModalHeader, SimpleModalHeader } from "./modals/core/ModalHeader";
+export type { ModalHeaderProps } from "./modals/core/ModalHeader";
 
-export { ModalFooter, DialogModalFooter } from "./modals/ModalFooter";
-export type { ModalFooterProps } from "./modals/ModalFooter";
+export { ModalFooter, DialogModalFooter } from "./modals/core/ModalFooter";
+export type { ModalFooterProps } from "./modals/core/ModalFooter";
 
-export { showConfirmModal } from "./modals/components/ConfirmModal";
-export type { ConfirmModalProps } from "./modals/components/ConfirmModal";
+export { showConfirmModal } from "./modals/ConfirmModal";
+export type { ConfirmModalProps } from "./modals/ConfirmModal";
 
-export { showButtonModal } from "./modals/components/ButtonModal";
-export type { ButtonModalProps, ButtonModalButton } from "./modals/components/ButtonModal";
+export { showButtonModal } from "./modals/ButtonModal";
+export type { ButtonModalProps, ButtonModalButton } from "./modals/ButtonModal";
 
-export { showSelectionModal } from "./modals/components/SelectionModal";
-export type { SelectionModalProps, SelectionModalItem } from "./modals/components/SelectionModal";
+export { showSelectionModal } from "./modals/SelectionModal";
+export type { SelectionModalProps, SelectionModalItem } from "./modals/SelectionModal";
 
 // Pages exports
 export { showLogseqAnkiFeatureExplorer } from "./pages/LogseqAnkiFeatureExplorer";

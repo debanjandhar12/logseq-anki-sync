@@ -11,8 +11,8 @@ import {
     SETTINGS_ICON,
 } from "../../constants";
 import {Modal, useModal, createModalPromise, ModalHeader, DialogModalFooter} from "../";
-import {LogseqButton} from "../common/LogseqButton";
-import {LogseqCheckbox} from "../common/LogseqCheckbox";
+import {LogseqButton} from "../components/LogseqButton";
+import {LogseqCheckbox} from "../components/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
 import { UI } from "../UI";
 import { createOcclusionRectEl } from "../../utils/occlusionUtils";

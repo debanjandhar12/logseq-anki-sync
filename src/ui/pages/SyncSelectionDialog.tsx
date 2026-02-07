@@ -1,9 +1,9 @@
 import React, {useCallback, useEffect, useState} from "../React";
 import {Modal} from "../";
 import { WindowParentBridge } from "../../logseq/WindowParentBridge";
-import {LogseqButton} from "../common/LogseqButton";
-import {LogseqCheckbox} from "../common/LogseqCheckbox";
-import {LogseqDropdownMenu} from "../common/LogseqDropdownMenu";
+import {LogseqButton} from "../components/LogseqButton";
+import {LogseqCheckbox} from "../components/LogseqCheckbox";
+import {LogseqDropdownMenu} from "../components/LogseqDropdownMenu";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
 import { createModalPromise, ModalHeader, DialogModalFooter, useModal } from "../";

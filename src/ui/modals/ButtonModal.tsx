@@ -1,11 +1,11 @@
-import React from "../../React";
-import { Modal } from "../Modal";
-import { useModal } from "../hooks/useModal";
-import { SimpleModalHeader } from "../ModalHeader";
-import { LogseqButton } from "../../common/LogseqButton";
-import { createModalPromise } from "../utils/createModalPromise";
-import { UI } from "../../UI";
-import { WindowBridge } from "../../../logseq/WindowBridge";
+import React from "../React";
+import { Modal } from "./core/Modal";
+import { useModal } from "./hooks/useModal";
+import { SimpleModalHeader } from "./core/ModalHeader";
+import { LogseqButton } from "../components/LogseqButton";
+import { createModalPromise } from "./utils/createModalPromise";
+import { UI } from "../UI";
+import { WindowBridge } from "../../logseq/WindowBridge";
 
 export interface ButtonModalButton {
     name: string;

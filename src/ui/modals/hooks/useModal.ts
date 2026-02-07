@@ -20,7 +20,7 @@ export interface UseModalReturn<T = any> {
 }
 
 /**
- * Base hook for modal state management and common behaviors
+ * Base hook for modal state management and components behaviors
  */
 export function useModal<T = any>(
     resolve: (value: T) => void,

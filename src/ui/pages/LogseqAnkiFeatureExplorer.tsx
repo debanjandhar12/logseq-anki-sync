@@ -3,7 +3,7 @@ import {Modal, useModal, createModalPromise} from "../";
 import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import { LogseqPropertiesHelper } from "../../logseq/LogseqPropertiesHelper";
-import {LogseqButton} from "../common/LogseqButton";
+import {LogseqButton} from "../components/LogseqButton";
 import {BlockContentParser} from "../../logseq/BlockContentParser";
 import {ImageOcclusionNote} from "../../anki-notes/ImageOcclusionNote";
 import _ from "lodash";

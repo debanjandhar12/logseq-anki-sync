@@ -1,10 +1,10 @@
-import React from "../../React";
-import { Modal } from "../Modal";
-import { useModal } from "../hooks/useModal";
-import { SimpleModalHeader } from "../ModalHeader";
-import { ModalFooter } from "../ModalFooter";
-import { createModalPromise } from "../utils/createModalPromise";
-import { UI } from "../../UI";
+import React from "../React";
+import { Modal } from "./core/Modal";
+import { useModal } from "./hooks/useModal";
+import { SimpleModalHeader } from "./core/ModalHeader";
+import { ModalFooter } from "./core/ModalFooter";
+import { createModalPromise } from "./utils/createModalPromise";
+import { UI } from "../UI";
 
 export interface ConfirmModalProps {
     message: string;
