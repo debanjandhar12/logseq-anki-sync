@@ -59,6 +59,7 @@ These fields are **never** touched by the plugin during sync:
 | **User Controlled Field (Back)**  | Custom content only on the back side    |
 | **User Controlled Field (Both)**  | Custom content on both sides            |
 | **CSS Section of Template**       | See [Custom CSS](./custom-css) for details |
+| **Leech Tag**                     | Anki's leech tag (e.g., "leech" on a card) is never overwritten |
 | **Review History**                | Your review history and scheduling data |
 
 ## User Controlled Fields
