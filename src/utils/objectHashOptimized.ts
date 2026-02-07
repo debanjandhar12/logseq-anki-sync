@@ -1,5 +1,5 @@
-import hashIt from "hash-it";
+import {hash} from "hash-it";
 
 export default function objectHashOptimized(obj: any) {
-    return hashIt(obj);
+    return hash(obj);
 }
