@@ -63,16 +63,16 @@ export class ParentContentParser {
         for (const parentBlock of parentBlocks) {
             const parentBlockConverted = await LogseqToHtmlConverterProxy.convertToHTMLFile(parentBlock.content, parentBlock.format);
             
+            parentBlockConverted.assets.forEach((asset) => assets.add(asset));
+
+            const isNumbered = _.get(parentBlock, "properties['logseq.orderListType']") === "number";
+            newHtml += `<ul class="children-list"><li class="children ${isNumbered ? 'numbered' : ''}">`;
+            
             if (parentBlock.hiddenParent) {
                 newHtml += `<span class="hidden-parent">${parentBlockConverted.html}</span>`;
             } else {
                 newHtml += parentBlockConverted.html;
             }
-
-            parentBlockConverted.assets.forEach((asset) => assets.add(asset));
-
-            const isNumbered = _.get(parentBlock, "properties['logseq.orderListType']") === "number";
-            newHtml += `<ul class="children-list"><li class="children ${isNumbered ? 'numbered' : ''}">`;
         }
 
         const isNumbered = _.get(note, "properties['logseq.orderListType']") === "number";
