@@ -10,7 +10,7 @@
         "strict": false,
         "forceConsistentCasingInFileNames": true,
         "module": "ES2020",
-        "moduleResolution": "Node",
+        "moduleResolution": "bundler",
         "resolveJsonModule": true,
         "isolatedModules": true,
         "noEmit": true,

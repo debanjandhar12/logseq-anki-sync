@@ -191,7 +191,7 @@ export class LogseqToHtmlConverter {
         );
         
         // Render images and codes
-        const $ = cheerio.load(resultContent, {decodeEntities: false});
+        const $ = cheerio.load(resultContent, {xml: false});
         $("pre code").each(function (i, elm) {
             $(elm).addClass("hljs");
             try {
