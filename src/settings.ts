@@ -16,6 +16,7 @@ export interface PluginSettings {
     addonsList?: string[];
     ankiFieldOptions?: ("furigana" | "kana" | "kanji" | "tts" | "tags" | "rtl")[];
     syncOverwriteList?: string[];
+    inheritPropertiesFromTags?: boolean;
     debug?: (
         "Anki Connect" | 
         "Lazy Anki Note Manager" | 
@@ -32,7 +33,7 @@ export interface PluginSettings {
     lastWelcomeVersion?: string;
 }
 
-export const addSettingsToLogseq = () => {
+export const addSettingsToLogseq = async () => {
     const settingsTemplate: SettingSchemaDesc[] = [
         {
             key: "donationHeading",
@@ -123,6 +124,13 @@ export const addSettingsToLogseq = () => {
                 "User Controlled Fields"
             ],
             enumPicker: "checkbox",
+        },
+        {
+            key: "inheritPropertiesFromTags",
+            type: "boolean",
+            default: true,
+            title: "Inherit properties from tags? (Recommended: Enabled)",
+            description: "When enabled, properties from tags will be inherited.",
         },
         {
             key: "ankiFieldOptions",
@@ -232,4 +240,15 @@ export const addSettingsToLogseq = () => {
             border: none;
         }
     `);
+
+    // Hide inheritPropertiesFromTags setting for non-DB graphs using CSS
+    const isDbGraph = await LogseqProxy.App.checkCurrentIsDbGraph();
+    logseq.provideStyle({
+        key: "hide-inherit-properties-from-tags",
+        style: isDbGraph ? `` : `
+            [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="inheritPropertiesFromTags"] {
+                display: none;
+            }
+        `,
+    });
 };

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { LogseqPropertiesHelper } from "../../../src/logseq/LogseqPropertiesHelper";
 
 describe("LogseqPropertiesHelper.stripPropertyPrefixes", () => {

@@ -3,6 +3,7 @@ import _ from "lodash";
 import getNameFromPage from "./getNameFromPage";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqProxy} from "./LogseqProxy";
+import getIDFromPage from "./getIDFromPage";
 
 /**
  * Helper class for fetching Logseq blocks and pages with properties attached.
@@ -80,6 +81,50 @@ export class LogseqPropertiesHelper {
     }
 
     /**
+     * Fetches and merges (inherits) properties from tags into the given entity.
+     * Tag properties have lower priority - existing properties are not overwritten.
+     * Also updates the entity's updatedAt to the max of current and tag updatedAt values.
+     * Only applies to DB graphs.
+     * 
+     * @param entity - The block or page entity to merge tag properties into
+     * @param tags - Array of tag names to fetch properties from
+     * @param isDbGraph - Whether the current graph is a DB graph
+     */
+    private static async inheritTagProperties(entity: BlockEntity | PageEntity, tags: string[], isDbGraph: boolean): Promise<void> {
+        const settings = await LogseqProxy.Settings.getPluginSettings();
+        if (!settings.inheritPropertiesFromTags) return;
+        if (!isDbGraph || !tags || tags.length === 0) return;
+        
+        let maxUpdatedAt = entity.updatedAt || 0;
+        
+        for (const tagName of tags) {
+            try {
+                const tagPage = await logseq.Editor.getPage(tagName);
+                if (!tagPage) continue;
+                
+                const tagProperties = await logseq.Editor.getPageProperties(tagName);
+                if (tagProperties) {
+                    const strippedTagProperties = this.stripPropertyPrefixes(tagProperties);
+                    // Merge without overwriting existing properties
+                    for (const [key, value] of Object.entries(strippedTagProperties)) {
+                        if (!(key in entity.properties)) {
+                            entity.properties[key] = value;
+                        }
+                    }
+                }
+                
+                // Track max updatedAt
+                if (tagPage.updatedAt && tagPage.updatedAt > maxUpdatedAt) {
+                    maxUpdatedAt = tagPage.updatedAt;
+                }
+            } catch (error) {}
+        }
+        
+        // Update entity's updatedAt to max value
+        entity.updatedAt = maxUpdatedAt;
+    }
+
+    /**
      * Processes a block by fetching and attaching properties, and updating content for DB graphs
      */
     private static async processBlock(b: BlockEntity, isDbGraph: boolean, includeChildren: boolean = false): Promise<void> {
@@ -92,6 +137,10 @@ export class LogseqPropertiesHelper {
                 b.properties["tags"] = b.properties["tags"].split(",").map((t: string) => t.trim()).filter((t: string) => t);
             }
             if (!b.properties.uuid) b.properties.uuid = b.uuid;
+        }
+        
+        if (b.properties?.tags && Array.isArray(b.properties.tags)) {
+            await this.inheritTagProperties(b, b.properties.tags, isDbGraph);
         }
         
         if (isDbGraph) {
@@ -115,6 +164,25 @@ export class LogseqPropertiesHelper {
             for (const child of b.children) {
                 await this.processBlock(child as BlockEntity, isDbGraph, includeChildren);
             }
+        }
+    }
+
+    /**
+     * Processes a page by fetching and attaching properties
+     */
+    private static async processPage(page: PageEntity, isDbGraph: boolean): Promise<void> {
+        if (!page) return;
+
+        if (isDbGraph) {
+            const properties = await logseq.Editor.getPageProperties(page.id);
+            if (properties) {
+                const strippedProperties = this.stripPropertyPrefixes(properties);
+                page.properties = { ...strippedProperties, ...page.properties };
+            }
+        }
+        
+        if (page.properties?.tags && Array.isArray(page.properties.tags)) {
+            await this.inheritTagProperties(page, page.properties.tags, isDbGraph);
         }
     }
 
@@ -152,14 +220,7 @@ export class LogseqPropertiesHelper {
         if (!page) return null;
 
         const isDbGraph = await this.checkCurrentIsDbGraph();
-
-        if (isDbGraph) {
-            const properties = await logseq.Editor.getPageProperties(page.id);
-            if (properties) {
-                const strippedProperties = this.stripPropertyPrefixes(properties);
-                page.properties = { ...strippedProperties, ...page.properties };
-            }
-        }
+        await this.processPage(page, isDbGraph);
 
         return page;
     }
@@ -173,12 +234,10 @@ export class LogseqPropertiesHelper {
     static async getPageBlocksTree(
         srcPage: PageIdentity | EntityID
     ): Promise<BlockEntity[]> {
-        if (typeof srcPage === "number") {
-            const page = await logseq.Editor.getPage(srcPage);
-            srcPage = getNameFromPage(page);
-        }
+        const page = await logseq.Editor.getPage(srcPage);
+        srcPage = page.uuid; // Convert to page uuid for getPageBlocksTree
         
-        const blocks = await logseq.Editor.getPageBlocksTree(srcPage);
+        const blocks = await logseq.Editor.getPageBlocksTree({uuid: srcPage as string});
         if (!blocks) return [];
 
         const isDbGraph = await this.checkCurrentIsDbGraph();
