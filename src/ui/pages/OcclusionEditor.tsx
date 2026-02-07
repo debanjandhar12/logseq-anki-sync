@@ -1,24 +1,20 @@
 import React, {useState, useEffect, useCallback, useRef} from "../React";
 import _ from "lodash";
-import { fabric } from "fabric";
+import {fabric} from "fabric";
 import path from "path-browserify";
-import {
-    ADD_OCCLUSION_ICON,
-    ANKI_ICON,
-    DONATE_ICON,
-    isWebURL_REGEXP,
-    REMOVE_OCCLUSION_ICON,
-    SETTINGS_ICON,
-} from "../../constants";
+import {ANKI_ICON, DONATE_ICON, isWebURL_REGEXP} from "../../constants";
+import ADD_OCCLUSION_ICON from "../../../node_modules/@tabler/icons/icons/outline/square-plus-2.svg?raw";
+import REMOVE_OCCLUSION_ICON from "../../../node_modules/@tabler/icons/icons/outline/square-minus.svg?raw";
+import SETTINGS_ICON from "../../../node_modules/@tabler/icons/icons/outline/settings.svg?raw";
 import {Modal, useModal, createModalPromise, ModalHeader, DialogModalFooter} from "../";
 import {LogseqButton} from "../components/LogseqButton";
 import {LogseqCheckbox} from "../components/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
-import { UI } from "../UI";
-import { createOcclusionRectEl } from "../../utils/occlusionUtils";
-import { WindowBridge } from "../../logseq/WindowBridge";
+import {UI} from "../UI";
+import {createOcclusionRectEl} from "../../utils/occlusionUtils";
+import {WindowBridge} from "../../logseq/WindowBridge";
 
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import {createLogger, LoggerCategory} from "../../utils/logger";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
 const logger = createLogger(LoggerCategory.Others);
@@ -60,7 +56,7 @@ export async function showOcclusionEditor(
             />
         ),
         {},
-        { errorMessage: "Failed to open Occlusion Editor" }
+        {errorMessage: "Failed to open Occlusion Editor"},
     );
 }
 
@@ -71,19 +67,27 @@ const OcclusionEditorComponent: React.FC<{
     blockTags: string[];
     resolve: (value: OcclusionData | boolean) => void;
     reject: Function;
-    modalContext?: { modalId: string | null };
-}> = ({imgURL, occlusionElements, occlusionConfig, blockTags, resolve, reject, modalContext}) => {
-    const { open, setOpen, returnResult } = useModal<OcclusionData | boolean>(resolve, {
+    modalContext?: {modalId: string | null};
+}> = ({
+    imgURL,
+    occlusionElements,
+    occlusionConfig,
+    blockTags,
+    resolve,
+    reject,
+    modalContext,
+}) => {
+    const {open, setOpen, returnResult} = useModal<OcclusionData | boolean>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false, // We'll handle Escape key manually due to complex interactions
-        enableEnterKey: false,   // We'll handle Enter key manually
+        enableEnterKey: false, // We'll handle Enter key manually
         modalId: modalContext?.modalId,
     });
     const [tags, setTags] = React.useState<string[]>(blockTags);
     const fabricRef = React.useRef<any>();
     const canvasRef = React.useRef(null);
     const cidSelectorRef = React.useRef(null);
-    const [imgEl, setImgEl] = React.useState(WindowBridge.createElement('img'));
+    const [imgEl, setImgEl] = React.useState(WindowBridge.createElement("img"));
     const handleConfirm = () => {
         const newOcclusionElements = fabricRef.current.getObjects().map((obj) => {
             // https://github.com/fabricjs/fabric.js/issues/801#issuecomment-218116910
@@ -107,7 +111,7 @@ const OcclusionEditorComponent: React.FC<{
             tags: tags,
         });
     };
-    
+
     const handleCancel = () => {
         returnResult(false);
     };
@@ -142,11 +146,8 @@ const OcclusionEditorComponent: React.FC<{
                 }
 
                 const img = new fabric.Image(imgEl);
-                const appRoot = WindowBridge.getElementById('app');
-                const canvasWidth = Math.min(
-                    imgEl.width,
-                    appRoot?.clientWidth - 160 || 800,
-                );
+                const appRoot = WindowBridge.getElementById("app");
+                const canvasWidth = Math.min(imgEl.width, appRoot?.clientWidth - 160 || 800);
                 const canvasHeight = Math.min(
                     imgEl.height,
                     WindowBridge.getBody().clientHeight - 340,
@@ -312,12 +313,9 @@ const OcclusionEditorComponent: React.FC<{
             }
             if (e.ctrlKey && e.key === "a") {
                 fabricRef.current.discardActiveObject();
-                var sel = new fabric.ActiveSelection(
-                    fabricRef.current.getObjects(),
-                    {
-                        canvas: fabricRef.current,
-                    },
-                );
+                var sel = new fabric.ActiveSelection(fabricRef.current.getObjects(), {
+                    canvas: fabricRef.current,
+                });
                 fabricRef.current.setActiveObject(sel);
                 fabricRef.current.renderAll();
                 e.preventDefault();
@@ -438,7 +436,7 @@ const OcclusionEditorComponent: React.FC<{
         try {
             setIsAIGeneratingOcclusion(true);
             worker = await createWorker("eng", 3, {
-                langPath: 'https://tessdata.projectnaptha.com/4.0.0_best'
+                langPath: "https://tessdata.projectnaptha.com/4.0.0_best",
             });
             await worker.setParameters({tessedit_pageseg_mode: PSM.SPARSE_TEXT});
             const ret = await worker.recognize(imgEl.src);
@@ -459,7 +457,8 @@ const OcclusionEditorComponent: React.FC<{
                 // Ignore small occlusions
                 if (width < 4 || height < 4) continue;
                 if (width * height < Math.pow(0.025, 2) * imgEl.width * imgEl.height) continue;
-                if (paragraph.text.trim().length < Math.min(avgParagraphTextLength / 2, 3)) continue;
+                if (paragraph.text.trim().length < Math.min(avgParagraphTextLength / 2, 3))
+                    continue;
 
                 // Ignore occlusions that intersect with existing ones
                 function doRectsCollide(a, b) {
@@ -475,19 +474,22 @@ const OcclusionEditorComponent: React.FC<{
                     const matrix = obj.calcTransformMatrix();
                     const objActualTop = matrix[5];
                     const objActualLeft = matrix[4];
-                    if (doRectsCollide(
-                        {
-                            top: paragraph.bbox.y0,
-                            left: paragraph.bbox.x0,
-                            width: width,
-                            height: height,
-                        },
-                        {
-                            top: objActualTop - (obj.height * obj.scaleY) / 2,
-                            left: objActualLeft - (obj.width * obj.scaleX) / 2,
-                            width: obj.width * obj.scaleX,
-                            height: obj.height * obj.scaleY,
-                        })) {
+                    if (
+                        doRectsCollide(
+                            {
+                                top: paragraph.bbox.y0,
+                                left: paragraph.bbox.x0,
+                                width: width,
+                                height: height,
+                            },
+                            {
+                                top: objActualTop - (obj.height * obj.scaleY) / 2,
+                                left: objActualLeft - (obj.width * obj.scaleX) / 2,
+                                width: obj.width * obj.scaleX,
+                                height: obj.height * obj.scaleY,
+                            },
+                        )
+                    ) {
                         intersects = true;
                         break;
                     }
@@ -524,13 +526,12 @@ const OcclusionEditorComponent: React.FC<{
             hasCloseButton={false}
             enableEscapeKeyClose={false}
             size={"large"}>
-            <div style={{margin: '0rem'}}>
+            <div style={{margin: "0rem"}}>
                 <ModalHeader
                     title="Occlusion Editor"
                     icon={ANKI_ICON}
                     onClose={() => setOpen(false)}
-                    showCloseButton={true}
-                >
+                    showCloseButton={true}>
                     <a href="https://github.com/sponsors/debanjandhar12">
                         <img alt="Donate" style={{height: "1.4rem"}} src={DONATE_ICON} />
                     </a>
@@ -547,7 +548,7 @@ const OcclusionEditorComponent: React.FC<{
                             className={"text-sm opacity-80"}
                             style={{
                                 paddingLeft: "0.25rem",
-                                display: 'flex',
+                                display: "flex",
                                 alignItems: "center",
                                 margin: "0.125rem auto 0.125rem 0",
                             }}>
@@ -619,7 +620,9 @@ const OcclusionEditorComponent: React.FC<{
                                         if (e.target.checked) {
                                             setTags([...tags, "hide-all-test-one"]);
                                         } else {
-                                            setTags(tags.filter(t => t !== "hide-all-test-one"));
+                                            setTags(
+                                                tags.filter((t) => t !== "hide-all-test-one"),
+                                            );
                                         }
                                     }}>
                                     Hide All, Test One (

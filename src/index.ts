@@ -4,20 +4,21 @@ import {ClozeNote} from "./anki-notes/ClozeNote";
 import {MultilineCardNote} from "./anki-notes/MultilineCardNote";
 import {LogseqToAnkiSync} from "./sync/syncLogseqToAnki";
 import {addSettingsToLogseq} from "./settings";
-import {ANKI_ICON, GITHUB_ICON, HEART_ICON} from "./constants";
+import {ANKI_ICON} from "./constants";
+import GITHUB_ICON from "../node_modules/@tabler/icons/icons/outline/brand-github.svg?raw";
+import HEART_ICON from "../node_modules/@tabler/icons/icons/outline/heart.svg?raw";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {AddonRegistry} from "./addons/AddonRegistry";
 import {SwiftArrowNote} from "./anki-notes/SwiftArrowNote";
 import {ImageOcclusionNote} from "./anki-notes/ImageOcclusionNote";
-import { BlockAndPageHashCache } from "./sync/cache";
+import {BlockAndPageHashCache} from "./sync/cache";
 import {Buffer} from "buffer/";
 import {Note} from "./anki-notes/Note";
 import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
 import pkg from "./../package.json";
-import { WindowParentBridge } from "./logseq/WindowParentBridge";
-
+import {WindowParentBridge} from "./logseq/WindowParentBridge";
 
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./utils/logger";
 
@@ -35,7 +36,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
         {
             key: `logseq-anki-sync-command-palette-${baseInfo.id}`,
             label: `Start Logseq to Anki Sync`,
-            keybinding: {mode: "global", binding: ''}
+            keybinding: {mode: "global", binding: ""},
         },
         syncLogseqToAnki,
     );
@@ -63,10 +64,10 @@ async function main(baseInfo: LSPluginBaseInfo) {
     addSettingsToLogseq();
 
     // Init various modules
-    WindowParentBridge.setGlobalObject('LogseqAnkiSync', {
+    WindowParentBridge.setGlobalObject("LogseqAnkiSync", {
         dispatchEvent: (event: string) => {
             WindowParentBridge.dispatchEvent(event);
-        }
+        },
     });
     LogseqProxy.init();
     BlockAndPageHashCache.init();
@@ -77,7 +78,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     ImageOcclusionNote.initLogseqOperations();
     AddonRegistry.getAll().forEach((addon) => addon.init());
     UI.init();
-    WindowParentBridge.setGlobalObject('AnkiConnect', AnkiConnect); // Make AnkiConnect available globally
+    WindowParentBridge.setGlobalObject("AnkiConnect", AnkiConnect); // Make AnkiConnect available globally
 
     // The lines below are needed for vite build and dev to work properly.
     // @ts-ignore
@@ -86,11 +87,10 @@ async function main(baseInfo: LSPluginBaseInfo) {
     window.process = process;
 
     // Show welcome message
-    const { lastWelcomeVersion } = LogseqProxy.Settings.getPluginSettings();
-    if (lastWelcomeVersion &&
-        lastWelcomeVersion !== pkg.version) {
+    const {lastWelcomeVersion} = LogseqProxy.Settings.getPluginSettings();
+    if (lastWelcomeVersion && lastWelcomeVersion !== pkg.version) {
         await (async () => {
-            await new Promise(resolve => setTimeout(resolve, 1000));    // wait logseq's react to load
+            await new Promise((resolve) => setTimeout(resolve, 1000)); // wait logseq's react to load
             await showButtonModal(
                 `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span>
                 <div style="overflow-y: auto; margin-top: 10px; border: 1px solid var(--ls-border-color); border-radius: 4px;">
@@ -100,9 +100,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
                     {
                         name: "Donate",
                         f: () => {
-                            window.open(
-                                `https://github.com/sponsors/debanjandhar12`,
-                            );
+                            window.open(`https://github.com/sponsors/debanjandhar12`);
                         },
                         closeOnClick: false,
                         icon: HEART_ICON,
@@ -118,7 +116,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
                         icon: GITHUB_ICON,
                     },
                 ],
-            )
+            );
         })();
     }
     logseq.updateSettings({lastWelcomeVersion: pkg.version});

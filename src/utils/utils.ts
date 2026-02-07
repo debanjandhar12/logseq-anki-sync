@@ -1,17 +1,16 @@
-import ohm from "ohm-js";
-import _, { isArray } from "lodash";
+import _ from "lodash";
 import replaceAsync from "string-replace-async";
 import "@logseq/libs";
-import { WindowParentBridge } from "../logseq/WindowParentBridge";
+import {WindowParentBridge} from "../logseq/WindowParentBridge";
 import {
     ANKI_CLOZE_REGEXP,
     LOGSEQ_PLUGIN_CLOZE_REGEXP,
     MD_MATH_BLOCK_REGEXP,
     OhmStrToListGrammar,
     specialChars,
-    WARNING_ICON,
 } from "../constants";
-import { ActionNotification } from "../ui/notifications/ActionNotification";
+import WARNING_ICON from "../../node_modules/@tabler/icons/icons/outline/alert-circle.svg?raw";
+import {ActionNotification} from "../ui/notifications/ActionNotification";
 
 export function regexPraser(input: string): RegExp {
     if (typeof input !== "string") {
@@ -33,7 +32,10 @@ export function escapeClozesAndMacroDelimiters(input: string): string {
     if (!input) return "";
 
     return input
-        .replace(LOGSEQ_PLUGIN_CLOZE_REGEXP, `<span class="anki-cloze-from-another-note" style="white-space: initial;" title="c$1 - $2">$2</span>`)
+        .replace(
+            LOGSEQ_PLUGIN_CLOZE_REGEXP,
+            `<span class="anki-cloze-from-another-note" style="white-space: initial;" title="c$1 - $2">$2</span>`,
+        )
         .replace(ANKI_CLOZE_REGEXP, "$3")
         .replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`)
         .replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`)
@@ -61,15 +63,15 @@ export function string_to_arr(str: string): any {
             a.semanticOperation();
             c.semanticOperation();
         },
-        emptyListOf() { },
+        emptyListOf() {},
         _iter(...a) {
             for (const b of a) b.semanticOperation();
         },
-        separator(a, b, c) { },
+        separator(a, b, c) {},
         StrOrRegex(a) {
             a.semanticOperation();
         },
-        _terminal() { },
+        _terminal() {},
         Regex(a, b, c, d) {
             r.push(regexPraser(this.sourceString));
         },
@@ -133,7 +135,7 @@ export function handleAnkiError(msg: string): void {
                 ],
                 "Please ensure Anki is open in background with AnkiConnect installed properly. Read installation guide for details.",
                 5000,
-                WARNING_ICON,
+                `<span class="text-warning">${WARNING_ICON}</span>`,
             );
             break;
         case "Permission to access anki was denied":
@@ -158,12 +160,24 @@ export function handleAnkiError(msg: string): void {
     }
 }
 
-
 // This is required to deal with properties with "-" in them
-export function getLogseqBlockPropSafe<T = any>(obj: any, path: string, defaultValue: T = null as T): T {
+export function getLogseqBlockPropSafe<T = any>(
+    obj: any,
+    path: string,
+    defaultValue: T = null as T,
+): T {
     let returnVal = _.get(obj, path, null);
     if (returnVal == null) {
-        return _.get(obj, path.split("-").map((x, i) => i === 0 ? x[0].toLowerCase() + x.slice(1) : x[0].toUpperCase() + x.slice(1)).join(""), defaultValue);
+        return _.get(
+            obj,
+            path
+                .split("-")
+                .map((x, i) =>
+                    i === 0 ? x[0].toLowerCase() + x.slice(1) : x[0].toUpperCase() + x.slice(1),
+                )
+                .join(""),
+            defaultValue,
+        );
     }
     return returnVal;
 }
@@ -266,7 +280,11 @@ export async function sortAsync<T>(arr: T[], score: (a: T) => Promise<number>): 
     });
 }
 
-export function getCaseInsensitive<T = any>(obj: any, path: string | string[], defaultValue: T): T {
+export function getCaseInsensitive<T = any>(
+    obj: any,
+    path: string | string[],
+    defaultValue: T,
+): T {
     if (!obj) {
         return defaultValue;
     }
@@ -285,22 +303,22 @@ export function getCaseInsensitive<T = any>(obj: any, path: string | string[], d
 /**
  * Safely parses a value to a number. If parsing fails or results in NaN,
  * returns the original value instead of throwing an error.
- * 
+ *
  * @param value - The value to parse (string, number, or any)
  * @param radix - Optional radix for parseInt (default: 10)
  * @returns Parsed number if successful, otherwise the original value
  */
 export function safeParseInt<T = any>(value: T, radix: number = 10): number | T {
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
         return value;
     }
-    
-    if (typeof value === 'string') {
+
+    if (typeof value === "string") {
         const parsed = parseInt(value, radix);
         if (!isNaN(parsed) && Number.isInteger(parsed)) {
             return parsed;
         }
     }
-    
+
     return value;
 }

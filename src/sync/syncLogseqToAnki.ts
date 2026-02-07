@@ -3,36 +3,32 @@ import * as AnkiConnect from "../anki-connect/AnkiConnect";
 import {LazyAnkiNoteManager} from "../anki-connect/LazyAnkiNoteManager";
 import {
     getTemplateFront,
-    getTemplateBack, getTemplateMediaFiles
+    getTemplateBack,
+    getTemplateMediaFiles,
 } from "../anki-template/AnkiCardTemplates";
 import {Note} from "../anki-notes/Note";
 import {ClozeNote} from "../anki-notes/ClozeNote";
 import {MultilineCardNote} from "../anki-notes/MultilineCardNote";
-import _ from "lodash";
-import {ParsedNoteData} from "./types";
-import {
-    handleAnkiError,
-    sortAsync
-} from "../utils/utils";
-import path from "path-browserify";
-import {SUCCESS_ICON, WARNING_ICON} from "../constants";
+import {handleAnkiError, sortAsync} from "../utils/utils";
+import SUCCESS_ICON from "../../node_modules/@tabler/icons/icons/outline/circle-check.svg?raw";
+import WARNING_ICON from "../../node_modules/@tabler/icons/icons/outline/alert-circle.svg?raw";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import pkg from "../../package.json";
 import {SwiftArrowNote} from "../anki-notes/SwiftArrowNote";
 import {ProgressNotification} from "../ui";
 import {showConfirmModal} from "../ui";
 import {ImageOcclusionNote} from "../anki-notes/ImageOcclusionNote";
-import { NoteHashCalculator } from "./cache";
+import {NoteHashCalculator} from "./cache";
 import {CancelablePromise} from "cancelable-promise";
-import { ActionNotification } from "../ui/notifications/ActionNotification";
+import {ActionNotification} from "../ui/notifications/ActionNotification";
 import {showSyncSelectionDialog} from "../ui";
 import {showSyncResultDialog} from "../ui";
-import { WindowParentBridge } from "../logseq/WindowParentBridge";
-import { CreateNotesTask } from "./tasks/CreateNotesTask";
-import { UpdateNotesTask } from "./tasks/UpdateNotesTask";
-import { DeleteNotesTask } from "./tasks/DeleteNotesTask";
-import { SuspendUnsuspendNotesTask } from "./tasks/SuspendUnsuspendNotesTask";
-import { createLogger, LoggerCategory } from "../utils/logger";
+import {WindowParentBridge} from "../logseq/WindowParentBridge";
+import {CreateNotesTask} from "./tasks/CreateNotesTask";
+import {UpdateNotesTask} from "./tasks/UpdateNotesTask";
+import {DeleteNotesTask} from "./tasks/DeleteNotesTask";
+import {SuspendUnsuspendNotesTask} from "./tasks/SuspendUnsuspendNotesTask";
+import {createLogger, LoggerCategory} from "../utils/logger";
 
 const logger = createLogger(LoggerCategory.SyncMain);
 
@@ -60,8 +56,7 @@ export class LogseqToAnkiSync {
                 template: ``,
             });
             logger.error("Sync failed", e);
-        }
-        finally {
+        } finally {
             this.completeSyncCleanup();
             LogseqToAnkiSync.isSyncing = false;
         }
@@ -71,7 +66,7 @@ export class LogseqToAnkiSync {
         this.graphName = await this.getGraphName();
         this.modelName = this.getModelName();
         logger.success(
-            `Starting Logseq to Anki Sync V${pkg.version} for graph ${this.graphName}`
+            `Starting Logseq to Anki Sync V${pkg.version} for graph ${this.graphName}`,
         );
 
         await this.setupAnkiModel();
@@ -81,19 +76,24 @@ export class LogseqToAnkiSync {
         await this.persistLogseqBlockIds(notes);
 
         const syncPlan = await this.createSyncPlan(notes, ankiNoteManager);
-        const { toCreateNotesOriginal, toUpdateNotesOriginal, toDeleteNotesOriginal } = syncPlan;
+        const {toCreateNotesOriginal, toUpdateNotesOriginal, toDeleteNotesOriginal} = syncPlan;
 
         const confirmation = await this.getUserConfirmation(
             toCreateNotesOriginal,
             toUpdateNotesOriginal,
             toDeleteNotesOriginal,
-            notes
+            notes,
         );
 
         if (!confirmation) return;
 
-        const { toCreateNotes, toUpdateNotes, toDeleteNotes } = confirmation;
-        const results = await this.executeSyncPlan(toCreateNotes, toUpdateNotes, toDeleteNotes, ankiNoteManager);
+        const {toCreateNotes, toUpdateNotes, toDeleteNotes} = confirmation;
+        const results = await this.executeSyncPlan(
+            toCreateNotes,
+            toUpdateNotes,
+            toDeleteNotes,
+            ankiNoteManager,
+        );
 
         WindowParentBridge.dispatchLogseqAnkiSyncEvent("syncLogseqToAnkiComplete");
         await this.performPostSyncCleanup(results.toCreateNotes);
@@ -103,13 +103,13 @@ export class LogseqToAnkiSync {
             results.toDeleteNotes,
             results.failedCreated,
             results.failedUpdated,
-            results.failedDeleted
+            results.failedDeleted,
         );
     }
 
     private async createNotes(
         toCreateNotes: Note[],
-        failedCreated: { [key: string]: Error },
+        failedCreated: {[key: string]: Error},
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification,
     ): Promise<void> {
@@ -121,14 +121,14 @@ export class LogseqToAnkiSync {
             this.graphName,
             graphPath,
             ankiNoteManager,
-            syncNotificationObj
+            syncNotificationObj,
         );
         Object.assign(failedCreated, result.failed);
     }
 
     private async updateNotes(
         toUpdateNotes: Note[],
-        failedUpdated: { [key: string]: Error },
+        failedUpdated: {[key: string]: Error},
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification,
     ): Promise<void> {
@@ -140,29 +140,23 @@ export class LogseqToAnkiSync {
             this.graphName,
             graphPath,
             ankiNoteManager,
-            syncNotificationObj
+            syncNotificationObj,
         );
         Object.assign(failedUpdated, result.failed);
     }
 
-    private async updateAssets(
-        ankiNoteManager: LazyAnkiNoteManager
-    ): Promise<void> {
+    private async updateAssets(ankiNoteManager: LazyAnkiNoteManager): Promise<void> {
         await ankiNoteManager.executeAssets();
     }
 
     private async deleteNotes(
         toDeleteNotes: number[],
-        failedDeleted: { [key: string]: Error },
+        failedDeleted: {[key: string]: Error},
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification,
     ) {
         const task = new DeleteNotesTask();
-        const result = await task.execute(
-            toDeleteNotes,
-            ankiNoteManager,
-            syncNotificationObj
-        );
+        const result = await task.execute(toDeleteNotes, ankiNoteManager, syncNotificationObj);
         Object.assign(failedDeleted, result.failed);
     }
 
@@ -172,12 +166,10 @@ export class LogseqToAnkiSync {
         syncNotificationObj: ProgressNotification,
     ): Promise<void> {
         const task = new SuspendUnsuspendNotesTask();
-        const result = await task.execute(
-            notes,
-            ankiNoteManager,
-            syncNotificationObj
+        const result = await task.execute(notes, ankiNoteManager, syncNotificationObj);
+        logger.info(
+            `Suspended ${result.suspended} cards, Unsuspended ${result.unsuspended} cards`,
         );
-        logger.info(`Suspended ${result.suspended} cards, Unsuspended ${result.unsuspended} cards`);
     }
 
     private async getGraphName(): Promise<string> {
@@ -192,10 +184,20 @@ export class LogseqToAnkiSync {
         await AnkiConnect.requestPermission();
         await AnkiConnect.upsertModel(
             this.modelName,
-            ["uuid-type", "Logseq Block UUID", "Logseq Page Id", "Text", "Breadcrumb", "User Controlled Field (Front)", "User Controlled Field (Back)",  "User Controlled Field (Both)", "Config"],
+            [
+                "uuid-type",
+                "Logseq Block UUID",
+                "Logseq Page Id",
+                "Text",
+                "Breadcrumb",
+                "User Controlled Field (Front)",
+                "User Controlled Field (Back)",
+                "User Controlled Field (Both)",
+                "Config",
+            ],
             getTemplateFront(),
             getTemplateBack(),
-            getTemplateMediaFiles()
+            getTemplateMediaFiles(),
         );
     }
 
@@ -210,9 +212,9 @@ export class LogseqToAnkiSync {
         const scanNotification = new ProgressNotification(
             `Scanning Logseq Graph <span style="opacity: 0.8">[${this.graphName}]</span>:`,
             5,
-            "graph"
+            "graph",
         );
-        
+
         let notes: Array<Note> = [];
         notes = [...notes, ...(await ClozeNote.getNotesFromLogseqBlocks())];
         scanNotification.increment();
@@ -231,7 +233,7 @@ export class LogseqToAnkiSync {
     }
 
     private async persistLogseqBlockIds(notes: Note[]): Promise<void> {
-        if (await LogseqProxy.App.checkCurrentIsDbGraph() === true) return; // DB graphs don't have reindex feature.
+        if ((await LogseqProxy.App.checkCurrentIsDbGraph()) === true) return; // DB graphs don't have reindex feature.
 
         // Need to persist id inside logseq blocks (which makeup notes) to prevent uuid from changing on re-index
         for (const note of notes) {
@@ -257,7 +259,7 @@ export class LogseqToAnkiSync {
         }
 
         const noteAnkiIds: Array<number> = await Promise.all(
-            notes.map((block) => block.getAnkiId())
+            notes.map((block) => block.getAnkiId()),
         );
         const AnkiIds: Array<number> = [...ankiNoteManager.noteInfoMap.keys()];
         for (const ankiId of AnkiIds) {
@@ -266,15 +268,15 @@ export class LogseqToAnkiSync {
             }
         }
 
-        return { toCreateNotesOriginal, toUpdateNotesOriginal, toDeleteNotesOriginal };
+        return {toCreateNotesOriginal, toUpdateNotesOriginal, toDeleteNotesOriginal};
     }
 
     private async getUserConfirmation(
         toCreateNotesOriginal: Note[],
         toUpdateNotesOriginal: Note[],
         toDeleteNotesOriginal: number[],
-        notes: Note[]
-    ): Promise<{ toCreateNotes: Note[], toUpdateNotes: Note[], toDeleteNotes: number[] } | null> {
+        notes: Note[],
+    ): Promise<{toCreateNotes: Note[]; toUpdateNotes: Note[]; toDeleteNotes: number[]} | null> {
         let buildNoteHashes: CancelablePromise | null = null;
         setTimeout(() => {
             buildNoteHashes = new CancelablePromise(async (resolve, reject, onCancel) => {
@@ -289,70 +291,94 @@ export class LogseqToAnkiSync {
         const noteSelection = await showSyncSelectionDialog(
             toCreateNotesOriginal,
             toUpdateNotesOriginal,
-            toDeleteNotesOriginal
+            toDeleteNotesOriginal,
         );
-        
+
         if (!noteSelection) {
             buildNoteHashes?.cancel();
             return null;
         }
 
-        const { toCreateNotes, toUpdateNotes, toDeleteNotes } = noteSelection;
-        logger.info("Sync plan created", { 
-            toCreate: toCreateNotes.length, 
-            toUpdate: toUpdateNotes.length, 
-            toDelete: toDeleteNotes.length 
+        const {toCreateNotes, toUpdateNotes, toDeleteNotes} = noteSelection;
+        logger.info("Sync plan created", {
+            toCreate: toCreateNotes.length,
+            toUpdate: toUpdateNotes.length,
+            toDelete: toDeleteNotes.length,
         });
 
-        if (toCreateNotes.length == 0 && toUpdateNotes.length == 0 && toDeleteNotes.length >= 10) {
+        if (
+            toCreateNotes.length == 0 &&
+            toUpdateNotes.length == 0 &&
+            toDeleteNotes.length >= 10
+        ) {
             const confirm_msg = `<b class="text-red-600">This will delete all your notes in anki that are generated from this graph.</b><br/>Are you sure you want to continue?`;
             if (!(await showConfirmModal(confirm_msg))) {
                 buildNoteHashes?.cancel();
                 return null;
             }
         }
-        
+
         buildNoteHashes?.cancel();
-        return { toCreateNotes, toUpdateNotes, toDeleteNotes };
+        return {toCreateNotes, toUpdateNotes, toDeleteNotes};
     }
 
     private async executeSyncPlan(
         toCreateNotes: Note[],
         toUpdateNotes: Note[],
         toDeleteNotes: number[],
-        ankiNoteManager: LazyAnkiNoteManager
+        ankiNoteManager: LazyAnkiNoteManager,
     ) {
-        const failedCreated: { [key: string]: Error } = {};
-        const failedUpdated: { [key: string]: Error } = {};
-        const failedDeleted: { [key: string]: Error } = {};
+        const failedCreated: {[key: string]: Error} = {};
+        const failedUpdated: {[key: string]: Error} = {};
+        const failedDeleted: {[key: string]: Error} = {};
 
         const start_time = performance.now();
         const twentyPercent = Math.ceil(
-            (toCreateNotes.length + toUpdateNotes.length + toDeleteNotes.length) / 20
-        );
-        
-        // Add 1 for suspend/unsuspend task if enabled
-        const { syncOverwriteList } = LogseqProxy.Settings.getPluginSettings();
-        const suspendTaskIncrement = syncOverwriteList?.includes("Suspended") ? 1 : 0;
-        
-        const syncNotificationObj = new ProgressNotification(
-            "Syncing logseq notes to anki...",
-            toCreateNotes.length + toUpdateNotes.length + toDeleteNotes.length + twentyPercent + 1 + suspendTaskIncrement,
-            "anki"
+            (toCreateNotes.length + toUpdateNotes.length + toDeleteNotes.length) / 20,
         );
 
-        await this.createNotes(toCreateNotes, failedCreated, ankiNoteManager, syncNotificationObj);
-        await this.updateNotes(toUpdateNotes, failedUpdated, ankiNoteManager, syncNotificationObj);
-        await this.deleteNotes(toDeleteNotes, failedDeleted, ankiNoteManager, syncNotificationObj);
-        
+        // Add 1 for suspend/unsuspend task if enabled
+        const {syncOverwriteList} = LogseqProxy.Settings.getPluginSettings();
+        const suspendTaskIncrement = syncOverwriteList?.includes("Suspended") ? 1 : 0;
+
+        const syncNotificationObj = new ProgressNotification(
+            "Syncing logseq notes to anki...",
+            toCreateNotes.length +
+                toUpdateNotes.length +
+                toDeleteNotes.length +
+                twentyPercent +
+                1 +
+                suspendTaskIncrement,
+            "anki",
+        );
+
+        await this.createNotes(
+            toCreateNotes,
+            failedCreated,
+            ankiNoteManager,
+            syncNotificationObj,
+        );
+        await this.updateNotes(
+            toUpdateNotes,
+            failedUpdated,
+            ankiNoteManager,
+            syncNotificationObj,
+        );
+        await this.deleteNotes(
+            toDeleteNotes,
+            failedDeleted,
+            ankiNoteManager,
+            syncNotificationObj,
+        );
+
         if (syncOverwriteList?.includes("Suspended")) {
             await this.suspendUnsuspendNotes(
                 [...toCreateNotes, ...toUpdateNotes],
                 ankiNoteManager,
-                syncNotificationObj
+                syncNotificationObj,
             );
         }
-        
+
         syncNotificationObj.updateMessage("Syncing logseq assets to anki...");
         await this.updateAssets(ankiNoteManager);
         syncNotificationObj.increment(twentyPercent);
@@ -360,10 +386,17 @@ export class LogseqToAnkiSync {
         syncNotificationObj.increment();
 
         logger.info("Sync completed", {
-            timeTaken: `${(performance.now() - start_time).toFixed(2)}ms`
+            timeTaken: `${(performance.now() - start_time).toFixed(2)}ms`,
         });
 
-        return { toCreateNotes, toUpdateNotes, toDeleteNotes, failedCreated, failedUpdated, failedDeleted };
+        return {
+            toCreateNotes,
+            toUpdateNotes,
+            toDeleteNotes,
+            failedCreated,
+            failedUpdated,
+            failedDeleted,
+        };
     }
 
     private async performPostSyncCleanup(toCreateNotes: Note[]): Promise<void> {
@@ -372,8 +405,7 @@ export class LogseqToAnkiSync {
                 //@ts-ignore
                 await WindowParentBridge.getInternalLogseqAPI().api.force_save_graph();
                 await new Promise((resolve) => setTimeout(resolve, 2000));
-            } catch (e) {
-            }
+            } catch (e) {}
         }
     }
 
@@ -381,18 +413,16 @@ export class LogseqToAnkiSync {
         toCreateNotes: Note[],
         toUpdateNotes: Note[],
         toDeleteNotes: number[],
-        failedCreated: { [key: string]: Error },
-        failedUpdated: { [key: string]: Error },
-        failedDeleted: { [key: string]: Error }
+        failedCreated: {[key: string]: Error},
+        failedUpdated: {[key: string]: Error},
+        failedDeleted: {[key: string]: Error},
     ): void {
         let summery = `Sync Completed! \n Created Blocks: ${
             toCreateNotes.length - Object.keys(failedCreated).length
         } \n Updated Blocks: ${
             toUpdateNotes.length - Object.keys(failedUpdated).length
-        } \n Deleted Blocks: ${
-            toDeleteNotes.length - Object.keys(failedDeleted).length
-        }`;
-        
+        } \n Deleted Blocks: ${toDeleteNotes.length - Object.keys(failedDeleted).length}`;
+
         if (Object.keys(failedCreated).length > 0)
             summery += `\nFailed Created: ${Object.keys(failedCreated).length} `;
         if (Object.keys(failedUpdated).length > 0)
@@ -403,9 +433,9 @@ export class LogseqToAnkiSync {
         logger.info("Sync summary", {
             created: toCreateNotes,
             updated: toUpdateNotes,
-            deleted: toDeleteNotes
+            deleted: toDeleteNotes,
         });
-        
+
         ActionNotification(
             [
                 {
@@ -417,22 +447,27 @@ export class LogseqToAnkiSync {
                             toDeleteNotes,
                             failedCreated,
                             failedUpdated,
-                            failedDeleted
+                            failedDeleted,
                         );
                     },
                 },
             ],
             summery,
             20000,
-            Object.keys(failedCreated).length > 0 || Object.keys(failedUpdated).length > 0 || Object.keys(failedDeleted).length > 0
-                ? WARNING_ICON
-                : SUCCESS_ICON
+            Object.keys(failedCreated).length > 0 ||
+                Object.keys(failedUpdated).length > 0 ||
+                Object.keys(failedDeleted).length > 0
+                ? `<span class="text-warning">${WARNING_ICON}</span>`
+                : `<span class="text-success">${SUCCESS_ICON}</span>`,
         );
-        
+
         logger.info(summery);
-        if (Object.keys(failedCreated).length > 0) logger.error("Failed Created", failedCreated);
-        if (Object.keys(failedUpdated).length > 0) logger.error("Failed Updated", failedUpdated);
-        if (Object.keys(failedDeleted).length > 0) logger.error("Failed Deleted", failedDeleted);
+        if (Object.keys(failedCreated).length > 0)
+            logger.error("Failed Created", failedCreated);
+        if (Object.keys(failedUpdated).length > 0)
+            logger.error("Failed Updated", failedUpdated);
+        if (Object.keys(failedDeleted).length > 0)
+            logger.error("Failed Deleted", failedDeleted);
     }
 
     private completeSyncCleanup(): void {
