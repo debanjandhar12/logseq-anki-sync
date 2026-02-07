@@ -29,6 +29,7 @@ import {UpdateNotesTask} from "./tasks/UpdateNotesTask";
 import {DeleteNotesTask} from "./tasks/DeleteNotesTask";
 import {SuspendUnsuspendNotesTask} from "./tasks/SuspendUnsuspendNotesTask";
 import {createLogger, LoggerCategory} from "../utils/logger";
+import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
 
 const logger = createLogger(LoggerCategory.SyncMain);
 
@@ -42,6 +43,13 @@ export class LogseqToAnkiSync {
         //     await logseq.UI.showMsg("Anki sync not supported in DB Graphs yet.\nDevelopment to support it is going on in db branch.", "error");
         //     return;
         // }
+        if (!LogseqAppInfoFetcher.checkHostAccess()) {
+            await logseq.UI.showMsg(
+                "Syncing is not supported in Logseq Web since plugin cannot read image files at the moment.",
+                "error",
+            );
+            return;
+        }
         if (LogseqToAnkiSync.isSyncing) {
             logger.info("Syncing already in process");
             return;

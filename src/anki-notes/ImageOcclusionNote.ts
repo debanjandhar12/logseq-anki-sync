@@ -1,7 +1,7 @@
 import {Note} from "./Note";
 import "@logseq/libs";
-import { WindowParentBridge } from "../logseq/WindowParentBridge";
-import { LogseqPropertiesHelper } from "../logseq/LogseqPropertiesHelper";
+import {WindowParentBridge} from "../logseq/WindowParentBridge";
+import {LogseqPropertiesHelper} from "../logseq/LogseqPropertiesHelper";
 import {
     escapeClozesAndMacroDelimiters,
     getFirstNonEmptyLine,
@@ -30,8 +30,9 @@ import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {showSelectionModal} from "../ui";
 
-import { createLogger, LoggerCategory } from "../utils/logger";
+import {createLogger, LoggerCategory} from "../utils/logger";
 import {appendExtraToHtmlFile} from "./NoteUtils";
+import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
@@ -58,10 +59,21 @@ export class ImageOcclusionNote extends Note {
         logseq.Editor.registerSlashCommand("Image Occlusion", async (block) => {
             await ImageOcclusionNote.handleImageOcclusionOperation(block);
         });
-        LogseqProxy.Editor.registerProperty("occlusion", {type: "default", cardinality: "one", hide: false});
+        LogseqProxy.Editor.registerProperty("occlusion", {
+            type: "default",
+            cardinality: "one",
+            hide: false,
+        });
     };
 
-    public static async handleImageOcclusionOperation(block: BlockEntity | {uuid: string;}) {
+    public static async handleImageOcclusionOperation(block: BlockEntity | {uuid: string}) {
+        if (!LogseqAppInfoFetcher.checkHostAccess()) {
+            await logseq.UI.showMsg(
+                "Opening Occlusion Editor is not supported in Logseq Web since plugin cannot read image files at the moment.",
+                "error",
+            );
+            return;
+        }
         const uuid = getUUIDFromBlock(block as BlockEntity);
         // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
         // Use helper method to get fresh block with properties
@@ -80,7 +92,7 @@ export class ImageOcclusionNote extends Note {
                 JSON.parse(
                     Buffer.from(
                         fetchedBlock.properties?.occlusion ||
-                        Buffer.from("{}", "utf8").toString("base64"),
+                            Buffer.from("{}", "utf8").toString("base64"),
                         "base64",
                     ).toString(),
                 ),
@@ -96,20 +108,20 @@ export class ImageOcclusionNote extends Note {
             block_images.length == 1
                 ? 0
                 : await showSelectionModal(
-                    await Promise.all(
-                        block_images.map(async (image) => {
-                            return {
-                                name: image,
-                                icon: `<img class="px-4" height="48" width="64" src="${
-                                    image.match(isWebURL_REGEXP)
-                                        ? image
-                                        : await WindowParentBridge.makeAssetUrl(image)
-                                }"></img>`,
-                            };
-                        }),
-                    ),
-                    {message: "Select Image for occlusion", enableKeySelect: true}
-                );
+                      await Promise.all(
+                          block_images.map(async (image) => {
+                              return {
+                                  name: image,
+                                  icon: `<img class="px-4" height="48" width="64" src="${
+                                      image.match(isWebURL_REGEXP)
+                                          ? image
+                                          : await WindowParentBridge.makeAssetUrl(image)
+                                  }"></img>`,
+                              };
+                          }),
+                      ),
+                      {message: "Select Image for occlusion", enableKeySelect: true},
+                  );
         if (selectedImageIdx != null) selectedImage = block_images[selectedImageIdx];
         if (selectedImage) {
             selectedImage = (selectedImage as string).split("?")[0];
@@ -135,9 +147,12 @@ export class ImageOcclusionNote extends Note {
                         "base64",
                     ) != fetchedBlock.properties?.occlusion
                 ) {
-                    logger.info(imgToOcclusionDataHashMap, Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
-                        "base64",
-                    ));
+                    logger.info(
+                        imgToOcclusionDataHashMap,
+                        Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
+                            "base64",
+                        ),
+                    );
                     await LogseqProxy.Editor.upsertBlockProperty(
                         getUUIDFromBlock(fetchedBlock),
                         "occlusion",
@@ -195,25 +210,36 @@ export class ImageOcclusionNote extends Note {
         <img id="localImgBasePath" src="_logseq_anki_sync.css"></img>
         </div>`;
 
-        const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(clozedContent, this.format);
+        const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(
+            clozedContent,
+            this.format,
+        );
 
         // --- Add extra property content (non-indented) ---
-        return appendExtraToHtmlFile(result, _.get(await LogseqProxy.Editor.getBlock(this.uuid), "properties.extra") as string, this.format, true);
+        return appendExtraToHtmlFile(
+            result,
+            _.get(await LogseqProxy.Editor.getBlock(this.uuid), "properties.extra") as string,
+            this.format,
+            true,
+        );
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ImageOcclusionNote[]> {
-        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: { id: number }}][];
-        let blocks : DatascriptQueryResult = [];
-        if (!await LogseqProxy.App.checkCurrentIsDbGraph()) {
-            blocks = await LogseqProxy.DB.datascriptQuery(`
+        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: {id: number}}][];
+        let blocks: DatascriptQueryResult = [];
+        if (!(await LogseqProxy.App.checkCurrentIsDbGraph())) {
+            blocks = await LogseqProxy.DB.datascriptQuery(
+                `
                 [:find (pull ?b [:block/uuid :block/page])
                 :where
                   [?b :block/properties ?p]
                   [(get ?p :occlusion)]
-                ]`, {suppressErrors: false});
-        }
-        else {
-            blocks = await LogseqProxy.DB.datascriptQuery(`
+                ]`,
+                {suppressErrors: false},
+            );
+        } else {
+            blocks = await LogseqProxy.DB.datascriptQuery(
+                `
                 [:find (pull ?b [:block/uuid :block/page])
                 :where
                   [?prop-e :block/tags :logseq.class/Property]
@@ -221,14 +247,16 @@ export class ImageOcclusionNote extends Note {
                   [(name ?prop) ?prop-name]
                   [(clojure.string/ends-with? ?prop-name "occlusion")]
                   [?b ?prop _]
-                ]`, {suppressErrors: false});
+                ]`,
+                {suppressErrors: false},
+            );
         }
         let notes: (ImageOcclusionNote | false)[] = await Promise.all(
             (blocks || []).map(async (b) => {
                 const uuid = getUUIDFromBlock(b[0]);
-                const pageId = _.get(b[0], 'page.id');
+                const pageId = _.get(b[0], "page.id");
                 if (!pageId) return null;
-                
+
                 let block = await LogseqProxy.Editor.getBlock(uuid);
                 if (block)
                     return new ImageOcclusionNote(
@@ -286,10 +314,10 @@ export class ImageOcclusionNote extends Note {
         // Preprocess to extract PDF properties and normalize format
         const preprocessResult = await LogseqContentPreprocessor.preprocess(
             block_content,
-            block.format || "markdown"
+            block.format || "markdown",
         );
         block_content = preprocessResult.content;
-        
+
         block_content = await safeReplaceAsync(
             block_content,
             LOGSEQ_BLOCK_REF_REGEXP,
@@ -299,11 +327,15 @@ export class ImageOcclusionNote extends Note {
                     // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
                     // Use helper method to get fresh block with properties
                     const block_ref = await LogseqPropertiesHelper.getBlock(blockUUID);
-                    let preprocessResult = await LogseqContentPreprocessor.preprocess(block_ref?.content || "", block_ref?.format || "markdown");
+                    let preprocessResult = await LogseqContentPreprocessor.preprocess(
+                        block_ref?.content || "",
+                        block_ref?.format || "markdown",
+                    );
                     let block_content = preprocessResult.content;
                     let block_props = preprocessResult.properties || {};
                     let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
-                    block_content_first_line = escapeClozesAndMacroDelimiters(block_content_first_line);
+                    block_content_first_line =
+                        escapeClozesAndMacroDelimiters(block_content_first_line);
 
                     let blockRef_content = block_content_first_line;
                     for (const [prop, value] of Object.entries(block_props))
@@ -379,7 +411,12 @@ export class ImageOcclusionNote extends Note {
                     config: {},
                     tags: [],
                 };
-            } else if (typeof value == "object" && value !== null && "elements" in value && Array.isArray((value as any).elements)) {
+            } else if (
+                typeof value == "object" &&
+                value !== null &&
+                "elements" in value &&
+                Array.isArray((value as any).elements)
+            ) {
                 // New format - ensure tags property exists
                 const occlusionData = value as OcclusionData;
                 if (!occlusionData.tags) {
