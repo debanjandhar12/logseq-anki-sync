@@ -10,7 +10,7 @@ import {
     REMOVE_OCCLUSION_ICON,
     SETTINGS_ICON,
 } from "../../constants";
-import {Modal, useModal, createModalPromise} from "../";
+import {Modal, useModal, createModalPromise, ModalHeader, DialogModalFooter} from "../";
 import {LogseqButton} from "../common/LogseqButton";
 import {LogseqCheckbox} from "../common/LogseqCheckbox";
 import {createWorker, PSM} from "tesseract.js";
@@ -73,7 +73,7 @@ const OcclusionEditorComponent: React.FC<{
     reject: Function;
     modalContext?: { modalId: string | null };
 }> = ({imgURL, occlusionElements, occlusionConfig, blockTags, resolve, reject, modalContext}) => {
-    const { open, setOpen, handleCancel: modalHandleCancel, returnResult } = useModal<OcclusionData | boolean>(resolve, {
+    const { open, setOpen, returnResult } = useModal<OcclusionData | boolean>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false, // We'll handle Escape key manually due to complex interactions
         enableEnterKey: false,   // We'll handle Enter key manually
@@ -107,6 +107,7 @@ const OcclusionEditorComponent: React.FC<{
             tags: tags,
         });
     };
+    
     const handleCancel = () => {
         returnResult(false);
     };
@@ -300,12 +301,12 @@ const OcclusionEditorComponent: React.FC<{
             if (!fabricRef || !open) return;
             if (e.key === "Escape" && fabricRef.current.getActiveObjects().length > 0) {
                 logger.info(fabricRef);
-                fabricRef.current.discardActiveObjects();
+                fabricRef.current.discardActiveObject();
                 fabricRef.current.renderAll();
                 e.preventDefault();
                 e.stopImmediatePropagation();
             } else if (e.key === "Escape") {
-                modalHandleCancel();
+                handleCancel();
                 e.preventDefault();
                 e.stopImmediatePropagation();
             }
@@ -521,23 +522,19 @@ const OcclusionEditorComponent: React.FC<{
             setOpen={setOpen}
             onClose={() => UI.hideModal(modalContext?.modalId)}
             hasCloseButton={false}
+            enableEscapeKey={false}
             size={"large"}>
-            <div className="of-plugins" style={{margin: '0rem'}}>
-                <div className="absolute top-0 right-0 pt-2 pr-3">
+            <div style={{margin: '0rem'}}>
+                <ModalHeader
+                    title="Occlusion Editor"
+                    icon={ANKI_ICON}
+                    onClose={() => setOpen(false)}
+                    showCloseButton={true}
+                >
                     <a href="https://github.com/sponsors/debanjandhar12">
                         <img alt="Donate" style={{height: "1.4rem"}} src={DONATE_ICON} />
                     </a>
-                </div>
-                <header
-                    style={{
-                        borderBottom: "1px solid var(--ls-border-color)",
-                        padding: "8px 12px",
-                    }}>
-                    <h3 className="title inline-flex items-center" style={{marginTop: "2px"}}>
-                        <i className="px-1" dangerouslySetInnerHTML={{__html: ANKI_ICON}}></i>
-                        <strong>Occlusion Editor</strong>
-                    </h3>
-                </header>
+                </ModalHeader>
                 <div
                     style={{
                         borderBottom: "1px solid var(--ls-border-color)",
@@ -550,6 +547,8 @@ const OcclusionEditorComponent: React.FC<{
                             className={"text-sm opacity-80"}
                             style={{
                                 paddingLeft: "0.25rem",
+                                display: 'flex',
+                                alignItems: "center",
                                 margin: "0.125rem auto 0.125rem 0",
                             }}>
                             <img src={zoomView} />
@@ -604,7 +603,6 @@ const OcclusionEditorComponent: React.FC<{
                         </div>
                     </span>
                     <span
-                        className={"anki_de"}
                         style={{
                             alignItems: "center",
                             justifyItems: "center",
@@ -612,35 +610,37 @@ const OcclusionEditorComponent: React.FC<{
                             paddingRight: "0.5rem",
                             borderRight: "1px solid var(--ls-border-color)",
                         }}>
-                        <LogseqButton color={"default"} size={"sm"} icon={SETTINGS_ICON} />
-                        <div className={"image-occlusion-menu"}>
-                            <LogseqCheckbox
-                                checked={tags.includes("hide-all-test-one")}
-                                onChange={(e) => {
-                                    if (e.target.checked) {
-                                        setTags([...tags, "hide-all-test-one"]);
-                                    } else {
-                                        setTags(tags.filter(t => t !== "hide-all-test-one"));
-                                    }
-                                }}>
-                                Hide All, Test One (
-                                <abbr title="When enabled, hides all occlusions including the one being tested during anki review.">
-                                    ?
-                                </abbr>
-                                )
-                            </LogseqCheckbox>
-                            <hr style={{margin: "0.5rem"}} />
-                            <div style={{marginLeft: "auto", marginRight: "auto"}}>
-                                <LogseqButton
-                                    color={"primary"}
-                                    size={"sm"}
-                                    title={"Generate Occlusions using AI"}
-                                    onClick={aiGenerateOcclusion}
-                                    disabled={isAIGeneratingOcclusion}>
-                                    {!isAIGeneratingOcclusion
-                                        ? "Generate Occlusions using AI"
-                                        : "Generating occlusions..."}
-                                </LogseqButton>
+                        <div className={"anki_de"}>
+                            <LogseqButton color={"default"} size={"sm"} icon={SETTINGS_ICON} />
+                            <div className={"image-occlusion-menu"}>
+                                <LogseqCheckbox
+                                    checked={tags.includes("hide-all-test-one")}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setTags([...tags, "hide-all-test-one"]);
+                                        } else {
+                                            setTags(tags.filter(t => t !== "hide-all-test-one"));
+                                        }
+                                    }}>
+                                    Hide All, Test One (
+                                    <abbr title="When enabled, hides all occlusions including the one being tested during anki review.">
+                                        ?
+                                    </abbr>
+                                    )
+                                </LogseqCheckbox>
+                                <hr style={{margin: "0.5rem"}} />
+                                <div style={{marginLeft: "auto", marginRight: "auto"}}>
+                                    <LogseqButton
+                                        color={"primary"}
+                                        size={"sm"}
+                                        title={"Generate Occlusions using AI"}
+                                        onClick={aiGenerateOcclusion}
+                                        disabled={isAIGeneratingOcclusion}>
+                                        {!isAIGeneratingOcclusion
+                                            ? "Generate Occlusions using AI"
+                                            : "Generating occlusions..."}
+                                    </LogseqButton>
+                                </div>
                             </div>
                         </div>
                     </span>
@@ -668,40 +668,12 @@ const OcclusionEditorComponent: React.FC<{
                         <canvas ref={canvasRef} />
                     </div>
                 </div>
-                <div
-                    className="mt-1 sm:flex sm:flex-row-reverse"
-                    style={{
-                        borderTop: "1px solid var(--ls-border-color)",
-                        padding: "2px",
-                        alignItems: "center",
-                    }}>
-                    <LogseqButton
-                        isFullWidth={true}
-                        depth={1}
-                        onClick={() => handleConfirm()}
-                        color="primary">
-                        <span
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}>
-                            <span>Confirm</span>
-                            <span
-                                className="opacity-80 ui__button-shortcut-key"
-                                style={{marginLeft: "2px"}}>
-                                ⏎
-                            </span>
-                        </span>
-                    </LogseqButton>
-                    <LogseqButton
-                        isFullWidth={true}
-                        depth={1}
-                        color={"outline-link"}
-                        onClick={() => handleCancel()}>
-                        Cancel
-                    </LogseqButton>
-                </div>
+                <DialogModalFooter
+                    onConfirm={handleConfirm}
+                    onCancel={handleCancel}
+                    confirmText="Confirm"
+                    cancelText="Cancel"
+                />
             </div>
         </Modal>
     );
