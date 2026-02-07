@@ -8,6 +8,7 @@ lerna-debug.log*
 
 # Dependency directories
 node_modules/*
+.vite_cache/*
 
 # Optional cache directory
 .parcel-cache/
@@ -26,3 +27,8 @@ dist/
 docusaurus/.docusaurus/
 docusaurus/build/
 docusaurus/node_modules/
+
+# IDE
+.kiro/*
+.idea/*
+.vscode/*
