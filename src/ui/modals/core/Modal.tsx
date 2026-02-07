@@ -17,7 +17,7 @@ interface ModalProps {
     zDepth?: "high" | "default";
     hasCloseButton?: boolean;
     className?: string;
-    enableEscapeKey?: boolean;
+    enableEscapeKeyClose?: boolean;
 }
 
 export function Modal({
@@ -29,7 +29,7 @@ export function Modal({
     children,
     hasCloseButton = true,
     className = "",
-    enableEscapeKey = true,
+    enableEscapeKeyClose = true,
 }: PropsWithChildren<ModalProps>) {
     // Handle close - calls setOpen(false), onClose callback, and UI.hideModal()
     const handleClose = React.useCallback(() => {
@@ -50,7 +50,7 @@ export function Modal({
         if (!open) return;
         
         // Escape key closes modal (if enabled)
-        if (enableEscapeKey && e.key === "Escape") {
+        if (enableEscapeKeyClose && e.key === "Escape") {
             handleClose();
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -78,7 +78,7 @@ export function Modal({
             e.preventDefault();
             e.stopImmediatePropagation();
         }
-    }, [open, handleClose, enableEscapeKey]);
+    }, [open, handleClose, enableEscapeKeyClose]);
 
     // Set up keyboard event listeners
     React.useEffect(() => {

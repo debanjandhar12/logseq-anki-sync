@@ -522,7 +522,7 @@ const OcclusionEditorComponent: React.FC<{
             setOpen={setOpen}
             onClose={() => UI.hideModal(modalContext?.modalId)}
             hasCloseButton={false}
-            enableEscapeKey={false}
+            enableEscapeKeyClose={false}
             size={"large"}>
             <div style={{margin: '0rem'}}>
                 <ModalHeader
