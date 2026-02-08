@@ -384,8 +384,13 @@ export namespace LogseqProxy {
     export class App {
         static async checkCurrentIsDbGraph() {
             try {
-                return await logseq.App.checkCurrentIsDbGraph()
-            } catch (e) {}
+                const value = await logseq.App.checkCurrentIsDbGraph();
+                if (typeof value === 'boolean') {
+                    return value;
+                }
+            } catch (e) {
+                // Silently fail and return false
+            }
             return false;
         }
 
