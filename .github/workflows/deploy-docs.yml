@@ -21,15 +21,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - uses: pnpm/action-setup@v2
         with:
           version: 8
       
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 18
+          node-version: 20
           cache: 'pnpm'
           cache-dependency-path: docusaurus/pnpm-lock.yaml
       
@@ -39,7 +39,7 @@ jobs:
       - name: Build
         run: cd docusaurus && pnpm run docusaurus:build
       
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: docusaurus/build
 
