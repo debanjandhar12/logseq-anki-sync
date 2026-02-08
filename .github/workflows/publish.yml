@@ -49,17 +49,12 @@ jobs:
               run: |
                   cat > release_notes.md << 'EOF'
                   ## What's Changed
-
-                  ${{ github.event_name == 'workflow_dispatch' && 'Please see the commit history for detailed changes.' || '' }}
+                
+                  Please see the commit history for detailed changes.
 
                   ## 🙏 Support
 
                   Loved the tool? Please consider [donating via GitHub Sponsors](https://github.com/sponsors/debanjandhar12) to help it improve!
-
-                  ### Contributors
-                  <a href="https://github.com/debanjandhar12/logseq-anki-sync/graphs/contributors">
-                    <img src="https://contrib.rocks/image?repo=debanjandhar12/logseq-anki-sync" />
-                  </a>
                   EOF
 
             - name: Create Release
