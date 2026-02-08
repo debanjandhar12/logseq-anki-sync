@@ -17,9 +17,9 @@ jobs:
             - name: Use Node.js
               uses: actions/setup-node@v6
               with:
-                node-version: 20
-                cache: 'pnpm'
-                cache-dependency-path: pnpm-lock.yaml
+                  node-version: 20
+                  cache: "pnpm"
+                  cache-dependency-path: pnpm-lock.yaml
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
@@ -40,36 +40,35 @@ jobs:
                   mv ${{ steps.package.outputs.package_name }}/${{ steps.package.outputs.package_name }}.zip ./
                   echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
 
+            - name: Generate Release Notes
+              id: release_notes
+              run: |
+                  cat > release_notes.md << 'EOF'
+                  ## What's Changed
+
+                  ${{ github.event_name == 'workflow_dispatch' && 'Please see the commit history for detailed changes.' || '' }}
+
+                  ## 🙏 Support
+
+                  Loved the tool? Please consider [donating via GitHub Sponsors](https://github.com/sponsors/debanjandhar12) to help it improve!
+
+                  ### Contributors
+                  <a href="https://github.com/debanjandhar12/logseq-anki-sync/graphs/contributors">
+                    <img src="https://contrib.rocks/image?repo=debanjandhar12/logseq-anki-sync" />
+                  </a>
+                  EOF
+
             - name: Create Release
-              uses: ncipollo/release-action@v1
-              id: create_release
+              uses: softprops/action-gh-release@v1
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  VERSION: v${{ steps.package.outputs.package_version }}
               with:
-                  allowUpdates: false
+                  tag_name: v${{ steps.package.outputs.package_version }}
+                  name: v${{ steps.package.outputs.package_version }}
                   draft: true
                   prerelease: false
-                  generateReleaseNotes: true
-                  tag: v${{ steps.package.outputs.package_version }}
-
-            - name: Upload zip file
-              id: upload_zip
-              uses: actions/upload-release-asset@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  upload_url: ${{ steps.create_release.outputs.upload_url }}
-                  asset_path: ./${{ steps.package.outputs.package_name }}.zip
-                  asset_name: ${{ steps.package.outputs.package_name }}-v${{ steps.package.outputs.package_version }}.zip
-                  asset_content_type: application/zip
-
-            - name: Upload test report
-              uses: actions/upload-release-asset@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  upload_url: ${{ steps.create_release.outputs.upload_url }}
-                  asset_path: ./test-report.json
-                  asset_name: test-report.json
-                  asset_content_type: application/json
+                  generate_release_notes: true
+                  body_path: release_notes.md
+                  files: |
+                      ./${{ steps.package.outputs.package_name }}.zip
+                      ./test-report.json
