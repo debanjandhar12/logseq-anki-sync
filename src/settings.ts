@@ -5,6 +5,7 @@ import {AddonRegistry} from "./addons/AddonRegistry";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {DONATE_ICON} from "./constants";
 import { updateLoggerLevels } from "./utils/logger";
+import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 
 // Type definitions for plugin settings
 export interface PluginSettings {
@@ -242,7 +243,7 @@ export const addSettingsToLogseq = async () => {
     `);
 
     // Hide inheritPropertiesFromTags setting for non-DB graphs using CSS
-    const isDbGraph = await LogseqProxy.App.checkCurrentIsDbGraph();
+    const isDbGraph = await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
     logseq.provideStyle({
         key: "hide-inherit-properties-from-tags",
         style: isDbGraph ? `` : `

@@ -95,7 +95,7 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
 
     return (
         <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} zDepth="high">
-            {message && <h1 className="mb-4 text-2xl p-1">{message}</h1>}
+            {message && <h1 className="mb-2 text-2xl p-1">{message}</h1>}
             {displayItems.map((item, index) => (
                 <LogseqButton
                     key={index}
@@ -125,9 +125,9 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
 export async function showSelectionModal(
     items: SelectionModalItem[],
     options: {
-        message?: string;
+        message: string;
         enableKeySelect?: boolean;
-    } = {}
+    } = {message: ''}
 ): Promise<number | null> {
     return createModalPromise<number | null>(
         (props) => (

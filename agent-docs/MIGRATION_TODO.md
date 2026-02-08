@@ -10,7 +10,8 @@
 - [ ] Add Awesome Logseq Anki Sync page -> add point regarding inherit prop from tags
 - [ ] Use graph config to display cloze in logseq -> not possible due to bug
 - [ ] Unify way for firstLine stuff (along with refs, image etc).. consider using title attr -> not possible
-- [ ] Fix Preview in Anki for pages
+- [x] Fix Preview in Anki for pages
+
 
 Good Links:
 - https://discuss.logseq.com/t/logseq-db-unofficial-faq/32508/11?u=danzu

@@ -3,11 +3,17 @@ import _ from "lodash";
 import getNameFromPage from "./getNameFromPage";
 import { LogseqPropertiesHelper } from "./LogseqPropertiesHelper";
 import { LogseqProxy } from "./LogseqProxy";
+import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 
 export class LogseqNamespaceHelper {
     protected static async getPage(pageId: number): Promise<PageEntity | null> {
         return await LogseqPropertiesHelper.getPage(pageId);
     }
+
+    protected static async checkCurrentIsDbGraph(): Promise<boolean> {
+        return await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
+    }
+
     /**
      * Gets the parent page of a given page.
      * Handles both DB version (page.parent) and File version (page.namespace.id).
@@ -61,12 +67,35 @@ export class LogseqNamespaceHelper {
      * Gets all descendant pages recursively.
      */
     static async getNamespaceDescendants(page: PageEntity): Promise<PageEntity[]> {
-        // TBU: Implement this for preview anki addon.. does not work currently
-        return await logseq.Editor.getPagesFromNamespace(getNameFromPage(page));
+        if (await this.checkCurrentIsDbGraph()) {
+            // logseq.Editor.getPagesFromNamespace does not work for db ver
+            // Hence, we use query to fetch namespace decendants
+            const query = `[:find ?child
+                :where
+                [?parent-page :block/name "${page.name.toLowerCase()}"]
+                (or [?parent :block/name "${page.name.toLowerCase()}"]
+                    [?parent :block/parent ?parent-page])
+                [?child :block/parent ?parent]
+                [?child :block/tags :logseq.class/Page]]`;
+
+            const recursive_hierarchy = await logseq.DB.datascriptQuery(query);
+            const result : PageEntity[]  = [];
+            for (const [page_id] of recursive_hierarchy) {
+                const block = await this.getPage(page_id);
+                if (!block) break;
+                result.push(block);
+            }
+            return result;
+        }
+        return await logseq.Editor.getPagesFromNamespace(getNameFromPage(page));    // Must pass name - page id throws error
     }
 }
 
 export class LogseqNamespaceHelperProxy extends LogseqNamespaceHelper {
+    protected static async checkCurrentIsDbGraph(): Promise<boolean> {
+        return Boolean(await LogseqProxy.App.checkCurrentIsDbGraph());
+    }
+
     protected static async getPage(pageId: number): Promise<PageEntity | null> {
         return await LogseqProxy.Editor.getPage(pageId);
     }

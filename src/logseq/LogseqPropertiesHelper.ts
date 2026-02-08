@@ -15,14 +15,10 @@ import getIDFromPage from "./getIDFromPage";
  * content behavior is similar to non db version.
  */
 export class LogseqPropertiesHelper {
-    /**
-     * Checks if the current graph is a DB graph.
-     * Returns false if the check fails (for backward compatibility with older Logseq versions).
-     * Override this in LogseqPropertiesHelperProxy to use cached version.
-     */
     protected static async checkCurrentIsDbGraph(): Promise<boolean> {
         return await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
     }
+
     public static stripPropertyPrefixes(properties: Record<string, any>): Record<string, any> {
         if (!properties) return properties;
         
