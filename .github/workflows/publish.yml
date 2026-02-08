@@ -14,6 +14,10 @@ jobs:
               uses: jarrettmeyer/github-action-package-values@v1
               id: package
 
+            - uses: pnpm/action-setup@v3
+              with:
+                  version: 9
+
             - name: Use Node.js
               uses: actions/setup-node@v6
               with:
