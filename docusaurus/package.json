@@ -2,6 +2,11 @@
   "name": "logseq-anki-sync-docs",
   "version": "0.0.0",
   "private": true,
+  "pnpm": {
+      "overrides": {
+          "cheerio": "1.0.0-rc.12"
+      }
+  },
   "scripts": {
     "docusaurus:dev": "docusaurus start",
     "docusaurus:build": "docusaurus build",
@@ -11,6 +16,7 @@
   "dependencies": {
     "@docusaurus/core": "2.4.3",
     "@docusaurus/module-type-aliases": "2.4.3",
+    "docusaurus-plugin-search-local": "^1.0.1",
     "@docusaurus/preset-classic": "2.4.3",
     "@giscus/react": "^2.4.0",
     "@mdx-js/react": "^1.6.22",

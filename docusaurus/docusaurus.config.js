@@ -14,90 +14,103 @@ const config = {
   trailingSlash: false,
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
-  i18n: {
+    i18n: {
     defaultLocale: 'en',
     locales: ['en'],
-  },
-  presets: [
-    [
+    },
+    presets: [
+        [
       'classic',
-      {
-        docs: {
+            {
+                docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/debanjandhar12/logseq-anki-sync/tree/main/docs/',
-          breadcrumbs: true,
-        },
-        blog: false,
-        theme: {
+                    breadcrumbs: true,
+                },
+                blog: false,
+                theme: {
           customCss: require.resolve('./src/css/custom.css'),
-        },
-      },
+                },
+            },
+        ],
     ],
-  ],
-  themes: [],
-  themeConfig: {
-    colorMode: {
+    themes: [
+        [
+            require.resolve("docusaurus-plugin-search-local"),
+            {
+                indexDocs: true,
+                indexPages: false,
+                highlightSearchTermsOnTargetPage: true,
+            },
+        ],
+    ],
+    themeConfig: {
+        colorMode: {
       defaultMode: 'dark',
-      disableSwitch: false,
-    },
-    navbar: {
-      logo: {
+            disableSwitch: false,
+        },
+        navbar: {
+            logo: {
         alt: 'Anki logo',
         src: 'img/anki-logo.svg',
-      },
-      items: [
-        {
-          type: 'doc',
-          docId: 'intro',
-          position: 'left',
-          label: 'Documentation',
-        },
-        {
+            },
+            items: [
+                {
+                    type: 'doc',
+                    docId: 'intro',
+                    position: 'left',
+                    label: 'Documentation',
+                },
+                {
+                    type: 'search',
+                    position: 'right',
+                },
+                {
           href: 'https://github.com/debanjandhar12/logseq-anki-sync',
           position: 'right',
           label: 'GitHub Project',
-        },
-        {
+                },
+                {
           href: 'https://github.com/sponsors/debanjandhar12',
           position: 'right',
           label: 'GitHub Sponsors',
           className: 'navbar-sponsor-button',
+                },
+            ],
         },
-      ],
-    },
-    prism: {
-      theme: lightCodeTheme,
-      darkTheme: darkCodeTheme,
+        prism: {
+            theme: lightCodeTheme,
+            darkTheme: darkCodeTheme,
       additionalLanguages: ['bash', 'json'],
-    },
-    footer: {
+        },
+        footer: {
       style: 'dark',
-      links: [
-        {
+            links: [
+                {
           title: 'Community',
-          items: [
-            {
+                    items: [
+                        {
               label: 'GitHub Issues',
               href: 'https://github.com/debanjandhar12/logseq-anki-sync/issues',
-            },
-            {
+                        },
+                        {
               label: 'GitHub Discussions',
               href: 'https://github.com/debanjandhar12/logseq-anki-sync/discussions',
-            },
-          ],
-        },
-        {
+                        },
+                    ],
+                },
+                {
           title: 'Support',
-          items: [
-            {
+                    items: [
+                        {
               label: 'GitHub Sponsors',
               href: 'https://github.com/sponsors/debanjandhar12',
-            },
-          ],
+                        },
+                    ],
+                },
+            ],
         },
-      ],
     },
-  },
 };
 
 module.exports = config;
