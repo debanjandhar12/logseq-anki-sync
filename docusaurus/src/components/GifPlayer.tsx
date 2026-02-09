@@ -18,6 +18,7 @@ const GifPlayer: React.FC<GifPlayerProps> = ({ gif, still, alt, caption }) => {
   const [gifDims, setGifDims] = useState({ width: 0, height: 0 });
   const [canvasSupported, setCanvasSupported] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const gifUrl = useBaseUrl(gif);
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -44,6 +45,7 @@ const GifPlayer: React.FC<GifPlayerProps> = ({ gif, still, alt, caption }) => {
         if (frames.length > 0) {
           setGifDims({ width: gif.lsd.width, height: gif.lsd.height });
         }
+        setIsLoading(false);
       });
   }, [gifUrl]);
 
@@ -141,6 +143,34 @@ const GifPlayer: React.FC<GifPlayerProps> = ({ gif, still, alt, caption }) => {
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
+          {isLoading && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '8px',
+                minHeight: '200px'
+              }}
+            >
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '3px solid rgba(255, 255, 255, 0.3)',
+                  borderTopColor: 'white',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }}
+              />
+            </div>
+          )}
           <canvas
             ref={canvasRef}
             onClick={() => setIsPlaying(!isPlaying)}

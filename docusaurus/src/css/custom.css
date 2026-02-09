@@ -190,3 +190,10 @@ table img {
 .navbar-sponsor-button:hover {
   color: #ffd700 !important;
 }
+
+/* GifPlayer spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
