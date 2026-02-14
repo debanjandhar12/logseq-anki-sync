@@ -246,7 +246,7 @@ export class LogseqPropertiesHelper {
         const page = await logseq.Editor.getPage(srcPage);
         srcPage = page.uuid; // Convert to page uuid for getPageBlocksTree
         
-        const blocks = await logseq.Editor.getPageBlocksTree({uuid: srcPage as string});
+        const blocks = await logseq.Editor.getPageBlocksTree(srcPage);
         if (!blocks) return [];
 
         const isDbGraph = await this.checkCurrentIsDbGraph();
