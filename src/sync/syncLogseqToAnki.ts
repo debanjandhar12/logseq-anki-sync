@@ -44,11 +44,14 @@ export class LogseqToAnkiSync {
         //     return;
         // }
         if (!LogseqAppInfoFetcher.checkHostAccess()) {
-            await logseq.UI.showMsg(
-                "Syncing is not supported in Logseq Web since plugin cannot read image files at the moment.",
-                "error",
-            );
-            return;
+            const settings = LogseqProxy.Settings.getPluginSettings();
+            if (!settings.enableExperimentalWebSync) {
+                await logseq.UI.showMsg(
+                    "Syncing is not supported in Logseq Web since plugin cannot read image files at the moment.",
+                    "error",
+                );
+                return;
+            }
         }
         if (LogseqToAnkiSync.isSyncing) {
             logger.info("Syncing already in process");

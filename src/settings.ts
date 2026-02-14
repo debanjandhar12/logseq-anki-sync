@@ -10,6 +10,7 @@ import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 // Type definitions for plugin settings
 export interface PluginSettings {
     disabled: boolean;
+    enableExperimentalWebSync?: boolean;
     breadcrumbDisplayOptions?: ("Page name" | "Page namespace" | "Parent blocks")[];
     includeParentContent?: boolean;
     renderClozeMarcosInLogseq?: boolean;
@@ -129,9 +130,16 @@ export const addSettingsToLogseq = async () => {
         {
             key: "inheritPropertiesFromTags",
             type: "boolean",
-            default: true,
-            title: "Inherit properties from tags? (Recommended: Enabled)",
+            default: false,
+            title: "Inherit properties from tags? (Recommended: Disabled)",
             description: "When enabled, properties from tags will be inherited.",
+        },
+        {
+            key: "enableExperimentalWebSync",
+            type: "boolean",
+            default: false,
+            title: "Enable experimental web sync? (Experimental)",
+            description: "When enabled, allows syncing in Logseq Web version. Note that image files cannot be synced in web version.",
         },
         {
             key: "ankiFieldOptions",
@@ -242,12 +250,23 @@ export const addSettingsToLogseq = async () => {
         }
     `);
 
-    // Hide inheritPropertiesFromTags setting for non-DB graphs using CSS
+    // Hide inheritPropertiesFromTags setting for non-DB graphs
     const isDbGraph = await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
     logseq.provideStyle({
         key: "hide-inherit-properties-from-tags",
         style: isDbGraph ? `` : `
             [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="inheritPropertiesFromTags"] {
+                display: none;
+            }
+        `,
+    });
+
+    // Show enableExperimentalWebSync setting only in web version
+    const isWebVersion = !LogseqAppInfoFetcher.checkHostAccess();
+    logseq.provideStyle({
+        key: "show-experimental-web-sync",
+        style: isWebVersion ? `` : `
+            [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="enableExperimentalWebSync"] {
                 display: none;
             }
         `,
