@@ -1,13 +1,13 @@
-import { Note } from "../../anki-notes/Note";
-import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
-import { ProgressNotification } from "../../ui";
-import { ParsedNoteData } from "../types";
-import { NoteHashCalculator } from "../cache";
-import { parseNote } from "../parsers/NoteParser";
-import { LogseqProxy } from "../../logseq/LogseqProxy";
+import {Note} from "../../anki-notes/Note";
+import {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
+import {ProgressNotification} from "../../ui";
+import {ParsedNoteData} from "../types";
+import {NoteHashCalculator} from "../cache";
+import {parseNote} from "../parsers/NoteParser";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 import path from "path-browserify";
 
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import {createLogger, LoggerCategory} from "../../utils/logger";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 
@@ -18,9 +18,9 @@ export class UpdateNotesTask {
         graphName: string,
         graphPath: string,
         ankiNoteManager: LazyAnkiNoteManager,
-        progressNotification: ProgressNotification
-    ): Promise<{ succeeded: Note[], failed: { [key: string]: Error } }> {
-        const failedUpdated: { [key: string]: Error } = {};
+        progressNotification: ProgressNotification,
+    ): Promise<{succeeded: Note[]; failed: {[key: string]: Error}}> {
+        const failedUpdated: {[key: string]: Error} = {};
 
         for (const note of notes) {
             try {
@@ -38,8 +38,8 @@ export class UpdateNotesTask {
             failedUpdated[failure.identifier] = failure.error;
         }
 
-        const succeeded = notes.filter(n => !failedUpdated[`${n.uuid}-${n.type}`]);
-        return { succeeded, failed: failedUpdated };
+        const succeeded = notes.filter((n) => !failedUpdated[`${n.uuid}-${n.type}`]);
+        return {succeeded, failed: failedUpdated};
     }
 
     private async updateNote(
@@ -47,11 +47,11 @@ export class UpdateNotesTask {
         modelName: string,
         graphName: string,
         graphPath: string,
-        ankiNoteManager: LazyAnkiNoteManager
+        ankiNoteManager: LazyAnkiNoteManager,
     ): Promise<void> {
         const ankiId = note.getAnkiId();
         const ankiNodeInfo = ankiNoteManager.noteInfoMap.get(ankiId);
-        
+
         const oldConfig = this.parseConfig(ankiNodeInfo.fields.Config.value);
         const [oldHtml, oldAssets, oldDeck, oldBreadcrumb, oldTags] = [
             ankiNodeInfo.fields.Text.value,
@@ -69,14 +69,14 @@ export class UpdateNotesTask {
             oldTags,
         ]);
 
-        const { skipOnDependencyHashMatch } = LogseqProxy.Settings.getPluginSettings();
-        
+        const {skipOnDependencyHashMatch} = LogseqProxy.Settings.getPluginSettings();
+
         if (skipOnDependencyHashMatch && oldConfig.dependencyHash === dependencyHash) {
             oldConfig.assets?.forEach((asset) => {
                 if (ankiNoteManager.mediaInfo.has(path.basename(asset))) return;
                 ankiNoteManager.storeAsset(
                     path.basename(asset),
-                    path.join(graphPath, path.resolve(asset))
+                    path.join(graphPath, path.normalize(asset)),
                 );
             });
             return;
@@ -94,7 +94,7 @@ export class UpdateNotesTask {
         assets.forEach((asset) => {
             ankiNoteManager.storeAsset(
                 path.basename(asset),
-                path.join(graphPath, path.resolve(asset))
+                path.join(graphPath, path.normalize(asset)),
             );
         });
 
@@ -115,7 +115,7 @@ export class UpdateNotesTask {
                     assets: [...assets],
                 }),
             },
-            tags
+            tags,
         );
     }
 
