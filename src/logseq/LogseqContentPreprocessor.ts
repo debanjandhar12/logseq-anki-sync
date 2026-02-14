@@ -387,6 +387,28 @@ export class LogseqContentPreprocessor {
             }
         }
 
+        // Code blocks backward compatibility
+        const hasCodeTag =
+            _.isArray(tags) && tags.map((t) => t.trim().toLowerCase()).includes("code");
+        const language = _.get(properties, "lang");
+        if (hasCodeTag) {
+            resultContent = "\`\`\`" + (language ? language : '') + "\n" + resultContent + "\n\`\`\`";
+        }
+
+        // Math block backward compatibility
+        const hasMathTag =
+            _.isArray(tags) && tags.map((t) => t.trim().toLowerCase()).includes("math");
+        if (hasMathTag) {
+            resultContent = "$$" + resultContent + "$$";
+        }
+
+        // Quote block backward compatibility
+        const hasQuoteTag =
+            _.isArray(tags) && tags.map((t) => t.trim().toLowerCase()).includes("quote");
+        if (hasQuoteTag) {
+            resultContent = resultContent.replace(/^/gm, "> ");
+        }
+
         return resultContent;
     }
 
