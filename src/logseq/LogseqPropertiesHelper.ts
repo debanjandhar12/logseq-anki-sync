@@ -109,19 +109,19 @@ export class LogseqPropertiesHelper {
      * Also updates the entity's updatedAt to the max of current and tag updatedAt values.
      * Only applies to DB graphs.
      */
-    private static async inheritTagProperties(entity: BlockEntity | PageEntity, tags: string[], isDbGraph: boolean): Promise<void> {
+    private static async inheritTagProperties(entity: BlockEntity | PageEntity, tagIds: number[], isDbGraph: boolean): Promise<void> {
         const settings = await LogseqProxy.Settings.getPluginSettings();
         if (!settings.inheritPropertiesFromTags) return;
-        if (!isDbGraph || !tags || tags.length === 0) return;
+        if (!isDbGraph || !tagIds || tagIds.length === 0) return;
         
         let maxUpdatedAt = entity.updatedAt || 0;
         
-        for (const tagName of tags) {
+        for (const tagId of tagIds) {
             try {
-                const tagPage = await logseq.Editor.getPage(tagName);
+                const tagPage = await logseq.Editor.getPage(tagId);
                 if (!tagPage) continue;
                 
-                const tagProperties = await logseq.Editor.getPageProperties(tagName);
+                const tagProperties = await logseq.Editor.getPageProperties(tagId);
                 if (tagProperties) {
                     const strippedTagProperties = this.handleTagProperty(entity, this.addStripedPropertyPrefixes(tagProperties));
                     // Merge without overwriting existing properties
@@ -159,7 +159,7 @@ export class LogseqPropertiesHelper {
         }
         
         if (b.properties?.tags && Array.isArray(b.properties.tags)) {
-            await this.inheritTagProperties(b, b.properties.tags, isDbGraph);
+            await this.inheritTagProperties(b, b.properties.tagIds, isDbGraph);
         }
         
         if (isDbGraph) {
@@ -201,7 +201,7 @@ export class LogseqPropertiesHelper {
         }
         
         if (page.properties?.tags && Array.isArray(page.properties.tags)) {
-            await this.inheritTagProperties(page, page.properties.tags, isDbGraph);
+            await this.inheritTagProperties(page, page.properties.tagIds, isDbGraph);
         }
     }
 
