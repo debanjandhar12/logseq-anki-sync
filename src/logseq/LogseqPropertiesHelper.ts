@@ -19,18 +19,66 @@ export class LogseqPropertiesHelper {
         return await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
     }
 
-    public static stripPropertyPrefixes(properties: Record<string, any>): Record<string, any> {
+    /**
+     * Handles the tags property by merging user-defined tag properties with block / page tags.
+     */
+    public static handleTagProperty(entity: BlockEntity | PageEntity, properties: Record<string, any>): Record<string, any> {
+        if (!properties) return properties;
+        
+        const blockTags = properties[":block/tags"] || [];
+        const propertyTags = properties.tags || [];
+        
+        let mergedTags: string[] = [];
+        
+        // Process user-defined tags (comma-separated string or array)
+        if (propertyTags) {
+            if (typeof propertyTags === "string") {
+                mergedTags = propertyTags.split(",").map((t: string) => t.trim()).filter((t: string) => t);
+            } else if (Array.isArray(propertyTags)) {
+                mergedTags = [...propertyTags];
+            }
+        }
+        
+        // Add block tags
+        if (Array.isArray(blockTags) && blockTags.length > 0) {
+            mergedTags = [...mergedTags, ...blockTags];
+        }
+        
+        // Return properties with merged tags (remove :block/tags key)
+        const result = { ...properties };
+        delete result[":block/tags"];
+        result.tags = mergedTags;
+
+        // Populate tag ids - tag ids currently contain only block tags
+        // Due to complexity, property tags are not added currently to tagIds
+        result.tagIds = [];
+        if (Array.isArray(entity.tags) && entity.tags.length > 0) {
+            result.tagIds = entity.tags.map(t => typeof t === "object" && t.id ? t.id : t);
+        }
+
+        // validate output
+        if (!Array.isArray(result.tags) || !result.tags.every(t => typeof t === "string")) {
+            throw new Error("LogseqPropertiesHelper failed to parse tag names....");
+        }
+        if (!Array.isArray(result.tagIds) || !result.tagIds.every(t => typeof t === "number")) {
+            throw new Error("LogseqPropertiesHelper failed to parse tag ids....");
+        }
+
+        return result;
+    }
+
+    /**
+     * Removes properties prefixes such as :plugin.property.rw1zys138 from properties obj and add them to result property
+     * Logseq DB adds such prefixes to properties. To maintain compatibility with file version of code, this needs to be done.
+     * Note: This is inclusive, meaning old properties remain along with strippedProperties
+     */
+    public static addStripedPropertyPrefixes(properties: Record<string, any>): Record<string, any> {
         if (!properties) return properties;
         
         const strippedProperties: Record<string, any> = {};
-        let blockTags: string[] | null = null;
         
         for (const [key, value] of Object.entries(properties)) {
-            // Special handling for :block/tags - save for merging with user tags
-            if (key === ":block/tags") {
-                blockTags = Array.isArray(value) ? value : [];
-                continue;
-            }
+            if (key === ":block/tags") continue;    // skip block tags
 
             let cleanKey = key;
             if (key.startsWith(":")) {
@@ -48,32 +96,11 @@ export class LogseqPropertiesHelper {
                     cleanKey = key.substring(1); // Remove leading colon
                 }
             }
-            
+
             strippedProperties[cleanKey] = value;
         }
         
-        // Merge tags from properties as well as content tags
-        if (strippedProperties.tags || blockTags) {
-            let mergedTags: string[] = [];
-            
-            // Split user-defined tags (comma-separated string)
-            if (strippedProperties.tags) {
-                if (typeof strippedProperties.tags === "string") {
-                    mergedTags = strippedProperties.tags.split(",").map((t: string) => t.trim()).filter((t: string) => t);
-                } else if (Array.isArray(strippedProperties.tags)) {
-                    mergedTags = [...strippedProperties.tags];
-                }
-            }
-            
-            // Add block tags
-            if (blockTags && blockTags.length > 0) {
-                mergedTags = [...mergedTags, ...blockTags];
-            }
-            
-            strippedProperties.tags = mergedTags;
-        }
-        
-        return strippedProperties;
+        return {...properties, ...strippedProperties};
     }
 
     /**
@@ -81,10 +108,6 @@ export class LogseqPropertiesHelper {
      * Tag properties have lower priority - existing properties are not overwritten.
      * Also updates the entity's updatedAt to the max of current and tag updatedAt values.
      * Only applies to DB graphs.
-     * 
-     * @param entity - The block or page entity to merge tag properties into
-     * @param tags - Array of tag names to fetch properties from
-     * @param isDbGraph - Whether the current graph is a DB graph
      */
     private static async inheritTagProperties(entity: BlockEntity | PageEntity, tags: string[], isDbGraph: boolean): Promise<void> {
         const settings = await LogseqProxy.Settings.getPluginSettings();
@@ -100,7 +123,7 @@ export class LogseqPropertiesHelper {
                 
                 const tagProperties = await logseq.Editor.getPageProperties(tagName);
                 if (tagProperties) {
-                    const strippedTagProperties = this.stripPropertyPrefixes(tagProperties);
+                    const strippedTagProperties = this.handleTagProperty(entity, this.addStripedPropertyPrefixes(tagProperties));
                     // Merge without overwriting existing properties
                     for (const [key, value] of Object.entries(strippedTagProperties)) {
                         if (!(key in entity.properties)) {
@@ -128,7 +151,7 @@ export class LogseqPropertiesHelper {
         
         const properties = await logseq.Editor.getBlockProperties(b.uuid);
         if (properties) {
-            b.properties = { ...this.stripPropertyPrefixes(properties), ...b.properties };
+            b.properties = { ...this.handleTagProperty(b, this.addStripedPropertyPrefixes(properties)), ...b.properties };
             if (b.properties["tags"] && typeof b.properties["tags"] === "string") {
                 b.properties["tags"] = b.properties["tags"].split(",").map((t: string) => t.trim()).filter((t: string) => t);
             }
@@ -172,7 +195,7 @@ export class LogseqPropertiesHelper {
         if (isDbGraph) {
             const properties = await logseq.Editor.getPageProperties(page.id);
             if (properties) {
-                const strippedProperties = this.stripPropertyPrefixes(properties);
+                const strippedProperties = this.handleTagProperty(page, this.addStripedPropertyPrefixes(properties));
                 page.properties = { ...strippedProperties, ...page.properties };
             }
         }
@@ -184,10 +207,6 @@ export class LogseqPropertiesHelper {
 
     /**
      * Fetches a block with properties attached (non-cached, fresh data)
-     *
-     * @param srcBlock - Block UUID or entity ID
-     * @param opts - Options for fetching (includeChildren)
-     * @returns Block with properties attached, or null if not found
      */
     static async getBlock(
         srcBlock: BlockIdentity | EntityID,
@@ -204,9 +223,6 @@ export class LogseqPropertiesHelper {
 
     /**
      * Fetches a page with properties attached (non-cached, fresh data)
-     * 
-     * @param srcPage - Page name or entity ID
-     * @returns Page with properties attached, or null if not found
      */
     static async getPage(
         srcPage: PageIdentity | EntityID
@@ -223,9 +239,6 @@ export class LogseqPropertiesHelper {
 
     /**
      * Fetches page blocks tree with properties attached (non-cached, fresh data)
-     * 
-     * @param srcPage - Page name or entity ID
-     * @returns Array of blocks with properties attached
      */
     static async getPageBlocksTree(
         srcPage: PageIdentity | EntityID
