@@ -6,7 +6,7 @@ import * as path from "path";
 import * as fs from "fs";
 const {parseSync, traverse} = require("@babel/core");
 const generate = require("@babel/generator").default;
-import {build} from "esbuild";
+import {context} from "esbuild";
 // https://vitejs.dev/config/
 
 function staticFileSyncTransformPlugin() {
@@ -81,7 +81,7 @@ function bundleJSStringPlugin(mode: string) {
             if (id.endsWith(".js?string")) {
                 const isProd = mode === "production";
                 const testLogLevel = process.env.VITE_TEST_LOG_LEVEL;
-                const result = await build({
+                const ctx = await context({
                     stdin: {
                         contents: code,
                         resolveDir: path.dirname(id),
@@ -105,6 +105,8 @@ function bundleJSStringPlugin(mode: string) {
                             : "undefined",
                     },
                 });
+                const result = await ctx.rebuild();
+                await ctx.dispose();
                 return {
                     code: `export default ${JSON.stringify(result.outputFiles[0].text)};`,
                     map: null,
@@ -138,7 +140,7 @@ export default defineConfig(({command, mode}) => {
         },
         build: {
             sourcemap: true,
-            target: "modules",
+            target: "esnext",
             minify: "esbuild",
             emptyOutDir: true,
         },
@@ -151,18 +153,10 @@ export default defineConfig(({command, mode}) => {
             include: ["**/*.test.ts"],
             exclude: ["**/logseq-dev-plugin/**", "**/node_modules/**"],
             setupFiles: ["./tests/setup.ts"],
-            // todo: why alias?
-            alias: {
-                "@logseq/libs": "sass",
-            },
             environment: "jsdom",
             env: {...env, NODE_ENV: mode},
             pool: "forks",
-            poolOptions: {
-                forks: {
-                    singleFork: true,
-                },
-            },
+            singleFork: true,
             fileParallelism: false,
         },
     };

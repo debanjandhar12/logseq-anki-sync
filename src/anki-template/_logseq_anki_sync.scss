@@ -2,9 +2,11 @@
 * This files contains the css for the both sides of anki cards.
 */
 
+@use "/node_modules/highlight.js/scss/atom-one-light.scss";
+@use "/node_modules/highlight.js/scss/atom-one-dark-reasonable.scss";
+
 body {
     background-color: white;
-    @import "/node_modules/highlight.js/scss/atom-one-light.scss";
 }
 
 .text {
@@ -13,9 +15,10 @@ body {
     color: black;
 }
 
-.anki-cloze-from-another-note, .cloze-inactive {
+.anki-cloze-from-another-note,
+.cloze-inactive {
     background-color: rgb(59 130 246 / 0.1);
- }
+}
 
 .hidden {
     display: none;
@@ -30,17 +33,17 @@ code {
 
 .typeGood {
     background: #afa;
-    color: #000
+    color: #000;
 }
 
 .typeBad {
     color: #000;
-    background: #faa
+    background: #faa;
 }
 
 .typeMissed {
     color: #000;
-    background: #ccc
+    background: #ccc;
 }
 
 p {
@@ -423,7 +426,6 @@ li:not(.children) {
 body.nightMode {
     background-color: #2c2c2c;
     color: #fcfcfc;
-    @import "/node_modules/highlight.js/scss/atom-one-dark-reasonable.scss";
 }
 
 body.nightMode .text {
