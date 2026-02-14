@@ -88,38 +88,37 @@ async function main(baseInfo: LSPluginBaseInfo) {
 
     // Show welcome message
     const {lastWelcomeVersion} = LogseqProxy.Settings.getPluginSettings();
+    console.log('lastWelcomeVersion', lastWelcomeVersion, pkg.version);
     if (lastWelcomeVersion && lastWelcomeVersion !== pkg.version) {
-        await (async () => {
-            await new Promise((resolve) => setTimeout(resolve, 1000)); // wait logseq's react to load
-            await showButtonModal(
-                `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span>
-                <div style="overflow-y: auto; margin-top: 10px; border: 1px solid var(--ls-border-color); border-radius: 4px;">
-                    <iframe src="https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}" style="width: 100%; height: 100%; min-height: 400px; border: none;"></iframe>
-                </div>`,
-                [
-                    {
-                        name: "Donate",
-                        f: () => {
-                            window.open(`https://github.com/sponsors/debanjandhar12`);
-                        },
-                        closeOnClick: false,
-                        icon: HEART_ICON,
+        logseq.updateSettings({lastWelcomeVersion: pkg.version});
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // wait logseq's react to load
+        await showButtonModal(
+            `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span>
+            <div style="overflow-y: auto; margin-top: 10px; border: 1px solid var(--ls-border-color); border-radius: 4px;">
+                <iframe src="https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}" style="width: 100%; height: 100%; min-height: 400px; border: none;"></iframe>
+            </div>`,
+            [
+                {
+                    name: "Donate",
+                    f: () => {
+                        window.open(`https://github.com/sponsors/debanjandhar12`);
                     },
-                    {
-                        name: "Open in GitHub",
-                        f: () => {
-                            window.open(
-                                `https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}`,
-                            );
-                        },
-                        closeOnClick: false,
-                        icon: GITHUB_ICON,
+                    closeOnClick: false,
+                    icon: HEART_ICON,
+                },
+                {
+                    name: "Open in GitHub",
+                    f: () => {
+                        window.open(
+                            `https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}`,
+                        );
                     },
-                ],
-            );
-        })();
+                    closeOnClick: false,
+                    icon: GITHUB_ICON,
+                },
+            ],
+        );
     }
-    logseq.updateSettings({lastWelcomeVersion: pkg.version});
 }
 
 // Bootstrap
