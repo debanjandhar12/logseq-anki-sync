@@ -265,18 +265,14 @@ exports[`E2E cases for non DB mode > Block Embed Rendering > block ref inside bl
 <ul class="children-list">
 <li class="children ">
       <span>A block with ref <span onclick="window.open('logseq://graph/LAS-TEST-GRAPH?block-id=LAS-TEST-UUID-1')" class="block-ref">
-      <span>A block with no ref.
-        <br>
-</span>
+      <span>A block with no ref.</span>
     </span></span>
     </li></ul></div></span>"
 `;
 
 exports[`E2E cases for non DB mode > Block Reference Rendering > Basic block ref rendering 1`] = `
 "<span>Block Ref: <span onclick="window.open('logseq://graph/LAS-TEST-GRAPH?block-id=LAS-TEST-UUID')" class="block-ref">
-      <span>A *<b>block</b>* with no ref.
-        <br>
-</span>
+      <span>A *<b>block</b>* with no ref.</span>
     </span></span>"
 `;
 

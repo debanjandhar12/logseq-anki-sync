@@ -42,6 +42,30 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
             expect(result).toBe(false);
         });
 
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Block with suspend-anki-card: 'true'", async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
+                properties: { "suspend-anki-card": "true" }
+            });
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page.id);
+            const result = await SuspendUnsuspendPropertyParser.parse(note);
+
+            expect(result).toBe(true);
+        });
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Block with suspend-anki-card: 'false'", async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
+                properties: { "suspend-anki-card": "false" }
+            });
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page.id);
+            const result = await SuspendUnsuspendPropertyParser.parse(note);
+
+            expect(result).toBe(false);
+        });
+
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Block with suspend-anki-card: 'yes' (string)", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
                 properties: { "suspend-anki-card": "yes" }
@@ -57,30 +81,6 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Block with suspend-anki-card: 'no' (string)", async () => {
             const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
                 properties: { "suspend-anki-card": "no" }
-            });
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page.id);
-            const result = await SuspendUnsuspendPropertyParser.parse(note);
-            
-            expect(result).toBe(false);
-        });
-
-        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Block with suspend-anki-card: '1' (string)", async () => {
-            const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
-                properties: { "suspend-anki-card": "1" }
-            });
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page.id);
-            const result = await SuspendUnsuspendPropertyParser.parse(note);
-            
-            expect(result).toBe(true);
-        });
-
-        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Block with suspend-anki-card: '0' (string)", async () => {
-            const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
-                properties: { "suspend-anki-card": "0" }
             });
             await new Promise(resolve => setTimeout(resolve, 100));
             
