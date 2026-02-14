@@ -39,6 +39,8 @@ export default class NoteHashCalculator {
                     const filename = path.basename(file.path);
                     assetModifiedTimeMap.set(filename, file.modifiedTime);
                 }
+            } else {
+                throw new Error("Failed to load file list... likely called from web ver");
             }
         } catch (e) {
             logger.error("Error getting asset modified times", e);
