@@ -28,7 +28,7 @@
 </details></li>
 </ul>
 
-## 🛠️ Installation ([Video](https://www.youtube.com/watch?v=XOkJmncK-o0))
+## 🛠️ Installation ([Video](https://www.youtube.com/watch?v=XOkJmncK-o0)) and Documentation
 
 1. Install Logseq Anki Sync from Marketplace.
     - Go to `⋯` > `Settings` > `Features` and enable `Plugins`.
@@ -43,25 +43,9 @@
    NB: Make sure the anki is running in background before clicking the Sync to Anki button.
 6. If you receive a [logseq wants to access anki message](https://raw.githubusercontent.com/debanjandhar12/Obsidian-Anki-Sync/main/docs/images/permission.png), click `Yes`.
 
-# 🗃️ Documentation
+For usage, please see documentation: https://debanjandhar12.github.io/logseq-anki-sync/docs/intro/
 
-<b>User Documentation</b>
-
--   [Making multiline cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/88)
--   [Making cloze cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/89)
--   [Making Swift Arrow cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/91)
--   [Making Image Occlusion cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/125)
--   [Specifying Extra Details and Hints](https://github.com/debanjandhar12/logseq-anki-sync/discussions/92)
--   [Terminology & Specifying Deck](https://github.com/debanjandhar12/logseq-anki-sync/discussions/117)
--   [[Advanced] Adding custom css for anki cards](https://github.com/debanjandhar12/logseq-anki-sync/discussions/118)
--   [Common FAQ](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Common-FAQ)
--   Developer Documentation: [Compiling Instructions](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Compiling-Instructions), [Structure of this Plugin](https://github.com/debanjandhar12/logseq-anki-sync/wiki/Structure-of-this-Plugin)
-    > Please create a [github issue](https://github.com/debanjandhar12/logseq-anki-sync/issues) for any feature request and reporting bugs.
-
-# 🎉 Vote for features
-Vote Features for next version: <a href="https://forms.gle/DCQ6vLwBHpzjSegQ9">https://forms.gle/DCQ6vLwBHpzjSegQ9</a>
-
-If your feature is not listed in the form, you can also create a github issue.
+> Please create a [github issue](https://github.com/debanjandhar12/logseq-anki-sync/issues) for any feature request and reporting bugs.
 
 # 🙏 Support
 
@@ -72,5 +56,6 @@ Loved the tool? Please consider donating 💸 to help continue development!<br/>
 </p>
 
 #### Sponsors:
+![sponsors badge](https://readme-contribs.as93.net/sponsors/debanjandhar12?shape=circle)
 
-[@Tubo](https://github.com/Tubo) [@ryanbl](https://github.com/rtblair) [@kieranlal](https://github.com/kieranlal) [@Satoriq](https://github.com/Satoriq) [@Dunrar](https://github.com/Dunrar) [@chs33](https://github.com/chs33) [@Koreanki](https://github.com/junyounglees) [@Rumpoled](https://github.com/Rumpoled) [@Resia1](https://github.com/Resia1) [@thiswillbeyourgithub](https://github.com/thiswillbeyourgithub) [@Speedy5onzales](https://github.com/Speedy5onzales)
+[@Tubo](https://github.com/Tubo) [@kieranlal](https://github.com/kieranlal) [@Satoriq](https://github.com/Satoriq) [@ryanbl](https://github.com/rtblair) [@LK0624]() [@Dunrar](https://github.com/Dunrar) [@chs33](https://github.com/chs33) [@Koreanki](https://github.com/junyounglees) [@Rumpoled](https://github.com/Rumpoled) [@Resia1](https://github.com/Resia1) [@thiswillbeyourgithub](https://github.com/thiswillbeyourgithub) [@Speedy5onzales](https://github.com/Speedy5onzales) [@ junyounglees]()
