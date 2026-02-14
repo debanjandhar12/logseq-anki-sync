@@ -1,5 +1,5 @@
 import React from "../../React";
-import { LogseqButton } from "../../components/LogseqButton";
+import {LogseqButton} from "../../components/LogseqButton";
 
 export interface ModalFooterProps {
     onConfirm?: () => void;
@@ -30,18 +30,13 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
         <div className={`mt-5 sm:mt-4 sm:flex sm:flex-row-reverse ${className}`}>
             {children}
             {showConfirm && onConfirm && (
-                <LogseqButton
-                    isFullWidth={true}
-                    onClick={onConfirm}
-                    color={confirmColor}
-                >
+                <LogseqButton isFullWidth={true} onClick={onConfirm} color={confirmColor}>
                     <span
                         style={{
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                        }}
-                    >
+                        }}>
                         <span>{confirmText}</span>
                         {confirmShortcut && (
                             <span className="px-1 opacity-80">
@@ -66,13 +61,7 @@ export const DialogModalFooter: React.FC<{
     confirmText?: string;
     cancelText?: string;
     children?: React.ReactNode;
-}> = ({
-    onConfirm,
-    onCancel,
-    confirmText = "Confirm",
-    cancelText = "Cancel",
-    children,
-}) => {
+}> = ({onConfirm, onCancel, confirmText = "Confirm", cancelText = "Cancel", children}) => {
     return (
         <div
             className="mt-1 sm:flex sm:flex-row-reverse"
@@ -80,27 +69,19 @@ export const DialogModalFooter: React.FC<{
                 borderTop: "1px solid var(--ls-border-color)",
                 padding: "2px",
                 alignItems: "center",
-            }}
-        >
+            }}>
             {onConfirm && (
-                <LogseqButton
-                    isFullWidth={true}
-                    depth={1}
-                    onClick={onConfirm}
-                    color="primary"
-                >
+                <LogseqButton isFullWidth={true} depth={1} onClick={onConfirm} color="primary">
                     <span
                         style={{
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                        }}
-                    >
+                        }}>
                         <span>{confirmText}</span>
                         <span
                             className="opacity-80 ui__button-shortcut-key"
-                            style={{ marginLeft: "2px" }}
-                        >
+                            style={{marginLeft: "2px"}}>
                             ⏎
                         </span>
                     </span>
@@ -111,16 +92,12 @@ export const DialogModalFooter: React.FC<{
                     color={"outline-link"}
                     isFullWidth={true}
                     depth={1}
-                    onClick={onCancel}
-                >
+                    onClick={onCancel}>
                     {cancelText}
                 </LogseqButton>
             )}
             {children && (
-                <div
-                    className="hidden md-block"
-                    style={{ flexGrow: 1, marginRight: "auto" }}
-                >
+                <div className="float-right sm:float-left" style={{flexGrow: 1}}>
                     {children}
                 </div>
             )}
