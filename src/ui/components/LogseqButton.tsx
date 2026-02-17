@@ -60,7 +60,7 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
     }
 
     return (
-        <div style={{margin: "0.25rem"}} className={'flex w-full rounded-md shadow-sm sm:ml-3 sm:w-auto'}>
+        <div style={{margin: "0.25rem"}} className={'flex rounded-md shadow-sm sm:ml-3 sm:w-auto'}>
             <button
                 disabled={disabled}
                 className={classNameString}

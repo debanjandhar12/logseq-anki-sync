@@ -130,6 +130,7 @@ export default defineConfig(({command, mode}) => {
         ],
         define: {
             "process.env": JSON.stringify({...env, NODE_ENV: mode}),
+            "process.cwd": "(() => '/')",
         },
         server: {
             port: 5173,

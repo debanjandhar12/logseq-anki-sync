@@ -40,7 +40,7 @@ export const addSettingsToLogseq = async () => {
         {
             key: "donationHeading",
             title: "",
-            description: `<a href="https://github.com/sponsors/debanjandhar12"><img alt="Donate" style="margin-top:-20px; height: 28px;" src="${DONATE_ICON}" /></a>`,
+            description: `<a href="https://github.com/sponsors/debanjandhar12" target="_blank"><img alt="Donate" style="margin-top:-20px; height: 28px;" src="${DONATE_ICON}" /></a>`,
             type: "heading",
             default: null,
         },

@@ -6,6 +6,8 @@ import {ANKI_ICON, DONATE_ICON, isWebURL_REGEXP} from "../../constants";
 import ADD_OCCLUSION_ICON from "../../../node_modules/@tabler/icons/icons/outline/square-plus-2.svg?raw";
 import REMOVE_OCCLUSION_ICON from "../../../node_modules/@tabler/icons/icons/outline/square-minus.svg?raw";
 import SETTINGS_ICON from "../../../node_modules/@tabler/icons/icons/outline/settings.svg?raw";
+import HAND_ICON from "../../../node_modules/@tabler/icons/icons/outline/hand-stop.svg?raw";
+import SELECT_ICON from "../../../node_modules/@tabler/icons/icons/outline/click.svg?raw";
 import {Modal, useModal, createModalPromise, ModalHeader, DialogModalFooter} from "../";
 import {LogseqButton} from "../components/LogseqButton";
 import {LogseqCheckbox} from "../components/LogseqCheckbox";
@@ -38,6 +40,9 @@ export type OcclusionData = {
     elements: Array<OcclusionElement>;
     tags: string[];
 };
+
+// Tool types for the toolbar
+type ToolType = "select" | "hand";
 
 export async function showOcclusionEditor(
     imgURL: string,
@@ -87,7 +92,19 @@ const OcclusionEditorComponent: React.FC<{
     const fabricRef = React.useRef<any>();
     const canvasRef = React.useRef(null);
     const cidSelectorRef = React.useRef(null);
+    const scrollContainerRef = React.useRef<HTMLDivElement>(null);
     const [imgEl, setImgEl] = React.useState(WindowBridge.createElement("img"));
+    
+    // Zoom state (5% to 200%)
+    const [zoomLevel, setZoomLevel] = React.useState<number>(100);
+    const [initialZoom, setInitialZoom] = React.useState<number>(1);
+    
+    // Tool state
+    const [activeTool, setActiveTool] = React.useState<ToolType>("select");
+    
+    // Store original image dimensions for coordinate calculations
+    const imageDimensions = React.useRef<{width: number; height: number}>({width: 0, height: 0});
+
     const handleConfirm = () => {
         const newOcclusionElements = fabricRef.current.getObjects().map((obj) => {
             // https://github.com/fabricjs/fabric.js/issues/801#issuecomment-218116910
@@ -114,6 +131,24 @@ const OcclusionEditorComponent: React.FC<{
 
     const handleCancel = () => {
         returnResult(false);
+    };
+
+    // Apply zoom to canvas
+    const applyZoom = useCallback((newZoomPercent: number) => {
+        if (!fabricRef.current || !imageDimensions.current.width) return;
+        
+        const newZoom = newZoomPercent / 100;
+        fabricRef.current.setZoom(newZoom);
+        fabricRef.current.setWidth(imageDimensions.current.width * newZoom);
+        fabricRef.current.setHeight(imageDimensions.current.height * newZoom);
+        fabricRef.current.renderAll();
+    }, []);
+
+    // Handle zoom slider change
+    const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newZoom = parseInt(e.target.value, 10);
+        setZoomLevel(newZoom);
+        applyZoom(newZoom);
     };
 
     React.useEffect(() => {
@@ -158,6 +193,15 @@ const OcclusionEditorComponent: React.FC<{
                         canvasHeight / imgEl.height,
                     ).toPrecision(1),
                 );
+                
+                // Store image dimensions for zoom calculations
+                imageDimensions.current = {width: imgEl.width, height: imgEl.height};
+                setInitialZoom(scale);
+                
+                // Set initial zoom level (as percentage)
+                const initialZoomPercent = Math.round(scale * 100);
+                setZoomLevel(initialZoomPercent);
+                
                 fabricRef.current.setZoom(scale);
                 fabricRef.current.setWidth(imgEl.width * scale);
                 fabricRef.current.setHeight(imgEl.height * scale);
@@ -225,30 +269,6 @@ const OcclusionEditorComponent: React.FC<{
         }
     }, [fabricSelection]);
 
-    // Show zoom view on mouse hover
-    const [zoomView, setZoomView] = React.useState<string>(null);
-    React.useEffect(() => {
-        if (!fabricRef || !fabricRef.current) return;
-        fabricRef.current.on("mouse:move", function (e: any) {
-            setZoomView(() => {
-                const currentZoom = fabricRef.current.getZoom();
-                if (currentZoom >= 1) return null;
-                fabricRef.current.setZoom(1.5);
-                const zoomImg = fabricRef.current.toDataURL({
-                    top: e.e.offsetY * (1.5 / currentZoom) - 15,
-                    left: e.e.offsetX * (1.5 / currentZoom) - 30,
-                    width: 60,
-                    height: 30,
-                });
-                fabricRef.current.setZoom(currentZoom);
-                return zoomImg;
-            });
-        });
-        fabricRef.current.on("mouse:out", function (e: any) {
-            setZoomView(null);
-        });
-    }, [fabricRef]);
-
     // Prevent out of bounds - https://stackoverflow.com/a/42915768
     React.useEffect(() => {
         if (!fabricRef || !fabricRef.current) return;
@@ -295,23 +315,107 @@ const OcclusionEditorComponent: React.FC<{
         fabricRef.current.on("object:modified", preventOutOfBounds);
     }, [fabricRef]);
 
+    // Update canvas interaction and cursor based on active tool
+    React.useEffect(() => {
+        if (!fabricRef.current) return;
+        
+        if (activeTool === "hand") {
+            // Disable object selection when hand tool is active
+            fabricRef.current.selection = false;
+            fabricRef.current.defaultCursor = "grab";
+            fabricRef.current.hoverCursor = "grab";
+            fabricRef.current.forEachObject((obj: any) => {
+                obj.selectable = false;
+                obj.evented = false;
+            });
+        } else {
+            // Enable object selection when select tool is active
+            fabricRef.current.selection = true;
+            fabricRef.current.defaultCursor = "default";
+            fabricRef.current.hoverCursor = "move";
+            fabricRef.current.forEachObject((obj: any) => {
+                obj.selectable = true;
+                obj.evented = true;
+            });
+        }
+        fabricRef.current.renderAll();
+    }, [activeTool]);
+
+    // Handle panning with hand tool using fabric mouse events
+    React.useEffect(() => {
+        if (!fabricRef.current || !scrollContainerRef.current) return;
+        
+        const canvas = fabricRef.current;
+        const scrollContainer = scrollContainerRef.current;
+        let localIsPanning = false;
+        let startX = 0;
+        let startY = 0;
+        let startScrollLeft = 0;
+        let startScrollTop = 0;
+        
+        const handleMouseDown = (opt: any) => {
+            if (activeTool !== "hand") return;
+            localIsPanning = true;
+            canvas.defaultCursor = "grabbing";
+            startX = opt.e.clientX;
+            startY = opt.e.clientY;
+            startScrollLeft = scrollContainer.scrollLeft;
+            startScrollTop = scrollContainer.scrollTop;
+            opt.e.preventDefault();
+        };
+        
+        const handleMouseMove = (opt: any) => {
+            if (!localIsPanning) return;
+            const dx = opt.e.clientX - startX;
+            const dy = opt.e.clientY - startY;
+            scrollContainer.scrollLeft = startScrollLeft - dx;
+            scrollContainer.scrollTop = startScrollTop - dy;
+        };
+        
+        const handleMouseUp = () => {
+            if (localIsPanning) {
+                localIsPanning = false;
+                if (activeTool === "hand") {
+                    canvas.defaultCursor = "grab";
+                }
+            }
+        };
+        
+        canvas.on("mouse:down", handleMouseDown);
+        canvas.on("mouse:move", handleMouseMove);
+        canvas.on("mouse:up", handleMouseUp);
+        
+        return () => {
+            canvas.off("mouse:down", handleMouseDown);
+            canvas.off("mouse:move", handleMouseMove);
+            canvas.off("mouse:up", handleMouseUp);
+        };
+    }, [activeTool]);
+
     // Handle some key events
     React.useEffect(() => {
         if (!fabricRef || !open) return;
         const onKeydown = (e: KeyboardEvent) => {
             if (!fabricRef || !open) return;
+            
+            // Escape key handling
             if (e.key === "Escape" && fabricRef.current.getActiveObjects().length > 0) {
                 logger.info(fabricRef);
                 fabricRef.current.discardActiveObject();
                 fabricRef.current.renderAll();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                return;
             } else if (e.key === "Escape") {
                 handleCancel();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                return;
             }
+            
+            // Ctrl+A - Select all (only in select mode)
             if (e.ctrlKey && e.key === "a") {
+                if (activeTool !== "select") return;
                 fabricRef.current.discardActiveObject();
                 var sel = new fabric.ActiveSelection(fabricRef.current.getObjects(), {
                     canvas: fabricRef.current,
@@ -320,68 +424,87 @@ const OcclusionEditorComponent: React.FC<{
                 fabricRef.current.renderAll();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                return;
             }
+            
+            // Enter - Confirm
             if (e.key === "Enter") {
                 handleConfirm();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                return;
             }
+            
+            // Delete - Delete selected occlusion
             if (e.key === "Delete" && fabricRef.current.getActiveObjects().length > 0) {
                 deleteOcclusion();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                return;
             }
+            
+            // Insert - Add occlusion
             if (e.key === "Insert") {
                 addOcclusion();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                return;
             }
+            
+            // Arrow keys - Move selection if active, otherwise let Modal.tsx handle scrolling
+            const activeObject = fabricRef.current.getActiveObject();
             if (e.key === "ArrowUp") {
-                if (fabricRef.current.getActiveObject()) {
-                    fabricRef.current.getActiveObject().top -= 1;
+                if (activeObject && activeTool === "select") {
+                    activeObject.top -= 1;
                     fabricRef.current.renderAll();
                     fabricRef.current.fire("object:modified", {
-                        target: fabricRef.current.getActiveObject(),
+                        target: activeObject,
                     });
                     e.preventDefault();
                     e.stopImmediatePropagation();
                 }
+                // If no selection, don't prevent default - let Modal.tsx handle scrolling
             }
             if (e.key === "ArrowDown") {
-                if (fabricRef.current.getActiveObject()) {
-                    fabricRef.current.getActiveObject().top += 1;
+                if (activeObject && activeTool === "select") {
+                    activeObject.top += 1;
                     fabricRef.current.renderAll();
                     fabricRef.current.fire("object:modified", {
-                        target: fabricRef.current.getActiveObject(),
+                        target: activeObject,
                     });
                     e.preventDefault();
                     e.stopImmediatePropagation();
                 }
+                // If no selection, don't prevent default - let Modal.tsx handle scrolling
             }
             if (e.key === "ArrowLeft") {
-                if (fabricRef.current.getActiveObject()) {
-                    fabricRef.current.getActiveObject().left -= 1;
+                if (activeObject && activeTool === "select") {
+                    activeObject.left -= 1;
                     fabricRef.current.renderAll();
                     fabricRef.current.fire("object:modified", {
-                        target: fabricRef.current.getActiveObject(),
+                        target: activeObject,
                     });
                     e.preventDefault();
                     e.stopImmediatePropagation();
                 }
+                // If no selection, don't prevent default - let Modal.tsx handle scrolling
             }
             if (e.key === "ArrowRight") {
-                if (fabricRef.current.getActiveObject()) {
-                    fabricRef.current.getActiveObject().left += 1;
+                if (activeObject && activeTool === "select") {
+                    activeObject.left += 1;
                     fabricRef.current.renderAll();
                     fabricRef.current.fire("object:modified", {
-                        target: fabricRef.current.getActiveObject(),
+                        target: activeObject,
                     });
                     e.preventDefault();
                     e.stopImmediatePropagation();
                 }
+                // If no selection, don't prevent default - let Modal.tsx handle scrolling
             }
+            
+            // Number keys 1-9 - Change cloze ID
             if (e.key >= "1" && e.key <= "9") {
-                if (fabricRef.current.getActiveObject()) {
+                if (activeObject && activeTool === "select") {
                     cidSelectorRef.current.value = e.key;
                     const event = new Event("change", {bubbles: true});
                     cidSelectorRef.current.dispatchEvent(event);
@@ -396,24 +519,51 @@ const OcclusionEditorComponent: React.FC<{
         return () => {
             WindowBridge.removeDocumentEventListener("keydown", onKeydown, {capture: true});
         };
-    }, [fabricRef, open]);
+    }, [fabricRef, open, activeTool]);
 
     // Create the UI
     const addOcclusion = () => {
-        const randomLocation = {
-            x:
-                Math.floor(Math.random() * (imgEl.width - 0.22 * imgEl.width)) +
-                0.11 * imgEl.width,
-            y:
-                Math.floor(Math.random() * (imgEl.height - 0.22 * imgEl.height)) +
-                0.11 * imgEl.height,
-        };
+        const occlusionWidth = 0.22 * imgEl.width;
+        const occlusionHeight = 0.22 * imgEl.height;
+        
+        let x: number, y: number;
+        
+        // Try to place occlusion within visible viewport
+        const scrollContainer = scrollContainerRef.current;
+        if (scrollContainer && fabricRef.current) {
+            const zoom = fabricRef.current.getZoom();
+            const visibleLeft = scrollContainer.scrollLeft / zoom;
+            const visibleTop = scrollContainer.scrollTop / zoom;
+            const visibleWidth = scrollContainer.clientWidth / zoom;
+            const visibleHeight = scrollContainer.clientHeight / zoom;
+            
+            // Calculate bounds for placing occlusion within visible area
+            const minX = Math.max(occlusionWidth / 2, visibleLeft + occlusionWidth / 2);
+            const maxX = Math.min(imgEl.width - occlusionWidth / 2, visibleLeft + visibleWidth - occlusionWidth / 2);
+            const minY = Math.max(occlusionHeight / 2, visibleTop + occlusionHeight / 2);
+            const maxY = Math.min(imgEl.height - occlusionHeight / 2, visibleTop + visibleHeight - occlusionHeight / 2);
+            
+            if (maxX > minX && maxY > minY) {
+                // Place within visible area
+                x = minX + Math.random() * (maxX - minX);
+                y = minY + Math.random() * (maxY - minY);
+            } else {
+                // Visible area too small, use random placement
+                x = Math.floor(Math.random() * (imgEl.width - occlusionWidth)) + occlusionWidth / 2 + 0.11 * imgEl.width;
+                y = Math.floor(Math.random() * (imgEl.height - occlusionHeight)) + occlusionHeight / 2 + 0.11 * imgEl.height;
+            }
+        } else {
+            // Fallback to random placement
+            x = Math.floor(Math.random() * (imgEl.width - occlusionWidth)) + occlusionWidth / 2 + 0.11 * imgEl.width;
+            y = Math.floor(Math.random() * (imgEl.height - occlusionHeight)) + occlusionHeight / 2 + 0.11 * imgEl.height;
+        }
+        
         const occlusionEl = createOcclusionRectEl(
             fabric,
-            randomLocation.x,
-            randomLocation.y,
-            0.22 * imgEl.width,
-            0.22 * imgEl.height,
+            x,
+            y,
+            occlusionWidth,
+            occlusionHeight,
         );
         fabricRef.current.add(occlusionEl);
         fabricRef.current.setActiveObject(occlusionEl);
@@ -526,13 +676,13 @@ const OcclusionEditorComponent: React.FC<{
             hasCloseButton={false}
             enableEscapeKeyClose={false}
             size={"large"}>
-            <div style={{margin: "0rem"}}>
+            <div style={{margin: "0rem", display: "flex", flexDirection: "column", maxHeight: "80vh"}}>
                 <ModalHeader
                     title="Occlusion Editor"
                     icon={ANKI_ICON}
                     onClose={() => setOpen(false)}
                     showCloseButton={true}>
-                    <a href="https://github.com/sponsors/debanjandhar12">
+                    <a href="https://github.com/sponsors/debanjandhar12" target={"_blank"}>
                         <img alt="Donate" style={{height: "1.4rem"}} src={DONATE_ICON} />
                     </a>
                 </ModalHeader>
@@ -541,21 +691,60 @@ const OcclusionEditorComponent: React.FC<{
                         borderBottom: "1px solid var(--ls-border-color)",
                         alignItems: "center",
                         justifyContent: "end",
+                        flexShrink: 0,
                     }}
                     className="occlusion-editor-toolbar flex">
-                    {zoomView && (
-                        <span
-                            className={"text-sm opacity-80"}
-                            style={{
-                                paddingLeft: "0.25rem",
-                                display: "flex",
-                                alignItems: "center",
-                                margin: "0.125rem auto 0.125rem 0",
-                            }}>
-                            <img src={zoomView} />
-                            <span className={"sm:hidden md:block"}>&lt;- Zoom</span>
+                    {/* Toolbar with select and hand tools */}
+                    <span
+                        style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingRight: "0.5rem",
+                            borderRight: "1px solid var(--ls-border-color)",
+                        }}>
+                        <LogseqButton
+                            color={activeTool === "select" ? "primary" : "ghost"}
+                            size={"sm"}
+                            title={"Select Tool (Select and move occlusions)"}
+                            onClick={() => setActiveTool("select")}
+                            icon={SELECT_ICON}
+                        />
+                        <LogseqButton
+                            color={activeTool === "hand" ? "primary" : "ghost"}
+                            size={"sm"}
+                            title={"Hand Tool (Pan/scroll the canvas)"}
+                            onClick={() => setActiveTool("hand")}
+                            icon={HAND_ICON}
+                        />
+                    </span>
+                    
+                    {/* Zoom slider */}
+                    <span
+                        style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingLeft: "0.5rem",
+                            paddingRight: "0.5rem",
+                            borderRight: "1px solid var(--ls-border-color)",
+                            gap: "0.5rem",
+                        }}>
+                        <span className="text-sm opacity-80">Zoom:</span>
+                        <input
+                            type="range"
+                            min="5"
+                            max="200"
+                            value={zoomLevel}
+                            onChange={handleZoomChange}
+                            style={{width: "100px"}}
+                            className="zoom-slider"
+                        />
+                        <span className="text-sm opacity-80" style={{minWidth: "3rem"}}>
+                            {zoomLevel}%
                         </span>
-                    )}
+                    </span>
+                    
                     <span
                         className={
                             fabricSelection && fabricSelection.length > 0 ? "flex" : "hidden"
@@ -563,13 +752,10 @@ const OcclusionEditorComponent: React.FC<{
                         style={{
                             alignItems: "center",
                             justifyItems: "center",
+                            paddingLeft: "0.5rem",
                             paddingRight: "0.5rem",
                             borderRight: "1px solid var(--ls-border-color)",
                         }}>
-                        {/* Add additional toolbar for fabricselection here */}
-                        <span style={{visibility: "hidden"}}>
-                            <LogseqButton size={"sm"} icon={ADD_OCCLUSION_ICON} />
-                        </span>{" "}
                         {/* An hack to align with the other buttons */}
                         <div style={{position: "relative", width: "80px", height: "1.6rem"}}>
                             <span
@@ -651,6 +837,7 @@ const OcclusionEditorComponent: React.FC<{
                     <LogseqButton
                         color={"success"}
                         size={"sm"}
+                        isFullWidth={false}
                         title={"Add Occlusion"}
                         onClick={addOcclusion}
                         icon={ADD_OCCLUSION_ICON}
@@ -658,16 +845,23 @@ const OcclusionEditorComponent: React.FC<{
                     <LogseqButton
                         color={"failed"}
                         size={"sm"}
+                        isFullWidth={false}
                         title={"Delete Occlusion"}
                         onClick={deleteOcclusion}
                         icon={REMOVE_OCCLUSION_ICON}
                         disabled={fabricSelection == null || fabricSelection.length == 0}
                     />
                 </div>
-                <div style={{maxHeight: "70vh"}}>
+                <div
+                    ref={scrollContainerRef}
+                    className="overflow-y-auto"
+                    style={{flex: 1, overflow: "auto", minHeight: 0}}>
                     <div
-                        className="cloze-editor-canvas-container flex mt-1"
-                        style={{justifyContent: "center"}}>
+                        className="cloze-editor-canvas-container"
+                        style={{
+                            display: "inline-block",
+                            margin: "0.5rem 1rem 1rem 1rem",
+                        }}>
                         <canvas ref={canvasRef} />
                     </div>
                 </div>
