@@ -74,9 +74,11 @@ export class CreateNotesTask {
         ]);
 
         assets.forEach((asset) => {
+            // Normalize asset path by removing leading ../ or ./ since assets are relative to graph root
+            const normalizedAsset = asset.replace(/^(\.\.\/)+(\.\/)*|^(\.\/)+/, "");
             ankiNoteManager.storeAsset(
                 path.basename(asset),
-                path.join(graphPath, path.normalize(asset)),
+                path.join(graphPath, normalizedAsset),
             );
         });
 
