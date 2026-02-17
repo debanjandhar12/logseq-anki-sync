@@ -129,8 +129,7 @@ export default defineConfig(({command, mode}) => {
             bundleJSStringPlugin(mode),
         ],
         define: {
-            "process.env": JSON.stringify({...env, NODE_ENV: mode}),
-            "process.cwd": "(() => '/')",
+            "process.env": JSON.stringify({...env, NODE_ENV: mode})
         },
         server: {
             port: 5173,

@@ -196,8 +196,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2
       vite-plugin-node-polyfills:
-        specifier: ^0.25.0
-        version: 0.25.0(rollup@4.52.5)(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)(terser@5.44.1))
+        specifier: 0.8.2
+        version: 0.8.2(rollup@4.52.5)(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)(terser@5.44.1))
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@22.15.30)(@vitest/ui@3.2.4)(happy-dom@17.6.3)(jiti@1.21.7)(jsdom@26.1.0(canvas@2.11.2(encoding@0.1.13)))(sass@1.97.3)(terser@5.44.1)
@@ -4649,10 +4649,10 @@ packages:
   vite-plugin-logseq@1.1.2:
     resolution: {integrity: sha512-l5YvoH3K25Zx9eqgoJFug7NfVqSPwq7/FcYYhN1TkdG8ZOiD+c+TAwdCS2dJbGgvx8GmSpbgwSZWgslB+wH53g==}
 
-  vite-plugin-node-polyfills@0.25.0:
-    resolution: {integrity: sha512-rHZ324W3LhfGPxWwQb2N048TThB6nVvnipsqBUJEzh3R9xeK9KI3si+GMQxCuAcpPJBVf0LpDtJ+beYzB3/chg==}
+  vite-plugin-node-polyfills@0.8.2:
+    resolution: {integrity: sha512-amOUVWwNvcuKxfWM9vpS8sAqvew28KXyR597OHO7BXWJFxr+QX4qB3XTDhWoRivj89TIZe4JTJTZwBHtIJ3ygQ==}
     peerDependencies:
-      vite: ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+      vite: ^2.0.0 || ^3.0.0 || ^4.0.0
 
   vite@7.3.1:
     resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
@@ -10095,7 +10095,7 @@ snapshots:
     dependencies:
       magic-string: 0.26.7
 
-  vite-plugin-node-polyfills@0.25.0(rollup@4.52.5)(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)(terser@5.44.1)):
+  vite-plugin-node-polyfills@0.8.2(rollup@4.52.5)(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)(terser@5.44.1)):
     dependencies:
       '@rollup/plugin-inject': 5.0.5(rollup@4.52.5)
       node-stdlib-browser: 1.3.1
