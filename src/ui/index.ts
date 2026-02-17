@@ -25,6 +25,9 @@ export type { ButtonModalProps, ButtonModalButton } from "./modals/ButtonModal";
 export { showSelectionModal } from "./modals/SelectionModal";
 export type { SelectionModalProps, SelectionModalItem } from "./modals/SelectionModal";
 
+export { showInputModal } from "./modals/InputModal";
+export type { InputModalProps } from "./modals/InputModal";
+
 // Pages exports
 export { showLogseqAnkiFeatureExplorer } from "./pages/LogseqAnkiFeatureExplorer";
 

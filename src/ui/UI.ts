@@ -327,6 +327,17 @@ export class UI {
     }
 
     /**
+     * Get the ID of the topmost (active) modal
+     * @returns The active modal ID, or null if no modals are open
+     */
+    public static getActiveModal(): string | null {
+        if (this.modalStack.length === 0) {
+            return null;
+        }
+        return this.modalStack[this.modalStack.length - 1].id;
+    }
+
+    /**
      * Close all modals at once
      */
     public static closeAllModals() {

@@ -235,6 +235,11 @@ const SyncSelectionDialogComponent: React.FC<{
     const onKeydown = React.useCallback(
         (e: KeyboardEvent) => {
             if (!open) return;
+            
+            if (UI.getActiveModal() !== modalContext?.modalId) {
+                return;
+            }
+            
             if (e.key === "Escape") {
                 handleCancel();
                 e.preventDefault();
@@ -245,7 +250,7 @@ const SyncSelectionDialogComponent: React.FC<{
                 e.stopImmediatePropagation();
             }
         },
-        [returnResult],
+        [returnResult, modalContext?.modalId],
     );
 
     React.useEffect(() => {

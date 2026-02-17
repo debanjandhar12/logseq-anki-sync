@@ -67,6 +67,10 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
         const onKeydown = (e: KeyboardEvent) => {
             if (!open) return;
             
+            if (UI.getActiveModal() !== modalContext?.modalId) {
+                return;
+            }
+            
             if (e.key === "Escape") {
                 handleSelection(null);
                 e.preventDefault();

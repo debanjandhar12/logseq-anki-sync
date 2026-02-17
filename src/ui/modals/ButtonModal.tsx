@@ -44,6 +44,10 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
         const onKeydown = (e: KeyboardEvent) => {
             if (!open) return;
             
+            if (UI.getActiveModal() !== modalContext?.modalId) {
+                return;
+            }
+            
             if (e.key === "Escape") {
                 returnResult(false);
                 e.preventDefault();

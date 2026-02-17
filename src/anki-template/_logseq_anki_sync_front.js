@@ -94,6 +94,7 @@ function handleImageOcclusion() {
                         occlusionElem.height,
                         occlusionElem.angle,
                         occlusionElem.cId,
+                        occlusionElem.hint,
                     );
                     occlusion._objects[0].set("opacity", 1);
                     canvas.add(occlusion);
@@ -112,6 +113,7 @@ function handleImageOcclusion() {
                         occlusionElem.height,
                         occlusionElem.angle,
                         occlusionElem.cId,
+                        null,   // do not display hint for other clozes
                     );
                     occlusion._objects[0].set("opacity", 1);
                     occlusion._objects[0].set("fill", "#3b4042");

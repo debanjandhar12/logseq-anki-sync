@@ -1,5 +1,6 @@
 import React from "../../React";
 import { WindowBridge } from "../../../logseq/WindowBridge";
+import { UI } from "../../UI";
 
 export interface UseModalOptions<T = any> {
     onClose?: () => void;
@@ -80,6 +81,10 @@ export function useModal<T = any>(
         const onKeydown = (e: KeyboardEvent) => {
             if (!open) return;
 
+            if (UI.getActiveModal() !== modalId) {
+                return;
+            }
+
             if (enableEscapeKey && e.key === "Escape") {
                 handleCancel();
                 e.preventDefault();
@@ -95,7 +100,7 @@ export function useModal<T = any>(
         return () => {
             WindowBridge.removeDocumentEventListener("keydown", onKeydown);
         };
-    }, [open, handleConfirm, handleCancel, enableEscapeKey, enableEnterKey]);
+    }, [open, handleConfirm, handleCancel, enableEscapeKey, enableEnterKey, modalId]);
 
     return {
         open,
