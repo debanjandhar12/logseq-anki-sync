@@ -20,6 +20,7 @@ export interface ButtonModalProps {
     resolve: (value: number | false) => void;
     reject: (error: any) => void;
     modalContext?: { modalId: string | null };
+    enableOutsideClickClose?: boolean;
 }
 
 const ButtonModalComponent: React.FC<ButtonModalProps> = ({
@@ -28,6 +29,7 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     resolve,
     reject,
     modalContext,
+    enableOutsideClickClose = true,
 }) => {
     const { open, setOpen, returnResult } = useModal<number | false>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
@@ -62,7 +64,13 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     }, [open, returnResult]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} zDepth="high">
+        <Modal 
+            open={open} 
+            setOpen={setOpen} 
+            onClose={() => UI.hideModal(modalContext?.modalId)} 
+            zDepth="high"
+            enableOutsideClickClose={enableOutsideClickClose}
+        >
             <div className="ui__confirm-modal is-">
                 <SimpleModalHeader title={message} />
                 <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
@@ -94,7 +102,8 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
  */
 export async function showButtonModal(
     message: string,
-    buttons: ButtonModalButton[]
+    buttons: ButtonModalButton[],
+    options?: { enableOutsideClickClose?: boolean }
 ): Promise<number | false> {
     return createModalPromise<number | false>(
         (props) => (
@@ -104,7 +113,7 @@ export async function showButtonModal(
                 {...props}
             />
         ),
-        {},
+        { enableOutsideClickClose: options?.enableOutsideClickClose },
         { errorMessage: "Failed to open button modal" }
     );
 }

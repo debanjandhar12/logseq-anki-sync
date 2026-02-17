@@ -18,6 +18,7 @@ interface ModalProps {
     hasCloseButton?: boolean;
     className?: string;
     enableEscapeKeyClose?: boolean;
+    enableOutsideClickClose?: boolean;
 }
 
 export function Modal({
@@ -30,6 +31,7 @@ export function Modal({
     hasCloseButton = true,
     className = "",
     enableEscapeKeyClose = true,
+    enableOutsideClickClose = true,
 }: PropsWithChildren<ModalProps>) {
     // Handle close - calls setOpen(false), onClose callback, and UI.hideModal()
     const handleClose = React.useCallback(() => {
@@ -92,7 +94,7 @@ export function Modal({
 
     // Handle click outside to close
     React.useEffect(() => {
-        if (!open) return;
+        if (!open || !enableOutsideClickClose) return;
         
         const handleClickOutside = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
@@ -106,7 +108,7 @@ export function Modal({
         return () => {
             WindowBridge.removeDocumentEventListener('click', handleClickOutside);
         };
-    }, [open, handleClose]);
+    }, [open, handleClose, enableOutsideClickClose]);
 
     if (!open) return null;
 

@@ -117,6 +117,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
                     icon: GITHUB_ICON,
                 },
             ],
+            { enableOutsideClickClose: false }
         );
     }
 }
