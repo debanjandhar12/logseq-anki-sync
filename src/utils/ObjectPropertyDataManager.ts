@@ -1,5 +1,8 @@
-import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
-import {createLogger, LoggerCategory} from "./logger";
+import { LogseqAppInfoFetcher } from "../logseq/LogseqAppInfoFetcher";
+import { createLogger, LoggerCategory } from "./logger";
+import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
+import { LogseqProxy } from "../logseq/LogseqProxy";
+import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -16,17 +19,27 @@ export class ObjectPropertyDataManager {
      * @param data - The object to save
      * @returns Promise<string> - The encoded string to store in property
      */
-    static async save(data: object): Promise<string> {
+    static async save(block: BlockEntity | { uuid: string; properties?: any }, propertyName: string, data: object): Promise<string> {
         const jsonString = JSON.stringify(data);
         const isDbGraph = await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
 
+        let encoded: string;
         if (isDbGraph) {
-            // DB graphs: save data directly after JSON.stringify
-            return jsonString;
+            encoded = jsonString;
         } else {
-            // Non-DB graphs: save data after JSON.stringify and then base64
-            return Buffer.from(jsonString, "utf8").toString("base64");
+            encoded = Buffer.from(jsonString, "utf8").toString("base64");
         }
+
+        const existingValue = block.properties?.[propertyName];
+        if (existingValue !== encoded) {
+            await LogseqProxy.Editor.upsertBlockProperty(
+                getUUIDFromBlock(block as BlockEntity),
+                propertyName,
+                encoded
+            );
+        }
+
+        return encoded;
     }
 
     /**
@@ -34,7 +47,8 @@ export class ObjectPropertyDataManager {
      * @param value - The property value to parse (may be base64 or JSON string)
      * @returns object | null - The parsed object, or null if parsing fails
      */
-    static load(value: string | undefined | null): object | null {
+    static load(block: BlockEntity | { properties?: any }, propertyName: string): object | null {
+        const value = block.properties?.[propertyName];
         if (!value) {
             return null;
         }
@@ -68,7 +82,7 @@ export class ObjectPropertyDataManager {
      * @param value - The property value to validate
      * @returns boolean - true if the value can be parsed as an object
      */
-    static validate(value: string | undefined | null): boolean {
-        return this.load(value) !== null;
+    static validate(block: BlockEntity | { properties?: any }, propertyName: string): boolean {
+        return this.load(block, propertyName) !== null;
     }
 }

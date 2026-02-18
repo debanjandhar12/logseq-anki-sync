@@ -1,0 +1,624 @@
+import React from "../React";
+import _ from "lodash";
+import { ANKI_ICON, DONATE_ICON } from "../../constants";
+import ADD_HIGHLIGHT_ICON from "../../../node_modules/@tabler/icons/icons/outline/plus.svg?raw";
+import REMOVE_HIGHLIGHT_ICON from "../../../node_modules/@tabler/icons/icons/outline/trash.svg?raw";
+import HINT_ICON from "../../../node_modules/@tabler/icons/icons/outline/bulb.svg?raw";
+import {
+    Modal,
+    useModal,
+    createModalPromise,
+    ModalHeader,
+    DialogModalFooter,
+    showInputModal,
+} from "../";
+import { LogseqButton } from "../components/LogseqButton";
+import { UI } from "../UI";
+import { WindowBridge } from "../../logseq/WindowBridge";
+import { createLogger, LoggerCategory } from "../../utils/logger";
+import StarterKit from "@tiptap/starter-kit";
+import { Extension, Editor } from "@tiptap/core";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { describeTextQuote, matchTextQuote, getHealedHighlightGeometry } from "../../utils/HighlighPosFinder";
+
+const logger = createLogger(LoggerCategory.Others);
+
+export type HighlightMaskElement = {
+    cId: number;
+    text: string;
+    prefix: string;
+    suffix: string;
+    hint?: string;
+    approxPos?: number;
+};
+
+export type HighlightMaskConfig = {
+    // Reserved for future use
+};
+
+export type HighlightMaskData = {
+    config: HighlightMaskConfig;
+    elements: Array<HighlightMaskElement>;
+};
+
+export async function showHighlightMaskEditor(
+    rawText: string,
+    highlightElements: Array<HighlightMaskElement>,
+    highlightConfig: HighlightMaskConfig,
+): Promise<HighlightMaskData | boolean> {
+    return createModalPromise<HighlightMaskData | boolean>(
+        (props) => (
+            <HighlightMaskEditorComponent
+                rawText={rawText}
+                highlightElements={highlightElements}
+                highlightConfig={highlightConfig}
+                {...props}
+            />
+        ),
+        {},
+        { errorMessage: "Failed to open Highlight Mask Editor" },
+    );
+}
+
+// Prosemirror plugin key for highlighting definitions
+const HighlightPluginKey = new PluginKey("highlightMask");
+
+export const HighlightMaskExtension = Extension.create({
+    name: "highlightMask",
+
+    addProseMirrorPlugins() {
+        return [
+            new Plugin({
+                key: HighlightPluginKey,
+                state: {
+                    init() {
+                        return DecorationSet.empty;
+                    },
+                    apply(tr, set) {
+                        const meta = tr.getMeta(HighlightPluginKey);
+                        if (meta && meta.type === "SET_DECORATIONS") {
+                            return DecorationSet.create(tr.doc, meta.decorations);
+                        }
+                        return set.map(tr.mapping, tr.doc);
+                    },
+                },
+                props: {
+                    decorations(state) {
+                        return HighlightPluginKey.getState(state);
+                    },
+                },
+            }),
+        ];
+    },
+});
+
+const HighlightMaskEditorComponent: React.FC<{
+    rawText: string;
+    highlightElements: Array<HighlightMaskElement>;
+    highlightConfig: HighlightMaskConfig;
+    resolve: (value: HighlightMaskData | boolean) => void;
+    reject: Function;
+    modalContext?: { modalId: string | null };
+}> = ({ rawText, highlightElements, highlightConfig, resolve, reject, modalContext }) => {
+    const { open, setOpen, returnResult } = useModal<HighlightMaskData | boolean>(resolve, {
+        onClose: () => UI.hideModal(modalContext?.modalId),
+        enableEscapeKey: false,
+        enableEnterKey: false,
+        modalId: modalContext?.modalId,
+    });
+
+    const [elements, setElements] = React.useState<HighlightMaskElement[]>(highlightElements);
+    const [selectedElementIndex, setSelectedElementIndex] = React.useState<number | null>(null);
+    const [hasTextSelection, setHasTextSelection] = React.useState(false);
+    const cidSelectorRef = React.useRef<HTMLSelectElement>(null);
+    const editorRef = React.useRef<HTMLDivElement>(null);
+    const [editor, setEditor] = React.useState<Editor | null>(null);
+
+    // Initialize Editor
+    React.useEffect(() => {
+        if (!editorRef.current) return;
+
+        const newEditor = new Editor({
+            element: editorRef.current,
+            extensions: [StarterKit, HighlightMaskExtension],
+            content: `<pre><code>${_.escape(rawText)}</code></pre>`,
+            editable: true,
+            editorProps: {
+                attributes: {
+                    class: "prose prose-sm max-w-none focus:outline-none p-4 font-mono whitespace-pre-wrap",
+                },
+            },
+            onTransaction: ({ editor }) => {
+                const { from, to } = editor.state.selection;
+                setHasTextSelection(from !== to);
+            },
+        });
+
+        setEditor(newEditor);
+
+        return () => {
+            newEditor.destroy();
+        };
+    }, []);
+
+    React.useEffect(() => {
+        if (!editor || !open) return;
+        // Make it effectively read-only
+        editor.setOptions({ editable: false });
+    }, [editor, open]);
+
+    const handleConfirm = async () => {
+        if (!editor) return;
+        const fullText = editor.state.doc.textContent;
+        const newElements = [];
+
+        for (const el of elements) {
+            const healResult = await getHealedHighlightGeometry(fullText, el);
+            if (healResult) {
+                newElements.push(healResult.element);
+            } else {
+                newElements.push(el);
+            }
+        }
+
+        returnResult({
+            config: highlightConfig,
+            elements: newElements,
+        });
+    };
+
+    const handleCancel = () => {
+        returnResult(false);
+    };
+
+    // Decoration Rendering
+    React.useEffect(() => {
+        if (!editor) return;
+
+        let isCancelled = false;
+
+        const renderDecorations = async () => {
+            const decorations: Decoration[] = [];
+            const fullText = editor.state.doc.textContent;
+
+            for (let index = 0; index < elements.length; index++) {
+                if (isCancelled) return;
+
+                const el = elements[index];
+                const isSelected = selectedElementIndex === index;
+                const actualStart = await matchTextQuote(fullText, {
+                    exact: el.text,
+                    prefix: el.prefix,
+                    suffix: el.suffix,
+                }, el.approxPos);
+
+                if (actualStart !== -1) {
+                    const actualEnd = actualStart + el.text.length;
+                    // Map raw string index to ProseMirror positions...
+                    let currentPos = 0;
+                    let fromPos = -1;
+                    let toPos = -1;
+
+                    editor.state.doc.descendants((node, pos) => {
+                        if (node.isText) {
+                            const nodeText = node.text || "";
+                            const nodeStart = currentPos;
+                            const nodeEnd = currentPos + nodeText.length;
+
+                            if (
+                                fromPos === -1 &&
+                                actualStart >= nodeStart &&
+                                actualStart < nodeEnd
+                            ) {
+                                fromPos = pos + (actualStart - nodeStart);
+                            }
+                            if (toPos === -1 && actualEnd > nodeStart && actualEnd <= nodeEnd) {
+                                toPos = pos + (actualEnd - nodeStart);
+                            }
+                            currentPos += nodeText.length;
+                        } else if (node.isBlock && currentPos > 0) {
+                            currentPos += 1;
+                        }
+                        if (fromPos !== -1 && toPos !== -1) return false;
+                        return true;
+                    });
+
+                    if (fromPos !== -1 && toPos !== -1) {
+                        const className = `cursor-pointer px-1 rounded transition-all ${isSelected
+                            ? "bg-blue-500 text-white ring-2 ring-blue-300"
+                            : "bg-yellow-200 hover:bg-yellow-300"
+                            }`;
+
+                        const titleText = el.hint
+                            ? `Cloze ID: ${el.cId} | Hint: ${el.hint}`
+                            : `Cloze ID: ${el.cId}`;
+                        decorations.push(
+                            Decoration.inline(fromPos, toPos, {
+                                class: className,
+                                title: titleText,
+                                "data-highlight-index": String(index),
+                            }),
+                        );
+
+                        const badge = document.createElement("span");
+                        badge.className = "mr-1 text-xs font-bold opacity-30 user-select-none";
+                        badge.innerText = `c${el.cId}`;
+                        badge.contentEditable = "false";
+                        decorations.push(Decoration.widget(fromPos, badge));
+                    }
+                }
+            }
+
+            if (!isCancelled) {
+                editor.view.dispatch(
+                    editor.state.tr.setMeta(HighlightPluginKey, {
+                        type: "SET_DECORATIONS",
+                        decorations: decorations,
+                    }),
+                );
+            }
+        };
+
+        renderDecorations();
+        return () => {
+            isCancelled = true;
+        };
+    }, [elements, selectedElementIndex, editor]);
+
+    // Handle Editor clicks
+    React.useEffect(() => {
+        if (!editor || !editor.view.dom) return;
+        const dom = editor.view.dom;
+        const handleClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const highlightIndex = target.getAttribute("data-highlight-index");
+            if (highlightIndex !== null) {
+                setSelectedElementIndex(parseInt(highlightIndex, 10));
+                editor.commands.setTextSelection(0);
+                e.stopPropagation();
+            } else {
+                setSelectedElementIndex(null);
+            }
+        };
+        dom.addEventListener("click", handleClick);
+        return () => dom.removeEventListener("click", handleClick);
+    }, [editor]);
+
+    // Add Highlight
+    const addHighlight = async () => {
+        if (!editor) return;
+        const { from, to } = editor.state.selection;
+        if (from === to) {
+            logseq.UI.showMsg("Please select text to highlight", "warning");
+            return;
+        }
+
+        const text = editor.state.doc.textBetween(from, to, " ");
+        if (!text || text.trim() === "") {
+            logseq.UI.showMsg("Please select valid text to highlight", "warning");
+            return;
+        }
+
+        const fullText = editor.state.doc.textContent;
+        // Map PM positions back to raw text string index to get accurate prefix/suffix
+        let currentPos = 0;
+        let actualStart = -1;
+        let actualEnd = -1;
+        editor.state.doc.descendants((node, pos) => {
+            if (node.isText) {
+                const nodeLen = node.text?.length || 0;
+                if (actualStart === -1 && from <= pos + nodeLen) {
+                    actualStart = currentPos + Math.max(0, from - pos);
+                }
+                if (to >= pos) {
+                    actualEnd = currentPos + Math.min(nodeLen, Math.max(0, to - pos));
+                }
+                currentPos += nodeLen;
+            } else if (node.isBlock && currentPos > 0) {
+                currentPos += 1;
+            }
+        });
+
+        if (actualStart === -1) actualStart = 0;
+        if (actualEnd === -1) actualEnd = currentPos;
+
+        const quoteInfo = await describeTextQuote(fullText, actualStart, actualEnd);
+
+        // Overlap Check (using naive intersections on text lengths)
+        let hasOverlap = false;
+        let overlapIndex = -1;
+        for (let idx = 0; idx < elements.length; idx++) {
+            const el = elements[idx];
+
+            const elStart = await matchTextQuote(fullText, {
+                exact: el.text,
+                prefix: el.prefix,
+                suffix: el.suffix,
+            }, el.approxPos);
+
+            if (elStart !== -1) {
+                const elEnd = elStart + el.text.length;
+                if (actualStart < elEnd && actualEnd > elStart) {
+                    hasOverlap = true;
+                    overlapIndex = idx;
+                    break;
+                }
+            }
+        }
+
+        if (hasOverlap) {
+            setSelectedElementIndex(overlapIndex);
+            editor.commands.setTextSelection(0);
+            logseq.UI.showMsg("Selection overlaps with existing highlight", "warning");
+            return;
+        }
+
+        const usedCIds = elements.map((el) => el.cId);
+        let newCId = 1;
+        while (usedCIds.includes(newCId) && newCId < 10) newCId++;
+        if (newCId > 9) newCId = 1;
+
+        const newElement: HighlightMaskElement = {
+            cId: newCId,
+            text: text,
+            prefix: quoteInfo.prefix || "",
+            suffix: quoteInfo.suffix || "",
+            approxPos: actualStart,
+        };
+
+        setElements([...elements, newElement]);
+        setSelectedElementIndex(elements.length);
+        editor.commands.setTextSelection(0);
+    };
+
+    const deleteHighlight = () => {
+        if (selectedElementIndex === null) return;
+        const newElements = [...elements];
+        newElements.splice(selectedElementIndex, 1);
+        setElements(newElements);
+        setSelectedElementIndex(null);
+    };
+
+    const onCIdChange = () => {
+        if (selectedElementIndex === null || !cidSelectorRef.current) return;
+        const newCId = parseInt(cidSelectorRef.current.value, 10);
+        const newElements = [...elements];
+        newElements[selectedElementIndex] = {
+            ...newElements[selectedElementIndex],
+            cId: newCId,
+        };
+        setElements(newElements);
+    };
+
+    const handleHintClick = async () => {
+        if (selectedElementIndex === null) return;
+        const currentHint = elements[selectedElementIndex].hint || "";
+        const hint = await showInputModal({
+            title: "Set Hint",
+            message: "Enter a hint for this highlight:",
+            placeholder: "Type a hint...",
+            initialValue: currentHint,
+        });
+
+        if (hint !== null) {
+            const newElements = [...elements];
+            newElements[selectedElementIndex] = {
+                ...newElements[selectedElementIndex],
+                hint: hint || undefined,
+            };
+            setElements(newElements);
+        }
+    };
+
+    React.useEffect(() => {
+        if (!open) return;
+        const onKeydown = (e: Event) => {
+            const keyboardEvent = e as KeyboardEvent;
+            if (UI.getActiveModal() !== modalContext?.modalId) return;
+
+            if (keyboardEvent.key === "Escape") {
+                if (selectedElementIndex !== null) {
+                    setSelectedElementIndex(null);
+                    keyboardEvent.preventDefault();
+                    keyboardEvent.stopImmediatePropagation();
+                    return;
+                } else {
+                    handleCancel();
+                    keyboardEvent.preventDefault();
+                    keyboardEvent.stopImmediatePropagation();
+                    return;
+                }
+            }
+
+            if (keyboardEvent.key === "Enter" && !keyboardEvent.shiftKey) {
+                handleConfirm();
+                keyboardEvent.preventDefault();
+                keyboardEvent.stopImmediatePropagation();
+                return;
+            }
+
+            if (keyboardEvent.key === "Delete" && selectedElementIndex !== null) {
+                deleteHighlight();
+                keyboardEvent.preventDefault();
+                keyboardEvent.stopImmediatePropagation();
+                return;
+            }
+
+            if (
+                keyboardEvent.key >= "1" &&
+                keyboardEvent.key <= "9" &&
+                selectedElementIndex !== null
+            ) {
+                if (cidSelectorRef.current) {
+                    cidSelectorRef.current.value = keyboardEvent.key;
+                    onCIdChange();
+                }
+                keyboardEvent.preventDefault();
+                keyboardEvent.stopImmediatePropagation();
+                return;
+            }
+        };
+
+        WindowBridge.addDocumentEventListener("keydown", onKeydown, { capture: true });
+        return () => {
+            WindowBridge.removeDocumentEventListener("keydown", onKeydown, { capture: true });
+        };
+    }, [open, selectedElementIndex, elements, modalContext?.modalId]);
+
+    React.useEffect(() => {
+        if (selectedElementIndex !== null && cidSelectorRef.current) {
+            cidSelectorRef.current.value =
+                elements[selectedElementIndex]?.cId.toString() || "1";
+        }
+    }, [selectedElementIndex, elements]);
+
+    return (
+        <Modal
+            open={open}
+            setOpen={setOpen}
+            onClose={() => UI.hideModal(modalContext?.modalId)}
+            hasCloseButton={false}
+            enableEscapeKeyClose={false}
+            enableOutsideClickClose={false}
+            size={"large"}>
+            <div
+                style={{
+                    margin: "0rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    maxHeight: "80vh",
+                }}>
+                <ModalHeader
+                    title="Highlight Mask Editor"
+                    icon={ANKI_ICON}
+                    onClose={() => setOpen(false)}
+                    showCloseButton={true}>
+                    <a href="https://github.com/sponsors/debanjandhar12" target={"_blank"}>
+                        <img alt="Donate" style={{ height: "1.4rem" }} src={DONATE_ICON} />
+                    </a>
+                </ModalHeader>
+
+                <div
+                    style={{
+                        borderBottom: "1px solid var(--ls-border-color)",
+                        alignItems: "center",
+                        justifyContent: "end",
+                        flexShrink: 0,
+                    }}
+                    className="highlight-mask-editor-toolbar flex">
+                    <span
+                        className={selectedElementIndex !== null ? "flex" : "hidden"}
+                        style={{
+                            alignItems: "center",
+                            justifyItems: "center",
+                            paddingLeft: "0.5rem",
+                            paddingRight: "0.5rem",
+                            borderRight: "1px solid var(--ls-border-color)",
+                        }}>
+                        <div style={{ position: "relative", width: "80px", height: "1.6rem" }}>
+                            <span
+                                style={{
+                                    position: "absolute",
+                                    zIndex: 2,
+                                    marginTop: "-8px",
+                                    fontSize: "12px",
+                                    userSelect: "none",
+                                    pointerEvents: "none",
+                                }}
+                                className={"text-sm opacity-80"}>
+                                Cloze Id:
+                            </span>
+                            <select
+                                ref={cidSelectorRef}
+                                onChange={onCIdChange}
+                                className="form-select is-small"
+                                style={{
+                                    position: "absolute",
+                                    zIndex: 1,
+                                    margin: "0",
+                                    width: "80px",
+                                    height: "inherit",
+                                }}>
+                                {_.range(1, 10).map((i) => (
+                                    <option key={i} value={i}>
+                                        {i}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        {selectedElementIndex !== null && (
+                            <LogseqButton
+                                color={"primary"}
+                                size={"sm"}
+                                title={
+                                    elements[selectedElementIndex]?.hint
+                                        ? `Hint: ${elements[selectedElementIndex].hint}`
+                                        : "Set Hint"
+                                }
+                                onClick={handleHintClick}
+                                icon={HINT_ICON}
+                            />
+                        )}
+                    </span>
+
+                    <span style={{ paddingLeft: "0.5rem" }} />
+                    <LogseqButton
+                        color={"success"}
+                        size={"sm"}
+                        isFullWidth={false}
+                        title={"Add Highlight (Select text first)"}
+                        onClick={addHighlight}
+                        icon={ADD_HIGHLIGHT_ICON}
+                        disabled={!hasTextSelection || selectedElementIndex !== null}
+                    />
+                    <LogseqButton
+                        color={"failed"}
+                        size={"sm"}
+                        isFullWidth={false}
+                        title={"Delete Highlight"}
+                        onClick={deleteHighlight}
+                        icon={REMOVE_HIGHLIGHT_ICON}
+                        disabled={selectedElementIndex === null}
+                    />
+                </div>
+
+                <div
+                    style={{
+                        padding: "0.5rem 1rem",
+                        borderBottom: "1px solid var(--ls-border-color)",
+                        backgroundColor: "var(--ls-tertiary-background-color)",
+                    }}>
+                    <p className="text-sm opacity-80 m-0">
+                        Select text in the editor below, then click "Add Highlight" to create a
+                        cloze.
+                    </p>
+                </div>
+
+                <div
+                    className="overflow-y-auto"
+                    style={{ flex: 1, overflow: "auto", minHeight: 0, padding: "1rem" }}>
+                    <div
+                        className="highlight-mask-content"
+                        style={{ userSelect: "text", lineHeight: "1.6" }}
+                        onClick={(e) => {
+                            // If user clicked inside the editor but not on a decoration, deselect
+                            const target = e.target as HTMLElement;
+                            if (!target.hasAttribute("data-highlight-index")) {
+                                setSelectedElementIndex(null);
+                            }
+                        }}>
+                        <div ref={editorRef} />
+                    </div>
+                </div>
+
+                <DialogModalFooter
+                    onConfirm={handleConfirm}
+                    onCancel={handleCancel}
+                    confirmText="Save"
+                    cancelText="Cancel"
+                />
+            </div>
+        </Modal>
+    );
+};

@@ -11,6 +11,7 @@ import {LogseqProxy} from "./logseq/LogseqProxy";
 import {AddonRegistry} from "./addons/AddonRegistry";
 import {SwiftArrowNote} from "./anki-notes/SwiftArrowNote";
 import {ImageOcclusionNote} from "./anki-notes/ImageOcclusionNote";
+import {HighlightMaskNote} from "./anki-notes/HighlightMaskNote";
 import {BlockAndPageHashCache} from "./sync/cache";
 import {Buffer} from "buffer/";
 import {Note} from "./anki-notes/Note";
@@ -76,6 +77,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     MultilineCardNote.initLogseqOperations();
     SwiftArrowNote.initLogseqOperations();
     ImageOcclusionNote.initLogseqOperations();
+    HighlightMaskNote.initLogseqOperations();
     AddonRegistry.getAll().forEach((addon) => addon.init());
     UI.init();
     WindowParentBridge.setGlobalObject("AnkiConnect", AnkiConnect); // Make AnkiConnect available globally
@@ -88,7 +90,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
 
     // Show welcome message
     const {lastWelcomeVersion} = LogseqProxy.Settings.getPluginSettings();
-    console.log('lastWelcomeVersion', lastWelcomeVersion, pkg.version);
+    console.log("lastWelcomeVersion", lastWelcomeVersion, pkg.version);
     if (lastWelcomeVersion && lastWelcomeVersion !== pkg.version) {
         logseq.updateSettings({lastWelcomeVersion: pkg.version});
         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait logseq's react to load
@@ -117,7 +119,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
                     icon: GITHUB_ICON,
                 },
             ],
-            { enableOutsideClickClose: false }
+            {enableOutsideClickClose: false},
         );
     }
 }

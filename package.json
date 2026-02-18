@@ -18,9 +18,14 @@
         "icon": "/icon.png"
     },
     "dependencies": {
+        "@apache-annotator/selector": "^0.2.0",
+        "@sanity/diff-match-patch": "^3.2.0",
         "@logseq/libs": "^0.2.12",
         "@tabler/icons": "^3.36.1",
         "@thi.ng/hiccup": "^4.2.29",
+        "@tiptap/core": "^3.20.0",
+        "@tiptap/pm": "^3.20.0",
+        "@tiptap/starter-kit": "^3.20.0",
         "@yellowdig/cljs-tools": "0.2.0",
         "await-lock": "^3.0.0",
         "cancelable-promise": "4.3.1",

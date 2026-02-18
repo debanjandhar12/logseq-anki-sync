@@ -18,6 +18,7 @@ import {SwiftArrowNote} from "../anki-notes/SwiftArrowNote";
 import {ProgressNotification} from "../ui";
 import {showConfirmModal} from "../ui";
 import {ImageOcclusionNote} from "../anki-notes/ImageOcclusionNote";
+import {HighlightMaskNote} from "../anki-notes/HighlightMaskNote";
 import {NoteHashCalculator} from "./cache";
 import {CancelablePromise} from "cancelable-promise";
 import {ActionNotification} from "../ui/notifications/ActionNotification";
@@ -222,7 +223,7 @@ export class LogseqToAnkiSync {
     private async collectAllNotes(): Promise<Note[]> {
         const scanNotification = new ProgressNotification(
             `Scanning Logseq Graph <span style="opacity: 0.8">[${this.graphName}]</span>:`,
-            5,
+            6,
             "graph",
         );
 
@@ -232,6 +233,8 @@ export class LogseqToAnkiSync {
         notes = [...notes, ...(await SwiftArrowNote.getNotesFromLogseqBlocks())];
         scanNotification.increment();
         notes = [...notes, ...(await ImageOcclusionNote.getNotesFromLogseqBlocks())];
+        scanNotification.increment();
+        notes = [...notes, ...(await HighlightMaskNote.getNotesFromLogseqBlocks())];
         scanNotification.increment();
         notes = [...notes, ...(await MultilineCardNote.getNotesFromLogseqBlocks(notes))];
         scanNotification.increment();
