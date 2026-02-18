@@ -42,8 +42,11 @@ export class ClozeNote extends Note {
             }
         `);
         LogseqProxy.Editor.createTagSilentlyIfNotExists("type-in");
-        LogseqProxy.Editor.registerProperty("replacecloze", {type: "default", cardinality: "one", hide: false});
-
+        LogseqProxy.App.checkCurrentIsDbGraph().then((isDbGraph) => {
+            if (!isDbGraph) {
+                LogseqProxy.Editor.registerProperty("replacecloze", {type: "default", cardinality: "one", hide: false});
+            }
+        });
         const { hideClozeMarcosUntilHoverInLogseq } = LogseqProxy.Settings.getPluginSettings();
         if (hideClozeMarcosUntilHoverInLogseq) {
             logseq.provideStyle(`
@@ -138,57 +141,57 @@ export class ClozeNote extends Note {
             },
         );
 
-        // --- Add anki-cloze array clozes ---
-        const replaceclozeProp = this.properties?.replacecloze ?? this.properties?.[".replacecloze"];
-        if (replaceclozeProp) {
-            let replaceclozeArr: any;
-            try {
-                if (typeof replaceclozeProp == "string" && replaceclozeProp.trim() != "") {
-                    replaceclozeArr = string_to_arr(replaceclozeProp.replace(/(^\s*"|\s*"$)/g, ""));
+        // --- Add replace clozes ---
+        if (!await LogseqProxy.App.checkCurrentIsDbGraph()) {
+            const replaceclozeProp = this.properties?.replacecloze ?? this.properties?.[".replacecloze"];
+            if (replaceclozeProp) {
+                let replaceclozeArr: any;
+                try {
+                    if (typeof replaceclozeProp == "string" && replaceclozeProp.trim() != "") {
+                        replaceclozeArr = string_to_arr(replaceclozeProp.replace(/(^\s*"|\s*"$)/g, ""));
+                    } else if (
+                        typeof replaceclozeProp == "object" &&
+                        replaceclozeProp.constructor == Array) {
+                        replaceclozeArr = string_to_arr(replaceclozeProp.join(","));
+                    } else replaceclozeArr = [];
+                } catch (e) {
+                    throw new Error(`Error parsing replacecloze property: ${e instanceof Error ? e.message : String(e)}`, {cause: e});
                 }
-                else if (
-                    typeof replaceclozeProp == "object" &&
-                    replaceclozeProp.constructor == Array) {
-                    replaceclozeArr = string_to_arr(replaceclozeProp.join(","));
-                }
-                else replaceclozeArr = [];
-            } catch (e) {
-                throw new Error(`Error parsing replacecloze property: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
-            }
 
-            const replaceclozehintProp = this.properties?.replaceclozehint ?? this.properties?.[".replaceclozehint"];
-            let replaceclozeHintArr: any;
-            if (typeof replaceclozehintProp == "string" && replaceclozehintProp.trim() != "") {
-                replaceclozeHintArr = replaceclozehintProp
-                    .replace(/(^\s*"|\s*"$)/g, "")
-                    .split(",");
-            } else if (
-                typeof replaceclozehintProp == "object" &&
-                replaceclozehintProp.constructor == Array
-            ) {
-                replaceclozeHintArr = replaceclozehintProp;
-            } else replaceclozeHintArr = [];
-            replaceclozeHintArr = replaceclozeHintArr.map((hint) => hint.trim());
+                const replaceclozehintProp = this.properties?.replaceclozehint ?? this.properties?.[".replaceclozehint"];
+                let replaceclozeHintArr: any;
+                if (typeof replaceclozehintProp == "string" && replaceclozehintProp.trim() != "") {
+                    replaceclozeHintArr = replaceclozehintProp
+                        .replace(/(^\s*"|\s*"$)/g, "")
+                        .split(",");
+                } else if (
+                    typeof replaceclozehintProp == "object" &&
+                    replaceclozehintProp.constructor == Array
+                ) {
+                    replaceclozeHintArr = replaceclozehintProp;
+                } else replaceclozeHintArr = [];
+                replaceclozeHintArr = replaceclozeHintArr.map((hint) => hint.trim());
 
-            // Add the clozes while ensuring that adding cloze in math mode double braces doesn't break the cloze
-            // This is done by adding extra space the braces between two double brace
-            for (const [i, reg] of replaceclozeArr.entries()) {
-                if (typeof reg == "string")
-                    clozedContent = clozedContent.replaceAll(
-                        reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(),
-                        (match) => {
+                // Add the clozes while ensuring that adding cloze in math mode double braces doesn't break the cloze
+                // This is done by adding extra space the braces between two double brace
+                for (const [i, reg] of replaceclozeArr.entries()) {
+                    if (typeof reg == "string")
+                        clozedContent = clozedContent.replaceAll(
+                            reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(),
+                            (match) => {
+                                return `{{c${cloze_id}::${escapeClozesAndMacroDelimiters(match)}${
+                                    replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""
+                                }\u{2063}}}`; // Add extra space between braces inside math
+                            },
+                        );
+                    else
+                        clozedContent = clozedContent.replace(reg, (match) => {
                             return `{{c${cloze_id}::${escapeClozesAndMacroDelimiters(match)}${
                                 replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""
                             }\u{2063}}}`; // Add extra space between braces inside math
-                        },
-                    );
-                else
-                    clozedContent = clozedContent.replace(reg, (match) => {
-                        return `{{c${cloze_id}::${escapeClozesAndMacroDelimiters(match)}${
-                            replaceclozeHintArr[i] ? `::${replaceclozeHintArr[i]}` : ""
-                        }\u{2063}}}`; // Add extra space between braces inside math
-                    });
-                cloze_id++;
+                        });
+                    cloze_id++;
+                }
             }
         }
 
@@ -252,16 +255,6 @@ export class ClozeNote extends Note {
                     [(re-find ?regex ?content)])                                                                                                                      
                (and [?b :block/title ?content]                                                                                                                        
                     [(re-find ?regex ?content)]))]`, {suppressErrors: false});
-        } else {
-            replaceCloze_blocks = await LogseqProxy.DB.datascriptQuery(`
-                [:find (pull ?b [:block/uuid :block/page])
-                :where
-                  [?prop-e :block/tags :logseq.class/Property]
-                  [?prop-e :db/ident ?prop]
-                  [(name ?prop) ?prop-name]
-                  [(clojure.string/ends-with? ?prop-name "replacecloze")]
-                  [?b ?prop _]
-                ]`, {suppressErrors: false});
         }
 
         let blocks = [

@@ -63,6 +63,10 @@ The `replaceCloze` block property lets you use search-and-replace patterns so yo
 | ![replaceCloze front 1](/img/cloze-replace-front-1.png) | ![replaceCloze back 1](/img/cloze-replace-back-1.png) |
 | ![replaceCloze front 2](/img/cloze-replace-front-2.png) | ![replaceCloze back 2](/img/cloze-replace-back-2.png) |
 
+:::warning
+The replacecloze property is a file graph only feature. It is not available in db graphs.
+:::
+
 ## Tips
 
 - Combine cloze syntax with `extra::` blocks to provide mnemonics.
