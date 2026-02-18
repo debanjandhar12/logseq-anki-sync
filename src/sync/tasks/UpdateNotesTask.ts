@@ -8,6 +8,7 @@ import {LogseqProxy} from "../../logseq/LogseqProxy";
 import path from "path-browserify";
 
 import {createLogger, LoggerCategory} from "../../utils/logger";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 
@@ -71,15 +72,12 @@ export class UpdateNotesTask {
 
         const {skipOnDependencyHashMatch} = LogseqProxy.Settings.getPluginSettings();
 
-        if (skipOnDependencyHashMatch && oldConfig.dependencyHash === dependencyHash) {
-            oldConfig.assets?.forEach((asset) => {
-                if (ankiNoteManager.mediaInfo.has(path.basename(asset))) return;
-                ankiNoteManager.storeAsset(
-                    path.basename(asset),
-                    path.join(graphPath, path.resolve(asset))
-                );
-            });
-            return;
+        for (const asset of oldConfig.assets ?? []) {
+            const name = path.basename(asset);
+            if (skipOnDependencyHashMatch && oldConfig.dependencyHash === dependencyHash
+                && ankiNoteManager.mediaInfo.has(name)) continue;
+            const url = await WindowParentBridge.makeAssetUrl(asset);
+            ankiNoteManager.storeAsset(name, url);
         }
 
         const [html, assets, deck, breadcrumb, tags] = await parseNote(note, graphName);

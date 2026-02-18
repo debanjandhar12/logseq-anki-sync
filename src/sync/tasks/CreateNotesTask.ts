@@ -9,6 +9,7 @@ import {NoteHashCalculator} from "../cache";
 import {parseNote} from "../parsers/NoteParser";
 import path from "path-browserify";
 import _ from "lodash";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
 export class CreateNotesTask {
     async execute(
@@ -73,12 +74,11 @@ export class CreateNotesTask {
             tags,
         ]);
 
-        assets.forEach((asset) => {
-            ankiNoteManager.storeAsset(
-                path.basename(asset),
-                path.join(graphPath, path.resolve(asset))
-            );
-        });
+        for (const asset of assets) {
+            const name = path.basename(asset);
+            const url = await WindowParentBridge.makeAssetUrl(asset);
+            ankiNoteManager.storeAsset(name, url);
+        }
 
         ankiNoteManager.addNote(
             deck,
