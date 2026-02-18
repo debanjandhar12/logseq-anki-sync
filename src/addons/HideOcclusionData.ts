@@ -11,6 +11,7 @@ export class HideOcclusionData extends Addon {
         if (this.isEnabled()) {
             logseq.provideStyle({
                 style: `
+            /* File version selectors */
             div:has(a[data-ref="occlusion"]) + span + .page-property-value > div {
                 display: none;
             }
@@ -23,6 +24,14 @@ export class HideOcclusionData extends Addon {
                 display: none;
             }
             div:has(a[data-ref="occlusion"]) > .page-property-value::before {
+                content: '<hidden occlusion data>';
+                font-style: italic;
+            }
+            /* DB version selectors */
+            div[data-property-title="occlusion"] .property-value-inner {
+                display: none;
+            }
+            div[data-property-title="occlusion"] .property-value::before {
                 content: '<hidden occlusion data>';
                 font-style: italic;
             }`,
