@@ -33,6 +33,7 @@ import {showSelectionModal} from "../ui";
 import {createLogger, LoggerCategory} from "../utils/logger";
 import {appendExtraToHtmlFile} from "./NoteUtils";
 import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
+import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
@@ -89,13 +90,7 @@ export class ImageOcclusionNote extends Note {
         }
         let imgToOcclusionDataHashMap: ImageToOcclusionDataHashMap =
             ImageOcclusionNote.upgradeProperties(
-                JSON.parse(
-                    Buffer.from(
-                        fetchedBlock.properties?.occlusion ||
-                            Buffer.from("{}", "utf8").toString("base64"),
-                        "base64",
-                    ).toString(),
-                ),
+                ObjectPropertyDataManager.load(fetchedBlock.properties?.occlusion) || {},
             );
         logger.info(imgToOcclusionDataHashMap);
         imgToOcclusionDataHashMap = ImageOcclusionNote.migratePdfImages(
@@ -142,23 +137,13 @@ export class ImageOcclusionNote extends Note {
             );
             if (newOcclusionData && typeof newOcclusionData == "object") {
                 imgToOcclusionDataHashMap[selectedImage] = newOcclusionData;
-                if (
-                    Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
-                        "base64",
-                    ) != fetchedBlock.properties?.occlusion
-                ) {
-                    logger.info(
-                        imgToOcclusionDataHashMap,
-                        Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
-                            "base64",
-                        ),
-                    );
+                const savedData = await ObjectPropertyDataManager.save(imgToOcclusionDataHashMap);
+                if (savedData != fetchedBlock.properties?.occlusion) {
+                    logger.info(imgToOcclusionDataHashMap, savedData);
                     await LogseqProxy.Editor.upsertBlockProperty(
                         getUUIDFromBlock(fetchedBlock),
                         "occlusion",
-                        Buffer.from(JSON.stringify(imgToOcclusionDataHashMap), "utf8").toString(
-                            "base64",
-                        ),
+                        savedData,
                     );
                 }
 
@@ -179,7 +164,7 @@ export class ImageOcclusionNote extends Note {
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let clozedContent: string = this.content;
         let imgToOcclusionDataHashMap = ImageOcclusionNote.upgradeProperties(
-            JSON.parse(Buffer.from(this.properties?.occlusion, "base64").toString()),
+            ObjectPropertyDataManager.load(this.properties?.occlusion) || {},
         );
         const block = await LogseqProxy.Editor.getBlock(this.uuid);
         let block_images = await ImageOcclusionNote.getImagesInBlockOrNote(block);
@@ -279,9 +264,7 @@ export class ImageOcclusionNote extends Note {
                 // Remove blocks that do not have images with occlusion
                 try {
                     let imgToOcclusionDataHashMap = ImageOcclusionNote.upgradeProperties(
-                        JSON.parse(
-                            Buffer.from(note.properties?.occlusion, "base64").toString(),
-                        ),
+                        ObjectPropertyDataManager.load(note.properties?.occlusion) || {},
                     );
                     let blockImages = await ImageOcclusionNote.getImagesInBlockOrNote(note);
                     imgToOcclusionDataHashMap = ImageOcclusionNote.migratePdfImages(
