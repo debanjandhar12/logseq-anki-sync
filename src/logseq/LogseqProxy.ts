@@ -24,11 +24,11 @@ const logger = createLogger(LoggerCategory.LogseqWrappers);
 
 /***
  * This is a cached + synchronization-safe logseq api wrapper.
- * Fixes the following issues: #58 (synchronization-safety is enabled only for macos)
+ * Fixes the following issues: #58 (synchronization-safety is enabled only for macos / dev mode)
  * */
 
 const isMacOs = platform.os?.family?.includes('Mac') || platform.os?.family?.includes('OS X');
-const getLogseqLock = isMacOs ? new AwaitLock() :
+const getLogseqLock = isMacOs || process.env.NODE_ENV !== 'production' ? new AwaitLock() :
         {acquireAsync: async (): Promise<void> => {}, release: async (): Promise<void> => {}}
 
 export namespace LogseqProxy {

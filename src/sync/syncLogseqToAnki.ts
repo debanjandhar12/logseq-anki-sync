@@ -228,14 +228,32 @@ export class LogseqToAnkiSync {
         );
 
         let notes: Array<Note> = [];
-        notes = [...notes, ...(await ClozeNote.getNotesFromLogseqBlocks())];
-        scanNotification.increment();
-        notes = [...notes, ...(await SwiftArrowNote.getNotesFromLogseqBlocks())];
-        scanNotification.increment();
-        notes = [...notes, ...(await ImageOcclusionNote.getNotesFromLogseqBlocks())];
-        scanNotification.increment();
-        notes = [...notes, ...(await HighlightMaskNote.getNotesFromLogseqBlocks())];
-        scanNotification.increment();
+        const [clozeNotes, swiftArrowNotes, imageOcclusionNotes, highlightMaskNotes] =
+            await Promise.all([
+                ClozeNote.getNotesFromLogseqBlocks().then((r) => {
+                    scanNotification.increment();
+                    return r;
+                }),
+                SwiftArrowNote.getNotesFromLogseqBlocks().then((r) => {
+                    scanNotification.increment();
+                    return r;
+                }),
+                ImageOcclusionNote.getNotesFromLogseqBlocks().then((r) => {
+                    scanNotification.increment();
+                    return r;
+                }),
+                HighlightMaskNote.getNotesFromLogseqBlocks().then((r) => {
+                    scanNotification.increment();
+                    return r;
+                }),
+            ]);
+        notes = [
+            ...notes,
+            ...clozeNotes,
+            ...swiftArrowNotes,
+            ...imageOcclusionNotes,
+            ...highlightMaskNotes,
+        ];
         notes = [...notes, ...(await MultilineCardNote.getNotesFromLogseqBlocks(notes))];
         scanNotification.increment();
         await new Promise((resolve) => setTimeout(resolve, 1000));
