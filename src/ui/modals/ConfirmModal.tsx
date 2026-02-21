@@ -32,7 +32,7 @@ const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
     });
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} zDepth="high">
+        <Modal open={open} setOpen={setOpen} onClose={() => {UI.hideModal(modalContext?.modalId); handleCancel();}} hasCloseButton={false} enableOutsideClickClose={false} zDepth="high">
             <div className="ui__confirm-modal is-">
                 <SimpleModalHeader title={message} />
                 <ModalFooter

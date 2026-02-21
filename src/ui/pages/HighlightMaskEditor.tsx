@@ -13,6 +13,7 @@ import {
     ModalHeader,
     DialogModalFooter,
     showInputModal,
+    showConfirmModal,
 } from "../";
 import {LogseqButton} from "../components/LogseqButton";
 import {LogseqCheckbox} from "../components/LogseqCheckbox";
@@ -200,7 +201,14 @@ const HighlightMaskEditorComponent: React.FC<{
         });
     };
 
-    const handleCancel = () => {
+    const handleCancel = async () => {
+        if (canUndo) {
+            const confirmed = await showConfirmModal(
+                "You have unsaved changes. Are you sure you want to close the Highlight Mask Editor?",
+                {confirmText: "Discard", cancelText: "Cancel"},
+            );
+            if (!confirmed) return;
+        }
         returnResult(false);
     };
 
@@ -551,7 +559,7 @@ const HighlightMaskEditorComponent: React.FC<{
                 <ModalHeader
                     title="Highlight Mask Editor"
                     icon={ANKI_ICON}
-                    onClose={() => setOpen(false)}
+                    onClose={handleCancel}
                     showCloseButton={true}>
                     <a href="https://github.com/sponsors/debanjandhar12" target={"_blank"}>
                         <img alt="Donate" style={{height: "1.4rem"}} src={DONATE_ICON} />
