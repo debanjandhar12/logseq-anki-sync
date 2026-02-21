@@ -1,13 +1,13 @@
-import { Note } from "../../anki-notes/Note";
-import { ParsedNoteData } from "../types";
-import { DeckParser } from "./DeckParser";
-import { BreadcrumbAndParentBlockParser } from "./BreadcrumbAndParentBlockParser";
-import { TagParser } from "./TagParser";
-import { ParentContentParser } from "./ParentContentParser";
+import {Note} from "../../anki-notes/Note";
+import {ParsedNoteData} from "../types";
+import {DeckParser} from "./DeckParser";
+import {BreadcrumbAndParentBlockParser} from "./BreadcrumbAndParentBlockParser";
+import {TagParser} from "./TagParser";
+import {ParentContentParser} from "./ParentContentParser";
 
 export async function parseNote(note: Note, graphName: string): Promise<ParsedNoteData> {
-    let { html, assets, tags } = await note.getClozedContentHTML();
-    
+    let {html, assets, tags} = await note.getClozedContentHTML();
+
     const tagsSet = tags instanceof Set ? tags : new Set(tags);
     const parentResult = await ParentContentParser.parse(note, html, assets, tagsSet);
     html = parentResult.html;
@@ -15,7 +15,7 @@ export async function parseNote(note: Note, graphName: string): Promise<ParsedNo
 
     const deck = await DeckParser.parse(note);
 
-    const breadcrumb = await BreadcrumbAndParentBlockParser.parse(note, graphName);
+    const breadcrumb = await BreadcrumbAndParentBlockParser.parse(note, graphName, tagsSet);
 
     const collectedTags = await TagParser.parse(note, Array.from(parentResult.tags));
 
