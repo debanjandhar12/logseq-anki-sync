@@ -10,7 +10,7 @@ const logger = createLogger(LoggerCategory.Others);
  * ObjectPropertyDataManager - Handles saving and loading object data
  * from Logseq block properties with proper encoding based on graph type.
  *
- * For DB graphs: Data is stored as JSON string directly
+ * For DB graphs: Data is stored as backtick-wrapped JSON string
  * For non-DB graphs: Data is stored as base64-encoded JSON string
  */
 export class ObjectPropertyDataManager {
@@ -19,13 +19,18 @@ export class ObjectPropertyDataManager {
      * @param data - The object to save
      * @returns Promise<string> - The encoded string to store in property
      */
-    static async save(block: BlockEntity | { uuid: string; properties?: any }, propertyName: string, data: object): Promise<string> {
+    static async save(
+        block: BlockEntity | { uuid: string; properties?: any },
+        propertyName: string,
+        data: object,
+    ): Promise<string> {
         const jsonString = JSON.stringify(data);
         const isDbGraph = await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
 
         let encoded: string;
         if (isDbGraph) {
-            encoded = jsonString;
+            const escapedJsonString = jsonString.replace(/`/g, "\\u0060"); // Replace backticks with their unicode escape sequence
+            encoded = `\`${escapedJsonString}\``;  // Backticks added to make it appear as code in logseq db ver
         } else {
             encoded = Buffer.from(jsonString, "utf8").toString("base64");
         }
@@ -35,7 +40,7 @@ export class ObjectPropertyDataManager {
             await LogseqProxy.Editor.upsertBlockProperty(
                 getUUIDFromBlock(block as BlockEntity),
                 propertyName,
-                encoded
+                encoded,
             );
         }
 
@@ -48,12 +53,17 @@ export class ObjectPropertyDataManager {
      * @returns object | null - The parsed object, or null if parsing fails
      */
     static load(block: BlockEntity | { properties?: any }, propertyName: string): object | null {
-        const value = block.properties?.[propertyName];
+        let value = block.properties?.[propertyName];
         if (!value) {
             return null;
         }
 
         try {
+            // Strip backticks if present (In DB graphs, we add them to make them appear as code in logseq)
+            if (typeof value === "string" && value.startsWith("`") && value.endsWith("`")) {
+                value = value.slice(1, -1);
+            }
+
             // First, try to parse as JSON directly (DB graph format)
             const parsed = JSON.parse(value);
             if (typeof parsed === "object" && parsed !== null) {
