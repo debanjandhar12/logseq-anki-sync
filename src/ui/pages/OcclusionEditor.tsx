@@ -1,6 +1,7 @@
 import React, {useState, useEffect, useCallback, useRef} from "../React";
 import _ from "lodash";
 import {fabric} from "fabric";
+import useUndo from "use-undo";
 import {ANKI_ICON, DONATE_ICON, isWebURL_REGEXP} from "../../constants";
 import ADD_OCCLUSION_ICON from "../../../node_modules/@tabler/icons/icons/outline/square-plus-2.svg?raw";
 import REMOVE_OCCLUSION_ICON from "../../../node_modules/@tabler/icons/icons/outline/square-minus.svg?raw";
@@ -114,6 +115,15 @@ const OcclusionEditorComponent: React.FC<{
     // Cloze ID state for select component
     const [clozeId, setClozeId] = React.useState<string>("1");
 
+    // Store initial elements in a ref to ensure stable hook initialization
+    const initialElementsRef = React.useRef(occlusionElements);
+
+    // Undo/Redo state for occlusion elements
+    const [
+        occlusionState,
+        {set: setOcclusionElements, undo: undoOcclusion, redo: redoOcclusion, canUndo, canRedo},
+    ] = useUndo(initialElementsRef.current);
+
     // Store original image dimensions for coordinate calculations
     const imageDimensions = React.useRef<{width: number; height: number}>({
         width: 0,
@@ -173,6 +183,7 @@ const OcclusionEditorComponent: React.FC<{
             updateOcclusionHint(selectedObj, hint, fabric);
             fabricRef.current.renderAll();
             setFabricSelection([...fabricSelection]); // Force re-render
+            saveCanvasState(); // Save to undo history
         }
     };
 
@@ -292,6 +303,34 @@ const OcclusionEditorComponent: React.FC<{
         };
     }, [open]);
 
+    // Sync canvas with undo/redo state changes
+    React.useEffect(() => {
+        if (!fabricRef.current || !imgEl.width) return;
+
+        const currentObjects = fabricRef.current.getObjects();
+        const targetElements = occlusionState.present;
+
+        if (currentObjects.length === 0 && targetElements.length === 0) return;
+
+        fabricRef.current.remove(...currentObjects);
+
+        targetElements.forEach((obj) => {
+            const occlusionEl = createOcclusionRectEl(
+                fabric,
+                obj.left,
+                obj.top,
+                obj.width,
+                obj.height,
+                obj.angle,
+                obj.cId,
+                obj.hint,
+            );
+            fabricRef.current.add(occlusionEl);
+        });
+        fabricRef.current.discardActiveObject();
+        fabricRef.current.renderAll();
+    }, [occlusionState.present]);
+
     // Handle Selection
     const [fabricSelection, setFabricSelection] = React.useState<Array<any>>([]);
     React.useEffect(() => {
@@ -306,6 +345,35 @@ const OcclusionEditorComponent: React.FC<{
             setFabricSelection(null);
         });
     }, [fabricRef]);
+
+    // Save state to undo history on object modification
+    const saveCanvasState = React.useCallback(() => {
+        if (!fabricRef.current) return;
+        const elements = fabricRef.current.getObjects().map((obj) => {
+            const matrix = obj.calcTransformMatrix();
+            const element: OcclusionElement = {
+                left: matrix[4],
+                top: matrix[5],
+                width: obj.getScaledWidth(),
+                height: obj.getScaledHeight(),
+                angle: obj.angle,
+                cId: parseInt(obj._objects[1].text),
+            };
+            if (obj.hint) element.hint = obj.hint;
+            return element;
+        });
+        setOcclusionElements(elements);
+    }, [setOcclusionElements]);
+
+    React.useEffect(() => {
+        if (!fabricRef || !fabricRef.current) return;
+        const onObjectModified = () => saveCanvasState();
+        fabricRef.current.on("object:modified", onObjectModified);
+        return () => {
+            fabricRef.current.off("object:modified", onObjectModified);
+        };
+    }, [fabricRef, saveCanvasState]);
+
     React.useEffect(() => {
         if (fabricSelection && fabricSelection.length > 0) {
             setClozeId(fabricSelection[0]._objects[1].text);
@@ -491,6 +559,26 @@ const OcclusionEditorComponent: React.FC<{
                 return;
             }
 
+            // Ctrl+Z - Undo
+            if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
+                if (canUndo) {
+                    undoOcclusion();
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+            }
+
+            // Ctrl+Shift+Z - Redo
+            if (e.ctrlKey && e.key === "Z" && e.shiftKey) {
+                if (canRedo) {
+                    redoOcclusion();
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+            }
+
             // Ctrl+A - Select all (only in select mode)
             if (e.ctrlKey && e.key === "a") {
                 if (activeTool !== "select") return;
@@ -596,16 +684,14 @@ const OcclusionEditorComponent: React.FC<{
         return () => {
             WindowBridge.removeDocumentEventListener("keydown", onKeydown, {capture: true});
         };
-    }, [fabricRef, open, activeTool, clozeId]);
+    }, [fabricRef, open, activeTool, clozeId, canUndo, canRedo]);
 
     // Create the UI
     const addOcclusion = () => {
         const occlusionWidth = 0.22 * imgEl.width;
         const occlusionHeight = 0.22 * imgEl.height;
 
-        const usedCIds = fabricRef.current
-            .getObjects()
-            .map((obj) => parseInt(obj._objects[1].text));
+        const usedCIds = occlusionState.present.map((obj) => obj.cId);
         let newCId = 1;
         while (usedCIds.includes(newCId) && newCId < 10) newCId++;
         if (newCId > 9) newCId = 1;
@@ -660,28 +746,40 @@ const OcclusionEditorComponent: React.FC<{
                 0.11 * imgEl.height;
         }
 
-        const occlusionEl = createOcclusionRectEl(
-            fabric,
-            x,
-            y,
-            occlusionWidth,
-            occlusionHeight,
-            0,
-            newCId,
-        );
-        fabricRef.current.add(occlusionEl);
-        fabricRef.current.setActiveObject(occlusionEl);
-        fabricRef.current.renderAll();
+        const newElement: OcclusionElement = {
+            left: x,
+            top: y,
+            width: occlusionWidth,
+            height: occlusionHeight,
+            angle: 0,
+            cId: newCId,
+        };
+        setOcclusionElements([...occlusionState.present, newElement]);
     };
     const deleteOcclusion = () => {
-        fabricRef.current.remove(...fabricRef.current.getActiveObjects());
-        fabricRef.current.renderAll();
+        if (!fabricRef.current) return;
+        const activeObjects = fabricRef.current.getActiveObjects();
+        if (activeObjects.length === 0) return;
+
+        const elementsToRemove = new Set(
+            activeObjects.map((obj) => {
+                const matrix = obj.calcTransformMatrix();
+                return `${matrix[4]},${matrix[5]}`;
+            }),
+        );
+
+        const newElements = occlusionState.present.filter((el) => {
+            const key = `${el.left},${el.top}`;
+            return !elementsToRemove.has(key);
+        });
+        setOcclusionElements(newElements);
     };
     const onCIdChange = (value: string) => {
         fabricSelection.forEach((obj) => {
             obj._objects[1].set("text", value);
         });
         fabricRef.current.renderAll();
+        saveCanvasState(); // Save to undo history
     };
     const [isAIGeneratingOcclusion, setIsAIGeneratingOcclusion] = useState(false);
 
@@ -764,7 +862,10 @@ const OcclusionEditorComponent: React.FC<{
             }
             if (counter === 0)
                 logseq.Editor.showMsg("All possible occlusions already present.", "warning");
-            else logseq.Editor.showMsg(`Generated ${counter} occlusions`, "success");
+            else {
+                logseq.Editor.showMsg(`Generated ${counter} occlusions`, "success");
+                saveCanvasState(); // Save to undo history
+            }
         } catch (e) {
             logseq.Editor.showMsg("Failed to generate occlusions", "error");
         }

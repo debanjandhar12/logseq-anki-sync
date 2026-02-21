@@ -1,6 +1,7 @@
 import React from "../React";
 import _ from "lodash";
 import {ANKI_ICON, DONATE_ICON} from "../../constants";
+import useUndo from "use-undo";
 import ADD_HIGHLIGHT_ICON from "../../../node_modules/@tabler/icons/icons/outline/plus.svg?raw";
 import REMOVE_HIGHLIGHT_ICON from "../../../node_modules/@tabler/icons/icons/outline/trash.svg?raw";
 import HINT_ICON from "../../../node_modules/@tabler/icons/icons/outline/bulb.svg?raw";
@@ -113,7 +114,15 @@ const HighlightMaskEditorComponent: React.FC<{
         modalId: modalContext?.modalId,
     });
 
-    const [elements, setElements] = React.useState<HighlightMaskElement[]>(highlightElements);
+    // Store initial elements in a ref to ensure stable hook initialization
+    const initialElementsRef = React.useRef(highlightElements);
+
+    const [
+        elementsState,
+        {set: setElements, undo: undoElements, redo: redoElements, canUndo, canRedo},
+    ] = useUndo(initialElementsRef.current);
+    const elements = elementsState.present;
+
     const [selectedElementIndex, setSelectedElementIndex] = React.useState<number | null>(null);
     const [hasTextSelection, setHasTextSelection] = React.useState(false);
     const [clozeId, setClozeId] = React.useState<string>("1");
@@ -446,6 +455,26 @@ const HighlightMaskEditorComponent: React.FC<{
                 }
             }
 
+            // Ctrl+Z - Undo
+            if (keyboardEvent.ctrlKey && keyboardEvent.key === "z" && !keyboardEvent.shiftKey) {
+                if (canUndo) {
+                    undoElements();
+                }
+                keyboardEvent.preventDefault();
+                keyboardEvent.stopImmediatePropagation();
+                return;
+            }
+
+            // Ctrl+Shift+Z - Redo
+            if (keyboardEvent.ctrlKey && keyboardEvent.key === "Z" && keyboardEvent.shiftKey) {
+                if (canRedo) {
+                    redoElements();
+                }
+                keyboardEvent.preventDefault();
+                keyboardEvent.stopImmediatePropagation();
+                return;
+            }
+
             if (keyboardEvent.key === "Enter" && !keyboardEvent.shiftKey) {
                 handleConfirm();
                 keyboardEvent.preventDefault();
@@ -478,7 +507,7 @@ const HighlightMaskEditorComponent: React.FC<{
         return () => {
             WindowBridge.removeDocumentEventListener("keydown", onKeydown, {capture: true});
         };
-    }, [open, selectedElementIndex, elements, modalContext?.modalId]);
+    }, [open, selectedElementIndex, elements, modalContext?.modalId, canUndo, canRedo]);
 
     React.useEffect(() => {
         if (selectedElementIndex !== null) {
