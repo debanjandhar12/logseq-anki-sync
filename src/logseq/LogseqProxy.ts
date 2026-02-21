@@ -19,15 +19,17 @@ import { LogseqNamespaceHelperProxy } from "./LogseqNamespaceHelper";
 import getNameFromPage from "./getNameFromPage";
 
 import { createLogger, LoggerCategory } from "../utils/logger";
-
+import platform from 'platform';
 const logger = createLogger(LoggerCategory.LogseqWrappers);
 
 /***
- * This is a cached + syncronization-safe logseq api wrapper.
- * Fixes the following issues: #58
+ * This is a cached + synchronization-safe logseq api wrapper.
+ * Fixes the following issues: #58 (synchronization-safety is enabled only for macos)
  * */
 
-const getLogseqLock = new AwaitLock();
+const isMacOs = platform.os?.family?.includes('Mac') || platform.os?.family?.includes('OS X');
+const getLogseqLock = isMacOs ? new AwaitLock() :
+        {acquireAsync: async (): Promise<void> => {}, release: async (): Promise<void> => {}}
 
 export namespace LogseqProxy {
     export class Editor {
