@@ -18,6 +18,7 @@ import {
 } from "../";
 import {LogseqButton} from "../components/LogseqButton";
 import {LogseqCheckbox} from "../components/LogseqCheckbox";
+import {LogseqSelect} from "../components/LogseqSelect";
 import {createWorker, PSM} from "tesseract.js";
 import {UI} from "../UI";
 import {createOcclusionRectEl, updateOcclusionHint} from "../../utils/occlusionUtils";
@@ -109,6 +110,9 @@ const OcclusionEditorComponent: React.FC<{
 
     // Tool state
     const [activeTool, setActiveTool] = React.useState<ToolType>("select");
+
+    // Cloze ID state for select component
+    const [clozeId, setClozeId] = React.useState<string>("1");
 
     // Store original image dimensions for coordinate calculations
     const imageDimensions = React.useRef<{width: number; height: number}>({
@@ -304,7 +308,7 @@ const OcclusionEditorComponent: React.FC<{
     }, [fabricRef]);
     React.useEffect(() => {
         if (fabricSelection && fabricSelection.length > 0) {
-            cidSelectorRef.current.value = fabricSelection[0]._objects[1].text;
+            setClozeId(fabricSelection[0]._objects[1].text);
         }
     }, [fabricSelection]);
 
@@ -383,7 +387,7 @@ const OcclusionEditorComponent: React.FC<{
         fabricRef.current.renderAll();
     }, [activeTool]);
 
-    // Handle panning with hand tool using fabric mouse events
+    // Handle panning with hand tool using fabric mouse events (left click)
     React.useEffect(() => {
         if (!fabricRef.current || !scrollContainerRef.current) return;
 
@@ -396,6 +400,7 @@ const OcclusionEditorComponent: React.FC<{
         let startScrollTop = 0;
 
         const handleMouseDown = (opt: any) => {
+            if (UI.getActiveModal() !== modalContext?.modalId) return;
             if (activeTool !== "hand") return;
             localIsPanning = true;
             canvas.defaultCursor = "grabbing";
@@ -407,6 +412,7 @@ const OcclusionEditorComponent: React.FC<{
         };
 
         const handleMouseMove = (opt: any) => {
+            if (UI.getActiveModal() !== modalContext?.modalId) return;
             if (!localIsPanning) return;
             const dx = opt.e.clientX - startX;
             const dy = opt.e.clientY - startY;
@@ -415,6 +421,7 @@ const OcclusionEditorComponent: React.FC<{
         };
 
         const handleMouseUp = () => {
+            if (UI.getActiveModal() !== modalContext?.modalId) return;
             if (localIsPanning) {
                 localIsPanning = false;
                 if (activeTool === "hand") {
@@ -433,6 +440,31 @@ const OcclusionEditorComponent: React.FC<{
             canvas.off("mouse:up", handleMouseUp);
         };
     }, [activeTool]);
+
+    // Handle Ctrl + Middle mouse wheel for zooming
+    React.useEffect(() => {
+        if (!fabricRef.current || !scrollContainerRef.current || !open) return;
+
+        const scrollContainer = scrollContainerRef.current;
+
+        const handleWheel = (e: WheelEvent) => {
+            if (!e.ctrlKey) return;
+            if (UI.getActiveModal() !== modalContext?.modalId) return;
+
+            e.preventDefault();
+
+            const delta = e.deltaY > 0 ? -10 : 10;
+            const newZoom = Math.max(5, Math.min(200, zoomLevel + delta));
+            setZoomLevel(newZoom);
+            applyZoom(newZoom);
+        };
+
+        scrollContainer.addEventListener("wheel", handleWheel, {passive: false});
+
+        return () => {
+            scrollContainer.removeEventListener("wheel", handleWheel);
+        };
+    }, [zoomLevel, applyZoom, open]);
 
     // Handle some key events
     React.useEffect(() => {
@@ -550,9 +582,9 @@ const OcclusionEditorComponent: React.FC<{
             // Number keys 1-9 - Change cloze ID
             if (e.key >= "1" && e.key <= "9") {
                 if (activeObject && activeTool === "select") {
-                    cidSelectorRef.current.value = e.key;
-                    const event = new Event("change", {bubbles: true});
-                    cidSelectorRef.current.dispatchEvent(event);
+                    const newClozeId = e.key;
+                    setClozeId(newClozeId);
+                    onCIdChange(newClozeId);
                     e.preventDefault();
                     e.stopImmediatePropagation();
                 }
@@ -564,7 +596,7 @@ const OcclusionEditorComponent: React.FC<{
         return () => {
             WindowBridge.removeDocumentEventListener("keydown", onKeydown, {capture: true});
         };
-    }, [fabricRef, open, activeTool]);
+    }, [fabricRef, open, activeTool, clozeId]);
 
     // Create the UI
     const addOcclusion = () => {
@@ -645,9 +677,9 @@ const OcclusionEditorComponent: React.FC<{
         fabricRef.current.remove(...fabricRef.current.getActiveObjects());
         fabricRef.current.renderAll();
     };
-    const onCIdChange = () => {
+    const onCIdChange = (value: string) => {
         fabricSelection.forEach((obj) => {
-            obj._objects[1].set("text", cidSelectorRef.current.value);
+            obj._objects[1].set("text", value);
         });
         fabricRef.current.renderAll();
     };
@@ -836,37 +868,18 @@ const OcclusionEditorComponent: React.FC<{
                             borderRight: "1px solid var(--ls-border-color)",
                         }}>
                         {/* An hack to align with the other buttons */}
-                        <div style={{position: "relative", width: "80px", height: "1.6rem"}}>
-                            <span
-                                style={{
-                                    position: "absolute",
-                                    zIndex: 2,
-                                    marginTop: "-8px",
-                                    fontSize: "12px",
-                                    userSelect: "none",
-                                    pointerEvents: "none",
-                                }}
-                                className={"text-sm opacity-80"}>
-                                Cloze Id:
-                            </span>
-                            <select
-                                ref={cidSelectorRef}
-                                onChange={onCIdChange}
-                                className="form-select is-small"
-                                style={{
-                                    position: "absolute",
-                                    zIndex: 1,
-                                    margin: "0",
-                                    width: "80px",
-                                    height: "inherit",
-                                }}>
-                                {_.range(1, 10).map((i) => (
-                                    <option key={i} value={i}>
-                                        {i}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <LogseqSelect
+                            ref={cidSelectorRef}
+                            value={clozeId}
+                            onChange={(val) => {
+                                setClozeId(val);
+                                onCIdChange(val);
+                            }}
+                            options={_.range(1, 10).map((i) => ({value: i, label: String(i)}))}
+                            title="Cloze Id:"
+                            size="sm"
+                            width="80px"
+                        />
                         {/* Hint button */}
                         {fabricSelection && fabricSelection.length === 1 && (
                             <LogseqButton

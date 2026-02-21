@@ -21,7 +21,7 @@ import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import { BlockEntity, BlockUUID } from "@logseq/libs/dist/LSPlugin";
 import { appendExtraToHtmlFile } from "./NoteUtils";
 import { ObjectPropertyDataManager } from "../utils/ObjectPropertyDataManager";
-import { matchTextQuote, getHealedHighlightGeometry } from "../utils/HighlighPosFinder";
+import { matchTextQuote, getHealedHighlightGeometry } from "../utils/HighlightNoteQuotePosFinder";
 import { createLogger, LoggerCategory } from "../utils/logger";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);

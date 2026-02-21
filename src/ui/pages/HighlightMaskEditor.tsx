@@ -1,6 +1,6 @@
 import React from "../React";
 import _ from "lodash";
-import { ANKI_ICON, DONATE_ICON } from "../../constants";
+import {ANKI_ICON, DONATE_ICON} from "../../constants";
 import ADD_HIGHLIGHT_ICON from "../../../node_modules/@tabler/icons/icons/outline/plus.svg?raw";
 import REMOVE_HIGHLIGHT_ICON from "../../../node_modules/@tabler/icons/icons/outline/trash.svg?raw";
 import HINT_ICON from "../../../node_modules/@tabler/icons/icons/outline/bulb.svg?raw";
@@ -12,15 +12,20 @@ import {
     DialogModalFooter,
     showInputModal,
 } from "../";
-import { LogseqButton } from "../components/LogseqButton";
-import { UI } from "../UI";
-import { WindowBridge } from "../../logseq/WindowBridge";
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import {LogseqButton} from "../components/LogseqButton";
+import {LogseqSelect} from "../components/LogseqSelect";
+import {UI} from "../UI";
+import {WindowBridge} from "../../logseq/WindowBridge";
+import {createLogger, LoggerCategory} from "../../utils/logger";
 import StarterKit from "@tiptap/starter-kit";
-import { Extension, Editor } from "@tiptap/core";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
-import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import { describeTextQuote, matchTextQuote, getHealedHighlightGeometry } from "../../utils/HighlighPosFinder";
+import {Extension, Editor} from "@tiptap/core";
+import {Plugin, PluginKey} from "@tiptap/pm/state";
+import {Decoration, DecorationSet} from "@tiptap/pm/view";
+import {
+    describeTextQuote,
+    matchTextQuote,
+    getHealedHighlightGeometry,
+} from "../../utils/HighlightNoteQuotePosFinder";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -57,7 +62,7 @@ export async function showHighlightMaskEditor(
             />
         ),
         {},
-        { errorMessage: "Failed to open Highlight Mask Editor" },
+        {errorMessage: "Failed to open Highlight Mask Editor"},
     );
 }
 
@@ -99,9 +104,9 @@ const HighlightMaskEditorComponent: React.FC<{
     highlightConfig: HighlightMaskConfig;
     resolve: (value: HighlightMaskData | boolean) => void;
     reject: Function;
-    modalContext?: { modalId: string | null };
-}> = ({ rawText, highlightElements, highlightConfig, resolve, reject, modalContext }) => {
-    const { open, setOpen, returnResult } = useModal<HighlightMaskData | boolean>(resolve, {
+    modalContext?: {modalId: string | null};
+}> = ({rawText, highlightElements, highlightConfig, resolve, reject, modalContext}) => {
+    const {open, setOpen, returnResult} = useModal<HighlightMaskData | boolean>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false,
         enableEnterKey: false,
@@ -111,6 +116,7 @@ const HighlightMaskEditorComponent: React.FC<{
     const [elements, setElements] = React.useState<HighlightMaskElement[]>(highlightElements);
     const [selectedElementIndex, setSelectedElementIndex] = React.useState<number | null>(null);
     const [hasTextSelection, setHasTextSelection] = React.useState(false);
+    const [clozeId, setClozeId] = React.useState<string>("1");
     const cidSelectorRef = React.useRef<HTMLSelectElement>(null);
     const editorRef = React.useRef<HTMLDivElement>(null);
     const [editor, setEditor] = React.useState<Editor | null>(null);
@@ -129,8 +135,8 @@ const HighlightMaskEditorComponent: React.FC<{
                     class: "prose prose-sm max-w-none focus:outline-none p-4 font-mono whitespace-pre-wrap",
                 },
             },
-            onTransaction: ({ editor }) => {
-                const { from, to } = editor.state.selection;
+            onTransaction: ({editor}) => {
+                const {from, to} = editor.state.selection;
                 setHasTextSelection(from !== to);
             },
         });
@@ -145,7 +151,7 @@ const HighlightMaskEditorComponent: React.FC<{
     React.useEffect(() => {
         if (!editor || !open) return;
         // Make it effectively read-only
-        editor.setOptions({ editable: false });
+        editor.setOptions({editable: false});
     }, [editor, open]);
 
     const handleConfirm = async () => {
@@ -187,11 +193,15 @@ const HighlightMaskEditorComponent: React.FC<{
 
                 const el = elements[index];
                 const isSelected = selectedElementIndex === index;
-                const actualStart = await matchTextQuote(fullText, {
-                    exact: el.text,
-                    prefix: el.prefix,
-                    suffix: el.suffix,
-                }, el.approxPos);
+                const actualStart = await matchTextQuote(
+                    fullText,
+                    {
+                        exact: el.text,
+                        prefix: el.prefix,
+                        suffix: el.suffix,
+                    },
+                    el.approxPos,
+                );
 
                 if (actualStart !== -1) {
                     const actualEnd = actualStart + el.text.length;
@@ -225,10 +235,11 @@ const HighlightMaskEditorComponent: React.FC<{
                     });
 
                     if (fromPos !== -1 && toPos !== -1) {
-                        const className = `cursor-pointer px-1 rounded transition-all ${isSelected
-                            ? "bg-blue-500 text-white ring-2 ring-blue-300"
-                            : "bg-yellow-200 hover:bg-yellow-300"
-                            }`;
+                        const className = `cursor-pointer px-1 rounded transition-all ${
+                            isSelected
+                                ? "bg-blue-500 text-white ring-2 ring-blue-300"
+                                : "bg-yellow-200 hover:bg-yellow-300"
+                        }`;
 
                         const titleText = el.hint
                             ? `Cloze ID: ${el.cId} | Hint: ${el.hint}`
@@ -288,7 +299,7 @@ const HighlightMaskEditorComponent: React.FC<{
     // Add Highlight
     const addHighlight = async () => {
         if (!editor) return;
-        const { from, to } = editor.state.selection;
+        const {from, to} = editor.state.selection;
         if (from === to) {
             logseq.UI.showMsg("Please select text to highlight", "warning");
             return;
@@ -331,11 +342,15 @@ const HighlightMaskEditorComponent: React.FC<{
         for (let idx = 0; idx < elements.length; idx++) {
             const el = elements[idx];
 
-            const elStart = await matchTextQuote(fullText, {
-                exact: el.text,
-                prefix: el.prefix,
-                suffix: el.suffix,
-            }, el.approxPos);
+            const elStart = await matchTextQuote(
+                fullText,
+                {
+                    exact: el.text,
+                    prefix: el.prefix,
+                    suffix: el.suffix,
+                },
+                el.approxPos,
+            );
 
             if (elStart !== -1) {
                 const elEnd = elStart + el.text.length;
@@ -380,9 +395,9 @@ const HighlightMaskEditorComponent: React.FC<{
         setSelectedElementIndex(null);
     };
 
-    const onCIdChange = () => {
-        if (selectedElementIndex === null || !cidSelectorRef.current) return;
-        const newCId = parseInt(cidSelectorRef.current.value, 10);
+    const onCIdChange = (value: string) => {
+        if (selectedElementIndex === null) return;
+        const newCId = parseInt(value, 10);
         const newElements = [...elements];
         newElements[selectedElementIndex] = {
             ...newElements[selectedElementIndex],
@@ -450,26 +465,24 @@ const HighlightMaskEditorComponent: React.FC<{
                 keyboardEvent.key <= "9" &&
                 selectedElementIndex !== null
             ) {
-                if (cidSelectorRef.current) {
-                    cidSelectorRef.current.value = keyboardEvent.key;
-                    onCIdChange();
-                }
+                const newClozeId = keyboardEvent.key;
+                setClozeId(newClozeId);
+                onCIdChange(newClozeId);
                 keyboardEvent.preventDefault();
                 keyboardEvent.stopImmediatePropagation();
                 return;
             }
         };
 
-        WindowBridge.addDocumentEventListener("keydown", onKeydown, { capture: true });
+        WindowBridge.addDocumentEventListener("keydown", onKeydown, {capture: true});
         return () => {
-            WindowBridge.removeDocumentEventListener("keydown", onKeydown, { capture: true });
+            WindowBridge.removeDocumentEventListener("keydown", onKeydown, {capture: true});
         };
     }, [open, selectedElementIndex, elements, modalContext?.modalId]);
 
     React.useEffect(() => {
-        if (selectedElementIndex !== null && cidSelectorRef.current) {
-            cidSelectorRef.current.value =
-                elements[selectedElementIndex]?.cId.toString() || "1";
+        if (selectedElementIndex !== null) {
+            setClozeId(elements[selectedElementIndex]?.cId.toString() || "1");
         }
     }, [selectedElementIndex, elements]);
 
@@ -495,7 +508,7 @@ const HighlightMaskEditorComponent: React.FC<{
                     onClose={() => setOpen(false)}
                     showCloseButton={true}>
                     <a href="https://github.com/sponsors/debanjandhar12" target={"_blank"}>
-                        <img alt="Donate" style={{ height: "1.4rem" }} src={DONATE_ICON} />
+                        <img alt="Donate" style={{height: "1.4rem"}} src={DONATE_ICON} />
                     </a>
                 </ModalHeader>
 
@@ -516,37 +529,18 @@ const HighlightMaskEditorComponent: React.FC<{
                             paddingRight: "0.5rem",
                             borderRight: "1px solid var(--ls-border-color)",
                         }}>
-                        <div style={{ position: "relative", width: "80px", height: "1.6rem" }}>
-                            <span
-                                style={{
-                                    position: "absolute",
-                                    zIndex: 2,
-                                    marginTop: "-8px",
-                                    fontSize: "12px",
-                                    userSelect: "none",
-                                    pointerEvents: "none",
-                                }}
-                                className={"text-sm opacity-80"}>
-                                Cloze Id:
-                            </span>
-                            <select
-                                ref={cidSelectorRef}
-                                onChange={onCIdChange}
-                                className="form-select is-small"
-                                style={{
-                                    position: "absolute",
-                                    zIndex: 1,
-                                    margin: "0",
-                                    width: "80px",
-                                    height: "inherit",
-                                }}>
-                                {_.range(1, 10).map((i) => (
-                                    <option key={i} value={i}>
-                                        {i}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <LogseqSelect
+                            ref={cidSelectorRef}
+                            value={clozeId}
+                            onChange={(val) => {
+                                setClozeId(val);
+                                onCIdChange(val);
+                            }}
+                            options={_.range(1, 10).map((i) => ({value: i, label: String(i)}))}
+                            title="Cloze Id:"
+                            size="sm"
+                            width="80px"
+                        />
                         {selectedElementIndex !== null && (
                             <LogseqButton
                                 color={"primary"}
@@ -562,7 +556,7 @@ const HighlightMaskEditorComponent: React.FC<{
                         )}
                     </span>
 
-                    <span style={{ paddingLeft: "0.5rem" }} />
+                    <span style={{paddingLeft: "0.5rem"}} />
                     <LogseqButton
                         color={"success"}
                         size={"sm"}
@@ -597,10 +591,10 @@ const HighlightMaskEditorComponent: React.FC<{
 
                 <div
                     className="overflow-y-auto"
-                    style={{ flex: 1, overflow: "auto", minHeight: 0, padding: "1rem" }}>
+                    style={{flex: 1, overflow: "auto", minHeight: 0, padding: "1rem"}}>
                     <div
                         className="highlight-mask-content"
-                        style={{ userSelect: "text", lineHeight: "1.6" }}
+                        style={{userSelect: "text", lineHeight: "1.6"}}
                         onClick={(e) => {
                             // If user clicked inside the editor but not on a decoration, deselect
                             const target = e.target as HTMLElement;
