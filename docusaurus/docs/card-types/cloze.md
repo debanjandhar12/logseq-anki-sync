@@ -64,7 +64,7 @@ The `replaceCloze` block property lets you use search-and-replace patterns so yo
 | ![replaceCloze front 2](/img/cloze-replace-front-2.png) | ![replaceCloze back 2](/img/cloze-replace-back-2.png) |
 
 :::warning
-The replacecloze property is a file graph only feature. It is not available in db graphs.
+The replacecloze property is a file graph only feature. It is not available in db graphs. Instead, please use highlight mask feature (db graph only) for creating cloze inside code blocks or math expressions.
 :::
 
 ## Tips
