@@ -29,7 +29,7 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
     modalContext,
 }) => {
     const [displayItems, setDisplayItems] = React.useState(items);
-    
+
     const { open, setOpen, returnResult } = useModal<number | null>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
@@ -45,7 +45,7 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
                 returnResult(selection);
             }
         },
-        [returnResult, items]
+        [returnResult, items],
     );
 
     // Setup keyboard shortcuts for numbered selection
@@ -60,22 +60,18 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
                         };
                     }
                     return item;
-                })
+                }),
             );
         }
 
         const onKeydown = (e: KeyboardEvent) => {
             if (!open) return;
-            
+
             if (UI.getActiveModal() !== modalContext?.modalId) {
                 return;
             }
-            
-            if (e.key === "Escape") {
-                handleSelection(null);
-                e.preventDefault();
-                e.stopImmediatePropagation();
-            } else if (e.key >= "1" && e.key <= "9" && enableKeySelect) {
+
+            if (e.key >= "1" && e.key <= "9" && enableKeySelect) {
                 const index = parseInt(e.key) - 1;
                 if (index < items.length) {
                     handleSelection(index);
@@ -98,7 +94,11 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
     }, [open, returnResult]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} zDepth="high">
+        <Modal
+            open={open}
+            setOpen={setOpen}
+            onClose={() => UI.hideModal(modalContext?.modalId)}
+            zDepth="high">
             {message && <h1 className="mb-2 text-2xl p-1">{message}</h1>}
             {displayItems.map((item, index) => (
                 <LogseqButton
@@ -106,8 +106,7 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
                     onClick={() => handleSelection(index)}
                     color="primary"
                     isFullWidth={true}
-                    icon={item.icon}
-                >
+                    icon={item.icon}>
                     <span
                         style={{
                             whiteSpace: "nowrap",
@@ -131,7 +130,7 @@ export async function showSelectionModal(
     options: {
         message: string;
         enableKeySelect?: boolean;
-    } = {message: ''}
+    } = { message: "" },
 ): Promise<number | null> {
     return createModalPromise<number | null>(
         (props) => (
@@ -143,6 +142,6 @@ export async function showSelectionModal(
             />
         ),
         {},
-        { errorMessage: "Failed to open selection modal" }
+        { errorMessage: "Failed to open selection modal" },
     );
 }

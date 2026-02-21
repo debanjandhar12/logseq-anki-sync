@@ -1,7 +1,7 @@
 import React from "../../React";
-import { UI } from "../../UI";
+import {UI} from "../../UI";
 
-import { createLogger, LoggerCategory } from "../../../utils/logger";
+import {createLogger, LoggerCategory} from "../../../utils/logger";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -25,25 +25,25 @@ export async function createModalPromise<T>(
         [key: string]: any;
     }) => React.ReactElement,
     componentProps: Record<string, any> = {},
-    options: ModalPromiseOptions = {}
+    options: ModalPromiseOptions = {},
 ): Promise<T> {
-    const {
-        errorMessage = 'Failed to open modal'
-    } = options;
+    const {errorMessage = "Failed to open modal"} = options;
 
     return new Promise<T>(async (resolve, reject) => {
-        const modalContext: ModalPromiseContext = { modalId: null };
-        
         try {
-            const modalId = await UI.showModal(
+            const modalId = `modal-${++UI.modalIdCounter}`;
+
+            const modalContext: ModalPromiseContext = {modalId};
+
+            const modalId2 = await UI.showModal(
                 ComponentFactory({
                     resolve,
                     reject,
                     modalContext,
                     ...componentProps,
-                })
+                }),
+                modalId,
             );
-            modalContext.modalId = modalId;
         } catch (e) {
             await logseq.UI.showMsg(errorMessage, "error");
             logger.info(e);

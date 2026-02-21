@@ -27,12 +27,21 @@ const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         enableEnterKey: true,
+        enableOutsideClickClose: false,
         defaultResult: true,
         modalId: modalContext?.modalId,
     });
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => {UI.hideModal(modalContext?.modalId); handleCancel();}} hasCloseButton={false} enableOutsideClickClose={false} zDepth="high">
+        <Modal
+            open={open}
+            setOpen={setOpen}
+            onClose={() => {
+                UI.hideModal(modalContext?.modalId);
+                handleCancel();
+            }}
+            hasCloseButton={false}
+            zDepth="high">
             <div className="ui__confirm-modal is-">
                 <SimpleModalHeader title={message} />
                 <ModalFooter
@@ -55,7 +64,7 @@ export async function showConfirmModal(
     options: {
         confirmText?: string;
         cancelText?: string;
-    } = {}
+    } = {},
 ): Promise<boolean> {
     return createModalPromise<boolean>(
         (props) => (
@@ -67,6 +76,6 @@ export async function showConfirmModal(
             />
         ),
         {},
-        { errorMessage: "Failed to open confirmation modal" }
+        { errorMessage: "Failed to open confirmation modal" },
     );
 }

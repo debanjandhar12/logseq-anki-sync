@@ -34,32 +34,12 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     const { open, setOpen, returnResult } = useModal<number | false>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
+        enableOutsideClickClose,
+        defaultResult: false,
         modalId: modalContext?.modalId,
     });
 
-    // Custom keyboard handling for numbered buttons
-    React.useEffect(() => {
-        if (!open) return;
 
-        const onKeydown = (e: KeyboardEvent) => {
-            if (!open) return;
-            
-            if (UI.getActiveModal() !== modalContext?.modalId) {
-                return;
-            }
-            
-            if (e.key === "Escape") {
-                returnResult(false);
-                e.preventDefault();
-                e.stopImmediatePropagation();
-            }
-        };
-
-        WindowBridge.addDocumentEventListener("keydown", onKeydown);
-        return () => {
-            WindowBridge.removeDocumentEventListener("keydown", onKeydown);
-        };
-    }, [open, returnResult]);
 
     React.useEffect(() => {
         if (!open) {
@@ -68,13 +48,11 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     }, [open, returnResult]);
 
     return (
-        <Modal 
-            open={open} 
-            setOpen={setOpen} 
-            onClose={() => UI.hideModal(modalContext?.modalId)} 
-            zDepth="high"
-            enableOutsideClickClose={enableOutsideClickClose}
-        >
+        <Modal
+            open={open}
+            setOpen={setOpen}
+            onClose={() => UI.hideModal(modalContext?.modalId)}
+            zDepth="high">
             <div className="ui__confirm-modal is-">
                 <SimpleModalHeader title={message} />
                 <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
@@ -88,9 +66,17 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
                                 if (btn.closeOnClick == null || btn.closeOnClick === true) {
                                     returnResult(i);
                                 }
-                            }}
-                        >
-                            {btn.icon && <span dangerouslySetInnerHTML={{ __html: btn.icon }} style={{ marginRight: '6px', display: 'inline-flex', alignItems: 'center' }} />}
+                            }}>
+                            {btn.icon && (
+                                <span
+                                    dangerouslySetInnerHTML={{ __html: btn.icon }}
+                                    style={{
+                                        marginRight: "6px",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                    }}
+                                />
+                            )}
                             {btn.name}
                         </LogseqButton>
                     ))}
@@ -107,17 +93,11 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
 export async function showButtonModal(
     message: string,
     buttons: ButtonModalButton[],
-    options?: { enableOutsideClickClose?: boolean }
+    options?: { enableOutsideClickClose?: boolean },
 ): Promise<number | false> {
     return createModalPromise<number | false>(
-        (props) => (
-            <ButtonModalComponent
-                message={message}
-                buttons={buttons}
-                {...props}
-            />
-        ),
+        (props) => <ButtonModalComponent message={message} buttons={buttons} {...props} />,
         { enableOutsideClickClose: options?.enableOutsideClickClose },
-        { errorMessage: "Failed to open button modal" }
+        { errorMessage: "Failed to open button modal" },
     );
 }

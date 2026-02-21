@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useCallback, useRef} from "../React";
 import _ from "lodash";
 import {fabric} from "fabric";
-import useUndo from "use-undo";
+import useUndo from "../hooks/useUndo";
 import {ANKI_ICON, DONATE_ICON, isWebURL_REGEXP} from "../../constants";
 import ADD_OCCLUSION_ICON from "../../../node_modules/@tabler/icons/icons/outline/square-plus-2.svg?raw";
 import REMOVE_OCCLUSION_ICON from "../../../node_modules/@tabler/icons/icons/outline/square-minus.svg?raw";
@@ -97,6 +97,7 @@ const OcclusionEditorComponent: React.FC<{
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false, // We'll handle Escape key manually due to complex interactions
         enableEnterKey: false, // We'll handle Enter key manually
+        enableOutsideClickClose: false,
         modalId: modalContext?.modalId,
     });
     const [tags, setTags] = React.useState<string[]>(blockTags);
@@ -378,7 +379,9 @@ const OcclusionEditorComponent: React.FC<{
         const onObjectModified = () => saveCanvasState();
         fabricRef.current.on("object:modified", onObjectModified);
         return () => {
-            fabricRef.current.off("object:modified", onObjectModified);
+            if (fabricRef.current) {
+                fabricRef.current.off("object:modified", onObjectModified);
+            }
         };
     }, [fabricRef, saveCanvasState]);
 
@@ -887,8 +890,6 @@ const OcclusionEditorComponent: React.FC<{
             setOpen={setOpen}
             onClose={() => UI.hideModal(modalContext?.modalId)}
             hasCloseButton={false}
-            enableEscapeKeyClose={false}
-            enableOutsideClickClose={false}
             size={"large"}>
             <div
                 style={{

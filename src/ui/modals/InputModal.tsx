@@ -29,7 +29,7 @@ const InputModalComponent: React.FC<InputModalProps> = ({
 }) => {
     const [inputValue, setInputValue] = React.useState(initialValue);
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-    
+
     const { open, setOpen, returnResult } = useModal<string | null>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
@@ -60,11 +60,11 @@ const InputModalComponent: React.FC<InputModalProps> = ({
     React.useEffect(() => {
         const onKeydown = (e: KeyboardEvent) => {
             if (!open) return;
-            
+
             if (UI.getActiveModal() !== modalContext?.modalId) {
                 return;
             }
-            
+
             if (e.key === "Escape") {
                 e.preventDefault();
                 e.stopPropagation();
@@ -91,26 +91,32 @@ const InputModalComponent: React.FC<InputModalProps> = ({
     }, [open, handleConfirm, handleCancel, modalContext?.modalId]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} zDepth="high">
+        <Modal
+            open={open}
+            setOpen={setOpen}
+            onClose={() => UI.hideModal(modalContext?.modalId)}
+            zDepth="high">
             <div style={{ margin: "1.25rem" }}>
                 {title && (
-                    <h2 style={{
-                        margin: "0 0 0.75rem 0",
-                        fontSize: "1.2rem",
-                        fontWeight: 600,
-                        color: "var(--ls-primary-text-color, #333)",
-                    }}>
+                    <h2
+                        style={{
+                            margin: "0 0 0.75rem 0",
+                            fontSize: "1.2rem",
+                            fontWeight: 600,
+                            color: "var(--ls-primary-text-color, #333)",
+                        }}>
                         {title}
                     </h2>
                 )}
                 {message && (
-                    <p style={{
-                        margin: "0 0 1rem 0",
-                        opacity: 0.7,
-                        fontSize: "0.875rem",
-                        lineHeight: 1.5,
-                        color: "var(--ls-secondary-text-color, #666)",
-                    }}>
+                    <p
+                        style={{
+                            margin: "0 0 1rem 0",
+                            opacity: 0.7,
+                            fontSize: "0.875rem",
+                            lineHeight: 1.5,
+                            color: "var(--ls-secondary-text-color, #666)",
+                        }}>
                         {message}
                     </p>
                 )}
@@ -142,37 +148,32 @@ const InputModalComponent: React.FC<InputModalProps> = ({
                         }}
                     />
                     {maxLength != null && (
-                        <div style={{
-                            display: "flex",
-                            justifyContent: "flex-end",
-                            marginTop: "0.35rem",
-                            fontSize: "0.75rem",
-                            color: inputValue.length >= maxLength
-                                ? "var(--ls-error-text-color, #e53e3e)"
-                                : "var(--ls-secondary-text-color, #999)",
-                        }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                marginTop: "0.35rem",
+                                fontSize: "0.75rem",
+                                color:
+                                    inputValue.length >= maxLength
+                                        ? "var(--ls-error-text-color, #e53e3e)"
+                                        : "var(--ls-secondary-text-color, #999)",
+                            }}>
                             {inputValue.length}/{maxLength}
                         </div>
                     )}
                 </div>
-                <div style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: "0.5rem",
-                    paddingTop: "0.25rem",
-                }}>
-                    <LogseqButton
-                        onClick={handleCancel}
-                        color="ghost"
-                        size="sm"
-                    >
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: "0.5rem",
+                        paddingTop: "0.25rem",
+                    }}>
+                    <LogseqButton onClick={handleCancel} color="ghost" size="sm">
                         Cancel
                     </LogseqButton>
-                    <LogseqButton
-                        onClick={handleConfirm}
-                        color="primary"
-                        size="sm"
-                    >
+                    <LogseqButton onClick={handleConfirm} color="primary" size="sm">
                         Confirm
                     </LogseqButton>
                 </div>
@@ -199,7 +200,7 @@ export async function showInputModal(
         placeholder?: string;
         initialValue?: string;
         maxLength?: number;
-    } = {}
+    } = {},
 ): Promise<string | null> {
     return createModalPromise<string | null>(
         (props) => (
@@ -213,6 +214,6 @@ export async function showInputModal(
             />
         ),
         {},
-        { errorMessage: "Failed to open input modal" }
+        { errorMessage: "Failed to open input modal" },
     );
 }

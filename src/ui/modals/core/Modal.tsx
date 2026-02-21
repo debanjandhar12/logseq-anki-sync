@@ -1,4 +1,4 @@
-import React, {PropsWithChildren} from "../../React";
+import React, { PropsWithChildren } from "../../React";
 import FocusTrap from "focus-trap-react";
 import { UI } from "../../UI";
 import { WindowBridge } from "../../../logseq/WindowBridge";
@@ -17,8 +17,6 @@ interface ModalProps {
     zDepth?: "high" | "default";
     hasCloseButton?: boolean;
     className?: string;
-    enableEscapeKeyClose?: boolean;
-    enableOutsideClickClose?: boolean;
 }
 
 export function Modal({
@@ -30,8 +28,6 @@ export function Modal({
     children,
     hasCloseButton = true,
     className = "",
-    enableEscapeKeyClose = true,
-    enableOutsideClickClose = true,
 }: PropsWithChildren<ModalProps>) {
     // Handle close - calls setOpen(false), onClose callback, and UI.hideModal()
     const handleClose = React.useCallback(() => {
@@ -44,71 +40,8 @@ export function Modal({
 
     let style = {};
     if (size === "large") {
-        style = {...style, width: "90vw"};
+        style = { ...style, width: "90vw" };
     }
-
-    // Handle keyboard events
-    const onKeydown = React.useCallback((e: KeyboardEvent) => {
-        if (!open) return;
-        
-        // Escape key closes modal (if enabled)
-        if (enableEscapeKeyClose && e.key === "Escape") {
-            handleClose();
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            return;
-        }
-        
-        // Arrow keys for scrolling
-        if (e.key === "ArrowDown") {
-            let divWithScrollbar = Array.from(WindowBridge.querySelectorAll('.overflow-y-auto')).filter(div => {
-                return div.scrollHeight > div.clientHeight;
-            })[0];
-            if (divWithScrollbar) {
-                divWithScrollbar.scrollTop = divWithScrollbar.scrollTop + 50;
-            }
-            e.preventDefault();
-            e.stopImmediatePropagation();
-        }
-        else if (e.key === "ArrowUp") {
-            let divWithScrollbar = Array.from(WindowBridge.querySelectorAll('.overflow-y-auto')).filter(div => {
-                return div.scrollHeight > div.clientHeight;
-            })[0];
-            if (divWithScrollbar) {
-                divWithScrollbar.scrollTop = divWithScrollbar.scrollTop - 50;
-            }
-            e.preventDefault();
-            e.stopImmediatePropagation();
-        }
-    }, [open, handleClose, enableEscapeKeyClose]);
-
-    // Set up keyboard event listeners
-    React.useEffect(() => {
-        if (open) {
-            WindowBridge.addDocumentEventListener("keydown", onKeydown);
-            return () => {
-                WindowBridge.removeDocumentEventListener("keydown", onKeydown);
-            };
-        }
-    }, [open, onKeydown]);
-
-    // Handle click outside to close
-    React.useEffect(() => {
-        if (!open || !enableOutsideClickClose) return;
-        
-        const handleClickOutside = (e: MouseEvent) => {
-            const target = e.target as HTMLElement;
-            // Check if click is on the overlay (has bg-black/50 class)
-            if (target.classList.contains('bg-black/50')) {
-                handleClose();
-            }
-        };
-        
-        WindowBridge.addDocumentEventListener('click', handleClickOutside);
-        return () => {
-            WindowBridge.removeDocumentEventListener('click', handleClickOutside);
-        };
-    }, [open, handleClose, enableOutsideClickClose]);
 
     if (!open) return null;
 
@@ -119,17 +52,17 @@ export function Modal({
 
     return (
         <FocusTrap focusTrapOptions={focusTrapOptions}>
-            <div 
+            <div
                 className="fixed inset-0 flex items-center justify-center p-4"
-                style={{zIndex: calculatedZIndex}}
+                style={{ zIndex: calculatedZIndex }}
             >
                 {/* Overlay */}
                 <div className="fixed inset-0 bg-black/50" />
-                
+
                 {/* Modal Panel */}
-                <div 
+                <div
                     className="relative bg-secondary-background border border-border rounded-md shadow-lg z-10"
-                    style={size === "large" ? {width: "90vw"} : {width: "60vw"}}
+                    style={size === "large" ? { width: "90vw" } : { width: "60vw" }}
                 >
                     {hasCloseButton && (
                         <div className="absolute top-0 right-0 pt-2 pr-2">

@@ -9,6 +9,7 @@ export interface UseModalOptions<T = any> {
     defaultResult?: T;
     enableEscapeKey?: boolean;
     enableEnterKey?: boolean;
+    enableOutsideClickClose?: boolean;
     modalId?: string | null;
 }
 
@@ -25,7 +26,7 @@ export interface UseModalReturn<T = any> {
  */
 export function useModal<T = any>(
     resolve: (value: T) => void,
-    options: UseModalOptions<T> = {}
+    options: UseModalOptions<T> = {},
 ): UseModalReturn<T> {
     const {
         onClose,
@@ -34,6 +35,7 @@ export function useModal<T = any>(
         defaultResult,
         enableEscapeKey = true,
         enableEnterKey = false,
+        enableOutsideClickClose = true,
         modalId,
     } = options;
 
@@ -44,7 +46,7 @@ export function useModal<T = any>(
             resolve(result);
             setOpen(false);
         },
-        [resolve]
+        [resolve],
     );
 
     const handleConfirm = React.useCallback(
@@ -55,7 +57,7 @@ export function useModal<T = any>(
             }
             returnResult(finalResult);
         },
-        [returnResult, onConfirm, defaultResult]
+        [returnResult, onConfirm, defaultResult],
     );
 
     const handleCancel = React.useCallback(() => {
@@ -93,6 +95,32 @@ export function useModal<T = any>(
                 handleConfirm();
                 e.preventDefault();
                 e.stopImmediatePropagation();
+            } else if (e.key === "ArrowDown") {
+                if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+                    return; // Don't intercept when typing
+                }
+                const container = modalId ? WindowBridge.getElementById(modalId) : WindowBridge.getBody();
+                let divWithScrollbar = Array.from((container || WindowBridge.getBody()).querySelectorAll('.overflow-y-auto')).filter(div => {
+                    return div.scrollHeight > div.clientHeight;
+                })[0];
+                if (divWithScrollbar) {
+                    divWithScrollbar.scrollTop = divWithScrollbar.scrollTop + 50;
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                }
+            } else if (e.key === "ArrowUp") {
+                if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+                    return; // Don't intercept when typing
+                }
+                const container = modalId ? WindowBridge.getElementById(modalId) : WindowBridge.getBody();
+                let divWithScrollbar = Array.from((container || WindowBridge.getBody()).querySelectorAll('.overflow-y-auto')).filter(div => {
+                    return div.scrollHeight > div.clientHeight;
+                })[0];
+                if (divWithScrollbar) {
+                    divWithScrollbar.scrollTop = divWithScrollbar.scrollTop - 50;
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                }
             }
         };
 
@@ -101,6 +129,27 @@ export function useModal<T = any>(
             WindowBridge.removeDocumentEventListener("keydown", onKeydown);
         };
     }, [open, handleConfirm, handleCancel, enableEscapeKey, enableEnterKey, modalId]);
+
+    // Handle click outside to close
+    React.useEffect(() => {
+        if (!open || !enableOutsideClickClose) return;
+
+        const handleClickOutside = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            // Check if click is on the overlay (has bg-black/50 class)
+            if (target.classList.contains('bg-black/50')) {
+                if (UI.getActiveModal() !== modalId) {
+                    return;
+                }
+                handleCancel();
+            }
+        };
+
+        WindowBridge.addDocumentEventListener('click', handleClickOutside);
+        return () => {
+            WindowBridge.removeDocumentEventListener('click', handleClickOutside);
+        };
+    }, [open, handleCancel, enableOutsideClickClose, modalId]);
 
     return {
         open,
