@@ -1,16 +1,16 @@
-import { Note } from "./Note";
+import {Note} from "./Note";
 import "@logseq/libs";
-import { WindowParentBridge } from "../logseq/WindowParentBridge";
-import { LogseqPropertiesHelper } from "../logseq/LogseqPropertiesHelper";
+import {WindowParentBridge} from "../logseq/WindowParentBridge";
+import {LogseqPropertiesHelper} from "../logseq/LogseqPropertiesHelper";
 import {
     escapeClozesAndMacroDelimiters,
     getFirstNonEmptyLine,
     safeReplace,
 } from "../utils/utils";
 import _ from "lodash";
-import { MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP } from "../constants";
-import { LogseqProxy } from "../logseq/LogseqProxy";
-import { LogseqToHtmlConverterProxy, HTMLFile } from "../logseq/LogseqToHtmlConverter";
+import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
 import {
     HighlightMaskData,
     HighlightMaskConfig,
@@ -18,11 +18,11 @@ import {
     HighlightMaskElement,
 } from "../ui/pages/HighlightMaskEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
-import { BlockEntity, BlockUUID } from "@logseq/libs/dist/LSPlugin";
-import { appendExtraToHtmlFile } from "./NoteUtils";
-import { ObjectPropertyDataManager } from "../utils/ObjectPropertyDataManager";
-import { matchTextQuote, getHealedHighlightGeometry } from "../utils/HighlightNoteQuotePosFinder";
-import { createLogger, LoggerCategory } from "../utils/logger";
+import {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
+import {appendExtraToHtmlFile} from "./NoteUtils";
+import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
+import {matchTextQuote, getHealedHighlightGeometry} from "../utils/HighlightNoteQuotePosFinder";
+import {createLogger, LoggerCategory} from "../utils/logger";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
@@ -59,7 +59,7 @@ export class HighlightMaskNote extends Note {
         });
     };
 
-    public static async handleHighlightMaskOperation(block: BlockEntity | { uuid: string }) {
+    public static async handleHighlightMaskOperation(block: BlockEntity | {uuid: string}) {
         const uuid = getUUIDFromBlock(block as BlockEntity);
 
         // Get fresh block with properties
@@ -82,23 +82,44 @@ export class HighlightMaskNote extends Note {
 
         // Load existing highlight data
         const highlightData: HighlightMaskData = (ObjectPropertyDataManager.load(
-            fetchedBlock, "highlight_mask"
+            fetchedBlock,
+            "highlight_mask",
         ) as HighlightMaskData) || {
             elements: [],
             config: {},
+            tags: [],
         };
 
         logger.info("Opening Highlight Mask Editor", highlightData);
+
+        // Get block tags
+        const blockTags = _.get(fetchedBlock, "properties.tags", []) as string[];
 
         // Open editor
         const newHighlightData = await showHighlightMaskEditor(
             rawContent,
             highlightData.elements || [],
             highlightData.config || {},
+            blockTags,
         );
 
         if (newHighlightData && typeof newHighlightData === "object") {
-            await ObjectPropertyDataManager.save(fetchedBlock, "highlight_mask", newHighlightData);
+            await ObjectPropertyDataManager.save(
+                fetchedBlock,
+                "highlight_mask",
+                newHighlightData,
+            );
+
+            // Handle tag updates for hide-all-test-one
+            const blockUUID = getUUIDFromBlock(fetchedBlock);
+            const tag = await logseq.Editor.getTag("hide-all-test-one");
+            if (tag) {
+                if (newHighlightData.tags.includes("hide-all-test-one")) {
+                    await logseq.Editor.addBlockTag(blockUUID, tag.uuid);
+                } else {
+                    await logseq.Editor.removeBlockTag(blockUUID, tag.uuid);
+                }
+            }
         }
     }
 
@@ -107,10 +128,12 @@ export class HighlightMaskNote extends Note {
 
         // Load highlight data
         const highlightData: HighlightMaskData = (ObjectPropertyDataManager.load(
-            this, "highlight_mask"
+            this,
+            "highlight_mask",
         ) as HighlightMaskData) || {
             elements: [],
             config: {},
+            tags: [],
         };
 
         // Get raw content without properties to safely insert cloze syntax
@@ -141,7 +164,11 @@ export class HighlightMaskNote extends Note {
             if (healResult) {
                 if (healResult.healed) {
                     Object.assign(element, healResult.element);
-                    await ObjectPropertyDataManager.save(this as any, "highlight_mask", highlightData);
+                    await ObjectPropertyDataManager.save(
+                        this as any,
+                        "highlight_mask",
+                        highlightData,
+                    );
                 }
 
                 replacements.push({
@@ -159,7 +186,7 @@ export class HighlightMaskNote extends Note {
         // Sort from end to start to avoid shifting earlier substitution positions
         replacements.sort((a, b) => b.start - a.start);
 
-        for (const { start, end, element } of replacements) {
+        for (const {start, end, element} of replacements) {
             const matchedText = rawContent.substring(start, end);
             const hintSuffix = element.hint ? `::${element.hint}` : "";
             const clozeText = `{{c${element.cId}::${matchedText}${hintSuffix}\u{2063}}}`;  // Add extra space between braces
@@ -191,7 +218,7 @@ export class HighlightMaskNote extends Note {
             return [];
         }
 
-        type DatascriptQueryResult = [] | [{ uuid: BlockUUID; page: { id: number } }][];
+        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: {id: number}}][];
 
         // Query blocks with highlight_mask property in DB graph
         const blocks: DatascriptQueryResult = await LogseqProxy.DB.datascriptQuery(
@@ -204,7 +231,7 @@ export class HighlightMaskNote extends Note {
                [(clojure.string/ends-with? ?prop-name "highlight_mask")]
                [?b ?prop _]
             ]`,
-            { suppressErrors: false },
+            {suppressErrors: false},
         );
 
         let notes: (HighlightMaskNote | false)[] = await Promise.all(
@@ -241,7 +268,8 @@ export class HighlightMaskNote extends Note {
                 validNotes.map(async (note) => {
                     try {
                         const highlightData = ObjectPropertyDataManager.load(
-                            note, "highlight_mask"
+                            note,
+                            "highlight_mask",
                         ) as HighlightMaskData | null;
 
                         if (
@@ -253,11 +281,15 @@ export class HighlightMaskNote extends Note {
                             const rawText = note.content;
                             const matchResults = await Promise.all(
                                 highlightData.elements.map((el) =>
-                                    matchTextQuote(rawText, {
-                                        exact: el.text,
-                                        prefix: el.prefix,
-                                        suffix: el.suffix,
-                                    }, el.approxPos),
+                                    matchTextQuote(
+                                        rawText,
+                                        {
+                                            exact: el.text,
+                                            prefix: el.prefix,
+                                            suffix: el.suffix,
+                                        },
+                                        el.approxPos,
+                                    ),
                                 ),
                             );
                             return matchResults.some((pos) => pos !== -1) ? note : null;

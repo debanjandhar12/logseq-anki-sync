@@ -5,6 +5,7 @@ import useUndo from "use-undo";
 import ADD_HIGHLIGHT_ICON from "../../../node_modules/@tabler/icons/icons/outline/plus.svg?raw";
 import REMOVE_HIGHLIGHT_ICON from "../../../node_modules/@tabler/icons/icons/outline/trash.svg?raw";
 import HINT_ICON from "../../../node_modules/@tabler/icons/icons/outline/bulb.svg?raw";
+import SETTINGS_ICON from "../../../node_modules/@tabler/icons/icons/outline/settings.svg?raw";
 import {
     Modal,
     useModal,
@@ -14,6 +15,7 @@ import {
     showInputModal,
 } from "../";
 import {LogseqButton} from "../components/LogseqButton";
+import {LogseqCheckbox} from "../components/LogseqCheckbox";
 import {LogseqSelect} from "../components/LogseqSelect";
 import {UI} from "../UI";
 import {WindowBridge} from "../../logseq/WindowBridge";
@@ -46,12 +48,14 @@ export type HighlightMaskConfig = {
 export type HighlightMaskData = {
     config: HighlightMaskConfig;
     elements: Array<HighlightMaskElement>;
+    tags: string[];
 };
 
 export async function showHighlightMaskEditor(
     rawText: string,
     highlightElements: Array<HighlightMaskElement>,
     highlightConfig: HighlightMaskConfig,
+    blockTags: string[] = [],
 ): Promise<HighlightMaskData | boolean> {
     return createModalPromise<HighlightMaskData | boolean>(
         (props) => (
@@ -59,6 +63,7 @@ export async function showHighlightMaskEditor(
                 rawText={rawText}
                 highlightElements={highlightElements}
                 highlightConfig={highlightConfig}
+                blockTags={blockTags}
                 {...props}
             />
         ),
@@ -103,16 +108,27 @@ const HighlightMaskEditorComponent: React.FC<{
     rawText: string;
     highlightElements: Array<HighlightMaskElement>;
     highlightConfig: HighlightMaskConfig;
+    blockTags: string[];
     resolve: (value: HighlightMaskData | boolean) => void;
     reject: Function;
     modalContext?: {modalId: string | null};
-}> = ({rawText, highlightElements, highlightConfig, resolve, reject, modalContext}) => {
+}> = ({
+    rawText,
+    highlightElements,
+    highlightConfig,
+    blockTags,
+    resolve,
+    reject,
+    modalContext,
+}) => {
     const {open, setOpen, returnResult} = useModal<HighlightMaskData | boolean>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false,
         enableEnterKey: false,
         modalId: modalContext?.modalId,
     });
+
+    const [tags, setTags] = React.useState<string[]>(blockTags);
 
     // Store initial elements in a ref to ensure stable hook initialization
     const initialElementsRef = React.useRef(highlightElements);
@@ -180,6 +196,7 @@ const HighlightMaskEditorComponent: React.FC<{
         returnResult({
             config: highlightConfig,
             elements: newElements,
+            tags: tags,
         });
     };
 
@@ -583,6 +600,38 @@ const HighlightMaskEditorComponent: React.FC<{
                                 icon={HINT_ICON}
                             />
                         )}
+                    </span>
+
+                    <span
+                        style={{
+                            alignItems: "center",
+                            justifyItems: "center",
+                            paddingLeft: "0.5rem",
+                            paddingRight: "0.5rem",
+                            borderRight: "1px solid var(--ls-border-color)",
+                        }}>
+                        <div className={"anki_de"}>
+                            <LogseqButton color={"default"} size={"sm"} icon={SETTINGS_ICON} />
+                            <div className={"image-occlusion-menu"}>
+                                <LogseqCheckbox
+                                    checked={tags.includes("hide-all-test-one")}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setTags([...tags, "hide-all-test-one"]);
+                                        } else {
+                                            setTags(
+                                                tags.filter((t) => t !== "hide-all-test-one"),
+                                            );
+                                        }
+                                    }}>
+                                    Hide All, Test One (
+                                    <abbr title="When enabled, hides all highlights including the one being tested during anki review.">
+                                        ?
+                                    </abbr>
+                                    )
+                                </LogseqCheckbox>
+                            </div>
+                        </div>
                     </span>
 
                     <span style={{paddingLeft: "0.5rem"}} />

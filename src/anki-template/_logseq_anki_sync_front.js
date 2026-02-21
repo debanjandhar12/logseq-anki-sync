@@ -11,7 +11,7 @@ const onLoadHandler = () => {
         return;
     }
     handleImageOcclusion();
-    handleShowAllTestOneTagForClozesAndMultilineIncrementalCards();
+    handleShowAllTestOneTagForClozesAndHighlightAndMultilineIncrementalCards();
     handleTypeInTag();
 };
 
@@ -134,8 +134,8 @@ function handleImageOcclusion() {
     }
 }
 
-function handleShowAllTestOneTagForClozesAndMultilineIncrementalCards() {
-    if (window.type !== "multiline_card" && window.type !== "cloze") return;
+function handleShowAllTestOneTagForClozesAndHighlightAndMultilineIncrementalCards() {
+    if (window.type !== "multiline_card" && window.type !== "cloze" && window.type !== "highlight_mask") return;
     if (!document.getElementById('tags').getAttribute('tags_name').split(' ')
         .includes('hide-all-test-one')) return; // If the card does not have the tag, do nothing
 
