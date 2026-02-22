@@ -11,6 +11,9 @@ importers:
       '@apache-annotator/selector':
         specifier: ^0.2.0
         version: 0.2.0
+      '@floating-ui/react':
+        specifier: ^0.27.18
+        version: 0.27.18(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
       '@logseq/libs':
         specifier: ^0.2.12
         version: 0.2.12
@@ -98,9 +101,6 @@ importers:
       tesseract.js:
         specifier: ^5.0.3
         version: 5.1.1(encoding@0.1.13)
-      use-undo:
-        specifier: ^1.1.1
-        version: 1.1.1(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
     devDependencies:
       '@babel/core':
         specifier: ^7.0.0
@@ -1165,6 +1165,27 @@ packages:
   '@eslint/plugin-kit@0.6.0':
     resolution: {integrity: sha512-bIZEUzOI1jkhviX2cp5vNyXQc6olzb2ohewQubuYlMXZ2Q/XjBO0x0XhGPvc9fjSIiUN0vw+0hq53BJ4eQSJKQ==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@floating-ui/core@1.7.4':
+    resolution: {integrity: sha512-C3HlIdsBxszvm5McXlB8PeOEWfBhcGBTZGkGlWc2U0KFY5IwG5OQEuQ8rq52DZmcHDlPLd+YFBK+cZcytwIFWg==}
+
+  '@floating-ui/dom@1.7.5':
+    resolution: {integrity: sha512-N0bD2kIPInNHUHehXhMke1rBGs1dwqvC9O9KYMyyjK7iXt7GAhnro7UlcuYcGdS/yYOlq0MAVgrow8IbWJwyqg==}
+
+  '@floating-ui/react-dom@2.1.7':
+    resolution: {integrity: sha512-0tLRojf/1Go2JgEVm+3Frg9A3IW8bJgKgdO0BN5RkF//ufuz2joZM63Npau2ff3J6lUVYgDSNzNkR+aH3IVfjg==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@floating-ui/react@0.27.18':
+    resolution: {integrity: sha512-xJWJxvmy3a05j643gQt+pRbht5XnTlGpsEsAPnMi5F5YTOEEJymA90uZKBD8OvIv5XvZ1qi4GcccSlqT3Bq44Q==}
+    peerDependencies:
+      react: '>=17.0.0'
+      react-dom: '>=17.0.0'
+
+  '@floating-ui/utils@0.2.10':
+    resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
   '@gar/promisify@1.1.3':
     resolution: {integrity: sha512-k2Ty1JcVojjJFwrg/ThKi2ujJ7XNLYaFGNB/bWT9wGR+oSMJHMa5w+CUq6p/pVrKeNNgA7pCqEcjSnHVoqJQFw==}
@@ -4910,12 +4931,6 @@ packages:
     resolution: {integrity: sha512-oCwdVC7mTuWiPyjLUz/COz5TLk6wgp0RCsN+wHZ2Ekneac9w8uuV0njcbbie2ME+Vs+d6duwmYuR3HgQXs1fOg==}
     engines: {node: '>= 0.4'}
 
-  use-undo@1.1.1:
-    resolution: {integrity: sha512-2NNpJv7TDQpyETgRTG5I/CsABX5nhExpx8PEhWiDsnW9C5BA6Xnn8G9u/lPeg3+JsBrBtUx8/5bMbGmpnWz1Cw==}
-    peerDependencies:
-      react: '>=16.8.6'
-      react-dom: '>=16.8.6'
-
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
@@ -6224,6 +6239,31 @@ snapshots:
     dependencies:
       '@eslint/core': 1.1.0
       levn: 0.4.1
+
+  '@floating-ui/core@1.7.4':
+    dependencies:
+      '@floating-ui/utils': 0.2.10
+
+  '@floating-ui/dom@1.7.5':
+    dependencies:
+      '@floating-ui/core': 1.7.4
+      '@floating-ui/utils': 0.2.10
+
+  '@floating-ui/react-dom@2.1.7(react-dom@17.0.2(react@17.0.2))(react@17.0.2)':
+    dependencies:
+      '@floating-ui/dom': 1.7.5
+      react: 17.0.2
+      react-dom: 17.0.2(react@17.0.2)
+
+  '@floating-ui/react@0.27.18(react-dom@17.0.2(react@17.0.2))(react@17.0.2)':
+    dependencies:
+      '@floating-ui/react-dom': 2.1.7(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
+      '@floating-ui/utils': 0.2.10
+      react: 17.0.2
+      react-dom: 17.0.2(react@17.0.2)
+      tabbable: 6.4.0
+
+  '@floating-ui/utils@0.2.10': {}
 
   '@gar/promisify@1.1.3': {}
 
@@ -10663,11 +10703,6 @@ snapshots:
     dependencies:
       punycode: 1.4.1
       qs: 6.14.2
-
-  use-undo@1.1.1(react-dom@17.0.2(react@17.0.2))(react@17.0.2):
-    dependencies:
-      react: 17.0.2
-      react-dom: 17.0.2(react@17.0.2)
 
   util-deprecate@1.0.2: {}
 

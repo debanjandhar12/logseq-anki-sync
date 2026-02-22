@@ -1,9 +1,10 @@
-import type * as ReactTypes from 'react';
-import * as OriginalReact from 'react';
+import type * as ReactTypes from "react";
+import * as OriginalReact from "react";
 
-const React = ((process.env.NODE_ENV === 'production' &&
-        typeof logseq !== 'undefined' && logseq?.Experiments?.React) as typeof ReactTypes
-    || OriginalReact);
+const React =
+    ((process.env.NODE_ENV === "production" &&
+        typeof logseq !== "undefined" &&
+        logseq?.Experiments?.React) as typeof ReactTypes) || OriginalReact;
 
 export default React;
 
@@ -28,7 +29,6 @@ export const cloneElement = React.cloneElement;
 export const createContext = React.createContext;
 export const forwardRef = React.forwardRef;
 export const memo = React.memo;
-export const lazy = React.lazy;
 
 export type {
     FC,
@@ -55,5 +55,5 @@ export type {
     Props,
     ComponentProps,
     ComponentPropsWithRef,
-    ComponentPropsWithoutRef
-} from 'react';
+    ComponentPropsWithoutRef,
+} from "react";

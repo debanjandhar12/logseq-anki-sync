@@ -1,12 +1,12 @@
 import reactPlugin from "@vitejs/plugin-react";
-import {defineConfig, loadEnv} from "vite";
+import { defineConfig, loadEnv } from "vite";
 import logseqDevPlugin from "vite-plugin-logseq";
-import {nodePolyfills} from "vite-plugin-node-polyfills";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 import * as path from "path";
 import * as fs from "fs";
-const {parseSync, traverse} = require("@babel/core");
+const { parseSync, traverse } = require("@babel/core");
 const generate = require("@babel/generator").default;
-import {context} from "esbuild";
+import { context } from "esbuild";
 // https://vitejs.dev/config/
 
 function staticFileSyncTransformPlugin() {
@@ -26,7 +26,7 @@ function staticFileSyncTransformPlugin() {
                     path.parse(path.basename(id)).name,
                 );
             }
-            const ast = parseSync(code, {sourceType: "module"});
+            const ast = parseSync(code, { sourceType: "module" });
             traverse(ast, {
                 Identifier(nodePath) {
                     if (nodePath.node.name === "__dirname") {
@@ -36,7 +36,7 @@ function staticFileSyncTransformPlugin() {
             });
             traverse(ast, {
                 CallExpression(nodePath) {
-                    const {callee, arguments: args} = nodePath.node;
+                    const { callee, arguments: args } = nodePath.node;
                     if (
                         callee.type === "MemberExpression" &&
                         callee.object.name === "path" &&
@@ -50,7 +50,7 @@ function staticFileSyncTransformPlugin() {
             });
             traverse(ast, {
                 CallExpression(nodePath) {
-                    const {callee, arguments: args} = nodePath.node;
+                    const { callee, arguments: args } = nodePath.node;
                     if (
                         callee.type === "MemberExpression" &&
                         callee.object.name === "fs" &&
@@ -66,10 +66,10 @@ function staticFileSyncTransformPlugin() {
                     }
                 },
             });
-            const generated = generate(ast, {retainLines: true});
+            const generated = generate(ast, { retainLines: true });
             code = generated.code;
             const map = generated.map;
-            return {code, map};
+            return { code, map };
         },
     };
 }
@@ -116,11 +116,17 @@ function bundleJSStringPlugin(mode: string) {
     };
 }
 
-export default defineConfig(({command, mode}) => {
+export default defineConfig(({ command, mode }) => {
     const env = loadEnv(mode, process.cwd(), "");
     return {
         base: "./",
         cacheDir: ".vite_cache",
+        resolve: {
+            alias: {
+                "react/jsx-runtime": "react/jsx-runtime.js",
+                "react/jsx-dev-runtime": "react/jsx-dev-runtime.js",
+            },
+        },
         plugins: [
             mode === "development" && logseqDevPlugin(), // for dev only
             mode === "development" && reactPlugin(), // for dev only
@@ -129,7 +135,7 @@ export default defineConfig(({command, mode}) => {
             bundleJSStringPlugin(mode),
         ],
         define: {
-            "process.env": JSON.stringify({...env, NODE_ENV: mode})
+            "process.env": JSON.stringify({ ...env, NODE_ENV: mode })
         },
         server: {
             port: 5173,
@@ -154,10 +160,15 @@ export default defineConfig(({command, mode}) => {
             exclude: ["**/logseq-dev-plugin/**", "**/node_modules/**"],
             setupFiles: ["./tests/setup.ts"],
             environment: "jsdom",
-            env: {...env, NODE_ENV: mode},
+            env: { ...env, NODE_ENV: mode },
             pool: "forks",
             singleFork: true,
             fileParallelism: false,
+            server: {
+                deps: {
+                    inline: [/@floating-ui/]
+                }
+            }
         },
     };
 });

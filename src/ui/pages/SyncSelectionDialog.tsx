@@ -1,16 +1,17 @@
 import React, {useCallback, useEffect, useState} from "../React";
 import {Modal} from "../";
-import { WindowParentBridge } from "../../logseq/WindowParentBridge";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import {LogseqButton} from "../components/LogseqButton";
 import {LogseqCheckbox} from "../components/LogseqCheckbox";
 import {LogseqDropdownMenu} from "../components/LogseqDropdownMenu";
+import {LogseqTooltip} from "../components/LogseqTooltip";
 import {ANKI_ICON} from "../../constants";
 import _ from "lodash";
-import { createModalPromise, ModalHeader, DialogModalFooter, useModal } from "../";
-import { UI } from "../UI";
-import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { LogseqContentPreprocessor } from "../../logseq/LogseqContentPreprocessor";
-import { WindowBridge } from "../../logseq/WindowBridge";
+import {createModalPromise, ModalHeader, DialogModalFooter, useModal} from "../";
+import {UI} from "../UI";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {LogseqContentPreprocessor} from "../../logseq/LogseqContentPreprocessor";
+import {WindowBridge} from "../../logseq/WindowBridge";
 
 export async function showSyncSelectionDialog(
     toCreateNotes: Array<any>,
@@ -35,7 +36,7 @@ export async function showSyncSelectionDialog(
             />
         ),
         {},
-        { errorMessage: "Failed to open sync selection dialog" }
+        {errorMessage: "Failed to open sync selection dialog"},
     );
 }
 const SyncSelectionDialogComponent: React.FC<{
@@ -50,12 +51,12 @@ const SyncSelectionDialogComponent: React.FC<{
         } | null,
     ) => void;
     reject: Function;
-    modalContext?: { modalId: string | null };
+    modalContext?: {modalId: string | null};
 }> = ({toCreateNotes, toUpdateNotes, toDeleteNotes, resolve, reject, modalContext}) => {
-    const { open, setOpen, returnResult } = useModal(resolve, {
+    const {open, setOpen, returnResult} = useModal(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false, // We'll handle this manually
-        enableEnterKey: false,  // We'll handle this manually
+        enableEnterKey: false, // We'll handle this manually
         defaultResult: null,
         modalId: modalContext?.modalId,
     });
@@ -85,8 +86,8 @@ const SyncSelectionDialogComponent: React.FC<{
             isAllCreateNotesSelected
                 ? "checked"
                 : isNoneCreateNotesSelected
-                    ? "unchecked"
-                    : "indeterminate"
+                  ? "unchecked"
+                  : "indeterminate",
         );
     }, [toCreateNotesSelection]);
 
@@ -97,8 +98,8 @@ const SyncSelectionDialogComponent: React.FC<{
             isAllUpdateNotesSelected
                 ? "checked"
                 : isNoneUpdateNotesSelected
-                    ? "unchecked"
-                    : "indeterminate"
+                  ? "unchecked"
+                  : "indeterminate",
         );
     }, [toUpdateNotesSelection]);
 
@@ -109,8 +110,8 @@ const SyncSelectionDialogComponent: React.FC<{
             isAllDeleteNotesSelected
                 ? "checked"
                 : isNoneDeleteNotesSelected
-                    ? "unchecked"
-                    : "indeterminate"
+                  ? "unchecked"
+                  : "indeterminate",
         );
     }, [toDeleteNotesSelection]);
 
@@ -235,11 +236,11 @@ const SyncSelectionDialogComponent: React.FC<{
     const onKeydown = React.useCallback(
         (e: KeyboardEvent) => {
             if (!open) return;
-            
+
             if (UI.getActiveModal() !== modalContext?.modalId) {
                 return;
             }
-            
+
             if (e.key === "Escape") {
                 handleCancel();
                 e.preventDefault();
@@ -288,14 +289,17 @@ const SyncSelectionDialogComponent: React.FC<{
     }, [skipOnHashMatch]);
 
     return (
-        <Modal open={open} setOpen={setOpen} onClose={() => UI.hideModal(modalContext?.modalId)} hasCloseButton={false}>
-            <div style={{margin: '0rem'}}>
+        <Modal
+            open={open}
+            setOpen={setOpen}
+            onClose={() => UI.hideModal(modalContext?.modalId)}
+            hasCloseButton={false}>
+            <div style={{margin: "0rem"}}>
                 <ModalHeader
                     title="Proceed sync with anki?"
                     icon={ANKI_ICON}
                     onClose={() => setOpen(false)}
-                    showCloseButton={true}
-                >
+                    showCloseButton={true}>
                     <LogseqDropdownMenu menuArr={selectionMenu}>
                         <LogseqButton size={"xs"} color="outline-link">
                             Selection
@@ -327,7 +331,7 @@ const SyncSelectionDialogComponent: React.FC<{
                                 {" "}
                                 {toCreateNotesSelection.filter(Boolean).length} /{" "}
                                 {toCreateNotesSelection.length}
-                                <span style={{width: '15px'}} />
+                                <span style={{width: "15px"}} />
                                 <LogseqCheckbox
                                     checked={toCreateNotesCheckbox === "checked"}
                                     indeterminate={toCreateNotesCheckbox === "indeterminate"}
@@ -443,8 +447,7 @@ const SyncSelectionDialogComponent: React.FC<{
                     onConfirm={handleConfirm}
                     onCancel={handleCancel}
                     confirmText="Confirm"
-                    cancelText="Cancel"
-                >
+                    cancelText="Cancel">
                     <div className={"anki_de"} style={{width: "fit-content"}}>
                         <LogseqButton color={"outline-link"} size={"sm"}>
                             🢁
@@ -454,9 +457,9 @@ const SyncSelectionDialogComponent: React.FC<{
                                 checked={skipOnHashMatch}
                                 onChange={() => setSkipOnHashMatch(!skipOnHashMatch)}>
                                 Skip on hash match (
-                                <abbr title="When enabled, this will result in faster performance. However, sometimes this may lead to ignoring some changes.">
+                                <LogseqTooltip content="When enabled, this will result in faster performance. However, sometimes this may lead to ignoring some changes.">
                                     ?
-                                </abbr>
+                                </LogseqTooltip>
                                 )
                             </LogseqCheckbox>
                         </div>
@@ -469,7 +472,10 @@ const SyncSelectionDialogComponent: React.FC<{
 
 // Utils
 export const AnkiLink = ({ankiId = null}) => {
-    const hoverStyle = {backgroundColor: "var(--ls-secondary-border-color)", borderRadius: "2px"};
+    const hoverStyle = {
+        backgroundColor: "var(--ls-secondary-border-color)",
+        borderRadius: "2px",
+    };
     const normalStyle = {backgroundColor: "inherit", borderRadius: "2px"};
     const [style, setStyle] = React.useState(normalStyle);
 
@@ -487,28 +493,32 @@ export const AnkiLink = ({ankiId = null}) => {
     const children = ankiId == null ? "New note" : ankiId;
 
     return (
-        <a
-            onClick={onClickHandler}
-            onMouseOver={onMouseOver}
-            onMouseOut={onMouseOut}
-            className="inline-flex flex-row items-center button"
-            title={"Anki Note: " + children}
-            style={{
-                ...style,
-                display: "inline-flex",
-                padding: 0,
-                height: "auto",
-                userSelect: "text",
-                cursor: "pointer",
-            }}>
-            <i className={"anki-icon"} />
-            <span>{children}</span>
-        </a>
+        <LogseqTooltip content={"Anki Note: " + children}>
+            <a
+                onClick={onClickHandler}
+                onMouseOver={onMouseOver}
+                onMouseOut={onMouseOut}
+                className="inline-flex flex-row items-center button"
+                style={{
+                    ...style,
+                    display: "inline-flex",
+                    padding: 0,
+                    height: "auto",
+                    userSelect: "text",
+                    cursor: "pointer",
+                }}>
+                <i className={"anki-icon"} />
+                <span>{children}</span>
+            </a>
+        </LogseqTooltip>
     );
 };
 
 export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string}) => {
-    const hoverStyle = {backgroundColor: "var(--ls-secondary-border-color)", borderRadius: "2px"};
+    const hoverStyle = {
+        backgroundColor: "var(--ls-secondary-border-color)",
+        borderRadius: "2px",
+    };
     const normalStyle = {backgroundColor: "inherit", borderRadius: "2px"};
     const [style, setStyle] = React.useState(normalStyle);
     const [displayText, setDisplayText] = React.useState(uuid);
@@ -521,15 +531,13 @@ export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string})
                 if (block && block.content) {
                     // Preprocess content using LogseqContentPreprocessor
                     const format = block.format || "markdown";
-                    const { content: preprocessedContent } = await LogseqContentPreprocessor.preprocess(
-                        block.content,
-                        format
-                    );
+                    const {content: preprocessedContent} =
+                        await LogseqContentPreprocessor.preprocess(block.content, format);
 
                     setBlockContent(preprocessedContent); // for title
 
                     const cleanedContent = preprocessedContent.replace(/\s+/g, " ").trim();
-                    const truncated = _.truncate(cleanedContent, { length: 34, omission: "..." });
+                    const truncated = _.truncate(cleanedContent, {length: 34, omission: "..."});
                     setDisplayText(truncated); // for display
                 } else {
                     // Fallback to UUID if block or content is not available
@@ -559,23 +567,24 @@ export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string})
         : `Block UUID: ${uuid}`;
 
     return (
-        <a
-            onMouseOver={onMouseOver}
-            onMouseOut={onMouseOut}
-            className="inline-flex flex-row items-center button"
-            title={titleText}
-            style={{
-                ...style,
-                display: "inline-flex",
-                padding: 0,
-                height: "auto",
-                userSelect: "text",
-                cursor: "pointer",
-            }}
-            onClick={onClickHandler}>
-            <i className={"logseq-icon"} />
-            <span>{displayText}</span>
-        </a>
+        <LogseqTooltip content={titleText}>
+            <a
+                onMouseOver={onMouseOver}
+                onMouseOut={onMouseOut}
+                className="inline-flex flex-row items-center button"
+                style={{
+                    ...style,
+                    display: "inline-flex",
+                    padding: 0,
+                    height: "auto",
+                    userSelect: "text",
+                    cursor: "pointer",
+                }}
+                onClick={onClickHandler}>
+                <i className={"logseq-icon"} />
+                <span>{displayText}</span>
+            </a>
+        </LogseqTooltip>
     );
 };
 

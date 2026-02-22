@@ -169,6 +169,10 @@ export class UI {
             // Gray colors for shortcut keys
             "--lx-gray-06-alpha",
             "--rx-gray-06-alpha",
+
+            // Popover colors
+            "--ls-popover-background-color",
+            "--ls-popover-text-color",
         ];
 
         try {
