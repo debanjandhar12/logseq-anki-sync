@@ -8,7 +8,7 @@ type LogseqButtonProps = {
     disabled?: boolean;
     depth?: number;
     title?: string;
-    color?: "primary" | "default" |"success" | "failed" | "ghost" | "link" | "outline-link";
+    color?: "primary" | "default" | "secondary" |"success" | "failed" | "ghost" | "link" | "outline-link";
     size?: "xs" | "sm" | "md" | "lg";
 };
 
@@ -28,13 +28,15 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
 
     // Color variants using Tailwind color aliases
     if (color === "primary" || color == "default") {
-        classNameString += " bg-button-background hover:opacity-90 text-white";
+        classNameString += " bg-primary hover:opacity-80 text-white";
+    } else if (color === "secondary") {
+        classNameString += " bg-secondary hover:opacity-80 text-white";
     } else if (color === "failed") {
         classNameString += " bg-red-600 hover:bg-red-700 text-white";
     } else if (color === "success") {
         classNameString += " bg-green-600 hover:bg-green-700 text-white";
     } else if (color === "ghost") {
-        classNameString += " hover:bg-tertiary-background hover:opacity-90 text-text";
+        classNameString += " hover:bg-tertiary-background hover:opacity-80 text-text";
     } else if (color === "link") {
         classNameString += " text-primary underline-offset-4 hover:underline";
     } else if (color === "outline-link") {

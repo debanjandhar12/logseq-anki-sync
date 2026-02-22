@@ -53,6 +53,7 @@ export const LogseqSelect: FC<LogseqSelectProps> = ({
                 ref={ref}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
+                className={"focus-visible:ring-2"}
                 style={{
                     position: "absolute",
                     zIndex: 1,

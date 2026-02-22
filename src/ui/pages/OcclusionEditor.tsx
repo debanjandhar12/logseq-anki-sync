@@ -1008,7 +1008,7 @@ const OcclusionEditorComponent: React.FC<{
                         {/* Hint button */}
                         {fabricSelection && fabricSelection.length === 1 && (
                             <LogseqButton
-                                color={"primary"}
+                                color={fabricSelection[0].hint ? "primary" : "secondary"}
                                 size={"sm"}
                                 title={
                                     fabricSelection[0].hint

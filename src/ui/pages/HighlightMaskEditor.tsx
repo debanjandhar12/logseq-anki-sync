@@ -597,7 +597,9 @@ const HighlightMaskEditorComponent: React.FC<{
                         />
                         {selectedElementIndex !== null && (
                             <LogseqButton
-                                color={"primary"}
+                                color={
+                                    elements[selectedElementIndex]?.hint ? "primary" : "secondary"
+                                }
                                 size={"sm"}
                                 title={
                                     elements[selectedElementIndex]?.hint
