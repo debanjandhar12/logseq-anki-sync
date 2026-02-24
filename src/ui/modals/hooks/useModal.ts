@@ -1,6 +1,6 @@
 import React from "../../React";
-import { WindowBridge } from "../../../logseq/WindowBridge";
-import { UI } from "../../UI";
+import {WindowBridge} from "../../../logseq/WindowBridge";
+import {UI} from "../../UI";
 
 export interface UseModalOptions<T = any> {
     onClose?: () => void;
@@ -92,15 +92,34 @@ export function useModal<T = any>(
                 e.preventDefault();
                 e.stopImmediatePropagation();
             } else if (enableEnterKey && e.key === "Enter") {
-                handleConfirm();
+                const activeElement = document.activeElement;
+                const isCancelButtonFocused =
+                    activeElement?.tagName === "BUTTON" &&
+                    (activeElement.classList.contains("cancel") ||
+                        activeElement.classList.contains("btn-cancel") ||
+                        activeElement.getAttribute("data-action") === "cancel" ||
+                        activeElement.textContent?.toLowerCase().includes("cancel"));
+
+                if (isCancelButtonFocused) {
+                    handleCancel();
+                } else {
+                    handleConfirm();
+                }
                 e.preventDefault();
                 e.stopImmediatePropagation();
             } else if (e.key === "ArrowDown") {
-                if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+                if (
+                    document.activeElement?.tagName === "INPUT" ||
+                    document.activeElement?.tagName === "TEXTAREA"
+                ) {
                     return; // Don't intercept when typing
                 }
-                const container = modalId ? WindowBridge.getElementById(modalId) : WindowBridge.getBody();
-                let divWithScrollbar = Array.from((container || WindowBridge.getBody()).querySelectorAll('.overflow-y-auto')).filter(div => {
+                const container = modalId
+                    ? WindowBridge.getElementById(modalId)
+                    : WindowBridge.getBody();
+                let divWithScrollbar = Array.from(
+                    (container || WindowBridge.getBody()).querySelectorAll(".overflow-y-auto"),
+                ).filter((div) => {
                     return div.scrollHeight > div.clientHeight;
                 })[0];
                 if (divWithScrollbar) {
@@ -109,11 +128,18 @@ export function useModal<T = any>(
                     e.stopImmediatePropagation();
                 }
             } else if (e.key === "ArrowUp") {
-                if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+                if (
+                    document.activeElement?.tagName === "INPUT" ||
+                    document.activeElement?.tagName === "TEXTAREA"
+                ) {
                     return; // Don't intercept when typing
                 }
-                const container = modalId ? WindowBridge.getElementById(modalId) : WindowBridge.getBody();
-                let divWithScrollbar = Array.from((container || WindowBridge.getBody()).querySelectorAll('.overflow-y-auto')).filter(div => {
+                const container = modalId
+                    ? WindowBridge.getElementById(modalId)
+                    : WindowBridge.getBody();
+                let divWithScrollbar = Array.from(
+                    (container || WindowBridge.getBody()).querySelectorAll(".overflow-y-auto"),
+                ).filter((div) => {
                     return div.scrollHeight > div.clientHeight;
                 })[0];
                 if (divWithScrollbar) {
@@ -137,7 +163,7 @@ export function useModal<T = any>(
         const handleClickOutside = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             // Check if click is on the overlay (has bg-black/50 class)
-            if (target.classList.contains('bg-black/50')) {
+            if (target.classList.contains("bg-black/50")) {
                 if (UI.getActiveModal() !== modalId) {
                     return;
                 }
@@ -145,9 +171,9 @@ export function useModal<T = any>(
             }
         };
 
-        WindowBridge.addDocumentEventListener('click', handleClickOutside);
+        WindowBridge.addDocumentEventListener("click", handleClickOutside);
         return () => {
-            WindowBridge.removeDocumentEventListener('click', handleClickOutside);
+            WindowBridge.removeDocumentEventListener("click", handleClickOutside);
         };
     }, [open, handleCancel, enableOutsideClickClose, modalId]);
 
