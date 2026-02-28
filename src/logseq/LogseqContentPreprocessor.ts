@@ -81,6 +81,7 @@ import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 export interface PreprocessResult {
     content: string;
     properties: Record<string, any>;
+    rawPropertiesStr: string;
 }
 
 export class LogseqContentPreprocessor {
@@ -95,11 +96,15 @@ export class LogseqContentPreprocessor {
         content: string,
         format: "markdown" | "org" = "markdown"
     ): Promise<PreprocessResult> {
+        if (!content || typeof content !== 'string' || content.trim() == '')
+            return {content, properties: {}, rawPropertiesStr: ""};
+
         let resultContent = content;
         let properties: Record<string, any> = {};
+        let rawPropertiesStr = "";
 
         // Step 1: Extract and remove properties
-        [resultContent, properties] = this.extractProperties(resultContent, format);
+        [resultContent, properties, rawPropertiesStr] = this.extractProperties(resultContent, format);
 
         // Step 2: Normalize page embeds to use UUIDs
         resultContent = await this.normalizePageEmbeds(resultContent);
@@ -116,22 +121,27 @@ export class LogseqContentPreprocessor {
         // Step 6: Apply backward compatibility transformations (DB mode)
         resultContent = await this.applyBackwardCompatibility(resultContent, properties);
 
-        return {content: resultContent, properties};
+        return {content: resultContent, properties, rawPropertiesStr};
     }
 
     /**
      * Extracts properties from content and removes them.
      * Handles both Markdown (key:: value) and Org (:PROPERTIES:) formats.
+     * Returns the cleaned content, parsed properties object, and raw properties string.
      */
-    private static extractProperties(
+    public static extractProperties(
         content: string,
-        format: "markdown" | "org"
-    ): [string, Record<string, any>] {
+        format: "markdown" | "org" = "markdown"
+    ): [string, Record<string, any>, string] {
         let resultContent = content;
         const properties: Record<string, any> = {};
+        let rawPropertiesStr = "";
 
-        // Remove org properties
-        resultContent = safeReplace(resultContent, ORG_PROPERTIES_REGEXP, "");
+        // Remove org properties and accumulate raw strings
+        resultContent = safeReplace(resultContent, ORG_PROPERTIES_REGEXP, (match) => {
+            rawPropertiesStr += match;
+            return "";
+        });
 
         // Extract and remove markdown properties
         resultContent = safeReplace(resultContent, MD_PROPERTIES_REGEXP, (match) => {
@@ -139,10 +149,16 @@ export class LogseqContentPreprocessor {
             if (key && value) {
                 properties[key.trim()] = value.trim();
             }
+            rawPropertiesStr += match;
             return "";
         });
 
-        return [resultContent, properties];
+        // Ensure rawPropertiesStr ends with newline if not empty
+        if (rawPropertiesStr && !rawPropertiesStr.trim().endsWith("\n")) {
+            rawPropertiesStr += "\n";
+        }
+
+        return [resultContent, properties, rawPropertiesStr];
     }
 
     /**

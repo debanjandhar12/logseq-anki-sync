@@ -14,8 +14,6 @@ import {
     isWebURL_REGEXP,
     LOGSEQ_BLOCK_REF_REGEXP,
     MD_IMAGE_EMBEDED_REGEXP,
-    MD_PROPERTIES_REGEXP,
-    ORG_PROPERTIES_REGEXP,
 } from "../constants";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import { LogseqToHtmlConverterProxy, HTMLFile } from "../logseq/LogseqToHtmlConverter";

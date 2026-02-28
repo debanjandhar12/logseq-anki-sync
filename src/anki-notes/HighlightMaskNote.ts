@@ -8,9 +8,9 @@ import {
     safeReplace,
 } from "../utils/utils";
 import _ from "lodash";
-import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
+import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import {
     HighlightMaskData,
     HighlightMaskConfig,
@@ -69,10 +69,8 @@ export class HighlightMaskNote extends Note {
             return;
         }
 
-        // Get raw content (without properties)
-        let rawContent = fetchedBlock.content || "";
-        rawContent = safeReplace(rawContent, MD_PROPERTIES_REGEXP, "");
-        rawContent = safeReplace(rawContent, ORG_PROPERTIES_REGEXP, "");
+        // Get raw content
+        let [rawContent] = LogseqContentPreprocessor.extractProperties(fetchedBlock.content || "");
         rawContent = rawContent.trim();
 
         if (!rawContent) {
@@ -137,20 +135,10 @@ export class HighlightMaskNote extends Note {
         };
 
         // Get raw content without properties to safely insert cloze syntax
-        let rawContent = clozedContent;
-        let removedLogseqProperties = "";
-        rawContent = safeReplace(rawContent, MD_PROPERTIES_REGEXP, (match) => {
-            removedLogseqProperties += match;
-            return "";
-        });
-        rawContent = safeReplace(rawContent, ORG_PROPERTIES_REGEXP, (match) => {
-            removedLogseqProperties += match;
-            return "";
-        });
-        if (!removedLogseqProperties.trim().endsWith("\\n")) {
-            // ensure newline
-            removedLogseqProperties += "\\n";
-        }
+        let [rawContent, , removedLogseqProperties] = LogseqContentPreprocessor.extractProperties(
+            clozedContent,
+            this.format as "markdown" | "org",
+        );
 
         // Escape existing cloze delimiters in the raw content first
         rawContent = escapeClozesAndMacroDelimiters(rawContent);

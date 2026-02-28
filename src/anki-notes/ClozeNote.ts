@@ -3,14 +3,14 @@ import "@logseq/libs";
 import { WindowParentBridge } from "../logseq/WindowParentBridge";
 import {
     string_to_arr,
-    get_math_inside_md,
     safeReplace,
     escapeClozesAndMacroDelimiters,
 } from "../utils/utils";
 import _ from "lodash";
-import {LOGSEQ_PLUGIN_CLOZE_REGEXP, MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
+import {LOGSEQ_PLUGIN_CLOZE_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
+import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 import {appendExtraToHtmlFile} from "./NoteUtils";
@@ -116,16 +116,11 @@ export class ClozeNote extends Note {
         let clozedContent: string = this.content;
 
         // --- Remove logseq properties and store it in removedLogseqProperties as it might cause problems during cloze creation ---
-        let removedLogseqProperties = "";
-        clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, (match) => {
-            removedLogseqProperties += match;
-            return "";
-        }); //Remove md properties
-        clozedContent = safeReplace(clozedContent, ORG_PROPERTIES_REGEXP, (match) => {
-            removedLogseqProperties += match;
-            return "";
-        }); //Remove org properties
-        if (!removedLogseqProperties.trim().endsWith("\n")) removedLogseqProperties += "\n";
+        const [contentWithoutProperties, , removedLogseqProperties] = LogseqContentPreprocessor.extractProperties(
+            clozedContent,
+            this.format as "markdown" | "org",
+        );
+        clozedContent = contentWithoutProperties;
 
         // --- Add anki cloze marco clozes ---
         clozedContent = safeReplace(

@@ -2,9 +2,9 @@ import {Note} from "./Note";
 import "@logseq/libs";
 import {escapeClozesAndMacroDelimiters, getRandomUnicodeString, safeReplace} from "../utils/utils";
 import _ from "lodash";
-import {MD_PROPERTIES_REGEXP, ORG_PROPERTIES_REGEXP} from "../constants";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
+import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 
@@ -33,8 +33,10 @@ export class SwiftArrowNote extends Note {
         let clozedContent: string = this.content;
 
         // Remove logseq properties as it might cause problems during cloze creation
-        clozedContent = safeReplace(clozedContent, MD_PROPERTIES_REGEXP, ""); //Remove md properties
-        clozedContent = safeReplace(clozedContent, ORG_PROPERTIES_REGEXP, ""); //Remove org properties
+        [clozedContent] = LogseqContentPreprocessor.extractProperties(
+            clozedContent,
+            this.format as "markdown" | "org",
+        );
         logger.info(clozedContent);
 
         // --- Add clozes ---
