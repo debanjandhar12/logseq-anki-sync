@@ -1,27 +1,28 @@
 import "@logseq/libs";
-import {LSPluginBaseInfo} from "@logseq/libs/dist/LSPlugin";
-import {ClozeNote} from "./anki-notes/ClozeNote";
-import {MultilineCardNote} from "./anki-notes/MultilineCardNote";
-import {LogseqToAnkiSync} from "./sync/syncLogseqToAnki";
-import {addSettingsToLogseq} from "./settings";
-import {ANKI_ICON} from "./constants";
+import { LSPluginBaseInfo } from "@logseq/libs/dist/LSPlugin";
+import { ClozeNote } from "./anki-notes/ClozeNote";
+import { MultilineCardNote } from "./anki-notes/MultilineCardNote";
+import { LogseqToAnkiSync } from "./sync/syncLogseqToAnki";
+import { addSettingsToLogseq } from "./settings";
+import { ANKI_ICON } from "./constants";
 import GITHUB_ICON from "../node_modules/@tabler/icons/icons/outline/brand-github.svg?raw";
 import HEART_ICON from "../node_modules/@tabler/icons/icons/outline/heart.svg?raw";
-import {LogseqProxy} from "./logseq/LogseqProxy";
-import {AddonRegistry} from "./addons/AddonRegistry";
-import {SwiftArrowNote} from "./anki-notes/SwiftArrowNote";
-import {ImageOcclusionNote} from "./anki-notes/ImageOcclusionNote";
-import {HighlightMaskNote} from "./anki-notes/HighlightMaskNote";
-import {BlockAndPageHashCache} from "./sync/cache";
-import {Buffer} from "buffer/";
-import {Note} from "./anki-notes/Note";
-import {showButtonModal} from "./ui";
-import {UI} from "./ui/UI";
+import { LogseqProxy } from "./logseq/LogseqProxy";
+import { AddonRegistry } from "./addons/AddonRegistry";
+import { SwiftArrowNote } from "./anki-notes/SwiftArrowNote";
+import { ImageOcclusionNote } from "./anki-notes/ImageOcclusionNote";
+import { HighlightMaskNote } from "./anki-notes/HighlightMaskNote";
+import { BlockAndPageHashCache } from "./sync/cache";
+import { Buffer } from "buffer/";
+import { Note } from "./anki-notes/Note";
+import { showButtonModal } from "./ui";
+import { UI } from "./ui/UI";
 import * as AnkiConnect from "./anki-connect/AnkiConnect";
 import pkg from "./../package.json";
-import {WindowParentBridge} from "./logseq/WindowParentBridge";
+import { WindowParentBridge } from "./logseq/WindowParentBridge";
 
-import {createLogger, LoggerCategory, updateLoggerLevels} from "./utils/logger";
+import { registerToolbar } from "./registerToolbar";
+import { createLogger, LoggerCategory, updateLoggerLevels } from "./utils/logger";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -37,30 +38,11 @@ async function main(baseInfo: LSPluginBaseInfo) {
         {
             key: `logseq-anki-sync-command-palette-${baseInfo.id}`,
             label: `Start Logseq to Anki Sync`,
-            keybinding: {mode: "global", binding: ""},
+            keybinding: { mode: "global", binding: "" },
         },
         syncLogseqToAnki,
     );
-    logseq.provideStyle(`
-    logseq-anki-toolbar-item-${baseInfo.id} {
-      display: flex;
-      align-items: center;
-      position: relative;
-      top: 0px;
-      opacity: 0.8;
-    }
-    logseq-anki-toolbar-item-${baseInfo.id}:hover {
-      opacity: 1;
-    }
-  `);
-    logseq.App.registerUIItem("toolbar", {
-        key: `logseq-anki-sync${baseInfo.id == "logseq-anki-sync" ? "" : "-" + baseInfo.id}`,
-        template: String.raw`
-      <a title="Start Logseq to Anki Sync" data-on-click="syncLogseqToAnki" class="button logseq-anki-toolbar-item-${baseInfo.id}">
-        <i class="ui__icon ti" style="font-size: 18px;">${ANKI_ICON}</i>
-      </a>
-    `,
-    });
+    registerToolbar(baseInfo);
     updateLoggerLevels();
     addSettingsToLogseq();
 
@@ -89,10 +71,10 @@ async function main(baseInfo: LSPluginBaseInfo) {
     window.process = process;
 
     // Show welcome message
-    const {lastWelcomeVersion} = LogseqProxy.Settings.getPluginSettings();
+    const { lastWelcomeVersion } = LogseqProxy.Settings.getPluginSettings();
     console.log("lastWelcomeVersion", lastWelcomeVersion, pkg.version);
     if (lastWelcomeVersion && lastWelcomeVersion !== pkg.version) {
-        logseq.updateSettings({lastWelcomeVersion: pkg.version});
+        logseq.updateSettings({ lastWelcomeVersion: pkg.version });
         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait logseq's react to load
         await showButtonModal(
             `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span>
@@ -119,7 +101,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
                     icon: GITHUB_ICON,
                 },
             ],
-            {enableOutsideClickClose: false},
+            { enableOutsideClickClose: false },
         );
     }
 }

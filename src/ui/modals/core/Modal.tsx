@@ -1,7 +1,6 @@
 import React, { PropsWithChildren } from "../../React";
 import FocusTrap from "focus-trap-react";
 import { UI } from "../../UI";
-import { WindowBridge } from "../../../logseq/WindowBridge";
 
 const focusTrapOptions = {
     tabbableOptions: {

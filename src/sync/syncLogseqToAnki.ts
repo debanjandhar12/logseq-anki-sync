@@ -477,7 +477,7 @@ export class LogseqToAnkiSync {
                 },
             ],
             summery,
-            20000,
+            12000,
             Object.keys(failedCreated).length > 0 ||
                 Object.keys(failedUpdated).length > 0 ||
                 Object.keys(failedDeleted).length > 0
