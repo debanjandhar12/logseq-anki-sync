@@ -31,6 +31,8 @@ import {DeleteNotesTask} from "./tasks/DeleteNotesTask";
 import {SuspendUnsuspendNotesTask} from "./tasks/SuspendUnsuspendNotesTask";
 import {createLogger, LoggerCategory} from "../utils/logger";
 import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
+import {SyncResult} from "./types";
+import WindowBridge from "../logseq/WindowBridge";
 
 const logger = createLogger(LoggerCategory.SyncMain);
 
@@ -100,23 +102,18 @@ export class LogseqToAnkiSync {
         if (!confirmation) return;
 
         const {toCreateNotes, toUpdateNotes, toDeleteNotes} = confirmation;
-        const results = await this.executeSyncPlan(
+        const syncResult = await this.executeSyncPlan(
             toCreateNotes,
             toUpdateNotes,
             toDeleteNotes,
             ankiNoteManager,
         );
 
+        await this.performPostSyncCleanup(syncResult.toCreateNotes);
+
         WindowParentBridge.dispatchLogseqAnkiSyncEvent("syncLogseqToAnkiComplete");
-        await this.performPostSyncCleanup(results.toCreateNotes);
-        this.displayResults(
-            results.toCreateNotes,
-            results.toUpdateNotes,
-            results.toDeleteNotes,
-            results.failedCreated,
-            results.failedUpdated,
-            results.failedDeleted,
-        );
+        WindowParentBridge.setGlobalObject("lastSyncLogseqToAnkiResult", syncResult);
+        this.displayResults(syncResult);
     }
 
     private async createNotes(
@@ -359,7 +356,7 @@ export class LogseqToAnkiSync {
         toUpdateNotes: Note[],
         toDeleteNotes: number[],
         ankiNoteManager: LazyAnkiNoteManager,
-    ) {
+    ): Promise<SyncResult> {
         const failedCreated: {[key: string]: Error} = {};
         const failedUpdated: {[key: string]: Error} = {};
         const failedDeleted: {[key: string]: Error} = {};
@@ -441,14 +438,16 @@ export class LogseqToAnkiSync {
         }
     }
 
-    private displayResults(
-        toCreateNotes: Note[],
-        toUpdateNotes: Note[],
-        toDeleteNotes: number[],
-        failedCreated: {[key: string]: Error},
-        failedUpdated: {[key: string]: Error},
-        failedDeleted: {[key: string]: Error},
-    ): void {
+    private displayResults(syncResult: SyncResult): void {
+        const {
+            toCreateNotes,
+            toUpdateNotes,
+            toDeleteNotes,
+            failedCreated,
+            failedUpdated,
+            failedDeleted,
+        } = syncResult;
+
         let summery = `Sync Completed! \n Created Blocks: ${
             toCreateNotes.length - Object.keys(failedCreated).length
         } \n Updated Blocks: ${
@@ -473,14 +472,7 @@ export class LogseqToAnkiSync {
                 {
                     name: "View Details",
                     func: () => {
-                        showSyncResultDialog(
-                            toCreateNotes,
-                            toUpdateNotes,
-                            toDeleteNotes,
-                            failedCreated,
-                            failedUpdated,
-                            failedDeleted,
-                        );
+                        showSyncResultDialog(syncResult);
                     },
                 },
             ],
