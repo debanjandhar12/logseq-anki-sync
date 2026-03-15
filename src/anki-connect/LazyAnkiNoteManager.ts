@@ -148,6 +148,12 @@ export class LazyAnkiNoteManager {
             }
         }
         if (needsFieldUpdate) {
+            // Delete user controlled fields from fields object to avoid overwriting them
+            const fieldsToUpdate = {...fields};
+            delete fieldsToUpdate["User Controlled Field (Front)"];
+            delete fieldsToUpdate["User Controlled Field (Back)"];
+            delete fieldsToUpdate["User Controlled Field (Both)"];
+
             this.updateNoteActionsQueue.push({
                 action: "updateNoteFields",
                 params: {
@@ -155,7 +161,7 @@ export class LazyAnkiNoteManager {
                         id: ankiId,
                         deckName: deckName,
                         modelName: modelName,
-                        fields: fields,
+                        fields: fieldsToUpdate,
                     },
                 },
             });

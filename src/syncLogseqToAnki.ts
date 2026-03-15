@@ -76,7 +76,7 @@ export class LogseqToAnkiSync {
         // -- Create models if it doesn't exists --
         await AnkiConnect.createModel(
             this.modelName,
-            ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"],
+            ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config", "User Controlled Field (Front)", "User Controlled Field (Back)", "User Controlled Field (Both)"],
             getTemplateFront(),
             getTemplateBack(),
             getTemplateMediaFiles()
@@ -327,6 +327,9 @@ export class LogseqToAnkiSync {
                             dependencyHash,
                             assets: [...assets],
                         }),
+                        "User Controlled Field (Front)": "",
+                        "User Controlled Field (Back)": "",
+                        "User Controlled Field (Both)": "",
                     },
                     tags,
                 );

@@ -501,6 +501,32 @@ body.nightMode div.warning::before {
     border-color: #bfbfbf;
 }
 
+/* --- User Controlled Fields --- */
+.user-controlled-fields {
+    margin-top: 10px;
+    font-size: 0.9em;
+    font-style: italic;
+    color: #666;
+}
+
+body.nightMode .user-controlled-fields {
+    color: #999;
+}
+
+/* Hide front-only fields on back side and vice-versa */
+body:has(.anki-card-back-side) .user-field-front {
+    display: none;
+}
+
+body:has(.anki-card-front-side) .user-field-back {
+    display: none;
+}
+
+.user-field-front:empty, .user-field-back:empty, .user-field-both:empty {
+    display: none;
+}
+
+
 body.nightMode .embed-page,
 body.nightMode .embed-block {
     border: 2px solid #bfbfbf;
