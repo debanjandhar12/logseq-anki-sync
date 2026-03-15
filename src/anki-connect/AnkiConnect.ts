@@ -159,6 +159,18 @@ export async function createModel(
             ],
         });
         console.log(`Created new model ${modelName}`);
+    } else {
+        // Check for missing fields and add them
+        const existingFields = await invoke("modelFieldNames", {modelName: modelName});
+        const missingFields = _.difference(fields, existingFields);
+        for (const field of missingFields) {
+            console.log(`Adding missing field ${field} to model ${modelName}`);
+            await invoke("modelFieldAdd", {
+                modelName: modelName,
+                fieldName: field,
+                index: fields.indexOf(field)
+            });
+        }
     }
 
     try {
