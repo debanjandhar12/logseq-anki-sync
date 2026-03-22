@@ -148,6 +148,12 @@ export class UI {
             "--ls-scrollbar-background-color",
             "--ls-scrollbar-thumb-hover-color",
             "--ls-scrollbar-width",
+            "--lx-gray-02",
+            "--lx-gray-05",
+            "--lx-gray-06",
+            "--rx-gray-02",
+            "--rx-gray-05",
+            "--rx-gray-06",
 
             // Misc
             "--ls-head-text-color",
