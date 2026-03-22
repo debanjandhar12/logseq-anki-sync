@@ -1,5 +1,5 @@
 import { Chunk, Chunker, textQuoteSelectorMatcher, describeTextQuote as apacheDescribeTextQuote, TextQuoteSelector } from "@apache-annotator/selector";
-import { match as dmpMatch } from "@sanity/diff-match-patch";
+import { makeDiff, xIndex } from "@sanity/diff-match-patch";
 
 export class StringChunk implements Chunk<string> {
     constructor(public data: string) { }
@@ -23,11 +23,16 @@ export type QuoteInfo = {
     suffix?: string;
 };
 
+export interface QuoteMatchResult {
+    start: number;
+    end: number;
+    text: string;
+}
+
 export async function matchTextQuote(
     text: string,
-    quote: QuoteInfo,
-    approxPos?: number
-): Promise<number> {
+    quote: QuoteInfo
+): Promise<QuoteMatchResult | null> {
     const matcher = textQuoteSelectorMatcher({
         type: "TextQuoteSelector",
         exact: quote.exact,
@@ -39,18 +44,38 @@ export async function matchTextQuote(
     const match = await generator.next();
 
     if (!match.done && match.value) {
-        return (match.value as any).startIndex;
+        const val = match.value as any;
+        return { start: val.startIndex, end: val.endIndex, text: quote.exact };
     }
 
-    if (approxPos !== undefined) {
-        const matchLoc = dmpMatch(text, quote.exact, approxPos);
-        if (matchLoc !== -1) {
-            return matchLoc;
-        }
+    // Fuzzy match via global semantic diff
+    const expectedPrefix = quote.prefix || "";
+    const expectedSuffix = quote.suffix || "";
+    const expectedText = expectedPrefix + quote.exact + expectedSuffix;
+
+    const diffs = makeDiff(expectedText, text);
+
+    const exactStartInExpected = expectedPrefix.length;
+    const exactEndInExpected = expectedPrefix.length + quote.exact.length;
+
+    const actualStart = xIndex(diffs, exactStartInExpected);
+    const actualEnd = xIndex(diffs, exactEndInExpected);
+
+    if (actualStart !== actualEnd) {
+        // diff-match-patch can aggressively semantic-cleanup boundary characters if the prefix/suffix 
+        // changes resemble the exact text. We override `actualEnd` if the original exact string is intact.
+        const end = text.startsWith(quote.exact, actualStart) 
+            ? actualStart + quote.exact.length 
+            : actualEnd;
+
+        return {
+            start: actualStart,
+            end: end,
+            text: text.substring(actualStart, end)
+        };
     }
 
-    // Fallback
-    return text.indexOf(quote.exact);
+    return null;
 }
 
 export async function describeTextQuote(
@@ -87,41 +112,42 @@ export type HighlightElementGeometry = {
     text: string;
     prefix: string;
     suffix: string;
-    approxPos?: number;
 };
 
 export async function getHealedHighlightGeometry<T extends HighlightElementGeometry>(
     fullText: string,
     element: T
 ): Promise<{ healed: boolean; element: T; actualStart: number } | null> {
-    const actualStart = await matchTextQuote(
+    const matchResult = await matchTextQuote(
         fullText,
         {
             exact: element.text,
             prefix: element.prefix,
             suffix: element.suffix,
-        },
-        element.approxPos
+        }
     );
 
-    if (actualStart !== -1) {
-        const matchedText = fullText.substring(actualStart, actualStart + element.text.length);
-        if (element.approxPos !== actualStart || matchedText !== element.text) {
-            const quoteInfo = await describeTextQuote(
-                fullText,
-                actualStart,
-                actualStart + matchedText.length
-            );
+    if (matchResult) {
+        const { start: actualStart, end: actualEnd, text: matchedText } = matchResult;
+
+        const quoteInfo = await describeTextQuote(
+            fullText,
+            actualStart,
+            actualEnd
+        );
+
+        if (matchedText !== element.text || quoteInfo.prefix !== element.prefix || quoteInfo.suffix !== element.suffix) {
+            const healedElement = {
+                ...element,
+                text: matchedText,
+                prefix: quoteInfo.prefix || "",
+                suffix: quoteInfo.suffix || "",
+            };
+
             return {
                 healed: true,
                 actualStart,
-                element: {
-                    ...element,
-                    approxPos: actualStart,
-                    text: matchedText,
-                    prefix: quoteInfo.prefix || "",
-                    suffix: quoteInfo.suffix || "",
-                },
+                element: healedElement,
             };
         }
         return {

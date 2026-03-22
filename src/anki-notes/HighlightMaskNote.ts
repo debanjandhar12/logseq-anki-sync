@@ -275,12 +275,11 @@ export class HighlightMaskNote extends Note {
                                             exact: el.text,
                                             prefix: el.prefix,
                                             suffix: el.suffix,
-                                        },
-                                        el.approxPos,
+                                        }
                                     ),
                                 ),
                             );
-                            return matchResults.some((pos) => pos !== -1) ? note : null;
+                            return matchResults.some((res) => res !== null) ? note : null;
                         }
                     } catch {
                         return null;

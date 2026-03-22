@@ -41,7 +41,6 @@ export type HighlightMaskElement = {
     prefix: string;
     suffix: string;
     hint?: string;
-    approxPos?: number;
 };
 
 export type HighlightMaskConfig = {
@@ -230,18 +229,18 @@ const HighlightMaskEditorComponent: React.FC<{
 
                     const el = elements[index];
                     const isSelected = selectedElementIndex === index;
-                    const actualStart = await matchTextQuote(
+                    const matchResult = await matchTextQuote(
                         fullText,
                         {
                             exact: el.text,
                             prefix: el.prefix,
                             suffix: el.suffix,
-                        },
-                        el.approxPos,
+                        }
                     );
 
-                    if (actualStart !== -1) {
-                        const actualEnd = actualStart + el.text.length;
+                    if (matchResult) {
+                        const actualStart = matchResult.start;
+                        const actualEnd = matchResult.end;
                         // Map raw string index to ProseMirror positions...
                         let currentPos = 0;
                         let fromPos = -1;
@@ -378,18 +377,18 @@ const HighlightMaskEditorComponent: React.FC<{
             for (let idx = 0; idx < elements.length; idx++) {
                 const el = elements[idx];
 
-                const elStart = await matchTextQuote(
+                const matchResult = await matchTextQuote(
                     fullText,
                     {
                         exact: el.text,
                         prefix: el.prefix,
                         suffix: el.suffix,
-                    },
-                    el.approxPos,
+                    }
                 );
 
-                if (elStart !== -1) {
-                    const elEnd = elStart + el.text.length;
+                if (matchResult) {
+                    const elStart = matchResult.start;
+                    const elEnd = matchResult.end;
                     if (actualStart < elEnd && actualEnd > elStart) {
                         hasOverlap = true;
                         overlapIndex = idx;
@@ -415,7 +414,6 @@ const HighlightMaskEditorComponent: React.FC<{
                 text: text,
                 prefix: quoteInfo.prefix || "",
                 suffix: quoteInfo.suffix || "",
-                approxPos: actualStart,
             };
 
             setElements([...elements, newElement]);
