@@ -273,7 +273,7 @@ const HighlightMaskEditorComponent: React.FC<{
                         if (fromPos !== -1 && toPos !== -1) {
                             const className = `cursor-pointer px-1 rounded transition-all ${isSelected
                                 ? "bg-blue-500 text-white ring-2 ring-blue-300"
-                                : "bg-yellow-200 hover:bg-yellow-300"
+                                : "bg-yellow-500 hover:bg-yellow-500"
                                 }`;
 
                             const titleText = el.hint
