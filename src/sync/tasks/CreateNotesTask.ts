@@ -1,6 +1,6 @@
 import {Note} from "../../anki-notes/Note";
 import {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
-import {createLogger, LoggerCategory} from "../../utils/logger";
+import {createLogger, LoggerCategory} from "../../logger";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 import {ProgressNotification} from "../../ui";

@@ -18,7 +18,7 @@ import { LogseqPropertiesHelperProxy } from "./LogseqPropertiesHelper";
 import { LogseqNamespaceHelperProxy } from "./LogseqNamespaceHelper";
 import getNameFromPage from "./getNameFromPage";
 
-import { createLogger, LoggerCategory } from "../utils/logger";
+import { createLogger, LoggerCategory } from "../logger";
 import platform from 'platform';
 const logger = createLogger(LoggerCategory.LogseqWrappers);
 

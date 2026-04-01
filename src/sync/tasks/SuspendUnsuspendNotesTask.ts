@@ -4,7 +4,7 @@ import * as AnkiConnect from "../../anki-connect/AnkiConnect";
 import { ProgressNotification } from "../../ui";
 import { SuspendUnsuspendPropertyParser } from "../parsers/SuspendUnsuspendPropertyParser";
 import { AnkiNoteCache } from "../../anki-connect/internal/AnkiNoteCache";
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 

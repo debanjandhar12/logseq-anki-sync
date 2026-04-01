@@ -7,7 +7,7 @@ import {parseNote} from "../parsers/NoteParser";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 import path from "path-browserify";
 
-import {createLogger, LoggerCategory} from "../../utils/logger";
+import {createLogger, LoggerCategory} from "../../logger";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
 const logger = createLogger(LoggerCategory.SyncInternal);

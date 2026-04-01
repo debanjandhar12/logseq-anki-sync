@@ -43,7 +43,7 @@ import {PluginSettings} from "../settings";
 import {WindowParentBridge} from "./WindowParentBridge";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 
-import { createLogger, LoggerCategory } from "../utils/logger";
+import { createLogger, LoggerCategory } from "../logger";
 
 const logger = createLogger(LoggerCategory.LogseqContentConverter);
 

@@ -2,7 +2,7 @@ import {Mldoc} from "mldoc";
 import {isAudio_REGEXP, isImage_REGEXP, isVideo_REGEXP } from "../constants";
 import _ from "lodash";
 
-import { createLogger, LoggerCategory } from "../utils/logger";
+import { createLogger, LoggerCategory } from "../logger";
 
 const logger = createLogger(LoggerCategory.Others);
 

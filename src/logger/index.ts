@@ -1,3 +1,6 @@
+/**
+ * Centralized logging utility with category-based log levels and settings integration.
+ */
 import { createConsola, ConsolaInstance, LogLevels } from 'consola';
 import { LogseqProxy } from '../logseq/LogseqProxy';
 

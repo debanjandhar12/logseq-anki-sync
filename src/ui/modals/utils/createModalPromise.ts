@@ -1,7 +1,7 @@
 import React from "../../React";
 import {UI} from "../../UI";
 
-import {createLogger, LoggerCategory} from "../../../utils/logger";
+import {createLogger, LoggerCategory} from "../../../logger";
 
 const logger = createLogger(LoggerCategory.Others);
 

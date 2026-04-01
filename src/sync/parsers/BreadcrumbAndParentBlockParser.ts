@@ -5,7 +5,7 @@ import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 import getNameFromPage from "../../logseq/getNameFromPage";
 import _ from "lodash";
 
-import {createLogger, LoggerCategory} from "../../utils/logger";
+import {createLogger, LoggerCategory} from "../../logger";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 

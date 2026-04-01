@@ -22,7 +22,7 @@ import pkg from "./../package.json";
 import { WindowParentBridge } from "./logseq/WindowParentBridge";
 
 import { registerToolbar } from "./registerToolbar";
-import { createLogger, LoggerCategory, updateLoggerLevels } from "./utils/logger";
+import { createLogger, LoggerCategory, updateLoggerLevels } from "./logger";
 
 const logger = createLogger(LoggerCategory.Others);
 

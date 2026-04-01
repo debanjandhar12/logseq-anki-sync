@@ -1,5 +1,5 @@
 import { LogseqAppInfoFetcher } from "../logseq/LogseqAppInfoFetcher";
-import { createLogger, LoggerCategory } from "./logger";
+import { createLogger, LoggerCategory } from "../logger";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
 import { LogseqProxy } from "../logseq/LogseqProxy";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";

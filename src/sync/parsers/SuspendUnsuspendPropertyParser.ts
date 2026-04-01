@@ -3,7 +3,7 @@ import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { getLogseqBlockPropSafe } from "../../utils/utils";
 import _ from "lodash";
 
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 

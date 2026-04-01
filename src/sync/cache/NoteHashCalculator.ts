@@ -11,8 +11,7 @@ import { Note } from "../../anki-notes/Note";
 import pkg from "../../../package.json";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
-import { DependencyEntity } from "../../logseq/getLogseqContentDirectDependencies";
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 import {
     getBlockHash,
     getPageHash,

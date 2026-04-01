@@ -1,7 +1,7 @@
 import * as AnkiConnect from "../AnkiConnect";
 import { AnkiAction } from "../types";
 import { WindowParentBridge } from "../../logseq/WindowParentBridge";
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 import _ from "lodash";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);

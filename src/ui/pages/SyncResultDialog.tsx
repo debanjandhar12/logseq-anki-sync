@@ -5,7 +5,7 @@ import { CreateLineDisplay, UpdateLineDisplay } from "./SyncSelectionDialog";
 import { createModalPromise, Modal, ModalHeader, useModal } from "../";
 import { UI } from "../UI";
 import { SyncResult } from "../../sync/types";
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 
 const logger = createLogger(LoggerCategory.Others);
 

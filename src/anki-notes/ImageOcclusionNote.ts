@@ -28,7 +28,7 @@ import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import { BlockEntity, BlockUUID } from "@logseq/libs/dist/LSPlugin";
 import { showSelectionModal } from "../ui";
 
-import { createLogger, LoggerCategory } from "../utils/logger";
+import { createLogger, LoggerCategory } from "../logger";
 import { appendExtraToHtmlFile } from "./NoteUtils";
 import { LogseqAppInfoFetcher } from "../logseq/LogseqAppInfoFetcher";
 import { ObjectPropertyDataManager } from "../utils/ObjectPropertyDataManager";

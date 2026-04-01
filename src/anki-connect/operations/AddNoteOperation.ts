@@ -2,8 +2,7 @@ import * as AnkiConnect from "../AnkiConnect";
 import { AnkiActionQueue } from "../internal/AnkiActionQueue";
 import { AnkiNoteFields, AddNotesResult, OperationFailure, AnkiIdUuidPair } from "../types";
 import { ANKI_CLOZE_REGEXP } from "../../constants";
-import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 import _ from "lodash";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);

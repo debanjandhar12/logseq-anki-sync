@@ -8,7 +8,7 @@ import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 
-import { createLogger, LoggerCategory } from "../utils/logger";
+import { createLogger, LoggerCategory } from "../logger";
 import {appendExtraToHtmlFile} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);

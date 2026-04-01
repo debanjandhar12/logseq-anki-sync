@@ -22,7 +22,7 @@ import { LogseqPopover } from "../components/LogseqPopover";
 import { LogseqTooltip } from "../components/LogseqTooltip";
 import { UI } from "../UI";
 import { WindowBridge } from "../../logseq/WindowBridge";
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 import StarterKit from "@tiptap/starter-kit";
 import { Extension, Editor } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";

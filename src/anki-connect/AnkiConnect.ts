@@ -1,6 +1,6 @@
 import _ from "lodash";
 import {ANKI_CLOZE_REGEXP} from "../constants";
-import { createLogger, LoggerCategory } from "../utils/logger";
+import { createLogger, LoggerCategory } from "../logger";
 
 const logger = createLogger(LoggerCategory.AnkiConnect);
 

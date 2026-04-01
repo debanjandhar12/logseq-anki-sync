@@ -4,7 +4,7 @@ import { WindowParentBridge } from "./logseq/WindowParentBridge";
 import {AddonRegistry} from "./addons/AddonRegistry";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {DONATE_ICON} from "./constants";
-import { updateLoggerLevels } from "./utils/logger";
+import { updateLoggerLevels } from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 
 // Type definitions for plugin settings

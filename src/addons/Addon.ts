@@ -2,7 +2,7 @@ import '@logseq/libs';
 import { LogseqProxy } from '../logseq/LogseqProxy';
 import { WindowParentBridge } from '../logseq/WindowParentBridge';
 
-import { createLogger, LoggerCategory } from "../utils/logger";
+import { createLogger, LoggerCategory } from "../logger";
 
 const logger = createLogger(LoggerCategory.Others);
 

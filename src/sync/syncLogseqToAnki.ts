@@ -29,10 +29,9 @@ import {CreateNotesTask} from "./tasks/CreateNotesTask";
 import {UpdateNotesTask} from "./tasks/UpdateNotesTask";
 import {DeleteNotesTask} from "./tasks/DeleteNotesTask";
 import {SuspendUnsuspendNotesTask} from "./tasks/SuspendUnsuspendNotesTask";
-import {createLogger, LoggerCategory} from "../utils/logger";
+import {createLogger, LoggerCategory} from "../logger";
 import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
 import {SyncResult} from "./types";
-import WindowBridge from "../logseq/WindowBridge";
 
 const logger = createLogger(LoggerCategory.SyncMain);
 

@@ -15,7 +15,7 @@ import {BlockUUID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import objectHashOptimized from "../../utils/objectHashOptimized";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 
 const logger = createLogger(LoggerCategory.SyncCacheLayer);
 

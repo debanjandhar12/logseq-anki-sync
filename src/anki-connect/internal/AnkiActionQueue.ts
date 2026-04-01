@@ -1,7 +1,7 @@
 import * as AnkiConnect from "../AnkiConnect";
 import { AnkiAction, AnkiActionResult } from "../types";
 import { chunk, flatten } from "lodash";
-import {createLogger, LoggerCategory} from "../../utils/logger";
+import {createLogger, LoggerCategory} from "../../logger";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 

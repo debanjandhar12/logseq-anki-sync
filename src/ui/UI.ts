@@ -1,7 +1,7 @@
 import "./styles/main.css";
 import ReactDOM from "./ReactDOM";
 
-import {createLogger, LoggerCategory} from "../utils/logger";
+import {createLogger, LoggerCategory} from "../logger";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {WindowBridge} from "../logseq/WindowBridge";
 

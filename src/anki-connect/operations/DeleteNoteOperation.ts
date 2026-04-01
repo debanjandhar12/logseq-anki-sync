@@ -1,6 +1,6 @@
 import { AnkiActionQueue } from "../internal/AnkiActionQueue";
 import { DeleteNotesResult, OperationFailure } from "../types";
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 import _ from "lodash";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);

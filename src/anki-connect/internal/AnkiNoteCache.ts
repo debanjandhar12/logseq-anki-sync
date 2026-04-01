@@ -2,7 +2,7 @@ import * as AnkiConnect from "../AnkiConnect";
 import { AnkiNoteInfo } from "../types";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 

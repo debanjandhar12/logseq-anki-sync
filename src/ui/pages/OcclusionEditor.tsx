@@ -28,7 +28,7 @@ import { UI } from "../UI";
 import { createOcclusionRectEl, updateOcclusionHint } from "../../utils/occlusionUtils";
 import { WindowBridge } from "../../logseq/WindowBridge";
 
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 import { WindowParentBridge } from "../../logseq/WindowParentBridge";
 
 const logger = createLogger(LoggerCategory.Others);

@@ -22,7 +22,7 @@ import {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {appendExtraToHtmlFile} from "./NoteUtils";
 import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
 import {matchTextQuote, getHealedHighlightGeometry} from "../utils/HighlightNoteQuotePosFinder";
-import {createLogger, LoggerCategory} from "../utils/logger";
+import {createLogger, LoggerCategory} from "../logger";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 

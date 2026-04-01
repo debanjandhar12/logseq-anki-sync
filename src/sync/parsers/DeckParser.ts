@@ -4,7 +4,7 @@ import { getLogseqBlockPropSafe } from "../../utils/utils";
 import _ from "lodash";
 import { LOGSEQ_PAGE_REF_REGEXP } from "../../constants";
 
-import { createLogger, LoggerCategory } from "../../utils/logger";
+import { createLogger, LoggerCategory } from "../../logger";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 

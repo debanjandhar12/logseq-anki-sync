@@ -9,7 +9,7 @@ import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import { appendExtraToHtmlFile } from "./NoteUtils";
 
-import { createLogger, LoggerCategory } from "../utils/logger";
+import { createLogger, LoggerCategory } from "../logger";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 

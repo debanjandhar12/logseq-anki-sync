@@ -40,7 +40,7 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
 
 **Settings:** Defined in `settings.ts` using `SettingSchemaDesc`. Access via `LogseqProxy.Settings.getPluginSettings()`, never directly through `logseq.settings`.
 
-**UI Components:** React-based modals and pages live in `src/ui/`. Key pages include OcclusionEditor (fabric.js canvas for image occlusion) and feature explorer.
+**UI Components:** React-based modals and pages live in `src/ui/`. Key pages include OcclusionEditor (fabric.js canvas for image occlusion).
 
 ## Testing
 
@@ -64,14 +64,17 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
   - For cached access during sync: Use `LogseqProxy.Editor.getBlock()` / `getPage()` (properties included automatically)
   - For fresh, non-cached data: Use `LogseqPropertiesHelper.getBlock()` / `getPage()` from `src/logseq/logseqPropertiesHelper.ts`
   - Never call `logseq.Editor.getBlock()` / `getPage()` directly - properties won't be fetched/stripped properly
+  - For calls from UI, always use fresh, non-cached methods. For calls made during syncing, use cached methods. 
 - **Tag Access:** Use `block.properties.tags` to access logseq tags array from a logseq block
 - **HTML Conversion:** Use `LogseqToHtmlConverterProxy` for sync operations (cached), `LogseqToHtmlConverter` for UI operations (non-cached). Same pattern applies to `LogseqContentPreprocessorProxy` vs `LogseqContentPreprocessor`. Proxy classes extend base classes, override protected methods to use LogseqProxy, and add pMemoize caching that clears on 'syncLogseqToAnkiComplete' event
 - **Parent Window Access:** Always use WindowParentBridge instead of direct `window.parent` access for iframe communication. WindowParentBridge provides type-safe, testable access to parent window objects (Logseq API, AnkiConnect, Fabric.js, DOM elements, etc.)
 - **Settings Access:** Use `LogseqProxy.Settings.getPluginSettings()` instead of `logseq.settings`
 - **React Imports:** Import React/ReactDOM from `ui/React.ts` and `ui/ReactDOM.ts`, not directly from npm packages
-- **Anki Operations:** Use LazyAnkiNoteManager instead of direct AnkiConnect calls for note management
+- **Anki Operations:** Use LazyAnkiNoteManager instead of direct AnkiConnect calls during sync.
 - **UI Development:** Follow existing modal/page patterns from `src/ui/` directory
 - **Build & Dev:** Use `pnpm dev` for hot reload development, `pnpm build` for production (pnpm is enforced via preinstall)
+- **Documentation:** When implementing new features or making significant changes, remember to update the documentation in the `docusaurus/` directory to keep it in sync with the codebase.
+- **Logging:** Use the centralized logger from `src/logger` with appropriate `LoggerCategory` for consistent logging. Never use `console.log()` directly.
 
 # Development Guidelines
 You are an elite software engineering assistant. Generate mission-critical production-ready code following these strict guidelines:
