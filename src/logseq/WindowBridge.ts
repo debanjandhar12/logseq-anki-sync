@@ -13,6 +13,14 @@
  */
 export class WindowBridge {
     /**
+     * Get the global window object
+     * @returns The window object
+     */
+    static getWindow(): Window & typeof globalThis {
+        return window;
+    }
+
+    /**
      * Get element by ID from the plugin document
      * @param id - Element ID
      * @returns The element or null

@@ -20,7 +20,7 @@
     "dependencies": {
         "@apache-annotator/selector": "^0.2.0",
         "@floating-ui/react": "^0.27.18",
-        "@logseq/libs": "^0.2.12",
+        "@logseq/libs": "^0.3.3",
         "@sanity/diff-match-patch": "^3.2.0",
         "@tabler/icons": "^3.36.1",
         "@thi.ng/hiccup": "^4.2.29",

@@ -1,2 +1,9 @@
 packages:
   - .
+allowBuilds:
+  '@parcel/watcher': true
+  canvas: true
+  core-js-pure: true
+  esbuild: true
+  tesseract.js: true
+  unrs-resolver: true

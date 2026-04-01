@@ -26,9 +26,30 @@ interface ModalStackEntry {
  */
 export class UI {
     private static appRoot: HTMLElement | null = null;
-    private static isVisible: boolean = false;
-    private static modalStack: ModalStackEntry[] = [];
-    public static modalIdCounter: number = 0;
+    
+    private static get isVisible(): boolean {
+        return (WindowBridge.getWindow() as any).__UI_IS_VISIBLE__ === true;
+    }
+    private static set isVisible(value: boolean) {
+        (WindowBridge.getWindow() as any).__UI_IS_VISIBLE__ = value;
+    }
+
+    private static get modalStack(): ModalStackEntry[] {
+        if (!(WindowBridge.getWindow() as any).__UI_MODAL_STACK__) {
+            (WindowBridge.getWindow() as any).__UI_MODAL_STACK__ = [];
+        }
+        return (WindowBridge.getWindow() as any).__UI_MODAL_STACK__;
+    }
+    private static set modalStack(value: ModalStackEntry[]) {
+        (WindowBridge.getWindow() as any).__UI_MODAL_STACK__ = value;
+    }
+
+    public static get modalIdCounter(): number {
+        return (WindowBridge.getWindow() as any).__UI_MODAL_ID_COUNTER__ || 0;
+    }
+    public static set modalIdCounter(value: number) {
+        (WindowBridge.getWindow() as any).__UI_MODAL_ID_COUNTER__ = value;
+    }
 
     /**
      * Reset UI state - useful for testing
