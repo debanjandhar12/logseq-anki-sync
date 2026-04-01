@@ -7,18 +7,16 @@ type LogseqSelectProps = {
     title?: string;
     size?: "sm" | "md" | "lg";
     width?: string;
-    ref?: RefObject<HTMLSelectElement>;
 };
 
-export const LogseqSelect: FC<LogseqSelectProps> = ({
+export const LogseqSelect = React.forwardRef<HTMLSelectElement, LogseqSelectProps>(({
     value,
     onChange,
     options,
     title,
     size = "md",
     width = "auto",
-    ref,
-}) => {
+}, ref) => {
     let height = "auto";
     let fontSize = "0.875rem";
     let padding = "0.375rem 0.75rem";
@@ -89,4 +87,4 @@ export const LogseqSelect: FC<LogseqSelectProps> = ({
             </select>
         </div>
     );
-};
+});
