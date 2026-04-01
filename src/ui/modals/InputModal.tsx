@@ -2,7 +2,6 @@ import React from "../React";
 import { Modal } from "./core/Modal";
 import { useModal } from "./hooks/useModal";
 import { LogseqButton } from "../components/LogseqButton";
-import { createModalPromise } from "./utils/createModalPromise";
 import { UI } from "../UI";
 import { WindowBridge } from "../../logseq/WindowBridge";
 
@@ -17,7 +16,7 @@ export interface InputModalProps {
     modalContext?: { modalId: string | null };
 }
 
-const InputModalComponent: React.FC<InputModalProps> = ({
+export const InputModalComponent: React.FC<InputModalProps> = ({
     title,
     message,
     placeholder = "",
@@ -182,38 +181,4 @@ const InputModalComponent: React.FC<InputModalProps> = ({
     );
 };
 
-/**
- * Shows an input modal for text entry.
- *
- * @param options - Modal options
- * @param options.title - Optional title for the modal
- * @param options.message - Optional message/description
- * @param options.placeholder - Placeholder text for the input field
- * @param options.initialValue - Initial value in the input field
- * @param options.maxLength - Optional maximum character length (counter shown only when provided)
- * @returns The entered string, or null if cancelled
- */
-export async function showInputModal(
-    options: {
-        title?: string;
-        message?: string;
-        placeholder?: string;
-        initialValue?: string;
-        maxLength?: number;
-    } = {},
-): Promise<string | null> {
-    return createModalPromise<string | null>(
-        (props) => (
-            <InputModalComponent
-                title={options.title}
-                message={options.message}
-                placeholder={options.placeholder}
-                initialValue={options.initialValue}
-                maxLength={options.maxLength}
-                {...props}
-            />
-        ),
-        {},
-        { errorMessage: "Failed to open input modal" },
-    );
-}
+

@@ -2,7 +2,6 @@ import React from "../React";
 import { Modal } from "./core/Modal";
 import { useModal } from "./hooks/useModal";
 import { LogseqButton } from "../components/LogseqButton";
-import { createModalPromise } from "./utils/createModalPromise";
 import { UI } from "../UI";
 import { WindowBridge } from "../../logseq/WindowBridge";
 
@@ -20,7 +19,7 @@ export interface SelectionModalProps {
     modalContext?: { modalId: string | null };
 }
 
-const SelectionModalComponent: React.FC<SelectionModalProps> = ({
+export const SelectionModalComponent: React.FC<SelectionModalProps> = ({
     items,
     message,
     enableKeySelect = false,
@@ -122,26 +121,4 @@ const SelectionModalComponent: React.FC<SelectionModalProps> = ({
     );
 };
 
-/**
- * Enhanced selection modal with standardized API
- */
-export async function showSelectionModal(
-    items: SelectionModalItem[],
-    options: {
-        message: string;
-        enableKeySelect?: boolean;
-    } = { message: "" },
-): Promise<number | null> {
-    return createModalPromise<number | null>(
-        (props) => (
-            <SelectionModalComponent
-                items={items}
-                message={options.message}
-                enableKeySelect={options.enableKeySelect}
-                {...props}
-            />
-        ),
-        {},
-        { errorMessage: "Failed to open selection modal" },
-    );
-}
+

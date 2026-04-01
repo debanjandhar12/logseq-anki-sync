@@ -9,7 +9,6 @@ import SETTINGS_ICON from "../../../node_modules/@tabler/icons/icons/outline/set
 import {
     Modal,
     useModal,
-    createModalPromise,
     ModalHeader,
     DialogModalFooter,
     showInputModal,
@@ -24,60 +23,28 @@ import { UI } from "../UI";
 import { WindowBridge } from "../../logseq/WindowBridge";
 import { createLogger, LoggerCategory } from "../../logger";
 import StarterKit from "@tiptap/starter-kit";
-import { Extension, Editor } from "@tiptap/core";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Editor } from "@tiptap/core";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import {
     describeTextQuote,
     matchTextQuote,
     getHealedHighlightGeometry,
 } from "../../utils/HighlightNoteQuotePosFinder";
+import { Extension } from "@tiptap/core";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import type {
+    HighlightMaskElement,
+    HighlightMaskConfig,
+    HighlightMaskData,
+} from "../launchers/showHighlightMaskEditor";
 
 const logger = createLogger(LoggerCategory.Others);
 
-export type HighlightMaskElement = {
-    cId: number;
-    text: string;
-    prefix: string;
-    suffix: string;
-    hint?: string;
-};
 
-export type HighlightMaskConfig = {
-    // Reserved for future use
-};
 
-export type HighlightMaskData = {
-    config: HighlightMaskConfig;
-    elements: Array<HighlightMaskElement>;
-    tags: string[];
-};
-
-export async function showHighlightMaskEditor(
-    rawText: string,
-    highlightElements: Array<HighlightMaskElement>,
-    highlightConfig: HighlightMaskConfig,
-    blockTags: string[] = [],
-): Promise<HighlightMaskData | boolean> {
-    return createModalPromise<HighlightMaskData | boolean>(
-        (props) => (
-            <HighlightMaskEditorComponent
-                rawText={rawText}
-                highlightElements={highlightElements}
-                highlightConfig={highlightConfig}
-                blockTags={blockTags}
-                {...props}
-            />
-        ),
-        {},
-        { errorMessage: "Failed to open Highlight Mask Editor" },
-    );
-}
-
-// Prosemirror plugin key for highlighting definitions
 const HighlightPluginKey = new PluginKey("highlightMask");
 
-export const HighlightMaskExtension = Extension.create({
+const HighlightMaskExtension = Extension.create({
     name: "highlightMask",
 
     addProseMirrorPlugins() {
@@ -106,7 +73,7 @@ export const HighlightMaskExtension = Extension.create({
     },
 });
 
-const HighlightMaskEditorComponent: React.FC<{
+export const HighlightMaskEditorComponent: React.FC<{
     rawText: string;
     highlightElements: Array<HighlightMaskElement>;
     highlightConfig: HighlightMaskConfig;
@@ -711,4 +678,4 @@ const HighlightMaskEditorComponent: React.FC<{
                 </div>
             </Modal>
         );
-    };
+};

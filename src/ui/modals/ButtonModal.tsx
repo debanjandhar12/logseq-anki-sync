@@ -3,7 +3,6 @@ import { Modal } from "./core/Modal";
 import { useModal } from "./hooks/useModal";
 import { SimpleModalHeader } from "./core/ModalHeader";
 import { LogseqButton } from "../components/LogseqButton";
-import { createModalPromise } from "./utils/createModalPromise";
 import { UI } from "../UI";
 import { WindowBridge } from "../../logseq/WindowBridge";
 
@@ -23,7 +22,7 @@ export interface ButtonModalProps {
     enableOutsideClickClose?: boolean;
 }
 
-const ButtonModalComponent: React.FC<ButtonModalProps> = ({
+export const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     message,
     buttons,
     resolve,
@@ -86,18 +85,4 @@ const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     );
 };
 
-/**
- * A model that shows message along with customizable buttons.
- * @return index of button pressed (or false when canceled from top right)
- */
-export async function showButtonModal(
-    message: string,
-    buttons: ButtonModalButton[],
-    options?: { enableOutsideClickClose?: boolean },
-): Promise<number | false> {
-    return createModalPromise<number | false>(
-        (props) => <ButtonModalComponent message={message} buttons={buttons} {...props} />,
-        { enableOutsideClickClose: options?.enableOutsideClickClose },
-        { errorMessage: "Failed to open button modal" },
-    );
-}
+

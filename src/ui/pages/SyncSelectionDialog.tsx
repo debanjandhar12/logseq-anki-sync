@@ -8,39 +8,13 @@ import { LogseqPopover } from "../components/LogseqPopover";
 import { LogseqTooltip } from "../components/LogseqTooltip";
 import { ANKI_ICON } from "../../constants";
 import _ from "lodash";
-import { createModalPromise, ModalHeader, DialogModalFooter, useModal } from "../";
+import { ModalHeader, DialogModalFooter, useModal } from "../";
 import { UI } from "../UI";
 import { LogseqProxy } from "../../logseq/LogseqProxy";
 import { LogseqContentPreprocessor } from "../../logseq/LogseqContentPreprocessor";
 import { WindowBridge } from "../../logseq/WindowBridge";
 
-export async function showSyncSelectionDialog(
-    toCreateNotes: Array<any>,
-    toUpdateNotes: Array<any>,
-    toDeleteNotes: Array<any>,
-): Promise<{
-    toCreateNotes: Array<any>;
-    toUpdateNotes: Array<any>;
-    toDeleteNotes: Array<any>;
-} | null> {
-    return createModalPromise<{
-        toCreateNotes: Array<any>;
-        toUpdateNotes: Array<any>;
-        toDeleteNotes: Array<any>;
-    } | null>(
-        (props) => (
-            <SyncSelectionDialogComponent
-                toCreateNotes={toCreateNotes}
-                toUpdateNotes={toUpdateNotes}
-                toDeleteNotes={toDeleteNotes}
-                {...props}
-            />
-        ),
-        {},
-        { errorMessage: "Failed to open sync selection dialog" },
-    );
-}
-const SyncSelectionDialogComponent: React.FC<{
+export const SyncSelectionDialogComponent: React.FC<{
     toCreateNotes: Array<any>;
     toUpdateNotes: Array<any>;
     toDeleteNotes: Array<any>;

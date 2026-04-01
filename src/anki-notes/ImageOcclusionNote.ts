@@ -21,9 +21,9 @@ import { LogseqContentPreprocessor } from "../logseq/LogseqContentPreprocessor";
 import {
     OcclusionData,
     OcclusionConfig,
-    showOcclusionEditor,
     OcclusionElement,
-} from "../ui/pages/OcclusionEditor";
+} from "../ui/launchers/showOcclusionEditor";
+import { showOcclusionEditor } from "../ui/launchers/showOcclusionEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import { BlockEntity, BlockUUID } from "@logseq/libs/dist/LSPlugin";
 import { showSelectionModal } from "../ui";

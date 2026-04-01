@@ -2,22 +2,14 @@ import React, { useState } from "../React";
 import { ANKI_ICON } from "../../constants";
 import _ from "lodash";
 import { CreateLineDisplay, UpdateLineDisplay } from "./SyncSelectionDialog";
-import { createModalPromise, Modal, ModalHeader, useModal } from "../";
+import { Modal, ModalHeader, useModal } from "../";
 import { UI } from "../UI";
 import { SyncResult } from "../../sync/types";
 import { createLogger, LoggerCategory } from "../../logger";
 
 const logger = createLogger(LoggerCategory.Others);
 
-export async function showSyncResultDialog(syncResult: SyncResult): Promise<SyncResult | null> {
-    return createModalPromise<SyncResult | null>(
-        (props) => <SyncResultDialogComponent syncResult={syncResult} {...props} />,
-        {},
-        { errorMessage: "Failed to open sync result dialog" },
-    );
-}
-
-const SyncResultDialogComponent: React.FC<{
+export const SyncResultDialogComponent: React.FC<{
     syncResult: SyncResult;
     resolve: (value: any) => void;
     reject: (error: any) => void;

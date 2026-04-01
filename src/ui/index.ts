@@ -16,41 +16,57 @@ export type {ModalHeaderProps} from "./modals/core/ModalHeader";
 export {ModalFooter, DialogModalFooter} from "./modals/core/ModalFooter";
 export type {ModalFooterProps} from "./modals/core/ModalFooter";
 
-export {showConfirmModal} from "./modals/ConfirmModal";
+// Modal launchers
+export {showConfirmModal} from "./launchers/showConfirmModal";
+export {showButtonModal} from "./launchers/showButtonModal";
+export type {ButtonModalButton} from "./launchers/showButtonModal";
+export {showSelectionModal} from "./launchers/showSelectionModal";
+export type {SelectionModalItem} from "./launchers/showSelectionModal";
+export {showInputModal} from "./launchers/showInputModal";
+
+// Modal components (for launcher use)
+export {ConfirmModalComponent} from "./modals/ConfirmModal";
 export type {ConfirmModalProps} from "./modals/ConfirmModal";
-
-export {showButtonModal} from "./modals/ButtonModal";
-export type {ButtonModalProps, ButtonModalButton} from "./modals/ButtonModal";
-
-export {showSelectionModal} from "./modals/SelectionModal";
-export type {SelectionModalProps, SelectionModalItem} from "./modals/SelectionModal";
-
-export {showInputModal} from "./modals/InputModal";
+export {ButtonModalComponent} from "./modals/ButtonModal";
+export type {ButtonModalProps} from "./modals/ButtonModal";
+export {SelectionModalComponent} from "./modals/SelectionModal";
+export type {SelectionModalProps} from "./modals/SelectionModal";
+export {InputModalComponent} from "./modals/InputModal";
 export type {InputModalProps} from "./modals/InputModal";
 
-// Pages exports
-export {showLogseqAnkiFeatureExplorer} from "./pages/LogseqAnkiFeatureExplorer";
+// Page launchers
+export {showLogseqAnkiFeatureExplorer} from "./launchers/showLogseqAnkiFeatureExplorer";
 
-export {showOcclusionEditor} from "./pages/OcclusionEditor";
-export type {OcclusionElement, OcclusionConfig, OcclusionData} from "./pages/OcclusionEditor";
+export {showOcclusionEditor} from "./launchers/showOcclusionEditor";
+export type {OcclusionElement, OcclusionConfig, OcclusionData} from "./launchers/showOcclusionEditor";
 
-export {showHighlightMaskEditor} from "./pages/HighlightMaskEditor";
+export {showHighlightMaskEditor} from "./launchers/showHighlightMaskEditor";
 export type {
     HighlightMaskElement,
     HighlightMaskConfig,
     HighlightMaskData,
-} from "./pages/HighlightMaskEditor";
+} from "./launchers/showHighlightMaskEditor";
 
-export {ProgressNotification} from "./notifications/ProgressNotification";
-export {ActionNotification} from "./notifications/ActionNotification";
+export {showSyncResultDialog} from "./launchers/showSyncResultDialog";
 
-export {showSyncResultDialog} from "./pages/SyncResultDialog";
+export {showSyncSelectionDialog} from "./launchers/showSyncSelectionDialog";
 
+// Page components (for launcher use)
+export {LogseqAnkiFeatureExplorerComponent} from "./pages/LogseqAnkiFeatureExplorer";
+export {OcclusionEditorComponent} from "./pages/OcclusionEditor";
+export {HighlightMaskEditorComponent} from "./pages/HighlightMaskEditor";
+export {SyncResultDialogComponent} from "./pages/SyncResultDialog";
+export {SyncSelectionDialogComponent} from "./pages/SyncSelectionDialog";
+
+// Helper components from SyncSelectionDialog
 export {
-    showSyncSelectionDialog,
     AnkiLink,
     LogseqLink,
     CreateLineDisplay,
     UpdateLineDisplay,
     DeleteLineDisplay,
 } from "./pages/SyncSelectionDialog";
+
+// Notifications
+export {ProgressNotification} from "./notifications/ProgressNotification";
+export {ActionNotification} from "./notifications/ActionNotification";

@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from "../React";
-import {Modal, useModal, createModalPromise} from "../";
+import {Modal, useModal} from "../";
 import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import { LogseqPropertiesHelper } from "../../logseq/LogseqPropertiesHelper";
@@ -9,25 +9,11 @@ import {ImageOcclusionNote} from "../../anki-notes/ImageOcclusionNote";
 import _ from "lodash";
 import getNameFromPage from "../../logseq/getNameFromPage";
 import { UI } from "../UI";
-
 import { createLogger, LoggerCategory } from "../../logger";
 
 const logger = createLogger(LoggerCategory.Others);
 
-export async function showLogseqAnkiFeatureExplorer(editingBlockUUID: string): Promise<void> {
-    return createModalPromise<void>(
-        (props) => (
-            <LogseqAnkiFeatureExplorerComponent
-                editingBlockUUID={editingBlockUUID}
-                {...props}
-            />
-        ),
-        {},
-        { errorMessage: "Failed to open Logseq Anki Feature Explorer" }
-    );
-}
-
-const LogseqAnkiFeatureExplorerComponent: React.FC<{
+export const LogseqAnkiFeatureExplorerComponent: React.FC<{
     editingBlockUUID: string;
     resolve: (value: void) => void;
     reject: (error: any) => void;

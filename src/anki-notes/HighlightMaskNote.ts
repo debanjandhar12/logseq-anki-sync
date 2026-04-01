@@ -14,9 +14,9 @@ import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import {
     HighlightMaskData,
     HighlightMaskConfig,
-    showHighlightMaskEditor,
     HighlightMaskElement,
-} from "../ui/pages/HighlightMaskEditor";
+} from "../ui/launchers/showHighlightMaskEditor";
+import { showHighlightMaskEditor } from "../ui/launchers/showHighlightMaskEditor";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {appendExtraToHtmlFile} from "./NoteUtils";

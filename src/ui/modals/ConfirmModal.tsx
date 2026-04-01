@@ -3,7 +3,6 @@ import { Modal } from "./core/Modal";
 import { useModal } from "./hooks/useModal";
 import { SimpleModalHeader } from "./core/ModalHeader";
 import { ModalFooter } from "./core/ModalFooter";
-import { createModalPromise } from "./utils/createModalPromise";
 import { UI } from "../UI";
 
 export interface ConfirmModalProps {
@@ -15,7 +14,7 @@ export interface ConfirmModalProps {
     modalContext?: { modalId: string | null };
 }
 
-const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
+export const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
     message,
     confirmText = "Confirm",
     cancelText = "Cancel",
@@ -56,26 +55,4 @@ const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
     );
 };
 
-/**
- * A confirmation model that returns boolean based on cancel or ok button click
- */
-export async function showConfirmModal(
-    message: string,
-    options: {
-        confirmText?: string;
-        cancelText?: string;
-    } = {},
-): Promise<boolean> {
-    return createModalPromise<boolean>(
-        (props) => (
-            <ConfirmModalComponent
-                message={message}
-                confirmText={options.confirmText}
-                cancelText={options.cancelText}
-                {...props}
-            />
-        ),
-        {},
-        { errorMessage: "Failed to open confirmation modal" },
-    );
-}
+

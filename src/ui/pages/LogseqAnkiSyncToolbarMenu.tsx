@@ -6,7 +6,7 @@ import PLAYER_PLAY_ICON from "@tabler/icons/outline/player-play.svg?raw";
 import LOGS_ICON from "@tabler/icons/outline/logs.svg?raw";
 import BOOK_ICON from "@tabler/icons/outline/book.svg?raw";
 import HEART_ICON from "@tabler/icons/outline/heart.svg?raw";
-import { showSyncResultDialog } from "./SyncResultDialog";
+import { showSyncResultDialog } from "../launchers/showSyncResultDialog";
 import { LogseqToAnkiSync } from "../../sync/syncLogseqToAnki";
 import FocusTrap from "focus-trap-react";
 

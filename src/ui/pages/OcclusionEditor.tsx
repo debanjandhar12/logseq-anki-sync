@@ -12,7 +12,6 @@ import HINT_ICON from "../../../node_modules/@tabler/icons/icons/outline/bulb.sv
 import {
     Modal,
     useModal,
-    createModalPromise,
     ModalHeader,
     DialogModalFooter,
     showInputModal,
@@ -27,58 +26,20 @@ import { createWorker, PSM } from "tesseract.js";
 import { UI } from "../UI";
 import { createOcclusionRectEl, updateOcclusionHint } from "../../utils/occlusionUtils";
 import { WindowBridge } from "../../logseq/WindowBridge";
-
 import { createLogger, LoggerCategory } from "../../logger";
 import { WindowParentBridge } from "../../logseq/WindowParentBridge";
+import type {
+    OcclusionElement,
+    OcclusionConfig,
+    OcclusionData,
+} from "../launchers/showOcclusionEditor";
 
 const logger = createLogger(LoggerCategory.Others);
-
-export type OcclusionElement = {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-    angle: number;
-    cId: number;
-    hint?: string;
-};
-
-export type OcclusionConfig = {
-    // hideAllTestOne is now controlled via #hide-all-test-one tag
-    // This type is kept for possible future user-defined config options
-};
-
-export type OcclusionData = {
-    config: OcclusionConfig;
-    elements: Array<OcclusionElement>;
-    tags: string[];
-};
 
 // Tool types for the toolbar
 type ToolType = "select" | "hand";
 
-export async function showOcclusionEditor(
-    imgURL: string,
-    occlusionElements: Array<OcclusionElement>,
-    occlusionConfig: OcclusionConfig,
-    blockTags: string[] = [],
-): Promise<OcclusionData | boolean> {
-    return createModalPromise<OcclusionData | boolean>(
-        (props) => (
-            <OcclusionEditorComponent
-                imgURL={imgURL}
-                occlusionElements={occlusionElements}
-                occlusionConfig={occlusionConfig}
-                blockTags={blockTags}
-                {...props}
-            />
-        ),
-        {},
-        { errorMessage: "Failed to open Occlusion Editor" },
-    );
-}
-
-const OcclusionEditorComponent: React.FC<{
+export const OcclusionEditorComponent: React.FC<{
     imgURL: string;
     occlusionElements: Array<OcclusionElement>;
     occlusionConfig: OcclusionConfig;
@@ -149,7 +110,7 @@ const OcclusionEditorComponent: React.FC<{
                     width: obj.getScaledWidth(),
                     height: obj.getScaledHeight(),
                     angle: obj.angle,
-                    cId: parseInt(obj._objects[1].text),
+                    cId: obj._objects?.[1]?.text ? parseInt(obj._objects[1].text) : 1,
                 };
 
                 // Include hint if it exists on the object
@@ -373,7 +334,7 @@ const OcclusionEditorComponent: React.FC<{
                     width: obj.getScaledWidth(),
                     height: obj.getScaledHeight(),
                     angle: obj.angle,
-                    cId: parseInt(obj._objects[1].text),
+                    cId: obj._objects?.[1]?.text ? parseInt(obj._objects[1].text) : 1,
                 };
                 if (obj.hint) element.hint = obj.hint;
                 return element;
@@ -395,7 +356,10 @@ const OcclusionEditorComponent: React.FC<{
 
         React.useEffect(() => {
             if (fabricSelection && fabricSelection.length > 0) {
-                setClozeId(fabricSelection[0]._objects[1].text);
+                const firstSelection = fabricSelection[0];
+                if (firstSelection?._objects?.[1]?.text) {
+                    setClozeId(firstSelection._objects[1].text);
+                }
             }
         }, [fabricSelection]);
 
@@ -802,8 +766,11 @@ const OcclusionEditorComponent: React.FC<{
             saveCanvasState();
         };
         const onCIdChange = (value: string) => {
+            if (!fabricSelection || !Array.isArray(fabricSelection)) return;
             fabricSelection.forEach((obj) => {
-                obj._objects[1].set("text", value);
+                if (obj?._objects?.[1]) {
+                    obj._objects[1].set("text", value);
+                }
             });
             fabricRef.current.renderAll();
             saveCanvasState(); // Save to undo history
