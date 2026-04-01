@@ -216,9 +216,6 @@ importers:
       vite:
         specifier: ^7.3.1
         version: 7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)(terser@5.44.1)
-      vite-plugin-logseq:
-        specifier: ^1.1.2
-        version: 1.1.2
       vite-plugin-node-polyfills:
         specifier: 0.8.2
         version: 0.8.2(rollup@4.52.5)(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)(terser@5.44.1))
@@ -3640,10 +3637,6 @@ packages:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
 
-  magic-string@0.26.7:
-    resolution: {integrity: sha512-hX9XH3ziStPoPhJxLq1syWuZMxbDvGNbVchfrdCtanC7D13888bMFow61x8axrx+GfHLtVeAx2kxL7tTGRl+Ow==}
-    engines: {node: '>=12'}
-
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
 
@@ -4581,10 +4574,6 @@ packages:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
 
-  sourcemap-codec@1.4.8:
-    resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
-    deprecated: Please use @jridgewell/sourcemap-codec instead
-
   sprintf-js@1.1.3:
     resolution: {integrity: sha512-Oo+0REFV59/rz3gfJNKQiBlwfHaSESl1pcGyABQsnnIfWOFt6JNj5gCog2U6MLZ//IGYD+nA8nI+mTShREReaA==}
 
@@ -4939,9 +4928,6 @@ packages:
 
   util@0.12.5:
     resolution: {integrity: sha512-kZf/K6hEIrWHI6XqOFUiiMa+79wE/D8Q+NCNAWclkyg3b4d2k7s0QGepNjiABc+aR3N1PAyHL7p6UcLY6LmrnA==}
-
-  vite-plugin-logseq@1.1.2:
-    resolution: {integrity: sha512-l5YvoH3K25Zx9eqgoJFug7NfVqSPwq7/FcYYhN1TkdG8ZOiD+c+TAwdCS2dJbGgvx8GmSpbgwSZWgslB+wH53g==}
 
   vite-plugin-node-polyfills@0.8.2:
     resolution: {integrity: sha512-amOUVWwNvcuKxfWM9vpS8sAqvew28KXyR597OHO7BXWJFxr+QX4qB3XTDhWoRivj89TIZe4JTJTZwBHtIJ3ygQ==}
@@ -9142,10 +9128,6 @@ snapshots:
 
   lz-string@1.5.0: {}
 
-  magic-string@0.26.7:
-    dependencies:
-      sourcemap-codec: 1.4.8
-
   magic-string@0.30.17:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
@@ -10237,8 +10219,6 @@ snapshots:
   source-map@0.6.1:
     optional: true
 
-  sourcemap-codec@1.4.8: {}
-
   sprintf-js@1.1.3: {}
 
   ssri@9.0.1:
@@ -10717,10 +10697,6 @@ snapshots:
       is-generator-function: 1.0.10
       is-typed-array: 1.1.13
       which-typed-array: 1.1.15
-
-  vite-plugin-logseq@1.1.2:
-    dependencies:
-      magic-string: 0.26.7
 
   vite-plugin-node-polyfills@0.8.2(rollup@4.52.5)(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)(terser@5.44.1)):
     dependencies:

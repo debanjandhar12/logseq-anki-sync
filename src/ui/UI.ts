@@ -64,23 +64,6 @@ export class UI {
             }
         });
 
-        // Listen for HMR updates to re-render all modals in the stack
-        // @ts-ignore - Vite will replace this
-        if (import.meta && import.meta.hot) {
-            // @ts-ignore - Vite will replace this
-            import.meta.hot.accept(() => {
-                if (this.modalStack.length > 0 && this.appRoot) {
-                    // Ensure the main UI is visible before re-rendering
-                    if (!this.isVisible) {
-                        logseq.showMainUI();
-                    }
-                    // Re-render all modals in the stack with updated components
-                    this.modalStack.forEach((entry) => {
-                        ReactDOM.render(entry.component, entry.containerElement);
-                    });
-                }
-            });
-        }
 
         // Hide main ui on plugin unload
         LogseqProxy.App.registerPluginUnloadListener(() => {
