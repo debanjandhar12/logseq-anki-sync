@@ -1,11 +1,11 @@
 {
-    "name": "logseq-anki-sync",
-    "version": "6.5.1",
-    "title": "Logseq Anki Sync",
-    "description": "An logseq to anki syncing plugin with superpowers - image occlusion, card direction, incremental cards, and a lot more.",
+    "name": "logseq-anki-sync-legacy",
+    "version": "6.6.0",
+    "title": "Logseq Anki Sync (Legacy)",
+    "description": "Legacy (older) version of logseq anki sync plugin.",
     "main": "dist/index.html",
     "license": "AGPL-3.0",
-    "repository": "debanjandhar12/logseq-anki-sync",
+    "repository": "debanjandhar12/logseq-anki-sync-legacy",
     "author": "@debanjandhar12",
     "scripts": {
         "dev": "vite",
@@ -14,7 +14,7 @@
         "test": "vitest"
     },
     "logseq": {
-        "id": "_rw1zys138",
+        "id": "_rw1zys137",
         "icon": "/icon.png"
     },
     "dependencies": {

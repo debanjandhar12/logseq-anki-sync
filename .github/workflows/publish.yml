@@ -1,68 +1,73 @@
 name: Publish plugin
 
 on:
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v2
+    steps:
+      - uses: actions/checkout@v6
 
-            - name: Get package values
-              uses: jarrettmeyer/github-action-package-values@v1
-              id: package
+      - name: Get package values
+        uses: jarrettmeyer/github-action-package-values@v1
+        id: package
 
-            - name: Use Node.js
-              uses: actions/setup-node@v3
-              with:
-                  node-version: "20.x"
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
 
-            - name: Use pnpm
-              uses: pnpm/action-setup@v3
-              with:
-                version: '9'
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
 
-            - name: Install dependencies
-              run: pnpm install
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-            - name: Build
-              id: build
-              run: |
-                  pnpm run build
-                  mkdir ${{ steps.package.outputs.package_name }}
-                  cp README.md package.json icon.png ${{ steps.package.outputs.package_name }}
-                  mv dist ${{ steps.package.outputs.package_name }}
-                  cd ${{ steps.package.outputs.package_name }}
-                  zip -r ${{ steps.package.outputs.package_name }}.zip *
-                  cd ..
-                  mv ${{ steps.package.outputs.package_name }}/${{ steps.package.outputs.package_name }}.zip ./
-                  echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
+      - name: Run tests
+        run: npx vitest run --reporter=verbose --reporter=json --outputFile=test-report.json
 
-            - name: Run Test Suites
-              run: pnpm test
+      - name: Build
+        id: build
+        run: |
+          pnpm run build
+          mkdir ${{ steps.package.outputs.package_name }}
+          cp README.md package.json icon.png ${{ steps.package.outputs.package_name }}
+          mv dist ${{ steps.package.outputs.package_name }}
+          cd ${{ steps.package.outputs.package_name }}
+          zip -r ${{ steps.package.outputs.package_name }}.zip *
+          cd ..
+          mv ${{ steps.package.outputs.package_name }}/${{ steps.package.outputs.package_name }}.zip ./
+          echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
 
-            - name: Create Release
-              uses: ncipollo/release-action@v1
-              id: create_release
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  VERSION: v${{ steps.package.outputs.package_version }}
-              with:
-                  allowUpdates: false
-                  draft: true
-                  prerelease: false
-                  generateReleaseNotes: true
-                  tag: v${{ steps.package.outputs.package_version }}
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          cat > release_notes.md << 'EOF'
+          ## What's Changed
+          
+          Please see the commit history for detailed changes.
+          
+          ## 🙏 Support
+          
+          Loved the tool? Please consider [donating via GitHub Sponsors](https://github.com/sponsors/debanjandhar12) to help it improve!
+          EOF
 
-            - name: Upload zip file
-              id: upload_zip
-              uses: actions/upload-release-asset@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  upload_url: ${{ steps.create_release.outputs.upload_url }}
-                  asset_path: ./${{ steps.package.outputs.package_name }}.zip
-                  asset_name: ${{ steps.package.outputs.package_name }}-v${{ steps.package.outputs.package_version }}.zip
-                  asset_content_type: application/zip
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: debanjandhar12/logseq-anki-sync-legacy
+          tag_name: v${{ steps.package.outputs.package_version }}
+          name: v${{ steps.package.outputs.package_version }}
+          token: ${{ secrets.LOGSEQ_ANKI_SYNC_LEGACY_REPO_TOKEN }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+          body_path: release_notes.md
+          files: |
+            ./${{ steps.package.outputs.package_name }}.zip
+            ./test-report.json
