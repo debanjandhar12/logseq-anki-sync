@@ -11,6 +11,17 @@ node_modules/*
 
 # Optional cache directory
 .parcel-cache/
+.vite_cache/
+
+# Ides
+.idea
+.vscode
+
+# Others
+.env
 
 # Dist folder
 dist/
+
+# Docusaurus not relivent for legacy version
+docusaurus/
