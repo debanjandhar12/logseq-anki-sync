@@ -1,46 +1,27 @@
 # Project Structure
 
-This is a Logseq plugin for one-way syncing flashcards to Anki with advanced features like image occlusion, cloze cards and block/page reference rendering.
+This is a Logseq plugin for ai chat using ai-sdk and assistant-ui.
 
 - **Entry Point:** `src/index.ts` initializes the plugin, registers UI commands, and sets up event listeners
 - **Output:** Build artifacts go to `dist/` directory
 - **Dependencies:** Defined in `package.json`
 - **Main Modules:**
-  - `src/logseq/` - Logseq API interaction with caching layer (LogseqProxy)
-  - `src/anki-connect/` - Anki Connect API integration
-  - `src/sync/` - Core syncing logic with hash-based change detection
-  - `src/anki-notes/` - Generates Anki notes from Logseq blocks
+  - `src/logseq/` - Logseq API interaction wrappers
   - `src/ui/` - React-based UI components (modals, pages, settings)
-  - `src/utils/` - Shared utility functions
-  - `src/addons/` - Plugin addon system
-  - `src/anki-template/` - Anki card templates
+  - `src/chat/` - Chat ui
+  - `src/ai/` - ai sdk wrappers and assistant ui runtimes
 
 ## Tech Stack
 
 - **Language:** TypeScript
 - **Build:** Vite with custom plugins for static file inlining and JS bundling
-- **UI Framework:** React 17 with focus-trap-react
+- **UI Framework:** React 18 with focus-trap-react
 - **Testing:** Vitest with jsdom environment
 - **Key Libraries:** @logseq/libs, mldoc (logseq markdown parsing), cheerio (HTML manipulation)
 
 ## Architecture
-
-**LogseqProxy Cache Layer:** All Logseq API calls go through `LogseqProxy` which provides memoized, synchronization-safe wrappers around @logseq/libs using p-memoize. Cache clears after sync via 'syncLogseqToAnkiComplete' event. For fresh, non-cached data with properties attached, use `LogseqPropertiesHelper` class.
-
-**Property Access (Logseq 0.2.3+):** Properties are now namespaced (e.g., `:user.property/deck-bavZ5684`). The `LogseqPropertiesHelper` class automatically fetches properties, strips prefixes, and filters system properties, maintaining backward compatibility. Use this helper when:
-- Bypassing cache for fresh data (e.g., UI interactions, image occlusion editor)
-- Direct API calls are needed outside LogseqProxy
-- LogseqProxy automatically uses these internally for cached access
-
-**Dependency Hash Cache:** `BlockAndPageHashCache.ts` maintains a dependency graph tracking block references, page embeds, and transitive dependencies. Each block's hash includes all dependency hashes plus metadata (page updatedAt, content length, parent/left ids). When a block changes, all dependent blocks' hashes automatically invalidate. Cache clears after sync via 'syncLogseqToAnkiComplete' event.
-
-**Syncing System:** `syncLogseqToAnki.ts` uses `NoteHashCalculator` to compute note hashes from dependency hashes + plugin settings + Anki fields. Only notes with changed hashes trigger re-rendering and Anki updates.
-
-**HTML Conversion:** `LogseqToHtmlConverter.ts` handles rendering Logseq markdown/org-mode to HTML, resolving block references, page embeds, PDF annotations, and other Logseq-specific syntax for Anki display.
-
 **Settings:** Defined in `settings.ts` using `SettingSchemaDesc`. Access via `LogseqSettingAccessor.getPluginSettings()`, never directly through `logseq.settings`.
-
-**UI Components:** React-based modals and pages live in `src/ui/`. Key pages include OcclusionEditor (fabric.js canvas for image occlusion).
+**UI Components:** React-based modals and pages live in `src/ui/`.
 
 ## Testing
 
@@ -48,7 +29,7 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
 
 **Running Tests:**
 - `pnpm test --run` - Run all tests
-- `pnpm test LogseqToHtmlConverter.test.ts --run` - Run specific test file
+- `pnpm test getModal.test.ts --run` - Run specific test file
 - `pnpm test -t "test case name" --run` - Run specific test case
 
 **Testing Approach:**
@@ -59,18 +40,10 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
 ## Best Practices
 
 - **Code Organization:** Keep related functionality within appropriate module directories
-- **Logseq API:** Always use LogseqProxy instead of direct @logseq/libs calls for caching and synchronization safety. However, do not use this inside LogseqPropertiesHelper.ts.
-- **Property Access:** Use `LogseqPropertiesHelper` for block/page property access:
-  - For cached access during sync: Use `LogseqProxy.Editor.getBlock()` / `getPage()` (properties included automatically)
-  - For fresh, non-cached data: Use `LogseqPropertiesHelper.getBlock()` / `getPage()` from `src/logseq/logseqPropertiesHelper.ts`
-  - Never call `logseq.Editor.getBlock()` / `getPage()` directly - properties won't be fetched/stripped properly
-  - For calls from UI, always use fresh, non-cached methods. For calls made during syncing, use cached methods. 
-- **Tag Access:** Use `block.properties.tags` to access logseq tags array from a logseq block
-- **HTML Conversion:** Use `LogseqToHtmlConverterProxy` for sync operations (cached), `LogseqToHtmlConverter` for UI operations (non-cached). Same pattern applies to `LogseqContentPreprocessorProxy` vs `LogseqContentPreprocessor`. Proxy classes extend base classes, override protected methods to use LogseqProxy, and add pMemoize caching that clears on 'syncLogseqToAnkiComplete' event
+- **Logseq API:** Always use wrappers from `src/logseq/` directory when possible.
 - **Parent Window Access:** Always use WindowParentBridge instead of direct `window.parent` access for iframe communication. WindowParentBridge provides type-safe, testable access to parent window objects (Logseq API, AnkiConnect, Fabric.js, DOM elements, etc.)
 - **Settings Access:** Use `LogseqSettingAccessor.getPluginSettings()` instead of `logseq.settings`
 - **React Imports:** Import React/ReactDOM from `ui/React.ts` and `ui/ReactDOM.ts`, not directly from npm packages
-- **Anki Operations:** Use LazyAnkiNoteManager instead of direct AnkiConnect calls during sync.
 - **UI Development:** Follow existing modal/page patterns from `src/ui/` directory
 - **Build & Dev:** Use `pnpm dev` for hot reload development, `pnpm build` for production (pnpm is enforced via preinstall)
 - **Documentation:** When implementing new features or making significant changes, remember to update the documentation in the `docusaurus/` directory to keep it in sync with the codebase.
