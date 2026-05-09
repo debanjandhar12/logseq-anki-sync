@@ -13,29 +13,24 @@ import {registerToolbar} from "./registerToolbar";
 import {addSettingsToLogseq} from "./settings";
 import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
+import {showAIChat, initAIChat} from "./chat/AIChatController";
 
 const logger = createLogger(LoggerCategory.MISC);
 
 async function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
-    const syncLogseqToAnki = async () => {
-        // TBU
-    };
-    logseq.provideModel({
-        syncLogseqToAnki: syncLogseqToAnki
-    });
+    await initAIChat();
+    logseq.provideModel({showAIChat: showAIChat});
     logseq.App.registerCommandPalette(
         {
             key: `logseq-ai-chat-command-palette-${baseInfo.id}`,
             label: `Open Logseq AI Chat`,
             keybinding: {mode: "global", binding: ""}
         },
-        syncLogseqToAnki
+        showAIChat
     );
     WindowParentBridge.setGlobalObject("LogseqAIChat", {
-        openChat: () => {
-            // TBU
-        }
+        showAIChat: showAIChat
     });
     registerToolbar(baseInfo);
     updateLoggerLevels();

@@ -1,6 +1,6 @@
 import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-import getNameFromPage from "./getNameFromPage";
+import getNameFromPage from "./utils/getNameFromPage";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 

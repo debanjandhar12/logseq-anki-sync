@@ -3,8 +3,7 @@ import * as OriginalReact from "react";
 import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
 
 const React =
-    ((process.env.NODE_ENV === "production" &&
-        LogseqAppInfoFetcher.checkHostAccess(window.parent) &&
+    ((LogseqAppInfoFetcher.checkHostAccess(window.parent) &&
         typeof logseq !== "undefined" &&
         logseq?.Experiments?.ReactDOM["createRoot"] &&
         logseq?.Experiments?.React) as typeof ReactTypes) || OriginalReact;

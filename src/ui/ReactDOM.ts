@@ -8,8 +8,7 @@ type CombinedReactDOM = typeof ReactDOMTypes & {
     createRoot: typeof ReactDOMClientTypes.createRoot;
 };
 
-const ReactDOM = (process.env.NODE_ENV === "production" &&
-    LogseqAppInfoFetcher.checkHostAccess(window.parent) &&
+const ReactDOM = (LogseqAppInfoFetcher.checkHostAccess(window.parent) &&
     typeof logseq !== "undefined" &&
     logseq?.Experiments?.ReactDOM["createRoot"] &&
     (logseq?.Experiments?.ReactDOM as CombinedReactDOM)) || {

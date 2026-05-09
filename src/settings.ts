@@ -3,11 +3,12 @@ import _ from "lodash";
 import {DONATE_ICON} from "./constants";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
+import {ProviderEnum} from "./core/ai-sdk/types";
 
 // Type definitions for plugin settings
 export interface PluginSettings {
     disabled: boolean;
-    llmProvider?: "TBU from types"[];
+    llmProvider?: ProviderEnum;
     llmAPIUrl?: string;
     llmAPIKey?: string;
     llmAPIModel?: string;
@@ -34,18 +35,32 @@ export const addSettingsToLogseq = async () => {
         {
             key: "llmProviderSetting",
             type: "enum",
-            default: ["TBU select first from types"],
+            default: Object.values(ProviderEnum)[0],
             title: "LLM Provider type",
             description: "Chose a supported provider type from the list.",
-            enumChoices: ["TBU from types"],
+            enumChoices: Object.values(ProviderEnum),
             enumPicker: "select"
         },
         {
-            key: "llmAPIUrlSetting",
+            key: "llmAPIUrl",
             type: "string",
             default: "",
             title: "LLM API Url",
-            description: "TBU"
+            description: "The base URL for the LLM API provider (e.g. https://api.openai.com/v1)"
+        },
+        {
+            key: "llmAPIKey",
+            type: "string",
+            default: "",
+            title: "LLM API Key",
+            description: "The API key for the LLM provider"
+        },
+        {
+            key: "llmAPIModel",
+            type: "string",
+            default: "gpt-4o",
+            title: "LLM Model",
+            description: "The model identifier to use (e.g. gpt-4o)"
         },
         {
             key: "advancedSettingsHeading",

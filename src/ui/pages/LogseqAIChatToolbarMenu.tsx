@@ -8,6 +8,7 @@ import type {FC} from "../React";
 // biome-ignore lint/style/useImportType: required for re-exported react
 import React, {useEffect, useState} from "../React";
 import {UI} from "../UI";
+import {showAIChat} from "../../chat/AIChatController";
 
 const focusTrapOptions = {
     tabbableOptions: {
@@ -46,9 +47,7 @@ const LogseqAIChatToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
             icon: SIDE_BAR_ICON,
             text: "Open Chat",
             disabled: false,
-            onClick: async () => {
-                // TBU
-            }
+            onClick: showAIChat
         },
         {separator: true},
         {
