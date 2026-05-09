@@ -321,15 +321,15 @@ export class UI {
             }
 
             if (entryToRemove) {
-                // Unmount React component
-                entryToRemove.root.unmount();
-
-                // Remove container from DOM
-                if (entryToRemove.containerElement.parentNode) {
-                    entryToRemove.containerElement.parentNode.removeChild(
-                        entryToRemove.containerElement
-                    );
-                }
+                // Unmount React component with defer
+                const container = entryToRemove.containerElement;
+                const root = entryToRemove.root;
+                setTimeout(() => {
+                    root.unmount();
+                    if (container.parentNode) {
+                        container.parentNode.removeChild(container);
+                    }
+                }, 0);
             }
 
             // Hide UI if all modals are closed
