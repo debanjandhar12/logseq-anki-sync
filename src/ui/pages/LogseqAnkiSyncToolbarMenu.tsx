@@ -7,7 +7,9 @@ import FocusTrap from "focus-trap-react";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import {LogseqToAnkiSync} from "../../sync/syncLogseqToAnki";
 import {showSyncResultDialog} from "../launchers/showSyncResultDialog";
-import React, {type FC, useEffect, useState} from "../React";
+import type {FC} from "../React";
+// biome-ignore lint/style/useImportType: required for re-exported react
+import React, {useEffect, useState} from "../React";
 import {UI} from "../UI";
 
 const focusTrapOptions = {

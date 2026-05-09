@@ -1,16 +1,14 @@
 import "@logseq/libs";
-import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
-import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
+import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
+import {afterEach, beforeEach, describe, expect, test} from "vitest";
 import {MultilineCardNote} from "../../../../src/anki-notes/MultilineCardNote";
-import {LogseqProxy} from "../../../../src/logseq/LogseqProxy";
 import {DeckParser} from "../../../../src/sync/parsers/DeckParser";
 
 describe("DeckParser E2E Tests", () => {
     describe("File Mode Deck Resolution", () => {
-        let prevPage: PageEntity | BlockEntity, page: PageEntity;
+        let page: PageEntity;
 
         beforeEach(async () => {
-            prevPage = await logseq.Editor.getCurrentPage();
             page = await logseq.Editor.createPage("Test DeckParser", {}, {createFirstBlock: false});
             await new Promise((resolve) => setTimeout(resolve, 100));
         });
@@ -179,7 +177,7 @@ describe("DeckParser E2E Tests", () => {
             // or the logseq-proxy library when dealing with namespace relationships in tests.
 
             // Create parent namespace page with deck property
-            const parentPage = await logseq.Editor.createPage(
+            await logseq.Editor.createPage(
                 "ParentNamespacePage",
                 {deck: "Parent Namespaced Page"},
                 {createFirstBlock: false}

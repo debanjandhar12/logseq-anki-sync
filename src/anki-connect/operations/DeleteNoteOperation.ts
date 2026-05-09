@@ -1,4 +1,3 @@
-import _ from "lodash";
 import {createLogger, LoggerCategory} from "../../logger";
 import {AnkiActionQueue} from "../internal/AnkiActionQueue";
 import type {DeleteNotesResult, OperationFailure} from "../types";

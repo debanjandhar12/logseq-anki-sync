@@ -1,13 +1,12 @@
 import "@logseq/libs";
-import {
-    type BlockEntity,
-    type BlockIdentity,
-    BlockUUID,
-    type EntityID,
-    type PageEntity,
-    type PageIdentity,
-    type PropertySchema,
-    type SettingSchemaDesc
+import type {
+    BlockEntity,
+    BlockIdentity,
+    EntityID,
+    PageEntity,
+    PageIdentity,
+    PropertySchema,
+    SettingSchemaDesc
 } from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
 import pMemoize, {pMemoizeClear} from "p-memoize";

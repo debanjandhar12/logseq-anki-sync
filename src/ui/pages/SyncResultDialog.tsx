@@ -7,7 +7,7 @@ import React, {useState} from "../React";
 import {UI} from "../UI";
 import {CreateLineDisplay, UpdateLineDisplay} from "./SyncSelectionDialog";
 
-const logger = createLogger(LoggerCategory.Others);
+const logger = createLogger(LoggerCategory.UI);
 
 export const SyncResultDialogComponent: React.FC<{
     syncResult: SyncResult;

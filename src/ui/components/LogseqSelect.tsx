@@ -1,4 +1,4 @@
-import React, {FC, RefObject} from "../React";
+import React from "../React";
 
 type LogseqSelectProps = {
     value: string | number;

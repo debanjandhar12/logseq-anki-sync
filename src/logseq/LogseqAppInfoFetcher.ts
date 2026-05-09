@@ -15,7 +15,7 @@ export class LogseqAppInfoFetcher {
             if (typeof value === "boolean") {
                 return value;
             }
-        } catch (e) {
+        } catch (_e) {
             // Silently fail and return false
         }
         return false;

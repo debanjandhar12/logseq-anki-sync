@@ -96,7 +96,7 @@ export class LogseqContentPreprocessor {
         content: string,
         format: "markdown" | "org" = "markdown"
     ): Promise<PreprocessResult> {
-        if (!content || typeof content !== "string" || content.trim() == "")
+        if (!content || typeof content !== "string" || content.trim() === "")
             return {content, properties: {}, rawPropertiesStr: ""};
 
         let resultContent = content;
@@ -191,7 +191,7 @@ export class LogseqContentPreprocessor {
                             return match.replace(pageName, String(pageId));
                         }
                     }
-                } catch (e) {
+                } catch (_e) {
                     // Page not found, keep original
                 }
                 return match;
@@ -209,7 +209,7 @@ export class LogseqContentPreprocessor {
         content: string,
         format: "markdown" | "org"
     ): Promise<string> {
-        return await safeReplaceAsync(content, LOGSEQ_PAGE_REF_REGEXP, async (match, pageName) => {
+        return await safeReplaceAsync(content, LOGSEQ_PAGE_REF_REGEXP, async (_match, pageName) => {
             // Handle org mode special cases (images and URLs)
             if (format === "org") {
                 const encodedName = encodeURI(pageName);
@@ -241,7 +241,7 @@ export class LogseqContentPreprocessor {
                         return `[[${pageId}]]`;
                     }
                 }
-            } catch (e) {
+            } catch (_e) {
                 // Page not found, keep original
             }
 
@@ -266,7 +266,7 @@ export class LogseqContentPreprocessor {
                             return `[${aliasContent}]([[${pageId}]])`;
                         }
                     }
-                } catch (e) {
+                } catch (_e) {
                     // Page not found, keep original
                 }
                 return match;
@@ -328,13 +328,13 @@ export class LogseqContentPreprocessor {
 
                 const symbol = annotationSymbolMap[hlColor] || "📌";
                 return `${symbol}**P${hlPage}** <div></div> ![](${hlsImgLoc})\n${content}`;
-            } catch (e) {}
+            } catch (_e) {}
         } else if (lsType === "annotation") {
             // Text annotation
             try {
                 const symbol = annotationSymbolMap[hlColor] || "📌";
                 return `${symbol}**P${hlPage}** ${content}`;
-            } catch (e) {}
+            } catch (_e) {}
         }
 
         return content;
@@ -355,7 +355,7 @@ export class LogseqContentPreprocessor {
         let tags: string[] = [];
         try {
             tags = JSON.parse(tagsStr);
-        } catch (e) {}
+        } catch (_e) {}
 
         const type = _.get(properties, "type", "");
         const uuid = _.get(properties, "uuid", "");
@@ -370,7 +370,7 @@ export class LogseqContentPreprocessor {
             let resizeMetaObj: Record<string, any> = {};
             try {
                 resizeMetaObj = JSON.parse(resizeMeta);
-            } catch (e) {}
+            } catch (_e) {}
 
             if (_.isPlainObject(resizeMetaObj)) {
                 const width = _.get(resizeMetaObj, "width", 0);

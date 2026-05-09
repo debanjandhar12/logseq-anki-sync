@@ -2,7 +2,7 @@ import {createLogger, LoggerCategory} from "../../../logger";
 import type React from "../../React";
 import {UI} from "../../UI";
 
-const logger = createLogger(LoggerCategory.Others);
+const logger = createLogger(LoggerCategory.UI);
 
 export interface ModalPromiseOptions {
     mountPath?: string;
@@ -34,7 +34,7 @@ export async function createModalPromise<T>(
 
             const modalContext: ModalPromiseContext = {modalId};
 
-            const modalId2 = await UI.showModal(
+            await UI.showModal(
                 ComponentFactory({
                     resolve,
                     reject,

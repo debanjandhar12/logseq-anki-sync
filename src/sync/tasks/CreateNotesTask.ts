@@ -10,7 +10,6 @@ import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import type {ProgressNotification} from "../../ui";
 import {NoteHashCalculator} from "../cache";
 import {parseNote} from "../parsers/NoteParser";
-import {ParsedNoteData} from "../types";
 
 export class CreateNotesTask {
     async execute(

@@ -37,7 +37,7 @@ import type {
 import React from "../React";
 import {UI} from "../UI";
 
-const logger = createLogger(LoggerCategory.Others);
+const logger = createLogger(LoggerCategory.UI);
 
 const HighlightPluginKey = new PluginKey("highlightMask");
 
@@ -268,7 +268,7 @@ export const HighlightMaskEditorComponent: React.FC<{
 
     // Handle Editor clicks
     React.useEffect(() => {
-        if (!editor || !editor.view.dom) return;
+        if (!editor?.view.dom) return;
         const dom = editor.view.dom;
         const handleClick = (e: MouseEvent) => {
             const target = e.target as HTMLElement;

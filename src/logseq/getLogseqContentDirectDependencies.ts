@@ -1,9 +1,8 @@
-import {type BlockEntity, BlockPageName, type BlockUUID} from "@logseq/libs/dist/LSPlugin";
+import type {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {
     LOGSEQ_BLOCK_REF_REGEXP,
     LOGSEQ_EMBDED_BLOCK_REGEXP,
-    LOGSEQ_EMBDED_PAGE_REGEXP,
-    LOGSEQ_PAGE_REF_REGEXP
+    LOGSEQ_EMBDED_PAGE_REGEXP
 } from "../constants";
 import {safeParseInt} from "../utils/utils";
 import getUUIDFromBlock from "./getUUIDFromBlock";
@@ -70,7 +69,7 @@ export default async function getLogseqContentDirectDependencies(
         const pageId = safeParseInt(pageIdStr);
 
         const isValidNumber =
-            typeof pageId === "number" && !isNaN(pageId) && Number.isInteger(pageId);
+            typeof pageId === "number" && !Number.isNaN(pageId) && Number.isInteger(pageId);
         if (!isValidNumber) continue;
 
         pageDependency.add(pageId);

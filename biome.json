@@ -55,7 +55,8 @@
             "!dist",
             "!node_modules",
             "!.vite_cache",
-            "!docusaurus"
+            "!docusaurus",
+            "!**/*.html"
         ]
     }
 }

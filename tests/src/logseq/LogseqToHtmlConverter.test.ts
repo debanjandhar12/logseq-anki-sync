@@ -1,7 +1,7 @@
 import "@logseq/libs";
-import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import * as cheerio from "cheerio";
-import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, test} from "vitest";
 import getNameFromPage from "../../../src/logseq/getNameFromPage";
 import {LogseqContentPreprocessor} from "../../../src/logseq/LogseqContentPreprocessor";
 import {LogseqToHtmlConverter} from "../../../src/logseq/LogseqToHtmlConverter";
@@ -476,9 +476,8 @@ describe("Basic Markdown Cases", () => {
 });
 
 describe("E2E cases for non DB mode", () => {
-    let prevPage: PageEntity | BlockEntity, page: PageEntity;
+    let page: PageEntity;
     beforeEach(async () => {
-        prevPage = await logseq.Editor.getCurrentPage();
         page = await logseq.Editor.createPage(
             "Test LogseqAnkiSync",
             {},
@@ -560,7 +559,6 @@ describe("E2E cases for non DB mode", () => {
                     expect(htmlFile.assets[0]).toContain("Linux_Slides_Test");
                     expect(htmlFile.assets[0]).toContain("1673181377785.png");
                 }
-                const $ = cheerio.load(htmlFile.html);
                 expect(htmlFile.html.trim()).toContain("🔵");
                 expect(htmlFile.html.trim()).toContain("P1");
                 await logseq.Editor.deletePage("hls__Linux_Slides_Test");
@@ -637,7 +635,7 @@ describe("E2E cases for non DB mode", () => {
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
             "Basic page ref rendering",
             async () => {
-                const refPage = await logseq.Editor.createPage(
+                await logseq.Editor.createPage(
                     "Test Ref Page",
                     {},
                     {redirect: false, createFirstBlock: false}
@@ -856,9 +854,8 @@ describe("E2E cases for non DB mode", () => {
 });
 
 describe("Page + Block Embed Rendering", () => {
-    let prevPage: PageEntity | BlockEntity, page: PageEntity;
+    let page: PageEntity;
     beforeEach(async () => {
-        prevPage = await logseq.Editor.getCurrentPage();
         page = await logseq.Editor.createPage(
             "Test LogseqAnkiSync Embed",
             {},
@@ -898,9 +895,8 @@ describe("Page + Block Embed Rendering", () => {
 });
 
 describe("E2E cases for DB mode", () => {
-    let prevPage: PageEntity | BlockEntity, page: PageEntity;
+    let page: PageEntity;
     beforeEach(async () => {
-        prevPage = await logseq.Editor.getCurrentPage();
         page = await logseq.Editor.createPage(
             "Test LogseqAnkiSync DB",
             {},
@@ -945,7 +941,7 @@ describe("E2E cases for DB mode", () => {
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
             "Basic page ref rendering",
             async () => {
-                const refPage = await logseq.Editor.createPage(
+                await logseq.Editor.createPage(
                     "Test DB Ref Page",
                     {},
                     {redirect: false, createFirstBlock: false}
@@ -1072,7 +1068,6 @@ describe("E2E cases for DB mode", () => {
                     expect(htmlFile.assets[0]).toContain("Linux_Slides_DB_Test");
                     expect(htmlFile.assets[0]).toContain("1767008103331.png");
                 }
-                const $ = cheerio.load(htmlFile.html);
                 expect(htmlFile.html.trim()).toContain("🟡");
                 expect(htmlFile.html.trim()).toContain("P1");
                 await logseq.Editor.deletePage("hls__Linux_Slides_DB_Test");

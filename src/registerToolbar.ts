@@ -1,8 +1,11 @@
 import "@logseq/libs";
 import type {LSPluginBaseInfo} from "@logseq/libs/dist/LSPlugin";
 import {ANKI_ICON} from "./constants";
+import {createLogger, LoggerCategory} from "./logger";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
 import {showToolbarMenu} from "./ui/pages/LogseqAnkiSyncToolbarMenu";
+
+const logger = createLogger(LoggerCategory.UI);
 
 export function registerToolbar(baseInfo: LSPluginBaseInfo) {
     logseq.provideModel({
@@ -18,7 +21,7 @@ export function registerToolbar(baseInfo: LSPluginBaseInfo) {
                     parentWidth = WindowParentBridge.getDocument().documentElement.clientWidth;
                 }
             } catch (error) {
-                console.warn("Could not access parent document for toolbar icon position:", error);
+                logger.warn("Could not access parent document for toolbar icon position:", error);
             }
             showToolbarMenu(triggerRect, parentWidth);
         }

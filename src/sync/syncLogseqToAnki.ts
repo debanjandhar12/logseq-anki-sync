@@ -280,7 +280,7 @@ export class LogseqToAnkiSync {
 
         for (const note of notes) {
             const ankiId = await note.getAnkiId();
-            if (ankiId == null || isNaN(ankiId)) toCreateNotesOriginal.push(note);
+            if (ankiId == null || Number.isNaN(ankiId)) toCreateNotesOriginal.push(note);
             else toUpdateNotesOriginal.push(note);
         }
 
@@ -305,7 +305,7 @@ export class LogseqToAnkiSync {
     ): Promise<{toCreateNotes: Note[]; toUpdateNotes: Note[]; toDeleteNotes: number[]} | null> {
         let buildNoteHashes: CancelablePromise | null = null;
         setTimeout(() => {
-            buildNoteHashes = new CancelablePromise(async (resolve, reject, onCancel) => {
+            buildNoteHashes = new CancelablePromise(async (_resolve, _reject, _onCancel) => {
                 await new Promise((resolve) => setTimeout(resolve, 10000));
                 for (const note of notes) {
                     await NoteHashCalculator.getHash(note, ["", new Set([]), "", "", []]);
@@ -332,7 +332,11 @@ export class LogseqToAnkiSync {
             toDelete: toDeleteNotes.length
         });
 
-        if (toCreateNotes.length == 0 && toUpdateNotes.length == 0 && toDeleteNotes.length >= 10) {
+        if (
+            toCreateNotes.length === 0 &&
+            toUpdateNotes.length === 0 &&
+            toDeleteNotes.length >= 10
+        ) {
             const confirm_msg = `<b class="text-red-600">This will delete all your notes in anki that are generated from this graph.</b><br/>Are you sure you want to continue?`;
             if (!(await showConfirmModal(confirm_msg))) {
                 buildNoteHashes?.cancel();
@@ -412,7 +416,7 @@ export class LogseqToAnkiSync {
                 //@ts-ignore
                 await WindowParentBridge.getInternalLogseqAPI().api.force_save_graph();
                 await new Promise((resolve) => setTimeout(resolve, 2000));
-            } catch (e) {}
+            } catch (_e) {}
         }
     }
 

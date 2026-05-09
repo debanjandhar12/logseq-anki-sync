@@ -1,4 +1,3 @@
-import {WindowBridge} from "../../logseq/WindowBridge";
 import {LogseqButton} from "../components/LogseqButton";
 import React from "../React";
 import {UI} from "../UI";

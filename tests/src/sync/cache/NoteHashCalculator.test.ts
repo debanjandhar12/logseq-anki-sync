@@ -1,5 +1,5 @@
 import "@logseq/libs";
-import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeAll, beforeEach, describe, expect, test, vi} from "vitest";
 import {MultilineCardNote} from "../../../../src/anki-notes/MultilineCardNote";
 import {LogseqProxy} from "../../../../src/logseq/LogseqProxy";

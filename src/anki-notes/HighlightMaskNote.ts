@@ -11,7 +11,7 @@ import {type HTMLFile, LogseqToHtmlConverterProxy} from "../logseq/LogseqToHtmlC
 import {type HighlightMaskData, showHighlightMaskEditor} from "../ui";
 import {getHealedHighlightGeometry, matchTextQuote} from "../utils/HighlightNoteQuotePosFinder";
 import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
-import {escapeClozesAndMacroDelimiters, getFirstNonEmptyLine, safeReplace} from "../utils/utils";
+import {escapeClozesAndMacroDelimiters} from "../utils/utils";
 import {appendExtraToHtmlFile} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
@@ -247,8 +247,7 @@ export class HighlightMaskNote extends Note {
                         ) as HighlightMaskData | null;
 
                         if (
-                            highlightData !== null &&
-                            highlightData.elements &&
+                            highlightData?.elements &&
                             Array.isArray(highlightData.elements) &&
                             highlightData.elements.length > 0
                         ) {

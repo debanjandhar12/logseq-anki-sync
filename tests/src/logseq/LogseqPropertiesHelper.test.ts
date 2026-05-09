@@ -1,5 +1,5 @@
-import {type BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
-import {afterEach, beforeEach, describe, expect, it} from "vitest";
+import type {BlockEntity} from "@logseq/libs/dist/LSPlugin";
+import {describe, expect, it} from "vitest";
 import {LogseqPropertiesHelper} from "../../../src/logseq/LogseqPropertiesHelper";
 
 describe("LogseqPropertiesHelper.addStripedPropertyPrefixes", () => {

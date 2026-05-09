@@ -71,7 +71,6 @@ async function main(baseInfo: LSPluginBaseInfo) {
 
     // Show welcome message
     const {lastWelcomeVersion} = LogseqProxy.Settings.getPluginSettings();
-    console.log("lastWelcomeVersion", lastWelcomeVersion, pkg.version);
     if (lastWelcomeVersion && lastWelcomeVersion !== pkg.version) {
         logseq.updateSettings({lastWelcomeVersion: pkg.version});
         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait logseq's react to load

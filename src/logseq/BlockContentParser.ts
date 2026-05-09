@@ -1,4 +1,3 @@
-import _ from "lodash";
 import {Mldoc} from "mldoc";
 import {isAudio_REGEXP, isImage_REGEXP, isVideo_REGEXP} from "../constants";
 
@@ -36,9 +35,9 @@ export class BlockContentParser {
             hiccup_in_block: true
         };
 
-        if (!blockContent || blockContent == "") return [];
+        if (!blockContent || blockContent === "") return [];
 
-        if (blockContentFormat == "org" || blockContentFormat == "Org") {
+        if (blockContentFormat === "org" || blockContentFormat === "Org") {
             mldocsOptions.format = "Org";
         } else mldocsOptions.format = "Markdown";
 
@@ -73,7 +72,7 @@ export class BlockContentParser {
             );
 
             // TODO: Potentially, web / local file links will not be parsed correctly in org mode
-            if (type == "Link") {
+            if (type === "Link") {
                 const link_type = node[0][1]?.url?.[0];
                 let link_url = node[0][1]?.url?.[1];
                 if (typeof link_url === "object") {
@@ -84,10 +83,10 @@ export class BlockContentParser {
                 const link_full_text = node[0][1]?.full_text;
                 const link_label_text = node[0][1]?.label?.[0]?.[1];
                 if (
-                    (link_type == "Search" || link_type == "Complex") &&
+                    (link_type === "Search" || link_type === "Complex") &&
                     link_url.match(isImage_REGEXP) &&
                     link_full_text.startsWith("!") &&
-                    findType == "img"
+                    findType === "img"
                 ) {
                     result.push({
                         type: "img",
@@ -98,10 +97,10 @@ export class BlockContentParser {
                         label: link_label_text
                     });
                 } else if (
-                    (link_type == "Search" || link_type == "Complex") &&
+                    (link_type === "Search" || link_type === "Complex") &&
                     link_url.match(isAudio_REGEXP) &&
                     link_full_text.startsWith("!") &&
-                    findType == "audio"
+                    findType === "audio"
                 ) {
                     result.push({
                         type: "audio",
@@ -112,10 +111,10 @@ export class BlockContentParser {
                         label: link_label_text
                     });
                 } else if (
-                    (link_type == "Search" || link_type == "Complex") &&
+                    (link_type === "Search" || link_type === "Complex") &&
                     link_url.match(isVideo_REGEXP) &&
                     link_full_text.startsWith("!") &&
-                    findType == "video"
+                    findType === "video"
                 ) {
                     result.push({
                         type: "video",
@@ -126,9 +125,9 @@ export class BlockContentParser {
                         label: link_label_text
                     });
                 } else if (
-                    (link_type == "Search" || link_type == "Complex") &&
+                    (link_type === "Search" || link_type === "Complex") &&
                     !link_full_text.startsWith("!") &&
-                    findType == "link"
+                    findType === "link"
                 ) {
                     result.push({
                         type: "link",
@@ -139,38 +138,41 @@ export class BlockContentParser {
                         label: link_label_text
                     });
                 }
-            } else if (type == "Tag" && findType == "tag") {
+            } else if (type === "Tag" && findType === "tag") {
                 result.push({
                     type: "tag",
                     content: nodeContent,
                     start_pos: start_pos,
                     end_pos: end_pos
                 });
-            } else if ((type == "Raw_Html" || type == "Inline_Html") && findType == "html") {
+            } else if ((type === "Raw_Html" || type === "Inline_Html") && findType === "html") {
                 result.push({
                     type: "html",
                     content: nodeContent,
                     start_pos: start_pos,
                     end_pos: end_pos
                 });
-            } else if ((type == "Raw_Hiccup" || type == "Inline_Hiccup") && findType == "hiccup") {
+            } else if (
+                (type === "Raw_Hiccup" || type === "Inline_Hiccup") &&
+                findType === "hiccup"
+            ) {
                 result.push(node);
-            } else if (type == "Code") {
-                if (nodeContent.startsWith(`\`\`\``) && findType == "code") {
+            } else if (type === "Code") {
+                if (nodeContent.startsWith(`\`\`\``) && findType === "code") {
                     result.push({
                         type: "code",
                         content: nodeContent + "`",
                         start_pos: start_pos,
                         end_pos: end_pos + 1
                     });
-                } else if (nodeContent.startsWith("#BEGIN_SRC") && findType == "code") {
+                } else if (nodeContent.startsWith("#BEGIN_SRC") && findType === "code") {
                     result.push({
                         type: "code",
                         content: nodeContent,
                         start_pos: start_pos,
                         end_pos: end_pos
                     });
-                } else if (findType == "inline_code") {
+                } else if (findType === "inline_code") {
                     result.push({
                         type: "inline_code",
                         content: nodeContent,
@@ -178,16 +180,16 @@ export class BlockContentParser {
                         end_pos: end_pos
                     });
                 }
-            } else if (type == "Latex_Fragment") {
+            } else if (type === "Latex_Fragment") {
                 const inlineOrDisplayed = node[0][1][0];
-                if (findType == "inline_math" && inlineOrDisplayed == "Inline") {
+                if (findType === "inline_math" && inlineOrDisplayed === "Inline") {
                     result.push({
                         type: "inline_math",
                         content: nodeContent,
                         start_pos: start_pos,
                         end_pos: end_pos
                     });
-                } else if (findType == "math" && inlineOrDisplayed == "Displayed") {
+                } else if (findType === "math" && inlineOrDisplayed === "Displayed") {
                     result.push({
                         type: "math", // displayed math
                         content: nodeContent,

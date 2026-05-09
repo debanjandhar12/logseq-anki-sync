@@ -6,8 +6,6 @@ import type {
     PageIdentity
 } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-import getIDFromPage from "./getIDFromPage";
-import getNameFromPage from "./getNameFromPage";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqProxy} from "./LogseqProxy";
 
@@ -156,7 +154,7 @@ export class LogseqPropertiesHelper {
                 if (tagPage.updatedAt && tagPage.updatedAt > maxUpdatedAt) {
                     maxUpdatedAt = tagPage.updatedAt;
                 }
-            } catch (error) {}
+            } catch (_e) {}
         }
 
         // Update entity's updatedAt to max value
@@ -171,7 +169,7 @@ export class LogseqPropertiesHelper {
         isDbGraph: boolean,
         includeChildren: boolean = false
     ): Promise<void> {
-        if (!b || !b.uuid) return;
+        if (!b?.uuid) return;
 
         const properties = await logseq.Editor.getBlockProperties(b.uuid);
         if (properties) {

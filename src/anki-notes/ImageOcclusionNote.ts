@@ -27,7 +27,6 @@ import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
 import {
     escapeClozesAndMacroDelimiters,
     getFirstNonEmptyLine,
-    safeReplace,
     safeReplaceAsync
 } from "../utils/utils";
 import {appendExtraToHtmlFile} from "./NoteUtils";
@@ -81,7 +80,7 @@ export class ImageOcclusionNote extends Note {
             return;
         }
         const block_images = await ImageOcclusionNote.getImagesInBlockOrNote(fetchedBlock);
-        if (block_images.length == 0) {
+        if (block_images.length === 0) {
             await logseq.UI.showMsg("No images found in this block.", "warning");
             return;
         }
@@ -97,7 +96,7 @@ export class ImageOcclusionNote extends Note {
         logger.info(imgToOcclusionDataHashMap);
         let selectedImage = null;
         const selectedImageIdx =
-            block_images.length == 1
+            block_images.length === 1
                 ? 0
                 : await showSelectionModal(
                       await Promise.all(
@@ -128,7 +127,7 @@ export class ImageOcclusionNote extends Note {
                 _.get(imgToOcclusionDataHashMap[selectedImage], "config", {}) as OcclusionConfig,
                 blockTags
             );
-            if (newOcclusionData && typeof newOcclusionData == "object") {
+            if (newOcclusionData && typeof newOcclusionData === "object") {
                 imgToOcclusionDataHashMap[selectedImage] = newOcclusionData;
                 await ObjectPropertyDataManager.save(
                     fetchedBlock,
@@ -161,10 +160,6 @@ export class ImageOcclusionNote extends Note {
             imgToOcclusionDataHashMap,
             block_images
         );
-
-        // Check for hide-all-test-one tag on the block
-        const hasHideAllTestOneTag = this.tags.includes("hide-all-test-one");
-
         const clozes = new Set();
         for (const image in imgToOcclusionDataHashMap) {
             const occlusionElements = imgToOcclusionDataHashMap[image].elements;
@@ -270,7 +265,7 @@ export class ImageOcclusionNote extends Note {
                         )
                             return note; // Found a valid occlusion!
                     }
-                } catch (e) {
+                } catch (_e) {
                     return false;
                 } // Most likely, the occlusion property is not a valid JSON string. Return false.
                 return false; // No valid occlusion found. Return false.
@@ -328,7 +323,7 @@ export class ImageOcclusionNote extends Note {
             }
         );
         block_images = _.uniq(block_images);
-        block_images = _.filter(block_images, (image) => image.trim() != "");
+        block_images = _.filter(block_images, (image) => image.trim() !== "");
         return block_images;
     }
 
@@ -383,7 +378,7 @@ export class ImageOcclusionNote extends Note {
                     tags: []
                 };
             } else if (
-                typeof value == "object" &&
+                typeof value === "object" &&
                 value !== null &&
                 "elements" in value &&
                 Array.isArray((value as any).elements)

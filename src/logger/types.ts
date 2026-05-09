@@ -8,5 +8,6 @@ export enum LoggerCategory {
     LogseqContentConverter = "Logseq Content Converter",
     SyncMain = "Sync Main",
     SyncInternal = "Sync Internal",
+    UI = "UI",
     Others = "Others"
 }
