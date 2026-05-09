@@ -1,10 +1,12 @@
 import type * as ReactDOMTypes from "react-dom";
 import * as OriginalReactDOM from "react-dom";
+import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
 
 const ReactDOM = ((process.env.NODE_ENV === "production" &&
-    typeof logseq !== "undefined" &&
-    logseq?.Experiments?.ReactDOM) ||
-    OriginalReactDOM) as typeof ReactDOMTypes;
+        LogseqAppInfoFetcher.checkHostAccess(window.parent) &&
+        typeof logseq !== "undefined" &&
+        logseq?.Experiments?.ReactDOM as typeof ReactDOMTypes) ||
+        OriginalReactDOM);
 
 export default ReactDOM;
 

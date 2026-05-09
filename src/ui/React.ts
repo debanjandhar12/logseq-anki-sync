@@ -1,8 +1,9 @@
 import type * as ReactTypes from "react";
 import * as OriginalReact from "react";
+import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
 
-const React =
-    ((process.env.NODE_ENV === "production" &&
+const React = ((process.env.NODE_ENV === "production" &&
+        LogseqAppInfoFetcher.checkHostAccess(window.parent) &&
         typeof logseq !== "undefined" &&
         logseq?.Experiments?.React) as typeof ReactTypes) || OriginalReact;
 
