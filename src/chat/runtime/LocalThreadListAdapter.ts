@@ -1,91 +1,71 @@
 import type {
-    RemoteThreadListAdapter,
-    RemoteThreadListResponse,
     RemoteThreadInitializeResponse,
-    RemoteThreadMetadata,
-} from '@assistant-ui/core';
-import { ThreadStorage, type ThreadFileData } from '../../core/storage/ThreadStorage';
+    RemoteThreadListResponse,
+    RemoteThreadMetadata
+} from "@assistant-ui/core";
+import type {RemoteThreadListAdapter, ThreadMessage} from "@assistant-ui/react";
+import pkg from "../../../package.json";
+import {generateTitle} from "../../core/title-generator/generateTitle";
+import {ThreadStore} from "../../logseq/stores/thread-store/ThreadStore";
+import type {ThreadFileData} from "../../logseq/stores/thread-store/types";
+import {createReadableStreamFromString} from "../utils/createReadableStreamFromString";
 
-// ---------------------------------------------------------------------------
-// LocalThreadListAdapter
-//
-// Fully implements RemoteThreadListAdapter backed by the filesystem.
-//
-// Single-thread operations (rename, archive, unarchive, fetch) read only one
-// file instead of scanning the entire directory.
-//
-// The runtime owns thread-list state. This adapter is only responsible for
-// reading and persisting thread metadata/history on disk.
-// ---------------------------------------------------------------------------
 export class LocalThreadListAdapter implements RemoteThreadListAdapter {
     async list(): Promise<RemoteThreadListResponse> {
-        const threads = await ThreadStorage.listThreads();
-        return { threads: threads.map(t => this._toMetadata(t)) };
+        const threads = await ThreadStore.listThreads();
+        return {threads: threads};
     }
 
     async initialize(threadId: string): Promise<RemoteThreadInitializeResponse> {
-        const existing = await ThreadStorage.loadThread(threadId);
+        const existing = await ThreadStore.loadThread(threadId);
         if (existing) {
-            return { remoteId: threadId, externalId: threadId };
+            return {remoteId: threadId, externalId: threadId};
         }
 
-        const newThread: ThreadFileData = {
-            id: threadId,
-            metadata: {},
-            messages: [],
-            createdAt: new Date(),
-            updatedAt: new Date(),
+        const newThreadData: ThreadFileData = {
+            remoteId: threadId,
+            status: "regular",
+            custom: {
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                createdByPluginVersion: pkg.version
+            }
         };
-        await ThreadStorage.saveThread(newThread);
-        return { remoteId: threadId, externalId: threadId };
+        await ThreadStore.saveThread(threadId, newThreadData);
+        return {remoteId: threadId, externalId: threadId};
     }
 
     async fetch(threadId: string): Promise<RemoteThreadMetadata> {
-        const thread = await ThreadStorage.loadThread(threadId);
-        if (!thread) throw new Error(`[LocalThreadListAdapter] Thread "${threadId}" not found`);
-        return this._toMetadata(thread);
+        return await ThreadStore.loadThread(threadId);
     }
 
     async rename(remoteId: string, newTitle: string): Promise<void> {
-        await updateThreadMetadata(remoteId, (metadata) => ({ ...metadata, title: newTitle }));
+        const threadData = await ThreadStore.loadThread(remoteId);
+        threadData.title = newTitle;
+        await ThreadStore.saveThread(remoteId, threadData);
     }
 
     async archive(remoteId: string): Promise<void> {
-        await updateThreadMetadata(remoteId, (metadata) => ({ ...metadata, status: 'archived' }));
+        const threadData = await ThreadStore.loadThread(remoteId);
+        threadData.status = "archived";
+        await ThreadStore.saveThread(remoteId, threadData);
     }
 
     async unarchive(remoteId: string): Promise<void> {
-        await updateThreadMetadata(remoteId, (metadata) => ({ ...metadata, status: 'regular' }));
+        const threadData = await ThreadStore.loadThread(remoteId);
+        threadData.status = "regular";
+        await ThreadStore.saveThread(remoteId, threadData);
     }
 
     async delete(remoteId: string): Promise<void> {
-        await ThreadStorage.deleteThread(remoteId);
+        await ThreadStore.deleteThread(remoteId);
     }
 
-    async generateTitle(): Promise<any> {
-        // TODO: Implement title generation
-        return new ReadableStream();
+    async generateTitle(
+        remoteId: string,
+        messages: readonly ThreadMessage[]
+    ): Promise<ReadableStream> {
+        const chatTitle = generateTitle(remoteId, messages);
+        return createReadableStreamFromString(chatTitle);
     }
-
-    private _toMetadata(thread: ThreadFileData): RemoteThreadMetadata {
-        return {
-            remoteId: thread.id,
-            externalId: thread.id,
-            title: (thread.metadata?.title ?? thread.metadata?.mode ?? undefined) as string | undefined,
-            status: thread.metadata?.status === 'archived' ? 'archived' : 'regular',
-            updatedAt: thread.updatedAt,
-            messageCount: thread.messages.length,
-        } as RemoteThreadMetadata & { updatedAt: Date; messageCount: number };
-    }
-}
-
-// Utility methods
-async function updateThreadMetadata(
-    threadId: string,
-    updater: (metadata: ThreadFileData['metadata']) => ThreadFileData['metadata'],
-): Promise<void> {
-    await ThreadStorage.updateThread(threadId, (thread) => {
-        if (!thread) return null;
-        return { ...thread, metadata: updater(thread.metadata) };
-    });
 }

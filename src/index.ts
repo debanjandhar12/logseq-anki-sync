@@ -5,6 +5,7 @@ import GITHUB_ICON from "../node_modules/@tabler/icons/icons/outline/brand-githu
 import HEART_ICON from "../node_modules/@tabler/icons/icons/outline/heart.svg?raw";
 import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?raw";
 import pkg from "./../package.json";
+import {initAIChat, showAIChat} from "./chat/AIChatController";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
@@ -13,7 +14,6 @@ import {registerToolbar} from "./registerToolbar";
 import {addSettingsToLogseq} from "./settings";
 import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
-import {showAIChat, initAIChat} from "./chat/AIChatController";
 
 const logger = createLogger(LoggerCategory.MISC);
 

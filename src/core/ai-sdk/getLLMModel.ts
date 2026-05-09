@@ -1,7 +1,7 @@
+import {createGoogleGenerativeAI} from "@ai-sdk/google";
 import {createOpenAI} from "@ai-sdk/openai";
 import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
 import {ProviderEnum} from "./types";
-import {createGoogleGenerativeAI} from "@ai-sdk/google";
 
 export async function getLLMModel() {
     const llmProvider = LogseqSettingAccessor.getPluginSettings().llmProvider;
@@ -12,14 +12,14 @@ export async function getLLMModel() {
     if (llmProvider === ProviderEnum.OPENAI) {
         const openai = createOpenAI({
             baseURL: llmAPIUrl,
-            apiKey: llmAPIKey,
+            apiKey: llmAPIKey
         });
         return openai.chat(llmAPIModel);
     } else if (llmProvider === ProviderEnum.GOOGLE) {
         const google = createGoogleGenerativeAI({
             apiKey: llmAPIKey,
             baseURL: llmAPIUrl
-        })
+        });
         return google.chat(llmAPIModel);
     }
 

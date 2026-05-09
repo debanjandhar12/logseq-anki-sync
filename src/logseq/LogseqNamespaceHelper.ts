@@ -1,8 +1,8 @@
 import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-import getNameFromPage from "./utils/getNameFromPage";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
+import getNameFromPage from "./utils/getNameFromPage";
 
 export class LogseqNamespaceHelper {
     protected static async getPage(pageId: number): Promise<PageEntity | null> {

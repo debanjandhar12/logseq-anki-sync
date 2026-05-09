@@ -3,12 +3,12 @@ import HEART_ICON from "@tabler/icons/outline/heart.svg?raw";
 import SIDE_BAR_ICON from "@tabler/icons/outline/layout-sidebar-right-expand.svg?raw";
 import SETTINGS_ICON from "@tabler/icons/outline/settings.svg?raw";
 import FocusTrap from "focus-trap-react";
+import {showAIChat} from "../../chat/AIChatController";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import type {FC} from "../React";
 // biome-ignore lint/style/useImportType: required for re-exported react
 import React, {useEffect, useState} from "../React";
 import {UI} from "../UI";
-import {showAIChat} from "../../chat/AIChatController";
 
 const focusTrapOptions = {
     tabbableOptions: {

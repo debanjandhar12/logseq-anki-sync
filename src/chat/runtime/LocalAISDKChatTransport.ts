@@ -1,17 +1,21 @@
-import { streamText, convertToModelMessages, type UIMessage, type UIMessageChunk, type ChatRequestOptions } from 'ai';
-import { frontendTools } from '@assistant-ui/react-ai-sdk';
-import { getLLMModel } from '../../core/ai-sdk/getLLMModel.js';
-import type { ChatTransport } from 'ai';
+import {frontendTools} from "@assistant-ui/react-ai-sdk";
+import type {ChatTransport} from "ai";
+import {type ChatRequestOptions, convertToModelMessages, streamText, type UIMessage, type UIMessageChunk} from "ai";
+import {getLLMModel} from "../../core/ai-sdk/getLLMModel.js";
 
 /**
- * Custom transport that integrates streamText with useChat.
- * Implements the ChatTransport interface to provide local AI streaming
- * without requiring a server endpoint.
+ * Custom transport for supplying to AI SDK useChat hook to avoid needing a server endpoint.
+ *
+ * Implements the ChatTransport interface to provide local AI streaming, tools and system message support.
+ *
+ * Limitations:
+ * (a) Currently only supports frontend tools.
+ * (b) Reconnection isn't supported and doesn't make sense for local streaming.
  */
 export class LocalAISDKChatTransport implements ChatTransport<UIMessage> {
     async sendMessages(
         options: {
-            trigger: 'submit-message' | 'regenerate-message';
+            trigger: "submit-message" | "regenerate-message";
             chatId: string;
             messageId: string | undefined;
             messages: UIMessage[];
@@ -23,34 +27,30 @@ export class LocalAISDKChatTransport implements ChatTransport<UIMessage> {
             const model = await getLLMModel();
 
             // Extract system and tools from body if provided
-            const body = options.body as { system?: string; tools?: Record<string, any> } | undefined;
+            const body = options.body as {system?: string; tools?: Record<string, any>} | undefined;
             const system = body?.system;
             const tools = body?.tools;
 
-            // Convert messages to model format
+            // Convert messages to model format and call AI SDK streamText
             const modelMessages = await convertToModelMessages(options.messages);
-
-            // Call AI SDK streamText with frontend tools support
-            const result = await streamText({
+            const result = streamText({
                 model,
                 system,
                 messages: modelMessages,
-                tools: tools ? (frontendTools(tools) as any) : undefined,
-                abortSignal: options.abortSignal ?? undefined,
+                tools: tools ? (frontendTools(tools) as any) : undefined, // pass tools
+                abortSignal: options.abortSignal ?? undefined
             });
 
-            // Get the UI message stream
-            const stream = result.toUIMessageStream();
-
-            return stream;
+            // Return as UI message stream
+            return result.toUIMessageStream();
         } catch (error) {
             throw error;
         }
     }
 
     async reconnectToStream(
-        options: { chatId: string } & ChatRequestOptions
+        options: {chatId: string} & ChatRequestOptions
     ): Promise<ReadableStream<UIMessageChunk> | null> {
-        return null; // Reconnection not supported for local streaming
+        return null; // Reconnection isn't supported for local streaming
     }
 }
