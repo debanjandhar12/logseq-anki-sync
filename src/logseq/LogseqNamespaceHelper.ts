@@ -3,7 +3,6 @@ import _ from "lodash";
 import getNameFromPage from "./getNameFromPage";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
-import {LogseqProxy} from "./LogseqProxy";
 
 export class LogseqNamespaceHelper {
     protected static async getPage(pageId: number): Promise<PageEntity | null> {
@@ -88,15 +87,5 @@ export class LogseqNamespaceHelper {
             return result;
         }
         return await logseq.Editor.getPagesFromNamespace(getNameFromPage(page)); // Must pass name - page id throws error
-    }
-}
-
-export class LogseqNamespaceHelperProxy extends LogseqNamespaceHelper {
-    protected static async checkCurrentIsDbGraph(): Promise<boolean> {
-        return Boolean(await LogseqProxy.App.checkCurrentIsDbGraph());
-    }
-
-    protected static async getPage(pageId: number): Promise<PageEntity | null> {
-        return await LogseqProxy.Editor.getPage(pageId);
     }
 }

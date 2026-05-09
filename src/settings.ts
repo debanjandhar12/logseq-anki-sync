@@ -2,12 +2,12 @@ import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {DONATE_ICON} from "./constants";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
-import {LogseqProxy} from "./logseq/LogseqProxy";
+import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 
 // Type definitions for plugin settings
 export interface PluginSettings {
     disabled: boolean;
-    llmProvider?: ("TBU from types")[];
+    llmProvider?: "TBU from types"[];
     llmAPIUrl?: string;
     llmAPIKey?: string;
     llmAPIModel?: string;
@@ -36,8 +36,7 @@ export const addSettingsToLogseq = async () => {
             type: "enum",
             default: ["TBU select first from types"],
             title: "LLM Provider type",
-            description:
-                "Chose a supported provider type from the list.",
+            description: "Chose a supported provider type from the list.",
             enumChoices: ["TBU from types"],
             enumPicker: "select"
         },
@@ -66,8 +65,8 @@ export const addSettingsToLogseq = async () => {
                 "Select the categories to enable info-level logging for. Warnings and errors are always shown."
         }
     ];
-    LogseqProxy.Settings.useSettingsSchema(settingsTemplate);
-    LogseqProxy.Settings.registerSettingsChangeListener(
+    LogseqSettingAccessor.useSettingsSchema(settingsTemplate);
+    LogseqSettingAccessor.registerSettingsChangeListener(
         (newSettings: PluginSettings, oldSettings: PluginSettings) => {
             // Handle debug category changes - update logger levels
             if (!_.isEqual(newSettings.debug, oldSettings.debug)) {

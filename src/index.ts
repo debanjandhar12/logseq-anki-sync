@@ -3,15 +3,16 @@ import type {LSPluginBaseInfo} from "@logseq/libs/dist/LSPlugin";
 import {Buffer} from "buffer/";
 import GITHUB_ICON from "../node_modules/@tabler/icons/icons/outline/brand-github.svg?raw";
 import HEART_ICON from "../node_modules/@tabler/icons/icons/outline/heart.svg?raw";
+import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?raw";
 import pkg from "./../package.json";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
-import {LogseqProxy} from "./logseq/LogseqProxy";
+import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
+import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
 import {registerToolbar} from "./registerToolbar";
 import {addSettingsToLogseq} from "./settings";
 import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
-import {ANKI_ICON} from "./constants";
 
 const logger = createLogger(LoggerCategory.MISC);
 
@@ -41,7 +42,8 @@ async function main(baseInfo: LSPluginBaseInfo) {
     addSettingsToLogseq();
 
     // Init various modules
-    LogseqProxy.init();
+    LogseqSettingAccessor.init();
+    LogseqAppListeners.init();
     UI.init();
 
     // The lines below are needed for vite build and dev to work properly.
@@ -51,12 +53,12 @@ async function main(baseInfo: LSPluginBaseInfo) {
     window.process = process;
 
     // Show welcome message
-    const {lastWelcomeVersion} = LogseqProxy.Settings.getPluginSettings();
+    const {lastWelcomeVersion} = LogseqSettingAccessor.getPluginSettings();
     if (lastWelcomeVersion && lastWelcomeVersion !== pkg.version) {
         logseq.updateSettings({lastWelcomeVersion: pkg.version});
         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait logseq's react to load
         await showButtonModal(
-            `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq AI Chat ${pkg.version}!</span>
+            `<span class="flex items-center"><i class="px-1">${AI_ICON}</i>Welcome to Logseq AI Chat ${pkg.version}!</span>
             <div style="overflow-y: auto; margin-top: 10px; border: 1px solid var(--ls-border-color); border-radius: 4px;">
                 <iframe src="https://github.com/debanjandhar12/logseq-ai-chat/releases/tag/v${pkg.version}" style="width: 100%; height: 100%; min-height: 400px; border: none;"></iframe>
             </div>`,

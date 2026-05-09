@@ -1,5 +1,5 @@
 import {createLogger, LoggerCategory} from "../../logger";
-import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {LogseqAppListeners} from "../../logseq/LogseqAppListeners";
 
 const logger = createLogger(LoggerCategory.MISC);
 
@@ -131,7 +131,7 @@ export async function ActionNotification(
                 });
             };
 
-            LogseqProxy.App.registerPluginUnloadListener(closeNotification);
+            LogseqAppListeners.registerPluginUnloadListener(closeNotification);
         } catch (e) {
             logger.error("Failed to show action notification", e);
             await logseq.UI.showMsg(msg, "success");

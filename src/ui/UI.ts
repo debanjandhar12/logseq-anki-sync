@@ -1,7 +1,7 @@
 import "./styles/main.css";
 
 import {createLogger, LoggerCategory} from "../logger";
-import {LogseqProxy} from "../logseq/LogseqProxy";
+import {LogseqAppListeners} from "../logseq/LogseqAppListeners";
 import {WindowBridge} from "../logseq/WindowBridge";
 import {createRoot, type Root} from "./ReactDOM";
 
@@ -88,7 +88,7 @@ export class UI {
         });
 
         // Hide main ui on plugin unload
-        LogseqProxy.App.registerPluginUnloadListener(() => {
+        LogseqAppListeners.registerPluginUnloadListener(() => {
             logseq.hideMainUI({restoreEditingCursor: true});
         });
     }

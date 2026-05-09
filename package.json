@@ -1,6 +1,6 @@
 {
     "name": "logseq-ai-chat",
-    "version": "7.0.4",
+    "version": "0.0.1",
     "title": "Logseq AI Chat",
     "description": "The best logseq plugin ever.",
     "main": "dist/index.html",

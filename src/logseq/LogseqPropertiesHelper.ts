@@ -7,7 +7,6 @@ import type {
 } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
-import {LogseqProxy} from "./LogseqProxy";
 
 /**
  * Helper class for fetching Logseq blocks and pages with properties attached.
@@ -115,53 +114,6 @@ export class LogseqPropertiesHelper {
     }
 
     /**
-     * Fetches and merges (inherits) properties from tags into the given entity.
-     * Tag properties have lower priority - existing properties are not overwritten.
-     * Also updates the entity's updatedAt to the max of current and tag updatedAt values.
-     * Only applies to DB graphs.
-     */
-    private static async inheritTagProperties(
-        entity: BlockEntity | PageEntity,
-        tagIds: number[],
-        isDbGraph: boolean
-    ): Promise<void> {
-        const settings = await LogseqProxy.Settings.getPluginSettings();
-        if (!settings.inheritPropertiesFromTags) return;
-        if (!isDbGraph || !tagIds || tagIds.length === 0) return;
-
-        let maxUpdatedAt = entity.updatedAt || 0;
-
-        for (const tagId of tagIds) {
-            try {
-                const tagPage = await logseq.Editor.getPage(tagId);
-                if (!tagPage) continue;
-
-                const tagProperties = await logseq.Editor.getPageProperties(tagId);
-                if (tagProperties) {
-                    const strippedTagProperties = LogseqPropertiesHelper.handleTagProperty(
-                        entity,
-                        LogseqPropertiesHelper.addStripedPropertyPrefixes(tagProperties)
-                    );
-                    // Merge without overwriting existing properties
-                    for (const [key, value] of Object.entries(strippedTagProperties)) {
-                        if (!(key in entity.properties)) {
-                            entity.properties[key] = value;
-                        }
-                    }
-                }
-
-                // Track max updatedAt
-                if (tagPage.updatedAt && tagPage.updatedAt > maxUpdatedAt) {
-                    maxUpdatedAt = tagPage.updatedAt;
-                }
-            } catch (_e) {}
-        }
-
-        // Update entity's updatedAt to max value
-        entity.updatedAt = maxUpdatedAt;
-    }
-
-    /**
      * Processes a block by fetching and attaching properties, and updating content for DB graphs
      */
     private static async processBlock(
@@ -187,10 +139,6 @@ export class LogseqPropertiesHelper {
                     .filter((t: string) => t);
             }
             if (!b.properties.uuid) b.properties.uuid = b.uuid;
-        }
-
-        if (b.properties?.tags && Array.isArray(b.properties.tags)) {
-            await LogseqPropertiesHelper.inheritTagProperties(b, b.properties.tagIds, isDbGraph);
         }
 
         if (isDbGraph) {
@@ -236,14 +184,6 @@ export class LogseqPropertiesHelper {
                 );
                 page.properties = {...strippedProperties, ...page.properties};
             }
-        }
-
-        if (page.properties?.tags && Array.isArray(page.properties.tags)) {
-            await LogseqPropertiesHelper.inheritTagProperties(
-                page,
-                page.properties.tagIds,
-                isDbGraph
-            );
         }
     }
 
@@ -294,15 +234,5 @@ export class LogseqPropertiesHelper {
         }
 
         return blocks;
-    }
-}
-
-/**
- * Proxy version that uses cached LogseqProxy.App.checkCurrentIsDbGraph.
- * Use this when working within the sync system where caching is beneficial.
- */
-export class LogseqPropertiesHelperProxy extends LogseqPropertiesHelper {
-    protected static async checkCurrentIsDbGraph(): Promise<boolean> {
-        return Boolean(await LogseqProxy.App.checkCurrentIsDbGraph());
     }
 }
