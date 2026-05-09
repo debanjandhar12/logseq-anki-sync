@@ -1,8 +1,8 @@
-import { LogseqAppInfoFetcher } from "../logseq/LogseqAppInfoFetcher";
-import { createLogger, LoggerCategory } from "../logger";
-import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
-import { LogseqProxy } from "../logseq/LogseqProxy";
+import type {BlockEntity} from "@logseq/libs/dist/LSPlugin";
+import {createLogger, LoggerCategory} from "../logger";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
+import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
+import {LogseqProxy} from "../logseq/LogseqProxy";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -20,9 +20,9 @@ export class ObjectPropertyDataManager {
      * @returns Promise<string> - The encoded string to store in property
      */
     static async save(
-        block: BlockEntity | { uuid: string; properties?: any },
+        block: BlockEntity | {uuid: string; properties?: any},
         propertyName: string,
-        data: object,
+        data: object
     ): Promise<string> {
         const jsonString = JSON.stringify(data);
         const isDbGraph = await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
@@ -30,7 +30,7 @@ export class ObjectPropertyDataManager {
         let encoded: string;
         if (isDbGraph) {
             const escapedJsonString = jsonString.replace(/`/g, "\\u0060"); // Replace backticks with their unicode escape sequence
-            encoded = `\`${escapedJsonString}\``;  // Backticks added to make it appear as code in logseq db ver
+            encoded = `\`${escapedJsonString}\``; // Backticks added to make it appear as code in logseq db ver
         } else {
             encoded = Buffer.from(jsonString, "utf8").toString("base64");
         }
@@ -40,7 +40,7 @@ export class ObjectPropertyDataManager {
             await LogseqProxy.Editor.upsertBlockProperty(
                 getUUIDFromBlock(block as BlockEntity),
                 propertyName,
-                encoded,
+                encoded
             );
         }
 
@@ -52,7 +52,7 @@ export class ObjectPropertyDataManager {
      * @param value - The property value to parse (may be base64 or JSON string)
      * @returns object | null - The parsed object, or null if parsing fails
      */
-    static load(block: BlockEntity | { properties?: any }, propertyName: string): object | null {
+    static load(block: BlockEntity | {properties?: any}, propertyName: string): object | null {
         let value = block.properties?.[propertyName];
         if (!value) {
             return null;
@@ -92,7 +92,7 @@ export class ObjectPropertyDataManager {
      * @param value - The property value to validate
      * @returns boolean - true if the value can be parsed as an object
      */
-    static validate(block: BlockEntity | { properties?: any }, propertyName: string): boolean {
-        return this.load(block, propertyName) !== null;
+    static validate(block: BlockEntity | {properties?: any}, propertyName: string): boolean {
+        return ObjectPropertyDataManager.load(block, propertyName) !== null;
     }
 }

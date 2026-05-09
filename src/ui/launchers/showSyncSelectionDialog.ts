@@ -1,11 +1,11 @@
+import {createModalPromise} from "../modals/utils/createModalPromise";
+import {SyncSelectionDialogComponent} from "../pages/SyncSelectionDialog";
 import React from "../React";
-import { createModalPromise } from "../modals/utils/createModalPromise";
-import { SyncSelectionDialogComponent } from "../pages/SyncSelectionDialog";
 
 export async function showSyncSelectionDialog(
     toCreateNotes: Array<any>,
     toUpdateNotes: Array<any>,
-    toDeleteNotes: Array<any>,
+    toDeleteNotes: Array<any>
 ): Promise<{
     toCreateNotes: Array<any>;
     toUpdateNotes: Array<any>;
@@ -16,15 +16,14 @@ export async function showSyncSelectionDialog(
         toUpdateNotes: Array<any>;
         toDeleteNotes: Array<any>;
     } | null>(
-        (props) => (
+        (props) =>
             React.createElement(SyncSelectionDialogComponent, {
                 toCreateNotes,
                 toUpdateNotes,
                 toDeleteNotes,
-                ...props,
-            })
-        ),
+                ...props
+            }),
         {},
-        { errorMessage: "Failed to open sync selection dialog" },
+        {errorMessage: "Failed to open sync selection dialog"}
     );
 }

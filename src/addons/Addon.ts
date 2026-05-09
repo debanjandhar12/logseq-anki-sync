@@ -1,8 +1,8 @@
-import '@logseq/libs';
-import { LogseqProxy } from '../logseq/LogseqProxy';
-import { WindowParentBridge } from '../logseq/WindowParentBridge';
+import "@logseq/libs";
 
-import { createLogger, LoggerCategory } from "../logger";
+import {createLogger, LoggerCategory} from "../logger";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import {WindowParentBridge} from "../logseq/WindowParentBridge";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -18,7 +18,7 @@ export abstract class Addon {
         WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
     }
     public isEnabled(): boolean {
-        const { addonsList } = LogseqProxy.Settings.getPluginSettings();
+        const {addonsList} = LogseqProxy.Settings.getPluginSettings();
         return addonsList?.includes(this.getName()) ?? false;
     }
 }

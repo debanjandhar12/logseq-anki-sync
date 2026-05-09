@@ -1,18 +1,17 @@
-import React, { useCallback, useEffect, useState } from "../React";
-import { Modal } from "../";
-import { WindowParentBridge } from "../../logseq/WindowParentBridge";
-import { LogseqButton } from "../components/LogseqButton";
-import { LogseqCheckbox } from "../components/LogseqCheckbox";
-import { LogseqDropdownMenu } from "../components/LogseqDropdownMenu";
-import { LogseqPopover } from "../components/LogseqPopover";
-import { LogseqTooltip } from "../components/LogseqTooltip";
-import { ANKI_ICON } from "../../constants";
 import _ from "lodash";
-import { ModalHeader, DialogModalFooter, useModal } from "../";
-import { UI } from "../UI";
-import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { LogseqContentPreprocessor } from "../../logseq/LogseqContentPreprocessor";
-import { WindowBridge } from "../../logseq/WindowBridge";
+import {ANKI_ICON} from "../../constants";
+import {LogseqContentPreprocessor} from "../../logseq/LogseqContentPreprocessor";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {WindowBridge} from "../../logseq/WindowBridge";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
+import {DialogModalFooter, Modal, ModalHeader, useModal} from "../";
+import {LogseqButton} from "../components/LogseqButton";
+import {LogseqCheckbox} from "../components/LogseqCheckbox";
+import {LogseqDropdownMenu} from "../components/LogseqDropdownMenu";
+import {LogseqPopover} from "../components/LogseqPopover";
+import {LogseqTooltip} from "../components/LogseqTooltip";
+import React, {useCallback, useEffect, useState} from "../React";
+import {UI} from "../UI";
 
 export const SyncSelectionDialogComponent: React.FC<{
     toCreateNotes: Array<any>;
@@ -23,26 +22,26 @@ export const SyncSelectionDialogComponent: React.FC<{
             toCreateNotes: Array<any>;
             toUpdateNotes: Array<any>;
             toDeleteNotes: Array<any>;
-        } | null,
+        } | null
     ) => void;
     reject: Function;
-    modalContext?: { modalId: string | null };
-}> = ({ toCreateNotes, toUpdateNotes, toDeleteNotes, resolve, reject, modalContext }) => {
-    const { open, setOpen, returnResult } = useModal(resolve, {
+    modalContext?: {modalId: string | null};
+}> = ({toCreateNotes, toUpdateNotes, toDeleteNotes, resolve, reject, modalContext}) => {
+    const {open, setOpen, returnResult} = useModal(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false, // We'll handle this manually
         enableEnterKey: false, // We'll handle this manually
         defaultResult: null,
-        modalId: modalContext?.modalId,
+        modalId: modalContext?.modalId
     });
     const [toCreateNotesSelection, setToCreateNotesSelection] = useState(
-        new Array(toCreateNotes.length).fill(true),
+        new Array(toCreateNotes.length).fill(true)
     );
     const [toUpdateNotesSelection, setToUpdateNotesSelection] = useState(
-        new Array(toUpdateNotes.length).fill(true),
+        new Array(toUpdateNotes.length).fill(true)
     );
     const [toDeleteNotesSelection, setToDeleteNotesSelection] = useState(
-        new Array(toDeleteNotes.length).fill(true),
+        new Array(toDeleteNotes.length).fill(true)
     );
     const [toCreateNotesCheckbox, setToCreateNotesCheckbox] = useState<
         "checked" | "unchecked" | "indeterminate"
@@ -61,8 +60,8 @@ export const SyncSelectionDialogComponent: React.FC<{
             isAllCreateNotesSelected
                 ? "checked"
                 : isNoneCreateNotesSelected
-                    ? "unchecked"
-                    : "indeterminate",
+                  ? "unchecked"
+                  : "indeterminate"
         );
     }, [toCreateNotesSelection]);
 
@@ -73,8 +72,8 @@ export const SyncSelectionDialogComponent: React.FC<{
             isAllUpdateNotesSelected
                 ? "checked"
                 : isNoneUpdateNotesSelected
-                    ? "unchecked"
-                    : "indeterminate",
+                  ? "unchecked"
+                  : "indeterminate"
         );
     }, [toUpdateNotesSelection]);
 
@@ -85,8 +84,8 @@ export const SyncSelectionDialogComponent: React.FC<{
             isAllDeleteNotesSelected
                 ? "checked"
                 : isNoneDeleteNotesSelected
-                    ? "unchecked"
-                    : "indeterminate",
+                  ? "unchecked"
+                  : "indeterminate"
         );
     }, [toDeleteNotesSelection]);
 
@@ -121,7 +120,7 @@ export const SyncSelectionDialogComponent: React.FC<{
                 setToCreateNotesSelection(new Array(toCreateNotes.length).fill(true));
                 setToUpdateNotesSelection(new Array(toUpdateNotes.length).fill(true));
                 setToDeleteNotesSelection(new Array(toDeleteNotes.length).fill(true));
-            },
+            }
         },
         {
             title: "Select None",
@@ -129,7 +128,7 @@ export const SyncSelectionDialogComponent: React.FC<{
                 setToCreateNotesSelection(new Array(toCreateNotes.length).fill(false));
                 setToUpdateNotesSelection(new Array(toUpdateNotes.length).fill(false));
                 setToDeleteNotesSelection(new Array(toDeleteNotes.length).fill(false));
-            },
+            }
         },
         {
             title: "Select New Notes Only",
@@ -137,8 +136,8 @@ export const SyncSelectionDialogComponent: React.FC<{
                 setToCreateNotesSelection(new Array(toCreateNotes.length).fill(true));
                 setToUpdateNotesSelection(new Array(toUpdateNotes.length).fill(false));
                 setToDeleteNotesSelection(new Array(toDeleteNotes.length).fill(false));
-            },
-        },
+            }
+        }
     ]);
     useEffect(() => {
         const addAdditionalSelectionMenu = async () => {
@@ -154,22 +153,20 @@ export const SyncSelectionDialogComponent: React.FC<{
                                     .fill(false)
                                     .map(
                                         (_, index) =>
-                                            toCreateNotes[index].page.uuid === currentPage.uuid,
-                                    ),
+                                            toCreateNotes[index].page.uuid === currentPage.uuid
+                                    )
                             );
                             setToUpdateNotesSelection(
                                 new Array(toUpdateNotes.length)
                                     .fill(false)
                                     .map(
                                         (_, index) =>
-                                            toUpdateNotes[index].page.uuid === currentPage.uuid,
-                                    ),
+                                            toUpdateNotes[index].page.uuid === currentPage.uuid
+                                    )
                             );
-                            setToDeleteNotesSelection(
-                                new Array(toDeleteNotes.length).fill(false),
-                            );
-                        },
-                    },
+                            setToDeleteNotesSelection(new Array(toDeleteNotes.length).fill(false));
+                        }
+                    }
                 ]);
             }
         };
@@ -192,7 +189,7 @@ export const SyncSelectionDialogComponent: React.FC<{
                 .filter(Boolean),
             toDeleteNotes: toDeleteNotesSelection
                 .map((selected, index) => (selected ? toDeleteNotes[index] : null))
-                .filter(Boolean),
+                .filter(Boolean)
         });
     }, [
         returnResult,
@@ -201,7 +198,7 @@ export const SyncSelectionDialogComponent: React.FC<{
         toDeleteNotes,
         toCreateNotesSelection,
         toUpdateNotesSelection,
-        toDeleteNotesSelection,
+        toDeleteNotesSelection
     ]);
 
     const handleCancel = useCallback(() => {
@@ -226,7 +223,7 @@ export const SyncSelectionDialogComponent: React.FC<{
                 e.stopImmediatePropagation();
             }
         },
-        [returnResult, modalContext?.modalId],
+        [returnResult, modalContext?.modalId]
     );
 
     React.useEffect(() => {
@@ -254,12 +251,12 @@ export const SyncSelectionDialogComponent: React.FC<{
     const [skipOnHashMatch, setSkipOnHashMatch] = useState(true);
     React.useEffect(() => {
         logseq.updateSettings({
-            skipOnDependencyHashMatch: true,
+            skipOnDependencyHashMatch: true
         });
     }, []);
     React.useEffect(() => {
         logseq.updateSettings({
-            skipOnDependencyHashMatch: skipOnHashMatch,
+            skipOnDependencyHashMatch: skipOnHashMatch
         });
     }, [skipOnHashMatch]);
 
@@ -269,7 +266,7 @@ export const SyncSelectionDialogComponent: React.FC<{
             setOpen={setOpen}
             onClose={() => UI.hideModal(modalContext?.modalId)}
             hasCloseButton={false}>
-            <div style={{ margin: "0rem" }}>
+            <div style={{margin: "0rem"}}>
                 <ModalHeader
                     title="Proceed sync with anki?"
                     icon={ANKI_ICON}
@@ -283,10 +280,10 @@ export const SyncSelectionDialogComponent: React.FC<{
                 </ModalHeader>
                 <div
                     className="sm:flex sm:items-start"
-                    style={{ maxHeight: "60vh", overflowY: "auto", overflowX: "hidden" }}>
+                    style={{maxHeight: "60vh", overflowY: "auto", overflowX: "hidden"}}>
                     <div
                         className="mt-3 sm:mt-0 ml-4 mr-4 flex"
-                        style={{ width: "100%", flexDirection: "column" }}>
+                        style={{width: "100%", flexDirection: "column"}}>
                         <div
                             className="p-4"
                             style={{
@@ -297,16 +294,16 @@ export const SyncSelectionDialogComponent: React.FC<{
                                 marginBottom: "0.5rem",
                                 padding: "0.25rem 0.5rem",
                                 userSelect: "none",
-                                zIndex: 1,
+                                zIndex: 1
                             }}>
                             Create
                             <span
                                 className="opacity-50 px-1 flex"
-                                style={{ userSelect: "none", float: "right", fontSize: "14px" }}>
+                                style={{userSelect: "none", float: "right", fontSize: "14px"}}>
                                 {" "}
                                 {toCreateNotesSelection.filter(Boolean).length} /{" "}
                                 {toCreateNotesSelection.length}
-                                <span style={{ width: "15px" }} />
+                                <span style={{width: "15px"}} />
                                 <LogseqCheckbox
                                     checked={toCreateNotesCheckbox === "checked"}
                                     indeterminate={toCreateNotesCheckbox === "indeterminate"}
@@ -315,14 +312,14 @@ export const SyncSelectionDialogComponent: React.FC<{
                             </span>
                         </div>
                         {toCreateNotes.length <= 0 && (
-                            <span style={{ fontSize: "14px" }}>No notes to be created.</span>
+                            <span style={{fontSize: "14px"}}>No notes to be created.</span>
                         )}
                         {toCreateNotes.map((note, index) => (
                             <LogseqCheckbox
                                 checked={toCreateNotesSelection[index]}
                                 key={note.uuid + note.type}
                                 onChange={() => {
-                                    let newToCreateNotesSelection = [...toCreateNotesSelection];
+                                    const newToCreateNotesSelection = [...toCreateNotesSelection];
                                     newToCreateNotesSelection[index] =
                                         !newToCreateNotesSelection[index];
                                     setToCreateNotesSelection(newToCreateNotesSelection);
@@ -340,16 +337,16 @@ export const SyncSelectionDialogComponent: React.FC<{
                                 marginBottom: "0.5rem",
                                 padding: "0.25rem 0.5rem",
                                 userSelect: "none",
-                                zIndex: 1,
+                                zIndex: 1
                             }}>
                             Delete
                             <span
                                 className="opacity-50 px-1 flex"
-                                style={{ userSelect: "none", float: "right", fontSize: "14px" }}>
+                                style={{userSelect: "none", float: "right", fontSize: "14px"}}>
                                 {" "}
                                 {toDeleteNotesSelection.filter(Boolean).length} /{" "}
                                 {toDeleteNotesSelection.length}
-                                <span style={{ width: "15px" }} />
+                                <span style={{width: "15px"}} />
                                 <LogseqCheckbox
                                     checked={toDeleteNotesCheckbox === "checked"}
                                     indeterminate={toDeleteNotesCheckbox === "indeterminate"}
@@ -358,14 +355,14 @@ export const SyncSelectionDialogComponent: React.FC<{
                             </span>
                         </div>
                         {toDeleteNotes.length <= 0 && (
-                            <span style={{ fontSize: "14px" }}>No notes to be deleted.</span>
+                            <span style={{fontSize: "14px"}}>No notes to be deleted.</span>
                         )}
                         {toDeleteNotes.map((ankiId, index) => (
                             <LogseqCheckbox
                                 key={ankiId}
                                 checked={toDeleteNotesSelection[index]}
                                 onChange={() => {
-                                    let newToDeleteNotesSelection = [...toDeleteNotesSelection];
+                                    const newToDeleteNotesSelection = [...toDeleteNotesSelection];
                                     newToDeleteNotesSelection[index] =
                                         !newToDeleteNotesSelection[index];
                                     setToDeleteNotesSelection(newToDeleteNotesSelection);
@@ -383,16 +380,16 @@ export const SyncSelectionDialogComponent: React.FC<{
                                 marginBottom: "0.5rem",
                                 padding: "0.25rem 0.5rem",
                                 userSelect: "none",
-                                zIndex: 1,
+                                zIndex: 1
                             }}>
                             Update
                             <span
                                 className="opacity-50 px-1 flex"
-                                style={{ userSelect: "none", float: "right", fontSize: "14px" }}>
+                                style={{userSelect: "none", float: "right", fontSize: "14px"}}>
                                 {" "}
                                 {toUpdateNotesSelection.filter(Boolean).length} /{" "}
                                 {toUpdateNotesSelection.length}
-                                <span style={{ width: "15px" }} />
+                                <span style={{width: "15px"}} />
                                 <LogseqCheckbox
                                     checked={toUpdateNotesCheckbox === "checked"}
                                     indeterminate={toUpdateNotesCheckbox === "indeterminate"}
@@ -401,14 +398,14 @@ export const SyncSelectionDialogComponent: React.FC<{
                             </span>
                         </div>
                         {toUpdateNotes.length <= 0 && (
-                            <span style={{ fontSize: "14px" }}>No notes to be updated.</span>
+                            <span style={{fontSize: "14px"}}>No notes to be updated.</span>
                         )}
                         {toUpdateNotes.map((note, index) => (
                             <LogseqCheckbox
                                 checked={toUpdateNotesSelection[index]}
                                 key={note.uuid + note.type}
                                 onChange={() => {
-                                    let newToUpdateNotesSelection = [...toUpdateNotesSelection];
+                                    const newToUpdateNotesSelection = [...toUpdateNotesSelection];
                                     newToUpdateNotesSelection[index] =
                                         !newToUpdateNotesSelection[index];
                                     setToUpdateNotesSelection(newToUpdateNotesSelection);
@@ -423,28 +420,31 @@ export const SyncSelectionDialogComponent: React.FC<{
                     onCancel={handleCancel}
                     confirmText="Confirm"
                     cancelText="Cancel">
-                    <LogseqPopover placement="top-start" content={
-                        <div
-                            style={{
-                                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                                borderRadius: "0.25rem",
-                                overflow: "hidden",
-                                margin: 0,
-                                padding: "10px",
-                                backgroundColor: "var(--ls-primary-background-color)",
-                                width: "200px"
-                            }}>
-                            <LogseqCheckbox
-                                checked={skipOnHashMatch}
-                                onChange={() => setSkipOnHashMatch(!skipOnHashMatch)}>
-                                Skip on hash match (
-                                <LogseqTooltip content="When enabled, this will result in faster performance. However, sometimes this may lead to ignoring some changes.">
-                                    ?
-                                </LogseqTooltip>
-                                )
-                            </LogseqCheckbox>
-                        </div>
-                    }>
+                    <LogseqPopover
+                        placement="top-start"
+                        content={
+                            <div
+                                style={{
+                                    boxShadow:
+                                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                                    borderRadius: "0.25rem",
+                                    overflow: "hidden",
+                                    margin: 0,
+                                    padding: "10px",
+                                    backgroundColor: "var(--ls-primary-background-color)",
+                                    width: "200px"
+                                }}>
+                                <LogseqCheckbox
+                                    checked={skipOnHashMatch}
+                                    onChange={() => setSkipOnHashMatch(!skipOnHashMatch)}>
+                                    Skip on hash match (
+                                    <LogseqTooltip content="When enabled, this will result in faster performance. However, sometimes this may lead to ignoring some changes.">
+                                        ?
+                                    </LogseqTooltip>
+                                    )
+                                </LogseqCheckbox>
+                            </div>
+                        }>
                         <LogseqButton color={"outline-link"} size={"sm"}>
                             🢁
                         </LogseqButton>
@@ -456,12 +456,12 @@ export const SyncSelectionDialogComponent: React.FC<{
 };
 
 // Utils
-export const AnkiLink = ({ ankiId = null }) => {
+export const AnkiLink = ({ankiId = null}) => {
     const hoverStyle = {
         backgroundColor: "var(--ls-secondary-border-color)",
-        borderRadius: "2px",
+        borderRadius: "2px"
     };
-    const normalStyle = { backgroundColor: "inherit", borderRadius: "2px" };
+    const normalStyle = {backgroundColor: "inherit", borderRadius: "2px"};
     const [style, setStyle] = React.useState(normalStyle);
 
     const onMouseOver = () => setStyle(hoverStyle);
@@ -490,7 +490,7 @@ export const AnkiLink = ({ ankiId = null }) => {
                     padding: 0,
                     height: "auto",
                     userSelect: "text",
-                    cursor: "pointer",
+                    cursor: "pointer"
                 }}>
                 <i className={"anki-icon"} />
                 <span>{children}</span>
@@ -499,12 +499,12 @@ export const AnkiLink = ({ ankiId = null }) => {
     );
 };
 
-export const LogseqLink = ({ uuid, graphName }: { uuid: string; graphName: string }) => {
+export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string}) => {
     const hoverStyle = {
         backgroundColor: "var(--ls-secondary-border-color)",
-        borderRadius: "2px",
+        borderRadius: "2px"
     };
-    const normalStyle = { backgroundColor: "inherit", borderRadius: "2px" };
+    const normalStyle = {backgroundColor: "inherit", borderRadius: "2px"};
     const [style, setStyle] = React.useState(normalStyle);
     const [displayText, setDisplayText] = React.useState(uuid);
     const [blockContent, setBlockContent] = React.useState<string | null>(null);
@@ -516,13 +516,13 @@ export const LogseqLink = ({ uuid, graphName }: { uuid: string; graphName: strin
                 if (block && block.content) {
                     // Preprocess content using LogseqContentPreprocessor
                     const format = block.format || "markdown";
-                    const { content: preprocessedContent } =
+                    const {content: preprocessedContent} =
                         await LogseqContentPreprocessor.preprocess(block.content, format);
 
                     setBlockContent(preprocessedContent); // for title
 
                     const cleanedContent = preprocessedContent.replace(/\s+/g, " ").trim();
-                    const truncated = _.truncate(cleanedContent, { length: 34, omission: "..." });
+                    const truncated = _.truncate(cleanedContent, {length: 34, omission: "..."});
                     setDisplayText(truncated); // for display
                 } else {
                     // Fallback to UUID if block or content is not available
@@ -563,7 +563,7 @@ export const LogseqLink = ({ uuid, graphName }: { uuid: string; graphName: strin
                     padding: 0,
                     height: "auto",
                     userSelect: "text",
-                    cursor: "pointer",
+                    cursor: "pointer"
                 }}
                 onClick={onClickHandler}>
                 <i className={"logseq-icon"} />
@@ -573,27 +573,27 @@ export const LogseqLink = ({ uuid, graphName }: { uuid: string; graphName: strin
     );
 };
 
-export const CreateLineDisplay = ({ note, graphName }) => {
+export const CreateLineDisplay = ({note, graphName}) => {
     return (
-        <span className="inline-flex items-center" style={{ fontSize: "14px" }}>
-            <span className="opacity-50 px-1" style={{ userSelect: "none", flexShrink: "0" }}>
+        <span className="inline-flex items-center" style={{fontSize: "14px"}}>
+            <span className="opacity-50 px-1" style={{userSelect: "none", flexShrink: "0"}}>
                 [{note.type}]
             </span>
             <span className={`truncate`}>
                 <LogseqLink uuid={note.uuid} graphName={graphName} />
             </span>
-            <span className="px-1" style={{ userSelect: "none" }}>{`⟶`}</span>
-            <span style={{ flexShrink: "0" }}>
+            <span className="px-1" style={{userSelect: "none"}}>{`⟶`}</span>
+            <span style={{flexShrink: "0"}}>
                 <AnkiLink />
             </span>
         </span>
     );
 };
 
-export const UpdateLineDisplay = ({ note, graphName }) => {
+export const UpdateLineDisplay = ({note, graphName}) => {
     return (
-        <span className="inline-flex items-center" style={{ fontSize: "14px" }}>
-            <span className="opacity-50 px-1" style={{ userSelect: "none", flexShrink: "0" }}>
+        <span className="inline-flex items-center" style={{fontSize: "14px"}}>
+            <span className="opacity-50 px-1" style={{userSelect: "none", flexShrink: "0"}}>
                 [{note.type}]
             </span>
             <span className={`truncate`}>
@@ -601,8 +601,8 @@ export const UpdateLineDisplay = ({ note, graphName }) => {
             </span>
             {note.ankiId && (
                 <>
-                    <span className="px-1" style={{ userSelect: "none" }}>{`⟶`}</span>
-                    <span style={{ flexShrink: "0" }}>
+                    <span className="px-1" style={{userSelect: "none"}}>{`⟶`}</span>
+                    <span style={{flexShrink: "0"}}>
                         <AnkiLink ankiId={note.ankiId} />
                     </span>
                 </>
@@ -611,9 +611,9 @@ export const UpdateLineDisplay = ({ note, graphName }) => {
     );
 };
 
-export const DeleteLineDisplay = ({ ankiId }) => {
+export const DeleteLineDisplay = ({ankiId}) => {
     return (
-        <span className="inline-flex items-center" style={{ fontSize: "14px" }}>
+        <span className="inline-flex items-center" style={{fontSize: "14px"}}>
             <AnkiLink ankiId={ankiId} />
         </span>
     );

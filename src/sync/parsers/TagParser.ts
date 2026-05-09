@@ -1,9 +1,8 @@
-import { Note } from "../../anki-notes/Note";
-import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { getCaseInsensitive } from "../../utils/utils";
 import _ from "lodash";
-
-import { createLogger, LoggerCategory } from "../../logger";
+import type {Note} from "../../anki-notes/Note";
+import {createLogger, LoggerCategory} from "../../logger";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {getCaseInsensitive} from "../../utils/utils";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 
@@ -11,16 +10,19 @@ export class TagParser {
     static async parse(note: Note, initialTags: string[]): Promise<string[]> {
         let tags = [...initialTags];
 
-        tags = await this.collectTagsFromBlockHierarchy(note, tags);
-        tags = await this.collectTagsFromNamespaceHierarchy(note, tags);
-        tags = this.normalizeTags(tags);
-        tags = this.deduplicateTags(tags);
-        tags = this.removeRedundantTags(tags);
+        tags = await TagParser.collectTagsFromBlockHierarchy(note, tags);
+        tags = await TagParser.collectTagsFromNamespaceHierarchy(note, tags);
+        tags = TagParser.normalizeTags(tags);
+        tags = TagParser.deduplicateTags(tags);
+        tags = TagParser.removeRedundantTags(tags);
 
         return tags;
     }
 
-    private static async collectTagsFromBlockHierarchy(note: Note, tags: string[]): Promise<string[]> {
+    private static async collectTagsFromBlockHierarchy(
+        note: Note,
+        tags: string[]
+    ): Promise<string[]> {
         try {
             let parentBlockUUID: string | number = note.uuid;
             while (parentBlockUUID != null) {
@@ -35,7 +37,10 @@ export class TagParser {
         return tags;
     }
 
-    private static async collectTagsFromNamespaceHierarchy(note: Note, tags: string[]): Promise<string[]> {
+    private static async collectTagsFromNamespaceHierarchy(
+        note: Note,
+        tags: string[]
+    ): Promise<string[]> {
         try {
             const page = await LogseqProxy.Editor.getPage(note.pageId);
             const parents = await LogseqProxy.Editor.getParentNamespacePages(page);
@@ -51,9 +56,7 @@ export class TagParser {
     }
 
     private static normalizeTags(tags: string[]): string[] {
-        return tags
-            .map((tag) => tag.replace(/\//g, "::"))
-            .map((tag) => tag.replace(/\s/g, "_"));
+        return tags.map((tag) => tag.replace(/\//g, "::")).map((tag) => tag.replace(/\s/g, "_"));
     }
 
     private static deduplicateTags(tags: string[]): string[] {
@@ -63,9 +66,7 @@ export class TagParser {
     private static removeRedundantTags(tags: string[]): string[] {
         return tags.filter((tag) => {
             const otherTags = tags.filter((otherTag) => otherTag !== tag);
-            const redundantTags = otherTags.filter((otherTag) =>
-                otherTag.startsWith(tag + "::")
-            );
+            const redundantTags = otherTags.filter((otherTag) => otherTag.startsWith(tag + "::"));
             return redundantTags.length === 0;
         });
     }

@@ -1,10 +1,10 @@
 /**
  * WindowBridge - Abstraction layer for plugin sandbox window and document access
- * 
+ *
  * This class provides a centralized, type-safe wrapper around the global window
  * and document objects within the Logseq plugin sandbox environment. It follows
  * the same pattern as WindowParentBridge but for the plugin's own execution context.
- * 
+ *
  * Benefits:
  * - Testability: Can be mocked for unit tests
  * - Consistency: Single point of access for DOM operations
@@ -34,7 +34,9 @@ export class WindowBridge {
      * @param tagName - Tag name for the element
      * @returns The created element
      */
-    static createElement<K extends keyof HTMLElementTagNameMap>(tagName: K): HTMLElementTagNameMap[K] {
+    static createElement<K extends keyof HTMLElementTagNameMap>(
+        tagName: K
+    ): HTMLElementTagNameMap[K] {
         return document.createElement(tagName);
     }
 

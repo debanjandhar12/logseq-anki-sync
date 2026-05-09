@@ -1,4 +1,4 @@
-export { AddNoteOperation } from "./AddNoteOperation";
-export { UpdateNoteOperation } from "./UpdateNoteOperation";
-export { DeleteNoteOperation } from "./DeleteNoteOperation";
-export { AssetOperation } from "./AssetOperation";
+export {AddNoteOperation} from "./AddNoteOperation";
+export {AssetOperation} from "./AssetOperation";
+export {DeleteNoteOperation} from "./DeleteNoteOperation";
+export {UpdateNoteOperation} from "./UpdateNoteOperation";

@@ -1,16 +1,18 @@
 import "@logseq/libs";
-import { LSPluginBaseInfo } from "@logseq/libs/dist/LSPlugin";
-import { ANKI_ICON } from "./constants";
-import { showToolbarMenu } from "./ui/pages/LogseqAnkiSyncToolbarMenu";
-import { WindowParentBridge } from "./logseq/WindowParentBridge";
+import type {LSPluginBaseInfo} from "@logseq/libs/dist/LSPlugin";
+import {ANKI_ICON} from "./constants";
+import {WindowParentBridge} from "./logseq/WindowParentBridge";
+import {showToolbarMenu} from "./ui/pages/LogseqAnkiSyncToolbarMenu";
 
 export function registerToolbar(baseInfo: LSPluginBaseInfo) {
     logseq.provideModel({
         showToolbarMenu: () => {
             let triggerRect: DOMRect | null = null;
-            let parentWidth: number | undefined = undefined;
+            let parentWidth: number | undefined;
             try {
-                const iconElement = WindowParentBridge.querySelector(`.logseq-anki-toolbar-item-${baseInfo.id}`);
+                const iconElement = WindowParentBridge.querySelector(
+                    `.logseq-anki-toolbar-item-${baseInfo.id}`
+                );
                 if (iconElement) {
                     triggerRect = iconElement.getBoundingClientRect();
                     parentWidth = WindowParentBridge.getDocument().documentElement.clientWidth;
@@ -19,7 +21,7 @@ export function registerToolbar(baseInfo: LSPluginBaseInfo) {
                 console.warn("Could not access parent document for toolbar icon position:", error);
             }
             showToolbarMenu(triggerRect, parentWidth);
-        },
+        }
     });
 
     logseq.provideStyle(`
@@ -42,6 +44,6 @@ export function registerToolbar(baseInfo: LSPluginBaseInfo) {
       <a title="Logseq to Anki Sync Options" data-on-click="showToolbarMenu" class="button logseq-anki-toolbar-item-${baseInfo.id}">
         <i class="ui__icon ti" style="font-size: 18px;">${ANKI_ICON}</i>
       </a>
-    `,
+    `
     });
 }

@@ -1,5 +1,5 @@
-import React from "../../React";
 import {LogseqButton} from "../../components/LogseqButton";
+import type React from "../../React";
 
 export interface ModalFooterProps {
     onConfirm?: () => void;
@@ -24,7 +24,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
     showCancel = true,
     confirmShortcut = "⏎",
     children,
-    className = "",
+    className = ""
 }) => {
     return (
         <div className={`mt-5 sm:mt-4 sm:flex sm:flex-row-reverse ${className}`}>
@@ -35,7 +35,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
                         style={{
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
+                            justifyContent: "center"
                         }}>
                         <span>{confirmText}</span>
                         {confirmShortcut && (
@@ -68,7 +68,7 @@ export const DialogModalFooter: React.FC<{
             style={{
                 borderTop: "1px solid var(--ls-border-color)",
                 padding: "2px",
-                alignItems: "center",
+                alignItems: "center"
             }}>
             {onConfirm && (
                 <LogseqButton isFullWidth={true} depth={1} onClick={onConfirm} color="primary">
@@ -76,7 +76,7 @@ export const DialogModalFooter: React.FC<{
                         style={{
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
+                            justifyContent: "center"
                         }}>
                         <span>{confirmText}</span>
                         <span

@@ -1,9 +1,9 @@
-import * as AnkiConnect from "../AnkiConnect";
-import { AnkiActionQueue } from "../internal/AnkiActionQueue";
-import { AnkiNoteFields, AddNotesResult, OperationFailure, AnkiIdUuidPair } from "../types";
-import { ANKI_CLOZE_REGEXP } from "../../constants";
-import { createLogger, LoggerCategory } from "../../logger";
 import _ from "lodash";
+import {ANKI_CLOZE_REGEXP} from "../../constants";
+import {createLogger, LoggerCategory} from "../../logger";
+import * as AnkiConnect from "../AnkiConnect";
+import {AnkiActionQueue} from "../internal/AnkiActionQueue";
+import type {AddNotesResult, AnkiIdUuidPair, AnkiNoteFields, OperationFailure} from "../types";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
@@ -13,16 +13,11 @@ export class AddNoteOperation {
     private uuidTypeQueue1: string[] = [];
     private uuidTypeQueue2: string[] = [];
 
-    addNote(
-        deckName: string,
-        modelName: string,
-        fields: AnkiNoteFields,
-        tags: string[]
-    ): void {
+    addNote(deckName: string, modelName: string, fields: AnkiNoteFields, tags: string[]): void {
         // Queue 1: Create deck + add note with placeholder cloze
         this.queue1.push({
             action: "createDeck",
-            params: { deck: deckName },
+            params: {deck: deckName}
         });
         this.uuidTypeQueue1.push(fields["uuid-type"]);
 
@@ -35,12 +30,12 @@ export class AddNoteOperation {
                     deckName: deckName,
                     fields: {
                         ...fields,
-                        Text: `{{c${cloze_id}:: placeholder}}`,
+                        Text: `{{c${cloze_id}:: placeholder}}`
                     },
                     tags: tags,
-                    options: { allowDuplicate: true },
-                },
-            },
+                    options: {allowDuplicate: true}
+                }
+            }
         });
         this.uuidTypeQueue1.push(fields["uuid-type"]);
 
@@ -51,9 +46,9 @@ export class AddNoteOperation {
                 note: {
                     deckName: deckName,
                     modelName: modelName,
-                    fields: fields,
-                },
-            },
+                    fields: fields
+                }
+            }
         });
         this.uuidTypeQueue2.push(fields["uuid-type"]);
     }
@@ -64,13 +59,13 @@ export class AddNoteOperation {
         // Execute queue 1: Create notes with dummy content (required to do this due to anki bug where note creation fails otherwise)
         const result1 = await this.queue1.execute();
         const failedNotes: OperationFailure[] = [];
-        
+
         for (let i = 0; i < result1.length; i++) {
             if (result1[i]?.error) {
                 const error = result1[i].error;
                 failedNotes.push({
                     identifier: this.uuidTypeQueue1[i],
-                    error: typeof error === 'string' ? new Error(error) : error,
+                    error: typeof error === "string" ? new Error(error) : error
                 });
             }
         }
@@ -80,14 +75,14 @@ export class AddNoteOperation {
         for (const uuidType of this.uuidTypeQueue2) {
             getAnkiIdActionsQueue.push({
                 action: "findNotes",
-                params: { query: `uuid-type:${uuidType}` },
+                params: {query: `uuid-type:${uuidType}`}
             });
         }
-        
+
         const ankiIdActionsQueueRes = await AnkiConnect.invoke("multi", {
-            actions: getAnkiIdActionsQueue,
+            actions: getAnkiIdActionsQueue
         });
-        
+
         const ankiId: number[] = [];
         const successfulNotes: AnkiIdUuidPair[] = [];
         for (let i = 0; i < ankiIdActionsQueueRes.length; i++) {
@@ -96,7 +91,7 @@ export class AddNoteOperation {
             if (ankiId[i] != null) {
                 successfulNotes.push({
                     "uuid-type": this.uuidTypeQueue2[i],
-                    ankiId: ankiIdActionsQueueRes[i][0],
+                    ankiId: ankiIdActionsQueueRes[i][0]
                 });
             }
         }
@@ -116,7 +111,7 @@ export class AddNoteOperation {
                 const error = result2[i].error;
                 failedNotes.push({
                     identifier: this.uuidTypeQueue2[i],
-                    error: typeof error === 'string' ? new Error(error) : error,
+                    error: typeof error === "string" ? new Error(error) : error
                 });
             }
         }
@@ -127,10 +122,10 @@ export class AddNoteOperation {
         this.uuidTypeQueue1 = [];
         this.uuidTypeQueue2 = [];
 
-        logger.info("Add notes operation completed", { successfulNotes, failedNotes });
+        logger.info("Add notes operation completed", {successfulNotes, failedNotes});
         return {
             successfulNotes,
-            failedNotes,
+            failedNotes
         };
     }
 }

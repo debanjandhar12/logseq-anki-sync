@@ -1,5 +1,5 @@
-import {ANKI_ICON} from "../../constants";
 import GRAPH_ICON from "../../../node_modules/@tabler/icons/icons/outline/hierarchy.svg?raw";
+import {ANKI_ICON} from "../../constants";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
@@ -26,7 +26,7 @@ export class ProgressNotification {
             </div>
             </div><div class="ml-4 flex-shrink-0 flex">
             </div></div></div></div></div></div>
-            `,
+            `
         });
         logseq.provideStyle(`
         #logseq-anki-sync-progress-bar-${logseq.baseInfo.id}::-webkit-progress-bar {
@@ -40,7 +40,7 @@ export class ProgressNotification {
         LogseqProxy.App.registerPluginUnloadListener(() => {
             logseq.provideUI({
                 key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`,
-                template: ``,
+                template: ``
             });
         });
     }
@@ -50,7 +50,7 @@ export class ProgressNotification {
         try {
             if (this.progressBar == null) {
                 this.progressBar = WindowParentBridge.getElementById(
-                    `logseq-anki-sync-progress-bar-${logseq.baseInfo.id}`,
+                    `logseq-anki-sync-progress-bar-${logseq.baseInfo.id}`
                 );
             }
             this.progressBar.setAttribute("value", `${this.current}`);
@@ -58,14 +58,14 @@ export class ProgressNotification {
         if (this.current >= this.max)
             logseq.provideUI({
                 key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`,
-                template: ``,
+                template: ``
             }); // Remove notification
     }
 
     updateMessage(msg: string) {
         try {
             const msgElement = WindowParentBridge.getElementById(
-                `logseq-anki-sync-progress-bar-msg`,
+                `logseq-anki-sync-progress-bar-msg`
             );
             msgElement.innerText = msg;
         } catch (e) {}

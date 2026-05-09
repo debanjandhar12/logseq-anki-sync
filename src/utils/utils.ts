@@ -1,15 +1,15 @@
 import _ from "lodash";
 import replaceAsync from "string-replace-async";
 import "@logseq/libs";
-import {WindowParentBridge} from "../logseq/WindowParentBridge";
+import WARNING_ICON from "../../node_modules/@tabler/icons/icons/outline/alert-circle.svg?raw";
 import {
     ANKI_CLOZE_REGEXP,
     LOGSEQ_PLUGIN_CLOZE_REGEXP,
     MD_MATH_BLOCK_REGEXP,
     OhmStrToListGrammar,
-    specialChars,
+    specialChars
 } from "../constants";
-import WARNING_ICON from "../../node_modules/@tabler/icons/icons/outline/alert-circle.svg?raw";
+import {WindowParentBridge} from "../logseq/WindowParentBridge";
 import {ActionNotification} from "../ui/notifications/ActionNotification";
 
 export function regexPraser(input: string): RegExp {
@@ -34,7 +34,7 @@ export function escapeClozesAndMacroDelimiters(input: string): string {
     return input
         .replace(
             LOGSEQ_PLUGIN_CLOZE_REGEXP,
-            `<span class="anki-cloze-from-another-note" style="white-space: initial;" title="c$1 - $2">$2</span>`,
+            `<span class="anki-cloze-from-another-note" style="white-space: initial;" title="c$1 - $2">$2</span>`
         )
         .replace(ANKI_CLOZE_REGEXP, "$3")
         .replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`)
@@ -77,7 +77,7 @@ export function string_to_arr(str: string): any {
         },
         Str(a, b, c) {
             r.push(this.children[1].sourceString);
-        },
+        }
     };
     const s = OhmStrToListGrammar.createSemantics();
     s.addOperation("semanticOperation", actions);
@@ -96,7 +96,7 @@ export function decodeHTMLEntities(text, exclude = ["gt", "lt"]) {
         ["lt", "<"],
         ["gt", ">"],
         ["nbsp", " "],
-        ["quot", '"'],
+        ["quot", '"']
     ];
     entities = entities.filter((e) => !exclude.includes(e[0]));
 
@@ -129,13 +129,13 @@ export function handleAnkiError(msg: string): void {
                         name: "Installation Guide",
                         func: () =>
                             WindowParentBridge.openWindow(
-                                "https://github.com/debanjandhar12/logseq-anki-sync#%EF%B8%8F-installation-video",
-                            ),
-                    },
+                                "https://github.com/debanjandhar12/logseq-anki-sync#%EF%B8%8F-installation-video"
+                            )
+                    }
                 ],
                 "Please ensure Anki is open in background with AnkiConnect installed properly. Read installation guide for details.",
                 5000,
-                `<span class="text-warning">${WARNING_ICON}</span>`,
+                `<span class="text-warning">${WARNING_ICON}</span>`
             );
             break;
         case "Permission to access anki was denied":
@@ -143,28 +143,41 @@ export function handleAnkiError(msg: string): void {
                 "Please give permission to access anki by clicking yes when prompted.",
                 "warning",
                 {
-                    timeout: 5000,
-                },
+                    timeout: 5000
+                }
             );
             break;
         case "collection is not available":
             logseq.UI.showMsg("Please select an anki profile before syncing.", "warning", {
-                timeout: 5000,
+                timeout: 5000
             });
             break;
         default:
             logseq.UI.showMsg(msg, "error", {
-                timeout: 5000,
+                timeout: 5000
             });
             break;
     }
 }
 
 // This is required to deal with properties with "-" in them
-export function getLogseqBlockPropSafe<T = any>(obj: any, path: string, defaultValue: T = null as T): T {
-    let returnVal = _.get(obj, path, null);
+export function getLogseqBlockPropSafe<T = any>(
+    obj: any,
+    path: string,
+    defaultValue: T = null as T
+): T {
+    const returnVal = _.get(obj, path, null);
     if (returnVal == null) {
-        return _.get(obj, path.split("-").map((x, i) => i === 0 ? x[0].toLowerCase() + x.slice(1) : x[0].toUpperCase() + x.slice(1)).join(""), defaultValue);
+        return _.get(
+            obj,
+            path
+                .split("-")
+                .map((x, i) =>
+                    i === 0 ? x[0].toLowerCase() + x.slice(1) : x[0].toUpperCase() + x.slice(1)
+                )
+                .join(""),
+            defaultValue
+        );
     }
     return returnVal;
 }
@@ -222,7 +235,7 @@ export function safeReplace(content: string, regex: RegExp | string, replaceArg:
 export async function safeReplaceAsync(
     content: string,
     regex: RegExp | string,
-    replaceArg: any,
+    replaceArg: any
 ): Promise<string> {
     let result = content;
     const hashmap = {};
@@ -255,7 +268,7 @@ export async function sortAsync<T>(arr: T[], score: (a: T) => Promise<number>): 
     const toSortPromises = arr.map(async (item) => {
         return {
             item: item,
-            score: await score(item),
+            score: await score(item)
         };
     });
     return await Promise.all(toSortPromises).then((toSort) => {
@@ -267,11 +280,7 @@ export async function sortAsync<T>(arr: T[], score: (a: T) => Promise<number>): 
     });
 }
 
-export function getCaseInsensitive<T = any>(
-    obj: any,
-    path: string | string[],
-    defaultValue: T,
-): T {
+export function getCaseInsensitive<T = any>(obj: any, path: string | string[], defaultValue: T): T {
     if (!obj) {
         return defaultValue;
     }

@@ -1,7 +1,8 @@
-import React, { FC, useState, useRef, useEffect, useCallback } from "../React";
-import { computePosition, flip, shift, offset, autoUpdate, Placement } from "@floating-ui/react";
-import { createPortal } from "../ReactDOM";
-import { WindowBridge } from "../../logseq/WindowBridge";
+import {autoUpdate, computePosition, flip, offset, type Placement, shift} from "@floating-ui/react";
+import {WindowBridge} from "../../logseq/WindowBridge";
+import type React from "../React";
+import {type FC, useCallback, useEffect, useRef, useState} from "../React";
+import {createPortal} from "../ReactDOM";
 
 interface LogseqPopoverProps {
     content: React.ReactNode;
@@ -16,10 +17,10 @@ export const LogseqPopover: FC<LogseqPopoverProps> = ({
     children,
     placement = "bottom-end",
     offsetY = -4,
-    usePortal = false,
+    usePortal = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [position, setPosition] = useState({x: 0, y: 0});
     const [isPositioned, setIsPositioned] = useState(false);
     const triggerRef = useRef<HTMLSpanElement>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
@@ -33,9 +34,9 @@ export const LogseqPopover: FC<LogseqPopoverProps> = ({
             }
             computePosition(triggerRef.current, popoverRef.current, {
                 placement,
-                middleware: [offset(offsetY), flip(), shift({ padding: 8 })],
-            }).then(({ x, y }) => {
-                setPosition({ x, y });
+                middleware: [offset(offsetY), flip(), shift({padding: 8})]
+            }).then(({x, y}) => {
+                setPosition({x, y});
                 setIsPositioned(true);
             });
         }
@@ -89,7 +90,7 @@ export const LogseqPopover: FC<LogseqPopoverProps> = ({
                     position: "fixed",
                     left: position.x,
                     top: position.y,
-                    visibility: isPositioned ? "visible" : "hidden",
+                    visibility: isPositioned ? "visible" : "hidden"
                 }}>
                 {content}
             </div>
@@ -101,10 +102,12 @@ export const LogseqPopover: FC<LogseqPopoverProps> = ({
                 ref={triggerRef}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                style={{ display: "inline-flex", cursor: "pointer", alignItems: "center" }}>
+                style={{display: "inline-flex", cursor: "pointer", alignItems: "center"}}>
                 {children}
             </span>
-            {usePortal && popoverElement ? createPortal(popoverElement, WindowBridge.getElementById("app")!) : popoverElement}
+            {usePortal && popoverElement
+                ? createPortal(popoverElement, WindowBridge.getElementById("app")!)
+                : popoverElement}
         </>
     );
 };

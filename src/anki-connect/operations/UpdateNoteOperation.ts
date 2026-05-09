@@ -1,8 +1,8 @@
-import { AnkiActionQueue } from "../internal/AnkiActionQueue";
-import { AnkiNoteCache } from "../internal/AnkiNoteCache";
-import { AnkiNoteFields, UpdateNotesResult, OperationFailure } from "../types";
-import { createLogger, LoggerCategory } from "../../logger";
 import _ from "lodash";
+import {createLogger, LoggerCategory} from "../../logger";
+import {AnkiActionQueue} from "../internal/AnkiActionQueue";
+import type {AnkiNoteCache} from "../internal/AnkiNoteCache";
+import type {AnkiNoteFields, OperationFailure, UpdateNotesResult} from "../types";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
@@ -31,25 +31,21 @@ export class UpdateNoteOperation {
         if (deckName !== noteinfo.deck) {
             this.queue.push({
                 action: "changeDeck",
-                params: { cards: cards, deck: deckName },
+                params: {cards: cards, deck: deckName}
             });
             this.uuidTypeQueue.push(fields["uuid-type"]);
         }
 
         // Handle tag changes
         let to_remove_tags = _.difference(noteinfo.tags, tags);
-        to_remove_tags = to_remove_tags.filter(
-            (tag) => tag.toLowerCase() !== "leech"
-        );
-        to_remove_tags = to_remove_tags.filter(
-            (tag) => tag.toLowerCase() !== "marked"
-        );
+        to_remove_tags = to_remove_tags.filter((tag) => tag.toLowerCase() !== "leech");
+        to_remove_tags = to_remove_tags.filter((tag) => tag.toLowerCase() !== "marked");
         const to_add_tags = _.difference(tags, noteinfo.tags);
 
         for (const tag of to_remove_tags) {
             this.queue.push({
                 action: "removeTags",
-                params: { notes: [ankiId], tags: tag },
+                params: {notes: [ankiId], tags: tag}
             });
             this.uuidTypeQueue.push(fields["uuid-type"]);
         }
@@ -57,7 +53,7 @@ export class UpdateNoteOperation {
         for (const tag of to_add_tags) {
             this.queue.push({
                 action: "addTags",
-                params: { notes: [ankiId], tags: tag },
+                params: {notes: [ankiId], tags: tag}
             });
             this.uuidTypeQueue.push(fields["uuid-type"]);
         }
@@ -65,7 +61,10 @@ export class UpdateNoteOperation {
         // Check if fields need update
         let needsFieldUpdate = false;
         for (const key in fields) {
-            if (noteinfo.fields[key as keyof typeof fields]?.value !== fields[key as keyof typeof fields]) {
+            if (
+                noteinfo.fields[key as keyof typeof fields]?.value !==
+                fields[key as keyof typeof fields]
+            ) {
                 logger.info("Field difference found", {
                     key,
                     oldValue: noteinfo.fields[key as keyof typeof fields]?.value,
@@ -84,9 +83,9 @@ export class UpdateNoteOperation {
                         id: ankiId,
                         deckName: deckName,
                         modelName: modelName,
-                        fields: fields,
-                    },
-                },
+                        fields: fields
+                    }
+                }
             });
             this.uuidTypeQueue.push(fields["uuid-type"]);
         }
@@ -97,7 +96,7 @@ export class UpdateNoteOperation {
 
         const result = await this.queue.execute();
 
-        logger.info("Update notes operation completed", { resultCount: result.length });
+        logger.info("Update notes operation completed", {resultCount: result.length});
 
         const successfulNotes: string[] = [];
         const failedNotes: OperationFailure[] = [];
@@ -107,7 +106,7 @@ export class UpdateNoteOperation {
                 const error = result[i].error;
                 failedNotes.push({
                     identifier: uuidType,
-                    error: typeof error === 'string' ? new Error(error) : error,
+                    error: typeof error === "string" ? new Error(error) : error
                 });
             } else {
                 successfulNotes.push(uuidType);
@@ -117,7 +116,7 @@ export class UpdateNoteOperation {
         this.queue.clear();
         this.uuidTypeQueue = [];
 
-        logger.info("Update notes operation completed", { successfulNotes, failedNotes });
-        return { successfulNotes, failedNotes };
+        logger.info("Update notes operation completed", {successfulNotes, failedNotes});
+        return {successfulNotes, failedNotes};
     }
 }

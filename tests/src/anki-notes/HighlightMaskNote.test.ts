@@ -1,7 +1,7 @@
 import "@logseq/libs";
+import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeEach, describe, expect, test} from "vitest";
 import {HighlightMaskNote} from "../../../src/anki-notes/HighlightMaskNote";
-import {PageEntity} from "@logseq/libs/dist/LSPlugin";
 
 describe("HighlightMaskNote E2E Tests", () => {
     let page: PageEntity | null = null;
@@ -10,7 +10,7 @@ describe("HighlightMaskNote E2E Tests", () => {
         page = await logseq.Editor.createPage(
             "Test HighlightMaskNote E2E",
             {},
-            {redirect: false, createFirstBlock: false},
+            {redirect: false, createFirstBlock: false}
         );
         await new Promise((resolve) => setTimeout(resolve, 100));
     });
@@ -32,7 +32,7 @@ describe("HighlightMaskNote E2E Tests", () => {
 
             const notes = await HighlightMaskNote.getNotesFromLogseqBlocks();
             expect(notes).toEqual([]);
-        },
+        }
     );
 
     test.skipIf(!globalThis.isLogseqAvailable)(
@@ -48,24 +48,20 @@ describe("HighlightMaskNote E2E Tests", () => {
             const initialNotes = await HighlightMaskNote.getNotesFromLogseqBlocks();
             const initialCount = initialNotes.length;
 
-            await logseq.Editor.appendBlockInPage(
-                page.uuid,
-                "Test content for highlight mask",
-                {
-                    properties: {
-                        highlight_mask: JSON.stringify({
-                            elements: [{text: "Test", cId: 1}],
-                            config: {},
-                            tags: [],
-                        }),
-                    },
-                },
-            );
+            await logseq.Editor.appendBlockInPage(page.uuid, "Test content for highlight mask", {
+                properties: {
+                    highlight_mask: JSON.stringify({
+                        elements: [{text: "Test", cId: 1}],
+                        config: {},
+                        tags: []
+                    })
+                }
+            });
             await new Promise((resolve) => setTimeout(resolve, 100));
 
             const finalNotes = await HighlightMaskNote.getNotesFromLogseqBlocks();
             expect(finalNotes.length).toBe(initialCount + 1);
-        },
+        }
     );
 
     test.skipIf(!globalThis.isLogseqAvailable)(
@@ -86,14 +82,14 @@ describe("HighlightMaskNote E2E Tests", () => {
                 "Test content without highlight data",
                 {
                     properties: {
-                        highlight_mask: JSON.stringify({elements: [], config: {}, tags: []}),
-                    },
-                },
+                        highlight_mask: JSON.stringify({elements: [], config: {}, tags: []})
+                    }
+                }
             );
             await new Promise((resolve) => setTimeout(resolve, 100));
 
             const finalNotes = await HighlightMaskNote.getNotesFromLogseqBlocks();
             expect(finalNotes.length).toBe(initialCount);
-        },
+        }
     );
 });

@@ -1,10 +1,10 @@
-import { Note } from "../../anki-notes/Note";
-import { LazyAnkiNoteManager } from "../../anki-connect/LazyAnkiNoteManager";
 import * as AnkiConnect from "../../anki-connect/AnkiConnect";
-import { ProgressNotification } from "../../ui";
-import { SuspendUnsuspendPropertyParser } from "../parsers/SuspendUnsuspendPropertyParser";
-import { AnkiNoteCache } from "../../anki-connect/internal/AnkiNoteCache";
-import { createLogger, LoggerCategory } from "../../logger";
+import {AnkiNoteCache} from "../../anki-connect/internal/AnkiNoteCache";
+import type {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
+import type {Note} from "../../anki-notes/Note";
+import {createLogger, LoggerCategory} from "../../logger";
+import type {ProgressNotification} from "../../ui";
+import {SuspendUnsuspendPropertyParser} from "../parsers/SuspendUnsuspendPropertyParser";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 
@@ -13,7 +13,7 @@ export class SuspendUnsuspendNotesTask {
         notes: Note[],
         ankiNoteManager: LazyAnkiNoteManager,
         progressNotification: ProgressNotification
-    ): Promise<{ suspended: number, unsuspended: number }> {
+    ): Promise<{suspended: number; unsuspended: number}> {
         const freshCache = new AnkiNoteCache();
         await freshCache.buildNoteInfoMap(ankiNoteManager.modelName); // Build fresh cache to include newly created notes
 
@@ -30,7 +30,7 @@ export class SuspendUnsuspendNotesTask {
                 if (shouldSuspend === null) continue;
 
                 const cardIds = this.getCardIdsForNote(ankiId, freshCache);
-                
+
                 if (shouldSuspend === true) {
                     cardsToSuspend.push(...cardIds);
                 } else if (shouldSuspend === false) {

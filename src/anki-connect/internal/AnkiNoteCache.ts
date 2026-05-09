@@ -1,8 +1,7 @@
+import {createLogger, LoggerCategory} from "../../logger";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 import * as AnkiConnect from "../AnkiConnect";
-import { AnkiNoteInfo } from "../types";
-import { LogseqProxy } from "../../logseq/LogseqProxy";
-
-import { createLogger, LoggerCategory } from "../../logger";
+import type {AnkiNoteInfo} from "../types";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
@@ -12,11 +11,11 @@ export class AnkiNoteCache {
 
     async buildNoteInfoMap(modelName: string): Promise<void> {
         const noteIds = await AnkiConnect.query(`"note:${modelName}"`);
-        const notes = await AnkiConnect.invoke("notesInfo", { notes: noteIds });
+        const notes = await AnkiConnect.invoke("notesInfo", {notes: noteIds});
 
         // Build reverse lookup: card ID → deck name
         const cardIds = notes.map((note: any) => note.cards[0]).filter(Boolean);
-        const decks = await AnkiConnect.invoke("getDecks", { cards: cardIds });
+        const decks = await AnkiConnect.invoke("getDecks", {cards: cardIds});
         const cardToDeck = new Map<string, string>();
         for (const [deckName, cards] of Object.entries(decks)) {
             for (const cardId of cards as any[]) {
@@ -28,7 +27,7 @@ export class AnkiNoteCache {
         for (const note of notes) {
             const firstCardId = note.cards[0];
             const deck = firstCardId ? cardToDeck.get(firstCardId.toString()) || "" : "";
-            this.noteInfoMap.set(note.noteId, { ...note, deck });
+            this.noteInfoMap.set(note.noteId, {...note, deck});
         }
 
         logger.debug("noteInfoMap built", this.noteInfoMap);
@@ -37,7 +36,7 @@ export class AnkiNoteCache {
     async buildMediaInfo(): Promise<void> {
         const mediaFileNames = await AnkiConnect.invoke("getMediaFilesNames", {});
         this.mediaInfo = new Set(mediaFileNames);
-        
+
         logger.debug("mediaInfo built", this.mediaInfo);
     }
 

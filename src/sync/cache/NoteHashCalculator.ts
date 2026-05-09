@@ -7,23 +7,19 @@
  * 4. Logseq Page Id field
  */
 
-import { Note } from "../../anki-notes/Note";
-import pkg from "../../../package.json";
-import { LogseqProxy } from "../../logseq/LogseqProxy";
-import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
-import { createLogger, LoggerCategory } from "../../logger";
-import {
-    getBlockHash,
-    getPageHash,
-} from "./BlockAndPageHashCache";
 import _ from "lodash";
-import objectHashOptimized from "../../utils/objectHashOptimized";
 import path from "path-browserify";
-import { ParsedNoteData } from "../types";
+import pkg from "../../../package.json";
+import type {Note} from "../../anki-notes/Note";
+import {createLogger, LoggerCategory} from "../../logger";
 import getNameFromPage from "../../logseq/getNameFromPage";
+import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
+import objectHashOptimized from "../../utils/objectHashOptimized";
+import type {ParsedNoteData} from "../types";
+import {getBlockHash, getPageHash} from "./BlockAndPageHashCache";
 
 const logger = createLogger(LoggerCategory.SyncCacheLayer);
-
 
 export default class NoteHashCalculator {
     /**
@@ -56,13 +52,13 @@ export default class NoteHashCalculator {
         // This is req since otherwise on property value change of parent block, hash won't change.
         let parentID = (await LogseqProxy.Editor.getBlock(note.uuid)).parent.id;
         let parent = null;
-        const { includeParentContent } = LogseqProxy.Settings.getPluginSettings();
+        const {includeParentContent} = LogseqProxy.Settings.getPluginSettings();
         if (includeParentContent) {
             while ((parent = await LogseqProxy.Editor.getBlock(parentID)) != null) {
                 const logseqBlockUUID = getUUIDFromBlock(parent) || parent.parent.id;
                 dependencies.push({
                     type: "Block",
-                    value: logseqBlockUUID,
+                    value: logseqBlockUUID
                 });
                 parentID = parent.parent.id;
             }
@@ -79,17 +75,17 @@ export default class NoteHashCalculator {
         const parentPages = await LogseqProxy.Editor.getParentNamespacePages(page);
         for (const parentPage of parentPages) {
             const pageId = parentPage.id;
-            if (pageId && typeof pageId === 'number') {
+            if (pageId && typeof pageId === "number") {
                 toHash.push(await getPageHash(pageId));
             }
         }
 
         // Add additional things to toHash
         toHash.push(getNameFromPage(page));
-        
+
         // Include Logseq Page Id in hash calculation
         toHash.push(note.pageId);
-        
+
         const settings = LogseqProxy.Settings.getPluginSettings();
         toHash.push(
             _.omit(settings, [
@@ -100,7 +96,7 @@ export default class NoteHashCalculator {
                 "lastWelcomeVersion",
                 "ankiFieldOptions",
                 "debug"
-            ]),
+            ])
         );
         toHash.push(pkg.version);
 
@@ -112,7 +108,7 @@ export default class NoteHashCalculator {
         tags.sort();
 
         // Get asset modified times and include them in hash calculation
-        const assetModifiedTimeMap = await this.getAssetModifiedTimeMap();
+        const assetModifiedTimeMap = await NoteHashCalculator.getAssetModifiedTimeMap();
         const assetsWithModifiedTime = assetsArray.map((assetPath: string) => {
             const filename = path.basename(assetPath);
             const modifiedTime = assetModifiedTimeMap.get(filename) || 0;
@@ -124,7 +120,7 @@ export default class NoteHashCalculator {
             assetsWithModifiedTime,
             deck ? deck.trim().toLowerCase() : "",
             breadcrumb.trim(),
-            tags,
+            tags
         ]);
 
         // Return hash

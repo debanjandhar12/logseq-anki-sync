@@ -1,10 +1,10 @@
-import React, { PropsWithChildren } from "../../React";
 import FocusTrap from "focus-trap-react";
-import { UI } from "../../UI";
+import React, {type PropsWithChildren} from "../../React";
+import {UI} from "../../UI";
 
 const focusTrapOptions = {
     tabbableOptions: {
-        displayCheck: 'none' as const,
+        displayCheck: "none" as const
     }
 };
 
@@ -26,7 +26,7 @@ export function Modal({
     onClose,
     children,
     hasCloseButton = true,
-    className = "",
+    className = ""
 }: PropsWithChildren<ModalProps>) {
     // Handle close - calls setOpen(false), onClose callback, and UI.hideModal()
     const handleClose = React.useCallback(() => {
@@ -39,7 +39,7 @@ export function Modal({
 
     let style = {};
     if (size === "large") {
-        style = { ...style, width: "90vw" };
+        style = {...style, width: "90vw"};
     }
 
     if (!open) return null;
@@ -47,22 +47,20 @@ export function Modal({
     // Calculate z-index based on modal depth (number of modals currently open)
     const modalDepth = UI.getModalCount();
     const baseZIndex = zDepth === "high" ? 9999 : 1000;
-    const calculatedZIndex = baseZIndex + (modalDepth * 10);
+    const calculatedZIndex = baseZIndex + modalDepth * 10;
 
     return (
         <FocusTrap focusTrapOptions={focusTrapOptions}>
             <div
                 className="fixed inset-0 flex items-center justify-center p-4"
-                style={{ zIndex: calculatedZIndex }}
-            >
+                style={{zIndex: calculatedZIndex}}>
                 {/* Overlay */}
                 <div className="fixed inset-0 bg-black/50" />
 
                 {/* Modal Panel */}
                 <div
                     className="relative bg-secondary-background border border-border rounded-md shadow-lg z-10"
-                    style={size === "large" ? { width: "90vw" } : { width: "60vw" }}
-                >
+                    style={size === "large" ? {width: "90vw"} : {width: "60vw"}}>
                     {hasCloseButton && (
                         <div className="absolute top-0 right-0 pt-2 pr-2">
                             <button
@@ -84,9 +82,7 @@ export function Modal({
                             </button>
                         </div>
                     )}
-                    <div className={`max-h-[80vh] ${className}`}>
-                        {children}
-                    </div>
+                    <div className={`max-h-[80vh] ${className}`}>{children}</div>
                 </div>
             </div>
         </FocusTrap>

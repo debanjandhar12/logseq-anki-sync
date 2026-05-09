@@ -1,15 +1,16 @@
-import {Note} from "../../anki-notes/Note";
-import {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
+import type {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
+import type {Note} from "../../anki-notes/Note";
 import {createLogger, LoggerCategory} from "../../logger";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
-import {ProgressNotification} from "../../ui";
-import {ParsedNoteData} from "../types";
+
+import _ from "lodash";
+import path from "path-browserify";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
+import type {ProgressNotification} from "../../ui";
 import {NoteHashCalculator} from "../cache";
 import {parseNote} from "../parsers/NoteParser";
-import path from "path-browserify";
-import _ from "lodash";
-import {WindowParentBridge} from "../../logseq/WindowParentBridge";
+import {ParsedNoteData} from "../types";
 
 export class CreateNotesTask {
     async execute(
@@ -18,7 +19,7 @@ export class CreateNotesTask {
         graphName: string,
         graphPath: string,
         ankiNoteManager: LazyAnkiNoteManager,
-        progressNotification: ProgressNotification,
+        progressNotification: ProgressNotification
     ): Promise<{succeeded: Note[]; failed: {[key: string]: Error}}> {
         const failedCreated: {[key: string]: Error} = {};
 
@@ -63,7 +64,7 @@ export class CreateNotesTask {
         modelName: string,
         graphName: string,
         graphPath: string,
-        ankiNoteManager: LazyAnkiNoteManager,
+        ankiNoteManager: LazyAnkiNoteManager
     ): Promise<void> {
         const [html, assets, deck, breadcrumb, tags] = await parseNote(note, graphName);
         const dependencyHash = await NoteHashCalculator.getHash(note, [
@@ -71,7 +72,7 @@ export class CreateNotesTask {
             assets,
             deck,
             breadcrumb,
-            tags,
+            tags
         ]);
 
         for (const asset of assets) {
@@ -91,10 +92,10 @@ export class CreateNotesTask {
                 Breadcrumb: breadcrumb,
                 Config: JSON.stringify({
                     dependencyHash,
-                    assets: [...assets],
-                }),
+                    assets: [...assets]
+                })
             },
-            tags,
+            tags
         );
     }
 }

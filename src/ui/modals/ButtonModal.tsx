@@ -1,10 +1,10 @@
+import {WindowBridge} from "../../logseq/WindowBridge";
+import {LogseqButton} from "../components/LogseqButton";
 import React from "../React";
-import { Modal } from "./core/Modal";
-import { useModal } from "./hooks/useModal";
-import { SimpleModalHeader } from "./core/ModalHeader";
-import { LogseqButton } from "../components/LogseqButton";
-import { UI } from "../UI";
-import { WindowBridge } from "../../logseq/WindowBridge";
+import {UI} from "../UI";
+import {Modal} from "./core/Modal";
+import {SimpleModalHeader} from "./core/ModalHeader";
+import {useModal} from "./hooks/useModal";
 
 export interface ButtonModalButton {
     name: string;
@@ -18,7 +18,7 @@ export interface ButtonModalProps {
     buttons: ButtonModalButton[];
     resolve: (value: number | false) => void;
     reject: (error: any) => void;
-    modalContext?: { modalId: string | null };
+    modalContext?: {modalId: string | null};
     enableOutsideClickClose?: boolean;
 }
 
@@ -28,17 +28,15 @@ export const ButtonModalComponent: React.FC<ButtonModalProps> = ({
     resolve,
     reject,
     modalContext,
-    enableOutsideClickClose = true,
+    enableOutsideClickClose = true
 }) => {
-    const { open, setOpen, returnResult } = useModal<number | false>(resolve, {
+    const {open, setOpen, returnResult} = useModal<number | false>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         enableOutsideClickClose,
         defaultResult: false,
-        modalId: modalContext?.modalId,
+        modalId: modalContext?.modalId
     });
-
-
 
     React.useEffect(() => {
         if (!open) {
@@ -68,11 +66,11 @@ export const ButtonModalComponent: React.FC<ButtonModalProps> = ({
                             }}>
                             {btn.icon && (
                                 <span
-                                    dangerouslySetInnerHTML={{ __html: btn.icon }}
+                                    dangerouslySetInnerHTML={{__html: btn.icon}}
                                     style={{
                                         marginRight: "6px",
                                         display: "inline-flex",
-                                        alignItems: "center",
+                                        alignItems: "center"
                                     }}
                                 />
                             )}
@@ -84,5 +82,3 @@ export const ButtonModalComponent: React.FC<ButtonModalProps> = ({
         </Modal>
     );
 };
-
-

@@ -1,6 +1,6 @@
+import {createModalPromise} from "../modals/utils/createModalPromise";
+import {OcclusionEditorComponent} from "../pages/OcclusionEditor";
 import React from "../React";
-import { createModalPromise } from "../modals/utils/createModalPromise";
-import { OcclusionEditorComponent } from "../pages/OcclusionEditor";
 
 export type OcclusionElement = {
     left: number;
@@ -27,19 +27,18 @@ export async function showOcclusionEditor(
     imgURL: string,
     occlusionElements: Array<OcclusionElement>,
     occlusionConfig: OcclusionConfig,
-    blockTags: string[] = [],
+    blockTags: string[] = []
 ): Promise<OcclusionData | boolean> {
     return createModalPromise<OcclusionData | boolean>(
-        (props) => (
+        (props) =>
             React.createElement(OcclusionEditorComponent, {
                 imgURL,
                 occlusionElements,
                 occlusionConfig,
                 blockTags,
-                ...props,
-            })
-        ),
+                ...props
+            }),
         {},
-        { errorMessage: "Failed to open Occlusion Editor" },
+        {errorMessage: "Failed to open Occlusion Editor"}
     );
 }

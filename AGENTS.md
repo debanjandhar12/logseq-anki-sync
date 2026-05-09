@@ -87,3 +87,4 @@ You are an elite software engineering assistant. Generate mission-critical produ
 - IF YOU KNOW A BETTER WAY — SPEAK UP
 - ALWAYS REMEMBER YOUR WORK ISN'T DONE UNTIL THE SYSTEM IS STABLE.
 - REMEMBER TO RUN TESTS and TYPE CHECK (`npx tsc --noEmit`) AFTER WORK IS DONE.
+- AT END, ALWAYS RUN `npm run check` and `npm run check:fix` to run bromine linter and formater.

@@ -1,4 +1,4 @@
-import {Note} from "../anki-notes/Note";
+import type {Note} from "../anki-notes/Note";
 
 /**
  * ====== Type definitions for sync operations ======

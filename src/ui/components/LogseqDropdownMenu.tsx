@@ -1,14 +1,15 @@
-import React, { FC } from "../React";
-import { LogseqPopover } from "./LogseqPopover";
+import type React from "../React";
+import type {FC} from "../React";
+import {LogseqPopover} from "./LogseqPopover";
 
 type MenuArr = {
     title: string;
     onClick: () => void;
 }[];
 
-export const LogseqDropdownMenu: FC<{ menuArr: MenuArr; children: React.ReactNode }> = ({
+export const LogseqDropdownMenu: FC<{menuArr: MenuArr; children: React.ReactNode}> = ({
     menuArr,
-    children,
+    children
 }) => {
     return (
         <LogseqPopover
@@ -25,13 +26,13 @@ export const LogseqDropdownMenu: FC<{ menuArr: MenuArr; children: React.ReactNod
                         margin: 0,
                         padding: 0,
                         backgroundColor: "var(--ls-primary-background-color, #fff)",
-                        width: "200px",
+                        width: "200px"
                     }}>
                     {menuArr.map((item, index) => (
                         <li
                             key={index}
                             onClick={item.onClick}
-                            style={{ padding: "5px", userSelect: "none", cursor: "pointer" }}
+                            style={{padding: "5px", userSelect: "none", cursor: "pointer"}}
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                     "var(--ls-quaternary-background-color, #ddd)";

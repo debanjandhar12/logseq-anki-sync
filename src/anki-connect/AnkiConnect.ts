@@ -1,6 +1,6 @@
 import _ from "lodash";
 import {ANKI_CLOZE_REGEXP} from "../constants";
-import { createLogger, LoggerCategory } from "../logger";
+import {createLogger, LoggerCategory} from "../logger";
 
 const logger = createLogger(LoggerCategory.AnkiConnect);
 
@@ -18,10 +18,10 @@ export function invoke(action: string, params = {}): any {
                 if (Object.getOwnPropertyNames(response).length != 2) {
                     throw "response has an unexpected number of fields";
                 }
-                if (!response.hasOwnProperty("error")) {
+                if (!Object.hasOwn(response, "error")) {
                     throw "response is missing required error field";
                 }
-                if (!response.hasOwnProperty("result")) {
+                if (!Object.hasOwn(response, "result")) {
                     throw "response is missing required result field";
                 }
                 if (response.error) {
@@ -127,13 +127,11 @@ export async function createBackup(): Promise<any> {
     for (const deck of decknames) {
         if (deck.includes("::") == false) {
             // if is not a subdeck then only create backup
-            logger.info(
-                `Created backup with name LogseqAnkiSync-Backup-${timestamp}_${deck}.apkg`,
-            );
+            logger.info(`Created backup with name LogseqAnkiSync-Backup-${timestamp}_${deck}.apkg`);
             await invoke("exportPackage", {
                 deck: deck,
                 path: `../LogseqAnkiSync-Backup-${timestamp}_${deck}.apkg`,
-                includeSched: true,
+                includeSched: true
             });
         }
     }
@@ -147,7 +145,7 @@ export async function upsertModel(
     fields: string[],
     template_front: string,
     template_back: string,
-    template_files: any,
+    template_files: any
 ): Promise<void> {
     const models = await invoke("modelNames", {});
     if (!models.includes(modelName)) {
@@ -160,9 +158,9 @@ export async function upsertModel(
                 {
                     Name: "Card",
                     Front: template_front,
-                    Back: template_back,
-                },
-            ],
+                    Back: template_back
+                }
+            ]
         });
         logger.info(`Created new model ${modelName}`);
     } else {
@@ -176,10 +174,10 @@ export async function upsertModel(
                 templates: {
                     Card: {
                         Front: template_front,
-                        Back: template_back,
-                    },
-                },
-            },
+                        Back: template_back
+                    }
+                }
+            }
         });
     } catch (e) {
         // Solves #1 by failing silenty, #1 was caused by AnkiConnect calling old Anki API but apprarenty even if it gives error, it works correctly.
@@ -195,7 +193,7 @@ export async function upsertModel(
     for (const filename in template_files)
         getcurrentTemplateFilesActions.push({
             action: "retrieveMediaFile",
-            params: {filename},
+            params: {filename}
         });
     (await invoke("multi", {actions: getcurrentTemplateFilesActions})).forEach((data, i) => {
         currentTemplateFiles[Object.keys(template_files)[i]] = data;
@@ -205,11 +203,11 @@ export async function upsertModel(
         if (data != currentTemplateFiles[filename])
             storeTemplateFilesActions.push({
                 action: "storeMediaFile",
-                params: {filename, data},
+                params: {filename, data}
             });
     }
     const updateTemplateFiles = await invoke("multi", {
-        actions: storeTemplateFilesActions,
+        actions: storeTemplateFilesActions
     });
     logger.info("Updated Template Files:", updateTemplateFiles);
 }
@@ -217,34 +215,34 @@ export async function upsertModel(
 export async function storeMediaFileByContent(filename: string, content: string): Promise<any> {
     return await invoke("storeMediaFile", {
         filename: filename,
-        data: Buffer.from(content).toString("base64"),
+        data: Buffer.from(content).toString("base64")
     });
 }
 
 export async function storeMediaFileByPath(filename: string, path: string): Promise<any> {
     return await invoke("storeMediaFile", {
         filename: filename,
-        path: path,
+        path: path
     });
 }
 
 export async function guiBrowse(query: string): Promise<any> {
     return await invoke("guiBrowse", {
-        query: query,
+        query: query
     });
 }
 
 export async function suspend(cards: number[]): Promise<any> {
     if (cards.length === 0) return;
     return await invoke("suspend", {
-        cards: cards,
+        cards: cards
     });
 }
 
 export async function unsuspend(cards: number[]): Promise<any> {
     if (cards.length === 0) return;
     return await invoke("unsuspend", {
-        cards: cards,
+        cards: cards
     });
 }
 
@@ -252,11 +250,11 @@ export async function unsuspend(cards: number[]): Promise<any> {
 
 async function updateModelFieldsIfNeeded(
     modelName: string,
-    desiredFields: string[],
+    desiredFields: string[]
 ): Promise<void> {
     // Get current fields from the model using modelFieldNames which returns fields in order
     const currentFields: string[] = await invoke("modelFieldNames", {
-        modelName: modelName,
+        modelName: modelName
     });
 
     // Check if fields need to be updated
@@ -270,7 +268,7 @@ async function updateModelFieldsIfNeeded(
 
     logger.info(`Updating model fields for ${modelName}`, {
         current: currentFields,
-        desired: desiredFields,
+        desired: desiredFields
     });
 
     // Add fields
@@ -279,7 +277,7 @@ async function updateModelFieldsIfNeeded(
         try {
             await invoke("modelFieldAdd", {
                 modelName: modelName,
-                fieldName: fieldName,
+                fieldName: fieldName
             });
             logger.info(`Added field "${fieldName}" to model ${modelName}`);
         } catch (e) {
@@ -290,7 +288,7 @@ async function updateModelFieldsIfNeeded(
 
     // Reorder fields to match desired order if needed
     const updatedFields: string[] = await invoke("modelFieldNames", {
-        modelName: modelName,
+        modelName: modelName
     });
     for (let i = 0; i < desiredFields.length; i++) {
         const fieldName = desiredFields[i];
@@ -301,9 +299,11 @@ async function updateModelFieldsIfNeeded(
                 await invoke("modelFieldReposition", {
                     modelName: modelName,
                     fieldName: fieldName,
-                    index: i,
+                    index: i
                 });
-                logger.info(`Repositioned field "${fieldName}" to index ${i} in model ${modelName}`);
+                logger.info(
+                    `Repositioned field "${fieldName}" to index ${i} in model ${modelName}`
+                );
                 // Update our local copy to reflect the repositioning
                 updatedFields.splice(currentIndex, 1);
                 updatedFields.splice(i, 0, fieldName);
@@ -320,7 +320,7 @@ async function updateModelFieldsIfNeeded(
         try {
             await invoke("modelFieldRemove", {
                 modelName: modelName,
-                fieldName: fieldName,
+                fieldName: fieldName
             });
             logger.info(`Removed field "${fieldName}" from model ${modelName}`);
         } catch (e) {

@@ -1,16 +1,16 @@
-import logseq_anki_sync_css from "./_logseq_anki_sync.scss?inline";
-import logseq_anki_sync_front_css from "./_logseq_anki_sync_front.css?inline";
-import logseq_anki_sync_back_css from "./_logseq_anki_sync_back.css?inline";
+import {LogseqProxy} from "../logseq/LogseqProxy";
 import logseq_anki_sync_js from "./_logseq_anki_sync.js?string";
-import logseq_anki_sync_front_js from "./_logseq_anki_sync_front.js?string";
+import logseq_anki_sync_css from "./_logseq_anki_sync.scss?inline";
+import logseq_anki_sync_back_css from "./_logseq_anki_sync_back.css?inline";
 import logseq_anki_sync_back_js from "./_logseq_anki_sync_back.js?string";
+import logseq_anki_sync_front_css from "./_logseq_anki_sync_front.css?inline";
+import logseq_anki_sync_front_js from "./_logseq_anki_sync_front.js?string";
 import template from "./template.html?raw";
-import { LogseqProxy } from "../logseq/LogseqProxy";
 
 function getTemplate() {
     const templateModifiedBasedOnUserSetting = template;
-    const { ankiFieldOptions } = LogseqProxy.Settings.getPluginSettings();
-    if(!Array.isArray(ankiFieldOptions)) return template;
+    const {ankiFieldOptions} = LogseqProxy.Settings.getPluginSettings();
+    if (!Array.isArray(ankiFieldOptions)) return template;
 
     let modifiedField = "{{cloze:Text}}";
     if (ankiFieldOptions.includes("tts")) {
@@ -59,6 +59,6 @@ export function getTemplateMediaFiles() {
         "_logseq_anki_sync_back.css": logseq_anki_sync_back_css,
         "_logseq_anki_sync.js": logseq_anki_sync_js,
         "_logseq_anki_sync_front.js": logseq_anki_sync_front_js,
-        "_logseq_anki_sync_back.js": logseq_anki_sync_back_js,
+        "_logseq_anki_sync_back.js": logseq_anki_sync_back_js
     };
 }

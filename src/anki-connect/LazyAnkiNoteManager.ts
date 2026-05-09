@@ -1,9 +1,15 @@
-import { AnkiNoteCache } from "./internal/AnkiNoteCache";
-import { AddNoteOperation } from "./operations/AddNoteOperation";
-import { UpdateNoteOperation } from "./operations/UpdateNoteOperation";
-import { DeleteNoteOperation } from "./operations/DeleteNoteOperation";
-import { AssetOperation } from "./operations/AssetOperation";
-import { AnkiNoteFields, AnkiNoteInfo, AddNotesResult, UpdateNotesResult, DeleteNotesResult } from "./types";
+import {AnkiNoteCache} from "./internal/AnkiNoteCache";
+import {AddNoteOperation} from "./operations/AddNoteOperation";
+import {AssetOperation} from "./operations/AssetOperation";
+import {DeleteNoteOperation} from "./operations/DeleteNoteOperation";
+import {UpdateNoteOperation} from "./operations/UpdateNoteOperation";
+import type {
+    AddNotesResult,
+    AnkiNoteFields,
+    AnkiNoteInfo,
+    DeleteNotesResult,
+    UpdateNotesResult
+} from "./types";
 
 export class LazyAnkiNoteManager {
     public modelName: string;

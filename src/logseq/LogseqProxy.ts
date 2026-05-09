@@ -1,25 +1,26 @@
 import "@logseq/libs";
 import {
-    BlockEntity,
-    BlockIdentity,
+    type BlockEntity,
+    type BlockIdentity,
     BlockUUID,
-    EntityID,
-    PageEntity,
-    PageIdentity, PropertySchema,
-    SettingSchemaDesc,
+    type EntityID,
+    type PageEntity,
+    type PageIdentity,
+    type PropertySchema,
+    type SettingSchemaDesc
 } from "@logseq/libs/dist/LSPlugin";
 import AwaitLock from "await-lock";
-import { PluginSettings } from "../settings";
 import pMemoize, {pMemoizeClear} from "p-memoize";
+import platform from "platform";
+import {createLogger, LoggerCategory} from "../logger";
+import type {PluginSettings} from "../settings";
 import objectHashOptimized from "../utils/objectHashOptimized";
-import {WindowParentBridge} from "./WindowParentBridge";
-import { LogseqAppInfoFetcher } from "./LogseqAppInfoFetcher";
-import { LogseqPropertiesHelperProxy } from "./LogseqPropertiesHelper";
-import { LogseqNamespaceHelperProxy } from "./LogseqNamespaceHelper";
 import getNameFromPage from "./getNameFromPage";
+import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
+import {LogseqNamespaceHelperProxy} from "./LogseqNamespaceHelper";
+import {LogseqPropertiesHelperProxy} from "./LogseqPropertiesHelper";
+import {WindowParentBridge} from "./WindowParentBridge";
 
-import { createLogger, LoggerCategory } from "../logger";
-import platform from 'platform';
 const logger = createLogger(LoggerCategory.LogseqWrappers);
 
 /***
@@ -27,111 +28,150 @@ const logger = createLogger(LoggerCategory.LogseqWrappers);
  * Fixes the following issues: #58 (synchronization-safety is enabled only for macos / dev mode)
  * */
 
-const isMacOs = platform.os?.family?.includes('Mac') || platform.os?.family?.includes('OS X');
-const getLogseqLock = isMacOs || process.env.NODE_ENV !== 'production' ? new AwaitLock() :
-        {acquireAsync: async (): Promise<void> => {}, release: async (): Promise<void> => {}}
+const isMacOs = platform.os?.family?.includes("Mac") || platform.os?.family?.includes("OS X");
+const getLogseqLock =
+    isMacOs || process.env.NODE_ENV !== "production"
+        ? new AwaitLock()
+        : {acquireAsync: async (): Promise<void> => {}, release: async (): Promise<void> => {}};
 
 export namespace LogseqProxy {
     export class Editor {
-        static getBlock = pMemoize(async (
-            srcBlock: BlockIdentity | EntityID,
-            opts: Partial<{includeChildren: boolean, suppressErrors: boolean}> = {suppressErrors: true}
-        ): Promise<BlockEntity | null> => {
-            srcBlock = typeof srcBlock === "string" ? srcBlock.toLowerCase() : srcBlock; // Convert to lowercase to avoid case sensitivity issues
-            let block = null;
-            await getLogseqLock.acquireAsync();
-            try {
-                block = await LogseqPropertiesHelperProxy.getBlock(srcBlock, opts);
-            } catch (e) {
-                logger.error(e);
-                if (!opts.suppressErrors) throw e;
-            } finally {
-                getLogseqLock.release();
-            }
-            return block;
-        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
-
-        static getPage = pMemoize(async (srcPage: PageIdentity | EntityID, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}): Promise<PageEntity | null> => {
-            srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
-            let page = null;
-            await getLogseqLock.acquireAsync();
-            try {
-                // Use helper method to fetch page with properties
-                page = await LogseqPropertiesHelperProxy.getPage(srcPage);
-            } catch (e) {
-                logger.error(e);
-                if (!opts.suppressErrors) throw e;
-            } finally {
-                getLogseqLock.release();
-            }
-            return page;
-        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
-
-        static getPageBlocksTree = pMemoize(async (srcPage: PageIdentity | EntityID, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}): Promise<BlockEntity[]> => {
-            srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
-            let pageBlockTree = [];
-            await getLogseqLock.acquireAsync();
-            try {
-                pageBlockTree = await LogseqPropertiesHelperProxy.getPageBlocksTree(srcPage);
-            } catch (e) {
-                logger.error(e);
-                if (!opts.suppressErrors) throw e;
-            } finally {
-                getLogseqLock.release();
-            }
-            return pageBlockTree;
-        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
-
-        static getParentNamespacePages = pMemoize(async (
-            page: PageEntity | null | undefined,
-            opts: Partial<{suppressErrors: boolean; includeLibrary: boolean}> = {suppressErrors: true, includeLibrary: true}
-        ): Promise<PageEntity[]> => {
-            if (!page) return [];
-            // we do not acquire lock here as LogseqNamespaceHelperProxy.getParentNamespacePages
-            // uses LogseqProxy.Editor.getPage which has separate lock
-            const { suppressErrors = true, includeLibrary = true } = opts;
-            try {
-                return await LogseqNamespaceHelperProxy.getParentNamespacePages(page, { includeLibrary });
-            } catch (e) {
-                logger.error(e);
-                if (!suppressErrors) throw e;
-            }
-            return [];
-        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
-
-        static getFullPageName = pMemoize(async (
-            page: PageEntity | null | undefined,
-            opts: Partial<{suppressErrors: boolean, includeLibrary : boolean}> = {suppressErrors: true, includeLibrary: true }
-        ): Promise<string> => {
-            if (!page) return "";
-            // we do not acquire lock here as we call methods that have separate lock
-            try {
-                const isDb = await LogseqProxy.App.checkCurrentIsDbGraph();
-                const baseName = getNameFromPage(page) || "";
-
-                if (!isDb) {
-                    return baseName;
+        static getBlock = pMemoize(
+            async (
+                srcBlock: BlockIdentity | EntityID,
+                opts: Partial<{includeChildren: boolean; suppressErrors: boolean}> = {
+                    suppressErrors: true
                 }
-
-                const parents = await LogseqProxy.Editor.getParentNamespacePages(page, { includeLibrary: opts.includeLibrary });
-                if (parents.length === 0) {
-                    return baseName;
+            ): Promise<BlockEntity | null> => {
+                srcBlock = typeof srcBlock === "string" ? srcBlock.toLowerCase() : srcBlock; // Convert to lowercase to avoid case sensitivity issues
+                let block = null;
+                await getLogseqLock.acquireAsync();
+                try {
+                    block = await LogseqPropertiesHelperProxy.getBlock(srcBlock, opts);
+                } catch (e) {
+                    logger.error(e);
+                    if (!opts.suppressErrors) throw e;
+                } finally {
+                    getLogseqLock.release();
                 }
+                return block;
+            },
+            {cacheKey: (arguments_) => objectHashOptimized(arguments_)}
+        );
 
-                const segments = [
-                    ...parents.reverse().map(p => getNameFromPage(p)),
-                    baseName
-                ];
-                return segments.filter(s => !!s).join("/");
-            } catch (e) {
-                logger.error(e);
-                if (!opts.suppressErrors) throw e;
-            }
-            return "";
-        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
+        static getPage = pMemoize(
+            async (
+                srcPage: PageIdentity | EntityID,
+                opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
+            ): Promise<PageEntity | null> => {
+                srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
+                let page = null;
+                await getLogseqLock.acquireAsync();
+                try {
+                    // Use helper method to fetch page with properties
+                    page = await LogseqPropertiesHelperProxy.getPage(srcPage);
+                } catch (e) {
+                    logger.error(e);
+                    if (!opts.suppressErrors) throw e;
+                } finally {
+                    getLogseqLock.release();
+                }
+                return page;
+            },
+            {cacheKey: (arguments_) => objectHashOptimized(arguments_)}
+        );
 
-        static async upsertBlockProperty(block: BlockIdentity,
-            key: string, value: any, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}) {
+        static getPageBlocksTree = pMemoize(
+            async (
+                srcPage: PageIdentity | EntityID,
+                opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
+            ): Promise<BlockEntity[]> => {
+                srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
+                let pageBlockTree = [];
+                await getLogseqLock.acquireAsync();
+                try {
+                    pageBlockTree = await LogseqPropertiesHelperProxy.getPageBlocksTree(srcPage);
+                } catch (e) {
+                    logger.error(e);
+                    if (!opts.suppressErrors) throw e;
+                } finally {
+                    getLogseqLock.release();
+                }
+                return pageBlockTree;
+            },
+            {cacheKey: (arguments_) => objectHashOptimized(arguments_)}
+        );
+
+        static getParentNamespacePages = pMemoize(
+            async (
+                page: PageEntity | null | undefined,
+                opts: Partial<{suppressErrors: boolean; includeLibrary: boolean}> = {
+                    suppressErrors: true,
+                    includeLibrary: true
+                }
+            ): Promise<PageEntity[]> => {
+                if (!page) return [];
+                // we do not acquire lock here as LogseqNamespaceHelperProxy.getParentNamespacePages
+                // uses LogseqProxy.Editor.getPage which has separate lock
+                const {suppressErrors = true, includeLibrary = true} = opts;
+                try {
+                    return await LogseqNamespaceHelperProxy.getParentNamespacePages(page, {
+                        includeLibrary
+                    });
+                } catch (e) {
+                    logger.error(e);
+                    if (!suppressErrors) throw e;
+                }
+                return [];
+            },
+            {cacheKey: (arguments_) => objectHashOptimized(arguments_)}
+        );
+
+        static getFullPageName = pMemoize(
+            async (
+                page: PageEntity | null | undefined,
+                opts: Partial<{suppressErrors: boolean; includeLibrary: boolean}> = {
+                    suppressErrors: true,
+                    includeLibrary: true
+                }
+            ): Promise<string> => {
+                if (!page) return "";
+                // we do not acquire lock here as we call methods that have separate lock
+                try {
+                    const isDb = await LogseqProxy.App.checkCurrentIsDbGraph();
+                    const baseName = getNameFromPage(page) || "";
+
+                    if (!isDb) {
+                        return baseName;
+                    }
+
+                    const parents = await LogseqProxy.Editor.getParentNamespacePages(page, {
+                        includeLibrary: opts.includeLibrary
+                    });
+                    if (parents.length === 0) {
+                        return baseName;
+                    }
+
+                    const segments = [
+                        ...parents.reverse().map((p) => getNameFromPage(p)),
+                        baseName
+                    ];
+                    return segments.filter((s) => !!s).join("/");
+                } catch (e) {
+                    logger.error(e);
+                    if (!opts.suppressErrors) throw e;
+                }
+                return "";
+            },
+            {cacheKey: (arguments_) => objectHashOptimized(arguments_)}
+        );
+
+        static async upsertBlockProperty(
+            block: BlockIdentity,
+            key: string,
+            value: any,
+            opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
+        ) {
             await getLogseqLock.acquireAsync();
             try {
                 await logseq.Editor.upsertBlockProperty(block, key, value);
@@ -158,7 +198,7 @@ export namespace LogseqProxy {
                 if (!exists) {
                     isDb
                         ? await logseq.Editor.createTag(tagName)
-                        : await logseq.Editor.createPage(tagName, {}, { redirect: false });
+                        : await logseq.Editor.createPage(tagName, {}, {redirect: false});
                 }
             } catch (e) {
                 logger.error(e);
@@ -182,7 +222,9 @@ export namespace LogseqProxy {
     }
     export class DB {
         static async datascriptQuery<T = any>(
-            query: string, opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}): Promise<T> {
+            query: string,
+            opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
+        ): Promise<T> {
             let result;
             await getLogseqLock.acquireAsync();
             try {
@@ -196,11 +238,13 @@ export namespace LogseqProxy {
             return result;
         }
 
-        static registeredDBListeners: Array<(event: {blocks: any[]; txData: any; txMeta: any}) => void> = [];
+        static registeredDBListeners: Array<
+            (event: {blocks: any[]; txData: any; txMeta: any}) => void
+        > = [];
         static registerDBChangeListener(
-            listener: (event: {blocks: any[]; txData: any; txMeta: any}) => void,
+            listener: (event: {blocks: any[]; txData: any; txMeta: any}) => void
         ): void {
-            this.registeredDBListeners.push(listener);
+            DB.registeredDBListeners.push(listener);
         }
     }
     export class Settings {
@@ -208,11 +252,13 @@ export namespace LogseqProxy {
             logseq.useSettingsSchema(schemas);
         }
 
-        static registeredSettingsChangeListeners: Array<(newSettings: PluginSettings, oldSettings: PluginSettings) => void> = [];
+        static registeredSettingsChangeListeners: Array<
+            (newSettings: PluginSettings, oldSettings: PluginSettings) => void
+        > = [];
         static registerSettingsChangeListener(
-            listener: (newSettings: PluginSettings, oldSettings: PluginSettings) => void,
+            listener: (newSettings: PluginSettings, oldSettings: PluginSettings) => void
         ): void {
-            this.registeredSettingsChangeListeners.push(listener);
+            Settings.registeredSettingsChangeListeners.push(listener);
         }
 
         static getPluginSettings(): PluginSettings {
@@ -220,25 +266,32 @@ export namespace LogseqProxy {
         }
     }
     export class Assets {
-        static listFilesOfCurrentGraph = pMemoize(async (exts?: string | string[]): Promise<{
-            accessTime: number;
-            birthTime: number;
-            changeTime: number;
-            modifiedTime: number;
-            path: string;
-            size: number;
-        }[]> => {
-            let files = [];
-            await getLogseqLock.acquireAsync();
-            try {
-                files = await logseq.Assets.listFilesOfCurrentGraph(exts);
-            } catch (e) {
-                logger.error(e);
-            } finally {
-                getLogseqLock.release();
-            }
-            return files;
-        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
+        static listFilesOfCurrentGraph = pMemoize(
+            async (
+                exts?: string | string[]
+            ): Promise<
+                {
+                    accessTime: number;
+                    birthTime: number;
+                    changeTime: number;
+                    modifiedTime: number;
+                    path: string;
+                    size: number;
+                }[]
+            > => {
+                let files = [];
+                await getLogseqLock.acquireAsync();
+                try {
+                    files = await logseq.Assets.listFilesOfCurrentGraph(exts);
+                } catch (e) {
+                    logger.error(e);
+                } finally {
+                    getLogseqLock.release();
+                }
+                return files;
+            },
+            {cacheKey: (arguments_) => objectHashOptimized(arguments_)}
+        );
     }
     export class App {
         static checkCurrentIsDbGraph = pMemoize(async () => {
@@ -251,12 +304,12 @@ export namespace LogseqProxy {
 
         static registeredGraphChangeListeners: Array<(e: any) => void> = [];
         static registerGraphChangeListener(listener: (e: any) => void): void {
-            this.registeredGraphChangeListeners.push(listener);
+            App.registeredGraphChangeListeners.push(listener);
         }
 
         static registeredPluginUnloadListeners: Array<() => void> = [];
         static registerPluginUnloadListener(listener: () => void): void {
-            this.registeredPluginUnloadListeners.push(listener);
+            App.registeredPluginUnloadListeners.push(listener);
         }
     }
     export function init() {
@@ -281,7 +334,9 @@ export namespace LogseqProxy {
             }
         });
         WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
-            logger.info("Clearing memoization caches for getBlock, getPage, getPageBlocksTree, namespace helpers, listFilesOfCurrentGraph, and checkCurrentIsDbGraph");
+            logger.info(
+                "Clearing memoization caches for getBlock, getPage, getPageBlocksTree, namespace helpers, listFilesOfCurrentGraph, and checkCurrentIsDbGraph"
+            );
             pMemoizeClear(LogseqProxy.Editor.getBlock);
             pMemoizeClear(LogseqProxy.Editor.getPage);
             pMemoizeClear(LogseqProxy.Editor.getPageBlocksTree);

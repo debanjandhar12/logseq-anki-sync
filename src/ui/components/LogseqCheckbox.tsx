@@ -1,4 +1,5 @@
-import React, { FC, useRef, useEffect } from "../React";
+import type React from "../React";
+import {type FC, useEffect, useRef} from "../React";
 
 type LogseqCheckboxProps = {
     children?: React.ReactNode;
@@ -9,12 +10,12 @@ type LogseqCheckboxProps = {
 };
 
 export const LogseqCheckbox: FC<LogseqCheckboxProps> = ({
-                                                            children,
-                                                            onChange,
-                                                            disabled = false,
-                                                            checked = false,
-                                                            indeterminate = false,
-                                                        }) => {
+    children,
+    onChange,
+    disabled = false,
+    checked = false,
+    indeterminate = false
+}) => {
     const checkboxRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -24,15 +25,15 @@ export const LogseqCheckbox: FC<LogseqCheckboxProps> = ({
     }, [indeterminate]);
 
     return (
-        <label style={{ display: "flex", alignItems: "center" }}>
+        <label style={{display: "flex", alignItems: "center"}}>
             <input
                 type="checkbox"
                 disabled={disabled}
                 checked={checked}
                 className="form-checkbox h-4 w-4 transition duration-150 ease-in-out"
                 style={{
-                    borderRadius: 'calc(var(--radius) - 4px)',
-                    accentColor: 'var(--primary)'
+                    borderRadius: "calc(var(--radius) - 4px)",
+                    accentColor: "var(--primary)"
                 }}
                 onChange={onChange}
                 ref={checkboxRef}

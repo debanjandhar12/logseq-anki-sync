@@ -1,9 +1,9 @@
-import React from "../React";
-import { Modal } from "./core/Modal";
-import { useModal } from "./hooks/useModal";
-import { SimpleModalHeader } from "./core/ModalHeader";
-import { ModalFooter } from "./core/ModalFooter";
-import { UI } from "../UI";
+import type React from "../React";
+import {UI} from "../UI";
+import {Modal} from "./core/Modal";
+import {ModalFooter} from "./core/ModalFooter";
+import {SimpleModalHeader} from "./core/ModalHeader";
+import {useModal} from "./hooks/useModal";
 
 export interface ConfirmModalProps {
     message: string;
@@ -11,7 +11,7 @@ export interface ConfirmModalProps {
     cancelText?: string;
     resolve: (value: boolean) => void;
     reject: (error: any) => void;
-    modalContext?: { modalId: string | null };
+    modalContext?: {modalId: string | null};
 }
 
 export const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
@@ -20,15 +20,15 @@ export const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
     cancelText = "Cancel",
     resolve,
     reject,
-    modalContext,
+    modalContext
 }) => {
-    const { open, setOpen, handleConfirm, handleCancel } = useModal<boolean>(resolve, {
+    const {open, setOpen, handleConfirm, handleCancel} = useModal<boolean>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         enableEnterKey: true,
         enableOutsideClickClose: false,
         defaultResult: true,
-        modalId: modalContext?.modalId,
+        modalId: modalContext?.modalId
     });
 
     return (
@@ -54,5 +54,3 @@ export const ConfirmModalComponent: React.FC<ConfirmModalProps> = ({
         </Modal>
     );
 };
-
-

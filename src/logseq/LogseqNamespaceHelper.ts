@@ -1,9 +1,9 @@
-import { PageEntity } from "@logseq/libs/dist/LSPlugin";
+import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import getNameFromPage from "./getNameFromPage";
-import { LogseqPropertiesHelper } from "./LogseqPropertiesHelper";
-import { LogseqProxy } from "./LogseqProxy";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
+import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
+import {LogseqProxy} from "./LogseqProxy";
 
 export class LogseqNamespaceHelper {
     protected static async getPage(pageId: number): Promise<PageEntity | null> {
@@ -25,7 +25,7 @@ export class LogseqNamespaceHelper {
         }
 
         if (parentId != null && parentId !== page.id) {
-            return await this.getPage(parentId as number);
+            return await LogseqNamespaceHelper.getPage(parentId as number);
         }
         return null;
     }
@@ -40,16 +40,16 @@ export class LogseqNamespaceHelper {
      */
     static async getParentNamespacePages(
         page: PageEntity,
-        opts: Partial<{ includeLibrary: boolean }> = { includeLibrary: true }
+        opts: Partial<{includeLibrary: boolean}> = {includeLibrary: true}
     ): Promise<PageEntity[]> {
-        const { includeLibrary = true } = opts;
+        const {includeLibrary = true} = opts;
         const parents: PageEntity[] = [];
         const visited = new Set<number>();
         if (page.id) visited.add(page.id);
 
         let current = page;
         while (true) {
-            const parent = await this.getParentPage(current);
+            const parent = await LogseqNamespaceHelper.getParentPage(current);
             if (!parent) break;
             if (!includeLibrary && getNameFromPage(parent)?.toLowerCase() === "library") break;
 
@@ -67,7 +67,7 @@ export class LogseqNamespaceHelper {
      * Gets all descendant pages recursively.
      */
     static async getNamespaceDescendants(page: PageEntity): Promise<PageEntity[]> {
-        if (await this.checkCurrentIsDbGraph()) {
+        if (await LogseqNamespaceHelper.checkCurrentIsDbGraph()) {
             // logseq.Editor.getPagesFromNamespace does not work for db ver
             // Hence, we use query to fetch namespace decendants
             const query = `[:find ?child
@@ -79,15 +79,15 @@ export class LogseqNamespaceHelper {
                 [?child :block/tags :logseq.class/Page]]`;
 
             const recursive_hierarchy = await logseq.DB.datascriptQuery(query);
-            const result : PageEntity[]  = [];
+            const result: PageEntity[] = [];
             for (const [page_id] of recursive_hierarchy) {
-                const block = await this.getPage(page_id);
+                const block = await LogseqNamespaceHelper.getPage(page_id);
                 if (!block) break;
                 result.push(block);
             }
             return result;
         }
-        return await logseq.Editor.getPagesFromNamespace(getNameFromPage(page));    // Must pass name - page id throws error
+        return await logseq.Editor.getPagesFromNamespace(getNameFromPage(page)); // Must pass name - page id throws error
     }
 }
 

@@ -1,6 +1,6 @@
+import {createModalPromise} from "../modals/utils/createModalPromise";
+import {HighlightMaskEditorComponent} from "../pages/HighlightMaskEditor";
 import React from "../React";
-import { createModalPromise } from "../modals/utils/createModalPromise";
-import { HighlightMaskEditorComponent } from "../pages/HighlightMaskEditor";
 
 export type HighlightMaskElement = {
     cId: number;
@@ -24,19 +24,18 @@ export async function showHighlightMaskEditor(
     rawText: string,
     highlightElements: Array<HighlightMaskElement>,
     highlightConfig: HighlightMaskConfig,
-    blockTags: string[] = [],
+    blockTags: string[] = []
 ): Promise<HighlightMaskData | boolean> {
     return createModalPromise<HighlightMaskData | boolean>(
-        (props) => (
+        (props) =>
             React.createElement(HighlightMaskEditorComponent, {
                 rawText,
                 highlightElements,
                 highlightConfig,
                 blockTags,
-                ...props,
-            })
-        ),
+                ...props
+            }),
         {},
-        { errorMessage: "Failed to open Highlight Mask Editor" },
+        {errorMessage: "Failed to open Highlight Mask Editor"}
     );
 }

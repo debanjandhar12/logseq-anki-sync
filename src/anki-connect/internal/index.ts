@@ -1,2 +1,2 @@
-export { AnkiActionQueue } from "./AnkiActionQueue";
-export { AnkiNoteCache } from "./AnkiNoteCache";
+export {AnkiActionQueue} from "./AnkiActionQueue";
+export {AnkiNoteCache} from "./AnkiNoteCache";

@@ -1,13 +1,14 @@
-import {BlockEntity, BlockPageName, BlockUUID} from "@logseq/libs/dist/LSPlugin";
+import {type BlockEntity, BlockPageName, type BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {
     LOGSEQ_BLOCK_REF_REGEXP,
+    LOGSEQ_EMBDED_BLOCK_REGEXP,
     LOGSEQ_EMBDED_PAGE_REGEXP,
-    LOGSEQ_EMBDED_BLOCK_REGEXP, LOGSEQ_PAGE_REF_REGEXP,
+    LOGSEQ_PAGE_REF_REGEXP
 } from "../constants";
-import {LogseqProxy} from "./LogseqProxy";
-import {LogseqContentPreprocessorProxy} from "./LogseqContentPreprocessor";
-import getUUIDFromBlock from "./getUUIDFromBlock";
 import {safeParseInt} from "../utils/utils";
+import getUUIDFromBlock from "./getUUIDFromBlock";
+import {LogseqContentPreprocessorProxy} from "./LogseqContentPreprocessor";
+import {LogseqProxy} from "./LogseqProxy";
 
 export interface BlockDependency {
     type: "Block";
@@ -22,7 +23,7 @@ export interface PageDependency {
 export type DependencyEntity = BlockDependency | PageDependency;
 export default async function getLogseqContentDirectDependencies(
     content: string,
-    format = "markdown",
+    format = "markdown"
 ): Promise<DependencyEntity[]> {
     // Normalize content to our internal format
     if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
@@ -40,7 +41,7 @@ export default async function getLogseqContentDirectDependencies(
     let match;
     while ((match = LOGSEQ_EMBDED_BLOCK_REGEXP.exec(content))) {
         const block = await LogseqProxy.Editor.getBlock(match[1], {
-            includeChildren: true,
+            includeChildren: true
         });
         // Add all children of block as dependencies
         if (block) {
@@ -68,7 +69,8 @@ export default async function getLogseqContentDirectDependencies(
         const pageIdStr = match[1];
         const pageId = safeParseInt(pageIdStr);
 
-        const isValidNumber = typeof pageId === 'number' && !isNaN(pageId) && Number.isInteger(pageId);
+        const isValidNumber =
+            typeof pageId === "number" && !isNaN(pageId) && Number.isInteger(pageId);
         if (!isValidNumber) continue;
 
         pageDependency.add(pageId);
@@ -77,10 +79,10 @@ export default async function getLogseqContentDirectDependencies(
 
     return [
         ...Array.from(blockDependency).map(
-            (block) => ({type: "Block", value: block}) as DependencyEntity,
+            (block) => ({type: "Block", value: block}) as DependencyEntity
         ),
         ...Array.from(pageDependency).map(
-            (page) => ({type: "Page", value: page}) as DependencyEntity,
-        ),
+            (page) => ({type: "Page", value: page}) as DependencyEntity
+        )
     ];
 }

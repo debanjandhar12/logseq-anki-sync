@@ -1,9 +1,9 @@
+import {WindowBridge} from "../../logseq/WindowBridge";
+import {LogseqButton} from "../components/LogseqButton";
 import React from "../React";
-import { Modal } from "./core/Modal";
-import { useModal } from "./hooks/useModal";
-import { LogseqButton } from "../components/LogseqButton";
-import { UI } from "../UI";
-import { WindowBridge } from "../../logseq/WindowBridge";
+import {UI} from "../UI";
+import {Modal} from "./core/Modal";
+import {useModal} from "./hooks/useModal";
 
 export interface InputModalProps {
     title?: string;
@@ -13,7 +13,7 @@ export interface InputModalProps {
     maxLength?: number;
     resolve: (value: string | null) => void;
     reject: (error: any) => void;
-    modalContext?: { modalId: string | null };
+    modalContext?: {modalId: string | null};
 }
 
 export const InputModalComponent: React.FC<InputModalProps> = ({
@@ -24,16 +24,16 @@ export const InputModalComponent: React.FC<InputModalProps> = ({
     maxLength,
     resolve,
     reject,
-    modalContext,
+    modalContext
 }) => {
     const [inputValue, setInputValue] = React.useState(initialValue);
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-    const { open, setOpen, returnResult } = useModal<string | null>(resolve, {
+    const {open, setOpen, returnResult} = useModal<string | null>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         defaultResult: null,
-        modalId: modalContext?.modalId,
+        modalId: modalContext?.modalId
     });
 
     const handleConfirm = React.useCallback(() => {
@@ -95,14 +95,14 @@ export const InputModalComponent: React.FC<InputModalProps> = ({
             setOpen={setOpen}
             onClose={() => UI.hideModal(modalContext?.modalId)}
             zDepth="high">
-            <div style={{ margin: "1.25rem" }}>
+            <div style={{margin: "1.25rem"}}>
                 {title && (
                     <h2
                         style={{
                             margin: "0 0 0.75rem 0",
                             fontSize: "1.2rem",
                             fontWeight: 600,
-                            color: "var(--ls-primary-text-color, #333)",
+                            color: "var(--ls-primary-text-color, #333)"
                         }}>
                         {title}
                     </h2>
@@ -114,12 +114,12 @@ export const InputModalComponent: React.FC<InputModalProps> = ({
                             opacity: 0.7,
                             fontSize: "0.875rem",
                             lineHeight: 1.5,
-                            color: "var(--ls-secondary-text-color, #666)",
+                            color: "var(--ls-secondary-text-color, #666)"
                         }}>
                         {message}
                     </p>
                 )}
-                <div style={{ marginBottom: "1rem" }}>
+                <div style={{marginBottom: "1rem"}}>
                     <textarea
                         ref={textareaRef}
                         className="form-input"
@@ -137,7 +137,7 @@ export const InputModalComponent: React.FC<InputModalProps> = ({
                             color: "var(--ls-primary-text-color, #333)",
                             outline: "none",
                             boxSizing: "border-box",
-                            transition: "border-color 0.15s ease",
+                            transition: "border-color 0.15s ease"
                         }}
                         onFocus={(e) => {
                             e.target.style.borderColor = "var(--ls-link-text-color, #4a9eff)";
@@ -156,7 +156,7 @@ export const InputModalComponent: React.FC<InputModalProps> = ({
                                 color:
                                     inputValue.length >= maxLength
                                         ? "var(--ls-error-text-color, #e53e3e)"
-                                        : "var(--ls-secondary-text-color, #999)",
+                                        : "var(--ls-secondary-text-color, #999)"
                             }}>
                             {inputValue.length}/{maxLength}
                         </div>
@@ -167,7 +167,7 @@ export const InputModalComponent: React.FC<InputModalProps> = ({
                         display: "flex",
                         justifyContent: "flex-end",
                         gap: "0.5rem",
-                        paddingTop: "0.25rem",
+                        paddingTop: "0.25rem"
                     }}>
                     <LogseqButton onClick={handleCancel} color="ghost" size="sm">
                         Cancel
@@ -180,5 +180,3 @@ export const InputModalComponent: React.FC<InputModalProps> = ({
         </Modal>
     );
 };
-
-

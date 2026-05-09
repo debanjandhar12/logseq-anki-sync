@@ -1,6 +1,6 @@
-import {Addon} from "./Addon";
-import {PreviewInAnkiContextMenu} from "./PreviewInAnki";
+import type {Addon} from "./Addon";
 import {HideOcclusionData} from "./HideOcclusionData";
+import {PreviewInAnkiContextMenu} from "./PreviewInAnki";
 // import {AnkiFeatureExplorer} from "./LogseqAnkiFeatureExplorer";
 
 /**

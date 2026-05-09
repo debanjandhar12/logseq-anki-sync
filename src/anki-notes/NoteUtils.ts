@@ -2,8 +2,8 @@
  * Utility functions for Note classes
  */
 
-import { HTMLFile, LogseqToHtmlConverterProxy } from "../logseq/LogseqToHtmlConverter";
 import _ from "lodash";
+import {type HTMLFile, LogseqToHtmlConverterProxy} from "../logseq/LogseqToHtmlConverter";
 
 /**
  * Appends extra property content to an HTMLFile if present.

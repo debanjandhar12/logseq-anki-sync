@@ -1,7 +1,8 @@
-import React, { FC, useState, useRef, useEffect, useCallback } from "../React";
-import { computePosition, flip, shift, offset, autoUpdate, Placement } from "@floating-ui/react";
-import { createPortal } from "../ReactDOM";
-import { WindowBridge } from "../../logseq/WindowBridge";
+import {autoUpdate, computePosition, flip, offset, type Placement, shift} from "@floating-ui/react";
+import {WindowBridge} from "../../logseq/WindowBridge";
+import type React from "../React";
+import {type FC, useCallback, useEffect, useRef, useState} from "../React";
+import {createPortal} from "../ReactDOM";
 
 interface LogseqTooltipProps {
     content: React.ReactNode;
@@ -14,10 +15,10 @@ export const LogseqTooltip: FC<LogseqTooltipProps> = ({
     content,
     children,
     placement = "top",
-    delayDuration = 200,
+    delayDuration = 200
 }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [position, setPosition] = useState({x: 0, y: 0});
     const [isPositioned, setIsPositioned] = useState(false);
     const triggerRef = useRef<HTMLElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
@@ -32,9 +33,9 @@ export const LogseqTooltip: FC<LogseqTooltipProps> = ({
             }
             computePosition(triggerRef.current, tooltipRef.current, {
                 placement,
-                middleware: [offset(8), flip(), shift({ padding: 8 })],
-            }).then(({ x, y }) => {
-                setPosition({ x, y });
+                middleware: [offset(8), flip(), shift({padding: 8})]
+            }).then(({x, y}) => {
+                setPosition({x, y});
                 setIsPositioned(true);
             });
         }
@@ -103,7 +104,7 @@ export const LogseqTooltip: FC<LogseqTooltipProps> = ({
                     fontSize: "0.875rem",
                     lineHeight: "1.25rem",
                     maxWidth: "16rem",
-                    whiteSpace: "pre-wrap",
+                    whiteSpace: "pre-wrap"
                 }}>
                 {content}
             </div>
@@ -115,11 +116,10 @@ export const LogseqTooltip: FC<LogseqTooltipProps> = ({
                 ref={triggerRef}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                style={{ display: "inline-block" }}>
+                style={{display: "inline-block"}}>
                 {children}
             </span>
-            {tooltipElement &&
-                createPortal(tooltipElement, WindowBridge.getElementById("app")!)}
+            {tooltipElement && createPortal(tooltipElement, WindowBridge.getElementById("app")!)}
         </>
     );
 };

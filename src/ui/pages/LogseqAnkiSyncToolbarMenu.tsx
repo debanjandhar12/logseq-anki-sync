@@ -1,18 +1,18 @@
-import React, { FC, useEffect, useState } from "../React";
-import { UI } from "../UI";
-import { WindowParentBridge } from "../../logseq/WindowParentBridge";
-import SETTINGS_ICON from "@tabler/icons/outline/settings.svg?raw";
-import PLAYER_PLAY_ICON from "@tabler/icons/outline/player-play.svg?raw";
-import LOGS_ICON from "@tabler/icons/outline/logs.svg?raw";
 import BOOK_ICON from "@tabler/icons/outline/book.svg?raw";
 import HEART_ICON from "@tabler/icons/outline/heart.svg?raw";
-import { showSyncResultDialog } from "../launchers/showSyncResultDialog";
-import { LogseqToAnkiSync } from "../../sync/syncLogseqToAnki";
+import LOGS_ICON from "@tabler/icons/outline/logs.svg?raw";
+import PLAYER_PLAY_ICON from "@tabler/icons/outline/player-play.svg?raw";
+import SETTINGS_ICON from "@tabler/icons/outline/settings.svg?raw";
 import FocusTrap from "focus-trap-react";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
+import {LogseqToAnkiSync} from "../../sync/syncLogseqToAnki";
+import {showSyncResultDialog} from "../launchers/showSyncResultDialog";
+import React, {type FC, useEffect, useState} from "../React";
+import {UI} from "../UI";
 
 const focusTrapOptions = {
     tabbableOptions: {
-        displayCheck: 'none' as const,
+        displayCheck: "none" as const
     }
 };
 
@@ -22,7 +22,11 @@ interface ToolbarMenuModalProps {
     modalId: string;
 }
 
-const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ triggerRect, parentWidth, modalId }) => {
+const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
+    triggerRect,
+    parentWidth,
+    modalId
+}) => {
     const [isVisible, setIsVisible] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
 
@@ -35,18 +39,21 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ trigger
         setTimeout(() => UI.hideModal(modalId), 150);
     };
 
-    const hasLastSync = WindowParentBridge.getGlobalObject("lastSyncLogseqToAnkiResult") !== null &&
+    const hasLastSync =
+        WindowParentBridge.getGlobalObject("lastSyncLogseqToAnkiResult") !== null &&
         WindowParentBridge.getGlobalObject("lastSyncLogseqToAnkiResult") !== undefined;
 
-    let rightPos = triggerRect ? (parentWidth || window.innerWidth) - triggerRect.right : 20;
-    let topPos = triggerRect ? triggerRect.bottom + 8 : 40;
+    const rightPos = triggerRect ? (parentWidth || window.innerWidth) - triggerRect.right : 20;
+    const topPos = triggerRect ? triggerRect.bottom + 8 : 40;
 
     const items = [
         {
             icon: PLAYER_PLAY_ICON,
             text: "Start Sync",
             color: "text-green-500",
-            onClick: async () => { await new LogseqToAnkiSync().sync(); }
+            onClick: async () => {
+                await new LogseqToAnkiSync().sync();
+            }
         },
         {
             icon: LOGS_ICON,
@@ -57,11 +64,12 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ trigger
                 if (result) showSyncResultDialog(result as any);
             }
         },
-        { separator: true },
+        {separator: true},
         {
             icon: BOOK_ICON,
             text: "Documentation",
-            onClick: () => window.open("https://debanjandhar12.github.io/logseq-anki-sync/docs/intro")
+            onClick: () =>
+                window.open("https://debanjandhar12.github.io/logseq-anki-sync/docs/intro")
         },
         {
             icon: SETTINGS_ICON,
@@ -85,7 +93,11 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ trigger
             } else if (e.key === "ArrowUp") {
                 e.preventDefault();
                 setSelectedIndex((prev) => (prev <= 0 ? selectableItems.length - 1 : prev - 1));
-            } else if (e.key === "Enter" && selectedIndex >= 0 && selectedIndex < selectableItems.length) {
+            } else if (
+                e.key === "Enter" &&
+                selectedIndex >= 0 &&
+                selectedIndex < selectableItems.length
+            ) {
                 e.preventDefault();
                 close();
                 selectableItems[selectedIndex].onClick?.();
@@ -104,16 +116,25 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ trigger
         };
     }, [selectableItems, selectedIndex]);
 
-    const MenuItem = ({ item, isSelected }: any) => {
+    const MenuItem = ({item, isSelected}: any) => {
         if (item.separator) {
-            return <div role="separator" className="-mx-1 my-1 h-px bg-muted" style={{ backgroundColor: "var(--ls-border-color, #eee)" }}></div>;
+            return (
+                <div
+                    role="separator"
+                    className="-mx-1 my-1 h-px bg-muted"
+                    style={{backgroundColor: "var(--ls-border-color, #eee)"}}></div>
+            );
         }
         return (
             <div
                 role="menuitem"
                 tabIndex={item.disabled ? -1 : 0}
-                className={`ui__dropdown-menu-item relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors ${item.disabled ? 'pointer-events-none opacity-50' : ''}`}
-                style={{ backgroundColor: isSelected ? "var(--ls-quaternary-background-color, #ddd)" : "transparent" }}
+                className={`ui__dropdown-menu-item relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors ${item.disabled ? "pointer-events-none opacity-50" : ""}`}
+                style={{
+                    backgroundColor: isSelected
+                        ? "var(--ls-quaternary-background-color, #ddd)"
+                        : "transparent"
+                }}
                 onClick={(e) => {
                     e.stopPropagation();
                     if (item.disabled) return;
@@ -125,10 +146,13 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ trigger
                 }}
                 onMouseLeave={() => {
                     if (!item.disabled) setSelectedIndex(-1);
-                }}
-            >
+                }}>
                 <span className="flex items-center w-full">
-                    <span className={`ui__icon ti flex items-center ${item.color || ""}`} dangerouslySetInnerHTML={{ __html: item.icon }} style={{ width: 18, height: 18 }} />
+                    <span
+                        className={`ui__icon ti flex items-center ${item.color || ""}`}
+                        dangerouslySetInnerHTML={{__html: item.icon}}
+                        style={{width: 18, height: 18}}
+                    />
                     <span className="pl-2">{item.text}</span>
                 </span>
             </div>
@@ -137,10 +161,10 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ trigger
 
     return (
         <FocusTrap focusTrapOptions={focusTrapOptions}>
-            <div style={{ position: "fixed", inset: 0, zIndex: 9999 }}>
+            <div style={{position: "fixed", inset: 0, zIndex: 9999}}>
                 {/* Backdrop */}
                 <div
-                    style={{ position: "absolute", inset: 0 }}
+                    style={{position: "absolute", inset: 0}}
                     onClick={(e) => {
                         e.stopPropagation();
                         close();
@@ -149,7 +173,7 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ trigger
 
                 {/* Menu */}
                 <div
-                    className={`ui__dropdown-menu-content z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md transition-all duration-150 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+                    className={`ui__dropdown-menu-content z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md transition-all duration-150 ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
                     style={{
                         position: "absolute",
                         right: rightPos,
@@ -158,10 +182,17 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ trigger
                         borderColor: "var(--ls-border-color, #eee)",
                         color: "var(--ls-primary-text-color, #000)",
                         transformOrigin: "top right"
-                    }}
-                >
+                    }}>
                     {items.map((item, idx) => (
-                        <MenuItem key={idx} item={item} isSelected={!item.separator && !item.disabled && selectableItems.indexOf(item) === selectedIndex} />
+                        <MenuItem
+                            key={idx}
+                            item={item}
+                            isSelected={
+                                !item.separator &&
+                                !item.disabled &&
+                                selectableItems.indexOf(item) === selectedIndex
+                            }
+                        />
                     ))}
                 </div>
             </div>
@@ -171,5 +202,12 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ trigger
 
 export function showToolbarMenu(triggerRect: DOMRect | null, parentWidth?: number) {
     const modalId = `modal-toolbar-${Date.now()}`;
-    UI.showModal(<LogseqAnkiSyncToolbarMenuComponent modalId={modalId} triggerRect={triggerRect} parentWidth={parentWidth} />, modalId);
+    UI.showModal(
+        <LogseqAnkiSyncToolbarMenuComponent
+            modalId={modalId}
+            triggerRect={triggerRect}
+            parentWidth={parentWidth}
+        />,
+        modalId
+    );
 }

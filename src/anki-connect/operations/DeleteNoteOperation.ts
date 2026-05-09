@@ -1,7 +1,7 @@
-import { AnkiActionQueue } from "../internal/AnkiActionQueue";
-import { DeleteNotesResult, OperationFailure } from "../types";
-import { createLogger, LoggerCategory } from "../../logger";
 import _ from "lodash";
+import {createLogger, LoggerCategory} from "../../logger";
+import {AnkiActionQueue} from "../internal/AnkiActionQueue";
+import type {DeleteNotesResult, OperationFailure} from "../types";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
@@ -12,7 +12,7 @@ export class DeleteNoteOperation {
     deleteNote(ankiId: number): void {
         this.queue.push({
             action: "deleteNotes",
-            params: { notes: [ankiId] },
+            params: {notes: [ankiId]}
         });
         this.ankiIdQueue.push(ankiId);
     }
@@ -30,7 +30,7 @@ export class DeleteNoteOperation {
                 const error = result[i].error;
                 failedNotes.push({
                     identifier: ankiId.toString(),
-                    error: typeof error === 'string' ? new Error(error) : error,
+                    error: typeof error === "string" ? new Error(error) : error
                 });
             } else {
                 successfulNotes.push(ankiId);
@@ -40,7 +40,7 @@ export class DeleteNoteOperation {
         this.queue.clear();
         this.ankiIdQueue = [];
 
-        logger.info("Delete notes operation completed", { successfulNotes, failedNotes });
-        return { successfulNotes, failedNotes };
+        logger.info("Delete notes operation completed", {successfulNotes, failedNotes});
+        return {successfulNotes, failedNotes};
     }
 }

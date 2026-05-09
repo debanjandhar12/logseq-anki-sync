@@ -20,16 +20,18 @@ function handleImageOcclusion() {
 }
 
 function handleTypeInTag() {
-    let typeans = document.getElementById("typeans");
+    const typeans = document.getElementById("typeans");
     if (typeans) {
         const provided = localStorage.getItem("logseq-prev-typeans");
 
         // get expected
-        let cloze = document.getElementsByClassName("cloze");
-        let expected = Array.from(cloze).map((el) => el.innerText).join(", ");
+        const cloze = document.getElementsByClassName("cloze");
+        const expected = Array.from(cloze)
+            .map((el) => el.innerText)
+            .join(", ");
 
         // compare and render
-        let newDiv = document.createElement("div");
+        const newDiv = document.createElement("div");
         newDiv.id = "typeans";
         newDiv.innerHTML = compareAnswer(expected, provided);
         typeans.replaceWith(newDiv);

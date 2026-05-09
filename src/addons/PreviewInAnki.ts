@@ -1,14 +1,14 @@
-import * as AnkiConnect from "../anki-connect/AnkiConnect";
-import {getLogseqBlockPropSafe, handleAnkiError} from "../utils/utils";
-import { Addon } from "./Addon";
 import _ from "lodash";
-import { showSelectionModal } from "../ui";
-import getNameFromPage from "../logseq/getNameFromPage";
+import * as AnkiConnect from "../anki-connect/AnkiConnect";
 import getIDFromPage from "../logseq/getIDFromPage";
-import { LogseqProxy } from "../logseq/LogseqProxy";
-import { LogseqNamespaceHelper } from "../logseq/LogseqNamespaceHelper";
+import getNameFromPage from "../logseq/getNameFromPage";
 import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
+import {LogseqNamespaceHelper} from "../logseq/LogseqNamespaceHelper";
 import {LogseqPropertiesHelper} from "../logseq/LogseqPropertiesHelper";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import {showSelectionModal} from "../ui";
+import {getLogseqBlockPropSafe, handleAnkiError} from "../utils/utils";
+import {Addon} from "./Addon";
 
 export class PreviewInAnkiContextMenu extends Addon {
     static _instance: PreviewInAnkiContextMenu;
@@ -21,7 +21,7 @@ export class PreviewInAnkiContextMenu extends Addon {
         if (this.isEnabled()) {
             logseq.Editor.registerBlockContextMenuItem(
                 "Preview in Anki",
-                this.previewBlockNotesInAnki,
+                this.previewBlockNotesInAnki
             );
             logseq.App.registerPageMenuItem("Preview in Anki", this.previewPageNotesInAnki);
         }
@@ -36,33 +36,40 @@ export class PreviewInAnkiContextMenu extends Addon {
         }
     }
 
-    private async previewPageNotesInAnki(arg : { page: string}) {
+    private async previewPageNotesInAnki(arg: {page: string}) {
         try {
             const pageObj = await LogseqPropertiesHelper.getPage(arg.page); // Ideally, we should pass page.id but it is not passed
-            let graphName = _.get(await logseq.App.getCurrentGraph(), "name") || "Default";
-            let modelName = `${graphName}Model`.replace(/\s/g, "_");
+            const graphName = _.get(await logseq.App.getCurrentGraph(), "name") || "Default";
+            const modelName = `${graphName}Model`.replace(/\s/g, "_");
             await AnkiConnect.requestPermission();
-            let query = '';
-            if (pageObj && await LogseqAppInfoFetcher.checkCurrentIsDbGraph() && getLogseqBlockPropSafe(pageObj, 'properties.tags', []).includes('Tag')) {
+            let query = "";
+            if (
+                pageObj &&
+                (await LogseqAppInfoFetcher.checkCurrentIsDbGraph()) &&
+                getLogseqBlockPropSafe(pageObj, "properties.tags", []).includes("Tag")
+            ) {
                 query = `"note:${modelName}" "tag:${getNameFromPage(pageObj)}"`;
-            }
-            else if (pageObj) {
+            } else if (pageObj) {
                 const namespacePages = await LogseqNamespaceHelper.getNamespaceDescendants(pageObj);
                 let pagesToView = [pageObj];
                 if (namespacePages.length > 0) {
-                    let selection = await showSelectionModal([
-                        { name: "Preview cards from this namespace in anki" },
-                        { name: "Preview cards from this page in anki" },
-                    ], {message: 'Select cards', enableKeySelect: true});
+                    const selection = await showSelectionModal(
+                        [
+                            {name: "Preview cards from this namespace in anki"},
+                            {name: "Preview cards from this page in anki"}
+                        ],
+                        {message: "Select cards", enableKeySelect: true}
+                    );
                     if (selection == null) return;
                     if (selection === 0) {
                         pagesToView = [...pagesToView, ...namespacePages];
                     }
                 }
-                const pageIds = pagesToView.map(page => getIDFromPage(page)).filter(id => id != null);
-                query = `"note:${modelName}" ${pageIds.map(id => `"Logseq Page Id:${id}"`).join(" OR ")}`;
-            }
-            else throw "Invalid page object passed to previewPageNotesInAnki";
+                const pageIds = pagesToView
+                    .map((page) => getIDFromPage(page))
+                    .filter((id) => id != null);
+                query = `"note:${modelName}" ${pageIds.map((id) => `"Logseq Page Id:${id}"`).join(" OR ")}`;
+            } else throw "Invalid page object passed to previewPageNotesInAnki";
             await AnkiConnect.guiBrowse(query);
         } catch (e) {
             handleAnkiError(e.toString());

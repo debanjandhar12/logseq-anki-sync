@@ -1,4 +1,4 @@
-import {PageEntity} from "@logseq/libs/dist/LSPlugin";
+import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 
 export default function getNameFromPage(page: PageEntity): string {
     return (

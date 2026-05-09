@@ -1,11 +1,10 @@
-import {Note} from "../../anki-notes/Note";
-import {LogseqProxy} from "../../logseq/LogseqProxy";
-import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP} from "../../constants";
-import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
-import getNameFromPage from "../../logseq/getNameFromPage";
+import type {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-
+import type {Note} from "../../anki-notes/Note";
+import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP} from "../../constants";
 import {createLogger, LoggerCategory} from "../../logger";
+import getNameFromPage from "../../logseq/getNameFromPage";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 
@@ -16,18 +15,18 @@ export class BreadcrumbAndParentBlockParser {
 
         // If no breadcrumb options selected, return hidden breadcrumb
         if (options.length === 0 || !options.includes("Page name")) {
-            return await this.buildHiddenBreadcrumb(note, graphName);
+            return await BreadcrumbAndParentBlockParser.buildHiddenBreadcrumb(note, graphName);
         }
 
         // Build breadcrumb based on selected options
-        return await this.buildBreadcrumb(note, graphName, options, tags);
+        return await BreadcrumbAndParentBlockParser.buildBreadcrumb(note, graphName, options, tags);
     }
 
     private static async buildHiddenBreadcrumb(note: Note, graphName: string): Promise<string> {
         const page = await LogseqProxy.Editor.getPage(note.pageId);
         const pageName = getNameFromPage(page);
         return `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(
-            pageName,
+            pageName
         )}" class="hidden">${pageName}</a>`;
     }
 
@@ -35,7 +34,7 @@ export class BreadcrumbAndParentBlockParser {
         note: Note,
         graphName: string,
         options: string[],
-        tags: Set<string>,
+        tags: Set<string>
     ): Promise<string> {
         const page = await LogseqProxy.Editor.getPage(note.pageId);
 
@@ -45,7 +44,7 @@ export class BreadcrumbAndParentBlockParser {
 
         if (options.includes("Page namespace")) {
             // Get full page name with namespace (handles both DB and File versions)
-            fullPageName = await this.getFullPageNameWithNamespace(page);
+            fullPageName = await BreadcrumbAndParentBlockParser.getFullPageNameWithNamespace(page);
             displayName = fullPageName;
         } else {
             // For file version of logseq, we need to extract just the page name without namespace
@@ -61,17 +60,20 @@ export class BreadcrumbAndParentBlockParser {
         }
 
         let breadcrumb = `<a href="logseq://graph/${encodeURIComponent(graphName)}?page=${encodeURIComponent(
-            fullPageName,
+            fullPageName
         )}" title="${displayName}">📄${displayName}</a>`;
 
         // Add parent blocks if enabled
         if (options.includes("Parent blocks")) {
             try {
-                const parentBlocks = await this.collectParentBlocks(note, tags);
+                const parentBlocks = await BreadcrumbAndParentBlockParser.collectParentBlocks(
+                    note,
+                    tags
+                );
                 for (const parentBlock of parentBlocks) {
                     const firstLine = parentBlock.content.split("\n")[0];
                     breadcrumb += ` > <a href="logseq://graph/${encodeURIComponent(
-                        graphName,
+                        graphName
                     )}?block-id=${encodeURIComponent(parentBlock.uuid)}" title="${
                         parentBlock.content
                     }">⚪${firstLine}</a>`;
@@ -79,7 +81,7 @@ export class BreadcrumbAndParentBlockParser {
             } catch (e) {
                 logger.error(
                     "[BreadcrumbAndParentBlockParser] Error adding parent blocks to breadcrumb:",
-                    e,
+                    e
                 );
             }
         }
@@ -114,7 +116,7 @@ export class BreadcrumbAndParentBlockParser {
 
     private static async collectParentBlocks(
         note: Note,
-        tags: Set<string>,
+        tags: Set<string>
     ): Promise<Array<{content: string; uuid: string}>> {
         const parentBlocks = [];
         let parentID = (await LogseqProxy.Editor.getBlock(note.uuid)).parent.id;
@@ -127,10 +129,12 @@ export class BreadcrumbAndParentBlockParser {
                 Array.from(tags).includes("hide-all-card-parent");
 
             parentBlocks.push({
-                content: !hiddenParent ? parentBlock.content
-                    .replaceAll(MD_PROPERTIES_REGEXP, "")
-                    .replaceAll(ANKI_CLOZE_REGEXP, "$3") : 'Hidden Parent Block',
-                uuid: parentBlock.uuid,
+                content: !hiddenParent
+                    ? parentBlock.content
+                          .replaceAll(MD_PROPERTIES_REGEXP, "")
+                          .replaceAll(ANKI_CLOZE_REGEXP, "$3")
+                    : "Hidden Parent Block",
+                uuid: parentBlock.uuid
             });
             parentID = parentBlock.parent.id;
         }

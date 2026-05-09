@@ -1,15 +1,14 @@
 import {Note} from "./Note";
 import "@logseq/libs";
+import type {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 import _ from "lodash";
-import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
-import {escapeClozesAndMacroDelimiters, safeReplace} from "../utils/utils";
-import {LogseqProxy} from "../logseq/LogseqProxy";
-import {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
-import {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
+import {createLogger, LoggerCategory} from "../logger";
+import type {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
-import { appendExtraToHtmlFile } from "./NoteUtils";
-
-import { createLogger, LoggerCategory } from "../logger";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import {type HTMLFile, LogseqToHtmlConverterProxy} from "../logseq/LogseqToHtmlConverter";
+import {escapeClozesAndMacroDelimiters, safeReplace} from "../utils/utils";
+import {appendExtraToHtmlFile} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
@@ -23,7 +22,7 @@ export class MultilineCardNote extends Note {
         properties: any,
         pageId: number,
         tags: string[] = [],
-        children: any = [],
+        children: any = []
     ) {
         super(uuid, content, format, properties, pageId, tags);
         this.children = children;
@@ -33,23 +32,23 @@ export class MultilineCardNote extends Note {
         // Init logseq operations at start of the program
         logseq.Editor.registerSlashCommand("Card (Forward)", [
             ["editor/input", `#card #forward`],
-            ["editor/clear-current-slash"],
+            ["editor/clear-current-slash"]
         ]);
         logseq.Editor.registerSlashCommand("Card (Reversed)", [
             ["editor/input", `#card #reversed`],
-            ["editor/clear-current-slash"],
+            ["editor/clear-current-slash"]
         ]);
         logseq.Editor.registerSlashCommand("Card (Bidirectional)", [
             ["editor/input", `#card #bidirectional`],
-            ["editor/clear-current-slash"],
+            ["editor/clear-current-slash"]
         ]);
         logseq.Editor.registerSlashCommand("Card (Incremental)", [
             ["editor/input", `#card #incremental`],
-            ["editor/clear-current-slash"],
+            ["editor/clear-current-slash"]
         ]);
         logseq.Editor.registerSlashCommand("Card (Incremental + Hide all, Test one)", [
             ["editor/input", `#card #incremental #hide-all-test-one`],
-            ["editor/clear-current-slash"],
+            ["editor/clear-current-slash"]
         ]);
         logseq.provideStyle(`
             .page-reference[data-ref=card], a[data-ref=card] {
@@ -117,7 +116,6 @@ export class MultilineCardNote extends Note {
         return maxDepth;
     }
 
-
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let clozedContent = "";
         const clozedContentAssets: Set<string> = new Set();
@@ -127,7 +125,10 @@ export class MultilineCardNote extends Note {
         this.content = escapeClozesAndMacroDelimiters(this.content);
 
         // Render the parent block and add to clozedContent
-        const parentBlockHTMLFile = await LogseqToHtmlConverterProxy.convertToHTMLFile(this.content, this.format);
+        const parentBlockHTMLFile = await LogseqToHtmlConverterProxy.convertToHTMLFile(
+            this.content,
+            this.format
+        );
         parentBlockHTMLFile.assets.forEach((asset) => clozedContentAssets.add(asset));
         if (direction == "<->" || direction == "<-")
             // Insert cloze braces depending upon direction else simply add parent block html to clozedContent
@@ -137,20 +138,17 @@ export class MultilineCardNote extends Note {
         // Add the content of children blocks and cloze it if direction is <-> or ->
         let cloze_id = 1;
         const maxDepth = this.getChildrenMaxDepth();
-        const getChildrenListHTMLFile = async (
-            childrenList: any,
-            level = 0,
-        ): Promise<HTMLFile> => {
+        const getChildrenListHTMLFile = async (childrenList: any, level = 0): Promise<HTMLFile> => {
             if (level >= maxDepth) return {html: "", assets: new Set<string>(), tags: []};
             const childrenListAssets = new Set<string>();
             let childrenListHTML = `\n<ul class="children-list left-border">`;
             for (const child of childrenList) {
-                childrenListHTML += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") == "number" ? 'numbered' : ''}">`;
+                childrenListHTML += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") == "number" ? "numbered" : ""}">`;
                 const childContent = _.get(child, "content", "");
-                let sanitizedChildContent = escapeClozesAndMacroDelimiters(childContent);
+                const sanitizedChildContent = escapeClozesAndMacroDelimiters(childContent);
                 const sanitizedChildHTMLFile = await LogseqToHtmlConverterProxy.convertToHTMLFile(
                     sanitizedChildContent,
-                    child.format,
+                    child.format
                 );
                 const sanitizedChildHTMLFileWithExtra = await appendExtraToHtmlFile(
                     sanitizedChildHTMLFile,
@@ -158,16 +156,16 @@ export class MultilineCardNote extends Note {
                     child.format
                 );
                 let sanitizedChildHTML = sanitizedChildHTMLFileWithExtra.html;
-                sanitizedChildHTMLFileWithExtra.assets.forEach((asset) => childrenListAssets.add(asset));
+                sanitizedChildHTMLFileWithExtra.assets.forEach((asset) =>
+                    childrenListAssets.add(asset)
+                );
                 if (child.children.length > 0) {
                     const allChildrenHTMLFile = await getChildrenListHTMLFile(
                         child.children,
-                        level + 1,
+                        level + 1
                     );
                     sanitizedChildHTML += allChildrenHTMLFile.html;
-                    allChildrenHTMLFile.assets.forEach((asset) =>
-                        childrenListAssets.add(asset),
-                    );
+                    allChildrenHTMLFile.assets.forEach((asset) => childrenListAssets.add(asset));
                 }
 
                 if (level == 0 && (direction == "<->" || direction == "->")) {
@@ -181,7 +179,7 @@ export class MultilineCardNote extends Note {
             return {
                 html: childrenListHTML,
                 assets: childrenListAssets,
-                tags: [],
+                tags: []
             };
         };
         const childrenHTMLFile = await getChildrenListHTMLFile(this.children);
@@ -195,58 +193,89 @@ export class MultilineCardNote extends Note {
         const result: HTMLFile = {
             html: clozedContent,
             assets: clozedContentAssets,
-            tags: parentBlockHTMLFile.tags,
+            tags: parentBlockHTMLFile.tags
         };
-        return appendExtraToHtmlFile(result, _.get(await LogseqProxy.Editor.getBlock(this.uuid), "properties.extra") as string, this.format, true);
+        return appendExtraToHtmlFile(
+            result,
+            _.get(await LogseqProxy.Editor.getBlock(this.uuid), "properties.extra") as string,
+            this.format,
+            true
+        );
     }
 
     public static async getNotesFromLogseqBlocks(
-        otherNotes: Array<Note>,
+        otherNotes: Array<Note>
     ): Promise<MultilineCardNote[]> {
-        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: { id: number }; parent: { id: number }}][];
-        let logseqCard_blocks : DatascriptQueryResult = [];
-        let flashCard_blocks : DatascriptQueryResult = [];
-        let logseqCardGroup_blocks : DatascriptQueryResult = [];
-        if (!await LogseqProxy.App.checkCurrentIsDbGraph()) {
-            logseqCard_blocks = await LogseqProxy.DB.datascriptQuery(`
+        type DatascriptQueryResult =
+            | []
+            | [{uuid: BlockUUID; page: {id: number}; parent: {id: number}}][];
+        let logseqCard_blocks: DatascriptQueryResult = [];
+        let flashCard_blocks: DatascriptQueryResult = [];
+        let logseqCardGroup_blocks: DatascriptQueryResult = [];
+        if (!(await LogseqProxy.App.checkCurrentIsDbGraph())) {
+            logseqCard_blocks =
+                (await LogseqProxy.DB.datascriptQuery(
+                    `
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?p :block/name "card"]
                 [?b :block/refs ?p]
-                ]`, {suppressErrors: false}) || [];
-            flashCard_blocks = await LogseqProxy.DB.datascriptQuery(`
+                ]`,
+                    {suppressErrors: false}
+                )) || [];
+            flashCard_blocks =
+                (await LogseqProxy.DB.datascriptQuery(
+                    `
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?p :block/name "flashcard"]
                 [?b :block/refs ?p]
-                ]`, {suppressErrors: false}) || [];
-            logseqCardGroup_blocks = await LogseqProxy.DB.datascriptQuery(`
+                ]`,
+                    {suppressErrors: false}
+                )) || [];
+            logseqCardGroup_blocks =
+                (await LogseqProxy.DB.datascriptQuery(
+                    `
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?r :block/name "card-group"]
                 [?p :block/refs ?r]
                 [?b :block/parent ?p]
-                ]`, {suppressErrors: false}) || [];
+                ]`,
+                    {suppressErrors: false}
+                )) || [];
         } else {
-            logseqCard_blocks = await LogseqProxy.DB.datascriptQuery(`
+            logseqCard_blocks =
+                (await LogseqProxy.DB.datascriptQuery(
+                    `
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?p :block/name "card"]
                 [?b :block/tags ?p]
-                ]`, {suppressErrors: false}) || [];
-            flashCard_blocks = await LogseqProxy.DB.datascriptQuery(`
+                ]`,
+                    {suppressErrors: false}
+                )) || [];
+            flashCard_blocks =
+                (await LogseqProxy.DB.datascriptQuery(
+                    `
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?p :block/name "flashcard"]
                 [?b :block/tags ?p]
-                ]`, {suppressErrors: false}) || [];
-            logseqCardGroup_blocks = await LogseqProxy.DB.datascriptQuery(`
+                ]`,
+                    {suppressErrors: false}
+                )) || [];
+            logseqCardGroup_blocks =
+                (await LogseqProxy.DB.datascriptQuery(
+                    `
                 [:find (pull ?b [:block/uuid :block/page :block/parent])
                 :where
                 [?r :block/name "card-group"]
                 [?p :block/tags ?r]
                 [?b :block/parent ?p]
-                ]`, {suppressErrors: false}) || [];
+                ]`,
+                    {suppressErrors: false}
+                )) || [];
         }
         logseqCardGroup_blocks = await Promise.all(
             logseqCardGroup_blocks.map(async (block) => {
@@ -256,22 +285,22 @@ export class MultilineCardNote extends Note {
                 const tags = _.get(parentBlock, "properties.tags", []) as string[];
                 block[0].tagsFromParentCardGroup = [...tags];
                 return block;
-            }),
+            })
         );
-        let blocks = [
+        const blocks = [
             ...(logseqCard_blocks || []),
             ...(flashCard_blocks || []),
-            ...(logseqCardGroup_blocks || []),
+            ...(logseqCardGroup_blocks || [])
         ];
         let notes = await Promise.all(
             blocks.map(async (b) => {
                 const uuid = getUUIDFromBlock(b[0]);
                 const pageId = b[0].page?.id;
                 if (!pageId) return null;
-                
+
                 const tagsFromParentCardGroup = _.get(b[0], "tagsFromParentCardGroup", []);
-                let block = await LogseqProxy.Editor.getBlock(uuid, {
-                    includeChildren: true,
+                const block = await LogseqProxy.Editor.getBlock(uuid, {
+                    includeChildren: true
                 });
                 if (block) {
                     const blockTags = _.get(block, "properties.tags", []) as string[];
@@ -283,15 +312,15 @@ export class MultilineCardNote extends Note {
                         pageId,
                         // Apply tags in parent card group block - #168
                         blockTags && blockTags.length > 0 ? blockTags : tagsFromParentCardGroup,
-                        block.children,
+                        block.children
                     );
                 } else {
                     return null;
                 }
-            }),
+            })
         );
         logger.info("MultilineCardNote Loaded");
-        notes = await Note.removeUnwantedNotes(notes) as MultilineCardNote[];
+        notes = (await Note.removeUnwantedNotes(notes)) as MultilineCardNote[];
         notes = _.filter(notes, (note) => {
             // Retain only blocks whose children count > 0 or direction is expictly specifed or no other note type is being generated from that block
             return (
@@ -316,7 +345,7 @@ export class MultilineCardNote extends Note {
             return result;
         }
         return [this.uuid, ...getChildrenUUID(this.children)].map(
-            (block) => ({type: "Block", value: block}) as DependencyEntity,
+            (block) => ({type: "Block", value: block}) as DependencyEntity
         );
     }
 }

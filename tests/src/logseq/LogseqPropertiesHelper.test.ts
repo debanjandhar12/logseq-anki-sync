@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { LogseqPropertiesHelper } from "../../../src/logseq/LogseqPropertiesHelper";
-import { BlockEntity, PageEntity } from "@logseq/libs/dist/LSPlugin";
+import {type BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import {afterEach, beforeEach, describe, expect, it} from "vitest";
+import {LogseqPropertiesHelper} from "../../../src/logseq/LogseqPropertiesHelper";
 
 describe("LogseqPropertiesHelper.addStripedPropertyPrefixes", () => {
     it("should strip :user.property/name-suffix format to just name (inclusive - keeps original keys)", () => {
@@ -68,24 +68,24 @@ describe("LogseqPropertiesHelper.addStripedPropertyPrefixes", () => {
             ":user.property/deck-bavZ5684": "Testx",
             ":user.property/extra-abc123": "Some extra value",
             "hnsw-label-updated-at": 0,
-            "tags": "a,b",
-            "deck": "Testx",
-            "extra": "Some extra value"
+            tags: "a,b",
+            deck: "Testx",
+            extra: "Some extra value"
         });
     });
 
     it("should handle object values without stringifying them (inclusive - keeps original keys)", () => {
         const input = {
-            ":user.property/metadata-xyz": { key: "value", nested: { data: 123 } },
+            ":user.property/metadata-xyz": {key: "value", nested: {data: 123}},
             ":user.property/simple-abc": "text"
         };
 
         const result = LogseqPropertiesHelper.addStripedPropertyPrefixes(input);
 
         expect(result).toEqual({
-            ":user.property/metadata-xyz": { key: "value", nested: { data: 123 } },
+            ":user.property/metadata-xyz": {key: "value", nested: {data: 123}},
             ":user.property/simple-abc": "text",
-            metadata: { key: "value", nested: { data: 123 } },
+            metadata: {key: "value", nested: {data: 123}},
             simple: "text"
         });
     });
@@ -106,7 +106,7 @@ describe("LogseqPropertiesHelper.addStripedPropertyPrefixes", () => {
     it("should handle mixed property types including arrays and objects (inclusive - keeps original keys)", () => {
         const input = {
             ":user.property/list-xyz": ["a", "b", "c"],
-            ":user.property/obj-abc": { key: "value" },
+            ":user.property/obj-abc": {key: "value"},
             ":user.property/text-def": "simple"
         };
 
@@ -114,17 +114,17 @@ describe("LogseqPropertiesHelper.addStripedPropertyPrefixes", () => {
 
         expect(result).toEqual({
             ":user.property/list-xyz": ["a", "b", "c"],
-            ":user.property/obj-abc": { key: "value" },
+            ":user.property/obj-abc": {key: "value"},
             ":user.property/text-def": "simple",
             list: ["a", "b", "c"],
-            obj: { key: "value" },
+            obj: {key: "value"},
             text: "simple"
         });
     });
 });
 
 describe("LogseqPropertiesHelper.handleTagProperty", () => {
-    const createMockEntity = (tags?: Array<{id: number, name: string}>): BlockEntity => {
+    const createMockEntity = (tags?: Array<{id: number; name: string}>): BlockEntity => {
         return {
             uuid: "test-uuid",
             tags: tags
@@ -132,7 +132,10 @@ describe("LogseqPropertiesHelper.handleTagProperty", () => {
     };
 
     it("should merge tags from user properties and block tags", () => {
-        const entity = createMockEntity([{id: 1, name: "Card"}, {id: 2, name: "Test"}]);
+        const entity = createMockEntity([
+            {id: 1, name: "Card"},
+            {id: 2, name: "Test"}
+        ]);
         const input = {
             ":block/tags": ["Card", "Test"],
             tags: "a,b"
@@ -146,7 +149,10 @@ describe("LogseqPropertiesHelper.handleTagProperty", () => {
     });
 
     it("should handle block tags only", () => {
-        const entity = createMockEntity([{id: 1, name: "Card"}, {id: 2, name: "Test"}]);
+        const entity = createMockEntity([
+            {id: 1, name: "Card"},
+            {id: 2, name: "Test"}
+        ]);
         const input = {
             ":block/tags": ["Card", "Test"]
         };
@@ -203,7 +209,7 @@ describe("LogseqPropertiesHelper.handleTagProperty", () => {
     });
 
     it("should handle entity without tags property but with block tags in properties", () => {
-        const entity = { uuid: "test-uuid" } as unknown as BlockEntity;
+        const entity = {uuid: "test-uuid"} as unknown as BlockEntity;
         const input = {
             ":block/tags": ["Card"],
             tags: "a,b"
@@ -217,7 +223,7 @@ describe("LogseqPropertiesHelper.handleTagProperty", () => {
 });
 
 describe("LogseqPropertiesHelper.addStripedPropertyPrefixes + handleTagProperty integration", () => {
-    const createMockEntity = (tags?: Array<{id: number, name: string}>): BlockEntity => {
+    const createMockEntity = (tags?: Array<{id: number; name: string}>): BlockEntity => {
         return {
             uuid: "test-uuid",
             tags: tags
@@ -225,7 +231,10 @@ describe("LogseqPropertiesHelper.addStripedPropertyPrefixes + handleTagProperty 
     };
 
     it("should add stripped prefixes first, then handle tags", () => {
-        const entity = createMockEntity([{id: 1, name: "Card"}, {id: 2, name: "Test"}]);
+        const entity = createMockEntity([
+            {id: 1, name: "Card"},
+            {id: 2, name: "Test"}
+        ]);
         const rawProperties = {
             ":block/tags": ["Card", "Test"],
             ":user.property/tags-xyz": "a,b"
@@ -241,7 +250,10 @@ describe("LogseqPropertiesHelper.addStripedPropertyPrefixes + handleTagProperty 
     });
 
     it("should handle full property object", () => {
-        const entity = createMockEntity([{id: 1, name: "Card"}, {id: 2, name: "Test"}]);
+        const entity = createMockEntity([
+            {id: 1, name: "Card"},
+            {id: 2, name: "Test"}
+        ]);
         const rawProperties = {
             ":logseq.property.embedding/hnsw-label-updated-at": 0,
             ":block/tags": ["Card", "Test"],

@@ -14,14 +14,14 @@ export function compareAnswer(expected, provided) {
 
 function prepareExpected(expected) {
     if (expected == null) return "";
-    let withoutNewlines = expected.replace(/\r?\n/g, " ");
-    let withoutOuterWhitespace = withoutNewlines.trim();
+    const withoutNewlines = expected.replace(/\r?\n/g, " ");
+    const withoutOuterWhitespace = withoutNewlines.trim();
     return normalizeToNFC(withoutOuterWhitespace);
 }
 
 function prepareProvided(provided) {
     if (provided == null) return "";
-    let withoutOuterWhitespace = provided.trim();
+    const withoutOuterWhitespace = provided.trim();
     return normalizeToNFC(withoutOuterWhitespace);
 }
 
@@ -32,38 +32,38 @@ class DiffContext {
     }
 
     toTokens() {
-        const matcher = new difflib.SequenceMatcher(
-            null,
-            this.provided,
-            this.expected,
-        );
+        const matcher = new difflib.SequenceMatcher(null, this.provided, this.expected);
         const opcodes = matcher.getOpcodes();
         const provided = [];
         const expected = [];
 
         for (const opcode of opcodes) {
             switch (opcode[0]) {
-                case "equal":
+                case "equal": {
                     const equalText = this.provided.slice(opcode[1], opcode[2]);
                     provided.push(DiffToken.good(equalText));
                     expected.push(DiffToken.good(equalText));
                     break;
-                case "delete":
+                }
+                case "delete": {
                     const deleteText = this.provided.slice(opcode[1], opcode[2]);
                     provided.push(DiffToken.bad(deleteText));
                     break;
-                case "insert":
+                }
+                case "insert": {
                     const insertText = this.expected.slice(opcode[3], opcode[4]);
                     const missingText = "-".repeat(insertText.length);
                     provided.push(DiffToken.missing(missingText));
                     expected.push(DiffToken.missing(insertText));
                     break;
-                case "replace":
+                }
+                case "replace": {
                     const replaceProvidedText = this.provided.slice(opcode[1], opcode[2]);
                     const replaceExpectedText = this.expected.slice(opcode[3], opcode[4]);
                     provided.push(DiffToken.bad(replaceProvidedText));
                     expected.push(DiffToken.missing(replaceExpectedText));
                     break;
+                }
                 default:
                     throw new Error(`Unexpected opcode: ${opcode[0]}`);
             }
@@ -122,8 +122,8 @@ function renderTokens(tokens) {
                 token.kind === "good"
                     ? "typeGood"
                     : token.kind === "bad"
-                        ? "typeBad"
-                        : "typeMissed";
+                      ? "typeBad"
+                      : "typeMissed";
             return `<span class="${className}">${encoded}</span>`;
         })
         .join("");
@@ -152,10 +152,10 @@ function withIsolatedLeadingMark(text) {
 
 function getUnicodeCategory(char) {
     const code = char.codePointAt(0);
-    const category = String.fromCodePoint(code).normalize('NFD').charAt(0);
+    const category = String.fromCodePoint(code).normalize("NFD").charAt(0);
     return category;
 }
 
 function normalizeToNFC(text) {
-    return text.normalize('NFC');
+    return text.normalize("NFC");
 }

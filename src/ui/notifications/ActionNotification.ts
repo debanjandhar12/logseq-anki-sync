@@ -1,5 +1,5 @@
-import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { createLogger, LoggerCategory } from "../../logger";
+import {createLogger, LoggerCategory} from "../../logger";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -12,15 +12,15 @@ export async function ActionNotification(
     btns: ActionButton[],
     msg: string,
     timeout?: number,
-    icon?: string,
+    icon?: string
 ): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
         const uniqueNotificationId =
             Math.random().toString(36).substring(2, 15) +
             Math.random().toString(36).substring(2, 15);
-        
+
         const uiKey = `action-notification-${uniqueNotificationId}`;
-        
+
         try {
             // Register model for button handlers
             const buttonHandlers: Record<string, () => void> = {};
@@ -37,16 +37,18 @@ export async function ActionNotification(
                     }
                 };
             });
-            
-            buttonHandlers['handleClose'] = () => {
+
+            buttonHandlers["handleClose"] = () => {
                 resolve(null);
                 closeNotification();
             };
-            
+
             logseq.provideModel(buttonHandlers);
-            
+
             // Generate button HTML
-            const buttonsHtml = btns.map((btn, index) => `
+            const buttonsHtml = btns
+                .map(
+                    (btn, index) => `
                 <button 
                     class="ui__button inline-flex items-center justify-center whitespace-nowrap text-xs gap-1 font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none bg-primary/90 hover:bg-primary/100 active:opacity-90 text-primary-foreground hover:text-primary-foreground as-classic h-6 rounded px-2 py-0.5 shadow-none focus:shadow-none"
                     data-on-click="handleAction${index}"
@@ -54,8 +56,10 @@ export async function ActionNotification(
                 >
                     ${btn.name}
                 </button>
-            `).join('');
-            
+            `
+                )
+                .join("");
+
             // Provide UI
             logseq.provideUI({
                 key: uiKey,
@@ -67,7 +71,7 @@ export async function ActionNotification(
                                 <div class="p-4">
                                     <div class="flex items-start">
                                         <div class="flex-shrink-0">
-                                            ${icon || ''}
+                                            ${icon || ""}
                                         </div>
                                         <div class="ml-3 w-0 flex-1">
                                             <div class="text-sm leading-5 font-medium" style="margin: 0px;">
@@ -108,9 +112,9 @@ export async function ActionNotification(
                             </div>
                         </div>
                     </div>
-                `,
+                `
             });
-            
+
             // Handle timeout
             if (timeout && timeout > 0) {
                 setTimeout(() => {
@@ -118,17 +122,16 @@ export async function ActionNotification(
                     closeNotification();
                 }, timeout);
             }
-            
+
             // Register cleanup on plugin unload
             const closeNotification = () => {
                 logseq.provideUI({
                     key: uiKey,
-                    template: ``,
+                    template: ``
                 });
             };
-            
+
             LogseqProxy.App.registerPluginUnloadListener(closeNotification);
-            
         } catch (e) {
             logger.error("Failed to show action notification", e);
             await logseq.UI.showMsg(msg, "success");

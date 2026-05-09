@@ -4,7 +4,7 @@
         "enabled": true,
         "indentStyle": "space",
         "indentWidth": 4,
-        "lineWidth": 320
+        "lineWidth": 100
     },
     "javascript": {
         "formatter": {
@@ -35,12 +35,24 @@
                 "noUselessConstructor": "error"
             },
             "suspicious": {
+                "noAlert": "error",
                 "noConsole": "error",
                 "noExplicitAny": "off"
             }
         }
     },
     "files": {
-        "includes": ["src/**", "tests/**", "*.ts", "*.tsx", "*.js", "biome.json", "!dist", "!node_modules", "!.vite_cache", "!docusaurus"]
+        "includes": [
+            "src/**",
+            "tests/**",
+            "*.ts",
+            "*.tsx",
+            "*.js",
+            "biome.json",
+            "!dist",
+            "!node_modules",
+            "!.vite_cache",
+            "!docusaurus"
+        ]
     }
 }

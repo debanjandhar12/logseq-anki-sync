@@ -1,4 +1,4 @@
-import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 
 /**
  * Get UUID from block entity
@@ -6,10 +6,5 @@ import {BlockEntity} from "@logseq/libs/dist/LSPlugin";
  * @param block
  */
 export default function getUUIDFromBlock(block: BlockEntity | {uuid: string}): string {
-    return (
-        (block?.uuid as any)?.['$uuid$'] ||
-        (block?.uuid as any)?.Wd ||
-        block?.uuid ||
-        null
-    );
+    return (block?.uuid as any)?.["$uuid$"] || (block?.uuid as any)?.Wd || block?.uuid || null;
 }

@@ -1,7 +1,7 @@
-import * as AnkiConnect from "../AnkiConnect";
-import { AnkiAction, AnkiActionResult } from "../types";
-import { chunk, flatten } from "lodash";
+import {chunk, flatten} from "lodash";
 import {createLogger, LoggerCategory} from "../../logger";
+import * as AnkiConnect from "../AnkiConnect";
+import type {AnkiAction, AnkiActionResult} from "../types";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
@@ -28,11 +28,11 @@ export class AnkiActionQueue {
 
         for (const batch of batches) {
             const batchResult = await AnkiConnect.invoke("multi", {
-                actions: batch,
+                actions: batch
             });
             results.push(batchResult);
         }
-        
+
         return flatten(results);
     }
 

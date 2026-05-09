@@ -1,10 +1,9 @@
-import { Note } from "../../anki-notes/Note";
-import { LogseqProxy } from "../../logseq/LogseqProxy";
-import { getLogseqBlockPropSafe } from "../../utils/utils";
 import _ from "lodash";
-import { LOGSEQ_PAGE_REF_REGEXP } from "../../constants";
-
-import { createLogger, LoggerCategory } from "../../logger";
+import type {Note} from "../../anki-notes/Note";
+import {LOGSEQ_PAGE_REF_REGEXP} from "../../constants";
+import {createLogger, LoggerCategory} from "../../logger";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {getLogseqBlockPropSafe} from "../../utils/utils";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 
@@ -16,18 +15,18 @@ export class DeckParser {
      * 3. Current page name
      */
     static async parse(note: Note): Promise<string> {
-        let deck = await this.findDeckInBlockHierarchy(note);
+        let deck = await DeckParser.findDeckInBlockHierarchy(note);
         if (deck !== null) {
-            return this.normalizeDeck(deck);
+            return DeckParser.normalizeDeck(deck);
         }
 
-        deck = await this.findDeckInNamespaceHierarchy(note);
+        deck = await DeckParser.findDeckInNamespaceHierarchy(note);
         if (deck !== null) {
-            return this.normalizeDeck(deck);
+            return DeckParser.normalizeDeck(deck);
         }
 
-        const defaultDeck = await this.getDefaultDeck(note.pageId); // Default Deck = Page Name with namespace of note
-        return this.normalizeDeck(defaultDeck);
+        const defaultDeck = await DeckParser.getDefaultDeck(note.pageId); // Default Deck = Page Name with namespace of note
+        return DeckParser.normalizeDeck(defaultDeck);
     }
 
     private static async findDeckInBlockHierarchy(note: Note): Promise<string | null> {
@@ -68,6 +67,6 @@ export class DeckParser {
     private static async normalizeDeck(deck: any): Promise<string> {
         if (typeof deck !== "string") deck = deck[0];
         deck = deck.replace(LOGSEQ_PAGE_REF_REGEXP, "$1"); // Handle direct [[Page Name]] as deck value in db versions
-        return deck.replaceAll("/", "::");  // convert to anki format and return
+        return deck.replaceAll("/", "::"); // convert to anki format and return
     }
 }

@@ -1,9 +1,17 @@
-import { Chunk, Chunker, textQuoteSelectorMatcher, describeTextQuote as apacheDescribeTextQuote, TextQuoteSelector } from "@apache-annotator/selector";
-import { makeDiff, xIndex } from "@sanity/diff-match-patch";
+import {
+    describeTextQuote as apacheDescribeTextQuote,
+    type Chunk,
+    type Chunker,
+    type TextQuoteSelector,
+    textQuoteSelectorMatcher
+} from "@apache-annotator/selector";
+import {makeDiff, xIndex} from "@sanity/diff-match-patch";
 
 export class StringChunk implements Chunk<string> {
-    constructor(public data: string) { }
-    equals(other: this) { return this.data === other.data; }
+    constructor(public data: string) {}
+    equals(other: this) {
+        return this.data === other.data;
+    }
 }
 
 export class StringChunker implements Chunker<StringChunk> {
@@ -11,10 +19,18 @@ export class StringChunker implements Chunker<StringChunk> {
     constructor(str: string) {
         this.chunk = new StringChunk(str);
     }
-    get currentChunk() { return this.chunk; }
-    nextChunk() { return null; }
-    previousChunk() { return null; }
-    precedesCurrentChunk() { return false; }
+    get currentChunk() {
+        return this.chunk;
+    }
+    nextChunk() {
+        return null;
+    }
+    previousChunk() {
+        return null;
+    }
+    precedesCurrentChunk() {
+        return false;
+    }
 }
 
 export type QuoteInfo = {
@@ -45,7 +61,7 @@ export async function matchTextQuote(
 
     if (!match.done && match.value) {
         const val = match.value as any;
-        return { start: val.startIndex, end: val.endIndex, text: quote.exact };
+        return {start: val.startIndex, end: val.endIndex, text: quote.exact};
     }
 
     // Fuzzy match via global semantic diff
@@ -62,10 +78,10 @@ export async function matchTextQuote(
     const actualEnd = xIndex(diffs, exactEndInExpected);
 
     if (actualStart !== actualEnd) {
-        // diff-match-patch can aggressively semantic-cleanup boundary characters if the prefix/suffix 
+        // diff-match-patch can aggressively semantic-cleanup boundary characters if the prefix/suffix
         // changes resemble the exact text. We override `actualEnd` if the original exact string is intact.
-        const end = text.startsWith(quote.exact, actualStart) 
-            ? actualStart + quote.exact.length 
+        const end = text.startsWith(quote.exact, actualStart)
+            ? actualStart + quote.exact.length
             : actualEnd;
 
         return {
@@ -84,12 +100,15 @@ export async function describeTextQuote(
     endIndex: number
 ): Promise<TextQuoteSelector> {
     const chunker = new StringChunker(text);
-    const quote = await apacheDescribeTextQuote({
-        startChunk: chunker.currentChunk,
-        startIndex: startIndex,
-        endChunk: chunker.currentChunk,
-        endIndex: endIndex
-    }, () => new StringChunker(text));
+    const quote = await apacheDescribeTextQuote(
+        {
+            startChunk: chunker.currentChunk,
+            startIndex: startIndex,
+            endChunk: chunker.currentChunk,
+            endIndex: endIndex
+        },
+        () => new StringChunker(text)
+    );
 
     const MIN_CONTEXT = 8;
 
@@ -117,43 +136,40 @@ export type HighlightElementGeometry = {
 export async function getHealedHighlightGeometry<T extends HighlightElementGeometry>(
     fullText: string,
     element: T
-): Promise<{ healed: boolean; element: T; actualStart: number } | null> {
-    const matchResult = await matchTextQuote(
-        fullText,
-        {
-            exact: element.text,
-            prefix: element.prefix,
-            suffix: element.suffix,
-        }
-    );
+): Promise<{healed: boolean; element: T; actualStart: number} | null> {
+    const matchResult = await matchTextQuote(fullText, {
+        exact: element.text,
+        prefix: element.prefix,
+        suffix: element.suffix
+    });
 
     if (matchResult) {
-        const { start: actualStart, end: actualEnd, text: matchedText } = matchResult;
+        const {start: actualStart, end: actualEnd, text: matchedText} = matchResult;
 
-        const quoteInfo = await describeTextQuote(
-            fullText,
-            actualStart,
-            actualEnd
-        );
+        const quoteInfo = await describeTextQuote(fullText, actualStart, actualEnd);
 
-        if (matchedText !== element.text || quoteInfo.prefix !== element.prefix || quoteInfo.suffix !== element.suffix) {
+        if (
+            matchedText !== element.text ||
+            quoteInfo.prefix !== element.prefix ||
+            quoteInfo.suffix !== element.suffix
+        ) {
             const healedElement = {
                 ...element,
                 text: matchedText,
                 prefix: quoteInfo.prefix || "",
-                suffix: quoteInfo.suffix || "",
+                suffix: quoteInfo.suffix || ""
             };
 
             return {
                 healed: true,
                 actualStart,
-                element: healedElement,
+                element: healedElement
             };
         }
         return {
             healed: false,
             actualStart,
-            element: element,
+            element: element
         };
     }
     return null;

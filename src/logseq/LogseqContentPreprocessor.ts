@@ -1,76 +1,76 @@
 import "@logseq/libs";
-import {EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import pMemoize, {pMemoizeClear} from "p-memoize";
-import objectHashOptimized from "../utils/objectHashOptimized";
 import {
     LOGSEQ_EMBDED_PAGE_REGEXP,
     LOGSEQ_PAGE_REF_REGEXP,
     LOGSEQ_RENAMED_PAGE_REF_REGEXP,
     MD_PROPERTIES_REGEXP,
-    ORG_PROPERTIES_REGEXP,
+    ORG_PROPERTIES_REGEXP
 } from "../constants";
+import objectHashOptimized from "../utils/objectHashOptimized";
 import {safeReplace, safeReplaceAsync} from "../utils/utils";
+import getIDFromPage from "./getIDFromPage";
 import getNameFromPage from "./getNameFromPage";
 import getUUIDFromBlock from "./getUUIDFromBlock";
-import getIDFromPage from "./getIDFromPage";
-import {WindowParentBridge} from "./WindowParentBridge";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
-import {LogseqProxy} from "./LogseqProxy";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
+import {LogseqProxy} from "./LogseqProxy";
+import {WindowParentBridge} from "./WindowParentBridge";
 
 /**
  * INTERNAL FORMAT SPECIFICATION
  * ==============================
- * 
+ *
  * LogseqContentPreprocessor normalizes Logseq content from different graph formats
  * (DB mode, Markdown, Org-mode) into a standardized internal representation before
  * HTML conversion. This acts as a backward compatibility layer.
- * 
+ *
  * WHY THIS EXISTS:
  * Logseq supports three graph formats with different syntax:
  * 1. DB Mode (0.2.3+) - Uses UUIDs, namespaced properties
  * 2. Markdown Mode - File-based with markdown syntax
  * 3. Org Mode - File-based with org-mode syntax
- * 
+ *
  * INTERNAL FORMAT TARGET:
- * 
+ *
  * 1. PAGE REFERENCES: [[page-id]]
  *    - All page names are resolved to their ID equivalents
  *    - Example: [[My Page]] → [[12345]]
  *    - Rationale: IDs are stable across renames, work in all graph modes
- * 
+ *
  * 2. PAGE EMBEDS: {{embed [[page-id]]}}
  *    - Page names in embeds are resolved to IDs
  *    - Example: {{embed [[My Page]]}} → {{embed [[12345]]}}
  *    - Rationale: Consistent with page references, enables dependency tracking
- * 
+ *
  * 3. RENAMED PAGE REFERENCES: [alias]([[page-id]])
  *    - Alias text is preserved, page name resolved to ID
  *    - Example: [My Alias]([[My Page]]) → [My Alias]([[12345]])
  *    - Rationale: Display name stays user-friendly, link is stable
- * 
+ *
  * 4. BLOCK REFERENCES (DB MODE SPECIAL CASE): ((block-uuid))
  *    - In DB mode, [[uuid-string]] might actually be a block reference
  *    - Checks if 36-character UUID string is a block, converts to ((uuid))
  *    - Example: [[65f3a2b1-4c8d-...]] → ((65f3a2b1-4c8d-...))
  *    - Rationale: DB mode uses [[]] for both pages and blocks, need to disambiguate
- * 
+ *
  * 5. PROPERTIES: Extracted and removed from content
  *    - Markdown: "key:: value" lines → Removed, stored in properties object
  *    - Org: ":PROPERTIES:...:END:" blocks → Removed, stored in properties object
  *    - Example: "deck:: MyDeck\nContent" → content="Content", properties={deck: "MyDeck"}
  *    - Rationale: Properties are metadata, not content for display
- * 
+ *
  * 6. PDF ANNOTATIONS
- * 
+ *
  * 7. ASSET BACKWARD COMPATIBILITY (DB MODE):
  *    - Blocks with tags:["asset"] + type + uuid properties
  *    - Converts to: ![](../assets/{uuid}.{type}){:width "..." :height "..."}
  *    - Example: tags:["asset"], type:"png", uuid:"abc123"
  *              → ![](../assets/abc123.png)
  *    - Rationale: DB mode stores assets as blocks, need markdown representation
- * 
+ *
  * 8. NODE EMBED BACKWARD COMPATIBILITY (DB MODE):
  *    - Blocks with link property (DB ID)
  *    - Converts to: {{embed ((block-uuid))}} or {{embed [[page-id]]}}
@@ -87,7 +87,7 @@ export interface PreprocessResult {
 export class LogseqContentPreprocessor {
     /**
      * Preprocesses Logseq content from any format (DB/MD/Org) to internal format.
-     * 
+     *
      * @param content - Raw Logseq block content
      * @param format - Source format: "markdown" or "org"
      * @returns Normalized content and extracted properties
@@ -96,7 +96,7 @@ export class LogseqContentPreprocessor {
         content: string,
         format: "markdown" | "org" = "markdown"
     ): Promise<PreprocessResult> {
-        if (!content || typeof content !== 'string' || content.trim() == '')
+        if (!content || typeof content !== "string" || content.trim() == "")
             return {content, properties: {}, rawPropertiesStr: ""};
 
         let resultContent = content;
@@ -104,22 +104,35 @@ export class LogseqContentPreprocessor {
         let rawPropertiesStr = "";
 
         // Step 1: Extract and remove properties
-        [resultContent, properties, rawPropertiesStr] = this.extractProperties(resultContent, format);
+        [resultContent, properties, rawPropertiesStr] = LogseqContentPreprocessor.extractProperties(
+            resultContent,
+            format
+        );
 
         // Step 2: Normalize page embeds to use UUIDs
-        resultContent = await this.normalizePageEmbeds(resultContent);
+        resultContent = await LogseqContentPreprocessor.normalizePageEmbeds(resultContent);
 
         // Step 3: Normalize page references to use UUIDs
-        resultContent = await this.normalizePageReferences(resultContent, format);
+        resultContent = await LogseqContentPreprocessor.normalizePageReferences(
+            resultContent,
+            format
+        );
 
         // Step 4: Normalize renamed page references to use UUIDs
-        resultContent = await this.normalizeRenamedPageReferences(resultContent);
+        resultContent =
+            await LogseqContentPreprocessor.normalizeRenamedPageReferences(resultContent);
 
         // Step 5: Apply PDF annotation formatting
-        resultContent = await this.applyPdfAnnotations(resultContent, properties);
+        resultContent = await LogseqContentPreprocessor.applyPdfAnnotations(
+            resultContent,
+            properties
+        );
 
         // Step 6: Apply backward compatibility transformations (DB mode)
-        resultContent = await this.applyBackwardCompatibility(resultContent, properties);
+        resultContent = await LogseqContentPreprocessor.applyBackwardCompatibility(
+            resultContent,
+            properties
+        );
 
         return {content: resultContent, properties, rawPropertiesStr};
     }
@@ -171,7 +184,7 @@ export class LogseqContentPreprocessor {
             LOGSEQ_EMBDED_PAGE_REGEXP,
             async (match, pageName) => {
                 try {
-                    const page = await this.getPage(pageName);
+                    const page = await LogseqContentPreprocessor.getPage(pageName);
                     if (page) {
                         const pageId = getIDFromPage(page);
                         if (pageId) {
@@ -196,48 +209,44 @@ export class LogseqContentPreprocessor {
         content: string,
         format: "markdown" | "org"
     ): Promise<string> {
-        return await safeReplaceAsync(
-            content,
-            LOGSEQ_PAGE_REF_REGEXP,
-            async (match, pageName) => {
-                // Handle org mode special cases (images and URLs)
-                if (format === "org") {
-                    const encodedName = encodeURI(pageName);
-                    if (encodedName.match(/\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)(\?.*)?$/i)) {
-                        return `![](${pageName})`; // This is actually an image
-                    }
-                    if (encodedName.match(/^(https?:\/\/)/i)) {
-                        return pageName; // This is actually a web URL
-                    }
+        return await safeReplaceAsync(content, LOGSEQ_PAGE_REF_REGEXP, async (match, pageName) => {
+            // Handle org mode special cases (images and URLs)
+            if (format === "org") {
+                const encodedName = encodeURI(pageName);
+                if (encodedName.match(/\.(png|jpg|jpeg|bmp|tiff|gif|apng|svg|webp)(\?.*)?$/i)) {
+                    return `![](${pageName})`; // This is actually an image
                 }
-
-                // DB mode special case: Check if [[uuid]] is actually a block reference
-                if (await this.checkCurrentIsDbGraph()) {
-                    if (pageName.length === 36) {
-                        // Might be a UUID
-                        const possibleBlock = await this.getBlock(pageName);
-                        if (possibleBlock) {
-                            return `((${possibleBlock.uuid}))`; // Convert to block ref
-                        }
-                    }
+                if (encodedName.match(/^(https?:\/\/)/i)) {
+                    return pageName; // This is actually a web URL
                 }
-
-                // Standard case: Convert page name to ID
-                try {
-                    const page = await this.getPage(pageName);
-                    if (page) {
-                        const pageId = getIDFromPage(page);
-                        if (pageId) {
-                            return `[[${pageId}]]`;
-                        }
-                    }
-                } catch (e) {
-                    // Page not found, keep original
-                }
-
-                return `[[${pageName}]]`;
             }
-        );
+
+            // DB mode special case: Check if [[uuid]] is actually a block reference
+            if (await LogseqContentPreprocessor.checkCurrentIsDbGraph()) {
+                if (pageName.length === 36) {
+                    // Might be a UUID
+                    const possibleBlock = await LogseqContentPreprocessor.getBlock(pageName);
+                    if (possibleBlock) {
+                        return `((${possibleBlock.uuid}))`; // Convert to block ref
+                    }
+                }
+            }
+
+            // Standard case: Convert page name to ID
+            try {
+                const page = await LogseqContentPreprocessor.getPage(pageName);
+                if (page) {
+                    const pageId = getIDFromPage(page);
+                    if (pageId) {
+                        return `[[${pageId}]]`;
+                    }
+                }
+            } catch (e) {
+                // Page not found, keep original
+            }
+
+            return `[[${pageName}]]`;
+        });
     }
 
     /**
@@ -250,7 +259,7 @@ export class LogseqContentPreprocessor {
             LOGSEQ_RENAMED_PAGE_REF_REGEXP,
             async (match, aliasContent, pageName) => {
                 try {
-                    const page = await this.getPage(pageName);
+                    const page = await LogseqContentPreprocessor.getPage(pageName);
                     if (page) {
                         const pageId = getIDFromPage(page);
                         if (pageId) {
@@ -286,19 +295,19 @@ export class LogseqContentPreprocessor {
             green: "🟢",
             blue: "🔵",
             red: "🔴",
-            purple: "🟣",
+            purple: "🟣"
         };
 
         if (lsType === "annotation" && hlType === "area") {
             // Image annotation
             const blockUuid = properties["id"] || properties["nid"] || properties["uuid"];
-            const block = await this.getBlock(blockUuid);
+            const block = await LogseqContentPreprocessor.getBlock(blockUuid);
             let hlsImgLoc = "error";
 
             try {
                 if (_.get(block, [":logseq.property.pdf/hl-image", "id"])) {
                     // DB graphs
-                    const assetBlock = await this.getBlock(
+                    const assetBlock = await LogseqContentPreprocessor.getBlock(
                         _.get(block, [":logseq.property.pdf/hl-image", "id"])
                     );
                     if (assetBlock) {
@@ -306,7 +315,9 @@ export class LogseqContentPreprocessor {
                     }
                 } else {
                     // MD graphs
-                    const page = await this.getPage(block?.page?.id as number | PageIdentity);
+                    const page = await LogseqContentPreprocessor.getPage(
+                        block?.page?.id as number | PageIdentity
+                    );
                     if (page) {
                         hlsImgLoc = `../assets/${(getNameFromPage(page) ?? "").replace(
                             "hls__",
@@ -386,14 +397,14 @@ export class LogseqContentPreprocessor {
         const linkDBId = _.toInteger(link);
 
         if (linkDBId) {
-            const block = await this.getBlock(linkDBId as any);
+            const block = await LogseqContentPreprocessor.getBlock(linkDBId as any);
             if (block) {
                 const blockUUID = getUUIDFromBlock(block);
                 if (blockUUID) {
                     resultContent = `{{embed ((${blockUUID}))}}` + "\n" + resultContent;
                 }
             } else {
-                const page = await this.getPage(linkDBId as EntityID);
+                const page = await LogseqContentPreprocessor.getPage(linkDBId as EntityID);
                 if (page) {
                     const pageId = getIDFromPage(page);
                     if (pageId) {
@@ -408,7 +419,7 @@ export class LogseqContentPreprocessor {
             _.isArray(tags) && tags.map((t) => t.trim().toLowerCase()).includes("code");
         const language = _.get(properties, "lang");
         if (hasCodeTag) {
-            resultContent = "\`\`\`" + (language ? language : '') + "\n" + resultContent + "\n\`\`\`";
+            resultContent = "```" + (language ? language : "") + "\n" + resultContent + "\n```";
         }
 
         // Math block backward compatibility
@@ -463,16 +474,28 @@ export class LogseqContentPreprocessorProxy extends LogseqContentPreprocessor {
 
     // Private memoized implementation - accessed by event listener below
     private static readonly _preprocessMemoized = pMemoize(
-        async (content: string, format: "markdown" | "org" = "markdown"): Promise<PreprocessResult> => {
-            return await LogseqContentPreprocessor.preprocess.call(LogseqContentPreprocessorProxy, content, format);
-        }, {cacheKey: arguments_ => objectHashOptimized(arguments_)});
+        async (
+            content: string,
+            format: "markdown" | "org" = "markdown"
+        ): Promise<PreprocessResult> => {
+            return await LogseqContentPreprocessor.preprocess.call(
+                LogseqContentPreprocessorProxy,
+                content,
+                format
+            );
+        },
+        {cacheKey: (arguments_) => objectHashOptimized(arguments_)}
+    );
 
-    static async preprocess(content: string, format: "markdown" | "org" = "markdown"): Promise<PreprocessResult> {
-        return await this._preprocessMemoized(content, format);
+    static async preprocess(
+        content: string,
+        format: "markdown" | "org" = "markdown"
+    ): Promise<PreprocessResult> {
+        return await LogseqContentPreprocessorProxy._preprocessMemoized(content, format);
     }
 }
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
     WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
         pMemoizeClear((LogseqContentPreprocessorProxy as any)._preprocessMemoized);
     });

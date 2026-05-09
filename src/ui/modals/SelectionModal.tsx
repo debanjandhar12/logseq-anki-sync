@@ -1,9 +1,9 @@
+import {WindowBridge} from "../../logseq/WindowBridge";
+import {LogseqButton} from "../components/LogseqButton";
 import React from "../React";
-import { Modal } from "./core/Modal";
-import { useModal } from "./hooks/useModal";
-import { LogseqButton } from "../components/LogseqButton";
-import { UI } from "../UI";
-import { WindowBridge } from "../../logseq/WindowBridge";
+import {UI} from "../UI";
+import {Modal} from "./core/Modal";
+import {useModal} from "./hooks/useModal";
 
 export interface SelectionModalItem {
     name: string;
@@ -16,7 +16,7 @@ export interface SelectionModalProps {
     enableKeySelect?: boolean;
     resolve: (value: number | null) => void;
     reject: (error: any) => void;
-    modalContext?: { modalId: string | null };
+    modalContext?: {modalId: string | null};
 }
 
 export const SelectionModalComponent: React.FC<SelectionModalProps> = ({
@@ -25,15 +25,15 @@ export const SelectionModalComponent: React.FC<SelectionModalProps> = ({
     enableKeySelect = false,
     resolve,
     reject,
-    modalContext,
+    modalContext
 }) => {
     const [displayItems, setDisplayItems] = React.useState(items);
 
-    const { open, setOpen, returnResult } = useModal<number | null>(resolve, {
+    const {open, setOpen, returnResult} = useModal<number | null>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         defaultResult: null,
-        modalId: modalContext?.modalId,
+        modalId: modalContext?.modalId
     });
 
     const handleSelection = React.useCallback(
@@ -44,7 +44,7 @@ export const SelectionModalComponent: React.FC<SelectionModalProps> = ({
                 returnResult(selection);
             }
         },
-        [returnResult, items],
+        [returnResult, items]
     );
 
     // Setup keyboard shortcuts for numbered selection
@@ -55,11 +55,11 @@ export const SelectionModalComponent: React.FC<SelectionModalProps> = ({
                     if (i + 1 >= 1 && i + 1 <= 9) {
                         return {
                             ...item,
-                            name: `${item.name}<span class="keyboard-shortcut px-3" style="margin-left: auto;"><div class="opacity-80 ui__button-shortcut-key" style="margin-left: 2px;">${i + 1}</div></span>`,
+                            name: `${item.name}<span class="keyboard-shortcut px-3" style="margin-left: auto;"><div class="opacity-80 ui__button-shortcut-key" style="margin-left: 2px;">${i + 1}</div></span>`
                         };
                     }
                     return item;
-                }),
+                })
             );
         }
 
@@ -111,14 +111,12 @@ export const SelectionModalComponent: React.FC<SelectionModalProps> = ({
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
-                            flex: 1,
+                            flex: 1
                         }}
-                        dangerouslySetInnerHTML={{ __html: item.name }}
+                        dangerouslySetInnerHTML={{__html: item.name}}
                     />
                 </LogseqButton>
             ))}
         </Modal>
     );
 };
-
-

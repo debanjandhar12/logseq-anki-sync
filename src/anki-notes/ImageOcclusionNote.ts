@@ -1,41 +1,40 @@
-import { Note } from "./Note";
+import {Note} from "./Note";
 import "@logseq/libs";
-import { WindowParentBridge } from "../logseq/WindowParentBridge";
-import { LogseqPropertiesHelper } from "../logseq/LogseqPropertiesHelper";
-import {
-    escapeClozesAndMacroDelimiters,
-    getFirstNonEmptyLine,
-    safeReplace,
-    safeReplaceAsync,
-} from "../utils/utils";
+import type {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {
     isImage_REGEXP,
     isWebURL_REGEXP,
     LOGSEQ_BLOCK_REF_REGEXP,
-    MD_IMAGE_EMBEDED_REGEXP,
+    MD_IMAGE_EMBEDED_REGEXP
 } from "../constants";
-import { LogseqProxy } from "../logseq/LogseqProxy";
-import { LogseqToHtmlConverterProxy, HTMLFile } from "../logseq/LogseqToHtmlConverter";
-import { LogseqContentPreprocessor } from "../logseq/LogseqContentPreprocessor";
-import {
-    OcclusionData,
-    OcclusionConfig,
-    OcclusionElement,
-} from "../ui/launchers/showOcclusionEditor";
-import { showOcclusionEditor } from "../ui/launchers/showOcclusionEditor";
+import {createLogger, LoggerCategory} from "../logger";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
-import { BlockEntity, BlockUUID } from "@logseq/libs/dist/LSPlugin";
-import { showSelectionModal } from "../ui";
-
-import { createLogger, LoggerCategory } from "../logger";
-import { appendExtraToHtmlFile } from "./NoteUtils";
-import { LogseqAppInfoFetcher } from "../logseq/LogseqAppInfoFetcher";
-import { ObjectPropertyDataManager } from "../utils/ObjectPropertyDataManager";
+import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
+import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
+import {LogseqPropertiesHelper} from "../logseq/LogseqPropertiesHelper";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import {type HTMLFile, LogseqToHtmlConverterProxy} from "../logseq/LogseqToHtmlConverter";
+import {WindowParentBridge} from "../logseq/WindowParentBridge";
+import {showSelectionModal} from "../ui";
+import {
+    type OcclusionConfig,
+    type OcclusionData,
+    type OcclusionElement,
+    showOcclusionEditor
+} from "../ui/launchers/showOcclusionEditor";
+import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
+import {
+    escapeClozesAndMacroDelimiters,
+    getFirstNonEmptyLine,
+    safeReplace,
+    safeReplaceAsync
+} from "../utils/utils";
+import {appendExtraToHtmlFile} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
-export type ImageToOcclusionDataHashMap = { [key: string]: OcclusionData };
+export type ImageToOcclusionDataHashMap = {[key: string]: OcclusionData};
 
 export class ImageOcclusionNote extends Note {
     public type = "image_occlusion";
@@ -46,7 +45,7 @@ export class ImageOcclusionNote extends Note {
         format: string,
         properties: any,
         pageId: number,
-        tags: string[] = [],
+        tags: string[] = []
     ) {
         super(uuid, content, format, properties, pageId, tags);
     }
@@ -61,15 +60,15 @@ export class ImageOcclusionNote extends Note {
         LogseqProxy.Editor.registerProperty("occlusion", {
             type: "default",
             cardinality: "one",
-            hide: false,
+            hide: false
         });
     };
 
-    public static async handleImageOcclusionOperation(block: BlockEntity | { uuid: string }) {
+    public static async handleImageOcclusionOperation(block: BlockEntity | {uuid: string}) {
         if (!LogseqAppInfoFetcher.checkHostAccess()) {
             await logseq.UI.showMsg(
                 "Opening Occlusion Editor is not supported in Logseq Web since plugin cannot read image files at the moment.",
-                "error",
+                "error"
             );
             return;
         }
@@ -88,32 +87,33 @@ export class ImageOcclusionNote extends Note {
         }
         let imgToOcclusionDataHashMap: ImageToOcclusionDataHashMap =
             ImageOcclusionNote.upgradeProperties(
-                ObjectPropertyDataManager.load(fetchedBlock, "occlusion") || {},
+                ObjectPropertyDataManager.load(fetchedBlock, "occlusion") || {}
             );
         logger.info(imgToOcclusionDataHashMap);
         imgToOcclusionDataHashMap = ImageOcclusionNote.migratePdfImages(
             imgToOcclusionDataHashMap,
-            block_images,
+            block_images
         );
         logger.info(imgToOcclusionDataHashMap);
         let selectedImage = null;
-        let selectedImageIdx =
+        const selectedImageIdx =
             block_images.length == 1
                 ? 0
                 : await showSelectionModal(
-                    await Promise.all(
-                        block_images.map(async (image) => {
-                            return {
-                                name: image,
-                                icon: `<img class="px-4" height="48" width="64" src="${image.match(isWebURL_REGEXP)
-                                        ? image
-                                        : await WindowParentBridge.makeAssetUrl(image)
-                                    }"></img>`,
-                            };
-                        }),
-                    ),
-                    { message: "Select Image for occlusion", enableKeySelect: true },
-                );
+                      await Promise.all(
+                          block_images.map(async (image) => {
+                              return {
+                                  name: image,
+                                  icon: `<img class="px-4" height="48" width="64" src="${
+                                      image.match(isWebURL_REGEXP)
+                                          ? image
+                                          : await WindowParentBridge.makeAssetUrl(image)
+                                  }"></img>`
+                              };
+                          })
+                      ),
+                      {message: "Select Image for occlusion", enableKeySelect: true}
+                  );
         if (selectedImageIdx != null) selectedImage = block_images[selectedImageIdx];
         if (selectedImage) {
             selectedImage = (selectedImage as string).split("?")[0];
@@ -123,18 +123,18 @@ export class ImageOcclusionNote extends Note {
                 _.get(
                     imgToOcclusionDataHashMap[selectedImage],
                     "elements",
-                    [],
+                    []
                 ) as OcclusionElement[],
-                _.get(
-                    imgToOcclusionDataHashMap[selectedImage],
-                    "config",
-                    {},
-                ) as OcclusionConfig,
-                blockTags,
+                _.get(imgToOcclusionDataHashMap[selectedImage], "config", {}) as OcclusionConfig,
+                blockTags
             );
             if (newOcclusionData && typeof newOcclusionData == "object") {
                 imgToOcclusionDataHashMap[selectedImage] = newOcclusionData;
-                await ObjectPropertyDataManager.save(fetchedBlock, "occlusion", imgToOcclusionDataHashMap);
+                await ObjectPropertyDataManager.save(
+                    fetchedBlock,
+                    "occlusion",
+                    imgToOcclusionDataHashMap
+                );
 
                 // Handle tag updates for hide-all-test-one
                 const blockUUID = getUUIDFromBlock(fetchedBlock);
@@ -153,13 +153,13 @@ export class ImageOcclusionNote extends Note {
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let clozedContent: string = this.content;
         let imgToOcclusionDataHashMap = ImageOcclusionNote.upgradeProperties(
-            ObjectPropertyDataManager.load(this, "occlusion") || {},
+            ObjectPropertyDataManager.load(this, "occlusion") || {}
         );
         const block = await LogseqProxy.Editor.getBlock(this.uuid);
         let block_images = await ImageOcclusionNote.getImagesInBlockOrNote(block);
         imgToOcclusionDataHashMap = ImageOcclusionNote.migratePdfImages(
             imgToOcclusionDataHashMap,
-            block_images,
+            block_images
         );
 
         // Check for hide-all-test-one tag on the block
@@ -178,15 +178,15 @@ export class ImageOcclusionNote extends Note {
         clozedContent = escapeClozesAndMacroDelimiters(clozedContent);
         clozedContent += `\n<div class="hidden">
         ${Array.from(clozes)
-                .map((cloze) => `{{c${cloze}:: ::<span id="c${cloze}"></span>}}`)
-                .join("")}
+            .map((cloze) => `{{c${cloze}:: ::<span id="c${cloze}"></span>}}`)
+            .join("")}
         <div id="imgToOcclusionDataHashMap">${JSON.stringify(imgToOcclusionDataHashMap)}</div>
         <img id="localImgBasePath" src="_logseq_anki_sync.css"></img>
         </div>`;
 
         const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(
             clozedContent,
-            this.format,
+            this.format
         );
 
         // --- Add extra property content (non-indented) ---
@@ -194,12 +194,12 @@ export class ImageOcclusionNote extends Note {
             result,
             _.get(await LogseqProxy.Editor.getBlock(this.uuid), "properties.extra") as string,
             this.format,
-            true,
+            true
         );
     }
 
     public static async getNotesFromLogseqBlocks(): Promise<ImageOcclusionNote[]> {
-        type DatascriptQueryResult = [] | [{ uuid: BlockUUID; page: { id: number } }][];
+        type DatascriptQueryResult = [] | [{uuid: BlockUUID; page: {id: number}}][];
         let blocks: DatascriptQueryResult = [];
         if (!(await LogseqProxy.App.checkCurrentIsDbGraph())) {
             blocks = await LogseqProxy.DB.datascriptQuery(
@@ -209,7 +209,7 @@ export class ImageOcclusionNote extends Note {
                   [?b :block/properties ?p]
                   [(get ?p :occlusion)]
                 ]`,
-                { suppressErrors: false },
+                {suppressErrors: false}
             );
         } else {
             blocks = await LogseqProxy.DB.datascriptQuery(
@@ -222,7 +222,7 @@ export class ImageOcclusionNote extends Note {
                   [(clojure.string/ends-with? ?prop-name "occlusion")]
                   [?b ?prop _]
                 ]`,
-                { suppressErrors: false },
+                {suppressErrors: false}
             );
         }
         let notes: (ImageOcclusionNote | false)[] = await Promise.all(
@@ -231,7 +231,7 @@ export class ImageOcclusionNote extends Note {
                 const pageId = _.get(b[0], "page.id");
                 if (!pageId) return null;
 
-                let block = await LogseqProxy.Editor.getBlock(uuid);
+                const block = await LogseqProxy.Editor.getBlock(uuid);
                 if (block)
                     return new ImageOcclusionNote(
                         uuid,
@@ -239,12 +239,12 @@ export class ImageOcclusionNote extends Note {
                         block.format,
                         block.properties || {},
                         pageId,
-                        _.get(block, "properties.tags", []) as string[],
+                        _.get(block, "properties.tags", []) as string[]
                     );
                 else {
                     return null;
                 }
-            }),
+            })
         );
         logger.info("ImageOcclusionNote Loaded", notes);
         notes = await Note.removeUnwantedNotes(notes as ImageOcclusionNote[]);
@@ -253,12 +253,12 @@ export class ImageOcclusionNote extends Note {
                 // Remove blocks that do not have images with occlusion
                 try {
                     let imgToOcclusionDataHashMap = ImageOcclusionNote.upgradeProperties(
-                        ObjectPropertyDataManager.load(note, "occlusion") || {},
+                        ObjectPropertyDataManager.load(note, "occlusion") || {}
                     );
                     let blockImages = await ImageOcclusionNote.getImagesInBlockOrNote(note);
                     imgToOcclusionDataHashMap = ImageOcclusionNote.migratePdfImages(
                         imgToOcclusionDataHashMap,
-                        blockImages,
+                        blockImages
                     );
                     blockImages = blockImages.map((image) => image.split("?")[0]);
                     for (const image in imgToOcclusionDataHashMap) {
@@ -274,7 +274,7 @@ export class ImageOcclusionNote extends Note {
                     return false;
                 } // Most likely, the occlusion property is not a valid JSON string. Return false.
                 return false; // No valid occlusion found. Return false.
-            }),
+            })
         );
         notes = _.without(notes, false);
         return notes as ImageOcclusionNote[];
@@ -286,7 +286,7 @@ export class ImageOcclusionNote extends Note {
         // Preprocess to extract PDF properties and normalize format
         const preprocessResult = await LogseqContentPreprocessor.preprocess(
             block_content,
-            block.format || "markdown",
+            block.format || "markdown"
         );
         block_content = preprocessResult.content;
 
@@ -299,12 +299,12 @@ export class ImageOcclusionNote extends Note {
                     // Dont use LogseqProxy.Editor.getBlock() here. It will cause a bug due to activeCache.
                     // Use helper method to get fresh block with properties
                     const block_ref = await LogseqPropertiesHelper.getBlock(blockUUID);
-                    let preprocessResult = await LogseqContentPreprocessor.preprocess(
+                    const preprocessResult = await LogseqContentPreprocessor.preprocess(
                         block_ref?.content || "",
-                        block_ref?.format || "markdown",
+                        block_ref?.format || "markdown"
                     );
-                    let block_content = preprocessResult.content;
-                    let block_props = preprocessResult.properties || {};
+                    const block_content = preprocessResult.content;
+                    const block_props = preprocessResult.properties || {};
                     let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
                     block_content_first_line =
                         escapeClozesAndMacroDelimiters(block_content_first_line);
@@ -318,14 +318,14 @@ export class ImageOcclusionNote extends Note {
                     logger.warn(e);
                 }
                 return match;
-            },
+            }
         );
         let block_images = (block_content.match(MD_IMAGE_EMBEDED_REGEXP) || []).map(
             (block_image) => {
                 block_image = block_image.replace(MD_IMAGE_EMBEDED_REGEXP, "$1");
                 if (!block_image.split("?")[0].match(isImage_REGEXP)) return ""; // Ignore non-images
                 return block_image;
-            },
+            }
         );
         block_images = _.uniq(block_images);
         block_images = _.filter(block_images, (image) => image.trim() != "");
@@ -335,7 +335,7 @@ export class ImageOcclusionNote extends Note {
     // This migrates the occlusions associated with older image annotation links with newer ones
     private static migratePdfImages(
         imgToOcclusionDataHashMap: ImageToOcclusionDataHashMap,
-        block_images: string[],
+        block_images: string[]
     ): ImageToOcclusionDataHashMap {
         const newImgToOcclusionDataHashMap = {};
         block_images.forEach((image) => {
@@ -349,7 +349,7 @@ export class ImageOcclusionNote extends Note {
                     let imageURLParams: any = new Map();
                     try {
                         imageURLParams = new URLSearchParams(image.split("?")[1]);
-                    } catch (e) { }
+                    } catch (e) {}
                     logger.info(image, imageURLParams.get("imageAnnotationBlockUUID"));
                     if (
                         imageURLParams.get("imageAnnotationBlockUUID") &&
@@ -360,15 +360,14 @@ export class ImageOcclusionNote extends Note {
                     return false;
                 });
             if (k) {
-                newImgToOcclusionDataHashMap[image.split("?")[0]] =
-                    imgToOcclusionDataHashMap[k];
+                newImgToOcclusionDataHashMap[image.split("?")[0]] = imgToOcclusionDataHashMap[k];
             }
         });
         logger.info(
             "migratePdfImages",
             block_images,
             imgToOcclusionDataHashMap,
-            newImgToOcclusionDataHashMap,
+            newImgToOcclusionDataHashMap
         );
         return newImgToOcclusionDataHashMap;
     }
@@ -381,7 +380,7 @@ export class ImageOcclusionNote extends Note {
                 newHashMap[key] = {
                     elements: value,
                     config: {},
-                    tags: [],
+                    tags: []
                 };
             } else if (
                 typeof value == "object" &&

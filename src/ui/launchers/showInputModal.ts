@@ -1,6 +1,6 @@
+import {InputModalComponent} from "../modals/InputModal";
+import {createModalPromise} from "../modals/utils/createModalPromise";
 import React from "../React";
-import { createModalPromise } from "../modals/utils/createModalPromise";
-import { InputModalComponent } from "../modals/InputModal";
 
 /**
  * Shows an input modal for text entry.
@@ -20,20 +20,19 @@ export async function showInputModal(
         placeholder?: string;
         initialValue?: string;
         maxLength?: number;
-    } = {},
+    } = {}
 ): Promise<string | null> {
     return createModalPromise<string | null>(
-        (props) => (
+        (props) =>
             React.createElement(InputModalComponent, {
                 title: options.title,
                 message: options.message,
                 placeholder: options.placeholder,
                 initialValue: options.initialValue,
                 maxLength: options.maxLength,
-                ...props,
-            })
-        ),
+                ...props
+            }),
         {},
-        { errorMessage: "Failed to open input modal" },
+        {errorMessage: "Failed to open input modal"}
     );
 }

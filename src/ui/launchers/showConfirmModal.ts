@@ -1,6 +1,6 @@
+import {ConfirmModalComponent} from "../modals/ConfirmModal";
+import {createModalPromise} from "../modals/utils/createModalPromise";
 import React from "../React";
-import { createModalPromise } from "../modals/utils/createModalPromise";
-import { ConfirmModalComponent } from "../modals/ConfirmModal";
 
 /**
  * A confirmation modal that returns boolean based on cancel or ok button click
@@ -10,18 +10,17 @@ export async function showConfirmModal(
     options: {
         confirmText?: string;
         cancelText?: string;
-    } = {},
+    } = {}
 ): Promise<boolean> {
     return createModalPromise<boolean>(
-        (props) => (
+        (props) =>
             React.createElement(ConfirmModalComponent, {
                 message,
                 confirmText: options.confirmText,
                 cancelText: options.cancelText,
-                ...props,
-            })
-        ),
+                ...props
+            }),
         {},
-        { errorMessage: "Failed to open confirmation modal" },
+        {errorMessage: "Failed to open confirmation modal"}
     );
 }

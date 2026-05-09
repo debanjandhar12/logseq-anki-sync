@@ -1,13 +1,13 @@
 import reactPlugin from "@vitejs/plugin-react";
-import { defineConfig, loadEnv } from "vite";
-import { logseqDevPlugin } from "./vite/logseqDevPlugin";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
+import {defineConfig, loadEnv} from "vite";
+import {nodePolyfills} from "vite-plugin-node-polyfills";
+import {bundleJSStringPlugin} from "./vite/bundleJSStringPlugin";
+import {logseqDevPlugin} from "./vite/logseqDevPlugin";
 import {rewriteDistReqToRootPlugin} from "./vite/rewriteDistReqToRootPlugin";
 import {staticFileSyncTransformPlugin} from "./vite/staticFileSyncTransformPlugin";
-import {bundleJSStringPlugin} from "./vite/bundleJSStringPlugin";
 // https://vitejs.dev/config/
 
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({command, mode}) => {
     const env = loadEnv(mode, process.cwd(), "");
     return {
         base: "./",
@@ -15,8 +15,8 @@ export default defineConfig(({ command, mode }) => {
         resolve: {
             alias: {
                 "react/jsx-runtime": "react/jsx-runtime.js",
-                "react/jsx-dev-runtime": "react/jsx-dev-runtime.js",
-            },
+                "react/jsx-dev-runtime": "react/jsx-dev-runtime.js"
+            }
         },
         plugins: [
             mode === "development" && logseqDevPlugin(), // for dev only
@@ -24,38 +24,38 @@ export default defineConfig(({ command, mode }) => {
             mode === "development" && rewriteDistReqToRootPlugin(), // for dev only
             nodePolyfills(),
             staticFileSyncTransformPlugin(),
-            bundleJSStringPlugin(mode),
+            bundleJSStringPlugin(mode)
         ],
         define: {
-            "process.env": JSON.stringify({ ...env, NODE_ENV: mode })
+            "process.env": JSON.stringify({...env, NODE_ENV: mode})
         },
         server: {
             port: 5173,
             cors: true,
             watch: {
-                ignored: ["**/dist/**", "**/node_modules/**"],
-            },
+                ignored: ["**/dist/**", "**/node_modules/**"]
+            }
         },
         build: {
             sourcemap: true,
             target: "esnext",
             minify: "esbuild",
-            emptyOutDir: true,
+            emptyOutDir: true
         },
         css: {
             postcss: {
                 plugins: [
-                    require("tailwindcss")({ config: "./src/ui/tailwind.config.js" }),
-                    require("autoprefixer"),
-                ],
-            },
+                    require("tailwindcss")({config: "./src/ui/tailwind.config.js"}),
+                    require("autoprefixer")
+                ]
+            }
         },
         test: {
             include: ["**/*.test.ts"],
             exclude: ["**/logseq-dev-plugin/**", "**/node_modules/**"],
             setupFiles: ["./tests/setup.ts"],
             environment: "jsdom",
-            env: { ...env, NODE_ENV: mode },
+            env: {...env, NODE_ENV: mode},
             pool: "forks",
             singleFork: true,
             fileParallelism: false,
@@ -64,6 +64,6 @@ export default defineConfig(({ command, mode }) => {
                     inline: [/@floating-ui/]
                 }
             }
-        },
+        }
     };
 });

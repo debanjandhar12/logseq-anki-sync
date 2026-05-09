@@ -1,13 +1,28 @@
-import {Mldoc} from "mldoc";
-import {isAudio_REGEXP, isImage_REGEXP, isVideo_REGEXP } from "../constants";
 import _ from "lodash";
+import {Mldoc} from "mldoc";
+import {isAudio_REGEXP, isImage_REGEXP, isVideo_REGEXP} from "../constants";
 
-import { createLogger, LoggerCategory } from "../logger";
+import {createLogger, LoggerCategory} from "../logger";
 
 const logger = createLogger(LoggerCategory.Others);
 
 export class BlockContentParser {
-    private static async _find(blockContent : string, blockContentFormat: "org" | 'Org' | 'Markdown',findType: 'link' | 'html' | 'hiccup' | 'img' | 'audio' | 'video' | 'inline_code' | 'code' | 'inline_math' | 'math' | 'tag') {
+    private static async _find(
+        blockContent: string,
+        blockContentFormat: "org" | "Org" | "Markdown",
+        findType:
+            | "link"
+            | "html"
+            | "hiccup"
+            | "img"
+            | "audio"
+            | "video"
+            | "inline_code"
+            | "code"
+            | "inline_math"
+            | "math"
+            | "tag"
+    ) {
         const mldocsOptions = {
             toc: false,
             heading_number: false,
@@ -18,27 +33,30 @@ export class BlockContentParser {
             inline_type_with_pos: true,
             parse_outline_only: false,
             export_md_remove_options: [],
-            hiccup_in_block: true,
+            hiccup_in_block: true
         };
 
         if (!blockContent || blockContent == "") return [];
 
-        if (blockContentFormat == "org" || blockContentFormat == 'Org') {
+        if (blockContentFormat == "org" || blockContentFormat == "Org") {
             mldocsOptions.format = "Org";
         } else mldocsOptions.format = "Markdown";
 
         let parsedJson = Mldoc.parseInlineJson(
             blockContent,
             JSON.stringify({...mldocsOptions, parse_outline_only: true}),
-            JSON.stringify({}),
+            JSON.stringify({})
         );
-        let blockContentUTF8 = new TextEncoder().encode(blockContent); // Convert to utf8 array as mldocs outputs position according to utf8 https://github.com/logseq/mldoc/issues/120
+        const blockContentUTF8 = new TextEncoder().encode(blockContent); // Convert to utf8 array as mldocs outputs position according to utf8 https://github.com/logseq/mldoc/issues/120
         try {
             parsedJson = JSON.parse(parsedJson);
         } catch {
             parsedJson = [];
             logger.info("Error parsing block content");
-            logseq.UI.showMsg("LogseqWrapper.BlockContentParser.forEach: Error parsing block content", "error");
+            logseq.UI.showMsg(
+                "LogseqWrapper.BlockContentParser.forEach: Error parsing block content",
+                "error"
+            );
         }
 
         const result = [];
@@ -50,7 +68,9 @@ export class BlockContentParser {
             const type = node[0][0];
             const start_pos = node[node.length - 1]["start_pos"];
             const end_pos = node[node.length - 1]["end_pos"];
-            const nodeContent = new TextDecoder().decode(blockContentUTF8.slice(start_pos, end_pos));
+            const nodeContent = new TextDecoder().decode(
+                blockContentUTF8.slice(start_pos, end_pos)
+            );
 
             // TODO: Potentially, web / local file links will not be parsed correctly in org mode
             if (type == "Link") {
@@ -63,115 +83,116 @@ export class BlockContentParser {
                 }
                 const link_full_text = node[0][1]?.full_text;
                 const link_label_text = node[0][1]?.label?.[0]?.[1];
-                if ((link_type == "Search" || link_type == "Complex") &&
+                if (
+                    (link_type == "Search" || link_type == "Complex") &&
                     link_url.match(isImage_REGEXP) &&
-                    link_full_text.startsWith("!") && findType == "img") {
+                    link_full_text.startsWith("!") &&
+                    findType == "img"
+                ) {
                     result.push({
                         type: "img",
                         content: nodeContent,
                         start_pos: start_pos,
                         end_pos: end_pos,
                         url: link_url,
-                        label: link_label_text,
+                        label: link_label_text
                     });
-                }
-                else if ((link_type == "Search" || link_type == "Complex") &&
+                } else if (
+                    (link_type == "Search" || link_type == "Complex") &&
                     link_url.match(isAudio_REGEXP) &&
-                    link_full_text.startsWith("!") && findType == "audio") {
+                    link_full_text.startsWith("!") &&
+                    findType == "audio"
+                ) {
                     result.push({
                         type: "audio",
                         content: nodeContent,
                         start_pos: start_pos,
                         end_pos: end_pos,
                         url: link_url,
-                        label: link_label_text,
+                        label: link_label_text
                     });
-                }
-                else if ((link_type == "Search" || link_type == "Complex")  &&
+                } else if (
+                    (link_type == "Search" || link_type == "Complex") &&
                     link_url.match(isVideo_REGEXP) &&
-                    link_full_text.startsWith("!") && findType == "video") {
+                    link_full_text.startsWith("!") &&
+                    findType == "video"
+                ) {
                     result.push({
                         type: "video",
                         content: nodeContent,
                         start_pos: start_pos,
                         end_pos: end_pos,
                         url: link_url,
-                        label: link_label_text,
+                        label: link_label_text
                     });
-                }
-                else if ((link_type == "Search" || link_type == "Complex")  &&
-                    !link_full_text.startsWith("!")  && findType == "link") {
+                } else if (
+                    (link_type == "Search" || link_type == "Complex") &&
+                    !link_full_text.startsWith("!") &&
+                    findType == "link"
+                ) {
                     result.push({
                         type: "link",
                         content: nodeContent,
                         start_pos: start_pos,
                         end_pos: end_pos,
                         url: link_url,
-                        label: link_label_text,
+                        label: link_label_text
                     });
                 }
-            }
-            else if (type == "Tag" && findType == "tag") {
+            } else if (type == "Tag" && findType == "tag") {
                 result.push({
                     type: "tag",
                     content: nodeContent,
                     start_pos: start_pos,
-                    end_pos: end_pos,
+                    end_pos: end_pos
                 });
-            }
-            else if ((type == "Raw_Html" || type == "Inline_Html") && findType == "html") {
+            } else if ((type == "Raw_Html" || type == "Inline_Html") && findType == "html") {
                 result.push({
                     type: "html",
                     content: nodeContent,
                     start_pos: start_pos,
-                    end_pos: end_pos,
+                    end_pos: end_pos
                 });
-            }
-            else if ((type == "Raw_Hiccup" || type == "Inline_Hiccup") && findType == "hiccup") {
+            } else if ((type == "Raw_Hiccup" || type == "Inline_Hiccup") && findType == "hiccup") {
                 result.push(node);
-            }
-            else if (type == "Code") {
+            } else if (type == "Code") {
                 if (nodeContent.startsWith(`\`\`\``) && findType == "code") {
                     result.push({
                         type: "code",
-                        content: nodeContent+'`',
+                        content: nodeContent + "`",
                         start_pos: start_pos,
-                        end_pos: end_pos+1,
+                        end_pos: end_pos + 1
                     });
-                }
-                else if (nodeContent.startsWith("#BEGIN_SRC") && findType == "code") {
+                } else if (nodeContent.startsWith("#BEGIN_SRC") && findType == "code") {
                     result.push({
                         type: "code",
                         content: nodeContent,
                         start_pos: start_pos,
-                        end_pos: end_pos,
+                        end_pos: end_pos
                     });
-                }
-                else if (findType == "inline_code") {
+                } else if (findType == "inline_code") {
                     result.push({
                         type: "inline_code",
                         content: nodeContent,
                         start_pos: start_pos,
-                        end_pos: end_pos,
+                        end_pos: end_pos
                     });
                 }
-            }
-            else if (type == "Latex_Fragment") {
+            } else if (type == "Latex_Fragment") {
                 const inlineOrDisplayed = node[0][1][0];
                 if (findType == "inline_math" && inlineOrDisplayed == "Inline") {
                     result.push({
                         type: "inline_math",
                         content: nodeContent,
                         start_pos: start_pos,
-                        end_pos: end_pos,
+                        end_pos: end_pos
                     });
-                }
-                else if (findType == "math" && inlineOrDisplayed == "Displayed") {
+                } else if (findType == "math" && inlineOrDisplayed == "Displayed") {
                     result.push({
                         type: "math", // displayed math
                         content: nodeContent,
                         start_pos: start_pos,
-                        end_pos: end_pos,
+                        end_pos: end_pos
                     });
                 }
             }
@@ -179,29 +200,94 @@ export class BlockContentParser {
         return result;
     }
 
-    static async find(blockContent : string, blockContentFormat: "org" | 'Org' | 'Markdown',findTypeArr: ('link' | 'html' | 'hiccup' | 'img' | 'audio' | 'video' | 'inline_code' | 'code' | 'inline_math' | 'math' | 'tag')[]) {
+    static async find(
+        blockContent: string,
+        blockContentFormat: "org" | "Org" | "Markdown",
+        findTypeArr: (
+            | "link"
+            | "html"
+            | "hiccup"
+            | "img"
+            | "audio"
+            | "video"
+            | "inline_code"
+            | "code"
+            | "inline_math"
+            | "math"
+            | "tag"
+        )[]
+    ) {
         let result = [];
         for (const findType of findTypeArr) {
-            const found = await this._find(blockContent, blockContentFormat, findType);
+            const found = await BlockContentParser._find(
+                blockContent,
+                blockContentFormat,
+                findType
+            );
             if (found) result = [...result, ...found];
         }
         return result;
     }
 
-    static async forEach(blockContent : string, blockContentFormat: "org" | 'Org' | 'Markdown',findTypeArr: ('link' | 'html' | 'hiccup' | 'img' | 'audio' | 'video' | 'inline_code' | 'code' | 'inline_math' | 'math' | 'tag')[], callback: (node: any) => void) {
+    static async forEach(
+        blockContent: string,
+        blockContentFormat: "org" | "Org" | "Markdown",
+        findTypeArr: (
+            | "link"
+            | "html"
+            | "hiccup"
+            | "img"
+            | "audio"
+            | "video"
+            | "inline_code"
+            | "code"
+            | "inline_math"
+            | "math"
+            | "tag"
+        )[],
+        callback: (node: any) => void
+    ) {
         for (const findType of findTypeArr) {
-            const found = await this._find(blockContent, blockContentFormat, findType);
+            const found = await BlockContentParser._find(
+                blockContent,
+                blockContentFormat,
+                findType
+            );
             if (found) found.forEach((node) => callback(node));
         }
     }
 
-    static async findAndReplace(blockContent : string, blockContentFormat: "org" | 'Org' | 'Markdown',findTypeArr: ('link' | 'html' | 'hiccup' | 'img' | 'audio' | 'video' | 'inline_code' | 'code' | 'inline_math' | 'math' | 'tag')[], replaceCallback: (node: any) => string) {
+    static async findAndReplace(
+        blockContent: string,
+        blockContentFormat: "org" | "Org" | "Markdown",
+        findTypeArr: (
+            | "link"
+            | "html"
+            | "hiccup"
+            | "img"
+            | "audio"
+            | "video"
+            | "inline_code"
+            | "code"
+            | "inline_math"
+            | "math"
+            | "tag"
+        )[],
+        replaceCallback: (node: any) => string
+    ) {
         let result = blockContent;
         for (const findType of findTypeArr) {
-            let foundArr = await this._find(blockContent, blockContentFormat, findType);
+            let foundArr = await BlockContentParser._find(
+                blockContent,
+                blockContentFormat,
+                findType
+            );
             foundArr = foundArr.sort((a, b) => b.start_pos - a.start_pos);
             foundArr.forEach((node) => {
-                result = result.substring(0, node.start_pos) + replaceCallback(node) + result.substring(node.end_pos);
+                result =
+                    result.substring(0, node.start_pos) +
+                    replaceCallback(node) +
+                    result.substring(node.end_pos);
             });
         }
         return result;

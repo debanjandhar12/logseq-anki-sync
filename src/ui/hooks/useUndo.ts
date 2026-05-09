@@ -14,10 +14,10 @@ export interface State<T> {
 }
 
 export type Action<T> =
-    | { type: ActionType.Undo }
-    | { type: ActionType.Redo }
-    | { type: ActionType.Set; newPresent: T; historyCheckpoint?: boolean }
-    | { type: ActionType.Reset; newPresent: T };
+    | {type: ActionType.Undo}
+    | {type: ActionType.Redo}
+    | {type: ActionType.Set; newPresent: T; historyCheckpoint?: boolean}
+    | {type: ActionType.Reset; newPresent: T};
 
 export const initialState = {
     past: [],
@@ -26,7 +26,7 @@ export const initialState = {
 };
 
 function reducer<T>(state: State<T>, action: Action<T>): State<T> {
-    const { past, present, future } = state;
+    const {past, present, future} = state;
 
     switch (action.type) {
         case ActionType.Undo: {
@@ -57,7 +57,7 @@ function reducer<T>(state: State<T>, action: Action<T>): State<T> {
 
         case ActionType.Set: {
             const isNewCheckpoint = action.historyCheckpoint !== false;
-            const { newPresent } = action;
+            const {newPresent} = action;
 
             if (newPresent === present) {
                 return state;
@@ -71,7 +71,7 @@ function reducer<T>(state: State<T>, action: Action<T>): State<T> {
         }
 
         case ActionType.Reset: {
-            const { newPresent } = action;
+            const {newPresent} = action;
             return {
                 past: [],
                 present: newPresent,
@@ -98,44 +98,47 @@ export function useUndo<T>(
     initialPresent: T,
     opts: UseUndoOptions = {}
 ): [State<T>, UseUndoActions<T>] {
-    const { useCheckpoints = false } = opts;
+    const {useCheckpoints = false} = opts;
 
-    const [state, dispatch] = React.useReducer(reducer as React.Reducer<State<T>, Action<T>>, {
-        ...initialState,
-        present: initialPresent
-    } as State<T>);
+    const [state, dispatch] = React.useReducer(
+        reducer as React.Reducer<State<T>, Action<T>>,
+        {
+            ...initialState,
+            present: initialPresent
+        } as State<T>
+    );
 
     const canUndo = state.past.length !== 0;
     const canRedo = state.future.length !== 0;
 
     const undo = React.useCallback(() => {
         if (canUndo) {
-            dispatch({ type: ActionType.Undo });
+            dispatch({type: ActionType.Undo});
         }
     }, [canUndo]);
 
     const redo = React.useCallback(() => {
         if (canRedo) {
-            dispatch({ type: ActionType.Redo });
+            dispatch({type: ActionType.Redo});
         }
     }, [canRedo]);
 
-    const set = React.useCallback((newPresent: T, checkpoint: boolean = false) => {
-        dispatch({
-            type: ActionType.Set,
-            newPresent,
-            historyCheckpoint: useCheckpoints ? checkpoint : true
-        });
-    }, [useCheckpoints]);
+    const set = React.useCallback(
+        (newPresent: T, checkpoint: boolean = false) => {
+            dispatch({
+                type: ActionType.Set,
+                newPresent,
+                historyCheckpoint: useCheckpoints ? checkpoint : true
+            });
+        },
+        [useCheckpoints]
+    );
 
     const reset = React.useCallback((newPresent: T) => {
-        dispatch({ type: ActionType.Reset, newPresent });
+        dispatch({type: ActionType.Reset, newPresent});
     }, []);
 
-    return [
-        state,
-        { set, reset, undo, redo, canUndo, canRedo }
-    ];
+    return [state, {set, reset, undo, redo, canUndo, canRedo}];
 }
 
 export default useUndo;

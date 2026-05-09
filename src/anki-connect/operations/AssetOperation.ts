@@ -1,8 +1,8 @@
-import * as AnkiConnect from "../AnkiConnect";
-import { AnkiAction } from "../types";
-import { WindowParentBridge } from "../../logseq/WindowParentBridge";
-import { createLogger, LoggerCategory } from "../../logger";
 import _ from "lodash";
+import {createLogger, LoggerCategory} from "../../logger";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
+import * as AnkiConnect from "../AnkiConnect";
+import type {AnkiAction} from "../types";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
@@ -16,7 +16,7 @@ export class AssetOperation {
     private readonly BATCH_SIZE = 10;
 
     storeAsset(filename: string, path: string): void {
-        this.queue.push({ filename, path });
+        this.queue.push({filename, path});
     }
 
     async execute(): Promise<void> {
@@ -30,11 +30,11 @@ export class AssetOperation {
             for (const currentBatch of batches) {
                 const retrieveActions = currentBatch.map((asset) => ({
                     action: "retrieveMediaFile",
-                    params: { filename: asset.filename },
+                    params: {filename: asset.filename}
                 }));
 
                 const existingAssetContents = await AnkiConnect.invoke("multi", {
-                    actions: retrieveActions,
+                    actions: retrieveActions
                 });
 
                 const storeActionsWithNulls = await Promise.all(
@@ -50,7 +50,7 @@ export class AssetOperation {
                 allStoreActions.push(...storeActions);
 
                 const batchResults = await AnkiConnect.invoke("multi", {
-                    actions: storeActions,
+                    actions: storeActions
                 });
                 storeResults.push(...batchResults);
             }
@@ -66,7 +66,7 @@ export class AssetOperation {
         asset: AssetParams,
         existingContent: string | false
     ): Promise<AnkiAction | null> {
-        if (asset.path == null || await this.shouldSkipAssetUpdate(asset, existingContent)) {
+        if (asset.path == null || (await this.shouldSkipAssetUpdate(asset, existingContent))) {
             return null;
         }
 
@@ -76,8 +76,8 @@ export class AssetOperation {
                 action: "storeMediaFile",
                 params: {
                     filename: asset.filename,
-                    data: base64Content,
-                },
+                    data: base64Content
+                }
             };
         }
 
@@ -85,8 +85,8 @@ export class AssetOperation {
             action: "storeMediaFile",
             params: {
                 filename: asset.filename,
-                path: asset.path,
-            },
+                path: asset.path
+            }
         };
     }
 

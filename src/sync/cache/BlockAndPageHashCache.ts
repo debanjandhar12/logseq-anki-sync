@@ -4,18 +4,18 @@
  * The idea of this is to maintain a dependency graph and calculate hash based on it.
  * This way, hash will change when we need to re-render the block.
  * Primarily, we can avoid LogseqToHtmlConverter if block hash has not changed.
- * 
+ *
  * IMPORTANT: Only pass block UUIDs and page IDs to the functions of this service.
  */
-import {DepGraph} from "dependency-graph";
-import {LogseqProxy} from "../../logseq/LogseqProxy";
-import getLogseqContentDirectDependencies from "../../logseq/getLogseqContentDirectDependencies";
-import _ from "lodash";
-import {BlockUUID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
-import objectHashOptimized from "../../utils/objectHashOptimized";
-import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 
-import { createLogger, LoggerCategory } from "../../logger";
+import type {BlockUUID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {DepGraph} from "dependency-graph";
+import _ from "lodash";
+import {createLogger, LoggerCategory} from "../../logger";
+import getLogseqContentDirectDependencies from "../../logseq/getLogseqContentDirectDependencies";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
+import objectHashOptimized from "../../utils/objectHashOptimized";
 
 const logger = createLogger(LoggerCategory.SyncCacheLayer);
 
@@ -26,7 +26,7 @@ const clearGraph = () => {
     graph = new DepGraph();
 };
 
-const removeBlockNode = (blockUUID : BlockUUID) => {
+const removeBlockNode = (blockUUID: BlockUUID) => {
     blockUUID = blockUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
 
     if (!graph.hasNode(blockUUID + "Block")) return;
@@ -50,21 +50,22 @@ const addPageNode = async (pageId: number) => {
     const pageKey = pageId + "PageById";
 
     if (graph.hasNode(pageKey)) return true;
-    
+
     const page = await LogseqProxy.Editor.getPage(pageId);
     if (!page) return false;
-    
+
     const toHash = [];
-    toHash.push([_.get(page, "updatedAt", ""),
+    toHash.push([
+        _.get(page, "updatedAt", ""),
         _.get(page, "parent.id", "") || _.get(page, "namespace.id", ""),
         page.id
-        ]);
+    ]);
     // TODO: consider adding refs as dependencies
     graph.addNode(pageKey, objectHashOptimized(toHash));
     return true;
 };
 
-const addBlockNode = async (blockUUID : BlockUUID) => {
+const addBlockNode = async (blockUUID: BlockUUID) => {
     blockUUID = blockUUID.toLowerCase(); // Convert to lowercase to avoid case sensitivity issues
 
     if (graph.hasNode(blockUUID + "Block")) return;
@@ -74,7 +75,7 @@ const addBlockNode = async (blockUUID : BlockUUID) => {
     const blockPage = await LogseqProxy.Editor.getPage(_.get(block, "page.id", "") as PageIdentity);
     const directDependencies = await getLogseqContentDirectDependencies(
         _.get(block, "content", ""),
-        _.get(block, "format", ""),
+        _.get(block, "format", "")
     );
     for (const dependency of directDependencies) {
         let nodeCreated = false;
@@ -84,12 +85,13 @@ const addBlockNode = async (blockUUID : BlockUUID) => {
         } else if (dependency.type === "Page") {
             nodeCreated = await addPageNode(dependency.value);
         }
-        
+
         // Only add dependency if the node was successfully created
         if (nodeCreated) {
-            const depKey = dependency.type === "Block" 
-                ? dependency.value.toLowerCase() + "Block"
-                : dependency.value + "PageById";
+            const depKey =
+                dependency.type === "Block"
+                    ? dependency.value.toLowerCase() + "Block"
+                    : dependency.value + "PageById";
             graph.addDependency(blockUUID + "Block", depKey);
         }
     }
@@ -104,7 +106,7 @@ const addBlockNode = async (blockUUID : BlockUUID) => {
         _.get(block, "content", "").length,
         _.get(block, "parent.id", ""),
         _.get(block, "page.id", ""),
-        _.get(block, "left.id", ""),
+        _.get(block, "left.id", "")
     ]);
     graph.setNodeData(blockUUID + "Block", objectHashOptimized(toHash));
 };
@@ -129,4 +131,4 @@ export const init = () => {
         logger.info("Clearing dependency graph cache");
         clearGraph();
     });
-}
+};

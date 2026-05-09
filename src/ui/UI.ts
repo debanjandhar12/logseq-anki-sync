@@ -1,9 +1,9 @@
 import "./styles/main.css";
-import ReactDOM from "./ReactDOM";
 
 import {createLogger, LoggerCategory} from "../logger";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {WindowBridge} from "../logseq/WindowBridge";
+import ReactDOM from "./ReactDOM";
 
 const logger = createLogger(LoggerCategory.Others);
 
@@ -26,7 +26,7 @@ interface ModalStackEntry {
  */
 export class UI {
     private static appRoot: HTMLElement | null = null;
-    
+
     private static get isVisible(): boolean {
         return (WindowBridge.getWindow() as any).__UI_IS_VISIBLE__ === true;
     }
@@ -57,34 +57,33 @@ export class UI {
      */
     public static _resetForTesting() {
         // Clean up modals without triggering logseq.hideMainUI
-        this.modalStack.forEach((entry) => {
+        UI.modalStack.forEach((entry) => {
             if (entry.containerElement.parentNode) {
                 entry.containerElement.parentNode.removeChild(entry.containerElement);
             }
         });
-        this.modalStack = [];
-        this.modalIdCounter = 0;
-        this.isVisible = false;
-        this.appRoot = null;
+        UI.modalStack = [];
+        UI.modalIdCounter = 0;
+        UI.isVisible = false;
+        UI.appRoot = null;
     }
 
     public static init() {
         logseq.hideMainUI({restoreEditingCursor: true}); // Hide main ui on plugin load
-        this.loadThemeVariables(); // Initialize theme variables
+        UI.loadThemeVariables(); // Initialize theme variables
 
         // Listen for theme changes
         logseq.App.onThemeChanged(() => {
-            setTimeout(() => this.loadThemeVariables(), 100);
+            setTimeout(() => UI.loadThemeVariables(), 100);
         });
 
         // Listen for visibility changes
         logseq.on("ui:visible:changed", ({visible}) => {
-            this.isVisible = visible;
+            UI.isVisible = visible;
             if (visible) {
-                this.loadThemeVariables();
+                UI.loadThemeVariables();
             }
         });
-
 
         // Hide main ui on plugin unload
         LogseqProxy.App.registerPluginUnloadListener(() => {
@@ -182,11 +181,11 @@ export class UI {
 
             // Popover colors
             "--ls-popover-background-color",
-            "--ls-popover-text-color",
+            "--ls-popover-text-color"
         ];
 
         try {
-            // @ts-ignore - logseq.UI.resolveThemeCssPropsVals is not in types
+            // @ts-expect-error - logseq.UI.resolveThemeCssPropsVals is not in types
             const vals = await logseq.UI.resolveThemeCssPropsVals(props);
             if (!vals) {
                 logger.warn("Theme variables not available, using defaults");
@@ -222,47 +221,47 @@ export class UI {
      */
     public static async showModal(
         component: React.ReactElement,
-        modalId?: string,
+        modalId?: string
     ): Promise<string> {
         try {
             // Get or create app root
-            this.appRoot = WindowBridge.getElementById("app");
-            if (!this.appRoot) {
+            UI.appRoot = WindowBridge.getElementById("app");
+            if (!UI.appRoot) {
                 throw new Error("App root element not found");
             }
 
             // Generate unique modal ID (use provided one if available)
-            const finalModalId = modalId || `modal-${++this.modalIdCounter}`;
+            const finalModalId = modalId || `modal-${++UI.modalIdCounter}`;
 
             // Create a container for this modal
             const containerElement = WindowBridge.createElement("div");
             containerElement.id = finalModalId;
             containerElement.style.position = "absolute";
             containerElement.style.inset = "0";
-            containerElement.style.zIndex = String(1000 + this.modalStack.length * 10);
+            containerElement.style.zIndex = String(1000 + UI.modalStack.length * 10);
 
             // Add container to app root
-            this.appRoot.appendChild(containerElement);
+            UI.appRoot.appendChild(containerElement);
 
             // Add to modal stack
             const entry: ModalStackEntry = {
                 id: finalModalId,
                 component,
-                containerElement,
+                containerElement
             };
-            this.modalStack.push(entry);
+            UI.modalStack.push(entry);
 
             // Render component in its container
             ReactDOM.render(component, containerElement);
 
             // Show UI if this is the first modal
-            if (this.modalStack.length === 1) {
+            if (UI.modalStack.length === 1) {
                 logseq.showMainUI();
             }
 
             // Verify UI is visible
             setTimeout(() => {
-                if (!this.isVisible) {
+                if (!UI.isVisible) {
                     logger.warn("UI may not be visible after showMainUI()");
                 }
             }, 100);
@@ -296,7 +295,7 @@ export class UI {
      */
     public static hideModal(modalId?: string) {
         try {
-            if (this.modalStack.length === 0) {
+            if (UI.modalStack.length === 0) {
                 logger.warn("hideModal called but modal stack is empty");
                 return;
             }
@@ -305,16 +304,16 @@ export class UI {
 
             if (modalId) {
                 // Remove specific modal by ID
-                const index = this.modalStack.findIndex((entry) => entry.id === modalId);
+                const index = UI.modalStack.findIndex((entry) => entry.id === modalId);
                 if (index === -1) {
                     logger.warn(`Modal with ID ${modalId} not found in stack`);
                     return;
                 }
-                entryToRemove = this.modalStack[index];
-                this.modalStack.splice(index, 1);
+                entryToRemove = UI.modalStack[index];
+                UI.modalStack.splice(index, 1);
             } else {
                 // Remove the top modal (most recent)
-                entryToRemove = this.modalStack.pop();
+                entryToRemove = UI.modalStack.pop();
             }
 
             if (entryToRemove) {
@@ -324,13 +323,13 @@ export class UI {
                 // Remove container from DOM
                 if (entryToRemove.containerElement.parentNode) {
                     entryToRemove.containerElement.parentNode.removeChild(
-                        entryToRemove.containerElement,
+                        entryToRemove.containerElement
                     );
                 }
             }
 
             // Hide UI if all modals are closed
-            if (this.modalStack.length === 0) {
+            if (UI.modalStack.length === 0) {
                 logseq.hideMainUI({restoreEditingCursor: true});
             }
         } catch (error) {
@@ -342,7 +341,7 @@ export class UI {
      * Get the number of currently open modals
      */
     public static getModalCount(): number {
-        return this.modalStack.length;
+        return UI.modalStack.length;
     }
 
     /**
@@ -350,10 +349,10 @@ export class UI {
      * @returns The active modal ID, or null if no modals are open
      */
     public static getActiveModal(): string | null {
-        if (this.modalStack.length === 0) {
+        if (UI.modalStack.length === 0) {
             return null;
         }
-        return this.modalStack[this.modalStack.length - 1].id;
+        return UI.modalStack[UI.modalStack.length - 1].id;
     }
 
     /**
@@ -362,8 +361,8 @@ export class UI {
     public static closeAllModals() {
         try {
             // Close modals in reverse order (top to bottom)
-            while (this.modalStack.length > 0) {
-                this.hideModal();
+            while (UI.modalStack.length > 0) {
+                UI.hideModal();
             }
         } catch (error) {
             logger.error("Failed to close all modals:", error);

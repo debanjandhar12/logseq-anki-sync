@@ -1,28 +1,24 @@
 import {Note} from "./Note";
 import "@logseq/libs";
-import {WindowParentBridge} from "../logseq/WindowParentBridge";
-import {LogseqPropertiesHelper} from "../logseq/LogseqPropertiesHelper";
-import {
-    escapeClozesAndMacroDelimiters,
-    getFirstNonEmptyLine,
-    safeReplace,
-} from "../utils/utils";
+import type {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-import {LogseqProxy} from "../logseq/LogseqProxy";
-import {LogseqToHtmlConverterProxy, HTMLFile} from "../logseq/LogseqToHtmlConverter";
-import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
-import {
-    HighlightMaskData,
-    HighlightMaskConfig,
-    HighlightMaskElement,
-} from "../ui/launchers/showHighlightMaskEditor";
-import { showHighlightMaskEditor } from "../ui/launchers/showHighlightMaskEditor";
-import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
-import {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
-import {appendExtraToHtmlFile} from "./NoteUtils";
-import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
-import {matchTextQuote, getHealedHighlightGeometry} from "../utils/HighlightNoteQuotePosFinder";
 import {createLogger, LoggerCategory} from "../logger";
+import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
+import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
+import {LogseqPropertiesHelper} from "../logseq/LogseqPropertiesHelper";
+import {LogseqProxy} from "../logseq/LogseqProxy";
+import {type HTMLFile, LogseqToHtmlConverterProxy} from "../logseq/LogseqToHtmlConverter";
+import {WindowParentBridge} from "../logseq/WindowParentBridge";
+import {
+    HighlightMaskConfig,
+    type HighlightMaskData,
+    HighlightMaskElement,
+    showHighlightMaskEditor
+} from "../ui/launchers/showHighlightMaskEditor";
+import {getHealedHighlightGeometry, matchTextQuote} from "../utils/HighlightNoteQuotePosFinder";
+import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
+import {escapeClozesAndMacroDelimiters, getFirstNonEmptyLine, safeReplace} from "../utils/utils";
+import {appendExtraToHtmlFile} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
@@ -35,7 +31,7 @@ export class HighlightMaskNote extends Note {
         format: string,
         properties: any,
         pageId: number,
-        tags: string[] = [],
+        tags: string[] = []
     ) {
         super(uuid, content, format, properties, pageId, tags);
     }
@@ -54,7 +50,7 @@ export class HighlightMaskNote extends Note {
             LogseqProxy.Editor.registerProperty("highlight_mask", {
                 type: "default",
                 cardinality: "one",
-                hide: false,
+                hide: false
             });
         });
     };
@@ -81,11 +77,11 @@ export class HighlightMaskNote extends Note {
         // Load existing highlight data
         const highlightData: HighlightMaskData = (ObjectPropertyDataManager.load(
             fetchedBlock,
-            "highlight_mask",
+            "highlight_mask"
         ) as HighlightMaskData) || {
             elements: [],
             config: {},
-            tags: [],
+            tags: []
         };
 
         logger.info("Opening Highlight Mask Editor", highlightData);
@@ -98,15 +94,11 @@ export class HighlightMaskNote extends Note {
             rawContent,
             highlightData.elements || [],
             highlightData.config || {},
-            blockTags,
+            blockTags
         );
 
         if (newHighlightData && typeof newHighlightData === "object") {
-            await ObjectPropertyDataManager.save(
-                fetchedBlock,
-                "highlight_mask",
-                newHighlightData,
-            );
+            await ObjectPropertyDataManager.save(fetchedBlock, "highlight_mask", newHighlightData);
 
             // Handle tag updates for hide-all-test-one
             const blockUUID = getUUIDFromBlock(fetchedBlock);
@@ -127,17 +119,17 @@ export class HighlightMaskNote extends Note {
         // Load highlight data
         const highlightData: HighlightMaskData = (ObjectPropertyDataManager.load(
             this,
-            "highlight_mask",
+            "highlight_mask"
         ) as HighlightMaskData) || {
             elements: [],
             config: {},
-            tags: [],
+            tags: []
         };
 
         // Get raw content without properties to safely insert cloze syntax
         let [rawContent, , removedLogseqProperties] = LogseqContentPreprocessor.extractProperties(
             clozedContent,
-            this.format as "markdown" | "org",
+            this.format as "markdown" | "org"
         );
 
         // Escape existing cloze delimiters in the raw content first
@@ -155,18 +147,18 @@ export class HighlightMaskNote extends Note {
                     await ObjectPropertyDataManager.save(
                         this as any,
                         "highlight_mask",
-                        highlightData,
+                        highlightData
                     );
                 }
 
                 replacements.push({
                     start: healResult.actualStart,
                     end: healResult.actualStart + element.text.length,
-                    element,
+                    element
                 });
             } else {
                 logger.warn(
-                    `HighlightMask: Could not locate text "${element.text}" in block content.`,
+                    `HighlightMask: Could not locate text "${element.text}" in block content.`
                 );
             }
         }
@@ -177,7 +169,7 @@ export class HighlightMaskNote extends Note {
         for (const {start, end, element} of replacements) {
             const matchedText = rawContent.substring(start, end);
             const hintSuffix = element.hint ? `::${element.hint}` : "";
-            const clozeText = `{{c${element.cId}::${matchedText}${hintSuffix}\u{2063}}}`;  // Add extra space between braces
+            const clozeText = `{{c${element.cId}::${matchedText}${hintSuffix}\u{2063}}}`; // Add extra space between braces
 
             rawContent = rawContent.substring(0, start) + clozeText + rawContent.substring(end);
         }
@@ -187,7 +179,7 @@ export class HighlightMaskNote extends Note {
 
         const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(
             clozedContent,
-            this.format,
+            this.format
         );
 
         // Add extra property content
@@ -195,7 +187,7 @@ export class HighlightMaskNote extends Note {
             result,
             _.get(await LogseqProxy.Editor.getBlock(this.uuid), "properties.extra") as string,
             this.format,
-            true,
+            true
         );
     }
 
@@ -219,10 +211,10 @@ export class HighlightMaskNote extends Note {
                [(clojure.string/ends-with? ?prop-name "highlight_mask")]
                [?b ?prop _]
             ]`,
-            {suppressErrors: false},
+            {suppressErrors: false}
         );
 
-        let notes: (HighlightMaskNote | false)[] = await Promise.all(
+        const notes: (HighlightMaskNote | false)[] = await Promise.all(
             (blocks || []).map(async (b) => {
                 const uuid = getUUIDFromBlock(b[0]);
                 if (!uuid) return false;
@@ -237,17 +229,17 @@ export class HighlightMaskNote extends Note {
                         block.format,
                         block.properties || {},
                         pageId,
-                        (block.properties?.tags ?? []) as string[],
+                        (block.properties?.tags ?? []) as string[]
                     );
                 } else {
                     return false;
                 }
-            }),
+            })
         );
 
         logger.info("HighlightMaskNote Loaded", notes);
         let validNotes = (await Note.removeUnwantedNotes(
-            notes.filter(Boolean) as Note[],
+            notes.filter(Boolean) as Note[]
         )) as HighlightMaskNote[];
 
         // Filter out notes without valid highlight data
@@ -257,7 +249,7 @@ export class HighlightMaskNote extends Note {
                     try {
                         const highlightData = ObjectPropertyDataManager.load(
                             note,
-                            "highlight_mask",
+                            "highlight_mask"
                         ) as HighlightMaskData | null;
 
                         if (
@@ -269,15 +261,12 @@ export class HighlightMaskNote extends Note {
                             const rawText = note.content;
                             const matchResults = await Promise.all(
                                 highlightData.elements.map((el) =>
-                                    matchTextQuote(
-                                        rawText,
-                                        {
-                                            exact: el.text,
-                                            prefix: el.prefix,
-                                            suffix: el.suffix,
-                                        }
-                                    ),
-                                ),
+                                    matchTextQuote(rawText, {
+                                        exact: el.text,
+                                        prefix: el.prefix,
+                                        suffix: el.suffix
+                                    })
+                                )
                             );
                             return matchResults.some((res) => res !== null) ? note : null;
                         }
@@ -285,7 +274,7 @@ export class HighlightMaskNote extends Note {
                         return null;
                     }
                     return null;
-                }),
+                })
             )
         ).filter((note): note is HighlightMaskNote => note !== null);
 

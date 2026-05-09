@@ -12,7 +12,7 @@ export class LogseqAppInfoFetcher {
     static async checkCurrentIsDbGraph(): Promise<boolean> {
         try {
             const value = await logseq.App.checkCurrentIsDbGraph();
-            if (typeof value === 'boolean') {
+            if (typeof value === "boolean") {
                 return value;
             }
         } catch (e) {

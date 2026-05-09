@@ -1,9 +1,9 @@
-import {Note} from "../../anki-notes/Note";
-import {ParsedNoteData} from "../types";
-import {DeckParser} from "./DeckParser";
+import type {Note} from "../../anki-notes/Note";
+import type {ParsedNoteData} from "../types";
 import {BreadcrumbAndParentBlockParser} from "./BreadcrumbAndParentBlockParser";
-import {TagParser} from "./TagParser";
+import {DeckParser} from "./DeckParser";
 import {ParentContentParser} from "./ParentContentParser";
+import {TagParser} from "./TagParser";
 
 export async function parseNote(note: Note, graphName: string): Promise<ParsedNoteData> {
     let {html, assets, tags} = await note.getClozedContentHTML();

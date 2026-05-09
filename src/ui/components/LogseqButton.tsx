@@ -1,4 +1,5 @@
-import React, {FC} from '../React';
+import type React from "../React";
+import type {FC} from "../React";
 
 type LogseqButtonProps = {
     children?: React.ReactNode;
@@ -8,21 +9,29 @@ type LogseqButtonProps = {
     disabled?: boolean;
     depth?: number;
     title?: string;
-    color?: "primary" | "default" | "secondary" |"success" | "failed" | "ghost" | "link" | "outline-link";
+    color?:
+        | "primary"
+        | "default"
+        | "secondary"
+        | "success"
+        | "failed"
+        | "ghost"
+        | "link"
+        | "outline-link";
     size?: "xs" | "sm" | "md" | "lg";
 };
 
 export const LogseqButton: FC<LogseqButtonProps> = ({
-                                                        children,
-                                                        onClick,
-                                                        icon,
-                                                        isFullWidth,
-                                                        color = "primary",
-                                                        disabled,
-                                                        size = "md",
-                                                        depth = 0,
-                                                        title,
-                                                    }) => {
+    children,
+    onClick,
+    icon,
+    isFullWidth,
+    color = "primary",
+    disabled,
+    size = "md",
+    depth = 0,
+    title
+}) => {
     let classNameString =
         "ui__button transition-colors transition-opacity inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
 
@@ -46,14 +55,11 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
     // Size variants
     if (size === "xs") {
         classNameString += " px-2 py-1 text-xs rounded h-6";
-    }
-    else if (size === "sm") {
+    } else if (size === "sm") {
         classNameString += " px-2 py-1 text-sm rounded h-7";
-    }
-    else if (size === "lg") {
+    } else if (size === "lg") {
         classNameString += " px-4 py-3 text-lg rounded h-11";
-    }
-    else if (size === "md") {
+    } else if (size === "md") {
         classNameString += " px-3 py-1 text-md rounded h-7";
     }
 
@@ -62,13 +68,11 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
     }
 
     return (
-        <div style={{margin: "0.25rem"}} className={'flex rounded-md shadow-sm sm:ml-3 sm:w-auto'}>
-            <button
-                disabled={disabled}
-                className={classNameString}
-                title={title}
-                onClick={onClick}>
-                {icon && <span className="ui__icon ti" dangerouslySetInnerHTML={{__html:icon}}></span>}
+        <div style={{margin: "0.25rem"}} className={"flex rounded-md shadow-sm sm:ml-3 sm:w-auto"}>
+            <button disabled={disabled} className={classNameString} title={title} onClick={onClick}>
+                {icon && (
+                    <span className="ui__icon ti" dangerouslySetInnerHTML={{__html: icon}}></span>
+                )}
                 {children}
             </button>
         </div>

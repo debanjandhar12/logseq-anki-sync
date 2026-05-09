@@ -1,14 +1,13 @@
-import {Note} from "../../anki-notes/Note";
-import {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
-import {ProgressNotification} from "../../ui";
-import {ParsedNoteData} from "../types";
+import path from "path-browserify";
+import type {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
+import type {Note} from "../../anki-notes/Note";
+import {createLogger, LoggerCategory} from "../../logger";
+import {LogseqProxy} from "../../logseq/LogseqProxy";
+import {WindowParentBridge} from "../../logseq/WindowParentBridge";
+import type {ProgressNotification} from "../../ui";
 import {NoteHashCalculator} from "../cache";
 import {parseNote} from "../parsers/NoteParser";
-import {LogseqProxy} from "../../logseq/LogseqProxy";
-import path from "path-browserify";
-
-import {createLogger, LoggerCategory} from "../../logger";
-import {WindowParentBridge} from "../../logseq/WindowParentBridge";
+import {ParsedNoteData} from "../types";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 
@@ -19,7 +18,7 @@ export class UpdateNotesTask {
         graphName: string,
         graphPath: string,
         ankiNoteManager: LazyAnkiNoteManager,
-        progressNotification: ProgressNotification,
+        progressNotification: ProgressNotification
     ): Promise<{succeeded: Note[]; failed: {[key: string]: Error}}> {
         const failedUpdated: {[key: string]: Error} = {};
 
@@ -48,7 +47,7 @@ export class UpdateNotesTask {
         modelName: string,
         graphName: string,
         graphPath: string,
-        ankiNoteManager: LazyAnkiNoteManager,
+        ankiNoteManager: LazyAnkiNoteManager
     ): Promise<void> {
         const ankiId = note.getAnkiId();
         const ankiNodeInfo = ankiNoteManager.noteInfoMap.get(ankiId);
@@ -59,7 +58,7 @@ export class UpdateNotesTask {
             oldConfig.assets,
             ankiNodeInfo.deck,
             ankiNodeInfo.fields.Breadcrumb.value,
-            ankiNodeInfo.tags,
+            ankiNodeInfo.tags
         ];
 
         let dependencyHash = await NoteHashCalculator.getHash(note, [
@@ -67,15 +66,19 @@ export class UpdateNotesTask {
             oldAssets,
             oldDeck,
             oldBreadcrumb,
-            oldTags,
+            oldTags
         ]);
 
         const {skipOnDependencyHashMatch} = LogseqProxy.Settings.getPluginSettings();
 
         for (const asset of oldConfig.assets ?? []) {
             const name = path.basename(asset);
-            if (skipOnDependencyHashMatch && oldConfig.dependencyHash === dependencyHash
-                && ankiNoteManager.mediaInfo.has(name)) continue;
+            if (
+                skipOnDependencyHashMatch &&
+                oldConfig.dependencyHash === dependencyHash &&
+                ankiNoteManager.mediaInfo.has(name)
+            )
+                continue;
             const url = await WindowParentBridge.makeAssetUrl(asset);
             ankiNoteManager.storeAsset(name, url);
         }
@@ -86,16 +89,13 @@ export class UpdateNotesTask {
             assets,
             deck,
             breadcrumb,
-            tags,
+            tags
         ]);
 
         assets.forEach((asset) => {
             // Normalize asset path by removing leading ../ or ./ since assets are relative to graph root
             const normalizedAsset = asset.replace(/^(\.\.\/)+(\.\/)*|^(\.\/)+/, "");
-            ankiNoteManager.storeAsset(
-                path.basename(asset),
-                path.join(graphPath, normalizedAsset),
-            );
+            ankiNoteManager.storeAsset(path.basename(asset), path.join(graphPath, normalizedAsset));
         });
 
         logger.info(`dependencyHash mismatch for note with id ${note.uuid}-${note.type}`);
@@ -112,10 +112,10 @@ export class UpdateNotesTask {
                 Breadcrumb: breadcrumb,
                 Config: JSON.stringify({
                     dependencyHash,
-                    assets: [...assets],
-                }),
+                    assets: [...assets]
+                })
             },
-            tags,
+            tags
         );
     }
 

@@ -1,5 +1,5 @@
-import React from "../../React";
 import {WindowBridge} from "../../../logseq/WindowBridge";
+import React from "../../React";
 import {UI} from "../../UI";
 
 export interface UseModalOptions<T = any> {
@@ -26,7 +26,7 @@ export interface UseModalReturn<T = any> {
  */
 export function useModal<T = any>(
     resolve: (value: T) => void,
-    options: UseModalOptions<T> = {},
+    options: UseModalOptions<T> = {}
 ): UseModalReturn<T> {
     const {
         onClose,
@@ -36,7 +36,7 @@ export function useModal<T = any>(
         enableEscapeKey = true,
         enableEnterKey = false,
         enableOutsideClickClose = true,
-        modalId,
+        modalId
     } = options;
 
     const [open, setOpen] = React.useState(true);
@@ -46,7 +46,7 @@ export function useModal<T = any>(
             resolve(result);
             setOpen(false);
         },
-        [resolve],
+        [resolve]
     );
 
     const handleConfirm = React.useCallback(
@@ -57,7 +57,7 @@ export function useModal<T = any>(
             }
             returnResult(finalResult);
         },
-        [returnResult, onConfirm, defaultResult],
+        [returnResult, onConfirm, defaultResult]
     );
 
     const handleCancel = React.useCallback(() => {
@@ -117,8 +117,8 @@ export function useModal<T = any>(
                 const container = modalId
                     ? WindowBridge.getElementById(modalId)
                     : WindowBridge.getBody();
-                let divWithScrollbar = Array.from(
-                    (container || WindowBridge.getBody()).querySelectorAll(".overflow-y-auto"),
+                const divWithScrollbar = Array.from(
+                    (container || WindowBridge.getBody()).querySelectorAll(".overflow-y-auto")
                 ).filter((div) => {
                     return div.scrollHeight > div.clientHeight;
                 })[0];
@@ -137,8 +137,8 @@ export function useModal<T = any>(
                 const container = modalId
                     ? WindowBridge.getElementById(modalId)
                     : WindowBridge.getBody();
-                let divWithScrollbar = Array.from(
-                    (container || WindowBridge.getBody()).querySelectorAll(".overflow-y-auto"),
+                const divWithScrollbar = Array.from(
+                    (container || WindowBridge.getBody()).querySelectorAll(".overflow-y-auto")
                 ).filter((div) => {
                     return div.scrollHeight > div.clientHeight;
                 })[0];
@@ -182,6 +182,6 @@ export function useModal<T = any>(
         setOpen,
         handleConfirm,
         handleCancel,
-        returnResult,
+        returnResult
     };
 }

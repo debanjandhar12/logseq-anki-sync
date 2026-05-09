@@ -35,7 +35,7 @@ export class HideOcclusionData extends Addon {
                 content: '<hidden occlusion data>';
                 font-style: italic;
             }`,
-                key: "hide-occlusion-data",
+                key: "hide-occlusion-data"
             });
         } else {
             logseq.provideStyle({style: ``, key: "hide-occlusion-data"});

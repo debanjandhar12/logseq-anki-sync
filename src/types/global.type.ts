@@ -1,7 +1,5 @@
-import '@logseq/libs';
-import {SyncResult} from "../sync/types";
-
-export {};
+import "@logseq/libs";
+import type {SyncResult} from "../sync/types";
 
 declare global {
     interface Window {

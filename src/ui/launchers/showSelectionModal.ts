@@ -1,6 +1,6 @@
+import {SelectionModalComponent} from "../modals/SelectionModal";
+import {createModalPromise} from "../modals/utils/createModalPromise";
 import React from "../React";
-import { createModalPromise } from "../modals/utils/createModalPromise";
-import { SelectionModalComponent } from "../modals/SelectionModal";
 
 export interface SelectionModalItem {
     name: string;
@@ -15,18 +15,17 @@ export async function showSelectionModal(
     options: {
         message: string;
         enableKeySelect?: boolean;
-    } = { message: "" },
+    } = {message: ""}
 ): Promise<number | null> {
     return createModalPromise<number | null>(
-        (props) => (
+        (props) =>
             React.createElement(SelectionModalComponent, {
                 items,
                 message: options.message,
                 enableKeySelect: options.enableKeySelect,
-                ...props,
-            })
-        ),
+                ...props
+            }),
         {},
-        { errorMessage: "Failed to open selection modal" },
+        {errorMessage: "Failed to open selection modal"}
     );
 }
