@@ -31,7 +31,7 @@ import type {
     OcclusionData,
     OcclusionElement
 } from "../launchers/showOcclusionEditor";
-import React, {useCallback, useEffect, useRef, useState} from "../React";
+import React, {useCallback, useState} from "../React";
 import {UI} from "../UI";
 
 const logger = createLogger(LoggerCategory.Others);
@@ -102,7 +102,7 @@ export const OcclusionEditorComponent: React.FC<{
                 width: obj.getScaledWidth(),
                 height: obj.getScaledHeight(),
                 angle: obj.angle,
-                cId: obj._objects?.[1]?.text ? parseInt(obj._objects[1].text) : 1
+                cId: obj._objects?.[1]?.text ? parseInt(obj._objects[1].text, 10) : 1
             };
 
             // Include hint if it exists on the object
@@ -299,7 +299,7 @@ export const OcclusionEditorComponent: React.FC<{
     // Handle Selection
     const [fabricSelection, setFabricSelection] = React.useState<Array<any>>([]);
     React.useEffect(() => {
-        if (!fabricRef || !fabricRef.current) return;
+        if (!fabricRef?.current) return;
         fabricRef.current.on("selection:created", () => {
             setFabricSelection(fabricRef.current.getActiveObjects());
         });
@@ -322,7 +322,7 @@ export const OcclusionEditorComponent: React.FC<{
                 width: obj.getScaledWidth(),
                 height: obj.getScaledHeight(),
                 angle: obj.angle,
-                cId: obj._objects?.[1]?.text ? parseInt(obj._objects[1].text) : 1
+                cId: obj._objects?.[1]?.text ? parseInt(obj._objects[1].text, 10) : 1
             };
             if (obj.hint) element.hint = obj.hint;
             return element;
@@ -332,7 +332,7 @@ export const OcclusionEditorComponent: React.FC<{
     }, [setOcclusionElements]);
 
     React.useEffect(() => {
-        if (!fabricRef || !fabricRef.current) return;
+        if (!fabricRef?.current) return;
         const onObjectModified = () => saveCanvasState();
         fabricRef.current.on("object:modified", onObjectModified);
         return () => {
@@ -353,7 +353,7 @@ export const OcclusionEditorComponent: React.FC<{
 
     // Prevent out of bounds - https://stackoverflow.com/a/42915768
     React.useEffect(() => {
-        if (!fabricRef || !fabricRef.current) return;
+        if (!fabricRef?.current) return;
         const preventOutOfBounds = (e: any) => {
             const obj = e.target;
             const angleRad = obj.angle * (Math.PI / 180);
@@ -383,7 +383,7 @@ export const OcclusionEditorComponent: React.FC<{
             }
         };
 
-        fabricRef.current.on("selection:created", (e) => {
+        fabricRef.current.on("selection:created", (_e) => {
             if (fabricRef.current.getActiveObjects().length > 1) {
                 fabric.Group.prototype.lockScalingX = true;
                 fabric.Group.prototype.lockScalingY = true;
@@ -1053,7 +1053,7 @@ export const OcclusionEditorComponent: React.FC<{
                         title={"Delete Occlusion"}
                         onClick={deleteOcclusion}
                         icon={REMOVE_OCCLUSION_ICON}
-                        disabled={fabricSelection == null || fabricSelection.length == 0}
+                        disabled={fabricSelection == null || fabricSelection.length === 0}
                     />
                 </div>
                 <div

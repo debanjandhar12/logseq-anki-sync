@@ -1,7 +1,6 @@
 import {autoUpdate, computePosition, flip, offset, type Placement, shift} from "@floating-ui/react";
 import {WindowBridge} from "../../logseq/WindowBridge";
-import type React from "../React";
-import {type FC, useCallback, useEffect, useRef, useState} from "../React";
+import React, {type FC, useCallback, useEffect, useRef, useState} from "../React";
 import {createPortal} from "../ReactDOM";
 
 interface LogseqTooltipProps {

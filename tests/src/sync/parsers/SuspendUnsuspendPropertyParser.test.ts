@@ -1,5 +1,5 @@
 import "@logseq/libs";
-import {BlockEntity, type PageEntity} from "@logseq/libs/dist/LSPlugin";
+import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeEach, describe, expect, test} from "vitest";
 import {MultilineCardNote} from "../../../../src/anki-notes/MultilineCardNote";
 import {SuspendUnsuspendPropertyParser} from "../../../../src/sync/parsers/SuspendUnsuspendPropertyParser";
@@ -385,7 +385,7 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
             // the parent namespace page by ID. This appears to be a limitation of the memoization
             // or the logseq-proxy library when dealing with namespace relationships in tests.
 
-            const parentPage = await logseq.Editor.createPage(
+            const _parentPage = await logseq.Editor.createPage(
                 "ParentNamespace",
                 {"suspend-anki-card": true},
                 {createFirstBlock: false}

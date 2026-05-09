@@ -32,12 +32,14 @@
             },
             "complexity": {
                 "noStaticOnlyClass": "off",
-                "noUselessConstructor": "error"
+                "noUselessConstructor": "error",
+                "useLiteralKeys": "off"
             },
             "suspicious": {
                 "noAlert": "error",
                 "noConsole": "error",
-                "noExplicitAny": "off"
+                "noExplicitAny": "off",
+                "useIterableCallbackReturn": "off"
             }
         }
     },

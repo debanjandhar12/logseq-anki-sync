@@ -1,5 +1,3 @@
-import _ from "lodash";
-import {ANKI_CLOZE_REGEXP} from "../constants";
 import {createLogger, LoggerCategory} from "../logger";
 
 const logger = createLogger(LoggerCategory.AnkiConnect);
@@ -15,7 +13,7 @@ export function invoke(action: string, params = {}): any {
         xhr.addEventListener("load", () => {
             try {
                 const response = JSON.parse(xhr.responseText);
-                if (Object.getOwnPropertyNames(response).length != 2) {
+                if (Object.getOwnPropertyNames(response).length !== 2) {
                     throw "response has an unexpected number of fields";
                 }
                 if (!Object.hasOwn(response, "error")) {
@@ -42,8 +40,8 @@ export function invoke(action: string, params = {}): any {
 
 export async function requestPermission(): Promise<any> {
     const r = await invoke("requestPermission", {});
-    if (r.permission != "granted") {
-        return new Promise((resolve, reject) => {
+    if (r.permission !== "granted") {
+        return new Promise((_resolve, _reject) => {
             throw "Permission to access anki was denied";
         });
     }
@@ -125,7 +123,7 @@ export async function createBackup(): Promise<any> {
     const timestamp = Date.now();
     const decknames = await invoke("deckNames", {});
     for (const deck of decknames) {
-        if (deck.includes("::") == false) {
+        if (deck.includes("::") === false) {
             // if is not a subdeck then only create backup
             logger.info(`Created backup with name LogseqAnkiSync-Backup-${timestamp}_${deck}.apkg`);
             await invoke("exportPackage", {
@@ -181,7 +179,7 @@ export async function upsertModel(
         });
     } catch (e) {
         // Solves #1 by failing silenty, #1 was caused by AnkiConnect calling old Anki API but apprarenty even if it gives error, it works correctly.
-        if (e == "save() takes from 1 to 2 positional arguments but 3 were given")
+        if (e === "save() takes from 1 to 2 positional arguments but 3 were given")
             logger.error("Model template update error:", e);
         else throw e;
     }
@@ -200,7 +198,7 @@ export async function upsertModel(
     });
     for (const filename in template_files) {
         const data = Buffer.from(template_files[filename]).toString("base64");
-        if (data != currentTemplateFiles[filename])
+        if (data !== currentTemplateFiles[filename])
             storeTemplateFilesActions.push({
                 action: "storeMediaFile",
                 params: {filename, data}

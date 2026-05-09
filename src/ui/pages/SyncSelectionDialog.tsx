@@ -513,7 +513,7 @@ export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string})
         const fetchBlockContent = async () => {
             try {
                 const block = await LogseqProxy.Editor.getBlock(uuid);
-                if (block && block.content) {
+                if (block?.content) {
                     // Preprocess content using LogseqContentPreprocessor
                     const format = block.format || "markdown";
                     const {content: preprocessedContent} =
@@ -528,7 +528,7 @@ export const LogseqLink = ({uuid, graphName}: {uuid: string; graphName: string})
                     // Fallback to UUID if block or content is not available
                     setDisplayText(uuid);
                 }
-            } catch (error) {
+            } catch (_e) {
                 // On fetch failure, show UUID
                 setDisplayText(uuid);
             }

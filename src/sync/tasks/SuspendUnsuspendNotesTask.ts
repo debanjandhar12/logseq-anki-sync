@@ -23,7 +23,7 @@ export class SuspendUnsuspendNotesTask {
         for (const note of notes) {
             try {
                 const ankiId = note.getAnkiId();
-                if (!ankiId || isNaN(ankiId)) continue;
+                if (!ankiId || Number.isNaN(ankiId)) continue;
 
                 const shouldSuspend = await SuspendUnsuspendPropertyParser.parse(note);
 
@@ -62,7 +62,7 @@ export class SuspendUnsuspendNotesTask {
 
     private getCardIdsForNote(ankiId: number, cache: AnkiNoteCache): number[] {
         const noteInfo = cache.getNoteInfo(ankiId);
-        if (!noteInfo || !noteInfo.cards) {
+        if (!noteInfo?.cards) {
             return [];
         }
         return noteInfo.cards;

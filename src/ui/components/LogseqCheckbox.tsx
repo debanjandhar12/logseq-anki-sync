@@ -1,5 +1,4 @@
-import type React from "../React";
-import {type FC, useEffect, useRef} from "../React";
+import React, {type FC, useEffect, useRef} from "../React";
 
 type LogseqCheckboxProps = {
     children?: React.ReactNode;

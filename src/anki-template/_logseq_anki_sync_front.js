@@ -7,6 +7,7 @@ import {createOcclusionRectEl} from "../utils/occlusionUtils";
 
 const onLoadHandler = () => {
     if (!document.getElementsByClassName("anki-card-front-side")[0]) {
+        // biome-ignore lint/suspicious/noConsole: runs in anki
         console.log("Not front side of anki card");
         return;
     }
@@ -21,8 +22,7 @@ function handleImageOcclusion() {
     // Get current cloze id (only works for image occlusion)
     let currentClozeId = "-1";
     for (let i = 1; i <= 9; i++) if (document.getElementById(`c${i}`)) currentClozeId = `${i}`;
-    console.log(`Current cloze id: ${currentClozeId}`);
-    if (currentClozeId == "-1") return;
+    if (currentClozeId === "-1") return;
     if (!document.getElementById("localImgBasePath")) return;
     // Get localImgBasePath
     let localImgBasePath = document.getElementById("localImgBasePath").src;
@@ -80,7 +80,7 @@ function handleImageOcclusion() {
                 imgToCanvasListHashMap[image] ||
                 imgToCanvasListHashMap[encodeURI(image)] ||
                 [];
-            if (occlusionElem.cId == currentClozeId) {
+            if (occlusionElem.cId === currentClozeId) {
                 canvasList.forEach((canvas) => {
                     const occlusion = createOcclusionRectEl(
                         fabric,
@@ -96,7 +96,7 @@ function handleImageOcclusion() {
                     canvas.add(occlusion);
                     canvas.renderAll();
                 });
-            } else if (occlusionElem.cId != currentClozeId && hideAllTestOne) {
+            } else if (occlusionElem.cId !== currentClozeId && hideAllTestOne) {
                 canvasList.forEach((canvas) => {
                     const occlusion = createOcclusionRectEl(
                         fabric,
@@ -178,10 +178,10 @@ function handleTypeInTag() {
     try {
         typeans.focus();
         typeans.click();
-    } catch (e) {}
+    } catch (_e) {}
     try {
         let resized = false;
-        typeans.addEventListener("focusin", async (event) => {
+        typeans.addEventListener("focusin", async (_event) => {
             if (!AnkiDroidJS) return;
             if (!resized) {
                 window.addEventListener("resize", () => {
@@ -201,8 +201,8 @@ function handleTypeInTag() {
                 typeans.parentNode.appendChild(warning);
             }
         });
-    } catch (e) {}
-    const onInput = (e) => {
+    } catch (_e) {}
+    const onInput = (_e) => {
         localStorage.setItem("logseq-prev-typeans", typeans.value);
     };
     typeans.onchange = onInput;

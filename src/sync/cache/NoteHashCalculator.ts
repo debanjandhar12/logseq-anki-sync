@@ -66,8 +66,8 @@ export default class NoteHashCalculator {
 
         // Get hash of all dependency blocks and pages
         for (const dep of dependencies) {
-            if (dep.type == "Block") toHash.push(await getBlockHash(dep.value));
-            else if (dep.type == "Page") toHash.push(await getPageHash(dep.value));
+            if (dep.type === "Block") toHash.push(await getBlockHash(dep.value));
+            else if (dep.type === "Page") toHash.push(await getPageHash(dep.value));
         }
 
         // Add namespace dependencies
@@ -102,8 +102,8 @@ export default class NoteHashCalculator {
 
         // Add additional things from ankiFields to toHash
         let [html, assets, deck, breadcrumb, tags] = ankiFields;
-        tags = tags.filter((tag: string) => tag.toLowerCase() != "leech"); // Remove leech from tags arr
-        tags = tags.filter((tag: string) => tag.toLowerCase() != "marked"); // Also remove marked
+        tags = tags.filter((tag: string) => tag.toLowerCase() !== "leech"); // Remove leech from tags arr
+        tags = tags.filter((tag: string) => tag.toLowerCase() !== "marked"); // Also remove marked
         const assetsArray = Array.from(assets).sort();
         tags.sort();
 

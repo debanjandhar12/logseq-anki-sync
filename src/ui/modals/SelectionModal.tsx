@@ -71,7 +71,7 @@ export const SelectionModalComponent: React.FC<SelectionModalProps> = ({
             }
 
             if (e.key >= "1" && e.key <= "9" && enableKeySelect) {
-                const index = parseInt(e.key) - 1;
+                const index = parseInt(e.key, 10) - 1;
                 if (index < items.length) {
                     handleSelection(index);
                     e.preventDefault();

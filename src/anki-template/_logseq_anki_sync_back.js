@@ -5,6 +5,7 @@ import {compareAnswer} from "./compareAnswer";
 
 const onLoadHandler = () => {
     if (!document.getElementsByClassName("anki-card-back-side")[0]) {
+        // biome-ignore lint/suspicious/noConsole: runs in anki
         console.log("Not back side of anki card");
         return;
     }
@@ -13,7 +14,7 @@ const onLoadHandler = () => {
 };
 
 function handleImageOcclusion() {
-    if (window.type == "image_occlusion") {
+    if (window.type === "image_occlusion") {
         // Show the main content
         document.getElementById("main-content").style.visibility = "visible";
     }

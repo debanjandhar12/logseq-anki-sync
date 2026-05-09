@@ -10,11 +10,12 @@ window.scrollToClozeElement = () => {
         block: "center",
         inline: "center"
     });
+    // biome-ignore lint/suspicious/noConsole: runs in anki
     console.log("Scrolled to cloze element");
 };
 
 window.openBlockInLogseq = (logseqBlockUUID) => {
-    if (logseqBlockUUID == null || logseqBlockUUID == "") return;
+    if (logseqBlockUUID == null || logseqBlockUUID === "") return;
     const element = document.getElementsByClassName("breadcrumb2")[0];
     // javascript get first child link element
     const page_link = element.getElementsByTagName("a")[0];

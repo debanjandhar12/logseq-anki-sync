@@ -1,5 +1,4 @@
 import {createLogger, LoggerCategory} from "../../logger";
-import {LogseqProxy} from "../../logseq/LogseqProxy";
 import * as AnkiConnect from "../AnkiConnect";
 import type {AnkiNoteInfo} from "../types";
 

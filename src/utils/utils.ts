@@ -37,8 +37,8 @@ export function escapeClozesAndMacroDelimiters(input: string): string {
             `<span class="anki-cloze-from-another-note" style="white-space: initial;" title="c$1 - $2">$2</span>`
         )
         .replace(ANKI_CLOZE_REGEXP, "$3")
-        .replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`)
-        .replace(/(?<= )(.*)::/g, (match, g1) => `${g1}:\u{2063}:`)
+        .replace(/(?<= )(.*)::/g, (_match, g1) => `${g1}:\u{2063}:`)
+        .replace(/(?<= )(.*)::/g, (_match, g1) => `${g1}:\u{2063}:`)
         .replace(/}}/g, "}\u{2063}}")
         .replace(/}}/g, "}\u{2063}}");
 }
@@ -59,7 +59,7 @@ export function string_to_arr(str: string): any {
             a.semanticOperation();
             b.semanticOperation();
         },
-        nonemptyListOf(a, b, c) {
+        nonemptyListOf(a, _b, c) {
             a.semanticOperation();
             c.semanticOperation();
         },
@@ -67,15 +67,15 @@ export function string_to_arr(str: string): any {
         _iter(...a) {
             for (const b of a) b.semanticOperation();
         },
-        separator(a, b, c) {},
+        separator(_a, _b, _c) {},
         StrOrRegex(a) {
             a.semanticOperation();
         },
         _terminal() {},
-        Regex(a, b, c, d) {
+        Regex(_a, _b, _c, _d) {
             r.push(regexPraser(this.sourceString));
         },
-        Str(a, b, c) {
+        Str(_a, _b, _c) {
             r.push(this.children[1].sourceString);
         }
     };
@@ -191,8 +191,8 @@ export function getFirstNonEmptyLine(str: string): string {
         end;
     let current_line_empty = true;
     for (end = 0; end < str.length; end++) {
-        if (str[end] != " " && str[end] != "\t" && str[end] != "\n") current_line_empty = false;
-        if (str[end] == "\n") {
+        if (str[end] !== " " && str[end] !== "\t" && str[end] !== "\n") current_line_empty = false;
+        if (str[end] === "\n") {
             if (!current_line_empty) return str.substring(start, end);
             else {
                 start = end + 1;
@@ -311,7 +311,7 @@ export function safeParseInt<T = any>(value: T, radix: number = 10): number | T 
 
     if (typeof value === "string") {
         const parsed = parseInt(value, radix);
-        if (!isNaN(parsed) && Number.isInteger(parsed)) {
+        if (!Number.isNaN(parsed) && Number.isInteger(parsed)) {
             return parsed;
         }
     }

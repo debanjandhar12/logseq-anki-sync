@@ -8,13 +8,10 @@ import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import {LogseqPropertiesHelper} from "../logseq/LogseqPropertiesHelper";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {type HTMLFile, LogseqToHtmlConverterProxy} from "../logseq/LogseqToHtmlConverter";
-import {WindowParentBridge} from "../logseq/WindowParentBridge";
 import {
-    HighlightMaskConfig,
     type HighlightMaskData,
-    HighlightMaskElement,
     showHighlightMaskEditor
-} from "../ui/launchers/showHighlightMaskEditor";
+} from "../ui";
 import {getHealedHighlightGeometry, matchTextQuote} from "../utils/HighlightNoteQuotePosFinder";
 import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
 import {escapeClozesAndMacroDelimiters, getFirstNonEmptyLine, safeReplace} from "../utils/utils";

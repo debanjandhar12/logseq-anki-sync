@@ -7,7 +7,6 @@ import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import type {ProgressNotification} from "../../ui";
 import {NoteHashCalculator} from "../cache";
 import {parseNote} from "../parsers/NoteParser";
-import {ParsedNoteData} from "../types";
 
 const logger = createLogger(LoggerCategory.SyncInternal);
 
@@ -122,7 +121,7 @@ export class UpdateNotesTask {
     private parseConfig(configString: string): any {
         try {
             return JSON.parse(configString);
-        } catch (e) {
+        } catch (_e) {
             return {};
         }
     }

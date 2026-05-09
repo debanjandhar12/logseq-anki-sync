@@ -1,5 +1,6 @@
-import type React from "../React";
 import type {FC} from "../React";
+// biome-ignore lint/style/useImportType: required for re-exported react
+import React from "../React";
 import {LogseqPopover} from "./LogseqPopover";
 
 type MenuArr = {

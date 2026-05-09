@@ -1,5 +1,6 @@
-import type React from "../React";
 import type {FC} from "../React";
+// biome-ignore lint/style/useImportType: required for re-exported react
+import React from "../React";
 
 type LogseqButtonProps = {
     children?: React.ReactNode;
@@ -36,7 +37,7 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
         "ui__button transition-colors transition-opacity inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
 
     // Color variants using Tailwind color aliases
-    if (color === "primary" || color == "default") {
+    if (color === "primary" || color === "default") {
         classNameString += " bg-primary hover:opacity-80 text-white";
     } else if (color === "secondary") {
         classNameString += " bg-secondary hover:opacity-80 text-white";

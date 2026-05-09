@@ -349,7 +349,7 @@ export class ImageOcclusionNote extends Note {
                     let imageURLParams: any = new Map();
                     try {
                         imageURLParams = new URLSearchParams(image.split("?")[1]);
-                    } catch (e) {}
+                    } catch (_e) {}
                     logger.info(image, imageURLParams.get("imageAnnotationBlockUUID"));
                     if (
                         imageURLParams.get("imageAnnotationBlockUUID") &&

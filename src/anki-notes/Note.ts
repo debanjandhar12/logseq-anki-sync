@@ -50,14 +50,14 @@ export abstract class Note {
         if (this.ankiId) return this.ankiId;
         const ankiNotesArr = Array.from(Note.ankiNoteManager.noteInfoMap.values());
         const filteredankiNotesArr = ankiNotesArr.filter(
-            (note) => note.fields["uuid-type"].value == `${this.uuid}-${this.type}`
+            (note) => note.fields["uuid-type"].value === `${this.uuid}-${this.type}`
         );
-        if (filteredankiNotesArr.length == 0) this.ankiId = null;
+        if (filteredankiNotesArr.length === 0) this.ankiId = null;
         else
             this.ankiId =
                 typeof filteredankiNotesArr[0].noteId === "number"
                     ? filteredankiNotesArr[0].noteId
-                    : parseInt(filteredankiNotesArr[0].noteId);
+                    : parseInt(filteredankiNotesArr[0].noteId, 10);
         return this.ankiId;
     }
 

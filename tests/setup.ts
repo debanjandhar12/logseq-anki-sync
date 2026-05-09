@@ -24,6 +24,7 @@ try {
 } catch {
     globalThis.isLogseqAvailable = false;
     globalThis.isLogseqCurrentIsDBGraph = false;
+    // biome-ignore lint/suspicious/noConsole: logger not present in test mode
     console.log("Logseq not available - some tests will be skipped");
 }
 

@@ -44,10 +44,9 @@ const clearAllCaches = () => {
 
 describe("NoteHashCalculator E2E Tests", () => {
     describe("File Mode Hash Calculation", () => {
-        let prevPage: PageEntity | BlockEntity, page: PageEntity;
+        let page: PageEntity;
 
         beforeEach(async () => {
-            prevPage = await logseq.Editor.getCurrentPage();
             page = await logseq.Editor.createPage("Test NoteHash", {}, {createFirstBlock: false});
         });
 
@@ -55,7 +54,7 @@ describe("NoteHashCalculator E2E Tests", () => {
             await logseq.Editor.deletePage("Test NoteHash");
         });
 
-        const createAnkiFields = (): ParsedNoteData => ["", new Set<string>(), "", "", [], ""];
+        const createAnkiFields = (): ParsedNoteData => ["", new Set<string>(), "", "", []];
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
             "Hash changes when block content is changed",
@@ -235,10 +234,9 @@ describe("NoteHashCalculator E2E Tests", () => {
     });
 
     describe("DB Mode Hash Calculation", () => {
-        let prevPage: PageEntity | BlockEntity, page: PageEntity;
+        let page: PageEntity;
 
         beforeEach(async () => {
-            prevPage = await logseq.Editor.getCurrentPage();
             page = await logseq.Editor.createPage(
                 "Test NoteHash DB",
                 {},
@@ -250,7 +248,7 @@ describe("NoteHashCalculator E2E Tests", () => {
             await logseq.Editor.deletePage("Test NoteHash DB");
         });
 
-        const createAnkiFields = (): ParsedNoteData => ["", new Set<string>(), "", "", [], ""];
+        const createAnkiFields = (): ParsedNoteData => ["", new Set<string>(), "", "", []];
 
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
             "Hash changes when block content is changed in DB mode",

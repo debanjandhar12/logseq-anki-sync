@@ -223,10 +223,9 @@ describe("DeckParser E2E Tests", () => {
     });
 
     describe("DB Mode Deck Resolution", () => {
-        let prevPage: PageEntity | BlockEntity, page: PageEntity;
+        let page: PageEntity;
 
         beforeEach(async () => {
-            prevPage = await logseq.Editor.getCurrentPage();
             page = await logseq.Editor.createPage(
                 "Test DeckParser DB",
                 {},

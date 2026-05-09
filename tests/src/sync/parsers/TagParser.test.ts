@@ -1,5 +1,5 @@
 import "@logseq/libs";
-import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {MultilineCardNote} from "../../../../src/anki-notes/MultilineCardNote";
 import {TagParser} from "../../../../src/sync/parsers/TagParser";
@@ -25,10 +25,9 @@ vi.mock("../../../../src/logseq/LogseqProxy", async () => {
 
 describe("TagParser E2E Tests", () => {
     describe("File Mode Tag Resolution", () => {
-        let prevPage: PageEntity | BlockEntity, page: PageEntity;
+        let page: PageEntity;
 
         beforeEach(async () => {
-            prevPage = await logseq.Editor.getCurrentPage();
             page = await logseq.Editor.createPage("Test TagParser", {}, {createFirstBlock: false});
         });
 
@@ -48,7 +47,7 @@ describe("TagParser E2E Tests", () => {
                     block.content,
                     block.format,
                     block.properties,
-                    page
+                    page.id
                 );
                 const tags = await TagParser.parse(note, ["Hello", "Anki"]);
 
@@ -82,7 +81,7 @@ describe("TagParser E2E Tests", () => {
                     childBlock.content,
                     childBlock.format,
                     childBlock.properties,
-                    page
+                    page.id
                 );
                 const tags = await TagParser.parse(note, []);
 

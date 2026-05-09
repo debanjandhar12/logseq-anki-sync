@@ -5,7 +5,6 @@ import getNameFromPage from "../logseq/getNameFromPage";
 import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
 import {LogseqNamespaceHelper} from "../logseq/LogseqNamespaceHelper";
 import {LogseqPropertiesHelper} from "../logseq/LogseqPropertiesHelper";
-import {LogseqProxy} from "../logseq/LogseqProxy";
 import {showSelectionModal} from "../ui";
 import {getLogseqBlockPropSafe, handleAnkiError} from "../utils/utils";
 import {Addon} from "./Addon";

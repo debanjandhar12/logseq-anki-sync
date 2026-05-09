@@ -130,7 +130,7 @@ export class ClozeNote extends Note {
             clozedContent,
             /\{\{(c|cloze)([1-9]) (.*?)\}\}/g,
             (match, group1, group2, group3) => {
-                cloze_id = Math.max(cloze_id, parseInt(group2) + 1);
+                cloze_id = Math.max(cloze_id, parseInt(group2, 10) + 1);
                 group3 = group3.replace(
                     /(.*)(\\\\|::)(.*)/,
                     (match, g1, g2, g3) => `${g1.trim()}::${g3.trim()}`
@@ -181,7 +181,7 @@ export class ClozeNote extends Note {
                 // Add the clozes while ensuring that adding cloze in math mode double braces doesn't break the cloze
                 // This is done by adding extra space the braces between two double brace
                 for (const [i, reg] of replaceclozeArr.entries()) {
-                    if (typeof reg == "string")
+                    if (typeof reg === "string")
                         clozedContent = clozedContent.replaceAll(
                             reg.replaceAll(`\\"`, `"`).replaceAll(`\\'`, `'`).trim(),
                             (match) => {

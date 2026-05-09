@@ -13,13 +13,11 @@
         config = JSON.parse(`{{Config}}`);
         uuid_type = `{{uuid-type}}`;
         type = uuid_type.split("-").pop();
-    } catch (e) {
-        console.log(e);
-    }
+    } catch (_e) {}
 </script>
 <script async="false" defer="false">
     style = document.createElement("style");
-    if (type == "image_occlusion")
+    if (type === "image_occlusion")
         style.textContent = `
             #main-content {
                 visibility: hidden;

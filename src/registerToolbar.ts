@@ -39,7 +39,7 @@ export function registerToolbar(baseInfo: LSPluginBaseInfo) {
     `);
 
     logseq.App.registerUIItem("toolbar", {
-        key: `logseq-anki-sync${baseInfo.id == "logseq-anki-sync" ? "" : "-" + baseInfo.id}`,
+        key: `logseq-anki-sync${baseInfo.id === "logseq-anki-sync" ? "" : "-" + baseInfo.id}`,
         template: String.raw`
       <a title="Logseq to Anki Sync Options" data-on-click="showToolbarMenu" class="button logseq-anki-toolbar-item-${baseInfo.id}">
         <i class="ui__icon ti" style="font-size: 18px;">${ANKI_ICON}</i>
