@@ -1,5 +1,5 @@
 import {type ConsolaInstance, createConsola, LogLevels} from "consola";
-import {LoggerCategory} from "./types";
+import type {LoggerCategory} from "./types";
 
 function getEnvLogLevel(): number {
     if (import.meta.env.PROD) {
@@ -9,13 +9,20 @@ function getEnvLogLevel(): number {
     if (import.meta.env.MODE === "test" || import.meta.env.VITEST) {
         const testLevel = import.meta.env.VITE_TEST_LOG_LEVEL?.toLowerCase();
         switch (testLevel) {
-            case "silent": return LogLevels.silent;
-            case "error": return LogLevels.error;
-            case "warn": return LogLevels.warn;
-            case "info": return LogLevels.info;
-            case "debug": return LogLevels.debug;
-            case "trace": return LogLevels.trace;
-            default: return LogLevels.warn;
+            case "silent":
+                return LogLevels.silent;
+            case "error":
+                return LogLevels.error;
+            case "warn":
+                return LogLevels.warn;
+            case "info":
+                return LogLevels.info;
+            case "debug":
+                return LogLevels.debug;
+            case "trace":
+                return LogLevels.trace;
+            default:
+                return LogLevels.warn;
         }
     }
 
@@ -24,7 +31,7 @@ function getEnvLogLevel(): number {
 
 function getLogLevelForCategory(category: LoggerCategory): number {
     // Directly access logseq.settings to avoid circular dependency with LogseqProxy
-    const settings = logseq.settings as { debug?: string[] } | null;
+    const settings = logseq.settings as {debug?: string[]} | null;
     const debug = settings?.debug || [];
     if (debug.includes(category as string)) {
         return LogLevels.info;

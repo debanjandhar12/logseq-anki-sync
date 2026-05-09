@@ -129,13 +129,13 @@ export class ClozeNote extends Note {
         clozedContent = safeReplace(
             clozedContent,
             /\{\{(c|cloze)([1-9]) (.*?)\}\}/g,
-            (match, group1, group2, group3) => {
+            (_match, _group1, group2, group3) => {
                 cloze_id = Math.max(cloze_id, parseInt(group2, 10) + 1);
                 group3 = group3.replace(
                     /(.*)(\\\\|::)(.*)/,
-                    (match, g1, g2, g3) => `${g1.trim()}::${g3.trim()}`
+                    (_match, g1, _g2, g3) => `${g1.trim()}::${g3.trim()}`
                 ); // Add support for logseq cloze cue
-                return `{{c${parseInt(group2)}::${group3}}}`;
+                return `{{c${parseInt(group2, 10)}::${group3}}}`;
             }
         );
 

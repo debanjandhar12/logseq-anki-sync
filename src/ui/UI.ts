@@ -185,7 +185,7 @@ export class UI {
         ];
 
         try {
-            // @ts-expect-error - logseq.UI.resolveThemeCssPropsVals is not in types
+            // @ts-ignore - logseq.UI.resolveThemeCssPropsVals is not in types
             const vals = await logseq.UI.resolveThemeCssPropsVals(props);
             if (!vals) {
                 logger.warn("Theme variables not available, using defaults");

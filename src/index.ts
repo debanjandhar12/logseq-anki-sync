@@ -64,9 +64,9 @@ async function main(baseInfo: LSPluginBaseInfo) {
     WindowParentBridge.setGlobalObject("AnkiConnect", AnkiConnect); // Make AnkiConnect available globally
 
     // The lines below are needed for vite build and dev to work properly.
-    // @ts-expect-error
+    // @ts-ignore
     window.Buffer = Buffer;
-    // @ts-expect-error
+    // @ts-ignore
     window.process = process;
 
     // Show welcome message

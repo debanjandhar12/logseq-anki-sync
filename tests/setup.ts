@@ -12,12 +12,12 @@ proxyLogseq({
 
 // Check Logseq availability
 try {
-    // @ts-expect-error
+    // @ts-ignore
     await logseq.App.getUserInfo();
     globalThis.isLogseqAvailable = true;
 
     // Check if current graph is DB graph
-    // @ts-expect-error
+    // @ts-ignore
     const isDBGraphAPIResponse = await logseq.App.checkCurrentIsDbGraph();
     globalThis.isLogseqCurrentIsDBGraph =
         typeof isDBGraphAPIResponse === "boolean" ? isDBGraphAPIResponse : false;
@@ -30,7 +30,7 @@ try {
 
 // Check Anki availability
 try {
-    // @ts-expect-error
+    // @ts-ignore
     const response = await fetch("http://localhost:8765", {
         method: "POST",
         body: JSON.stringify({action: "version", version: 6})

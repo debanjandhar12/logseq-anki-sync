@@ -409,7 +409,7 @@ export class LogseqToAnkiSync {
     private async performPostSyncCleanup(toCreateNotes: Note[]): Promise<void> {
         if (toCreateNotes.some((note) => !note.properties["id"])) {
             try {
-                //@ts-expect-error
+                //@ts-ignore
                 await WindowParentBridge.getInternalLogseqAPI().api.force_save_graph();
                 await new Promise((resolve) => setTimeout(resolve, 2000));
             } catch (e) {}
