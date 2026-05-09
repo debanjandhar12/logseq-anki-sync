@@ -2,7 +2,7 @@ import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {AddonRegistry} from "./addons/AddonRegistry";
 import {DONATE_ICON} from "./constants";
-import {updateLoggerLevels} from "./logger";
+import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
@@ -19,18 +19,7 @@ export interface PluginSettings {
     ankiFieldOptions?: ("furigana" | "kana" | "kanji" | "tts" | "tags" | "rtl")[];
     syncOverwriteList?: string[];
     inheritPropertiesFromTags?: boolean;
-    debug?: (
-        | "Anki Connect"
-        | "Lazy Anki Note Manager"
-        | "Lazy Anki Note Manager Internal"
-        | "Anki Notes"
-        | "Logseq Wrappers"
-        | "Sync Cache Layer"
-        | "Logseq Content Converter"
-        | "Sync Main"
-        | "Sync Internal"
-        | "Others"
-    )[];
+    debug?: LoggerCategory[];
     skipOnDependencyHashMatch?: boolean;
     lastWelcomeVersion?: string;
 }
@@ -156,18 +145,7 @@ export const addSettingsToLogseq = async () => {
             type: "enum",
             default: [],
             title: "Enable info-level logging for categories? (Recommended: None)",
-            enumChoices: [
-                "Anki Connect",
-                "Lazy Anki Note Manager",
-                "Lazy Anki Note Manager Internal",
-                "Anki Notes",
-                "Logseq Wrappers",
-                "Sync Cache Layer",
-                "Logseq Content Converter",
-                "Sync Main",
-                "Sync Internal",
-                "Others"
-            ],
+            enumChoices: Object.values(LoggerCategory),
             enumPicker: "checkbox",
             description:
                 "Select the categories to enable info-level logging for. Warnings and errors are always shown."
