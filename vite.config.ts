@@ -14,8 +14,8 @@ export default defineConfig(({command, mode}) => {
         cacheDir: ".vite_cache",
         resolve: {
             alias: {
-                "react/jsx-runtime": "react/jsx-runtime.js",
-                "react/jsx-dev-runtime": "react/jsx-dev-runtime.js"
+                "react/jsx-runtime": "react/jsx-runtime",
+                "react/jsx-dev-runtime": "react/jsx-dev-runtime"
             }
         },
         plugins: [

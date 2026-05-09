@@ -3,7 +3,7 @@ import "./styles/main.css";
 import {createLogger, LoggerCategory} from "../logger";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {WindowBridge} from "../logseq/WindowBridge";
-import ReactDOM from "./ReactDOM";
+import {createRoot, type Root} from "./ReactDOM";
 
 const logger = createLogger(LoggerCategory.UI);
 
@@ -11,6 +11,7 @@ interface ModalStackEntry {
     id: string;
     component: React.ReactElement;
     containerElement: HTMLElement;
+    root: Root;
 }
 
 /**
@@ -58,6 +59,7 @@ export class UI {
     public static _resetForTesting() {
         // Clean up modals without triggering logseq.hideMainUI
         UI.modalStack.forEach((entry) => {
+            entry.root.unmount();
             if (entry.containerElement.parentNode) {
                 entry.containerElement.parentNode.removeChild(entry.containerElement);
             }
@@ -243,16 +245,18 @@ export class UI {
             // Add container to app root
             UI.appRoot.appendChild(containerElement);
 
+            // Render component in its container
+            const root = createRoot(containerElement);
+            root.render(component);
+
             // Add to modal stack
             const entry: ModalStackEntry = {
                 id: finalModalId,
                 component,
-                containerElement
+                containerElement,
+                root
             };
             UI.modalStack.push(entry);
-
-            // Render component in its container
-            ReactDOM.render(component, containerElement);
 
             // Show UI if this is the first modal
             if (UI.modalStack.length === 1) {
@@ -318,7 +322,7 @@ export class UI {
 
             if (entryToRemove) {
                 // Unmount React component
-                ReactDOM.unmountComponentAtNode(entryToRemove.containerElement);
+                entryToRemove.root.unmount();
 
                 // Remove container from DOM
                 if (entryToRemove.containerElement.parentNode) {
