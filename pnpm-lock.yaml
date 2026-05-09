@@ -140,10 +140,10 @@ importers:
         version: 5.62.0(eslint@10.0.0(jiti@1.21.7))(typescript@5.4.5)
       '@vitejs/plugin-react':
         specifier: ^4.5.1
-        version: 4.5.1(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))
+        version: 4.5.1(vite@7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))
       '@vitest/browser':
         specifier: ^3.2.2
-        version: 3.2.2(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))(vitest@4.0.18)
+        version: 3.2.2(vite@7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))(vitest@4.0.18)
       '@vitest/ui':
         specifier: ^3.2.2
         version: 3.2.4(vitest@4.0.18)
@@ -152,7 +152,7 @@ importers:
         version: 2.1.0
       autoprefixer:
         specifier: ^10.4.23
-        version: 10.4.23(postcss@8.5.6)
+        version: 10.4.23(postcss@8.5.14)
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -193,8 +193,8 @@ importers:
         specifier: ^1.0.1
         version: 1.0.1
       postcss:
-        specifier: ^8.5.6
-        version: 8.5.6
+        specifier: ^8.5.14
+        version: 8.5.14
       prettier:
         specifier: ^3.0.0
         version: 3.2.5
@@ -214,11 +214,11 @@ importers:
         specifier: ^5.1.6
         version: 5.4.5
       vite:
-        specifier: ^7.3.1
-        version: 7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)
+        specifier: ^7.3.3
+        version: 7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)
       vite-plugin-node-polyfills:
         specifier: 0.8.2
-        version: 0.8.2(rollup@4.52.5)(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))
+        version: 0.8.2(rollup@4.52.5)(vite@7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@22.15.30)(@vitest/ui@3.2.4)(jiti@1.21.7)(jsdom@26.1.0(canvas@2.11.2(encoding@0.1.13)))(sass@1.97.3)
@@ -4161,6 +4161,10 @@ packages:
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
+  postcss@8.5.14:
+    resolution: {integrity: sha512-SoSL4+OSEtR99LHFZQiJLkT59C5B1amGO1NzTwj7TT1qCUgUO6hxOvzkOYxD+vMrXBM3XJIKzokoERdqQq/Zmg==}
+    engines: {node: ^10 || ^12 || >=14}
+
   postcss@8.5.6:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
     engines: {node: ^10 || ^12 || >=14}
@@ -4953,6 +4957,46 @@ packages:
 
   vite@7.3.1:
     resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^20.19.0 || >=22.12.0
+      jiti: '>=1.21.0'
+      less: ^4.0.0
+      lightningcss: ^1.21.0
+      sass: ^1.70.0
+      sass-embedded: ^1.70.0
+      stylus: '>=0.54.8'
+      sugarss: ^5.0.0
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
+
+  vite@7.3.3:
+    resolution: {integrity: sha512-/4XH147Ui7OGTjg3HbdWe5arnZQSbfuRzdr9Ec7TQi5I7R+ir0Rlc9GIvD4v0XZurELqA035KVXJXpR61xhiTA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -6960,7 +7004,7 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
-  '@vitejs/plugin-react@4.5.1(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))':
+  '@vitejs/plugin-react@4.5.1(vite@7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))':
     dependencies:
       '@babel/core': 7.27.4
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.27.4)
@@ -6968,15 +7012,15 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.9
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)
+      vite: 7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/browser@3.2.2(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))(vitest@4.0.18)':
+  '@vitest/browser@3.2.2(vite@7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))(vitest@4.0.18)':
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.6.1(@testing-library/dom@10.4.0)
-      '@vitest/mocker': 3.2.2(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))
+      '@vitest/mocker': 3.2.2(vite@7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))
       '@vitest/utils': 3.2.2
       magic-string: 0.30.17
       sirv: 3.0.1
@@ -6998,13 +7042,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@3.2.2(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))':
+  '@vitest/mocker@3.2.2(vite@7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))':
     dependencies:
       '@vitest/spy': 3.2.2
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
-      vite: 7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)
+      vite: 7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)
 
   '@vitest/mocker@4.0.18(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3))':
     dependencies:
@@ -7285,13 +7329,13 @@ snapshots:
   asynckit@0.4.0:
     optional: true
 
-  autoprefixer@10.4.23(postcss@8.5.6):
+  autoprefixer@10.4.23(postcss@8.5.14):
     dependencies:
       browserslist: 4.28.1
       caniuse-lite: 1.0.30001761
       fraction.js: 5.3.4
       picocolors: 1.1.1
-      postcss: 8.5.6
+      postcss: 8.5.14
       postcss-value-parser: 4.2.0
 
   available-typed-arrays@1.0.7:
@@ -9664,6 +9708,12 @@ snapshots:
 
   postcss-value-parser@4.2.0: {}
 
+  postcss@8.5.14:
+    dependencies:
+      nanoid: 3.3.11
+      picocolors: 1.1.1
+      source-map-js: 1.2.1
+
   postcss@8.5.6:
     dependencies:
       nanoid: 3.3.11
@@ -10693,15 +10743,29 @@ snapshots:
       is-typed-array: 1.1.13
       which-typed-array: 1.1.15
 
-  vite-plugin-node-polyfills@0.8.2(rollup@4.52.5)(vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)):
+  vite-plugin-node-polyfills@0.8.2(rollup@4.52.5)(vite@7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)):
     dependencies:
       '@rollup/plugin-inject': 5.0.5(rollup@4.52.5)
       node-stdlib-browser: 1.3.1
-      vite: 7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)
+      vite: 7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3)
     transitivePeerDependencies:
       - rollup
 
   vite@7.3.1(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3):
+    dependencies:
+      esbuild: 0.27.3
+      fdir: 6.5.0(picomatch@4.0.3)
+      picomatch: 4.0.3
+      postcss: 8.5.6
+      rollup: 4.52.5
+      tinyglobby: 0.2.15
+    optionalDependencies:
+      '@types/node': 22.15.30
+      fsevents: 2.3.3
+      jiti: 1.21.7
+      sass: 1.97.3
+
+  vite@7.3.3(@types/node@22.15.30)(jiti@1.21.7)(sass@1.97.3):
     dependencies:
       esbuild: 0.27.3
       fdir: 6.5.0(picomatch@4.0.3)

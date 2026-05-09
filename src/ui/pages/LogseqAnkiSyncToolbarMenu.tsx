@@ -22,7 +22,7 @@ interface ToolbarMenuModalProps {
     modalId: string;
 }
 
-const ToolbarMenuModalComponent: FC<ToolbarMenuModalProps> = ({ triggerRect, parentWidth, modalId }) => {
+const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({ triggerRect, parentWidth, modalId }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
 
@@ -171,5 +171,5 @@ const ToolbarMenuModalComponent: FC<ToolbarMenuModalProps> = ({ triggerRect, par
 
 export function showToolbarMenu(triggerRect: DOMRect | null, parentWidth?: number) {
     const modalId = `modal-toolbar-${Date.now()}`;
-    UI.showModal(<ToolbarMenuModalComponent modalId={modalId} triggerRect={triggerRect} parentWidth={parentWidth} />, modalId);
+    UI.showModal(<LogseqAnkiSyncToolbarMenuComponent modalId={modalId} triggerRect={triggerRect} parentWidth={parentWidth} />, modalId);
 }

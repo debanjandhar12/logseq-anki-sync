@@ -1,6 +1,6 @@
 /**
  * This rewrites requests from logseq web of dist folder to main url.
- * Why? Vite 7 mounts dist folder as root! This means /dist/index.html request will fail.
+ * Why? Vite 7 mounts dist folder as root! This means /dist/index.html done from logseq web client will fail.
  * Note: In dev mode, /dist folder is created by vite-logseq-plugin.
  */
 export function rewriteDistReqToRootPlugin() {
