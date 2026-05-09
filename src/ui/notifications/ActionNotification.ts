@@ -1,7 +1,7 @@
 import {createLogger, LoggerCategory} from "../../logger";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 
-const logger = createLogger(LoggerCategory.Others);
+const logger = createLogger(LoggerCategory.MISC);
 
 interface ActionButton {
     name: string;

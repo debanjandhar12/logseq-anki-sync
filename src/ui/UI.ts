@@ -5,7 +5,7 @@ import {LogseqProxy} from "../logseq/LogseqProxy";
 import {WindowBridge} from "../logseq/WindowBridge";
 import {createRoot, type Root} from "./ReactDOM";
 
-const logger = createLogger(LoggerCategory.UI);
+const logger = createLogger(LoggerCategory.OTHER_UI);
 
 interface ModalStackEntry {
     id: string;

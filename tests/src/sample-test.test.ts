@@ -10,13 +10,3 @@ describe("Logseq", () => {
         }
     );
 });
-
-describe("Anki", () => {
-    test.skipIf(!globalThis.isAnkiAvailable)("Basic connect test", async () => {
-        const response = await fetch("http://localhost:8765", {
-            method: "POST",
-            body: JSON.stringify({action: "version", version: 6})
-        });
-        expect(response.ok).toEqual(true);
-    });
-});

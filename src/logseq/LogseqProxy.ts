@@ -13,7 +13,6 @@ import pMemoize, {pMemoizeClear} from "p-memoize";
 import platform from "platform";
 import {createLogger, LoggerCategory} from "../logger";
 import type {PluginSettings} from "../settings";
-import objectHashOptimized from "../utils/objectHashOptimized";
 import getNameFromPage from "./getNameFromPage";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqNamespaceHelperProxy} from "./LogseqNamespaceHelper";
@@ -21,6 +20,7 @@ import {LogseqPropertiesHelperProxy} from "./LogseqPropertiesHelper";
 import {WindowParentBridge} from "./WindowParentBridge";
 
 const logger = createLogger(LoggerCategory.LogseqWrappers);
+const objectHashOptimized = () => null;
 
 /***
  * This is a cached + synchronization-safe logseq api wrapper.

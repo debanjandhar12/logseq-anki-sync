@@ -1,12 +1,9 @@
 import BOOK_ICON from "@tabler/icons/outline/book.svg?raw";
 import HEART_ICON from "@tabler/icons/outline/heart.svg?raw";
-import LOGS_ICON from "@tabler/icons/outline/logs.svg?raw";
-import PLAYER_PLAY_ICON from "@tabler/icons/outline/player-play.svg?raw";
+import SIDE_BAR_ICON from "@tabler/icons/outline/layout-sidebar.svg?raw";
 import SETTINGS_ICON from "@tabler/icons/outline/settings.svg?raw";
 import FocusTrap from "focus-trap-react";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
-import {LogseqToAnkiSync} from "../../sync/syncLogseqToAnki";
-import {showSyncResultDialog} from "../launchers/showSyncResultDialog";
 import type {FC} from "../React";
 // biome-ignore lint/style/useImportType: required for re-exported react
 import React, {useEffect, useState} from "../React";
@@ -24,7 +21,7 @@ interface ToolbarMenuModalProps {
     modalId: string;
 }
 
-const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
+const LogseqAIChatToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
     triggerRect,
     parentWidth,
     modalId
@@ -41,46 +38,37 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
         setTimeout(() => UI.hideModal(modalId), 150);
     };
 
-    const hasLastSync =
-        WindowParentBridge.getGlobalObject("lastSyncLogseqToAnkiResult") !== null &&
-        WindowParentBridge.getGlobalObject("lastSyncLogseqToAnkiResult") !== undefined;
-
     const rightPos = triggerRect ? (parentWidth || window.innerWidth) - triggerRect.right : 20;
     const topPos = triggerRect ? triggerRect.bottom + 8 : 40;
 
     const items = [
         {
-            icon: PLAYER_PLAY_ICON,
-            text: "Start Sync",
-            color: "text-green-500",
+            icon: SIDE_BAR_ICON,
+            text: "Open Chat",
+            disabled: false,
             onClick: async () => {
-                await new LogseqToAnkiSync().sync();
+                // TBU
             }
         },
+        {separator: true},
         {
-            icon: LOGS_ICON,
-            text: "Last Sync Details",
-            disabled: !hasLastSync,
-            onClick: () => {
-                const result = WindowParentBridge.getGlobalObject("lastSyncLogseqToAnkiResult");
-                if (result) showSyncResultDialog(result as any);
-            }
+            icon: SETTINGS_ICON,
+            text: "Settings",
+            disabled: false,
+            onClick: () => logseq.showSettingsUI()
         },
         {separator: true},
         {
             icon: BOOK_ICON,
             text: "Documentation",
+            disabled: true,
             onClick: () =>
                 window.open("https://debanjandhar12.github.io/logseq-anki-sync/docs/intro")
         },
         {
-            icon: SETTINGS_ICON,
-            text: "Settings",
-            onClick: () => logseq.showSettingsUI()
-        },
-        {
             icon: HEART_ICON,
             text: "Donate",
+            disabled: false,
             onClick: () => window.open("https://github.com/sponsors/debanjandhar12")
         }
     ];
@@ -205,7 +193,7 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
 export function showToolbarMenu(triggerRect: DOMRect | null, parentWidth?: number) {
     const modalId = `modal-toolbar-${Date.now()}`;
     UI.showModal(
-        <LogseqAnkiSyncToolbarMenuComponent
+        <LogseqAIChatToolbarMenuComponent
             modalId={modalId}
             triggerRect={triggerRect}
             parentWidth={parentWidth}

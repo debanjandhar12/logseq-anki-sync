@@ -3,9 +3,9 @@ import type {LSPluginBaseInfo} from "@logseq/libs/dist/LSPlugin";
 import {ANKI_ICON} from "./constants";
 import {createLogger, LoggerCategory} from "./logger";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
-import {showToolbarMenu} from "./ui/pages/LogseqAnkiSyncToolbarMenu";
+import {showToolbarMenu} from "./ui/pages/LogseqAIChatToolbarMenu";
 
-const logger = createLogger(LoggerCategory.UI);
+const logger = createLogger(LoggerCategory.OTHER_UI);
 
 export function registerToolbar(baseInfo: LSPluginBaseInfo) {
     logseq.provideModel({

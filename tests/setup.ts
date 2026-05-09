@@ -27,15 +27,3 @@ try {
     // biome-ignore lint/suspicious/noConsole: logger not present in test mode
     console.log("Logseq not available - some tests will be skipped");
 }
-
-// Check Anki availability
-try {
-    // @ts-ignore
-    const response = await fetch("http://localhost:8765", {
-        method: "POST",
-        body: JSON.stringify({action: "version", version: 6})
-    });
-    globalThis.isAnkiAvailable = response.ok;
-} catch {
-    globalThis.isAnkiAvailable = false;
-}

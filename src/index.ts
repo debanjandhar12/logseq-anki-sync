@@ -4,64 +4,45 @@ import {Buffer} from "buffer/";
 import GITHUB_ICON from "../node_modules/@tabler/icons/icons/outline/brand-github.svg?raw";
 import HEART_ICON from "../node_modules/@tabler/icons/icons/outline/heart.svg?raw";
 import pkg from "./../package.json";
-import {AddonRegistry} from "./addons/AddonRegistry";
-import * as AnkiConnect from "./anki-connect/AnkiConnect";
-import {ClozeNote} from "./anki-notes/ClozeNote";
-import {HighlightMaskNote} from "./anki-notes/HighlightMaskNote";
-import {ImageOcclusionNote} from "./anki-notes/ImageOcclusionNote";
-import {MultilineCardNote} from "./anki-notes/MultilineCardNote";
-import {Note} from "./anki-notes/Note";
-import {SwiftArrowNote} from "./anki-notes/SwiftArrowNote";
-import {ANKI_ICON} from "./constants";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
 import {registerToolbar} from "./registerToolbar";
 import {addSettingsToLogseq} from "./settings";
-import {BlockAndPageHashCache} from "./sync/cache";
-import {LogseqToAnkiSync} from "./sync/syncLogseqToAnki";
 import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
+import {ANKI_ICON} from "./constants";
 
-const logger = createLogger(LoggerCategory.Others);
+const logger = createLogger(LoggerCategory.MISC);
 
 async function main(baseInfo: LSPluginBaseInfo) {
     // Register UI and Commands
     const syncLogseqToAnki = async () => {
-        await new LogseqToAnkiSync().sync();
+        // TBU
     };
     logseq.provideModel({
         syncLogseqToAnki: syncLogseqToAnki
     });
     logseq.App.registerCommandPalette(
         {
-            key: `logseq-anki-sync-command-palette-${baseInfo.id}`,
-            label: `Start Logseq to Anki Sync`,
+            key: `logseq-ai-chat-command-palette-${baseInfo.id}`,
+            label: `Open Logseq AI Chat`,
             keybinding: {mode: "global", binding: ""}
         },
         syncLogseqToAnki
     );
+    WindowParentBridge.setGlobalObject("LogseqAIChat", {
+        openChat: () => {
+            // TBU
+        }
+    });
     registerToolbar(baseInfo);
     updateLoggerLevels();
     addSettingsToLogseq();
 
     // Init various modules
-    WindowParentBridge.setGlobalObject("LogseqAnkiSync", {
-        dispatchEvent: (event: string) => {
-            WindowParentBridge.dispatchEvent(event);
-        }
-    });
     LogseqProxy.init();
-    BlockAndPageHashCache.init();
-    Note.initLogseqOperations();
-    ClozeNote.initLogseqOperations();
-    MultilineCardNote.initLogseqOperations();
-    SwiftArrowNote.initLogseqOperations();
-    ImageOcclusionNote.initLogseqOperations();
-    HighlightMaskNote.initLogseqOperations();
-    AddonRegistry.getAll().forEach((addon) => addon.init());
     UI.init();
-    WindowParentBridge.setGlobalObject("AnkiConnect", AnkiConnect); // Make AnkiConnect available globally
 
     // The lines below are needed for vite build and dev to work properly.
     // @ts-ignore
@@ -75,9 +56,9 @@ async function main(baseInfo: LSPluginBaseInfo) {
         logseq.updateSettings({lastWelcomeVersion: pkg.version});
         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait logseq's react to load
         await showButtonModal(
-            `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span>
+            `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq AI Chat ${pkg.version}!</span>
             <div style="overflow-y: auto; margin-top: 10px; border: 1px solid var(--ls-border-color); border-radius: 4px;">
-                <iframe src="https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}" style="width: 100%; height: 100%; min-height: 400px; border: none;"></iframe>
+                <iframe src="https://github.com/debanjandhar12/logseq-ai-chat/releases/tag/v${pkg.version}" style="width: 100%; height: 100%; min-height: 400px; border: none;"></iframe>
             </div>`,
             [
                 {
@@ -92,7 +73,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
                     name: "Open in GitHub",
                     f: () => {
                         window.open(
-                            `https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}`
+                            `https://github.com/debanjandhar12/logseq-ai-chat/releases/tag/v${pkg.version}`
                         );
                     },
                     closeOnClick: false,
