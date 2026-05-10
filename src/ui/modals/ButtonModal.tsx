@@ -1,5 +1,5 @@
 import {LogseqButton} from "../components/LogseqButton";
-import React from "../React";
+import React from "react";
 import {UI} from "../UI";
 import {Modal} from "./core/Modal";
 import {SimpleModalHeader} from "./core/ModalHeader";

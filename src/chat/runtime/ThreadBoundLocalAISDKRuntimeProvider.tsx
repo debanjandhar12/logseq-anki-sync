@@ -1,5 +1,5 @@
 import {AssistantRuntimeProvider, useRemoteThreadListRuntime} from "@assistant-ui/react";
-import React, {type ReactNode, useMemo} from "../../ui/React";
+import React, {type ReactNode, useMemo} from "react";
 import {LocalThreadListAdapter} from "./LocalThreadListAdapter";
 import {useThreadBoundLocalAISDKChat} from "./useThreadBoundLocalAISDKChat";
 

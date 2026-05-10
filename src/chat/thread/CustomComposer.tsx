@@ -1,5 +1,5 @@
 import { ComposerPrimitive } from "@assistant-ui/react";
-import React from "../../ui/React";
+import React from "react";
 
 export const CustomComposer = () => (
     <ComposerPrimitive.Root className="composer-box">

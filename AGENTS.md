@@ -21,7 +21,7 @@ This is a Logseq plugin for ai chat using ai-sdk and assistant-ui.
 
 ## Architecture
 **Settings:** Defined in `settings.ts` using `SettingSchemaDesc`. Access via `LogseqSettingAccessor.getPluginSettings()`, never directly through `logseq.settings`.
-**UI Components:** React-based modals and pages live in `src/ui/`.
+**UI Components:** React-based modals and pages live in `src/ui/`. Chat app lives in `src/chat`.
 
 ## Testing
 
@@ -43,7 +43,6 @@ This is a Logseq plugin for ai chat using ai-sdk and assistant-ui.
 - **Logseq API:** Always use wrappers from `src/logseq/` directory when possible.
 - **Parent Window Access:** Always use WindowParentBridge instead of direct `window.parent` access for iframe communication. WindowParentBridge provides type-safe, testable access to parent window objects (Logseq API, AnkiConnect, Fabric.js, DOM elements, etc.)
 - **Settings Access:** Use `LogseqSettingAccessor.getPluginSettings()` instead of `logseq.settings`
-- **React Imports:** Import React/ReactDOM from `ui/React.ts` and `ui/ReactDOM.ts`, not directly from npm packages
 - **UI Development:** Follow existing modal/page patterns from `src/ui/` directory
 - **Build & Dev:** Use `pnpm dev` for hot reload development, `pnpm build` for production (pnpm is enforced via preinstall)
 - **Documentation:** When implementing new features or making significant changes, remember to update the documentation in the `docusaurus/` directory to keep it in sync with the codebase.

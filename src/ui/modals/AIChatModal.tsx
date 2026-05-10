@@ -1,4 +1,4 @@
-import React from "../React";
+import React from "react";
 import {UI} from "../UI";
 import {Modal} from "./core/Modal";
 import {useModal} from "./hooks/useModal";

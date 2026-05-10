@@ -1,5 +1,5 @@
 import { ThreadPrimitive, AuiIf } from "@assistant-ui/react";
-import React from "../../ui/React";
+import React from "react";
 import {CustomComposer} from "./CustomComposer";
 
 export const CustomThread = () => {

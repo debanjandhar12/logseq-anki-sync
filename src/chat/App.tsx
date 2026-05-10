@@ -1,4 +1,4 @@
-import React from "../ui/React";
+import React from "react";
 import {ThreadBoundLocalAISDKRuntimeProvider} from "./runtime/ThreadBoundLocalAISDKRuntimeProvider";
 import {AppContent} from "./AppContent";
 

@@ -1,6 +1,6 @@
 import {ButtonModalComponent} from "../modals/ButtonModal";
 import {createModalPromise} from "../modals/utils/createModalPromise";
-import React from "../React";
+import React from "react";
 
 export interface ButtonModalButton {
     name: string;

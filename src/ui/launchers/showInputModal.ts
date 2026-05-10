@@ -1,6 +1,6 @@
 import {InputModalComponent} from "../modals/InputModal";
 import {createModalPromise} from "../modals/utils/createModalPromise";
-import React from "../React";
+import React from "react";
 
 /**
  * Shows an input modal for text entry.

@@ -1,7 +1,7 @@
 import {autoUpdate, computePosition, flip, offset, type Placement, shift} from "@floating-ui/react";
 import {WindowBridge} from "../../logseq/WindowBridge";
-import React, {type FC, useCallback, useEffect, useRef, useState} from "../React";
-import {createPortal} from "../ReactDOM";
+import React, {type FC, useCallback, useEffect, useRef, useState} from "react";
+import {createPortal} from "react-dom";
 
 interface LogseqPopoverProps {
     content: React.ReactNode;

@@ -5,9 +5,9 @@ import SETTINGS_ICON from "@tabler/icons/outline/settings.svg?raw";
 import FocusTrap from "focus-trap-react";
 import {showAIChat} from "../../chat";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
-import type {FC} from "../React";
+import type {FC} from "react";
 // biome-ignore lint/style/useImportType: required for re-exported react
-import React, {useEffect, useState} from "../React";
+import React, {useEffect, useState} from "react";
 import {UI} from "../UI";
 
 const focusTrapOptions = {

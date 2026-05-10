@@ -1,4 +1,4 @@
-import React from "../ui/React";
+import React from "react";
 import {showAIChatModal} from "../ui";
 import {LogseqSettingAccessor} from "../logseq/LogseqSettingAccessor";
 import {App} from "./App";

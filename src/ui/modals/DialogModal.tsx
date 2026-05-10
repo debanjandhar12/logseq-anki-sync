@@ -1,4 +1,4 @@
-// import React from "../../React";
+// import React from "react";
 // import { Modal } from "../Modal";
 // import { useModal } from "../hooks/useModal";
 // import { ModalHeader } from "../ModalHeader";
