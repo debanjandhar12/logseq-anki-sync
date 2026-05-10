@@ -6,8 +6,8 @@ import type {
 import type {RemoteThreadListAdapter, ThreadMessage} from "@assistant-ui/react";
 import pkg from "../../../package.json";
 import {generateTitle} from "../../core/title-generator/generateTitle";
-import {ThreadStore} from "../../logseq/stores/thread-store/ThreadStore";
-import type {ThreadFileData} from "../../logseq/stores/thread-store/types";
+import {ThreadStore} from "../stores/thread-store/ThreadStore";
+import type {ThreadFileData} from "../stores/thread-store/types";
 import {createReadableStreamFromString} from "../utils/createReadableStreamFromString";
 
 /**

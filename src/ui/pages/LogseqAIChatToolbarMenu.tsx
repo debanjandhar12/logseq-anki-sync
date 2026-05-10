@@ -5,7 +5,7 @@ import SIDE_BAR_ICON from "@tabler/icons/outline/layout-sidebar-right-expand.svg
 import SETTINGS_ICON from "@tabler/icons/outline/settings.svg?raw";
 import FocusTrap from "focus-trap-react";
 import {showAIChat} from "../../chat";
-import {LogseqPluginStorageManager} from "../../logseq/stores/LogseqPluginStorageManager";
+import {LogseqPluginStorageManager} from "../../logseq/LogseqPluginStorageManager";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import type {FC} from "react";
 // biome-ignore lint/style/useImportType: required for re-exported react

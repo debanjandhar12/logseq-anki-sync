@@ -9,7 +9,7 @@ import type {
     MessageFormatAdapter,
     ThreadHistoryAdapter
 } from "@assistant-ui/react";
-import {ThreadStore} from "../../logseq/stores/thread-store/ThreadStore";
+import {ThreadStore} from "../stores/thread-store/ThreadStore";
 
 export class LocalThreadHistoryAdapter implements ThreadHistoryAdapter {
     constructor(private readonly threadId: string) {}

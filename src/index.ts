@@ -14,7 +14,7 @@ import {registerToolbar} from "./registerToolbar";
 import {addSettingsToLogseq} from "./settings";
 import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
-import {LogseqPluginStorageManager} from "./logseq/stores/LogseqPluginStorageManager";
+import {LogseqPluginStorageManager} from "./logseq/LogseqPluginStorageManager";
 
 const logger = createLogger(LoggerCategory.MISC);
 

@@ -1,5 +1,5 @@
 import {createLogger, LoggerCategory} from "../../../logger";
-import {LogseqPluginStorageManager} from "../LogseqPluginStorageManager";
+import {LogseqPluginStorageManager} from "../../../logseq/LogseqPluginStorageManager";
 import type {ThreadFileData} from "./types";
 
 const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);
