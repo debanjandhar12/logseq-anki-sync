@@ -60,7 +60,7 @@ export function staticFileSyncTransformPlugin() {
                     }
                 },
             });
-            const generated = generate(ast, { retainLines: true });
+            const generated = generate(ast, { retainLines: true, sourceMaps: true, sourceFileName: id }, code);
             code = generated.code;
             const map = generated.map;
             return { code, map };

@@ -2,7 +2,7 @@ import { Plugin } from "vite";
 import { readFileSync, mkdirSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import { get } from "http";
-
+import MagicString from "magic-string";
 function getLogseqPluginId() {
     try {
         const packageJson = readFileSync(resolve(process.cwd(), "package.json"), "utf-8");
@@ -127,8 +127,8 @@ export function logseqDevPlugin(): Plugin {
                 const isLikelyEntry = /[/\\](index|main)\.[tj]sx?$/.test(id);
 
                 if (isGraphRoot || (!moduleNode && isLikelyEntry)) {
-                    return {
-                        code: `
+                    const s = new MagicString(code);
+                    s.prepend(`
 if (import.meta && import.meta.hot) {
     let isTopAccessible = false;
     try {
@@ -179,8 +179,10 @@ if (import.meta && import.meta.hot) {
     // Fallback listeners for explicit vite native reload signals
     import.meta.hot.on('vite:beforeFullReload', __logseqDevPluginReload);
 }
-` + code,
-                        map: null,
+`);
+                    return {
+                        code: s.toString(),
+                        map: s.generateMap({ hires: true, source: id }),
                     };
                 }
             }
