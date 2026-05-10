@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "skills": {
+    "assistant-ui": {
+      "source": "assistant-ui/skills",
+      "sourceType": "github",
+      "skillPath": "assistant-ui/skills/assistant-ui/SKILL.md",
+      "computedHash": "cfce3ce8c4c2da38f0fc8e881af677efa8166d379862541f79c54e66f1a599d5"
+    },
+    "primitives": {
+      "source": "assistant-ui/skills",
+      "sourceType": "github",
+      "skillPath": "assistant-ui/skills/primitives/SKILL.md",
+      "computedHash": "acdb5ddbdd066abf513a3f729198cee8ad79d03b18ba3329e609658d88bc09ee"
+    },
+    "runtime": {
+      "source": "assistant-ui/skills",
+      "sourceType": "github",
+      "skillPath": "assistant-ui/skills/runtime/SKILL.md",
+      "computedHash": "7aac755d83b8396ef149320fb5a8ad4073a828fafbbc6a759de0da4b78bb99c2"
+    },
+    "setup": {
+      "source": "assistant-ui/skills",
+      "sourceType": "github",
+      "skillPath": "assistant-ui/skills/setup/SKILL.md",
+      "computedHash": "283c7cbc08cbc1a3b58307083f505a24fcc8b5e5621608d6e1fb88034b1afce0"
+    },
+    "streaming": {
+      "source": "assistant-ui/skills",
+      "sourceType": "github",
+      "skillPath": "assistant-ui/skills/streaming/SKILL.md",
+      "computedHash": "31a090f9360343967f1189559c2b24da7eeacbf5b1b1c503c57c98c71106e326"
+    },
+    "thread-list": {
+      "source": "assistant-ui/skills",
+      "sourceType": "github",
+      "skillPath": "assistant-ui/skills/thread-list/SKILL.md",
+      "computedHash": "aaa49c0f8c1a3c5cf37498c8019f7e0d4f614053b17728593a27755b663e9d7c"
+    },
+    "tools": {
+      "source": "assistant-ui/skills",
+      "sourceType": "github",
+      "skillPath": "assistant-ui/skills/tools/SKILL.md",
+      "computedHash": "55a64b569cf4eac3bc8877e216e401af6b40d296e5180eb71174ac80b68d670d"
+    },
+    "update": {
+      "source": "assistant-ui/skills",
+      "sourceType": "github",
+      "skillPath": "assistant-ui/skills/update/SKILL.md",
+      "computedHash": "9ce8f6ff9d76fb1fa3101da8240b805da09836bf6aad9a1bc3f671060de461a7"
+    }
+  }
+}
