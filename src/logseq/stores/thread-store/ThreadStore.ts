@@ -11,15 +11,20 @@ export class ThreadStore {
     static groupName: string = "thread";
 
     static async loadThread(threadId: string): Promise<ThreadFileData> {
-        const content = await LogseqPluginStorageManager.getFileContent(
-            ThreadStore.groupName,
-            threadId
-        );
-        return JSON.parse(content) as ThreadFileData;
+        try {
+            const content = await LogseqPluginStorageManager.getFileContent(
+                ThreadStore.groupName,
+                threadId
+            );
+            return JSON.parse(content) as ThreadFileData;
+        } catch (e) {
+            return null;
+        }
     }
 
     static async listThreads(): Promise<ThreadFileData[]> {
         const fileNames = await LogseqPluginStorageManager.getFiles(ThreadStore.groupName);
+        console.log("fileNames", await LogseqPluginStorageManager.store.allKeys());
         const threadFiles = [];
         for (const fileName of fileNames) {
             const content = await LogseqPluginStorageManager.getFileContent(
@@ -45,6 +50,8 @@ export class ThreadStore {
     }
 
     static async deleteThread(threadId: string): Promise<void> {
-        await LogseqPluginStorageManager.deleteFile(ThreadStore.groupName, threadId);
+        try {
+            await LogseqPluginStorageManager.deleteFile(ThreadStore.groupName, threadId);
+        } catch (e) {}
     }
 }

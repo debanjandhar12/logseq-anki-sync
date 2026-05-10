@@ -1,17 +1,12 @@
-// ---------------------------------------------------------------------------
-// LocalThreadHistoryAdapter
-//
-// Implements ThreadHistoryAdapter so useLocalRuntime can load persisted
-// messages when a thread is opened, and persist new messages as they arrive.
-//
-// Key design decisions:
-//  - Uses ThreadStorage.loadThread(id) — reads exactly one file, not the
-//    entire directory.
-//  - append() updates a single thread atomically through ThreadStorage.
-// ---------------------------------------------------------------------------
+/**
+ * Implements ThreadHistoryAdapter so useLocalRuntime can load persisted
+ * messages when a thread is opened and persist new messages as they arrive.
+ */
 import type {
     ExportedMessageRepository,
     ExportedMessageRepositoryItem,
+    GenericThreadHistoryAdapter,
+    MessageFormatAdapter,
     ThreadHistoryAdapter
 } from "@assistant-ui/react";
 import {ThreadStore} from "../../logseq/stores/thread-store/ThreadStore";
@@ -21,7 +16,7 @@ export class LocalThreadHistoryAdapter implements ThreadHistoryAdapter {
 
     async load(): Promise<ExportedMessageRepository> {
         const threadData = await ThreadStore.loadThread(this.threadId);
-        if (!threadData || !threadData.exportedMessageRepository) {
+        if (!threadData?.exportedMessageRepository) {
             return {headId: null, messages: []};
         }
         return threadData.exportedMessageRepository;
@@ -38,5 +33,13 @@ export class LocalThreadHistoryAdapter implements ThreadHistoryAdapter {
         threadData.custom.updatedAt = new Date();
         
         await ThreadStore.saveThread(this.threadId, threadData);
+    }
+
+    withFormat<TMessage, TStorageFormat extends Record<string, unknown>>(
+        _formatAdapter: MessageFormatAdapter<TMessage, TStorageFormat>
+    ): GenericThreadHistoryAdapter<TMessage> {
+        // The base adapter already works with the external message format (UIMessage from AI SDK)
+        // so we can simply cast and delegate to the base methods
+        return this as unknown as GenericThreadHistoryAdapter<TMessage>;
     }
 }

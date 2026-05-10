@@ -10,6 +10,10 @@ import {ThreadStore} from "../../logseq/stores/thread-store/ThreadStore";
 import type {ThreadFileData} from "../../logseq/stores/thread-store/types";
 import {createReadableStreamFromString} from "../utils/createReadableStreamFromString";
 
+/**
+ * Implement RemoteThreadListAdapter to provide thread list.
+ * Actual messages are loaded via ThreadHistoryAdapter after thread is opened.
+ */
 export class LocalThreadListAdapter implements RemoteThreadListAdapter {
     async list(): Promise<RemoteThreadListResponse> {
         const threads = await ThreadStore.listThreads();
