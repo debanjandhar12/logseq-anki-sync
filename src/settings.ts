@@ -12,6 +12,7 @@ export interface PluginSettings {
     llmAPIUrl?: string;
     llmAPIKey?: string;
     llmAPIModel?: string;
+    openChatInSidebar?: boolean;
     debug?: LoggerCategory[];
     lastWelcomeVersion?: string;
 }
@@ -61,6 +62,21 @@ export const addSettingsToLogseq = async () => {
             default: "gpt-4o",
             title: "LLM Model",
             description: "The model identifier to use (e.g. gpt-4o)"
+        },
+        {
+            key: "displaySettingsHeading",
+            title: "🎨 Display Settings",
+            description: "",
+            type: "heading",
+            default: null
+        },
+        {
+            key: "openChatInSidebar",
+            type: "boolean",
+            default: true,
+            title: "Open Chat in Sidebar",
+            description:
+                "When enabled, the AI chat will open in the right sidebar. (Note: Does not work on logseq web.)"
         },
         {
             key: "advancedSettingsHeading",
