@@ -5,7 +5,7 @@ import {showAIChatModal} from "../ui";
 import {App} from "./App";
 
 const sideBarCanBeShown =
-    LogseqAppInfoFetcher.checkHostAccess(window.parent) && process.env.NODE_ENV === "production";
+    LogseqAppInfoFetcher.checkHostAccess() && process.env.NODE_ENV === "production";
 export const showAIChat = async () => {
     const settings = LogseqSettingAccessor.getPluginSettings();
     const openInSidebar = settings.openChatInSidebar ?? true;
@@ -18,6 +18,7 @@ export const showAIChat = async () => {
 };
 
 export const initAIChat = async () => {
+    if(!LogseqAppInfoFetcher.checkHostAccess()) return;
     await logseq.Experiments.registerSidebarRenderer("logseq-ai-chat-ui-sidebar", {
         title: "Logseq AI Chat",
         render: () => {
