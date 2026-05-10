@@ -42,7 +42,7 @@ export function registerToolbar(baseInfo: LSPluginBaseInfo) {
     `);
 
     logseq.App.registerUIItem("toolbar", {
-        key: `logseq-ai-chat${baseInfo.id === "logseq-ai-chat" ? "" : "-" + baseInfo.id}`,
+        key: `logseq-ai-chat${baseInfo.id === "logseq-ai-chat-ui" ? "" : "-" + baseInfo.id}`,
         template: String.raw`
       <a title="Logseq AI Chat Menubar" style="padding: 0px 4px;" data-on-click="showToolbarMenu" class="button logseq-ai-chat-item-${baseInfo.id}">
         <i class="ui__icon ti" style="font-size: 20px;">${AI_ICON}</i>

@@ -151,7 +151,7 @@ import { Thread } from "@/components/assistant-ui/thread";
 function Chat() {
   const runtime = useChatRuntime({
     transport: new AssistantChatTransport({
-      api: "/api/chat",
+      api: "/api/chat-ui",
     }),
     // Data Stream format is automatically handled
   });

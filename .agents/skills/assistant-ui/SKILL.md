@@ -1,6 +1,6 @@
 ---
 name: assistant-ui
-description: Guide for assistant-ui library - AI chat UI components. Use when asking about architecture, debugging, or understanding the codebase.
+description: Guide for assistant-ui library - AI chat-ui UI components. Use when asking about architecture, debugging, or understanding the codebase.
 version: 0.0.1
 license: MIT
 ---
@@ -83,7 +83,7 @@ import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-s
 
 function App() {
   const runtime = useChatRuntime({
-    transport: new AssistantChatTransport({ api: "/api/chat" }),
+    transport: new AssistantChatTransport({ api: "/api/chat-ui" }),
   });
   return (
     <AssistantRuntimeProvider runtime={runtime}>

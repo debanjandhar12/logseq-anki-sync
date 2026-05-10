@@ -76,7 +76,7 @@ export const addSettingsToLogseq = async () => {
             default: true,
             title: "Open Chat in Sidebar",
             description:
-                "When enabled, the AI chat will open in the right sidebar. (Note: Does not work on logseq web.)"
+                "When enabled, the AI chat-ui will open in the right sidebar. (Note: Does not work on logseq web.)"
         },
         {
             key: "advancedSettingsHeading",

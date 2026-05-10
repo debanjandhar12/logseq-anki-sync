@@ -825,13 +825,13 @@ import { DefaultChatTransport } from "ai";
 
 // Before (v5)
 const { messages } = useChat({
-  api: "/api/chat",
+  api: "/api/chat-ui",
 });
 
 // After (v6)
 const { messages } = useChat({
   transport: new DefaultChatTransport({
-    api: "/api/chat",
+    api: "/api/chat-ui",
     headers: { /* ... */ },
     body: { /* ... */ },
     credentials: "include",
@@ -1398,12 +1398,12 @@ import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
 
 export function Chat() {
-  // Defaults to AssistantChatTransport with /api/chat endpoint
+  // Defaults to AssistantChatTransport with /api/chat-ui endpoint
   const runtime = useChatRuntime();
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      {/* Your chat UI */}
+      {/* Your chat-ui UI */}
     </AssistantRuntimeProvider>
   );
 }
@@ -1420,7 +1420,7 @@ import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-s
 // Automatically forwards system messages and tools from context
 const runtime = useChatRuntime({
   transport: new AssistantChatTransport({
-    api: "/my-custom-api/chat",
+    api: "/my-custom-api/chat-ui",
   }),
 });
 ```
@@ -1435,7 +1435,7 @@ import { DefaultChatTransport } from "ai";
 // Does NOT auto-forward system/tools
 const runtime = useChatRuntime({
   transport: new DefaultChatTransport({
-    api: "/api/chat",
+    api: "/api/chat-ui",
   }),
 });
 ```
@@ -1689,7 +1689,7 @@ export function Chat() {
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <WeatherTool />
-      {/* Your chat UI */}
+      {/* Your chat-ui UI */}
     </AssistantRuntimeProvider>
   );
 }

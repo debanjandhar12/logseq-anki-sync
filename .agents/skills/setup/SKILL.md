@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Setup and configure assistant-ui in a project. Use when installing packages, configuring runtimes, setting up chat UI, or troubleshooting setup issues.
+description: Setup and configure assistant-ui in a project. Use when installing packages, configuring runtimes, setting up chat-ui UI, or troubleshooting setup issues.
 version: 0.1.0
 license: MIT
 ---

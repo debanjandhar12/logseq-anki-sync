@@ -51,7 +51,7 @@ import { ThemeProvider } from "next-themes";
   <Thread className="h-full" />
 </div>
 
-// Floating modal chat
+// Floating modal chat-ui
 <AssistantModal />
 
 // Constrained-width centered thread

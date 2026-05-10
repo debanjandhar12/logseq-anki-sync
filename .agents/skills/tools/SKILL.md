@@ -30,7 +30,7 @@ Where does the tool execute?
 ## Backend Tool with UI
 
 ```ts
-// Backend (app/api/chat/route.ts)
+// Backend (app/api/chat-ui/route.ts)
 import { tool, stepCountIs } from "ai";
 import { z } from "zod";
 

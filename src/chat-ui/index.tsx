@@ -11,14 +11,14 @@ export const showAIChat = async () => {
     const openInSidebar = settings.openChatInSidebar ?? true;
 
     if (openInSidebar && sideBarCanBeShown) {
-        logseq.Editor.openInRightSidebar("_sidebar.logseq-ai-chat-sidebar");
+        logseq.Editor.openInRightSidebar("_sidebar.logseq-ai-chat-ui-sidebar");
     } else {
         await showAIChatModal(<App />);
     }
 };
 
 export const initAIChat = async () => {
-    await logseq.Experiments.registerSidebarRenderer("logseq-ai-chat-sidebar", {
+    await logseq.Experiments.registerSidebarRenderer("logseq-ai-chat-ui-sidebar", {
         title: "Logseq AI Chat",
         render: () => {
             const settings = LogseqSettingAccessor.getPluginSettings();

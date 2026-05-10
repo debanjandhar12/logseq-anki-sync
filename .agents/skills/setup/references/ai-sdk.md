@@ -92,7 +92,7 @@ import { lastAssistantMessageIsCompleteWithToolCalls } from "ai";
 
 const runtime = useChatRuntime({
   transport: new AssistantChatTransport({
-    api: "/api/chat",
+    api: "/api/chat-ui",
     headers: { "X-Workspace": "acme" },
     body: { model: "gpt-4o-mini" },
   }),
@@ -118,7 +118,7 @@ import { DefaultChatTransport } from "ai";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
 
 const runtime = useChatRuntime({
-  transport: new DefaultChatTransport({ api: "/api/chat" }),
+  transport: new DefaultChatTransport({ api: "/api/chat-ui" }),
 });
 ```
 
@@ -208,7 +208,7 @@ Pass the model name from the frontend via `body`, then select the provider on th
 // Frontend
 const runtime = useChatRuntime({
   transport: new AssistantChatTransport({
-    api: "/api/chat",
+    api: "/api/chat-ui",
     body: { model: "gpt-4o-mini" },
   }),
 });
@@ -245,7 +245,7 @@ const cloud = new AssistantCloud({
 
 function ChatPage() {
   const runtime = useChatRuntime({
-    transport: new AssistantChatTransport({ api: "/api/chat" }),
+    transport: new AssistantChatTransport({ api: "/api/chat-ui" }),
     cloud,
   });
 

@@ -5,7 +5,7 @@ import GITHUB_ICON from "../node_modules/@tabler/icons/icons/outline/brand-githu
 import HEART_ICON from "../node_modules/@tabler/icons/icons/outline/heart.svg?raw";
 import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?raw";
 import pkg from "./../package.json";
-import {initAIChat, showAIChat} from "./chat";
+import {initAIChat, showAIChat} from "./chat-ui";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
 import {LogseqPluginStorageManager} from "./logseq/LogseqPluginStorageManager";

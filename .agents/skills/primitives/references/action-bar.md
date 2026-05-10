@@ -134,7 +134,7 @@ Requires a feedback adapter in the runtime:
 ```tsx
 const runtime = useChatRuntime({
   transport: new AssistantChatTransport({
-    api: "/api/chat",
+    api: "/api/chat-ui",
   }),
   adapters: {
     feedback: {

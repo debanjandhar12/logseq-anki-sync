@@ -11,6 +11,6 @@ export async function showAIChatModal(chatComponent: React.ReactElement): Promis
     return createModalPromise<void>(
         (props) => React.createElement(AIChatModalComponent, {chatComponent, ...props}),
         {enableOutsideClickClose: false},
-        {errorMessage: "Failed to open AI chat modal"}
+        {errorMessage: "Failed to open AI chat-ui modal"}
     );
 }
