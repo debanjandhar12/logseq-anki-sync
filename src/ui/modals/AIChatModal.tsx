@@ -37,9 +37,9 @@ export const AIChatModalComponent: React.FC<AIChatModalProps> = ({
             onClose={() => UI.hideModal(modalContext?.modalId)}
             size="large"
             zDepth="high"
-            hasCloseButton={false}
+            hasCloseButton={true}
             className="overflow-hidden">
-            <div className="h-full w-full" style={{height: "80vh"}}>
+            <div className="h-full w-full" style={{height: "80vh", marginTop: '32px'}}>
                 {chatComponent}
             </div>
         </Modal>
