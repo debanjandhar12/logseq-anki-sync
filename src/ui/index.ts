@@ -34,3 +34,5 @@ export type {ModalPromiseOptions} from "./modals/utils/createModalPromise";
 export {createModalPromise} from "./modals/utils/createModalPromise";
 // Notifications
 export {ActionNotification} from "./notifications/ActionNotification";
+// ShadowWrapper
+export {ShadowWrapper} from "./ShadowWrapper";

@@ -22,6 +22,7 @@ This is a Logseq plugin for ai chat using ai-sdk and assistant-ui.
 ## Architecture
 **Settings:** Defined in `settings.ts` using `SettingSchemaDesc`. Access via `LogseqSettingAccessor.getPluginSettings()`, never directly through `logseq.settings`.
 **UI Components:** React-based modals and pages live in `src/ui/`. Chat app lives in `src/chat`.
+**Theme & CSS Isolation:** Theme management centralized in `src/ui/theme/`. Chat Sidebar uses `ShadowWrapper` for CSS isolation. Other UI are already isolated from logseq as they are in iframes.
 
 ## Testing
 
