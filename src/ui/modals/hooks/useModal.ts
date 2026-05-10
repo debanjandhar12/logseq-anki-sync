@@ -1,5 +1,5 @@
-import {WindowBridge} from "../../../logseq/WindowBridge";
 import React from "react";
+import {WindowBridge} from "../../../logseq/WindowBridge";
 import {UI} from "../../UI";
 
 export interface UseModalOptions<T = any> {

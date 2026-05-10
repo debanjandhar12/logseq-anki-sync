@@ -15,9 +15,11 @@ export class LogseqPluginStorageManager {
         LogseqPluginStorageManager.validateOperation(group);
         const allKeys = await LogseqPluginStorageManager.store.allKeys();
         const prefix = `${group}/`;
-        return allKeys
-            ?.filter((key) => key.startsWith(prefix))
-            .map((key) => key.slice(prefix.length)) || [];
+        return (
+            allKeys
+                ?.filter((key) => key.startsWith(prefix))
+                .map((key) => key.slice(prefix.length)) || []
+        );
     }
 
     static async getFileContent(group: string, fileName: string) {
@@ -36,12 +38,12 @@ export class LogseqPluginStorageManager {
 
     static async openStorage() {
         LogseqPluginStorageManager.validateOperation();
-        
+
         try {
             console.log(await logseq.Assets.listFilesOfCurrentGraph());
             // TBU: figure out how to open storage
         } catch (error) {
-            await logseq.UI.showMsg('Failed to access plugin storage.', 'error');
+            await logseq.UI.showMsg("Failed to access plugin storage.", "error");
             throw error;
         }
     }

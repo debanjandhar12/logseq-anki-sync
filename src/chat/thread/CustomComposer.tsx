@@ -1,4 +1,4 @@
-import { ComposerPrimitive } from "@assistant-ui/react";
+import {ComposerPrimitive} from "@assistant-ui/react";
 import React from "react";
 
 export const CustomComposer = () => (

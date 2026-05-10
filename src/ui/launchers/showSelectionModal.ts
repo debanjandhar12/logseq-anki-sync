@@ -1,6 +1,6 @@
+import React from "react";
 import {SelectionModalComponent} from "../modals/SelectionModal";
 import {createModalPromise} from "../modals/utils/createModalPromise";
-import React from "react";
 
 export interface SelectionModalItem {
     name: string;

@@ -1,4 +1,4 @@
-import { ThreadPrimitive, AuiIf } from "@assistant-ui/react";
+import {AuiIf, ThreadPrimitive} from "@assistant-ui/react";
 import React from "react";
 import {CustomComposer} from "./CustomComposer";
 
@@ -11,8 +11,8 @@ export const CustomThread = () => {
                     <div>Welcome!</div>
                 </AuiIf>
                 <ThreadPrimitive.Messages>
-                    {({ message }) => {
-                        return 'Hi';
+                    {({message}) => {
+                        return "Hi";
                     }}
                 </ThreadPrimitive.Messages>
                 <ThreadPrimitive.ViewportFooter>
@@ -22,4 +22,4 @@ export const CustomThread = () => {
             </ThreadPrimitive.Viewport>
         </ThreadPrimitive.Root>
     );
-}
+};

@@ -1,16 +1,16 @@
 import {AuiProvider, useAui} from "@assistant-ui/react";
-import {getSuggestions} from "./utils/getSuggestions";
-import {CustomThread} from "./thread/CustomThread";
 import React from "react";
+import {CustomThread} from "./thread/CustomThread";
+import {getSuggestions} from "./utils/getSuggestions";
 
 export const AppContent = () => {
     const aui = useAui({
-        suggestions: getSuggestions(),
+        suggestions: getSuggestions()
     });
 
     return (
         <AuiProvider value={aui}>
-            <CustomThread/>
+            <CustomThread />
         </AuiProvider>
     );
 };

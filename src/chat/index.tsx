@@ -1,11 +1,11 @@
 import React from "react";
-import {showAIChatModal} from "../ui";
-import {LogseqSettingAccessor} from "../logseq/LogseqSettingAccessor";
-import {App} from "./App";
 import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
+import {LogseqSettingAccessor} from "../logseq/LogseqSettingAccessor";
+import {showAIChatModal} from "../ui";
+import {App} from "./App";
 
-const sideBarCanBeShown = LogseqAppInfoFetcher.checkHostAccess(window.parent)
-    && process.env.NODE_ENV === "production";
+const sideBarCanBeShown =
+    LogseqAppInfoFetcher.checkHostAccess(window.parent) && process.env.NODE_ENV === "production";
 export const showAIChat = async () => {
     const settings = LogseqSettingAccessor.getPluginSettings();
     const openInSidebar = settings.openChatInSidebar ?? true;
@@ -23,7 +23,8 @@ export const initAIChat = async () => {
         render: () => {
             const settings = LogseqSettingAccessor.getPluginSettings();
             const openInSidebar = settings.openChatInSidebar ?? true;
-            if (!sideBarCanBeShown || !openInSidebar) return "Chat Sidebar cannot be shown. This can happen in logseq web version or in a rare event when logseq react object is not accessible.";
+            if (!sideBarCanBeShown || !openInSidebar)
+                return "Chat Sidebar cannot be shown. This can happen in logseq web version or in a rare event when logseq react object is not accessible.";
             return <App />;
         }
     });

@@ -1,9 +1,9 @@
 import "./styles/main.css";
 
+import {createRoot, type Root} from "react-dom/client";
 import {createLogger, LoggerCategory} from "../logger";
 import {LogseqAppListeners} from "../logseq/LogseqAppListeners";
 import {WindowBridge} from "../logseq/WindowBridge";
-import {createRoot, type Root} from "react-dom/client";
 
 const logger = createLogger(LoggerCategory.OTHER_UI);
 

@@ -1,6 +1,12 @@
 import {frontendTools} from "@assistant-ui/react-ai-sdk";
 import type {ChatTransport} from "ai";
-import {type ChatRequestOptions, convertToModelMessages, streamText, type UIMessage, type UIMessageChunk} from "ai";
+import {
+    type ChatRequestOptions,
+    convertToModelMessages,
+    streamText,
+    type UIMessage,
+    type UIMessageChunk
+} from "ai";
 import {getLLMModel} from "../../core/ai-sdk/getLLMModel.js";
 
 /**

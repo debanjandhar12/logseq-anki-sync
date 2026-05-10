@@ -1,6 +1,6 @@
+import React from "react";
 import {ConfirmModalComponent} from "../modals/ConfirmModal";
 import {createModalPromise} from "../modals/utils/createModalPromise";
-import React from "react";
 
 /**
  * A confirmation modal that returns boolean based on cancel or ok button click

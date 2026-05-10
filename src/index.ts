@@ -8,13 +8,13 @@ import pkg from "./../package.json";
 import {initAIChat, showAIChat} from "./chat";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
+import {LogseqPluginStorageManager} from "./logseq/LogseqPluginStorageManager";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
 import {registerToolbar} from "./registerToolbar";
 import {addSettingsToLogseq} from "./settings";
 import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
-import {LogseqPluginStorageManager} from "./logseq/LogseqPluginStorageManager";
 
 const logger = createLogger(LoggerCategory.MISC);
 

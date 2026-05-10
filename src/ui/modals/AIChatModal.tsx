@@ -39,7 +39,7 @@ export const AIChatModalComponent: React.FC<AIChatModalProps> = ({
             zDepth="high"
             hasCloseButton={true}
             className="overflow-hidden">
-            <div className="h-full w-full" style={{height: "80vh", marginTop: '32px'}}>
+            <div className="h-full w-full" style={{height: "80vh", marginTop: "32px"}}>
                 {chatComponent}
             </div>
         </Modal>
