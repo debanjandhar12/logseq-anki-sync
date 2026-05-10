@@ -13,9 +13,11 @@ export class LogseqPluginStorageManager {
 
     static async getFiles(group: string) {
         LogseqPluginStorageManager.validateOperation(group);
-        return (await LogseqPluginStorageManager.store.allKeys())?.filter((key) =>
-            key.startsWith(group)
-        ) || [];
+        const allKeys = await LogseqPluginStorageManager.store.allKeys();
+        const prefix = `${group}/`;
+        return allKeys
+            ?.filter((key) => key.startsWith(prefix))
+            .map((key) => key.slice(prefix.length)) || [];
     }
 
     static async getFileContent(group: string, fileName: string) {

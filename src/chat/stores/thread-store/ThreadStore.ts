@@ -24,7 +24,6 @@ export class ThreadStore {
 
     static async listThreads(): Promise<ThreadFileData[]> {
         const fileNames = await LogseqPluginStorageManager.getFiles(ThreadStore.groupName);
-        console.log("fileNames", await LogseqPluginStorageManager.store.allKeys());
         const threadFiles = [];
         for (const fileName of fileNames) {
             const content = await LogseqPluginStorageManager.getFileContent(
