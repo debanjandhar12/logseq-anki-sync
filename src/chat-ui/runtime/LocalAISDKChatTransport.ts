@@ -8,6 +8,9 @@ import {
     type UIMessageChunk
 } from "ai";
 import {getLLMModel} from "../../core/ai-sdk/getLLMModel.js";
+import {createLogger, LoggerCategory} from "../../logger";
+
+const logger = createLogger(LoggerCategory.CHAT_UI);
 
 /**
  * Custom transport for supplying to AI SDK useChat hook to avoid needing a server endpoint.
@@ -28,30 +31,40 @@ export class LocalAISDKChatTransport implements ChatTransport<UIMessage> {
             abortSignal: AbortSignal | undefined;
         } & ChatRequestOptions
     ): Promise<ReadableStream<UIMessageChunk>> {
-        try {
-            // Get model configuration
-            const model = await getLLMModel();
+        // Get model configuration
+        const model = await getLLMModel();
 
-            // Extract system and tools from body if provided
-            const body = options.body as {system?: string; tools?: Record<string, any>} | undefined;
-            const system = body?.system;
-            const tools = body?.tools;
+        // Extract system and tools from body if provided
+        const body = options.body as {system?: string; tools?: Record<string, any>} | undefined;
+        const system = body?.system;
+        const tools = body?.tools;
 
-            // Convert messages to model format and call AI SDK streamText
-            const modelMessages = await convertToModelMessages(options.messages);
-            const result = streamText({
-                model,
-                system,
-                messages: modelMessages,
-                tools: tools ? (frontendTools(tools) as any) : undefined, // pass tools
-                abortSignal: options.abortSignal ?? undefined
-            });
+        // Convert messages to model format and call AI SDK streamText
+        const modelMessages = await convertToModelMessages(options.messages);
+        const result = streamText({
+            model,
+            system,
+            messages: modelMessages,
+            tools: tools ? (frontendTools(tools) as any) : undefined, // pass tools
+            abortSignal: options.abortSignal ?? undefined
+        });
 
-            // Return as UI message stream
-            return result.toUIMessageStream();
-        } catch (error) {
-            throw error;
-        }
+        // Return message stream
+        return result.toUIMessageStream({
+            messageMetadata: ({ part }) => {
+                if (part.type === "finish") {
+                    return {
+                        usage: part.totalUsage,
+                    };
+                }
+                if (part.type === "finish-step") {
+                    return {
+                        modelId: part.response.modelId,
+                    };
+                }
+                return undefined;
+            }
+        });
     }
 
     async reconnectToStream(
