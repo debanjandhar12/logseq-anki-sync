@@ -3,12 +3,16 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { ShadowRootContext } from "@/ui/ShadowWrapper"
 
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
 
-const DialogPortal = DialogPrimitive.Portal
+const DialogPortal = ({ children, ...props }: DialogPrimitive.DialogPortalProps) => {
+  const container = React.useContext(ShadowRootContext)
+  return <DialogPrimitive.Portal container={container} {...props}>{children}</DialogPrimitive.Portal>
+}
 
 const DialogClose = DialogPrimitive.Close
 

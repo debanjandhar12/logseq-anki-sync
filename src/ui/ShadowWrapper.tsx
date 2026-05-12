@@ -1,9 +1,8 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
 import root from "react-shadow";
 import {createLogger, LoggerCategory} from "../logger";
 // Import main.css as a raw string using Vite's ?inline feature
 import mainCss from "./styles/main.css?inline";
-import {ThemeManager} from "./theme/ThemeManager";
 
 const logger = createLogger(LoggerCategory.OTHER_UI);
 
@@ -17,36 +16,32 @@ interface ShadowWrapperProps {
  * Wraps children in a Shadow DOM to prevent CSS leaking to/from Logseq's UI.
  * Injects both the core CSS (main.css) and Logseq theme variables into the shadow root.
  */
-export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
-    const [themeVars, setThemeVars] = useState<string>("");
-    const themeUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+export const ShadowRootContext = React.createContext<HTMLDivElement | null>(null);
 
-    // Load theme variables on mount
+export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
+    const [container, setContainer] = useState<HTMLDivElement | null>(null);
+    const [isDark, setIsDark] = useState<boolean>(false);
+
+    // Listen for theme changes from Logseq
     useEffect(() => {
-        const loadTheme = async () => {
-            const cssString = await ThemeManager.getThemeVariablesCssString();
-            setThemeVars(cssString);
+        const updateTheme = async () => {
+            try {
+                // Determine if Logseq is in dark mode
+                const theme = await logseq.App.getStateFromStore<"dark" | "light">("ui/theme");
+                setIsDark(theme === "dark");
+            } catch (error) {
+                logger.error("Failed to fetch theme state:", error);
+            }
         };
 
-        loadTheme();
+        updateTheme();
 
-        // Listen for theme changes from Logseq
         const unsubscribe = logseq.App.onThemeChanged(() => {
-            // Debounce theme updates to avoid rapid re-renders
-            if (themeUpdateTimeoutRef.current) {
-                clearTimeout(themeUpdateTimeoutRef.current);
-            }
-
-            themeUpdateTimeoutRef.current = setTimeout(() => {
-                logger.debug("Theme changed, updating shadow DOM");
-                loadTheme();
-            }, 100);
+            logger.debug("Theme changed, updating shadow DOM classes");
+            updateTheme();
         });
 
         return () => {
-            if (themeUpdateTimeoutRef.current) {
-                clearTimeout(themeUpdateTimeoutRef.current);
-            }
             unsubscribe();
         };
     }, []);
@@ -54,8 +49,11 @@ export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
     return (
         <root.div>
             <style>{mainCss}</style>
-            {themeVars && <style>{themeVars}</style>}
-            {children}
+            <div ref={setContainer} className={isDark ? "dark" : "light"} style={{ height: "100%", width: "100%", transform: "translate(0, 0)" }}>
+                <ShadowRootContext.Provider value={container}>
+                    {children}
+                </ShadowRootContext.Provider>
+            </div>
         </root.div>
     );
 };

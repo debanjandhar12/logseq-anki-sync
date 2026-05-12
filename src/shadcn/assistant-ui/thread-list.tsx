@@ -13,6 +13,8 @@ import {
   TrashIcon,
 } from "lucide-react";
 import type { FC } from "react";
+import React, { useContext } from "react";
+import { ShadowRootContext } from "@/ui/ShadowWrapper";
 
 export const ThreadList: FC = () => {
   return (
@@ -75,6 +77,7 @@ const ThreadListItem: FC = () => {
 };
 
 const ThreadListItemMore: FC = () => {
+  const container = useContext(ShadowRootContext);
   return (
     <ThreadListItemMorePrimitive.Root>
       <ThreadListItemMorePrimitive.Trigger asChild>
@@ -88,6 +91,7 @@ const ThreadListItemMore: FC = () => {
         </Button>
       </ThreadListItemMorePrimitive.Trigger>
       <ThreadListItemMorePrimitive.Content
+        portalProps={{ container }}
         side="bottom"
         align="start"
         className="aui-thread-list-item-more-content z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"

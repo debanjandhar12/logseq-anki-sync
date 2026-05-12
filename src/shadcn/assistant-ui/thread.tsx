@@ -46,6 +46,8 @@ import {
   SquareIcon,
 } from "lucide-react";
 import type { FC } from "react";
+import React, { useContext } from "react";
+import { ShadowRootContext } from "@/ui/ShadowWrapper";
 
 export const Thread: FC = () => {
   return (
@@ -299,6 +301,7 @@ const AssistantMessage: FC = () => {
 };
 
 const AssistantActionBar: FC = () => {
+  const container = useContext(ShadowRootContext);
   return (
     <ActionBarPrimitive.Root
       hideWhenRunning
@@ -330,6 +333,7 @@ const AssistantActionBar: FC = () => {
           </TooltipIconButton>
         </ActionBarMorePrimitive.Trigger>
         <ActionBarMorePrimitive.Content
+          portalProps={{ container }}
           side="bottom"
           align="start"
           className="aui-action-bar-more-content z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
