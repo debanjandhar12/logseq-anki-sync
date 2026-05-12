@@ -1,6 +1,6 @@
 import {AuiProvider, useAui} from "@assistant-ui/react";
 import React from "react";
-import {CustomThread} from "./thread/CustomThread";
+import {Thread} from "@/shadcn/assistant-ui/thread";
 import {getSuggestions} from "./utils/getSuggestions";
 
 export const AppContent = () => {
@@ -10,7 +10,7 @@ export const AppContent = () => {
 
     return (
         <AuiProvider value={aui}>
-            <CustomThread />
+            <Thread />
         </AuiProvider>
     );
 };
