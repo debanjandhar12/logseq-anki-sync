@@ -15,6 +15,9 @@ export default defineConfig(({command, mode}) => {
         base: "./",
         cacheDir: ".vite_cache",
         resolve: {
+            alias: {
+                "@": path.resolve(__dirname, "./src")
+            },
             dedupe: ["react", "react-dom"]
         },
         plugins: [

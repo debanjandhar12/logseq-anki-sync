@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --background: var(--ls-primary-background-color);
+    --foreground: var(--ls-primary-text-color);
+    --card: var(--ls-secondary-background-color);
+    --card-foreground: var(--ls-secondary-text-color);
+    --popover: var(--ls-tertiary-background-color);
+    --popover-foreground: var(--ls-primary-text-color);
+    --primary: var(--ls-button-background);
+    --primary-foreground: var(--ls-primary-text-color);
+    --secondary: var(--ls-secondary-background-color);
+    --secondary-foreground: var(--ls-secondary-text-color);
+    --muted: var(--ls-tertiary-background-color);
+    --muted-foreground: var(--ls-secondary-text-color);
+    --accent: var(--ls-quaternary-background-color);
+    --accent-foreground: var(--ls-primary-text-color);
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: var(--ls-border-color);
+    --input: var(--ls-secondary-border-color);
+    --ring: var(--ls-selection-background-color);
+    --radius: 0.5rem;
+  }
+}
+
 /* Theme variables will be set dynamically by UI.loadThemeVariables() */
 /* No defaults needed - Logseq provides all theme variables */
 

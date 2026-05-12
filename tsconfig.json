@@ -1,5 +1,9 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
         "target": "ES2020",
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
         "types": ["vite/client", "node"],
@@ -14,7 +18,7 @@
         "resolveJsonModule": true,
         "isolatedModules": true,
         "noEmit": true,
-        "jsx": "react"
+        "jsx": "react-jsx"
     },
     "include": ["./src", "./src/types/*.d.ts"]
 }
