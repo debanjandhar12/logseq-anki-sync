@@ -13,12 +13,19 @@ import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
 import {registerToolbar} from "./registerToolbar";
 import {addSettingsToLogseq} from "./settings";
-import {showButtonModal} from "./ui";
+import {showButtonModal, showConfirmModal} from "./ui";
 import {UI} from "./ui/UI";
+import {LogseqAppInfoFetcher} from "@/logseq/LogseqAppInfoFetcher";
 
 const logger = createLogger(LoggerCategory.MISC);
 
 async function main(baseInfo: LSPluginBaseInfo) {
+    // Check db version or not
+    if (!await LogseqAppInfoFetcher.checkCurrentIsDbGraph()) {
+        await logseq.UI.showMsg('Logseq AI Chat is only supported in DB Graphs. Please switch to DB Graphs and try again.', 'error');
+        return;
+    }
+
     // Register UI and Commands
     await initAIChat();
     logseq.provideModel({showAIChat: showAIChat});
@@ -48,7 +55,6 @@ async function main(baseInfo: LSPluginBaseInfo) {
     window.Buffer = Buffer;
     // @ts-ignore
     window.process = process;
-
     // Show welcome message
     const {lastWelcomeVersion} = LogseqSettingAccessor.getPluginSettings();
     if (lastWelcomeVersion && lastWelcomeVersion !== pkg.version) {
