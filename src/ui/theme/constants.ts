@@ -15,6 +15,7 @@ export const LOGSEQ_THEME_VARIABLES = [
     "--tertiary",
     "--primary",
     "--radius",
+    "--background",
 
     // Border colors
     "--ls-border-color",
@@ -87,8 +88,6 @@ export const LOGSEQ_THEME_VARIABLES = [
     // Gray colors for shortcut keys
     "--lx-gray-06-alpha",
     "--rx-gray-06-alpha",
-
-    // Popover colors
-    "--ls-popover-background-color",
-    "--ls-popover-text-color"
+    "--lx-gray-11",
+    "--rx-gray-11"
 ] as const;

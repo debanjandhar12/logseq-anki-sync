@@ -38,7 +38,7 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
 
     // Color variants using Tailwind color aliases
     if (color === "primary" || color === "default") {
-        classNameString += " bg-primary hover:opacity-80 text-white";
+        classNameString += " bg-primary-background hover:opacity-80 text-white";
     } else if (color === "secondary") {
         classNameString += " bg-secondary hover:opacity-80 text-white";
     } else if (color === "failed") {

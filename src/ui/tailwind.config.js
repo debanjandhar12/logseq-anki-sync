@@ -5,20 +5,26 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                // Shadcn semantic tokens — use var() directly because Logseq CSS vars
-                // are already full color values (hex/rgb), NOT bare HSL triplets.
-                border: "var(--border)",
+                borderColor: "var(--ls-border-color)",
                 input: "var(--input)",
                 ring: "var(--ring)",
-                background: "var(--background)",
-                foreground: "var(--foreground)",
+                foreground: "var(--ls-primary-text-color, var(--lx-gray-11, var(--rx-gray-11)))",
                 primary: {
                     DEFAULT: "var(--primary)",
-                    foreground: "var(--primary-foreground)"
+                    background: "hsl(var(--primary, 200 97% 37%) / 0.9)",
+                    foreground: "var(--ls-button-text-color, var(--lx-gray-1, var(--rx-gray-1)))",
+                    borderColor: "var(--ls-border-color)",
                 },
                 secondary: {
                     DEFAULT: "var(--secondary)",
-                    foreground: "var(--secondary-foreground)"
+                    background: "var(--ls-secondary-background-color, hsl(var(--background)))",
+                    border: "var(--ls-secondary-border-color)",
+                    foreground: "var(--ls-secondary-text-color)",
+                },
+                tertiary: {
+                    DEFAULT: "hsl(var(--tertiary)/.9)",
+                    background: "var(--ls-tertiary-background-color)",
+                    border: "var(--ls-tertiary-border-color)",
                 },
                 destructive: {
                     DEFAULT: "var(--destructive)",
@@ -36,15 +42,7 @@ module.exports = {
                     DEFAULT: "var(--popover)",
                     foreground: "var(--popover-foreground)"
                 },
-                card: {
-                    DEFAULT: "var(--card)",
-                    foreground: "var(--card-foreground)"
-                }
-            },
-            borderRadius: {
-                lg: "var(--radius)",
-                md: "calc(var(--radius) - 2px)",
-                sm: "calc(var(--radius) - 4px)"
+                highlight: "var(--ls-block-highlight-color)"
             }
         }
     },
