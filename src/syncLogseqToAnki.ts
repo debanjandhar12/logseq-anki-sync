@@ -34,6 +34,7 @@ import {showModelWithButtons} from "./ui/general/ModelWithBtns";
 import {SyncSelectionDialog} from "./ui/customized/SyncSelectionDialog";
 import {SyncResultDialog} from "./ui/customized/SyncResultDialog";
 import {BlockEntity, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {upsertModel} from "./anki-connect/AnkiConnect";
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
     graphName: string;
@@ -74,7 +75,7 @@ export class LogseqToAnkiSync {
         await AnkiConnect.requestPermission();
 
         // -- Create models if it doesn't exists --
-        await AnkiConnect.createModel(
+        await AnkiConnect.upsertModel(
             this.modelName,
             ["uuid-type", "uuid", "Text", "Extra", "Breadcrumb", "Config"],
             getTemplateFront(),
