@@ -123,12 +123,12 @@ export async function createBackup(): Promise<any> {
     const timestamp = Date.now();
     const decknames = await invoke("deckNames", {});
     for (const deck of decknames) {
-        if (deck.includes("::") === false) {
-            // if is not a subdeck then only create backup
-            logger.info(`Created backup with name LogseqAnkiSync-Backup-${timestamp}_${deck}.apkg`);
+        if (deck.includes("::") === false) { // if deck not a sub deck
+            const safeDeckName = deck.trim().replace(/[\s/]/g, "_").replace(/[<>:"/\\|?*\x00-\x1F]/g, '');
+            logger.info(`Created backup with name LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`);
             await invoke("exportPackage", {
                 deck: deck,
-                path: `../LogseqAnkiSync-Backup-${timestamp}_${deck}.apkg`,
+                path: `../LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`,
                 includeSched: true
             });
         }
@@ -268,6 +268,10 @@ async function updateModelFieldsIfNeeded(
         current: currentFields,
         desired: desiredFields
     });
+
+    // Create backup before modifications
+    logger.info(`Taking backup before updating model fields for ${modelName}`);
+    await createBackup();
 
     // Add fields
     const fieldsToAdd = desiredFields.filter((field) => !currentFields.includes(field));
