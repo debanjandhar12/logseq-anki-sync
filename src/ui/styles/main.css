@@ -9,9 +9,7 @@ body {
     padding: 0;
     margin: 0;
     box-sizing: border-box;
-    font-family:
-        var(--ls-font-family, Inter),
-        sans-serif;
+    font-family: var(--ls-font-family, Inter), sans-serif;
     color: var(--ls-primary-text-color, #333);
     background-color: transparent;
     overflow: hidden;

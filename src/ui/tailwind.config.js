@@ -1,3 +1,19 @@
+// Tailwind calls color entries as functions for opacity modifiers like `text-foreground/80`.
+// This utility method keeps those variants working.
+const logseqColor = (cssVariable, fallback) => {
+    return ({opacityValue}) => {
+        const color = `var(${cssVariable}, ${fallback})`;
+
+        const opacityNumber = Number(opacityValue);
+
+        if (opacityValue === undefined || Number.isNaN(opacityNumber)) {
+            return color;
+        }
+
+        return `color-mix(in srgb, ${color} ${opacityNumber * 100}%, transparent)`;
+    };
+};
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: ["class"],
@@ -5,53 +21,106 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                sans: [
-                    "var(--ls-font-family, Inter)",
-                    "sans-serif"
-                ],
-                mono: [
-                    "MonoLisa"
-                ]
+                sans: ["var(--ls-font-family, Inter)", "sans-serif"],
+                mono: ["MonoLisa"]
             },
             colors: {
-                borderColor: "var(--ls-border-color)",
-                input: "var(--input)",
-                ring: "var(--ring)",
-                foreground: "var(--ls-primary-text-color, var(--lx-gray-11, var(--rx-gray-11)))",
+                border: logseqColor("--ls-border-color", "hsl(var(--border, 214.3 31.8% 91.4%))"),
+                input: logseqColor(
+                    "--ls-secondary-border-color",
+                    "hsl(var(--input, 214.3 31.8% 91.4%))"
+                ),
+                ring: logseqColor("--ls-link-text-color", "hsl(var(--ring, 200 97% 37%))"),
+                background: logseqColor(
+                    "--ls-primary-background-color",
+                    "hsl(var(--background, 0 0% 100%))"
+                ),
+                foreground: logseqColor(
+                    "--ls-primary-text-color",
+                    "var(--lx-gray-11, var(--rx-gray-11, hsl(var(--foreground, 222.2 84% 4.9%))))"
+                ),
                 primary: {
-                    DEFAULT: "hsl(var(--primary, 200 97% 37%))",
-                    background: "hsl(var(--primary, 200 97% 37%))",
-                    foreground: "var(--ls-button-text-color, var(--lx-gray-1, var(--rx-gray-1)))",
-                    borderColor: "var(--ls-border-color)"
+                    DEFAULT: logseqColor(
+                        "--ls-button-background",
+                        "hsl(var(--primary, 200 97% 37%))"
+                    ),
+                    background: logseqColor(
+                        "--ls-button-background",
+                        "hsl(var(--primary, 200 97% 37%))"
+                    ),
+                    foreground: logseqColor(
+                        "--ls-button-text-color",
+                        "var(--lx-gray-1, var(--rx-gray-1, hsl(var(--primary-foreground, 210 40% 98%))))"
+                    ),
+                    border: logseqColor(
+                        "--ls-border-color",
+                        "hsl(var(--border, 214.3 31.8% 91.4%))"
+                    )
                 },
                 secondary: {
-                    DEFAULT: "hsl(var(--secondary))",
-                    background: "var(--ls-secondary-background-color, hsl(var(--background)))",
-                    border: "var(--ls-secondary-border-color)",
-                    foreground: "var(--ls-secondary-text-color)"
+                    DEFAULT: logseqColor(
+                        "--ls-secondary-background-color",
+                        "hsl(var(--secondary))"
+                    ),
+                    background: logseqColor(
+                        "--ls-secondary-background-color",
+                        "hsl(var(--background))"
+                    ),
+                    border: logseqColor("--ls-secondary-border-color", "hsl(var(--border))"),
+                    foreground: logseqColor(
+                        "--ls-secondary-text-color",
+                        "hsl(var(--secondary-foreground))"
+                    )
                 },
                 tertiary: {
-                    DEFAULT: "hsl(var(--tertiary))",
-                    background: "var(--ls-tertiary-background-color)",
-                    border: "var(--ls-tertiary-border-color)"
+                    DEFAULT: logseqColor("--ls-tertiary-background-color", "hsl(var(--tertiary))"),
+                    background: logseqColor(
+                        "--ls-tertiary-background-color",
+                        "hsl(var(--tertiary))"
+                    ),
+                    border: logseqColor("--ls-tertiary-border-color", "hsl(var(--border))")
                 },
                 destructive: {
-                    DEFAULT: "hsl(var(--destructive))",
-                    foreground: "var(--destructive-foreground)"
+                    DEFAULT: logseqColor(
+                        "--ls-error-color",
+                        "hsl(var(--destructive, 0 84.2% 60.2%))"
+                    ),
+                    foreground: logseqColor(
+                        "--ls-button-text-color",
+                        "hsl(var(--destructive-foreground, 210 40% 98%))"
+                    )
                 },
                 muted: {
-                    DEFAULT: "hsl(var(--muted))",
-                    foreground: "var(--muted-foreground)"
+                    DEFAULT: logseqColor(
+                        "--ls-secondary-background-color",
+                        "hsl(var(--muted, 210 40% 96.1%))"
+                    ),
+                    foreground: logseqColor(
+                        "--ls-secondary-text-color",
+                        "hsl(var(--muted-foreground, 215.4 16.3% 46.9%))"
+                    )
                 },
                 accent: {
-                    DEFAULT: "hsl(var(--accent))",
-                    foreground: "var(--accent-foreground)"
+                    DEFAULT: logseqColor(
+                        "--ls-menu-hover-color",
+                        "hsl(var(--accent, 210 40% 96.1%))"
+                    ),
+                    foreground: logseqColor(
+                        "--ls-primary-text-color",
+                        "hsl(var(--accent-foreground, 222.2 47.4% 11.2%))"
+                    )
                 },
                 popover: {
-                    DEFAULT: "hsl(var(--popover))",
-                    foreground: "var(--popover-foreground)"
+                    DEFAULT: logseqColor(
+                        "--ls-secondary-background-color",
+                        "hsl(var(--popover, 0 0% 100%))"
+                    ),
+                    foreground: logseqColor(
+                        "--ls-primary-text-color",
+                        "hsl(var(--popover-foreground, 222.2 84% 4.9%))"
+                    )
                 },
-                highlight: "var(--ls-block-highlight-color)"
+                highlight: logseqColor("--ls-block-highlight-color", "hsl(var(--accent))")
             }
         }
     },
