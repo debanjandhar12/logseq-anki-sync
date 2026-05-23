@@ -48,6 +48,9 @@ jobs:
         id: release_notes
         run: |
           cat > release_notes.md << 'EOF'
+          > 🐈 Note: This is an legacy version of the plugin. If you are comfortable with few breaking changes related to deck names, removal of #no-anki-sync, oclussion config change, etc introduced in v7, please use the normal version of the plugin.
+          > Check https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v7.0.5 for full list of breaking changes.
+          
           ## What's Changed
           
           Please see the commit history for detailed changes.

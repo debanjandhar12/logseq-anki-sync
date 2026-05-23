@@ -85,12 +85,20 @@ function main(baseInfo: LSPluginBaseInfo) {
         (async () => {
             await new Promise(resolve => setTimeout(resolve, 1000));    // wait logseq's react to load
             await showModelWithButtons(
-                `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span> 
-                                    <br/><small class="px-2">Update is installed successfully. </small>
-                                    <br /><br /><small class="px-2" style="display: block">This patch contains minor bug fixes.</small>`,
+                `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync (Legacy) ${pkg.version}!</span>
+            <div style="overflow-y: auto; margin-top: 10px; border: 1px solid var(--ls-border-color); border-radius: 4px;">
+                <iframe src="https://github.com/debanjandhar12/logseq-anki-sync-legacy/releases/tag/v${pkg.version}" style="width: 100%; height: 100%; min-height: 400px; border: none; display: block;"></iframe>
+            </div>`,
                 [
                     {
-                        name: "Read Release Notes",
+                        name: "Donate",
+                        f: () => {
+                            window.open(`https://github.com/sponsors/debanjandhar12`);
+                        },
+                        returnOnClick: false
+                    },
+                    {
+                        name: "Open in GitHub",
                         f: () => {
                             window.open(
                                 `https://github.com/debanjandhar12/logseq-anki-sync/releases/tag/v${pkg.version}`,

@@ -88,9 +88,10 @@ const ModelComponent: React.FC<{
         <Modal open={open} setOpen={setOpen} onClose={onClose} zDepth={"high"}>
             <div className="ui__confirm-modal is-">
                 <div className="sm:flex sm:items-start">
-                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" style={{width: "100%", maxWidth: "100%"}}>
                         <h2
                             className="headline text-lg leading-6 font-medium"
+                            style={{width: "100%", maxWidth: "100%"}}
                             dangerouslySetInnerHTML={{__html: msg}}
                         />
                         <label className="sublabel">
