@@ -1,5 +1,4 @@
 import {createLogger, LoggerCategory} from "../../logger";
-import {WindowBridge} from "../../logseq/WindowBridge";
 import {LOGSEQ_THEME_VARIABLES} from "./constants";
 
 const logger = createLogger(LoggerCategory.OTHER_UI);
@@ -35,33 +34,15 @@ export class ThemeManager {
      * Apply theme variables to the iframe body element
      * Used by UI.ts for the main UI (iframe context)
      */
-    public static async applyThemeToBody(): Promise<void> {
+    public static async applyThemeToBody(body): Promise<void> {
         const vals = await ThemeManager.fetchThemeVariables();
         if (!vals) {
             return;
         }
 
-        const style = WindowBridge.getBody().style;
+        const style = body.style;
         Object.entries(vals).forEach(([k, v]) => {
             style.setProperty(k, v);
         });
-    }
-
-    /**
-     * Get theme variables as a CSS string for Shadow DOM
-     * Returns a formatted string like: ":host { --var: value; ... }"
-     * Used by ShadowWrapper for sidebar context
-     */
-    public static async getThemeVariablesCssString(): Promise<string> {
-        const vals = await ThemeManager.fetchThemeVariables();
-        if (!vals) {
-            return "";
-        }
-
-        const cssVars = Object.entries(vals)
-            .map(([key, value]) => `${key}: ${value};`)
-            .join("\n  ");
-
-        return `:host {\n  ${cssVars}\n}`;
     }
 }

@@ -73,18 +73,21 @@ export class UI {
 
     public static init() {
         logseq.hideMainUI({restoreEditingCursor: true}); // Hide main ui on plugin load
-        ThemeManager.applyThemeToBody(); // Initialize theme variables
+        ThemeManager.applyThemeToBody(WindowBridge.getBody()); // Initialize theme variables
 
         // Listen for theme changes
         logseq.App.onThemeChanged(() => {
-            setTimeout(() => ThemeManager.applyThemeToBody(), 100);
+            setTimeout(() => ThemeManager.applyThemeToBody(WindowBridge.getBody()), 100);
+        });
+        logseq.App.onThemeModeChanged(() => {
+            setTimeout(() => ThemeManager.applyThemeToBody(WindowBridge.getBody()), 100);
         });
 
         // Listen for visibility changes
         logseq.on("ui:visible:changed", ({visible}) => {
             UI.isVisible = visible;
             if (visible) {
-                ThemeManager.applyThemeToBody();
+                ThemeManager.applyThemeToBody(WindowBridge.getBody());
             }
         });
 

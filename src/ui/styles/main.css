@@ -2,40 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-    /* Defined on both :root (iframe/modal) and :host (Shadow DOM sidebar).
-   * Logseq theme vars are full color values (rgb/hex), NOT HSL triplets.
-   * Tailwind config uses var() directly so they resolve correctly.
-   * ThemeManager injects Logseq vars into the shadow :host via ShadowWrapper. */
-    :root,
-    :host {
-        --background: var(--ls-primary-background-color, #ffffff);
-        --foreground: var(--ls-primary-text-color, #333333);
-        --card: var(--ls-secondary-background-color, #f8f8f8);
-        --card-foreground: var(--ls-secondary-text-color, #666666);
-        --popover: var(--ls-tertiary-background-color, #f0f0f0);
-        --popover-foreground: var(--ls-primary-text-color, #333333);
-        /* Use link color as accent/primary - matches Logseq blue accent */
-        --primary: var(--ls-link-text-color, var(--ls-button-background, #106ba3));
-        --primary-foreground: #ffffff;
-        --secondary: var(--ls-secondary-background-color, #f8f8f8);
-        --secondary-foreground: var(--ls-secondary-text-color, #666666);
-        --muted: var(--ls-tertiary-background-color, #f0f0f0);
-        --muted-foreground: var(--ls-secondary-text-color, #888888);
-        --accent: var(
-            --ls-quaternary-background-color,
-            var(--ls-tertiary-background-color, #e8e8e8)
-        );
-        --accent-foreground: var(--ls-primary-text-color, #333333);
-        --destructive: #e53e3e;
-        --destructive-foreground: #ffffff;
-        --border: var(--ls-border-color, #e0e0e0);
-        --input: var(--ls-secondary-border-color, var(--ls-border-color, #cccccc));
-        --ring: var(--ls-link-text-color, var(--ls-button-background, #106ba3));
-        --radius: 0.375rem;
-    }
-}
-
 /* Theme variables will be set dynamically by UI.loadThemeVariables() */
 /* No defaults needed - Logseq provides all theme variables */
 
