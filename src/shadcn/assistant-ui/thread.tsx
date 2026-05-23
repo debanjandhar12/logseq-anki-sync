@@ -27,7 +27,7 @@ import type {FC} from "react";
 import {useContext} from "react";
 import {ShadowRootContext} from "../../ui/ShadowWrapper";
 import {cn} from "../lib/utils";
-import {Button} from "../ui-components/button";
+import {Button} from "../radix-ui/button";
 import {ComposerAddAttachment, ComposerAttachments, UserMessageAttachments} from "./attachment";
 import {MarkdownText} from "./markdown-text";
 import {

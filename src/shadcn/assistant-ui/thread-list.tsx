@@ -8,8 +8,8 @@ import {ArchiveIcon, MoreHorizontalIcon, PlusIcon, TrashIcon} from "lucide-react
 import type {FC} from "react";
 import React, {useContext} from "react";
 import {ShadowRootContext} from "../../ui/ShadowWrapper";
-import {Button} from "../ui-components/button";
-import {Skeleton} from "../ui-components/skeleton";
+import {Button} from "../radix-ui/button";
+import {Skeleton} from "../radix-ui/skeleton";
 
 export const ThreadList: FC = () => {
     return (

@@ -10,7 +10,7 @@ import {cva, type VariantProps} from "class-variance-authority";
 import {BrainIcon, ChevronDownIcon} from "lucide-react";
 import {memo, useCallback, useRef, useState} from "react";
 import {cn} from "../lib/utils";
-import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "../ui-components/collapsible";
+import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "../radix-ui/collapsible";
 import {MarkdownText} from "./markdown-text";
 
 const ANIMATION_DURATION = 200;

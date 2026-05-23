@@ -5,7 +5,7 @@ import {cva, type VariantProps} from "class-variance-authority";
 import {ChevronDownIcon, LoaderIcon} from "lucide-react";
 import {type FC, memo, type PropsWithChildren, useCallback, useRef, useState} from "react";
 import {cn} from "../lib/utils";
-import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "../ui-components/collapsible";
+import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "../radix-ui/collapsible";
 
 const ANIMATION_DURATION = 200;
 

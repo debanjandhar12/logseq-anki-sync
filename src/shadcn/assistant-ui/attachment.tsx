@@ -11,9 +11,9 @@ import {FileText, PlusIcon, XIcon} from "lucide-react";
 import {type FC, type PropsWithChildren, useEffect, useState} from "react";
 import {useShallow} from "zustand/shallow";
 import {cn} from "../lib/utils";
-import {Avatar, AvatarFallback, AvatarImage} from "../ui-components/avatar";
-import {Dialog, DialogContent, DialogTitle, DialogTrigger} from "../ui-components/dialog";
-import {Tooltip, TooltipContent, TooltipTrigger} from "../ui-components/tooltip";
+import {Avatar, AvatarFallback, AvatarImage} from "../radix-ui/avatar";
+import {Dialog, DialogContent, DialogTitle, DialogTrigger} from "../radix-ui/dialog";
+import {Tooltip, TooltipContent, TooltipTrigger} from "../radix-ui/tooltip";
 import {TooltipIconButton} from "./tooltip-icon-button";
 
 const useFileSrc = (file: File | undefined) => {
