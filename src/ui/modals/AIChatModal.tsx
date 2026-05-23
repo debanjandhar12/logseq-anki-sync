@@ -11,11 +11,11 @@ export interface AIChatModalProps {
 }
 
 export const AIChatModalComponent: React.FC<AIChatModalProps> = ({
-    chatComponent,
-    resolve,
-    reject,
-    modalContext
-}) => {
+                                                                     chatComponent,
+                                                                     resolve,
+                                                                     reject,
+                                                                     modalContext
+                                                                 }) => {
     const {open, setOpen, returnResult} = useModal<void>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,

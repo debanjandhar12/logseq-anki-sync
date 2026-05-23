@@ -2,12 +2,6 @@ import FocusTrap from "focus-trap-react";
 import React, {type PropsWithChildren} from "react";
 import {UI} from "../../UI";
 
-const focusTrapOptions = {
-    tabbableOptions: {
-        displayCheck: "none" as const
-    }
-};
-
 interface ModalProps {
     open: boolean;
     setOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -53,6 +47,18 @@ export function Modal({
     const baseZIndex = zDepth === "high" ? 9999 : 1000;
     const calculatedZIndex = baseZIndex + modalDepth * 10;
 
+    // Focus trap configs
+    const panelRef = React.useRef<HTMLDivElement>(null);
+    const focusTrapOptions = React.useMemo(
+        () => ({
+            fallbackFocus: () => panelRef.current ?? document.body,
+            tabbableOptions: {
+                displayCheck: "none" as const
+            }
+        }),
+        []
+    );
+
     return (
         <FocusTrap focusTrapOptions={focusTrapOptions}>
             <div
@@ -63,6 +69,8 @@ export function Modal({
 
                 {/* Modal Panel */}
                 <div
+                    ref={panelRef}
+                    tabIndex={-1}
                     className="relative bg-secondary-background border border-border rounded-md shadow-lg z-10"
                     style={style}>
                     {hasCloseButton && (
@@ -73,6 +81,7 @@ export function Modal({
                                 className="text-gray-400 hover:text-gray-600 opacity-60 hover:opacity-100 transition-opacity cursor-pointer bg-transparent border-none"
                                 onClick={handleClose}>
                                 <svg
+                                    aria-hidden="true"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
                                     fill="none"
