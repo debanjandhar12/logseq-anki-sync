@@ -4,6 +4,15 @@ module.exports = {
     content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
     theme: {
         extend: {
+            fontFamily: {
+                sans: [
+                    "var(--ls-font-family, Inter)",
+                    "sans-serif"
+                ],
+                mono: [
+                    "MonoLisa"
+                ]
+            },
             colors: {
                 borderColor: "var(--ls-border-color)",
                 input: "var(--input)",

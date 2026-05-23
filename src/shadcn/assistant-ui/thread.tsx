@@ -24,7 +24,7 @@ import {
     SquareIcon
 } from "lucide-react";
 import type {FC} from "react";
-import React, {useContext} from "react";
+import {useContext} from "react";
 import {ShadowRootContext} from "../../ui/ShadowWrapper";
 import {cn} from "../lib/utils";
 import {Button} from "../ui-components/button";

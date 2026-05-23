@@ -23,6 +23,7 @@ export const LOGSEQ_THEME_VARIABLES = [
     "--ls-tertiary-border-color",
 
     // Text colors
+    "--ls-font-family",
     "--ls-primary-text-color",
     "--ls-secondary-text-color",
 
