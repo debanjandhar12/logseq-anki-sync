@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import {LogseqButton} from "../../components/LogseqButton";
 
 export interface ModalFooterProps {

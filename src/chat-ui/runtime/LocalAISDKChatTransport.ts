@@ -51,15 +51,15 @@ export class LocalAISDKChatTransport implements ChatTransport<UIMessage> {
 
         // Return message stream
         return result.toUIMessageStream({
-            messageMetadata: ({ part }) => {
+            messageMetadata: ({part}) => {
                 if (part.type === "finish") {
                     return {
-                        usage: part.totalUsage,
+                        usage: part.totalUsage
                     };
                 }
                 if (part.type === "finish-step") {
                     return {
-                        modelId: part.response.modelId,
+                        modelId: part.response.modelId
                     };
                 }
                 return undefined;

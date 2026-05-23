@@ -18,7 +18,7 @@ export const showAIChat = async () => {
 };
 
 export const initAIChat = async () => {
-    if(!LogseqAppInfoFetcher.checkHostAccess()) return;
+    if (!LogseqAppInfoFetcher.checkHostAccess()) return;
     try {
         await logseq.Experiments.registerSidebarRenderer("logseq-ai-chat-ui-sidebar", {
             title: "Logseq AI Chat",

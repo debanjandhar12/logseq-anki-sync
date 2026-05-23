@@ -7,6 +7,7 @@ import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?
 import pkg from "./../package.json";
 import {initAIChat, showAIChat} from "./chat-ui";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
+import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
 import {LogseqPluginStorageManager} from "./logseq/LogseqPluginStorageManager";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
@@ -15,14 +16,16 @@ import {registerToolbar} from "./registerToolbar";
 import {addSettingsToLogseq} from "./settings";
 import {showButtonModal, showConfirmModal} from "./ui";
 import {UI} from "./ui/UI";
-import {LogseqAppInfoFetcher} from "@/logseq/LogseqAppInfoFetcher";
 
 const logger = createLogger(LoggerCategory.MISC);
 
 async function main(baseInfo: LSPluginBaseInfo) {
     // Check db version or not
-    if (!await LogseqAppInfoFetcher.checkCurrentIsDbGraph()) {
-        await logseq.UI.showMsg('Logseq AI Chat is only supported in DB Graphs. Please switch to DB Graphs and try again.', 'error');
+    if (!(await LogseqAppInfoFetcher.checkCurrentIsDbGraph())) {
+        await logseq.UI.showMsg(
+            "Logseq AI Chat is only supported in DB Graphs. Please switch to DB Graphs and try again.",
+            "error"
+        );
         return;
     }
 

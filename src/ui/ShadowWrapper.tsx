@@ -49,7 +49,10 @@ export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
     return (
         <root.div>
             <style>{mainCss}</style>
-            <div ref={setContainer} className={isDark ? "dark" : "light"} style={{ height: "100%", width: "100%", transform: "translate(0, 0)" }}>
+            <div
+                ref={setContainer}
+                className={isDark ? "dark" : "light"}
+                style={{height: "100%", width: "100%", transform: "translate(0, 0)"}}>
                 <ShadowRootContext.Provider value={container}>
                     {children}
                 </ShadowRootContext.Provider>
