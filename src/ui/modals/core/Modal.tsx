@@ -12,7 +12,7 @@ interface ModalProps {
     open: boolean;
     setOpen: React.Dispatch<React.SetStateAction<boolean>>;
     onClose?: () => void;
-    size?: "default" | "large";
+    size?: "default" | "large" | "chat";
     zDepth?: "high" | "default";
     hasCloseButton?: boolean;
     className?: string;
@@ -40,6 +40,10 @@ export function Modal({
     let style = {};
     if (size === "large") {
         style = {...style, width: "90vw"};
+    } else if (size === "chat") {
+        style = {...style, width: "90vw", minWidth: "320px", maxWidth: "720px" };
+    } else {
+        style = {...style, width: "60vw"}
     }
 
     if (!open) return null;
@@ -60,7 +64,7 @@ export function Modal({
                 {/* Modal Panel */}
                 <div
                     className="relative bg-secondary-background border border-border rounded-md shadow-lg z-10"
-                    style={size === "large" ? {width: "90vw"} : {width: "60vw"}}>
+                    style={style}>
                     {hasCloseButton && (
                         <div className="absolute top-0 right-0 pt-2 pr-2">
                             <button
@@ -82,7 +86,7 @@ export function Modal({
                             </button>
                         </div>
                     )}
-                    <div className={`max-h-[80vh] ${className}`}>{children}</div>
+                    <div className={`${size === "large" || size === "chat" ? "max-h-[90vh]" : "max-h-[75vh]"} ${className}`}>{children}</div>
                 </div>
             </div>
         </FocusTrap>
