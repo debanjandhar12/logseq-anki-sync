@@ -11,11 +11,11 @@ export interface AIChatModalProps {
 }
 
 export const AIChatModalComponent: React.FC<AIChatModalProps> = ({
-                                                                     chatComponent,
-                                                                     resolve,
-                                                                     reject,
-                                                                     modalContext
-                                                                 }) => {
+    chatComponent,
+    resolve,
+    reject,
+    modalContext
+}) => {
     const {open, setOpen, returnResult} = useModal<void>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
@@ -37,9 +37,9 @@ export const AIChatModalComponent: React.FC<AIChatModalProps> = ({
             onClose={() => UI.hideModal(modalContext?.modalId)}
             size="chat"
             zDepth="high"
-            hasCloseButton={true}
+            hasCloseButton={false}
             className="overflow-hidden">
-            <div className="h-full w-full" style={{height: "80vh", marginTop: "32px"}}>
+            <div className="h-full w-full" style={{height: "80vh"}}>
                 {chatComponent}
             </div>
         </Modal>
