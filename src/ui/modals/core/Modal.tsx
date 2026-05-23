@@ -41,9 +41,9 @@ export function Modal({
     if (size === "large") {
         style = {...style, width: "90vw"};
     } else if (size === "chat") {
-        style = {...style, width: "90vw", minWidth: "320px", maxWidth: "720px" };
+        style = {...style, width: "90vw", minWidth: "320px", maxWidth: "720px"};
     } else {
-        style = {...style, width: "60vw"}
+        style = {...style, width: "60vw"};
     }
 
     if (!open) return null;
@@ -86,7 +86,10 @@ export function Modal({
                             </button>
                         </div>
                     )}
-                    <div className={`${size === "large" || size === "chat" ? "max-h-[90vh]" : "max-h-[75vh]"} ${className}`}>{children}</div>
+                    <div
+                        className={`${size === "large" || size === "chat" ? "max-h-[90vh]" : "max-h-[75vh]"} ${className}`}>
+                        {children}
+                    </div>
                 </div>
             </div>
         </FocusTrap>
