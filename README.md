@@ -47,6 +47,8 @@ For usage, please see documentation: https://debanjandhar12.github.io/logseq-ank
 
 > Please create a [github issue](https://github.com/debanjandhar12/logseq-anki-sync/issues) for any feature request and reporting bugs.
 
+> Release branches are db branch and legacy branch at the moment. The main branch is no longer used.
+
 # 🙏 Support
 
 Loved the tool? Please consider donating 💸 to help continue development!<br/>

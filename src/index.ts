@@ -72,7 +72,6 @@ async function main(baseInfo: LSPluginBaseInfo) {
     // Show welcome message
     const {lastWelcomeVersion} = LogseqProxy.Settings.getPluginSettings();
     if (lastWelcomeVersion && lastWelcomeVersion !== pkg.version) {
-        logseq.updateSettings({lastWelcomeVersion: pkg.version});
         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait logseq's react to load
         await showButtonModal(
             `<span class="flex items-center"><i class="px-1">${ANKI_ICON}</i>Welcome to Logseq Anki Sync ${pkg.version}!</span>
@@ -102,6 +101,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
             {enableOutsideClickClose: false}
         );
     }
+    logseq.updateSettings({lastWelcomeVersion: pkg.version});
 }
 
 // Bootstrap
