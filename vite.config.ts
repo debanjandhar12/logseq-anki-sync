@@ -1,5 +1,4 @@
 import reactPlugin from "@vitejs/plugin-react";
-import path from "path";
 import {defineConfig, loadEnv} from "vite";
 import {nodePolyfills} from "vite-plugin-node-polyfills";
 import {bundleJSStringPlugin} from "./vite/bundleJSStringPlugin";
@@ -7,9 +6,11 @@ import {logseqDevPlugin} from "./vite/logseqDevPlugin";
 import {logseqReactBridgePlugin} from "./vite/logseqReactBridgePlugin";
 import {rewriteDistReqToRootPlugin} from "./vite/rewriteDistReqToRootPlugin";
 import {staticFileSyncTransformPlugin} from "./vite/staticFileSyncTransformPlugin";
+import {stripUseClientDirectivePlugin} from "./vite/stripUseClientDirectivePlugin";
+
 // https://vitejs.dev/config/
 
-export default defineConfig(({command, mode}) => {
+export default defineConfig(({mode}) => {
     const env = loadEnv(mode, process.cwd(), "");
     return {
         base: "./",
@@ -18,6 +19,7 @@ export default defineConfig(({command, mode}) => {
             dedupe: ["react", "react-dom"]
         },
         plugins: [
+            stripUseClientDirectivePlugin(),
             logseqReactBridgePlugin(), // Must be first to intercept React imports
             mode === "development" && logseqDevPlugin(), // for dev only
             mode === "development" && reactPlugin(), // for dev only
