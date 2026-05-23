@@ -38,7 +38,7 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
 
     // Color variants using Tailwind color aliases
     if (color === "primary" || color === "default") {
-        classNameString += " bg-primary-background hover:opacity-80 text-white";
+        classNameString += " bg-primary hover:opacity-80 text-white";
     } else if (color === "secondary") {
         classNameString += " bg-secondary hover:opacity-80 text-white";
     } else if (color === "failed") {
@@ -46,7 +46,7 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
     } else if (color === "success") {
         classNameString += " bg-green-600 hover:bg-green-700 text-white";
     } else if (color === "ghost") {
-        classNameString += " hover:bg-tertiary-background hover:opacity-80 text-text";
+        classNameString += " hover:bg-tertiary hover:opacity-80 text-text";
     } else if (color === "link") {
         classNameString += " text-primary underline-offset-4 hover:underline";
     } else if (color === "outline-link") {

@@ -7,6 +7,9 @@
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
       <excludeFolder url="file://$MODULE_DIR$/dist" />
       <excludeFolder url="file://$MODULE_DIR$/.parcel-cache" />
+      <excludeFolder url="file://$MODULE_DIR$/.agents" />
+      <excludeFolder url="file://$MODULE_DIR$/.codex" />
+      <excludeFolder url="file://$MODULE_DIR$/.kiro" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
