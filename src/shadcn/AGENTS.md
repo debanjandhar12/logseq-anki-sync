@@ -8,7 +8,7 @@ This should contain only original shadcn components.
 - The shadcn folder is excluded in bromine since we are supposed to not modify directly.
 - When customizing assistant ui components, copy to `src/chat-app/components` and modify it there.
 - Currently, @assistant-ui shadcn imports are bugged with double nesting of assistant-ui folder without the changes in tsconfig.json..
-- Exports needs to added manually to assistant-ui components in this folder. This is an exception to the do not change rule.
+- Exports needs to added or removed manually to assistant-ui components in this folder. This is an exception to the do not change rule. Export is added to components that are not overridden. Export is removed from components that are overridden.
 
 ## Commands
 - Check diff with upstream components: `pnpm shadcn add button --diff --yes`

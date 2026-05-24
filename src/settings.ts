@@ -1,7 +1,7 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-import {ProviderEnum} from "./core/ai-sdk/types";
 import {DONATE_ICON} from "./constants";
+import {ProviderEnum} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 

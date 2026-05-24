@@ -1,0 +1,7 @@
+.aui-composer-send {
+    border-radius: calc(var(--radius, 2rem) - 2px);
+}
+
+.aui-composer-root > div {
+    padding: 4px;
+}

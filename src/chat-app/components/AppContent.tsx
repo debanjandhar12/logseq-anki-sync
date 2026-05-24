@@ -1,7 +1,6 @@
 import {AuiProvider, useAui} from "@assistant-ui/react";
-import React from "react";
-import {Thread} from "../shadcn/assistant-ui/thread";
-import {getSuggestions} from "./utils/getSuggestions";
+import {ThreadWrapper} from "src/chat-app/components/ThreadWrapper";
+import {getSuggestions} from "../utils/getSuggestions";
 
 export const AppContent = () => {
     const aui = useAui({
@@ -10,7 +9,7 @@ export const AppContent = () => {
 
     return (
         <AuiProvider value={aui}>
-            <Thread />
+            <ThreadWrapper />
         </AuiProvider>
     );
 };

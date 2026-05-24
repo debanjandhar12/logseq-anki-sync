@@ -1,9 +1,10 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useLayoutEffect, useState} from "react";
 import root from "react-shadow";
-import {createLogger, LoggerCategory} from "../logger";
+import {createLogger, LoggerCategory} from "../../logger";
 // Import main.css as a raw string using Vite's ?inline feature
-import mainCss from "./styles/main.css?inline";
-import {ThemeManager} from "./theme/ThemeManager";
+import mainCss from "../styles/main.css?inline";
+import {ThemeManager} from "../theme/ThemeManager";
+import {installReactPopperShadowDomCompatibilityPatch} from "./installReactPopperShadowDomCompatibilityPatch";
 
 const logger = createLogger(LoggerCategory.OTHER_UI);
 
@@ -21,6 +22,23 @@ export const ShadowRootContext = React.createContext<HTMLDivElement | null>(null
 
 export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null);
+    const [isReactPopperCompatibilityInstalled, setIsReactPopperCompatibilityInstalled] =
+        useState(false);
+
+    useLayoutEffect(() => {
+        if (!container) {
+            setIsReactPopperCompatibilityInstalled(false);
+            return;
+        }
+
+        const cleanup = installReactPopperShadowDomCompatibilityPatch({
+            container,
+            portalContainer: container
+        });
+        setIsReactPopperCompatibilityInstalled(true);
+
+        return cleanup;
+    }, [container]);
 
     // Listen for theme changes from Logseq
     useEffect(() => {
@@ -50,13 +68,13 @@ export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
     }, [container]);
 
     return (
-        <root.div>
+        <root.div mode="open">
             <style>{mainCss}</style>
             <div
                 ref={setContainer}
                 style={{height: "100%", width: "100%", transform: "translate(0, 0)"}}>
                 <ShadowRootContext.Provider value={container}>
-                    {children}
+                    {isReactPopperCompatibilityInstalled ? children : null}
                 </ShadowRootContext.Provider>
             </div>
         </root.div>

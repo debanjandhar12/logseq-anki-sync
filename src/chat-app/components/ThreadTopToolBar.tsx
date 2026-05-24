@@ -1,0 +1,37 @@
+import {ThreadListPrimitive} from "@assistant-ui/react";
+import {ArrowLeftIcon, HistoryIcon, PlusIcon} from "lucide-react";
+import type {FC} from "react";
+import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
+
+interface ThreadTopToolBarProps {
+    isHistoryVisible: boolean;
+    onBackToThread: () => void;
+    onShowHistory: () => void;
+}
+
+export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
+    isHistoryVisible,
+    onBackToThread,
+    onShowHistory
+}) => {
+    return (
+        <div className="flex h-10 shrink-0 items-center justify-end border-b bg-background px-3">
+            <div className="flex items-center gap-1">
+                {isHistoryVisible ? (
+                    <TooltipIconButton tooltip="Back to thread" onClick={onBackToThread}>
+                        <ArrowLeftIcon className="size-4" />
+                    </TooltipIconButton>
+                ) : (
+                    <TooltipIconButton tooltip="Thread history" onClick={onShowHistory}>
+                        <HistoryIcon className="size-4" />
+                    </TooltipIconButton>
+                )}
+                <ThreadListPrimitive.New asChild>
+                    <TooltipIconButton tooltip="New thread" onClick={onBackToThread}>
+                        <PlusIcon className="size-4" />
+                    </TooltipIconButton>
+                </ThreadListPrimitive.New>
+            </div>
+        </div>
+    );
+};

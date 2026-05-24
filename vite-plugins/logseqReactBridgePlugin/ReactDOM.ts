@@ -26,10 +26,35 @@ function getReactDOMInstance(): CombinedReactDOM {
 
 const ReactDOM = getReactDOMInstance();
 
-export default ReactDOM;
+const getDefaultPortalContainer = (): Element | DocumentFragment | null => {
+    return (globalThis as any).__LOGSEQ_AI_CHAT_PORTAL_CONTAINERS__?.at(-1) ?? null;
+};
+
+const isDocumentBody = (container: Element | DocumentFragment): boolean => {
+    return container.nodeType === Node.ELEMENT_NODE && container === container.ownerDocument.body;
+};
+
+const createPortalWithDefaultContainer: typeof ReactDOMTypes.createPortal = (
+    children,
+    container,
+    key
+) => {
+    const defaultPortalContainer = getDefaultPortalContainer();
+    const resolvedContainer =
+        defaultPortalContainer && isDocumentBody(container) ? defaultPortalContainer : container;
+
+    return ReactDOM.createPortal(children, resolvedContainer, key);
+};
+
+const ReactDOMWithDefaultPortal = {
+    ...ReactDOM,
+    createPortal: createPortalWithDefaultContainer
+};
+
+export default ReactDOMWithDefaultPortal;
 
 export const createRoot = ReactDOM.createRoot;
-export const createPortal = ReactDOM.createPortal;
+export const createPortal = createPortalWithDefaultContainer;
 export const flushSync = ReactDOM.flushSync;
 
 export const findDOMNode = ReactDOM.findDOMNode;

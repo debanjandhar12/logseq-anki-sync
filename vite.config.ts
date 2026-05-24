@@ -1,4 +1,4 @@
-import path from "path";
+import path from "node:path";
 import reactPlugin from "@vitejs/plugin-react";
 import {defineConfig, loadEnv} from "vite";
 import {nodePolyfills} from "vite-plugin-node-polyfills";
@@ -6,6 +6,7 @@ import {bundleJSStringPlugin} from "./vite-plugins/bundleJSStringPlugin";
 import {logseqDevPlugin} from "./vite-plugins/logseqDevPlugin";
 import {logseqReactBridgePlugin} from "./vite-plugins/logseqReactBridgePlugin";
 import {rewriteDistReqToRootPlugin} from "./vite-plugins/rewriteDistReqToRootPlugin";
+import {shadowDOMFloatingUIReactPopperBridgePlugin} from "./vite-plugins/shadowDOMFloatingUIReactPopperBridgePlugin";
 import {staticFileSyncTransformPlugin} from "./vite-plugins/staticFileSyncTransformPlugin";
 import {stripUseClientDirectivePlugin} from "./vite-plugins/stripUseClientDirectivePlugin";
 
@@ -26,6 +27,7 @@ export default defineConfig(({mode}) => {
         plugins: [
             stripUseClientDirectivePlugin(),
             logseqReactBridgePlugin(), // Must be first to intercept React imports
+            shadowDOMFloatingUIReactPopperBridgePlugin(),
             mode === "development" && logseqDevPlugin(), // for dev only
             mode === "development" && reactPlugin(), // for dev only
             mode === "development" && rewriteDistReqToRootPlugin(), // for dev only

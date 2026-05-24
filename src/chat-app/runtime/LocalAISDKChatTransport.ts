@@ -7,8 +7,8 @@ import {
     type UIMessage,
     type UIMessageChunk
 } from "ai";
-import {createLogger, LoggerCategory} from "../../logger";
 import {getLLMModel} from "../../core/ai-sdk/getLLMModel.js";
+import {createLogger, LoggerCategory} from "../../logger";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
