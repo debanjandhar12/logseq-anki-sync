@@ -13,5 +13,5 @@ This should contain only original shadcn components.
 - Add / update components: `pnpm shadcn add @assistant-ui/thread --overwrite --yes`
 
 Notes:
-- Review diffs when overwriting
+- When updating with `--overwrite`, we need to review the diff and make same the same changes in our custom components.
 - Use `--overwrite` sparingly
