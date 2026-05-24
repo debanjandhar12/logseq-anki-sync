@@ -17,5 +17,8 @@
     "lib": "src/shadcn/lib",
     "hooks": "src/shadcn/hooks"
   },
+  "registries": {
+    "@assistant-ui": "https://r.assistant-ui.com/{name}.json"
+  },
   "iconLibrary": "lucide"
 }
