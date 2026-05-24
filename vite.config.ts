@@ -1,3 +1,4 @@
+import path from "path";
 import reactPlugin from "@vitejs/plugin-react";
 import {defineConfig, loadEnv} from "vite";
 import {nodePolyfills} from "vite-plugin-node-polyfills";
@@ -16,7 +17,11 @@ export default defineConfig(({mode}) => {
         base: "./",
         cacheDir: ".vite_cache",
         resolve: {
-            dedupe: ["react", "react-dom"]
+            dedupe: ["react", "react-dom"],
+            alias: {
+                // Required for src/ imports used in shadcn
+                src: path.resolve(__dirname, "./src")
+            }
         },
         plugins: [
             stripUseClientDirectivePlugin(),

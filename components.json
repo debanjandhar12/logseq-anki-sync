@@ -11,7 +11,7 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "src/shadcn",
+    "components": "src/shadcn/assistant-ui",
     "utils": "src/shadcn/lib/utils",
     "ui": "src/shadcn/radix-ui",
     "lib": "src/shadcn/lib",

@@ -1,6 +1,13 @@
 {
     "compilerOptions": {
         "baseUrl": ".",
+        "paths": {
+            // Workaround for assistant-ui bugged registry that causes
+            // double nesting in import paths of shadcn during pnpm shadcn@latest add.
+            "src/shadcn/assistant-ui/assistant-ui/*": ["src/shadcn/assistant-ui/*"],
+            // Required for src/ imports used in shadcn
+            "src/*": ["src/*"]
+        },
         "target": "ES2020",
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
         "types": ["vite/client", "node"],
