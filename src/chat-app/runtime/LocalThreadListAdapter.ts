@@ -4,11 +4,11 @@ import type {
     RemoteThreadMetadata
 } from "@assistant-ui/core";
 import type {RemoteThreadListAdapter, ThreadMessage} from "@assistant-ui/react";
+import {createAssistantStream} from "assistant-stream";
 import pkg from "../../../package.json";
 import {ThreadStore} from "../../core/stores/thread-store/ThreadStore";
 import type {ThreadFileData} from "../../core/stores/thread-store/types";
 import {generateTitle} from "../../core/title-generator/generateTitle";
-import {createReadableStreamFromString} from "../utils/createReadableStreamFromString";
 
 /**
  * Implement RemoteThreadListAdapter to provide thread list.
@@ -70,6 +70,15 @@ export class LocalThreadListAdapter implements RemoteThreadListAdapter {
         messages: readonly ThreadMessage[]
     ): Promise<ReadableStream> {
         const chatTitle = generateTitle(remoteId, messages);
-        return createReadableStreamFromString(chatTitle);
+
+        const threadData = await ThreadStore.loadThread(remoteId);
+        if (threadData) {
+            threadData.title = chatTitle;
+            await ThreadStore.saveThread(remoteId, threadData);
+        }
+
+        return createAssistantStream((controller) => {
+            controller.appendText(chatTitle);
+        });
     }
 }
