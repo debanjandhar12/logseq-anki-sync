@@ -17,7 +17,7 @@ interface ThreadListProps {
  */
 export const ThreadList: FC<ThreadListProps> = ({onThreadSelected}) => {
     return (
-        <ThreadListPrimitive.Root className="aui-root aui-thread-list-root flex flex-col gap-1 p-2">
+        <ThreadListPrimitive.Root className="aui-root aui-thread-list-root flex flex-col gap-1 p-2 h-full overflow-y-auto">
             <AuiIf condition={(s) => s.threads.isLoading}>
                 <ThreadListSkeleton />
             </AuiIf>
@@ -33,6 +33,7 @@ export const ThreadList: FC<ThreadListProps> = ({onThreadSelected}) => {
 /**
  * Changes:
  * (a) Added onThreadSelected callback by decomposing ThreadListItem
+ * (b) Added h-full overflow-y-auto css.
  */
 const ThreadListItem: FC<ThreadListProps> = ({onThreadSelected}) => {
     return (
