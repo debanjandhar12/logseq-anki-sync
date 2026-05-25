@@ -26,9 +26,9 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
     );
     const threadStatus = useAuiState((state) => state.threadListItem.status);
 
-    // Create history adapter for non-new threads
+    // Create history adapter
     const historyAdapter = useMemo(
-        () => (threadStatus === "new" ? undefined : new LocalThreadHistoryAdapter(threadId)),
+        () => new LocalThreadHistoryAdapter(threadId),
         [threadId, threadStatus]
     );
 
@@ -73,7 +73,8 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
 
     // Wrap with useAISDKRuntime and attach history adapter
     const runtime = useAISDKRuntime(chat, {
-        adapters: historyAdapter ? {history: historyAdapter} : undefined
+        adapters: {history: historyAdapter},
+        cancelPendingToolCallsOnSend: true
     });
 
     return runtime;
