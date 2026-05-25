@@ -1,7 +1,7 @@
 import {ThreadListPrimitive} from "@assistant-ui/react";
 import {ArrowLeftIcon, HistoryIcon, PlusIcon, XIcon} from "lucide-react";
-import type {FC} from "react";
-import {useChatUI} from "src/chat-app/context/ChatUIContextProvider";
+import {FC, useContext} from "react";
+import {ChatUIContext} from "src/chat-app/context/ChatUIContext";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
 
 interface ThreadTopToolBarProps {
@@ -15,7 +15,7 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
     onBackToThread,
     onShowHistory
 }) => {
-    const {onClose} = useChatUI();
+    const {onClose} = useContext(ChatUIContext);
     return (
         <div className="flex h-10 shrink-0 items-center justify-end border-b bg-background px-3">
             <div className="flex items-center gap-1">

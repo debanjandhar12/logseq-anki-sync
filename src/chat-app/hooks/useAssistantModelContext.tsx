@@ -1,5 +1,5 @@
-import type {ModelContextProvider} from "@assistant-ui/react";
-import {useEffect, useMemo, useState} from "react";
+import {ModelContextProvider, useAui} from "@assistant-ui/react";
+import {ReactNode, useEffect, useMemo, useState} from "react";
 import {parseTemplateString} from "../../core/template-engine/parseTemplateString";
 import {createLogger, LoggerCategory} from "../../logger";
 import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
@@ -7,7 +7,7 @@ import systemMessageTemplate from "../prompts/SystemMessage.md?raw";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
-export function useAssistantModelContextProvider(): ModelContextProvider {
+export function useAssistantModelContext(): ModelContextProvider {
     const [systemPrompt, setSystemPrompt] = useState<string>();
 
     useEffect(() => {
