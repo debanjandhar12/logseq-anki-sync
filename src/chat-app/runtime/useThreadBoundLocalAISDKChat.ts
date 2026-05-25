@@ -2,9 +2,13 @@ import {useChat} from "@ai-sdk/react";
 import type {AssistantRuntime} from "@assistant-ui/react";
 import {useAuiState} from "@assistant-ui/react";
 import {useAISDKRuntime} from "@assistant-ui/react-ai-sdk";
-import {useMemo} from "react";
+import {useEffect, useMemo} from "react";
+import {ThreadStore} from "../../core/stores/thread-store/ThreadStore";
 import {LocalAISDKChatTransport} from "./LocalAISDKChatTransport";
 import {LocalThreadHistoryAdapter} from "./LocalThreadHistoryAdapter.js";
+import {createLogger, LoggerCategory} from "src/logger";
+
+const logger = createLogger(LoggerCategory.CHAT_UI);
 
 /**
  * Hook that creates a thread-bound AssistantRuntime using AI SDK's useChat.
@@ -22,10 +26,9 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
     );
     const threadStatus = useAuiState((state) => state.threadListItem.status);
 
-    // Create history adapter for non-new threads
     const historyAdapter = useMemo(
-        () => (threadStatus === "new" ? undefined : new LocalThreadHistoryAdapter(threadId)),
-        [threadId, threadStatus]
+        () => new LocalThreadHistoryAdapter(threadId),
+        [threadId]
     );
 
     // Create useChat instance bound to thread ID
@@ -35,9 +38,41 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
         onError: (error) => logseq.UI.showMsg(error.message, "error")
     });
 
-    // Wrap with useAISDKRuntime and attach history adapter
+    // WORKAROUND for assistant-ui useExternalHistory bug:
+    // useExternalHistory uses a loadedRef that is set to true on the first mount
+    // (the default "new" thread which has no remoteId). When switching to an
+    // existing thread, loadedRef is never reset, so history loading is permanently
+    // skipped. We bypass this by manually loading history via ThreadStore.
+    useEffect(() => {
+        if (threadStatus === "new") return;
+        let active = true;
+
+        async function loadHistory() {
+            try {
+                const threadData = await ThreadStore.loadThread(threadId);
+                if (!active) return;
+
+                if (threadData?.exportedMessageRepository?.messages?.length) {
+                    const loadedMessages = threadData.exportedMessageRepository.messages.map(
+                        (item) => item.message as any
+                    );
+                    chat.setMessages(loadedMessages);
+                }
+            } catch (err) {
+                logger.error("[useThreadBoundLocalAISDKChat] Failed to load history:", err);
+            }
+        }
+
+        loadHistory();
+
+        return () => {
+            active = false;
+        };
+    }, [threadId, threadStatus, chat.setMessages]);
+
+    // Wrap with useAISDKRuntime and attach history adapter for persisting new messages
     const runtime = useAISDKRuntime(chat, {
-        adapters: historyAdapter ? {history: historyAdapter} : undefined
+        adapters: {history: historyAdapter}
     });
 
     return runtime;
