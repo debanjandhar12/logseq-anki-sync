@@ -16,10 +16,10 @@ export class LocalThreadHistoryAdapter implements ThreadHistoryAdapter {
 
     async load(): Promise<ExportedMessageRepository> {
         const threadData = await ThreadStore.loadThread(this.threadId);
-        if (!threadData?.exportedMessageRepository) {
-            return {headId: null, messages: []};
+        if (threadData?.exportedMessageRepository) {
+            return threadData.exportedMessageRepository;
         }
-        return threadData.exportedMessageRepository;
+        return {headId: null, messages: []};
     }
 
     async append(item: ExportedMessageRepositoryItem): Promise<void> {
