@@ -128,7 +128,7 @@ export async function createBackup(): Promise<any> {
             logger.info(`Created backup with name LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`);
             await invoke("exportPackage", {
                 deck: deck,
-                path: `../LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`,
+                path: `./LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`,
                 includeSched: true
             });
         }
@@ -271,7 +271,11 @@ async function updateModelFieldsIfNeeded(
 
     // Create backup before modifications
     logger.info(`Taking backup before updating model fields for ${modelName}`);
-    await createBackup();
+    try {
+        await createBackup();
+    } catch (e) {
+        logger.warn('Failed to take backup', e);
+    }
 
     // Add fields
     const fieldsToAdd = desiredFields.filter((field) => !currentFields.includes(field));
