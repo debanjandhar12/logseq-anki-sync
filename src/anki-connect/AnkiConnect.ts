@@ -257,7 +257,11 @@ async function updateModelFieldsIfNeeded(
 
     // Create backup before modifications
     console.log(`Taking backup before updating model fields for ${modelName}`);
-    await createBackup();
+    try {
+        await createBackup();
+    } catch(e) {
+        console.warn('Failed to take backup', e);
+    }
 
     // Add fields
     const fieldsToAdd = desiredFields.filter((field) => !currentFields.includes(field));
