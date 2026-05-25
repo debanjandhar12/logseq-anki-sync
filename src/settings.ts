@@ -34,7 +34,7 @@ export const addSettingsToLogseq = async () => {
             default: null
         },
         {
-            key: "llmProviderSetting",
+            key: "llmProvider",
             type: "enum",
             default: Object.values(ProviderEnum)[0],
             title: "LLM Provider type",
