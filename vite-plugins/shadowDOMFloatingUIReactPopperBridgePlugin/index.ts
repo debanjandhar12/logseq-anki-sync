@@ -7,21 +7,31 @@ import type {Plugin} from "vite";
  */
 export function shadowDOMFloatingUIReactPopperBridgePlugin(): Plugin {
     const radixPopperCompatPath = path.resolve(__dirname, "./radixPopperCompat.tsx");
+    const radixPortalCompatPath = path.resolve(__dirname, "./radixPortalCompat.tsx");
     const floatingUiReactDomCompatPath = path.resolve(__dirname, "./floatingUiReactDomCompat.ts");
 
     return {
         name: "shadow-dom-react-popper-bridge",
         enforce: "pre",
-        resolveId(source) {
-            if (source === "@radix-ui/react-popper") {
-                return radixPopperCompatPath;
-            }
-
-            if (source === "@floating-ui/react-dom") {
-                return floatingUiReactDomCompatPath;
-            }
-
-            return null;
+        config() {
+            return {
+                resolve: {
+                    alias: [
+                        {
+                            find: /^@radix-ui\/react-popper$/,
+                            replacement: radixPopperCompatPath
+                        },
+                        {
+                            find: /^@radix-ui\/react-portal$/,
+                            replacement: radixPortalCompatPath
+                        },
+                        {
+                            find: /^@floating-ui\/react-dom$/,
+                            replacement: floatingUiReactDomCompatPath
+                        }
+                    ]
+                }
+            };
         }
     };
 }

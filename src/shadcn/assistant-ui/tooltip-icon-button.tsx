@@ -17,10 +17,6 @@ export type TooltipIconButtonProps = ComponentPropsWithRef<typeof Button> & {
   side?: "top" | "bottom" | "left" | "right";
 };
 
-/**
- * We were forced to modify this as an exception to fix 
- */
-
 export const TooltipIconButton = forwardRef<
   HTMLButtonElement,
   TooltipIconButtonProps
