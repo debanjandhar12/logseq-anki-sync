@@ -1,13 +1,13 @@
 import React from "react";
-import {UI} from "../UI";
-import {Modal} from "./core/Modal";
-import {useModal} from "./hooks/useModal";
+import { UI } from "../UI";
+import { Modal } from "./core/Modal";
+import { useModal } from "./hooks/useModal";
 
 export interface AIChatModalProps {
     chatComponent: React.ReactElement;
     resolve: (value: void) => void;
     reject: (error: any) => void;
-    modalContext?: {modalId: string | null};
+    modalContext?: { modalId: string | null };
 }
 
 export const AIChatModalComponent: React.FC<AIChatModalProps> = ({
@@ -16,7 +16,7 @@ export const AIChatModalComponent: React.FC<AIChatModalProps> = ({
     reject,
     modalContext
 }) => {
-    const {open, setOpen, returnResult} = useModal<void>(resolve, {
+    const { open, setOpen, returnResult } = useModal<void>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         enableOutsideClickClose: false,
@@ -39,8 +39,8 @@ export const AIChatModalComponent: React.FC<AIChatModalProps> = ({
             zDepth="high"
             hasCloseButton={false}
             className="overflow-hidden">
-            <div className="h-full w-full" style={{height: "80vh"}}>
-                {chatComponent}
+            <div className="h-full w-full" style={{ height: "80vh" }}>
+                {React.cloneElement(chatComponent, { onClose: () => setOpen(false) })}
             </div>
         </Modal>
     );
