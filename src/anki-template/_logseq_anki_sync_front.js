@@ -80,7 +80,7 @@ function handleImageOcclusion() {
                 imgToCanvasListHashMap[image] ||
                 imgToCanvasListHashMap[encodeURI(image)] ||
                 [];
-            if (occlusionElem.cId === currentClozeId) {
+            if (String(occlusionElem.cId) === String(currentClozeId)) {
                 canvasList.forEach((canvas) => {
                     const occlusion = createOcclusionRectEl(
                         fabric,
