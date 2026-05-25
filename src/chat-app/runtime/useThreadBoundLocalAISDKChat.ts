@@ -3,9 +3,9 @@ import type {AssistantRuntime} from "@assistant-ui/react";
 import {useAuiState} from "@assistant-ui/react";
 import {useAISDKRuntime} from "@assistant-ui/react-ai-sdk";
 import {useEffect, useMemo} from "react";
-import {ThreadStore} from "../../core/stores/thread-store/ThreadStore";
 import {LocalAISDKChatTransport} from "./LocalAISDKChatTransport";
 import {LocalThreadHistoryAdapter} from "./LocalThreadHistoryAdapter.js";
+import {ThreadStore} from "src/core/stores/thread-store/ThreadStore";
 import {createLogger, LoggerCategory} from "src/logger";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
@@ -26,9 +26,10 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
     );
     const threadStatus = useAuiState((state) => state.threadListItem.status);
 
+    // Create history adapter for non-new threads
     const historyAdapter = useMemo(
-        () => new LocalThreadHistoryAdapter(threadId),
-        [threadId]
+        () => (threadStatus === "new" ? undefined : new LocalThreadHistoryAdapter(threadId)),
+        [threadId, threadStatus]
     );
 
     // Create useChat instance bound to thread ID
@@ -70,9 +71,9 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
         };
     }, [threadId, threadStatus, chat.setMessages]);
 
-    // Wrap with useAISDKRuntime and attach history adapter for persisting new messages
+    // Wrap with useAISDKRuntime and attach history adapter
     const runtime = useAISDKRuntime(chat, {
-        adapters: {history: historyAdapter}
+        adapters: historyAdapter ? {history: historyAdapter} : undefined
     });
 
     return runtime;
