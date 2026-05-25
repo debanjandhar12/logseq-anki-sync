@@ -22,10 +22,9 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
     );
     const threadStatus = useAuiState((state) => state.threadListItem.status);
 
-    // Create history adapter for non-new threads
     const historyAdapter = useMemo(
-        () => (threadStatus === "new" ? undefined : new LocalThreadHistoryAdapter(threadId)),
-        [threadId, threadStatus]
+        () => new LocalThreadHistoryAdapter(threadId),
+        [threadId]
     );
 
     // Create useChat instance bound to thread ID
