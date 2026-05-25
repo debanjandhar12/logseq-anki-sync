@@ -42,7 +42,7 @@ export class LogseqToAnkiSync {
 
     public async sync(): Promise<void> {
         if (await LogseqProxy.App.checkCurrentIsDbGraph()  === true) {
-            await logseq.UI.showMsg("Logseq Anki Sync (marketplace version) does not support DB graphs yet.\nAn alpha build with db support is available for sideloading here: https://github.com/debanjandhar12/logseq-anki-sync/issues/310", "error");
+            await logseq.UI.showMsg("Logseq Anki Sync (legacy version) does not support DB graphs.\nPlease use the latest version for db graphs instead.", "error");
             return;
         }
         if (LogseqToAnkiSync.isSyncing) {
