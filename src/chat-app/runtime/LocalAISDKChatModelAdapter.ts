@@ -19,33 +19,47 @@ type TokenUsageMetadata = {
  */
 export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
     async *run({messages, abortSignal, context}) {
-        const model = await getLLMModel();
-        const modelMessages = await convertToModelMessages(messages.map(threadMessageToUIMessage));
+        try {
+            const model = await getLLMModel();
+            const modelMessages = await convertToModelMessages(
+                messages.map(threadMessageToUIMessage)
+            );
 
-        const result = streamText({
-            model,
-            system: context.system,
-            messages: modelMessages,
-            tools: context.tools ? frontendTools(context.tools as any) : undefined, // pass tools
-            abortSignal,
-            ...context.callSettings
-        });
+            const result = streamText({
+                model,
+                system: context.system,
+                messages: modelMessages,
+                tools: context.tools ? frontendTools(context.tools as any) : undefined, // pass tools
+                abortSignal,
+                ...context.callSettings
+            });
 
-        let text = "";
-        for await (const delta of result.textStream) {
-            text += delta;
+            let text = "";
+            for await (const delta of result.textStream) {
+                text += delta;
+                yield {
+                    content: [{type: "text", text}]
+                };
+            }
+
+            const usage = normalizeTokenUsage(await result.totalUsage);
             yield {
-                content: [{type: "text", text}]
+                status: {type: "complete", reason: "unknown"},
+                metadata: usage ? {custom: {usage}} : undefined
+            };
+        } catch (error) {
+            yield {
+                content: [{type: "text", text: getErrorMessage(error)}],
+                status: {type: "incomplete", reason: "error", error: getErrorMessage(error)}
             };
         }
-
-        const usage = normalizeTokenUsage(await result.totalUsage);
-        yield {
-            status: {type: "complete", reason: "unknown"},
-            metadata: usage ? {custom: {usage}} : undefined
-        };
     }
 };
+
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    return typeof error === "string" ? error : "An unexpected error occurred.";
+}
 
 function normalizeTokenUsage(usage: {
     inputTokens?: number;

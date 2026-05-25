@@ -9,6 +9,19 @@ export async function getLLMModel() {
     const llmAPIKey = LogseqSettingAccessor.getPluginSettings().llmAPIKey;
     const llmAPIModel = LogseqSettingAccessor.getPluginSettings().llmAPIModel;
 
+    if (!llmProvider) {
+        throw new Error("LLM provider not set");
+    }
+    if (!llmAPIUrl) {
+        throw new Error("LLM API URL not set");
+    }
+    if (!llmAPIKey) {
+        throw new Error("LLM API Key not set");
+    }
+    if (!llmAPIModel) {
+        throw new Error("LLM API Model not set");
+    }
+
     if (llmProvider === ProviderEnum.OPENAI) {
         const openai = createOpenAI({
             baseURL: llmAPIUrl,
