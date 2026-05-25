@@ -40,8 +40,6 @@ export function Modal({
         style = {...style, width: "60vw"};
     }
 
-    if (!open) return null;
-
     // Calculate z-index based on modal depth (number of modals currently open)
     const modalDepth = UI.getModalCount();
     const baseZIndex = zDepth === "high" ? 9999 : 1000;
@@ -58,6 +56,8 @@ export function Modal({
         }),
         []
     );
+
+    if (!open) return null;
 
     return (
         <FocusTrap focusTrapOptions={focusTrapOptions}>
