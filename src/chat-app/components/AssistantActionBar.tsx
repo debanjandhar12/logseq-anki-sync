@@ -9,12 +9,12 @@ import {ShadowRootContext} from "src/ui/ShadowWrapper";
  *
  * Changes:
  * (a) Disabled the ActionBarMore menu.
+ * (b) Removed autohide="not-last" from ActionBarPrimitive.Root.
  */
 export const AssistantActionBar: FC = () => {
     return (
         <ActionBarPrimitive.Root
             hideWhenRunning
-            autohide="not-last"
             className="aui-assistant-action-bar-root col-start-3 row-start-2 -ms-1 flex gap-1 text-muted-foreground">
             <ActionBarPrimitive.Copy asChild>
                 <TooltipIconButton tooltip="Copy">
