@@ -25,12 +25,19 @@ export class LocalThreadHistoryAdapter implements ThreadHistoryAdapter {
     async append(item: ExportedMessageRepositoryItem): Promise<void> {
         const threadData = await ThreadStore.loadThread(this.threadId);
 
-        if (!threadData.exportedMessageRepository) {
-            threadData.exportedMessageRepository = {headId: item.message.id, messages: []};
+        const repository = threadData.exportedMessageRepository ?? {headId: null, messages: []};
+
+        const existingMessageIndex = repository.messages.findIndex(
+            ({message}) => message.id === item.message.id
+        );
+        if (existingMessageIndex >= 0) {
+            repository.messages[existingMessageIndex] = item;
+        } else {
+            repository.messages.push(item);
         }
 
-        threadData.exportedMessageRepository.messages.push(item);
-        threadData.exportedMessageRepository.headId = item.message.id; // headId must always point to the latest message in the chain
+        repository.headId = item.message.id;
+        threadData.exportedMessageRepository = repository;
         threadData.custom.updatedAt = new Date();
 
         await ThreadStore.saveThread(this.threadId, threadData);

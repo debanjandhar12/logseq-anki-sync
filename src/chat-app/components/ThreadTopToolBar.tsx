@@ -1,7 +1,7 @@
 import {ThreadListPrimitive} from "@assistant-ui/react";
 import {ArrowLeftIcon, HistoryIcon, PlusIcon, XIcon} from "lucide-react";
 import type {FC} from "react";
-import {useChatUI} from "src/chat-app/context/ChatUIContext";
+import {useChatUI} from "src/chat-app/context/ChatUIContextProvider";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
 
 interface ThreadTopToolBarProps {
