@@ -1,6 +1,6 @@
-import type {ChatModelAdapter, ThreadMessage} from "@assistant-ui/react";
+import type {ChatModelAdapter, ChatModelRunResult, ThreadMessage} from "@assistant-ui/react";
 import {frontendTools} from "@assistant-ui/react-ai-sdk";
-import {convertToModelMessages, streamText, type UIMessage} from "ai";
+import {convertToModelMessages, type LanguageModelUsage, streamText, type UIMessage} from "ai";
 import {getLLMModel} from "../../core/ai-sdk/getLLMModel";
 
 type TokenUsageMetadata = {
@@ -19,6 +19,8 @@ type TokenUsageMetadata = {
  */
 export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
     async *run({messages, abortSignal, context}) {
+        let streamError: unknown;
+
         try {
             const model = await getLLMModel();
             const modelMessages = await convertToModelMessages(
@@ -31,45 +33,74 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 messages: modelMessages,
                 tools: context.tools ? frontendTools(context.tools as any) : undefined, // pass tools
                 abortSignal,
-                ...context.callSettings
+                ...context.callSettings,
+                onError: ({error}) => {
+                    streamError = error;
+                }
             });
 
             let text = "";
-            for await (const delta of result.textStream) {
-                text += delta;
-                yield {
-                    content: [{type: "text", text}]
-                };
+            let usage: LanguageModelUsage | undefined;
+
+            for await (const part of result.fullStream) {
+                switch (part.type) {
+                    case "text-delta":
+                        text += part.text;
+                        yield {
+                            content: [{type: "text", text}]
+                        };
+                        break;
+                    case "finish":
+                        usage = part.totalUsage;
+                        break;
+                    case "error": {
+                        const errorMessage = getErrorMessage(part.error);
+                        yield createErrorMessageResult(text, errorMessage);
+                        return;
+                    }
+                }
             }
 
-            const usage = normalizeTokenUsage(await result.totalUsage);
+            const tokenUsage = usage ? normalizeTokenUsage(usage) : undefined;
             yield {
                 status: {type: "complete", reason: "unknown"},
-                metadata: usage ? {custom: {usage}} : undefined
+                metadata: tokenUsage ? {custom: {usage: tokenUsage}} : undefined
             };
         } catch (error) {
-            yield {
-                content: [{type: "text", text: getErrorMessage(error)}],
-                status: {type: "incomplete", reason: "error", error: getErrorMessage(error)}
-            };
+            yield createErrorMessageResult("", getErrorMessage(streamError ?? error));
         }
     }
 };
 
+function createErrorMessageResult(existingText: string, errorMessage: string): ChatModelRunResult {
+    const text = existingText ? `${existingText}\n\n${errorMessage}` : errorMessage;
+    return {
+        content: [{type: "text" as const, text}],
+        status: {type: "incomplete", reason: "error", error: errorMessage}
+    };
+}
+
 function getErrorMessage(error: unknown): string {
+    if (isRecord(error)) {
+        const cause = error.cause;
+        const causeMessage =
+            cause !== error && cause !== undefined ? getErrorMessage(cause) : undefined;
+        const message = typeof error.message === "string" ? error.message : undefined;
+
+        if (message === "No output generated. Check the stream for errors." && causeMessage) {
+            return causeMessage;
+        }
+        if (message) return causeMessage ? `${message}: ${causeMessage}` : message;
+    }
     if (error instanceof Error) return error.message;
     return typeof error === "string" ? error : "An unexpected error occurred.";
 }
 
-function normalizeTokenUsage(usage: {
-    inputTokens?: number;
-    outputTokens?: number;
-    totalTokens?: number;
-    outputTokenDetails?: {reasoningTokens?: number};
-    inputTokenDetails?: {cacheReadTokens?: number};
-    reasoningTokens?: number;
-    cachedInputTokens?: number;
-}): TokenUsageMetadata | undefined {
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null;
+}
+
+function normalizeTokenUsage(usage: LanguageModelUsage): TokenUsageMetadata | undefined {
     const metadata: TokenUsageMetadata = {
         inputTokens: usage.inputTokens,
         outputTokens: usage.outputTokens,
