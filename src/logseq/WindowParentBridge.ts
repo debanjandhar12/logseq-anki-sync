@@ -1,5 +1,6 @@
 import "@logseq/libs";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
+import {LogseqProxy} from "./LogseqProxy";
 
 /**
  * WindowParentBridge - Abstraction layer for communication with Logseq parent window
@@ -124,6 +125,9 @@ export class WindowParentBridge {
         let result = null;
         try {
             result = await logseq.Assets.makeUrl(path);
+            if (!await LogseqProxy.App.checkCurrentIsDbGraph()) {
+                result = result.replace('assets://', '');
+            }
         } catch {}
         return result || path;
     }
