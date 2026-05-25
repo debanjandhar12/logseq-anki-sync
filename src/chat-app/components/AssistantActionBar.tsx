@@ -8,11 +8,9 @@ import {ShadowRootContext} from "src/ui/ShadowWrapper";
  * This is the toolbar under assistant message.
  *
  * Changes:
- * (a) Added ShadowRootContext portal container to fix floating ui issue.
- * (b) Disabled the ActionBarMore menu.
+ * (a) Disabled the ActionBarMore menu.
  */
 export const AssistantActionBar: FC = () => {
-    const container = useContext(ShadowRootContext);
     return (
         <ActionBarPrimitive.Root
             hideWhenRunning
@@ -43,7 +41,6 @@ export const AssistantActionBar: FC = () => {
             {/*        </TooltipIconButton>*/}
             {/*    </ActionBarMorePrimitive.Trigger>*/}
             {/*    <ActionBarMorePrimitive.Content*/}
-            {/*        portalProps={{ container }}*/}
             {/*        side="bottom"*/}
             {/*        align="start"*/}
             {/*        className="aui-action-bar-more-content z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"*/}

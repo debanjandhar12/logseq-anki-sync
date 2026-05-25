@@ -74,7 +74,7 @@ const ThreadListItem: FC = () => {
   );
 };
 
-const ThreadListItemMore: FC = () => {
+export const ThreadListItemMore: FC = () => {
   return (
     <ThreadListItemMorePrimitive.Root>
       <ThreadListItemMorePrimitive.Trigger asChild>
