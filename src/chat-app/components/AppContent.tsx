@@ -1,8 +1,8 @@
 import {AuiProvider, useAui} from "@assistant-ui/react";
-import {ThreadWrapper} from "src/chat-app/components/ThreadWrapper";
-import {getSuggestions} from "../utils/getSuggestions";
 import {useEffect} from "react";
+import {ThreadWrapper} from "src/chat-app/components/ThreadWrapper";
 import {useAssistantModelContext} from "src/chat-app/hooks/useAssistantModelContext";
+import {getSuggestions} from "../utils/getSuggestions";
 
 /**
  * Registers model context and suggestions with Assistant UI.

@@ -4,7 +4,6 @@ import {ChatUIContext} from "./context/ChatUIContext";
 import {ThreadBoundLocalAISDKRuntimeProvider} from "./runtime/ThreadBoundLocalAISDKRuntimeProvider";
 import chatAppCss from "./style/main.css?inline";
 
-
 export const App = ({onClose}: {onClose?: () => void}) => {
     return (
         <ChatUIContext.Provider value={{onClose}}>
@@ -14,7 +13,7 @@ export const App = ({onClose}: {onClose?: () => void}) => {
                     className="h-full"
                     style={{height: "calc(100vh - 128px)", margin: "0px", padding: "0px"}}>
                     <ThreadBoundLocalAISDKRuntimeProvider>
-                         <AppContent />
+                        <AppContent />
                     </ThreadBoundLocalAISDKRuntimeProvider>
                 </div>
             </ShadowWrapper>

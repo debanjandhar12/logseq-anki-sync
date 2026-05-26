@@ -1,6 +1,6 @@
 import {ThreadListPrimitive} from "@assistant-ui/react";
 import {ArrowLeftIcon, HistoryIcon, PlusIcon, XIcon} from "lucide-react";
-import {FC, useContext} from "react";
+import {type FC, useContext} from "react";
 import {ChatUIContext} from "src/chat-app/context/ChatUIContext";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
 

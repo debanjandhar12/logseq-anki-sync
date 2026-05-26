@@ -1,4 +1,4 @@
-import {ModelContextProvider, useAui} from "@assistant-ui/react";
+import {type ModelContextProvider, useAui} from "@assistant-ui/react";
 import {ReactNode, useEffect, useMemo, useState} from "react";
 import {parseTemplateString} from "../../core/template-engine/parseTemplateString";
 import {createLogger, LoggerCategory} from "../../logger";
