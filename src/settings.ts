@@ -12,7 +12,7 @@ export interface PluginSettings {
     llmAPIUrl?: string;
     llmAPIKey?: string;
     llmAPIModel?: string;
-    additionalSystemPrompt?: string;
+    globalAgentInstruction?: string;
     openChatInSidebar?: boolean;
     debug?: LoggerCategory[];
     lastWelcomeVersion?: string;
@@ -65,12 +65,12 @@ export const addSettingsToLogseq = async () => {
             description: "The model identifier to use (e.g. gpt-4o)"
         },
         {
-            key: "additionalSystemPrompt",
+            key: "globalAgentInstruction",
             type: "string",
             default: "",
-            title: "Additional System Prompt",
+            title: "Global Agent Instruction",
             description:
-                "Optional instructions sent as the system prompt for every AI chat response."
+                "Optional instructions sent as part of the system prompt for every AI chat response."
         },
         {
             key: "displaySettingsHeading",

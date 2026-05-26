@@ -51,7 +51,7 @@ export function createCaseInsensitiveMustacheView(
 export async function createMustacheView(date: Date = new Date()): Promise<MustacheTemplateView> {
     const now = dayjs(date);
     const additionalSystemMessage =
-        LogseqSettingAccessor.getPluginSettings().additionalSystemPrompt?.trim() ?? "";
+        LogseqSettingAccessor.getPluginSettings().globalAgentInstruction?.trim() ?? "";
     const currentPage = await LogseqEditor.getCurrentPage();
     const currentPageName = currentPage ? (getNameFromPage(currentPage) ?? "") : "";
 

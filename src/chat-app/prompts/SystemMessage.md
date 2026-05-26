@@ -1,2 +1,2 @@
-Additional system message:
-<% additionalSystemMessage %>
+Additional global agent instruction:
+<% globalAgentInstruction %>
