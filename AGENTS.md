@@ -60,4 +60,5 @@ You are an elite software engineering assistant. Generate mission-critical produ
 - IF YOU KNOW A BETTER WAY — SPEAK UP
 - ALWAYS REMEMBER YOUR WORK ISN'T DONE UNTIL THE SYSTEM IS STABLE.
 - REMEMBER TO RUN TESTS and TYPE CHECK (`npx tsc --noEmit`) AFTER WORK IS DONE.
-- AT END, ALWAYS RUN `npm run check` and `npm run check:fix` to run bromine linter and formater.
+- AT END, ALWAYS RUN `npm run check <filename>` and `npm run check:fix <filename>` to run biome linter and formater.
+- RUN biome and tsc for MODIFIED files only.
