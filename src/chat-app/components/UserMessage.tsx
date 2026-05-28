@@ -1,7 +1,7 @@
-import type {FC} from "react";
 import {MessagePrimitive} from "@assistant-ui/react";
-import {BranchPicker, UserActionBar} from "src/shadcn/assistant-ui/thread";
+import type {FC} from "react";
 import {AttachmentUI} from "src/chat-app/components/AttachmentUI";
+import {BranchPicker, UserActionBar} from "src/shadcn/assistant-ui/thread";
 
 /**
  * Changes:
@@ -12,8 +12,7 @@ export const UserMessage: FC = () => {
         <MessagePrimitive.Root
             data-slot="aui_user-message-root"
             className="fade-in slide-in-from-bottom-1 grid animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [contain-intrinsic-size:auto_60px] [content-visibility:auto] [&:where(>*)]:col-start-2"
-            data-role="user"
-        >
+            data-role="user">
             <UserMessageAttachments />
 
             <div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">
@@ -36,9 +35,7 @@ export const UserMessage: FC = () => {
 const UserMessageAttachments: FC = () => {
     return (
         <div className="aui-user-message-attachments-end col-span-full col-start-1 row-start-1 flex w-full flex-row justify-end gap-2">
-            <MessagePrimitive.Attachments>
-                {() => <AttachmentUI />}
-            </MessagePrimitive.Attachments>
+            <MessagePrimitive.Attachments>{() => <AttachmentUI />}</MessagePrimitive.Attachments>
         </div>
     );
 };

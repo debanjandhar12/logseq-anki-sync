@@ -1,5 +1,5 @@
-import {OpenAIChatCommand} from "src/core/chat-interop/commands/OpenAIChatCommand";
 import {AddLogseqBlockAsAttachmentCommand} from "src/core/chat-interop/commands/AddLogseqBlockAsAttachmentCommand";
+import {OpenAIChatCommand} from "src/core/chat-interop/commands/OpenAIChatCommand";
 
 /**
  * This attempts registers AI Chat related context menu items in Logseq.
@@ -21,4 +21,4 @@ export const initContextMenu = async () => {
         await command.execute();
         await new OpenAIChatCommand().execute();
     });
-}
+};

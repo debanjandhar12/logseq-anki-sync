@@ -44,7 +44,10 @@ export class ChatInteropCommandQueue {
         } finally {
             ChatInteropCommandQueue.isFlushing = false;
 
-            if (ChatInteropCommandQueue.pendingCommands.length > 0 && ChatInteropCommandQueue.getCurrentHandler()) {
+            if (
+                ChatInteropCommandQueue.pendingCommands.length > 0 &&
+                ChatInteropCommandQueue.getCurrentHandler()
+            ) {
                 void ChatInteropCommandQueue.flush();
             }
         }

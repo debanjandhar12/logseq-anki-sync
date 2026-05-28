@@ -1,7 +1,7 @@
 import {ComposerPrimitive} from "@assistant-ui/react";
 import type {FC} from "react";
-import {ComposerAction} from "src/chat-app/components/ComposerAction";
 import {AttachmentUI} from "src/chat-app/components/AttachmentUI";
+import {ComposerAction} from "src/chat-app/components/ComposerAction";
 
 /**
  * Changes:

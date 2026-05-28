@@ -1,6 +1,6 @@
-import {ChatInteropCommandQueue} from "../queue/ChatInteropCommandQueue";
 import type {BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {createLogger, LoggerCategory} from "../../../logger";
+import {ChatInteropCommandQueue} from "../queue/ChatInteropCommandQueue";
 import type {ChatCommand} from "../types";
 
 const logger = createLogger(LoggerCategory.MISC);

@@ -1,13 +1,14 @@
-import {LogseqAppInfoFetcher} from "src/logseq/LogseqAppInfoFetcher";
+import React from "react";
+import {App} from "src/chat-app/App";
 import {
     canShowSidebar,
     getSidebarRendererKey,
     getSidebarUnavailableMessage
 } from "src/core/chat-interop/commands/OpenAIChatCommand";
-import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
-import React from "react";
-import {App} from "src/chat-app/App";
 import {createLogger, LoggerCategory} from "src/logger";
+import {LogseqAppInfoFetcher} from "src/logseq/LogseqAppInfoFetcher";
+import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
+
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 /**
@@ -34,4 +35,4 @@ export const initAIChat = async () => {
     } catch (error) {
         logger.error("Failed to register AI Chat sidebar renderer", error);
     }
-}
+};

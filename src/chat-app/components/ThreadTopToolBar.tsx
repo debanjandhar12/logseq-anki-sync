@@ -1,8 +1,8 @@
 import {ThreadListPrimitive} from "@assistant-ui/react";
 import {ArrowLeftIcon, HistoryIcon, PlusIcon, XIcon} from "lucide-react";
 import {type FC, useContext} from "react";
-import {ChatUIContext} from "../context/ChatUIContext";
 import {TooltipIconButton} from "../../shadcn/assistant-ui/tooltip-icon-button";
+import {ChatUIContext} from "../context/ChatUIContext";
 
 interface ThreadTopToolBarProps {
     isHistoryVisible: boolean;
