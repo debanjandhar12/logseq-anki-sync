@@ -20,13 +20,17 @@ export class OpenAIChatCommand implements ChatCommand {
         const settings = LogseqSettingAccessor.getPluginSettings();
         const openInSidebar = settings.openChatInSidebar ?? true;
 
-        if (openInSidebar && canShowSidebar()) {
-            await logseq.Editor.openInRightSidebar(sidebarPageName);
-            await logseq.App.setRightSidebarVisible(true);
-            return;
-        }
+        try {
+            if (openInSidebar && canShowSidebar()) {
+                await logseq.Editor.openInRightSidebar(sidebarPageName);
+                await logseq.App.setRightSidebarVisible(true);
+                return;
+            }
 
-        await showAIChatModal(React.createElement(App));
+            await showAIChatModal(React.createElement(App));
+        } catch (e) {
+            logger.error("Failed to open AI Chat", e);
+        }
     }
 }
 
