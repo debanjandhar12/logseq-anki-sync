@@ -2,7 +2,6 @@ import dayjs from "dayjs";
 import advancedFormat from "dayjs/plugin/advancedFormat";
 import {LogseqEditor} from "../../logseq/LogseqEditor";
 import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
-import getNameFromPage from "../../logseq/utils/getNameFromPage";
 
 dayjs.extend(advancedFormat);
 
@@ -53,15 +52,16 @@ export async function createMustacheView(date: Date = new Date()): Promise<Musta
     const additionalSystemMessage =
         LogseqSettingAccessor.getPluginSettings().globalAgentInstruction?.trim() ?? "";
     const currentPage = await LogseqEditor.getCurrentPage();
-    const currentPageName = currentPage ? (getNameFromPage(currentPage) ?? "") : "";
+    const currentEditingBlock = await LogseqEditor.getCurrentEditingBlock();
 
     const view: MustacheTemplateView = {
         "additional system message": additionalSystemMessage,
-        "current page": currentPageName,
+        "current page": currentPage ? currentPage.uuid : "No current page",
+        "current editing block": currentEditingBlock?.uuid ?? "No current editing block",
         additionalsystemmessage: additionalSystemMessage,
         additionalSystemMessage,
-        currentpage: currentPageName,
-        currentPage: currentPageName,
+        currentpage: currentPage ? currentPage.uuid : "No current page",
+        currenteditingblock: currentEditingBlock?.uuid ?? "No current editing block",
         time: now.format("HH:mm"),
         today: formatDate(now),
         tomorrow: formatDate(now.add(1, "day")),
