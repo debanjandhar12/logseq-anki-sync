@@ -14,7 +14,7 @@ export const AppContent = () => {
         suggestions: getSuggestions()
     });
 
-    const modelContext = useAssistantModelContext();
+    const modelContext = useAssistantModelContext(aui);
     useChatCommandHandler(aui);
 
     useEffect(() => {

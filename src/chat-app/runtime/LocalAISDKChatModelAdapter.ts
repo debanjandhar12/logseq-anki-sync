@@ -1,6 +1,7 @@
 import type {ChatModelAdapter, ChatModelRunResult, ThreadMessage} from "@assistant-ui/react";
 import {frontendTools} from "@assistant-ui/react-ai-sdk";
 import {convertToModelMessages, type LanguageModelUsage, streamText, type UIMessage} from "ai";
+import {type Tool, ToolResponse} from "assistant-stream";
 import {getLLMModel} from "../../core/ai-sdk/getLLMModel";
 
 type TokenUsageMetadata = {
@@ -23,6 +24,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
 
         try {
             const model = await getLLMModel();
+            const tools = context.tools ? frontendTools(context.tools as any) : undefined;
             const modelMessages = await convertToModelMessages(
                 messages.map(threadMessageToUIMessage)
             );
@@ -31,7 +33,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 model,
                 system: context.system,
                 messages: modelMessages,
-                tools: context.tools ? frontendTools(context.tools as any) : undefined, // pass tools
+                tools,
                 abortSignal,
                 ...context.callSettings,
                 onError: ({error}) => {
@@ -39,31 +41,64 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 }
             });
 
-            let text = "";
+            let errorText = "";
+            let content: NonNullable<ChatModelRunResult["content"]> = [];
             let usage: LanguageModelUsage | undefined;
+            const toolExecutionPromises: Promise<void>[] = [];
 
             for await (const part of result.fullStream) {
                 switch (part.type) {
                     case "text-delta":
-                        text += part.text;
+                        errorText += part.text;
+                        content = appendTextDelta(content, part.text);
                         yield {
-                            content: [{type: "text", text}]
+                            content
                         };
                         break;
+                    case "tool-call": {
+                        const toolCall = createToolCallMessagePart(part);
+                        content = [...content, toolCall];
+                        yield {
+                            content,
+                            status: {type: "requires-action", reason: "tool-calls"}
+                        };
+
+                        const tool = context.tools?.[toolCall.toolName];
+                        if (tool?.type !== "human" && tool?.execute) {
+                            toolExecutionPromises.push(
+                                executeFrontendTool(tool, toolCall, abortSignal).then(
+                                    (toolResult) => {
+                                        content = content.map((contentPart) =>
+                                            contentPart.type === "tool-call" &&
+                                            contentPart.toolCallId === toolCall.toolCallId
+                                                ? {...contentPart, ...toolResult}
+                                                : contentPart
+                                        );
+                                    }
+                                )
+                            );
+                        }
+                        break;
+                    }
                     case "finish":
                         usage = part.totalUsage;
                         break;
                     case "error": {
                         const errorMessage = getErrorMessage(part.error);
-                        yield createErrorMessageResult(text, errorMessage);
+                        yield createErrorMessageResult(errorText, errorMessage);
                         return;
                     }
                 }
             }
 
+            await Promise.all(toolExecutionPromises);
+
             const tokenUsage = usage ? normalizeTokenUsage(usage) : undefined;
             yield {
-                status: {type: "complete", reason: "unknown"},
+                content,
+                status: content.some((part) => part.type === "tool-call")
+                    ? {type: "requires-action", reason: "tool-calls"}
+                    : {type: "complete", reason: "unknown"},
                 metadata: tokenUsage ? {custom: {usage: tokenUsage}} : undefined
             };
         } catch (error) {
@@ -71,6 +106,68 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
         }
     }
 };
+
+type ToolCallStreamPart = {
+    type: "tool-call";
+    toolCallId: string;
+    toolName: string;
+    input: unknown;
+};
+
+type ToolCallMessagePart = Extract<
+    NonNullable<ChatModelRunResult["content"]>[number],
+    {type: "tool-call"}
+>;
+
+function appendTextDelta(
+    content: NonNullable<ChatModelRunResult["content"]>,
+    textDelta: string
+): NonNullable<ChatModelRunResult["content"]> {
+    const lastPart = content.at(-1);
+    if (lastPart?.type !== "text") {
+        return [...content, {type: "text", text: textDelta}];
+    }
+
+    return [...content.slice(0, -1), {...lastPart, text: `${lastPart.text}${textDelta}`}];
+}
+
+function createToolCallMessagePart(part: ToolCallStreamPart): ToolCallMessagePart {
+    const args = isRecord(part.input) ? (part.input as ToolCallMessagePart["args"]) : {};
+    return {
+        type: "tool-call",
+        toolCallId: part.toolCallId,
+        toolName: part.toolName,
+        args,
+        argsText: JSON.stringify(args)
+    };
+}
+
+async function executeFrontendTool(
+    tool: Tool,
+    toolCall: ToolCallMessagePart,
+    abortSignal: AbortSignal
+): Promise<Pick<ToolCallMessagePart, "result" | "isError">> {
+    try {
+        if (!tool.execute) {
+            return {
+                result: {error: `Tool cannot be executed: ${toolCall.toolName}`},
+                isError: true
+            };
+        }
+
+        const output = await tool.execute(toolCall.args, {
+            toolCallId: toolCall.toolCallId,
+            abortSignal,
+            human: async () => {
+                throw new Error("Human input is not supported by this chat adapter.");
+            }
+        });
+        const response = ToolResponse.toResponse(output);
+        return {result: response.result, isError: response.isError};
+    } catch (error) {
+        return {result: {error: getErrorMessage(error)}, isError: true};
+    }
+}
 
 function createErrorMessageResult(existingText: string, errorMessage: string): ChatModelRunResult {
     const text = existingText ? `${existingText}\n\n${errorMessage}` : errorMessage;
@@ -136,6 +233,9 @@ function threadMessageToUIMessage(message: ThreadMessage): UIMessage {
                     filename: part.filename
                 });
                 break;
+            case "tool-call":
+                parts.push(createToolUIMessagePart(part));
+                break;
         }
     }
 
@@ -145,6 +245,36 @@ function threadMessageToUIMessage(message: ThreadMessage): UIMessage {
         parts,
         metadata: message.metadata
     } as UIMessage;
+}
+
+function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["parts"][number] {
+    const input = part.args ?? {};
+    if (part.result === undefined) {
+        return {
+            type: `tool-${part.toolName}`,
+            toolCallId: part.toolCallId,
+            state: "input-available",
+            input
+        } as UIMessage["parts"][number];
+    }
+
+    if (part.isError) {
+        return {
+            type: `tool-${part.toolName}`,
+            toolCallId: part.toolCallId,
+            state: "output-error",
+            input,
+            errorText: typeof part.result === "string" ? part.result : JSON.stringify(part.result)
+        } as UIMessage["parts"][number];
+    }
+
+    return {
+        type: `tool-${part.toolName}`,
+        toolCallId: part.toolCallId,
+        state: "output-available",
+        input,
+        output: part.result
+    } as UIMessage["parts"][number];
 }
 
 type ModelMessagePart = ThreadMessage["content"][number];
@@ -160,5 +290,10 @@ function getModelMessageParts(message: ThreadMessage): ModelMessagePart[] {
 }
 
 function isSupportedModelMessagePart(part: ModelMessagePart): boolean {
-    return part.type === "text" || part.type === "image" || part.type === "file";
+    return (
+        part.type === "text" ||
+        part.type === "image" ||
+        part.type === "file" ||
+        part.type === "tool-call"
+    );
 }
