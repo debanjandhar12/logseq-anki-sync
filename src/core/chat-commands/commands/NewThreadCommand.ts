@@ -1,16 +1,19 @@
 import {CommandQueue} from "../CommandQueue";
 import type {ChatCommand} from "../types";
-import {CHAT_RUNTIME_COMMAND_TYPES} from "../types";
 import {OpenAIChatCommand} from "./OpenAIChatCommand";
 
 /**
  * Creates a new AI Chat thread.
  */
 export class NewThreadCommand implements ChatCommand {
+    static readonly TYPE = "new-thread";
+    static readonly RUNTIME_TYPE = "new-thread";
+    readonly type = NewThreadCommand.TYPE;
+
     constructor(private readonly openAIChatCommand: ChatCommand = new OpenAIChatCommand()) {}
 
     async execute(): Promise<void> {
-        CommandQueue.enqueue({type: CHAT_RUNTIME_COMMAND_TYPES.NEW_THREAD});
+        CommandQueue.enqueue({type: NewThreadCommand.RUNTIME_TYPE});
         await this.openAIChatCommand.execute();
     }
 }

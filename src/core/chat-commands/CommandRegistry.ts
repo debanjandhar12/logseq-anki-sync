@@ -6,8 +6,8 @@ import type {ChatCommand} from "./types";
 export class CommandRegistry {
     private static commands = new Map<string, ChatCommand>();
 
-    static register(type: string, command: ChatCommand): void {
-        CommandRegistry.commands.set(type, command);
+    static register(command: ChatCommand): void {
+        CommandRegistry.commands.set(command.type, command);
     }
 
     static get(type: string): ChatCommand | undefined {

@@ -1,7 +1,7 @@
 import type {AssistantClient} from "@assistant-ui/react";
 import {useEffect} from "react";
 import type {ChatRuntimeCommand} from "../../core/chat-commands";
-import {CHAT_RUNTIME_COMMAND_TYPES, CommandQueue} from "../../core/chat-commands";
+import {CommandQueue, NewThreadCommand} from "../../core/chat-commands";
 import {createLogger, LoggerCategory} from "../../logger";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
@@ -19,7 +19,7 @@ async function executeRuntimeCommand(
     command: ChatRuntimeCommand
 ): Promise<void> {
     try {
-        if (command.type === CHAT_RUNTIME_COMMAND_TYPES.NEW_THREAD) {
+        if (command.type === NewThreadCommand.RUNTIME_TYPE) {
             await aui.threads().switchToNewThread();
         }
     } catch (error) {

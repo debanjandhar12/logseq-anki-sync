@@ -16,6 +16,9 @@ const logger = createLogger(LoggerCategory.CHAT_UI);
  * Initializes AI Chat integrations that must be registered once at plugin startup.
  */
 export class InitAIChatCommand implements ChatCommand {
+    static readonly TYPE = "init-ai-chat";
+    readonly type = InitAIChatCommand.TYPE;
+
     async execute(): Promise<void> {
         if (!LogseqAppInfoFetcher.checkHostAccess()) return;
 

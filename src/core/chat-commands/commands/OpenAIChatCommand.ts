@@ -14,6 +14,9 @@ const sidebarPageName = `_sidebar.${sidebarRendererKey}`;
  * Opens the AI Chat interface.
  */
 export class OpenAIChatCommand implements ChatCommand {
+    static readonly TYPE = "open-ai-chat";
+    readonly type = OpenAIChatCommand.TYPE;
+
     async execute(): Promise<void> {
         const settings = LogseqSettingAccessor.getPluginSettings();
         const openInSidebar = settings.openChatInSidebar ?? true;
