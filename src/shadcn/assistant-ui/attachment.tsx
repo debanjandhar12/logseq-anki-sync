@@ -25,7 +25,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "src/shadcn/radix-ui/avatar"
 import { TooltipIconButton } from "src/shadcn/assistant-ui/tooltip-icon-button";
 import { cn } from "src/shadcn/lib/utils";
 
-const useFileSrc = (file: File | undefined) => {
+export const useFileSrc = (file: File | undefined) => {
   const [src, setSrc] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -45,7 +45,7 @@ const useFileSrc = (file: File | undefined) => {
   return src;
 };
 
-const useAttachmentSrc = () => {
+export const useAttachmentSrc = () => {
   const { file, src } = useAuiState(
     useShallow((s): { file?: File; src?: string } => {
       if (s.attachment.type !== "image") return {};
@@ -64,7 +64,7 @@ type AttachmentPreviewProps = {
   src: string;
 };
 
-const AttachmentPreview: FC<AttachmentPreviewProps> = ({ src }) => {
+export const AttachmentPreview: FC<AttachmentPreviewProps> = ({ src }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   return (
     <img
@@ -81,7 +81,7 @@ const AttachmentPreview: FC<AttachmentPreviewProps> = ({ src }) => {
   );
 };
 
-const AttachmentPreviewDialog: FC<PropsWithChildren> = ({ children }) => {
+export const AttachmentPreviewDialog: FC<PropsWithChildren> = ({ children }) => {
   const src = useAttachmentSrc();
 
   if (!src) return children;
@@ -106,7 +106,7 @@ const AttachmentPreviewDialog: FC<PropsWithChildren> = ({ children }) => {
   );
 };
 
-const AttachmentThumb: FC = () => {
+export const AttachmentThumb: FC = () => {
   const src = useAttachmentSrc();
 
   return (
@@ -171,7 +171,7 @@ const AttachmentUI: FC = () => {
   );
 };
 
-const AttachmentRemove: FC = () => {
+export const AttachmentRemove: FC = () => {
   return (
     <AttachmentPrimitive.Remove asChild>
       <TooltipIconButton
@@ -195,7 +195,7 @@ export const UserMessageAttachments: FC = () => {
   );
 };
 
-export const ComposerAttachments: FC = () => {
+const ComposerAttachments: FC = () => {
   return (
     <div className="aui-composer-attachments flex w-full flex-row items-center gap-2 overflow-x-auto empty:hidden">
       <ComposerPrimitive.Attachments>
