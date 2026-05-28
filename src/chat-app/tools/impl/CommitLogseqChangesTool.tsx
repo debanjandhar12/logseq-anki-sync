@@ -2,13 +2,11 @@ import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
 import {ToolResponse} from "assistant-stream";
 import {CheckIcon, GitCommitIcon, XIcon} from "lucide-react";
 import {useState} from "react";
+import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
 import {Button} from "src/shadcn/radix-ui/button";
 import {z} from "zod";
 import {BaseChatTool} from "../base/BaseChatTool";
-import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-
-export const COMMIT_LOGSEQ_CHANGES_TOOL_NAME = "CommitLogseqChanges";
 
 const commitLogseqChangesParameters = z.object({});
 
@@ -28,7 +26,9 @@ export class CommitLogseqChangesTool extends BaseChatTool<
     CommitLogseqChangesArgs,
     LogseqCommitResult
 > {
-    readonly name = COMMIT_LOGSEQ_CHANGES_TOOL_NAME;
+    static readonly NAME = "CommitLogseqChanges";
+
+    readonly name = CommitLogseqChangesTool.NAME;
     readonly type = "human";
     readonly description =
         "Ask the user to approve committing pending Logseq graph changes made by block/page editing tools.";

@@ -1,7 +1,7 @@
 import {getMcpAppFromToolPart, MessagePrimitive} from "@assistant-ui/react";
 import type {FC} from "react";
 import {AssistantActionBar} from "src/chat-app/components/AssistantActionBar";
-import {COMMIT_LOGSEQ_CHANGES_TOOL_NAME} from "src/chat-app/tools/impl/CommitLogseqChangesTool";
+import {CommitLogseqChangesTool} from "src/chat-app/tools/impl/CommitLogseqChangesTool";
 import {MarkdownText} from "src/shadcn/assistant-ui/markdown-text";
 import {
     Reasoning,
@@ -44,7 +44,7 @@ export const AssistantMessage: FC = () => {
                             return ["group-chainOfThought", "group-reasoning"];
                         if (part.type === "tool-call") {
                             if (getMcpAppFromToolPart(part)) return null;
-                            if (part.toolName === COMMIT_LOGSEQ_CHANGES_TOOL_NAME) return null;
+                            if (part.toolName === CommitLogseqChangesTool.NAME) return null;
                             return ["group-chainOfThought", "group-tool"];
                         }
                         return null;

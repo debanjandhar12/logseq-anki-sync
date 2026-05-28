@@ -7,7 +7,7 @@ import {ReadLogseqBlockTool} from "src/chat-app/tools/impl/ReadLogseqBlockTool";
 export class ChatToolRegistry {
     private static instance: ChatToolRegistry | undefined;
 
-    private readonly tools = new Map<string, Tool>();
+    private readonly tools = new Map<string, Tool<any, any>>();
     private readonly toolUIs = new Map<string, ToolCallMessagePartComponent>();
 
     static getInstance(): ChatToolRegistry {
@@ -18,7 +18,7 @@ export class ChatToolRegistry {
         return ChatToolRegistry.instance;
     }
 
-    getTools(): Record<string, Tool> {
+    getTools(): Record<string, Tool<any, any>> {
         return Object.fromEntries(this.tools);
     }
 
@@ -35,7 +35,9 @@ export class ChatToolRegistry {
         return registry;
     }
 
-    private registerTool(tool: BaseChatTool): void {
+    private registerTool<TArgs extends Record<string, unknown>, TResult>(
+        tool: BaseChatTool<TArgs, TResult>
+    ): void {
         this.tools.set(tool.name, tool.getDefinition());
         if (tool.render) {
             this.toolUIs.set(tool.name, tool.render);
