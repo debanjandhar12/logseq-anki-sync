@@ -6,10 +6,9 @@ import HEART_ICON from "../node_modules/@tabler/icons/icons/outline/heart.svg?ra
 import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?raw";
 import pkg from "./../package.json";
 import {
-    AddLogseqBlockAsAttachmentCommand,
-    InitAIChatCommand,
+    initAIChat, initContextMenu,
     OpenAIChatCommand
-} from "./core/chat-commands";
+} from "./core/chat-interop";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
@@ -34,29 +33,12 @@ async function main(baseInfo: LSPluginBaseInfo) {
     }
 
     // Register UI and Commands
-    await new InitAIChatCommand().execute();
-    logseq.provideModel({
-        showAIChat: () => new OpenAIChatCommand().execute()
-    });
-    logseq.App.registerCommandPalette(
-        {
-            key: `logseq-ai-chat-command-palette-${baseInfo.id}`,
-            label: `Open Logseq AI Chat`,
-            keybinding: {mode: "global", binding: ""}
-        },
-        () => new OpenAIChatCommand().execute()
-    );
+    await initAIChat();
+    await initContextMenu();
     WindowParentBridge.setGlobalObject("LogseqAIChat", {
         showAIChat: () => new OpenAIChatCommand().execute()
     });
     registerToolbar(baseInfo);
-
-    logseq.Editor.registerBlockContextMenuItem("Add to AI Chat", async (e) => {
-        const command = new AddLogseqBlockAsAttachmentCommand(e.uuid);
-        await command.execute();
-        await new OpenAIChatCommand().execute();
-    });
-
     updateLoggerLevels();
     addSettingsToLogseq();
 

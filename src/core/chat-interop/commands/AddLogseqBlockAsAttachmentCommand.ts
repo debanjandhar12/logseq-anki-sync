@@ -1,4 +1,4 @@
-import {CommandQueue} from "../CommandQueue";
+import {ChatInteropCommandQueue} from "../queue/ChatInteropCommandQueue";
 import type {BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {createLogger, LoggerCategory} from "../../../logger";
 import type {ChatCommand} from "../types";
@@ -15,7 +15,7 @@ export class AddLogseqBlockAsAttachmentCommand implements ChatCommand {
 
     async execute(): Promise<void> {
         try {
-            CommandQueue.enqueue({
+            ChatInteropCommandQueue.enqueue({
                 type: AddLogseqBlockAsAttachmentCommand.TYPE,
                 payload: {uuid: this.uuid}
             });

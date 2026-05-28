@@ -7,7 +7,7 @@ import FocusTrap from "focus-trap-react";
 import type {FC} from "react";
 // biome-ignore lint/style/useImportType: required for re-exported react
 import React, {useEffect, useState} from "react";
-import {OpenAIChatCommand} from "../../core/chat-commands";
+import {OpenAIChatCommand} from "../../core/chat-interop";
 import {LogseqPluginStorageManager} from "../../logseq/LogseqPluginStorageManager";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import {UI} from "../UI";

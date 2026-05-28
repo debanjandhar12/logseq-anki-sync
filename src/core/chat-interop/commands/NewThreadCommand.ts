@@ -1,4 +1,4 @@
-import {CommandQueue} from "../CommandQueue";
+import {ChatInteropCommandQueue} from "../queue/ChatInteropCommandQueue";
 import type {ChatCommand} from "../types";
 import {OpenAIChatCommand} from "./OpenAIChatCommand";
 
@@ -11,7 +11,7 @@ export class NewThreadCommand implements ChatCommand {
     constructor(private readonly openAIChatCommand: ChatCommand = new OpenAIChatCommand()) {}
 
     async execute(): Promise<void> {
-        CommandQueue.enqueue({type: NewThreadCommand.TYPE});
+        ChatInteropCommandQueue.enqueue({type: NewThreadCommand.TYPE});
         await this.openAIChatCommand.execute();
     }
 }

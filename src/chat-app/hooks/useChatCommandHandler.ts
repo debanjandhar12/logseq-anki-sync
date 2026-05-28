@@ -1,14 +1,14 @@
 import type {AssistantClient} from "@assistant-ui/react";
 import {useEffect} from "react";
-import type {ChatRuntimeCommand} from "../../core/chat-commands";
-import {CommandQueue, NewThreadCommand} from "../../core/chat-commands";
+import type {ChatRuntimeCommand} from "../../core/chat-interop";
+import {ChatInteropCommandQueue, NewThreadCommand} from "../../core/chat-interop";
 import {createLogger, LoggerCategory} from "../../logger";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 export function useChatCommandHandler(aui: AssistantClient): void {
     useEffect(() => {
-        return CommandQueue.subscribe(async (command) => {
+        return ChatInteropCommandQueue.subscribe(async (command) => {
             await executeRuntimeCommand(aui, command);
         });
     }, [aui]);
