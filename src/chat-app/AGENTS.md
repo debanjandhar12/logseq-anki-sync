@@ -1,5 +1,5 @@
 # Shadcn Development Guidelines
-This contains the main chat app. The components contain modified shadcn / assistant-ui components.
+This contains the main chat app. The components folder contain modified shadcn / assistant-ui components.
 
 
 ## How shadcn / assistant-ui are maintained

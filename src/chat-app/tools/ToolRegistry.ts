@@ -1,18 +1,8 @@
 import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
-import {
-    COMMIT_LOGSEQ_CHANGES_TOOL_NAME,
-    CommitLogseqChangesTool,
-    CommitLogseqChangesToolUI
-} from "./CommitLogseqChangesTool";
-import {
-    READ_LOGSEQ_BLOCK_TOOL_NAME,
-    ReadLogseqBlockTool
-} from "./ReadLogseqBlockTool";
-
-type RegisteredTool = Tool<any, any> & {
-    render?: ToolCallMessagePartComponent;
-};
+import type {BaseChatTool} from "src/chat-app/tools/base/BaseChatTool";
+import {CommitLogseqChangesTool} from "src/chat-app/tools/impl/CommitLogseqChangesTool";
+import {ReadLogseqBlockTool} from "src/chat-app/tools/impl/ReadLogseqBlockTool";
 
 export class ChatToolRegistry {
     private static instance: ChatToolRegistry | undefined;
@@ -39,22 +29,16 @@ export class ChatToolRegistry {
     private static createDefault(): ChatToolRegistry {
         const registry = new ChatToolRegistry();
 
-        registry.registerTool(READ_LOGSEQ_BLOCK_TOOL_NAME, {
-            ...ReadLogseqBlockTool
-        });
-        registry.registerTool(COMMIT_LOGSEQ_CHANGES_TOOL_NAME, {
-            ...CommitLogseqChangesTool,
-            render: CommitLogseqChangesToolUI
-        });
+        registry.registerTool(new ReadLogseqBlockTool());
+        registry.registerTool(new CommitLogseqChangesTool());
 
         return registry;
     }
 
-    private registerTool(toolName: string, tool: RegisteredTool): void {
-        const {render, ...toolDefinition} = tool;
-        this.tools.set(toolName, toolDefinition);
-        if (render) {
-            this.toolUIs.set(toolName, render);
+    private registerTool(tool: BaseChatTool): void {
+        this.tools.set(tool.name, tool.getDefinition());
+        if (tool.render) {
+            this.toolUIs.set(tool.name, tool.render);
         }
     }
 }

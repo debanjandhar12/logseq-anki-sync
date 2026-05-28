@@ -1,7 +1,7 @@
 import {getMcpAppFromToolPart, MessagePrimitive} from "@assistant-ui/react";
 import type {FC} from "react";
 import {AssistantActionBar} from "src/chat-app/components/AssistantActionBar";
-import {COMMIT_LOGSEQ_CHANGES_TOOL_NAME} from "src/chat-app/tools/CommitLogseqChangesTool";
+import {COMMIT_LOGSEQ_CHANGES_TOOL_NAME} from "src/chat-app/tools/impl/CommitLogseqChangesTool";
 import {MarkdownText} from "src/shadcn/assistant-ui/markdown-text";
 import {
     Reasoning,
