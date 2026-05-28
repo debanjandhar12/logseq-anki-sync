@@ -1,15 +1,18 @@
-import type {FC} from "react";
 import {AttachmentPrimitive, ComposerPrimitive, useAui, useAuiState} from "@assistant-ui/react";
-import {Tooltip, TooltipContent, TooltipTrigger} from "src/shadcn/radix-ui/tooltip";
+import type {FC} from "react";
+import {
+    AttachmentPreviewDialog,
+    AttachmentRemove,
+    AttachmentThumb
+} from "src/shadcn/assistant-ui/attachment";
 import {cn} from "src/shadcn/lib/utils";
-import {AttachmentPreviewDialog, AttachmentRemove, AttachmentThumb} from "src/shadcn/assistant-ui/attachment";
+import {Tooltip, TooltipContent, TooltipTrigger} from "src/shadcn/radix-ui/tooltip";
+import {LOGSEQ_BLOCK_ATTACHMENT_TYPE} from "../runtime/LogseqBlockAttachmentAdapter";
 
 export const ComposerAttachments: FC = () => {
     return (
         <div className="aui-composer-attachments flex w-full flex-row items-center gap-2 overflow-x-auto empty:hidden">
-            <ComposerPrimitive.Attachments>
-                {() => <AttachmentUI />}
-            </ComposerPrimitive.Attachments>
+            <ComposerPrimitive.Attachments>{() => <AttachmentUI />}</ComposerPrimitive.Attachments>
         </div>
     );
 };
@@ -28,6 +31,8 @@ const AttachmentUI: FC = () => {
                 return "Document";
             case "file":
                 return "File";
+            case LOGSEQ_BLOCK_ATTACHMENT_TYPE:
+                return "Logseq block";
             default:
                 return type;
         }
@@ -38,19 +43,16 @@ const AttachmentUI: FC = () => {
             <AttachmentPrimitive.Root
                 className={cn(
                     "aui-attachment-root relative",
-                    isImage && "aui-attachment-root-composer only:*:first:size-24",
-                )}
-            >
+                    isImage && "aui-attachment-root-composer only:*:first:size-24"
+                )}>
                 <AttachmentPreviewDialog>
                     <TooltipTrigger asChild>
-                        <div
+                        <button
+                            type="button"
                             className="aui-attachment-tile size-14 cursor-pointer overflow-hidden rounded-[calc(var(--composer-radius)-var(--composer-padding))] border bg-muted transition-opacity hover:opacity-75"
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`${typeLabel} attachment`}
-                        >
+                            aria-label={`${typeLabel} attachment`}>
                             <AttachmentThumb />
-                        </div>
+                        </button>
                     </TooltipTrigger>
                 </AttachmentPreviewDialog>
                 {isComposer && <AttachmentRemove />}

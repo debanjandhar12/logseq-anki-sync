@@ -50,8 +50,10 @@ export const useAttachmentSrc = () => {
     useShallow((s): { file?: File; src?: string } => {
       if (s.attachment.type !== "image") return {};
       if (s.attachment.file) return { file: s.attachment.file };
-      const src = s.attachment.content?.filter((c) => c.type === "image")[0]
-        ?.image;
+      const imagePart = s.attachment.content?.find(
+        (c): c is Extract<typeof c, { type: "image" }> => c.type === "image",
+      );
+      const src = imagePart?.image;
       if (!src) return {};
       return { src };
     }),

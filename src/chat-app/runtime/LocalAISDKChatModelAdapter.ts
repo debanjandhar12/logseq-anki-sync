@@ -115,7 +115,7 @@ function normalizeTokenUsage(usage: LanguageModelUsage): TokenUsageMetadata | un
 // Utility method
 function threadMessageToUIMessage(message: ThreadMessage): UIMessage {
     const parts: UIMessage["parts"] = [];
-    for (const part of message.content) {
+    for (const part of getModelMessageParts(message)) {
         switch (part.type) {
             case "text":
                 parts.push({type: "text", text: part.text});
@@ -145,4 +145,20 @@ function threadMessageToUIMessage(message: ThreadMessage): UIMessage {
         parts,
         metadata: message.metadata
     } as UIMessage;
+}
+
+type ModelMessagePart = ThreadMessage["content"][number];
+
+function getModelMessageParts(message: ThreadMessage): ModelMessagePart[] {
+    const parts: ModelMessagePart[] = [...message.content];
+
+    for (const attachment of message.attachments ?? []) {
+        parts.push(...attachment.content);
+    }
+
+    return parts.filter(isSupportedModelMessagePart);
+}
+
+function isSupportedModelMessagePart(part: ModelMessagePart): boolean {
+    return part.type === "text" || part.type === "image" || part.type === "file";
 }
