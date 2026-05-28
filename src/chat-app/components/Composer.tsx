@@ -1,12 +1,13 @@
 import {ComposerPrimitive} from "@assistant-ui/react";
 import type {FC} from "react";
 import {ComposerAction} from "src/chat-app/components/ComposerAction";
-import {ComposerAttachments} from "src/chat-app/components/ComposerAttachments";
+import {AttachmentUI} from "src/chat-app/components/AttachmentUI";
 
 /**
  * Changes:
  * (a) Removed attachment dropzone
  * (b) Added logseq page / block mentions
+ * (c) Decomposed ComposerAttachments for using custom AttachmentUI
  */
 export const Composer: FC = () => {
     return (
@@ -25,5 +26,13 @@ export const Composer: FC = () => {
                 <ComposerAction />
             </div>
         </ComposerPrimitive.Root>
+    );
+};
+
+const ComposerAttachments: FC = () => {
+    return (
+        <div className="aui-composer-attachments flex w-full flex-row items-center gap-2 overflow-x-auto empty:hidden">
+            <ComposerPrimitive.Attachments>{() => <AttachmentUI />}</ComposerPrimitive.Attachments>
+        </div>
     );
 };

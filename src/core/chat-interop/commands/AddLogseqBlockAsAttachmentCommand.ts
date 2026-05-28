@@ -6,7 +6,7 @@ import type {ChatCommand} from "../types";
 const logger = createLogger(LoggerCategory.MISC);
 
 /**
- * Fetches a Logseq block and stores it as a pending attachment for AI Chat.
+ * Fetches a Logseq block and stores it as a attachment for AI Chat.
  */
 export class AddLogseqBlockAsAttachmentCommand implements ChatCommand {
     static readonly TYPE = "add-block-as-attachment";
