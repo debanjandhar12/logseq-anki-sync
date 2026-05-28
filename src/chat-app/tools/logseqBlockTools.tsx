@@ -10,10 +10,6 @@ import {Button} from "src/shadcn/radix-ui/button";
 export const READ_LOGSEQ_BLOCK_TOOL_NAME = "ReadLogseqBlock";
 export const UPSERT_LOGSEQ_BLOCK_TOOL_NAME = "UpsertLogseqBlock";
 
-type ReadLogseqBlockArgs = {
-    uuid: string;
-    includeParent?: boolean;
-};
 
 type UpsertLogseqBlockArgs = {
     uuid: string;
@@ -196,7 +192,3 @@ function getUpsertResultText(result: UpsertLogseqBlockResult | undefined): strin
     return "error" in result ? result.error : "Block update failed.";
 }
 
-function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) return error.message;
-    return typeof error === "string" ? error : "Unknown error";
-}
