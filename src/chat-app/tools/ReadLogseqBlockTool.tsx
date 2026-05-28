@@ -1,48 +1,57 @@
-import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
-import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
-import {Tool, ToolResponse} from "assistant-stream";
 import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
-import {useState} from "react";
-import {Button} from "src/shadcn/radix-ui/button";
-import {CheckIcon, XIcon} from "lucide-react";
+import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import type {Tool} from "assistant-stream";
+import {FileTextIcon} from "lucide-react";
+import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
+import {z} from "zod";
 
-type ReadLogseqBlockArgs = {
-    uuid: string;
-    includeChildren?: boolean;
-};
+export const READ_LOGSEQ_BLOCK_TOOL_NAME = "ReadLogseqBlock";
+
+const readLogseqBlockParameters = z.object({
+    uuid: z.string().describe("The UUID of the Logseq block or page to read."),
+    includeChildren: z
+        .boolean()
+        .optional()
+        .describe("Whether to include child blocks in the returned block or page.")
+});
+
+type ReadLogseqBlockArgs = z.infer<typeof readLogseqBlockParameters>;
 
 type ReadLogseqBlockResult =
     | {
-    success: true;
-    type: "block" | "page";
-    block: BlockEntity | PageEntity;
-}
+          success: true;
+          type: "block" | "page";
+          block: BlockEntity | PageEntity;
+          children?: BlockEntity[];
+      }
     | {
-    success: false;
-    error: string;
+          success: false;
+          error: string;
+      };
+
+export const ReadLogseqBlockTool: Tool<ReadLogseqBlockArgs, ReadLogseqBlockResult> = {
+    type: "frontend",
+    description: "Read a Logseq block or page by UUID.",
+    parameters: readLogseqBlockParameters,
+    execute
 };
 
-export const ReadLogseqBlockTool: Tool<ReadLogseqBlockArgs, ReadLogseqBlockResult> =  {
-    type: "frontend",
-    description:
-        "Read Logseq block or page by uuid.",
-    // TBU: define params using zod
-}
-
 async function execute({
-                      uuid,
-                      includeChildren = false
-                      }: ReadLogseqBlockArgs): Promise<ReadLogseqBlockResult> {
+    uuid,
+    includeChildren = false
+}: ReadLogseqBlockArgs): Promise<ReadLogseqBlockResult> {
     try {
-        const pageBlockTree = await LogseqPropertiesHelper.getPageBlocksTree(uuid);
-        if (pageBlockTree) {
-            const page = await LogseqPropertiesHelper.getPage(uuid);
+        const page = await LogseqPropertiesHelper.getPage(uuid);
+        if (page) {
             if (includeChildren) {
-                page.children = pageBlockTree as unknown as PageEntity[];
+                const children = await LogseqPropertiesHelper.getPageBlocksTree(uuid);
+                return {success: true, type: "page", block: page, children};
             }
+
             return {success: true, type: "page", block: page};
         }
-        const block = await LogseqPropertiesHelper.getBlock(uuid, {includeChildren: includeChildren});
+
+        const block = await LogseqPropertiesHelper.getBlock(uuid, {includeChildren});
         if (!block) {
             return {success: false, error: `Logseq block not found: ${uuid}`};
         }

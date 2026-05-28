@@ -1,28 +1,39 @@
-import {Tool, ToolResponse} from "assistant-stream";
-import {ToolCallMessagePartComponent} from "@assistant-ui/react";
+import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
+import {type Tool, ToolResponse} from "assistant-stream";
+import {CheckIcon, GitCommitIcon, XIcon} from "lucide-react";
 import {useState} from "react";
+import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
+import {Button} from "src/shadcn/radix-ui/button";
+import {z} from "zod";
+
+export const COMMIT_LOGSEQ_CHANGES_TOOL_NAME = "CommitLogseqChanges";
+
+const commitLogseqChangesParameters = z.object({});
+
+type CommitLogseqChangesArgs = z.infer<typeof commitLogseqChangesParameters>;
 
 type LogseqCommitResult =
     | {
-    success: true;
-    changes: string;
-}
+          success: true;
+          changes: string;
+      }
     | {
-    success: false;
-    error: string;
+          success: false;
+          error: string;
+      };
+
+export const CommitLogseqChangesTool: Tool<CommitLogseqChangesArgs, LogseqCommitResult> = {
+    type: "human",
+    description:
+        "Ask the user to approve committing pending Logseq graph changes made by block/page editing tools.",
+    parameters: commitLogseqChangesParameters
 };
 
-export const CommitLogseqChangesTool: Tool<{}, LogseqCommitResult> =  {
-    type: "frontend",
-    description:
-        "Commit changes done by UpsertLogseqBlockTool, AppendLogseqBlockTool, DeleteLogseqBlockTool, CreateLogseqPageTool, DeleteLogseqPageTool."
-    // TBU: define params using zod
-}
-
-export const ReadLogseqBlockToolUI: ToolCallMessagePartComponent<
-    {},
+export const CommitLogseqChangesToolUI: ToolCallMessagePartComponent<
+    CommitLogseqChangesArgs,
     LogseqCommitResult
-> = ({args, result, addResult, status}) => {
+> = (props) => {
+    const {result, addResult, status} = props;
     const [isApproving, setIsApproving] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
 
@@ -32,8 +43,8 @@ export const ReadLogseqBlockToolUI: ToolCallMessagePartComponent<
     const approve = async () => {
         setIsApproving(true);
         try {
-            // TBU: implement logic
-            // call addResult with new ToolResponse
+            const commitResult = await execute();
+            addResult(new ToolResponse({result: commitResult, isError: !commitResult.success}));
         } catch (error) {
             addResult(
                 new ToolResponse({
@@ -56,15 +67,34 @@ export const ReadLogseqBlockToolUI: ToolCallMessagePartComponent<
         );
     };
 
+    if (!isPending) {
+        return <ToolFallback {...props} />;
+    }
+
     return (
-        {/* return improved ui... when commiting we will show toolname and below subtext: AI Chat wants to make changes to your logseq graph
-        It will have approve and reject button. When approved or rejected, we will use the normal tools ui.
-        In other words, we will return the default ui when not approving or rejecting. */}
+        <div className="w-full rounded-lg border bg-background p-3 text-sm">
+            <div className="mb-2 flex items-center gap-2 font-medium">
+                <GitCommitIcon className="size-4" />
+                Commit Logseq changes
+            </div>
+            <div className="mb-3 text-muted-foreground">
+                AI Chat wants to make changes to your Logseq graph.
+            </div>
+            <div className="flex gap-2">
+                <Button size="sm" onClick={approve} disabled={isBusy}>
+                    <CheckIcon />
+                    {isApproving ? "Committing" : "Approve"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={reject} disabled={isBusy}>
+                    <XIcon />
+                    Reject
+                </Button>
+            </div>
+        </div>
     );
 };
 
-async function execute({}): Promise<LogseqCommitResult> {
-    // TBU: i will implement this later
+async function execute(): Promise<LogseqCommitResult> {
     return {success: false, error: "Not implemented yet."};
 }
 

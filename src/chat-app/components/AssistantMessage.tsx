@@ -1,6 +1,7 @@
 import {getMcpAppFromToolPart, MessagePrimitive} from "@assistant-ui/react";
 import type {FC} from "react";
 import {AssistantActionBar} from "src/chat-app/components/AssistantActionBar";
+import {COMMIT_LOGSEQ_CHANGES_TOOL_NAME} from "src/chat-app/tools/CommitLogseqChangesTool";
 import {MarkdownText} from "src/shadcn/assistant-ui/markdown-text";
 import {
     Reasoning,
@@ -18,6 +19,10 @@ import {
 } from "src/shadcn/assistant-ui/tool-group";
 import {cn} from "src/shadcn/lib/utils";
 
+/**
+ * Changes:
+ * (a) Removed tool grouping for CommitLogseqChanges tool.
+ */
 export const AssistantMessage: FC = () => {
     // reserves space for action bar and compensates with `-mb` for consistent msg spacing
     // keeps hovered action bar from shifting layout (autohide doesn't support absolute positioning well)
@@ -39,6 +44,7 @@ export const AssistantMessage: FC = () => {
                             return ["group-chainOfThought", "group-reasoning"];
                         if (part.type === "tool-call") {
                             if (getMcpAppFromToolPart(part)) return null;
+                            if (part.toolName === COMMIT_LOGSEQ_CHANGES_TOOL_NAME) return null;
                             return ["group-chainOfThought", "group-tool"];
                         }
                         return null;

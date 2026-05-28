@@ -1,12 +1,14 @@
 import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
 import {
+    COMMIT_LOGSEQ_CHANGES_TOOL_NAME,
+    CommitLogseqChangesTool,
+    CommitLogseqChangesToolUI
+} from "./CommitLogseqChangesTool";
+import {
     READ_LOGSEQ_BLOCK_TOOL_NAME,
-    readLogseqBlockTool,
-    UPSERT_LOGSEQ_BLOCK_TOOL_NAME,
-    UpsertLogseqBlockToolUI,
-    upsertLogseqBlockTool
-} from "./logseqBlockTools";
+    ReadLogseqBlockTool
+} from "./ReadLogseqBlockTool";
 
 type RegisteredTool = Tool<any, any> & {
     render?: ToolCallMessagePartComponent;
@@ -37,10 +39,12 @@ export class ChatToolRegistry {
     private static createDefault(): ChatToolRegistry {
         const registry = new ChatToolRegistry();
 
-        registry.registerTool(READ_LOGSEQ_BLOCK_TOOL_NAME, readLogseqBlockTool);
-        registry.registerTool(UPSERT_LOGSEQ_BLOCK_TOOL_NAME, {
-            ...upsertLogseqBlockTool,
-            render: UpsertLogseqBlockToolUI
+        registry.registerTool(READ_LOGSEQ_BLOCK_TOOL_NAME, {
+            ...ReadLogseqBlockTool
+        });
+        registry.registerTool(COMMIT_LOGSEQ_CHANGES_TOOL_NAME, {
+            ...CommitLogseqChangesTool,
+            render: CommitLogseqChangesToolUI
         });
 
         return registry;

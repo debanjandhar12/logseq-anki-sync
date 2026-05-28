@@ -1,7 +1,7 @@
 import type {ChatModelAdapter, ChatModelRunResult, ThreadMessage} from "@assistant-ui/react";
 import {frontendTools} from "@assistant-ui/react-ai-sdk";
 import {convertToModelMessages, type LanguageModelUsage, streamText, type UIMessage} from "ai";
-import {type Tool, ToolResponse} from "assistant-stream";
+import {type Tool, ToolResponse, toJSONSchema} from "assistant-stream";
 import {getLLMModel} from "../../core/ai-sdk/getLLMModel";
 
 type TokenUsageMetadata = {
@@ -24,7 +24,9 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
 
         try {
             const model = await getLLMModel();
-            const tools = context.tools ? frontendTools(context.tools as any) : undefined;
+            const tools = context.tools
+                ? frontendTools(toJSONSchemaToolSet(context.tools))
+                : undefined;
             const modelMessages = await convertToModelMessages(
                 messages.map(threadMessageToUIMessage)
             );
@@ -106,6 +108,20 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
         }
     }
 };
+
+function toJSONSchemaToolSet(
+    tools: Record<string, Tool>
+): Record<string, {description?: string; parameters: any}> {
+    return Object.fromEntries(
+        Object.entries(tools).map(([toolName, tool]) => [
+            toolName,
+            {
+                ...(tool.description ? {description: tool.description} : {}),
+                parameters: tool.parameters ? toJSONSchema(tool.parameters) : {type: "object"}
+            }
+        ])
+    );
+}
 
 type ToolCallStreamPart = {
     type: "tool-call";
