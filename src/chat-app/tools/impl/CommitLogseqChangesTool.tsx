@@ -6,6 +6,7 @@ import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
 import {Button} from "src/shadcn/radix-ui/button";
 import {z} from "zod";
 import {BaseChatTool} from "../base/BaseChatTool";
+import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 
 export const COMMIT_LOGSEQ_CHANGES_TOOL_NAME = "CommitLogseqChanges";
 
@@ -55,7 +56,7 @@ export class CommitLogseqChangesTool extends BaseChatTool<
             } catch (error) {
                 addResult(
                     new ToolResponse({
-                        result: {success: false, error: getErrorMessage(error)},
+                        result: {success: false, error: getErrorMessageFromErrObj(error)},
                         isError: true
                     })
                 );
@@ -100,9 +101,4 @@ export class CommitLogseqChangesTool extends BaseChatTool<
             </div>
         );
     };
-}
-
-function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) return error.message;
-    return typeof error === "string" ? error : "Unknown error";
 }

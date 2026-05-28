@@ -2,6 +2,7 @@ import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
 import {z} from "zod";
 import {BaseChatTool} from "../base/BaseChatTool";
+import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 
 export const READ_LOGSEQ_BLOCK_TOOL_NAME = "ReadLogseqBlock";
 
@@ -56,13 +57,8 @@ export class ReadLogseqBlockTool extends BaseChatTool<ReadLogseqBlockArgs, ReadL
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to read Logseq block ${uuid}: ${getErrorMessage(err)}`
+                error: `Failed to read Logseq block ${uuid}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }
-}
-
-function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) return error.message;
-    return typeof error === "string" ? error : "Unknown error";
 }
