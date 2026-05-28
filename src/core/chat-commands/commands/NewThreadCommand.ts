@@ -7,13 +7,11 @@ import {OpenAIChatCommand} from "./OpenAIChatCommand";
  */
 export class NewThreadCommand implements ChatCommand {
     static readonly TYPE = "new-thread";
-    static readonly RUNTIME_TYPE = "new-thread";
-    readonly type = NewThreadCommand.TYPE;
 
     constructor(private readonly openAIChatCommand: ChatCommand = new OpenAIChatCommand()) {}
 
     async execute(): Promise<void> {
-        CommandQueue.enqueue({type: NewThreadCommand.RUNTIME_TYPE});
+        CommandQueue.enqueue({type: NewThreadCommand.TYPE});
         await this.openAIChatCommand.execute();
     }
 }

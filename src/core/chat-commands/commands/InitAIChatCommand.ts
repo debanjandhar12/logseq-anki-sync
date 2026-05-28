@@ -17,7 +17,6 @@ const logger = createLogger(LoggerCategory.CHAT_UI);
  */
 export class InitAIChatCommand implements ChatCommand {
     static readonly TYPE = "init-ai-chat";
-    readonly type = InitAIChatCommand.TYPE;
 
     async execute(): Promise<void> {
         if (!LogseqAppInfoFetcher.checkHostAccess()) return;

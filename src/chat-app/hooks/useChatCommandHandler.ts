@@ -19,7 +19,7 @@ async function executeRuntimeCommand(
     command: ChatRuntimeCommand
 ): Promise<void> {
     try {
-        if (command.type === NewThreadCommand.RUNTIME_TYPE) {
+        if (command.type === NewThreadCommand.TYPE) {
             await aui.threads().switchToNewThread();
         }
     } catch (error) {

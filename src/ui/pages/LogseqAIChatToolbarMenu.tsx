@@ -7,7 +7,7 @@ import FocusTrap from "focus-trap-react";
 import type {FC} from "react";
 // biome-ignore lint/style/useImportType: required for re-exported react
 import React, {useEffect, useState} from "react";
-import {showAIChat} from "../../core/chat-commands";
+import {OpenAIChatCommand} from "../../core/chat-commands";
 import {LogseqPluginStorageManager} from "../../logseq/LogseqPluginStorageManager";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import {UI} from "../UI";
@@ -49,7 +49,7 @@ const LogseqAIChatToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
             icon: SIDE_BAR_ICON,
             text: "Open Chat",
             disabled: false,
-            onClick: showAIChat
+            onClick: () => new OpenAIChatCommand().execute()
         },
         {separator: true},
         {

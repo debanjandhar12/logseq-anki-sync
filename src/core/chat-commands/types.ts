@@ -1,5 +1,4 @@
 export interface ChatCommand {
-    readonly type: string;
     execute(): Promise<void>;
 }
 

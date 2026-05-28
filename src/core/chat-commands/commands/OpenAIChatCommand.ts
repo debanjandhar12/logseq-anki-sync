@@ -15,7 +15,6 @@ const sidebarPageName = `_sidebar.${sidebarRendererKey}`;
  */
 export class OpenAIChatCommand implements ChatCommand {
     static readonly TYPE = "open-ai-chat";
-    readonly type = OpenAIChatCommand.TYPE;
 
     async execute(): Promise<void> {
         const settings = LogseqSettingAccessor.getPluginSettings();

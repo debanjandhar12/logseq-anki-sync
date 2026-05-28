@@ -10,15 +10,13 @@ const logger = createLogger(LoggerCategory.MISC);
  */
 export class AddLogseqBlockAsAttachmentCommand implements ChatCommand {
     static readonly TYPE = "add-block-as-attachment";
-    static readonly RUNTIME_TYPE = "add-block-as-attachment";
-    readonly type = AddLogseqBlockAsAttachmentCommand.TYPE;
 
     constructor(private readonly uuid: BlockUUID) {}
 
     async execute(): Promise<void> {
         try {
             CommandQueue.enqueue({
-                type: AddLogseqBlockAsAttachmentCommand.RUNTIME_TYPE,
+                type: AddLogseqBlockAsAttachmentCommand.TYPE,
                 payload: {uuid: this.uuid}
             });
         } catch (error) {
