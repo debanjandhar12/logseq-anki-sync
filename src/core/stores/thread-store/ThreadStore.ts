@@ -17,7 +17,7 @@ export class ThreadStore {
                 threadId
             );
             return JSON.parse(content) as ThreadFileData;
-        } catch (e) {
+        } catch {
             return null;
         }
     }
@@ -36,7 +36,7 @@ export class ThreadStore {
                 logger.warn(`Failed to parse thread file ${fileName}:`, e);
             }
         }
-        threadFiles.sort((a, b) => b.custom.updatedAt - a.custom.updatedAt);
+        threadFiles.sort((a, b) => getThreadUpdatedAt(b) - getThreadUpdatedAt(a));
         return threadFiles;
     }
 
@@ -51,6 +51,13 @@ export class ThreadStore {
     static async deleteThread(threadId: string): Promise<void> {
         try {
             await LogseqPluginStorageManager.deleteFile(ThreadStore.groupName, threadId);
-        } catch (e) {}
+        } catch {}
     }
 }
+
+// Utilities
+const getThreadUpdatedAt = (threadData: ThreadFileData): number => {
+    const updatedAt = threadData.custom.updatedAt;
+    return updatedAt instanceof Date ? updatedAt.getTime() : new Date(updatedAt).getTime();
+};
+

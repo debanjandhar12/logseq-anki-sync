@@ -1,9 +1,4 @@
-import {
-    AuiIf,
-    ThreadListItemMorePrimitive,
-    ThreadListItemPrimitive,
-    ThreadListPrimitive
-} from "@assistant-ui/react";
+import {AuiIf, ThreadListItemPrimitive, ThreadListPrimitive} from "@assistant-ui/react";
 import type {FC} from "react";
 import {ThreadListItemMore, ThreadListSkeleton} from "src/shadcn/assistant-ui/thread-list";
 

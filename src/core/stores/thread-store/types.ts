@@ -6,8 +6,8 @@ export interface ThreadFileData {
     exportedMessageRepository?: ExportedMessageRepository; // actual messages
     status: "regular" | "archived";
     custom: {
-        createdAt: Date;
-        updatedAt: Date;
+        createdAt: Date | string;
+        updatedAt: Date | string;
         createdByPluginVersion: string;
     };
 }
