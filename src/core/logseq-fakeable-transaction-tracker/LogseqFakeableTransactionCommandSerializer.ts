@@ -22,13 +22,13 @@ export class LogseqFakeableTransactionCommandSerializer {
             case "CreatePage":
                 return new CreatePageCommand(command.pageName, command.properties);
             case "DeletePage":
-                return new DeletePageCommand(command.pageIdentity);
+                return new DeletePageCommand(command.pageUuid);
             case "InsertBlock":
                 return new InsertBlockCommand(command.parentUuid, command.content);
             case "MoveBlock":
                 return new MoveBlockCommand(command.srcBlockUuid, command.destBlockUuid);
             case "RenamePage":
-                return new RenamePageCommand(command.pageIdentity, command.newName);
+                return new RenamePageCommand(command.pageUuid, command.newName);
             case "UpdateBlock":
                 return new UpdateBlockCommand(command.blockUuid, command.content);
         }
