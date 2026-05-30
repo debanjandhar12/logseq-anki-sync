@@ -1,6 +1,6 @@
 import {type ToolCallMessagePartComponent, useAuiState} from "@assistant-ui/react";
 import {ToolResponse} from "assistant-stream";
-import {CheckIcon, GitCommitIcon, XIcon} from "lucide-react";
+import {GitCommitIcon} from "lucide-react";
 import {useState} from "react";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
@@ -44,24 +44,6 @@ export class CommitLogseqChangesTool extends BaseChatTool<
     ): Promise<LogseqCommitResult | ToolResponse<LogseqCommitResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            const inMemoryExecutor = await transactionTracker.executeInTheInMemoryDB();
-            const isApproved = await showAIChangesReviewModal(
-                inMemoryExecutor.getInMemoryPageDataDb(),
-                inMemoryExecutor.getOriginalInMemoryPageDataDb()
-            );
-
-            if (isApproved === null) return; // closed without rejecting / approving
-
-            if (isApproved === false) {
-                return new ToolResponse({
-                    result: {
-                        success: false,
-                        error: "User rejected the Logseq commit operation."
-                    },
-                    isError: true
-                });
-            }
-
             await transactionTracker.executeInLogseq();
             transactionTracker.clear();
 
@@ -82,15 +64,33 @@ export class CommitLogseqChangesTool extends BaseChatTool<
     ) => {
         const {result, addResult, status} = props;
         const messages = useAuiState((state) => state.thread.messages);
-        const [isApproving, setIsApproving] = useState(false);
-        const [isRejecting, setIsRejecting] = useState(false);
+        const [isReviewing, setIsReviewing] = useState(false);
 
         const isPending = result === undefined && status?.type !== "incomplete";
-        const isBusy = isApproving || isRejecting;
 
-        const approve = async () => {
-            setIsApproving(true);
+        const reviewAndApply = async () => {
+            setIsReviewing(true);
             try {
+                const transactionTracker = getLastLogseqFakeableTransactionTracker(messages);
+                const inMemoryExecutor = await transactionTracker.executeInTheInMemoryDB();
+                const isApproved = await showAIChangesReviewModal(
+                    inMemoryExecutor.getInMemoryPageDataDb(),
+                    inMemoryExecutor.getOriginalInMemoryPageDataDb()
+                );
+
+                if (isApproved !== true) {
+                    addResult(
+                        new ToolResponse({
+                            result: {
+                                success: false,
+                                error: "User cancelled the Logseq commit operation."
+                            },
+                            isError: true
+                        })
+                    );
+                    return;
+                }
+
                 const commitResult = ToolResponse.toResponse(await this.execute({}, {messages}));
                 addResult(commitResult);
             } catch (error) {
@@ -101,18 +101,8 @@ export class CommitLogseqChangesTool extends BaseChatTool<
                     })
                 );
             } finally {
-                setIsApproving(false);
+                setIsReviewing(false);
             }
-        };
-
-        const reject = () => {
-            setIsRejecting(true);
-            addResult(
-                new ToolResponse({
-                    result: {success: false, error: "User rejected the Logseq commit operation."},
-                    isError: true
-                })
-            );
         };
 
         if (!isPending) {
@@ -129,13 +119,8 @@ export class CommitLogseqChangesTool extends BaseChatTool<
                     AI Chat wants to make changes to your Logseq graph.
                 </div>
                 <div className="flex gap-2">
-                    <Button size="sm" onClick={approve} disabled={isBusy}>
-                        <CheckIcon />
-                        {isApproving ? "Committing" : "Approve"}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={reject} disabled={isBusy}>
-                        <XIcon />
-                        Reject
+                    <Button size="sm" onClick={reviewAndApply} disabled={isReviewing}>
+                        {isReviewing ? "Reviewing" : "Review & Apply"}
                     </Button>
                 </div>
             </div>
