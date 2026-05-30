@@ -8,7 +8,7 @@ export class LogseqInMemoryDataPrinter {
     }
 
     private static printPage(page: InMemoryPageEntity): string {
-        const lines = [`# ${page.title || page.name}`];
+        const lines = [];
         for (const child of page.children || []) {
             lines.push(...LogseqInMemoryDataPrinter.printBlock(child as InMemoryLogseqEntity, 0));
         }
@@ -22,18 +22,11 @@ export class LogseqInMemoryDataPrinter {
         const lines: string[] = [];
         const bulletIndent = "    ".repeat(depth);
         const contentIndent = `${bulletIndent}  `;
-        const properties = LogseqInMemoryDataPrinter.getPrintableProperties(
-            entity.properties || {}
-        );
-        const content = entity.content || entity.title || "";
+        const contentLines = (entity.content || entity.title || "").trim().split("\n");
 
-        if (properties.length > 0) {
-            const [firstProperty, ...remainingProperties] = properties;
-            lines.push(`${bulletIndent}- ${firstProperty}`);
-            lines.push(...remainingProperties.map((property) => `${contentIndent}${property}`));
-            if (content) lines.push(`${contentIndent}${content}`);
-        } else {
-            lines.push(`${bulletIndent}- ${content}`);
+        lines.push(`${bulletIndent}- ${contentLines[0]}`);
+        for (const contentLine of contentLines) {
+            lines.push(`${contentIndent}${contentLine}`);
         }
 
         for (const child of entity.children || []) {
@@ -43,20 +36,6 @@ export class LogseqInMemoryDataPrinter {
         }
 
         return lines;
-    }
-
-    private static getPrintableProperties(properties: Record<string, any>): string[] {
-        return Object.entries(properties)
-            .filter(([key]) => key !== "uuid" && !key.startsWith("logseq."))
-            .map(
-                ([key, value]) => `${key}:: ${LogseqInMemoryDataPrinter.stringifyProperty(value)}`
-            );
-    }
-
-    private static stringifyProperty(value: any): string {
-        if (value === null || value === undefined) return "";
-        if (typeof value === "object") return JSON.stringify(value);
-        return String(value);
     }
 
     private static isPageEntity(entity: InMemoryLogseqEntity): entity is InMemoryPageEntity {
