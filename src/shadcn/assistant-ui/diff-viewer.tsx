@@ -107,7 +107,7 @@ function computeDiff(
   return { lines, additions, deletions };
 }
 
-function pairLinesForSplit(lines: ParsedLine[]): SplitLinePair[] {
+export function pairLinesForSplit(lines: ParsedLine[]): SplitLinePair[] {
   const pairs: SplitLinePair[] = [];
   let i = 0;
 
@@ -539,7 +539,7 @@ DiffViewer.displayName = "DiffViewer";
 export type { ParsedLine, ParsedFile, SplitLinePair };
 
 export {
-  DiffViewer,
+  // DiffViewer,
   DiffViewerFile,
   DiffViewerHeader,
   DiffViewerContent,

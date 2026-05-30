@@ -1,10 +1,10 @@
 import React from "react";
+import {DiffViewer} from "src/chat-app/components/DiffViewer";
 import {LogseqInMemoryDataPrinter} from "src/core/logseq-fakeable-transaction-tracker/LogseqInMemoryDataPrinter";
 import type {
     InMemoryDB,
     InMemoryPageEntity
 } from "src/core/logseq-fakeable-transaction-tracker/types";
-import {DiffViewer} from "src/shadcn/assistant-ui/diff-viewer";
 import {LogseqButton} from "../components/LogseqButton";
 import {Modal} from "../modals/core/Modal";
 import {SimpleModalHeader} from "../modals/core/ModalHeader";
@@ -23,6 +23,8 @@ type PageChange = {
     uuid: string;
     title: string;
     status: "created" | "deleted" | "modified";
+    originalTitle?: string;
+    currentTitle?: string;
     originalContent: string;
     currentContent: string;
 };
@@ -93,32 +95,19 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
 };
 
 function PageChangePreview({change}: {change: PageChange}) {
-    const [isOpen, setIsOpen] = React.useState(true);
-    const statusLabel = getStatusLabel(change.status);
-
     return (
-        <section className="overflow-hidden rounded border border-border bg-secondary-background">
-            <button
-                type="button"
-                className="flex w-full items-center gap-2 border-border border-b bg-transparent px-3 py-2 text-left text-text"
-                onClick={() => setIsOpen((current) => !current)}>
-                <span className="w-4 shrink-0 text-center opacity-70">{isOpen ? "▾" : "▸"}</span>
-                <span className="min-w-0 flex-1 truncate font-medium">{change.title}</span>
-                <span className="rounded bg-tertiary px-2 py-0.5 text-xs uppercase opacity-80">
-                    {statusLabel}
-                </span>
-            </button>
-            {isOpen && (
-                <DiffViewer
-                    oldFile={{content: change.originalContent, name: `${change.title} (before)`}}
-                    newFile={{content: change.currentContent, name: `${change.title} (after)`}}
-                    viewMode="split"
-                    size="sm"
-                    showLineNumbers={false}
-                    variant="ghost"
-                    className="max-h-96 overflow-auto rounded-none"
-                />
-            )}
+        <section>
+            <DiffViewer
+                oldFile={{content: change.originalContent, name: change.originalTitle}}
+                newFile={{content: change.currentContent, name: change.currentTitle}}
+                viewMode="split"
+                size="sm"
+                showLineNumbers={false}
+                showIcon={false}
+                variant="ghost"
+                className="rounded border border-border bg-secondary-background"
+                contentClassName="max-h-96 overflow-auto"
+            />
         </section>
     );
 }
@@ -151,6 +140,8 @@ function getPageChange(
         uuid,
         title: getPageTitle(currentPage ?? originalPage),
         status: getPageStatus(originalPage, currentPage),
+        originalTitle: originalPage ? getPageTitle(originalPage) : undefined,
+        currentTitle: currentPage ? getPageTitle(currentPage) : undefined,
         originalContent,
         currentContent
     };
@@ -170,11 +161,5 @@ function getPageStatus(
 ): PageChange["status"] {
     if (!originalPage) return "created";
     if (!currentPage) return "deleted";
-    return "modified";
-}
-
-function getStatusLabel(status: PageChange["status"]): string {
-    if (status === "created") return "new";
-    if (status === "deleted") return "deleted";
     return "modified";
 }
