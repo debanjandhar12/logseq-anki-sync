@@ -1,6 +1,13 @@
-import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
-import type {Tool} from "assistant-stream";
+import type {ThreadMessage, ToolCallMessagePartComponent} from "@assistant-ui/react";
+import type {Tool, ToolResponse} from "assistant-stream";
 import type {z} from "zod";
+
+export type ChatToolExecutionContext = {
+    toolCallId?: string;
+    abortSignal?: AbortSignal;
+    human?: (payload: unknown) => Promise<unknown>;
+    messages?: readonly ThreadMessage[];
+};
 
 export abstract class BaseChatTool<
     TArgs extends Record<string, unknown> = Record<string, unknown>,
@@ -27,7 +34,10 @@ export abstract class BaseChatTool<
      * The actual execution logic for the tool.
      * Note: For "human" type tools, this might be a placeholder if execution is handled via UI.
      */
-    abstract execute(args: TArgs): Promise<TResult>;
+    abstract execute(
+        args: TArgs,
+        context?: ChatToolExecutionContext
+    ): Promise<TResult | ToolResponse<TResult>>;
 
     /**
      * Retrieves the tool definition compatible with `assistant-stream`.

@@ -1,7 +1,8 @@
 import type {
     LogseqEntityIdentity,
     LogseqFakeableCommand,
-    LogseqTransactionExecutor
+    LogseqTransactionExecutor,
+    SerializedLogseqFakeableCommand
 } from "../types";
 
 export class RenamePageCommand implements LogseqFakeableCommand {
@@ -12,5 +13,9 @@ export class RenamePageCommand implements LogseqFakeableCommand {
 
     async execute(executor: LogseqTransactionExecutor): Promise<void> {
         await executor.renamePage(this.pageIdentity, this.newName);
+    }
+
+    toJSON(): SerializedLogseqFakeableCommand {
+        return {type: "RenamePage", pageIdentity: this.pageIdentity, newName: this.newName};
     }
 }

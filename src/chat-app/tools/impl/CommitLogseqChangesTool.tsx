@@ -1,7 +1,12 @@
-import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
+import {type ToolCallMessagePartComponent, useAuiState} from "@assistant-ui/react";
 import {ToolResponse} from "assistant-stream";
 import {CheckIcon, GitCommitIcon, XIcon} from "lucide-react";
 import {useState} from "react";
+import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
+import {
+    createLogseqFakeableTransactionTrackerArtifact,
+    getLastLogseqFakeableTransactionTracker
+} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
 import {Button} from "src/shadcn/radix-ui/button";
@@ -34,14 +39,32 @@ export class CommitLogseqChangesTool extends BaseChatTool<
         "Ask the user to approve committing pending Logseq graph changes made by block/page editing tools.";
     readonly parameters = commitLogseqChangesParameters;
 
-    async execute(): Promise<LogseqCommitResult> {
-        return {success: false, error: "Not implemented yet."};
+    async execute(
+        _args: CommitLogseqChangesArgs = {},
+        context?: ChatToolExecutionContext
+    ): Promise<LogseqCommitResult | ToolResponse<LogseqCommitResult>> {
+        try {
+            const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
+            await transactionTracker.executeInLogseq();
+            transactionTracker.clear();
+
+            return new ToolResponse({
+                result: {success: true, changes: "Committed pending Logseq changes."},
+                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker) as any
+            });
+        } catch (err) {
+            return {
+                success: false,
+                error: `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}`
+            };
+        }
     }
 
     readonly render: ToolCallMessagePartComponent<CommitLogseqChangesArgs, LogseqCommitResult> = (
         props
     ) => {
         const {result, addResult, status} = props;
+        const messages = useAuiState((state) => state.thread.messages);
         const [isApproving, setIsApproving] = useState(false);
         const [isRejecting, setIsRejecting] = useState(false);
 
@@ -51,8 +74,8 @@ export class CommitLogseqChangesTool extends BaseChatTool<
         const approve = async () => {
             setIsApproving(true);
             try {
-                const commitResult = await this.execute();
-                addResult(new ToolResponse({result: commitResult, isError: !commitResult.success}));
+                const commitResult = ToolResponse.toResponse(await this.execute({}, {messages}));
+                addResult(commitResult);
             } catch (error) {
                 addResult(
                     new ToolResponse({

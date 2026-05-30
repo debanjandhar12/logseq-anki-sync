@@ -1,7 +1,8 @@
 import type {
     LogseqEntityIdentity,
     LogseqFakeableCommand,
-    LogseqTransactionExecutor
+    LogseqTransactionExecutor,
+    SerializedLogseqFakeableCommand
 } from "../types";
 
 export class InsertBlockCommand implements LogseqFakeableCommand {
@@ -12,5 +13,9 @@ export class InsertBlockCommand implements LogseqFakeableCommand {
 
     async execute(executor: LogseqTransactionExecutor): Promise<void> {
         await executor.insertBlock(this.parentUuid, this.content);
+    }
+
+    toJSON(): SerializedLogseqFakeableCommand {
+        return {type: "InsertBlock", parentUuid: this.parentUuid, content: this.content};
     }
 }

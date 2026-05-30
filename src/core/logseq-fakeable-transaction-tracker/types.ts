@@ -51,3 +51,38 @@ export interface LogseqTransactionExecutor {
 export interface LogseqFakeableCommand {
     execute(executor: LogseqTransactionExecutor): Promise<void>;
 }
+
+export type SerializedLogseqFakeableCommand =
+    | {
+          type: "CreatePage";
+          pageName: string;
+          properties?: Record<string, any>;
+      }
+    | {
+          type: "DeletePage";
+          pageIdentity: LogseqEntityIdentity;
+      }
+    | {
+          type: "InsertBlock";
+          parentUuid: LogseqEntityIdentity;
+          content: string;
+      }
+    | {
+          type: "MoveBlock";
+          srcBlockUuid: LogseqEntityIdentity;
+          destBlockUuid: LogseqEntityIdentity;
+      }
+    | {
+          type: "RenamePage";
+          pageIdentity: LogseqEntityIdentity;
+          newName: string;
+      }
+    | {
+          type: "UpdateBlock";
+          blockUuid: LogseqEntityIdentity;
+          content: string;
+      };
+
+export type SerializedLogseqFakeableTransactionTracker = {
+    commands: SerializedLogseqFakeableCommand[];
+};

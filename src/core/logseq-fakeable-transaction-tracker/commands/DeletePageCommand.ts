@@ -1,7 +1,8 @@
 import type {
     LogseqEntityIdentity,
     LogseqFakeableCommand,
-    LogseqTransactionExecutor
+    LogseqTransactionExecutor,
+    SerializedLogseqFakeableCommand
 } from "../types";
 
 export class DeletePageCommand implements LogseqFakeableCommand {
@@ -9,5 +10,9 @@ export class DeletePageCommand implements LogseqFakeableCommand {
 
     async execute(executor: LogseqTransactionExecutor): Promise<void> {
         await executor.deletePage(this.pageIdentity);
+    }
+
+    toJSON(): SerializedLogseqFakeableCommand {
+        return {type: "DeletePage", pageIdentity: this.pageIdentity};
     }
 }

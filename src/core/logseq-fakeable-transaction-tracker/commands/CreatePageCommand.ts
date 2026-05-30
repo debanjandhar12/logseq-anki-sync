@@ -1,4 +1,8 @@
-import type {LogseqFakeableCommand, LogseqTransactionExecutor} from "../types";
+import type {
+    LogseqFakeableCommand,
+    LogseqTransactionExecutor,
+    SerializedLogseqFakeableCommand
+} from "../types";
 
 export class CreatePageCommand implements LogseqFakeableCommand {
     constructor(
@@ -8,5 +12,9 @@ export class CreatePageCommand implements LogseqFakeableCommand {
 
     async execute(executor: LogseqTransactionExecutor): Promise<void> {
         await executor.createPage(this.pageName, this.properties);
+    }
+
+    toJSON(): SerializedLogseqFakeableCommand {
+        return {type: "CreatePage", pageName: this.pageName, properties: this.properties};
     }
 }

@@ -19,7 +19,7 @@ type TokenUsageMetadata = {
  * Reference implementation: @assistant-ui/react-ai-sdk/src/ui/use-chat/useAISDKRuntime.ts.
  */
 export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
-    async *run({messages, abortSignal, context}) {
+    async *run({messages, abortSignal, context, unstable_assistantMessageId}) {
         let streamError: unknown;
 
         try {
@@ -46,7 +46,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
             let errorText = "";
             let content: NonNullable<ChatModelRunResult["content"]> = [];
             let usage: LanguageModelUsage | undefined;
-            const toolExecutionPromises: Promise<void>[] = [];
+            let toolExecutionQueue = Promise.resolve();
 
             for await (const part of result.fullStream) {
                 switch (part.type) {
@@ -67,18 +67,24 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
 
                         const tool = context.tools?.[toolCall.toolName];
                         if (tool?.type !== "human" && tool?.execute) {
-                            toolExecutionPromises.push(
-                                executeFrontendTool(tool, toolCall, abortSignal).then(
-                                    (toolResult) => {
-                                        content = content.map((contentPart) =>
-                                            contentPart.type === "tool-call" &&
-                                            contentPart.toolCallId === toolCall.toolCallId
-                                                ? {...contentPart, ...toolResult}
-                                                : contentPart
-                                        );
-                                    }
-                                )
-                            );
+                            toolExecutionQueue = toolExecutionQueue.then(async () => {
+                                const toolResult = await executeFrontendTool(
+                                    tool,
+                                    toolCall,
+                                    abortSignal,
+                                    getCurrentBranchMessagesWithAssistantMessage(
+                                        messages,
+                                        content,
+                                        unstable_assistantMessageId
+                                    )
+                                );
+                                content = content.map((contentPart) =>
+                                    contentPart.type === "tool-call" &&
+                                    contentPart.toolCallId === toolCall.toolCallId
+                                        ? {...contentPart, ...toolResult}
+                                        : contentPart
+                                );
+                            });
                         }
                         break;
                     }
@@ -93,7 +99,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 }
             }
 
-            await Promise.all(toolExecutionPromises);
+            await toolExecutionQueue;
 
             const tokenUsage = usage ? normalizeTokenUsage(usage) : undefined;
             yield {
@@ -161,8 +167,9 @@ function createToolCallMessagePart(part: ToolCallStreamPart): ToolCallMessagePar
 async function executeFrontendTool(
     tool: Tool,
     toolCall: ToolCallMessagePart,
-    abortSignal: AbortSignal
-): Promise<Pick<ToolCallMessagePart, "result" | "isError">> {
+    abortSignal: AbortSignal,
+    messages: readonly ThreadMessage[]
+): Promise<Pick<ToolCallMessagePart, "result" | "isError" | "artifact">> {
     try {
         if (!tool.execute) {
             return {
@@ -174,15 +181,46 @@ async function executeFrontendTool(
         const output = await tool.execute(toolCall.args, {
             toolCallId: toolCall.toolCallId,
             abortSignal,
+            messages,
             human: async () => {
                 throw new Error("Human input is not supported by this chat adapter.");
             }
-        });
+        } as any);
         const response = ToolResponse.toResponse(output);
-        return {result: response.result, isError: response.isError};
+        return {
+            result: response.result,
+            artifact: response.artifact as ToolCallMessagePart["artifact"],
+            isError: response.isError
+        };
     } catch (error) {
         return {result: {error: getErrorMessage(error)}, isError: true};
     }
+}
+
+function getCurrentBranchMessagesWithAssistantMessage(
+    messages: readonly ThreadMessage[],
+    content: NonNullable<ChatModelRunResult["content"]>,
+    assistantMessageId: string | undefined
+): readonly ThreadMessage[] {
+    if (!content.length) return messages;
+
+    return [
+        ...messages,
+        {
+            id: assistantMessageId ?? "current-assistant-message",
+            role: "assistant",
+            status: {type: "requires-action", reason: "tool-calls"},
+            content,
+            metadata: {
+                unstable_state: null,
+                unstable_annotations: [],
+                unstable_data: [],
+                steps: [],
+                custom: {}
+            },
+            createdAt: new Date()
+        }
+    ];
 }
 
 function createErrorMessageResult(existingText: string, errorMessage: string): ChatModelRunResult {

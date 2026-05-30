@@ -1,7 +1,8 @@
 import type {
     LogseqEntityIdentity,
     LogseqFakeableCommand,
-    LogseqTransactionExecutor
+    LogseqTransactionExecutor,
+    SerializedLogseqFakeableCommand
 } from "../types";
 
 export class UpdateBlockCommand implements LogseqFakeableCommand {
@@ -12,5 +13,9 @@ export class UpdateBlockCommand implements LogseqFakeableCommand {
 
     async execute(executor: LogseqTransactionExecutor): Promise<void> {
         await executor.updateBlock(this.blockUuid, this.content);
+    }
+
+    toJSON(): SerializedLogseqFakeableCommand {
+        return {type: "UpdateBlock", blockUuid: this.blockUuid, content: this.content};
     }
 }
