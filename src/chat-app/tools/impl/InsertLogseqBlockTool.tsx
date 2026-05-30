@@ -4,10 +4,8 @@ import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromE
 import {InsertBlockCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
 import {z} from "zod";
 import {BaseChatTool} from "../base/BaseChatTool";
-import {
-    createLogseqFakeableTransactionTrackerArtifact,
-    getLastLogseqFakeableTransactionTracker
-} from "../transaction/getLastLogseqFakeableTransactionTracker";
+import {createLogseqFakeableTransactionTrackerArtifact} from "../transaction/createLogseqFakeableTransactionTrackerArtifact";
+import {getLastLogseqFakeableTransactionTracker} from "../transaction/getLastLogseqFakeableTransactionTracker";
 
 const insertLogseqBlockParameters = z.object({
     parentUuid: z.string().describe("UUID of the parent Logseq block or page."),

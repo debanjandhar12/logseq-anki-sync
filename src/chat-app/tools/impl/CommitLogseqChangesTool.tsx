@@ -3,10 +3,8 @@ import {ToolResponse} from "assistant-stream";
 import {CheckIcon, GitCommitIcon, XIcon} from "lucide-react";
 import {useState} from "react";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
-import {
-    createLogseqFakeableTransactionTrackerArtifact,
-    getLastLogseqFakeableTransactionTracker
-} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
+import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
+import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
 import {Button} from "src/shadcn/radix-ui/button";

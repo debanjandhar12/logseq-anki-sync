@@ -1,19 +1,8 @@
-import {
-    CreatePageCommand,
-    DeletePageCommand,
-    InsertBlockCommand,
-    MoveBlockCommand,
-    RenamePageCommand,
-    UpdateBlockCommand
-} from "./commands";
 import {InMemoryExecutor} from "./executor/InMemoryExecutor";
 import {LogseqExecutor} from "./executor/LogseqExecutor";
 import {LogseqFakeableTransactionCommandQueue} from "./LogseqFakeableTransactionCommandQueue";
-import type {
-    LogseqFakeableCommand,
-    SerializedLogseqFakeableCommand,
-    SerializedLogseqFakeableTransactionTracker
-} from "./types";
+import {LogseqFakeableTransactionCommandSerializer} from "./LogseqFakeableTransactionCommandSerializer";
+import type {LogseqFakeableCommand, SerializedLogseqFakeableTransactionTracker} from "./types";
 
 export class LogseqFakeableTransactionTracker {
     private readonly commandQueue = new LogseqFakeableTransactionCommandQueue();
@@ -28,7 +17,9 @@ export class LogseqFakeableTransactionTracker {
 
     public toJSON(): SerializedLogseqFakeableTransactionTracker {
         return {
-            commands: this.commandQueue.getCommands().map(serializeCommand)
+            commands: this.commandQueue
+                .getCommands()
+                .map(LogseqFakeableTransactionCommandSerializer.serialize)
         };
     }
 
@@ -37,7 +28,7 @@ export class LogseqFakeableTransactionTracker {
     ): LogseqFakeableTransactionTracker {
         const tracker = new LogseqFakeableTransactionTracker();
         for (const command of json.commands) {
-            tracker.addCommand(deserializeCommand(command));
+            tracker.addCommand(LogseqFakeableTransactionCommandSerializer.deserialize(command));
         }
 
         return tracker;
@@ -59,30 +50,5 @@ export class LogseqFakeableTransactionTracker {
         }
 
         return true;
-    }
-}
-
-function serializeCommand(command: LogseqFakeableCommand): SerializedLogseqFakeableCommand {
-    if ("toJSON" in command && typeof command.toJSON === "function") {
-        return command.toJSON() as SerializedLogseqFakeableCommand;
-    }
-
-    throw new Error(`Unsupported Logseq transaction command: ${command.constructor.name}`);
-}
-
-function deserializeCommand(command: SerializedLogseqFakeableCommand): LogseqFakeableCommand {
-    switch (command.type) {
-        case "CreatePage":
-            return new CreatePageCommand(command.pageName, command.properties);
-        case "DeletePage":
-            return new DeletePageCommand(command.pageIdentity);
-        case "InsertBlock":
-            return new InsertBlockCommand(command.parentUuid, command.content);
-        case "MoveBlock":
-            return new MoveBlockCommand(command.srcBlockUuid, command.destBlockUuid);
-        case "RenamePage":
-            return new RenamePageCommand(command.pageIdentity, command.newName);
-        case "UpdateBlock":
-            return new UpdateBlockCommand(command.blockUuid, command.content);
     }
 }
