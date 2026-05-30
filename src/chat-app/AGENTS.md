@@ -10,6 +10,4 @@ This contains the main chat app. The components folder contain modified shadcn /
 
 # Notes
 - Chat App specific css can be added in `src/chat-app/styles/main.css`.
-
-# Gotchas
-- 
+- We use LocalRuntime for assistant-ui state management with adapters for history etc. The ChatModalAdapter uses ai sdk internally. When working on the `runtime` folder, we need to maintain references used regorously.
