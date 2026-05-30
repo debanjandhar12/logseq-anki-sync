@@ -1,8 +1,16 @@
-import {AuiIf, ThreadListItemMorePrimitive, ThreadListItemPrimitive, ThreadListPrimitive} from "@assistant-ui/react";
+import {
+    AuiIf,
+    ThreadListItemMorePrimitive,
+    ThreadListItemPrimitive,
+    ThreadListPrimitive,
+    useAui,
+    useAuiState
+} from "@assistant-ui/react";
+import {EditIcon, MoreHorizontalIcon, TrashIcon} from "lucide-react";
 import type {FC} from "react";
 import {ThreadListSkeleton} from "src/shadcn/assistant-ui/thread-list";
 import {Button} from "src/shadcn/radix-ui/button";
-import {ArchiveIcon, MoreHorizontalIcon, TrashIcon} from "lucide-react";
+import {showInputModal} from "src/ui/launchers/showInputModal";
 
 interface ThreadListProps {
     onThreadSelected?: () => void;
@@ -50,16 +58,31 @@ const ThreadListItem: FC<ThreadListProps> = ({onThreadSelected}) => {
 /**
  * Changes:
  * (a) Remove ThreadListItemPrimitive.Archive
+ * (b) Added Rename item with showInputModal and useAui/useAuiState hooks
  */
 const ThreadListItemMore: FC = () => {
+    const threadId = useAuiState((s) => s.threadListItem.id);
+    const currentTitle = useAuiState((s) => s.threadListItem.title);
+    const api = useAui();
+
+    const handleRename = async () => {
+        const newName = await showInputModal({
+            title: "Rename Thread",
+            initialValue: currentTitle,
+            placeholder: "Enter new thread name"
+        });
+        if (newName) {
+            api.threads().item({id: threadId}).rename(newName);
+        }
+    };
+
     return (
         <ThreadListItemMorePrimitive.Root>
             <ThreadListItemMorePrimitive.Trigger asChild>
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="aui-thread-list-item-more me-2 size-7 p-0 opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:bg-accent data-[state=open]:opacity-100 group-data-active:opacity-100"
-                >
+                    className="aui-thread-list-item-more me-2 size-7 p-0 opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:bg-accent data-[state=open]:opacity-100 group-data-active:opacity-100">
                     <MoreHorizontalIcon className="size-4" />
                     <span className="sr-only">More options</span>
                 </Button>
@@ -67,14 +90,19 @@ const ThreadListItemMore: FC = () => {
             <ThreadListItemMorePrimitive.Content
                 side="bottom"
                 align="start"
-                className="aui-thread-list-item-more-content z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-            >
+                className="aui-thread-list-item-more-content z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
                 {/*<ThreadListItemPrimitive.Archive asChild>*/}
                 {/*    <ThreadListItemMorePrimitive.Item className="aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">*/}
                 {/*        <ArchiveIcon className="size-4" />*/}
                 {/*        Archive*/}
                 {/*    </ThreadListItemMorePrimitive.Item>*/}
                 {/*</ThreadListItemPrimitive.Archive>*/}
+                <ThreadListItemMorePrimitive.Item
+                    className="aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                    onClick={handleRename}>
+                    <EditIcon className="size-4" />
+                    Rename
+                </ThreadListItemMorePrimitive.Item>
                 <ThreadListItemPrimitive.Delete asChild>
                     <ThreadListItemMorePrimitive.Item className="aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-destructive text-sm outline-none hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive">
                         <TrashIcon className="size-4" />
