@@ -78,14 +78,5 @@ export function getModelMessageParts(message: ThreadMessage): ModelMessagePart[]
         parts.push(...attachment.content);
     }
 
-    return parts.filter(isSupportedModelMessagePart);
-}
-
-export function isSupportedModelMessagePart(part: ModelMessagePart): boolean {
-    return (
-        part.type === "text" ||
-        part.type === "image" ||
-        part.type === "file" ||
-        part.type === "tool-call"
-    );
+    return parts;
 }
