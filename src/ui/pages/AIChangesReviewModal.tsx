@@ -41,7 +41,7 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
     const {open, setOpen, handleConfirm, handleCancel} = useModal<boolean | null>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
-        enableEnterKey: false,
+        enableEnterKey: true,
         enableOutsideClickClose: false,
         defaultResult: false,
         modalId: modalContext?.modalId
@@ -53,11 +53,10 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
             setOpen={setOpen}
             onClose={() => {
                 UI.hideModal(modalContext?.modalId);
-                handleCancel();
             }}
             size="large"
             zDepth="high"
-            hasCloseButton={false}
+            hasCloseButton={true}
             className="overflow-hidden">
             <div className="flex max-h-[90vh] flex-col p-4 text-text">
                 <SimpleModalHeader title="Review AI Changes" />
@@ -83,8 +82,8 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
                     <LogseqButton onClick={() => handleConfirm(true)} color="primary">
                         Apply changes
                     </LogseqButton>
-                    <LogseqButton onClick={handleCancel} color="outline-link">
-                        Cancel
+                    <LogseqButton onClick={() => handleConfirm(false)} color="failed">
+                        Reject changes
                     </LogseqButton>
                 </div>
             </div>

@@ -50,7 +50,9 @@ export class CommitLogseqChangesTool extends BaseChatTool<
                 inMemoryExecutor.getOriginalInMemoryPageDataDb()
             );
 
-            if (!isApproved) {
+            if (isApproved === null) return; // closed without rejecting / approving
+
+            if (isApproved === false) {
                 return new ToolResponse({
                     result: {
                         success: false,

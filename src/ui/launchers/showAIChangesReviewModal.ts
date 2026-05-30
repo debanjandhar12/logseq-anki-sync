@@ -14,7 +14,7 @@ export async function showAIChangesReviewModal(
                 originalPageDataDb,
                 ...props
             }),
-        {enableOutsideClickClose: false},
+        {enableOutsideClickClose: true},
         {errorMessage: "Failed to open AI changes review modal"}
     );
 }
