@@ -32,7 +32,9 @@ export class LogseqFakeableTransactionTracker {
         };
     }
 
-    static fromJSON(json: SerializedLogseqFakeableTransactionTracker): LogseqFakeableTransactionTracker {
+    static fromJSON(
+        json: SerializedLogseqFakeableTransactionTracker
+    ): LogseqFakeableTransactionTracker {
         const tracker = new LogseqFakeableTransactionTracker();
         for (const command of json.commands) {
             tracker.addCommand(deserializeCommand(command));

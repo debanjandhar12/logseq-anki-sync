@@ -50,7 +50,7 @@ export class CommitLogseqChangesTool extends BaseChatTool<
 
             return new ToolResponse({
                 result: {success: true, changes: "Committed pending Logseq changes."},
-                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker) as any
+                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {
             return {

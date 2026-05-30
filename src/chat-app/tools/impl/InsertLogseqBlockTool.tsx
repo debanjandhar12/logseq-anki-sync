@@ -47,7 +47,7 @@ export class InsertLogseqBlockTool extends BaseChatTool<
 
             return new ToolResponse({
                 result: {success: true},
-                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker) as any
+                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {
             return {
