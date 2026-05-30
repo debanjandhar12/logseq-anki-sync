@@ -1,10 +1,16 @@
 import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
 import type {BaseChatTool} from "src/chat-app/tools/base/BaseChatTool";
+import {ClearLogseqChangesTool} from "src/chat-app/tools/impl/ClearLogseqChangesTool";
 import {CommitLogseqChangesTool} from "src/chat-app/tools/impl/CommitLogseqChangesTool";
+import {CreateLogseqPageTool} from "src/chat-app/tools/impl/CreateLogseqPageTool";
+import {DeleteLogseqPageTool} from "src/chat-app/tools/impl/DeleteLogseqPageTool";
 import {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 import {InsertLogseqBlockTool} from "src/chat-app/tools/impl/InsertLogseqBlockTool";
+import {MoveLogseqBlockTool} from "src/chat-app/tools/impl/MoveLogseqBlockTool";
 import {ReadLogseqBlockTool} from "src/chat-app/tools/impl/ReadLogseqBlockTool";
+import {RenameLogseqPageTool} from "src/chat-app/tools/impl/RenameLogseqPageTool";
+import {UpdateLogseqBlockTool} from "src/chat-app/tools/impl/UpdateLogseqBlockTool";
 
 export class ChatToolRegistry {
     private static instance: ChatToolRegistry | undefined;
@@ -33,6 +39,12 @@ export class ChatToolRegistry {
 
         registry.registerTool(new ReadLogseqBlockTool());
         registry.registerTool(new InsertLogseqBlockTool());
+        registry.registerTool(new CreateLogseqPageTool());
+        registry.registerTool(new DeleteLogseqPageTool());
+        registry.registerTool(new RenameLogseqPageTool());
+        registry.registerTool(new UpdateLogseqBlockTool());
+        registry.registerTool(new MoveLogseqBlockTool());
+        registry.registerTool(new ClearLogseqChangesTool());
         registry.registerTool(new GetUserInfoTool());
         registry.registerTool(new CommitLogseqChangesTool());
 

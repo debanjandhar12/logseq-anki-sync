@@ -64,7 +64,7 @@ export class CommitLogseqChangesTool extends BaseChatToolWithCustomUI<
         return new ToolResponse({
             result: {
                 success: false,
-                error: "User cancelled the commit operation."
+                error: "User cancelled the commit operation. Note: In memory changes not cleared."
             }
         })
     }
