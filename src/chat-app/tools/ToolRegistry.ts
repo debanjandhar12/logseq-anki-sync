@@ -2,6 +2,7 @@ import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
 import type {BaseChatTool} from "src/chat-app/tools/base/BaseChatTool";
 import {CommitLogseqChangesTool} from "src/chat-app/tools/impl/CommitLogseqChangesTool";
+import {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 import {ReadLogseqBlockTool} from "src/chat-app/tools/impl/ReadLogseqBlockTool";
 
 export class ChatToolRegistry {
@@ -30,6 +31,7 @@ export class ChatToolRegistry {
         const registry = new ChatToolRegistry();
 
         registry.registerTool(new ReadLogseqBlockTool());
+        registry.registerTool(new GetUserInfoTool());
         registry.registerTool(new CommitLogseqChangesTool());
 
         return registry;

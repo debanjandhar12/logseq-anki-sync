@@ -1,9 +1,7 @@
 import dayjs from "dayjs";
-import advancedFormat from "dayjs/plugin/advancedFormat";
 import {LogseqEditor} from "../../logseq/LogseqEditor";
 import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
-
-dayjs.extend(advancedFormat);
+import {getUserPreferredDayjsFormat} from "./getUserPreferredDayjsFormat";
 
 const WEEKDAY_INDEX_BY_NAME: Record<string, number> = {
     sunday: 0,
@@ -14,10 +12,6 @@ const WEEKDAY_INDEX_BY_NAME: Record<string, number> = {
     friday: 5,
     saturday: 6
 } as const;
-
-function formatDate(date: dayjs.Dayjs): string {
-    return date.format("MMMM Do, YYYY");
-}
 
 function getLastWeekday(date: dayjs.Dayjs, weekdayIndex: number): dayjs.Dayjs {
     const daysSinceWeekday = (date.day() - weekdayIndex + 7) % 7 || 7;
@@ -53,6 +47,7 @@ export async function createMustacheView(date: Date = new Date()): Promise<Musta
         LogseqSettingAccessor.getPluginSettings().globalAgentInstruction?.trim() ?? "";
     const currentPage = await LogseqEditor.getCurrentPage();
     const currentEditingBlock = await LogseqEditor.getCurrentEditingBlock();
+    const dayjsFormat = await getUserPreferredDayjsFormat();
 
     const view: MustacheTemplateView = {
         "additional system message": additionalSystemMessage,
@@ -63,13 +58,13 @@ export async function createMustacheView(date: Date = new Date()): Promise<Musta
         currentpage: currentPage ? currentPage.uuid : "No current page",
         currenteditingblock: currentEditingBlock?.uuid ?? "No current editing block",
         time: now.format("HH:mm"),
-        today: formatDate(now),
-        tomorrow: formatDate(now.add(1, "day")),
-        yesterday: formatDate(now.subtract(1, "day"))
+        today: now.format(dayjsFormat),
+        tomorrow: now.add(1, "day").format(dayjsFormat),
+        yesterday: now.subtract(1, "day").format(dayjsFormat)
     };
 
     for (const [weekdayName, weekdayIndex] of Object.entries(WEEKDAY_INDEX_BY_NAME)) {
-        view[`last ${weekdayName}`] = formatDate(getLastWeekday(now, weekdayIndex));
+        view[`last ${weekdayName}`] = getLastWeekday(now, weekdayIndex).format(dayjsFormat);
     }
 
     return createCaseInsensitiveMustacheView(view);
