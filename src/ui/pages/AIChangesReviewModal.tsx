@@ -19,7 +19,7 @@ export interface AIChangesReviewModalProps {
     modalContext?: {modalId: string | null};
 }
 
-type PageChange = {
+export type PageChange = {
     uuid: string;
     title: string;
     status: "created" | "deleted" | "modified";
@@ -112,7 +112,7 @@ function PageChangePreview({change}: {change: PageChange}) {
     );
 }
 
-function getPageChanges(
+export function getPageChanges(
     currentPageDataDb: InMemoryDB,
     originalPageDataDb: InMemoryDB
 ): PageChange[] {
@@ -133,15 +133,24 @@ function getPageChange(
     const currentPage = currentPageDataDb.get(uuid);
     const originalContent = originalPage ? printPage(uuid, originalPage) : "";
     const currentContent = currentPage ? printPage(uuid, currentPage) : "";
+    const originalTitle = originalPage ? getPageTitle(originalPage) : undefined;
+    const currentTitle = currentPage ? getPageTitle(currentPage) : undefined;
+    const hasPagePresenceChanged = (originalPage === undefined) !== (currentPage === undefined);
 
-    if (originalContent === currentContent) return null;
+    if (
+        !hasPagePresenceChanged &&
+        originalTitle === currentTitle &&
+        originalContent === currentContent
+    ) {
+        return null;
+    }
 
     return {
         uuid,
         title: getPageTitle(currentPage ?? originalPage),
         status: getPageStatus(originalPage, currentPage),
-        originalTitle: originalPage ? getPageTitle(originalPage) : undefined,
-        currentTitle: currentPage ? getPageTitle(currentPage) : undefined,
+        originalTitle,
+        currentTitle,
         originalContent,
         currentContent
     };
