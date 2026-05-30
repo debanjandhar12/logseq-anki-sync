@@ -1,4 +1,4 @@
-import {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 
 /**
  * Utility types.
@@ -8,4 +8,3 @@ import {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 export type PageEntityWithBlockChildren = Omit<PageEntity, "children"> & {
     children?: Array<PageEntity | BlockEntity>;
 };
-

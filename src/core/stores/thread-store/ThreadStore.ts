@@ -60,4 +60,3 @@ const getThreadUpdatedAt = (threadData: ThreadFileData): number => {
     const updatedAt = threadData.custom.updatedAt;
     return updatedAt instanceof Date ? updatedAt.getTime() : new Date(updatedAt).getTime();
 };
-

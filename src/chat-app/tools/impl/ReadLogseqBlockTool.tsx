@@ -1,9 +1,9 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
+import type {PageEntityWithBlockChildren} from "src/logseq/types";
 import {z} from "zod";
 import {BaseChatTool} from "../base/BaseChatTool";
-import {PageEntityWithBlockChildren} from "src/logseq/types";
 
 const readLogseqBlockParameters = z.object({
     uuid: z.string().describe("UUID of the Logseq block or page to read."),
@@ -35,7 +35,7 @@ export class ReadLogseqBlockTool extends BaseChatTool<ReadLogseqBlockArgs, ReadL
         includeChildren = false
     }: ReadLogseqBlockArgs): Promise<ReadLogseqBlockResult> {
         try {
-            const page : PageEntityWithBlockChildren = await LogseqPropertiesHelper.getPage(uuid);
+            const page: PageEntityWithBlockChildren = await LogseqPropertiesHelper.getPage(uuid);
             if (page) {
                 if (includeChildren) {
                     page.children = await LogseqPropertiesHelper.getPageBlocksTree(uuid);
