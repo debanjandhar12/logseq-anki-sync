@@ -21,6 +21,7 @@ interface ShadowWrapperProps {
 export const ShadowRootContext = React.createContext<HTMLDivElement | null>(null);
 
 export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
+    const [host, setHost] = useState<HTMLElement | null>(null);
     const [container, setContainer] = useState<HTMLDivElement | null>(null);
     const [isReactPopperCompatibilityInstalled, setIsReactPopperCompatibilityInstalled] =
         useState(false);
@@ -39,6 +40,26 @@ export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
 
         return cleanup;
     }, [container]);
+
+    useEffect(() => {
+        if (!host) {
+            return;
+        }
+
+        const stopKeyboardPropagation = (event: KeyboardEvent) => {
+            event.stopPropagation();
+        };
+
+        host.addEventListener("keydown", stopKeyboardPropagation);
+        host.addEventListener("keyup", stopKeyboardPropagation);
+        host.addEventListener("keypress", stopKeyboardPropagation);
+
+        return () => {
+            host.removeEventListener("keydown", stopKeyboardPropagation);
+            host.removeEventListener("keyup", stopKeyboardPropagation);
+            host.removeEventListener("keypress", stopKeyboardPropagation);
+        };
+    }, [host]);
 
     // Listen for theme changes from Logseq
     useEffect(() => {
@@ -68,7 +89,7 @@ export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
     }, [container]);
 
     return (
-        <root.div mode="open">
+        <root.div ref={setHost} mode="open">
             <style>{mainCss}</style>
             <div
                 ref={setContainer}

@@ -1,5 +1,5 @@
 import {ComposerPrimitive} from "@assistant-ui/react";
-import type {FC} from "react";
+import type {FC, KeyboardEvent} from "react";
 import {AttachmentUI} from "src/chat-app/components/AttachmentUI";
 import {ComposerAction} from "src/chat-app/components/ComposerAction";
 
@@ -8,8 +8,31 @@ import {ComposerAction} from "src/chat-app/components/ComposerAction";
  * (a) Removed attachment dropzone
  * (b) Added logseq page / block mentions
  * (c) Decomposed ComposerAttachments for using custom AttachmentUI
+ * (d) Handles Shift+Enter explicitly because this does not work in Logseq sidebar as logseq intercepts it.
+ *     ShadowDOM was unable to block this intercept.
  */
 export const Composer: FC = () => {
+    const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.key !== "Enter" || !event.shiftKey) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const textarea = event.currentTarget;
+        const selectionStart = textarea.selectionStart ?? textarea.value.length;
+        const selectionEnd = textarea.selectionEnd ?? textarea.value.length;
+        const nextCursorPosition = selectionStart + 1;
+
+        textarea.setRangeText("\n", selectionStart, selectionEnd, "end");
+        textarea.dispatchEvent(new InputEvent("input", {bubbles: true, data: "\n"}));
+
+        requestAnimationFrame(() => {
+            textarea.setSelectionRange(nextCursorPosition, nextCursorPosition);
+            textarea.scrollTop = textarea.scrollHeight;
+        });
+    };
+
     return (
         <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
             <div
@@ -22,6 +45,7 @@ export const Composer: FC = () => {
                     rows={1}
                     autoFocus
                     aria-label="Message input"
+                    onKeyDown={handleKeyDown}
                 />
                 <ComposerAction />
             </div>
