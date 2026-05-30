@@ -1,9 +1,10 @@
-import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
 import type {PageEntityWithBlockChildren} from "src/logseq/types";
 import {z} from "zod";
-import {BaseChatTool} from "../base/BaseChatTool";
+
+import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 
 const readLogseqBlockParameters = z.object({
     uuid: z.string().describe("UUID of the Logseq block or page to read."),
@@ -23,7 +24,10 @@ type ReadLogseqBlockResult =
           error: string;
       };
 
-export class ReadLogseqBlockTool extends BaseChatTool<ReadLogseqBlockArgs, ReadLogseqBlockResult> {
+export class ReadLogseqBlockTool extends BaseChatToolWithDefaultUI<
+    ReadLogseqBlockArgs,
+    ReadLogseqBlockResult
+> {
     static readonly NAME = "ReadLogseqBlock";
 
     readonly name = ReadLogseqBlockTool.NAME;

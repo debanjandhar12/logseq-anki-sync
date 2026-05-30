@@ -10,7 +10,8 @@ import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
 import {Button} from "src/shadcn/radix-ui/button";
 import {showAIChangesReviewModal} from "src/ui/launchers/showAIChangesReviewModal";
 import {z} from "zod";
-import {BaseChatTool} from "../base/BaseChatTool";
+
+import {BaseChatToolWithCustomUI} from "src/chat-app/tools/base/BaseChatToolWithCustomUI";
 
 const commitLogseqChangesParameters = z.object({});
 
@@ -26,7 +27,7 @@ type LogseqCommitResult =
           error: string;
       };
 
-export class CommitLogseqChangesTool extends BaseChatTool<
+export class CommitLogseqChangesTool extends BaseChatToolWithCustomUI<
     CommitLogseqChangesArgs,
     LogseqCommitResult
 > {
@@ -38,7 +39,7 @@ export class CommitLogseqChangesTool extends BaseChatTool<
         "Ask the user to approve committing pending Logseq graph changes made by block/page editing tools.";
     readonly parameters = commitLogseqChangesParameters;
 
-    async execute(
+    async executeApprove(
         _args: CommitLogseqChangesArgs = {},
         context?: ChatToolExecutionContext
     ): Promise<LogseqCommitResult | ToolResponse<LogseqCommitResult>> {
@@ -57,6 +58,15 @@ export class CommitLogseqChangesTool extends BaseChatTool<
                 error: `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}`
             };
         }
+    }
+
+    async executeCancel(): Promise<LogseqCommitResult | ToolResponse<LogseqCommitResult>> {
+        return new ToolResponse({
+            result: {
+                success: false,
+                error: "User cancelled the commit operation."
+            }
+        })
     }
 
     readonly render: ToolCallMessagePartComponent<CommitLogseqChangesArgs, LogseqCommitResult> = (
@@ -78,21 +88,13 @@ export class CommitLogseqChangesTool extends BaseChatTool<
                     inMemoryExecutor.getOriginalInMemoryPageDataDb()
                 );
 
-                if (isApproved !== true) {
-                    addResult(
-                        new ToolResponse({
-                            result: {
-                                success: false,
-                                error: "User cancelled the Logseq commit operation."
-                            },
-                            isError: true
-                        })
-                    );
-                    return;
-                }
-
-                const commitResult = ToolResponse.toResponse(await this.execute({}, {messages}));
-                addResult(commitResult);
+                if (isApproved === false) {
+                    const cancelResult = ToolResponse.toResponse(await this.executeCancel());
+                    addResult(cancelResult);
+                } else if (isApproved === true) {
+                    const commitResult = ToolResponse.toResponse(await this.executeApprove({}, {messages}));
+                    addResult(commitResult);
+                } // else ignore if isApproved is null (showAIChangesReviewModal returns null if closed without accepting or rejecting)
             } catch (error) {
                 addResult(
                     new ToolResponse({
@@ -105,7 +107,7 @@ export class CommitLogseqChangesTool extends BaseChatTool<
             }
         };
 
-        if (!isPending) {
+        if (!isPending) {   // fallback to original ui when not pending
             return <ToolFallback {...props} />;
         }
 
@@ -120,7 +122,7 @@ export class CommitLogseqChangesTool extends BaseChatTool<
                 </div>
                 <div className="flex gap-2">
                     <Button size="sm" onClick={reviewAndApply} disabled={isReviewing}>
-                        {isReviewing ? "Reviewing" : "Review & Apply"}
+                        Review & Apply
                     </Button>
                 </div>
             </div>

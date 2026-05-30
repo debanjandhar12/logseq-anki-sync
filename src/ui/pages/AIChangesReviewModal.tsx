@@ -52,6 +52,7 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
             open={open}
             setOpen={setOpen}
             onClose={() => {
+                handleCancel();
                 UI.hideModal(modalContext?.modalId);
             }}
             size="large"

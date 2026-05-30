@@ -1,10 +1,10 @@
 import type {AppUserInfo} from "@logseq/libs/dist/LSPlugin";
 import dayjs from "dayjs";
-import {BaseChatTool} from "src/chat-app/tools/base/BaseChatTool";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {getUserPreferredDayjsFormat} from "src/core/template-engine/getUserPreferredDayjsFormat";
 import {getUserTimeZone} from "src/core/template-engine/getUserTimeZone";
 import {z} from "zod";
+import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 
 const getUserInfoParameters = z.object({});
 
@@ -20,7 +20,7 @@ type GetUserInfoResult =
           error: string;
       };
 
-export class GetUserInfoTool extends BaseChatTool<GetUserInfoArgs, GetUserInfoResult> {
+export class GetUserInfoTool extends BaseChatToolWithDefaultUI<GetUserInfoArgs, GetUserInfoResult> {
     static readonly NAME = "GetUserInfo";
 
     readonly name = GetUserInfoTool.NAME;

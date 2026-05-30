@@ -32,9 +32,9 @@ export abstract class BaseChatTool<
 
     /**
      * The actual execution logic for the tool.
-     * Note: For "human" type tools, this might be a placeholder if execution is handled via UI.
+     * Human tools with custom UI can omit this because their UI supplies the result.
      */
-    abstract execute(
+    execute?(
         args: TArgs,
         context?: ChatToolExecutionContext
     ): Promise<TResult | ToolResponse<TResult>>;
@@ -43,11 +43,18 @@ export abstract class BaseChatTool<
      * Retrieves the tool definition compatible with `assistant-stream`.
      */
     getDefinition(): Tool<TArgs, TResult> {
-        return {
+        const definition = {
             type: this.type,
             description: this.description,
-            parameters: this.parameters,
-            execute: this.execute.bind(this)
+            parameters: this.parameters
         };
+
+        if (!this.execute) return definition as Tool<TArgs, TResult>;
+
+        return {
+            ...definition,
+            execute: this.execute.bind(this)
+        } as Tool<TArgs, TResult>;
     }
 }
+
