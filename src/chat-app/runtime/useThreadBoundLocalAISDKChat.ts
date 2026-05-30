@@ -6,7 +6,7 @@ import {
     useLocalRuntime
 } from "@assistant-ui/react";
 import {useMemo} from "react";
-import {LocalAISDKChatModelAdapter} from "./LocalAISDKChatModelAdapter";
+import {LocalAISDKChatModelAdapter} from "./LocalChatModelAdapter";
 import {LocalThreadHistoryAdapter} from "./LocalThreadHistoryAdapter.js";
 import {LogseqBlockAttachmentAdapter} from "./LogseqBlockAttachmentAdapter";
 
@@ -34,6 +34,7 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
             history: historyAdapter,
             attachments: attachmentAdapter
         },
+        maxSteps: 5,
         unstable_humanToolNames: ["CommitLogseqChanges"]
     });
 }
