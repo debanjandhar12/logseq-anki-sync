@@ -95,6 +95,9 @@ importers:
       dependency-graph:
         specifier: ^1.0.0
         version: 1.0.0
+      diff:
+        specifier: ^9.0.0
+        version: 9.0.0
       focus-trap-react:
         specifier: ^10.2.3
         version: 10.3.1(prop-types@15.8.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -116,6 +119,9 @@ importers:
       p-memoize:
         specifier: ^8.0.0
         version: 8.0.0
+      parse-diff:
+        specifier: ^0.12.0
+        version: 0.12.0
       platform:
         specifier: ^1.3.6
         version: 1.3.6
@@ -3369,6 +3375,10 @@ packages:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
     engines: {node: '>=0.3.1'}
 
+  diff@9.0.0:
+    resolution: {integrity: sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==}
+    engines: {node: '>=0.3.1'}
+
   diffie-hellman@5.0.3:
     resolution: {integrity: sha512-kqag/Nl+f3GwyK25fhUMYj81BUOrZ9IuJsjIcDE5icNM9FJHAVm3VcUDxdLPoQtTuUylWm6ZIknYJwwaPxsUzg==}
 
@@ -4578,6 +4588,9 @@ packages:
   parse-asn1@5.1.7:
     resolution: {integrity: sha512-CTM5kuWR3sx9IFamcl5ErfPl6ea/N8IYwiJ+vpeB2g+1iknv7zBl5uPwbMbRVznRVbrNY6lGuDoE5b30grmbqg==}
     engines: {node: '>= 0.10'}
+
+  parse-diff@0.12.0:
+    resolution: {integrity: sha512-2Xr5mW4Bqd4CqYq2zttfw/RZraK+KcRuJvNkJzbDk3ea67Ap525XeTvBdtDE5tigJMVzIx/DMUzsShAf6+5SCA==}
 
   parse-entities@4.0.2:
     resolution: {integrity: sha512-GG2AQYWoLgL877gQIKeRPGO1xF9+eG1ujIb5soS5gPvLQ1y2o8FL90w2QWNdf9I361Mpp7726c+lj3U0qK1uGw==}
@@ -9159,6 +9172,8 @@ snapshots:
 
   diff@8.0.4: {}
 
+  diff@9.0.0: {}
+
   diffie-hellman@5.0.3:
     dependencies:
       bn.js: 4.12.0
@@ -10609,6 +10624,8 @@ snapshots:
       hash-base: 3.0.4
       pbkdf2: 3.1.2
       safe-buffer: 5.2.1
+
+  parse-diff@0.12.0: {}
 
   parse-entities@4.0.2:
     dependencies:

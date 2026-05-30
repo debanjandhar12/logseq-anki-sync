@@ -8,6 +8,7 @@ import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transa
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
 import {Button} from "src/shadcn/radix-ui/button";
+import {showAIChangesReviewModal} from "src/ui/launchers/showAIChangesReviewModal";
 import {z} from "zod";
 import {BaseChatTool} from "../base/BaseChatTool";
 
@@ -43,6 +44,22 @@ export class CommitLogseqChangesTool extends BaseChatTool<
     ): Promise<LogseqCommitResult | ToolResponse<LogseqCommitResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
+            const inMemoryExecutor = await transactionTracker.executeInTheInMemoryDB();
+            const isApproved = await showAIChangesReviewModal(
+                inMemoryExecutor.getInMemoryPageDataDb(),
+                inMemoryExecutor.getOriginalInMemoryPageDataDb()
+            );
+
+            if (!isApproved) {
+                return new ToolResponse({
+                    result: {
+                        success: false,
+                        error: "User rejected the Logseq commit operation."
+                    },
+                    isError: true
+                });
+            }
+
             await transactionTracker.executeInLogseq();
             transactionTracker.clear();
 
