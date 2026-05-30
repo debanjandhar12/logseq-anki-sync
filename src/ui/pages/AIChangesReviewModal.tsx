@@ -114,6 +114,7 @@ function PageChangePreview({change}: {change: PageChange}) {
                     newFile={{content: change.currentContent, name: `${change.title} (after)`}}
                     viewMode="split"
                     size="sm"
+                    showLineNumbers={false}
                     variant="ghost"
                     className="max-h-96 overflow-auto rounded-none"
                 />
