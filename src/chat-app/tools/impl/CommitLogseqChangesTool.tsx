@@ -3,6 +3,7 @@ import {ToolResponse} from "assistant-stream";
 import {GitCommitIcon} from "lucide-react";
 import {useState} from "react";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
+import {BaseChatToolWithCustomUI} from "src/chat-app/tools/base/BaseChatToolWithCustomUI";
 import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
 import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -10,8 +11,6 @@ import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
 import {Button} from "src/shadcn/radix-ui/button";
 import {showAIChangesReviewModal} from "src/ui/launchers/showAIChangesReviewModal";
 import {z} from "zod";
-
-import {BaseChatToolWithCustomUI} from "src/chat-app/tools/base/BaseChatToolWithCustomUI";
 
 const commitLogseqChangesParameters = z.object({});
 
@@ -53,10 +52,13 @@ export class CommitLogseqChangesTool extends BaseChatToolWithCustomUI<
                 artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}`
-            };
+            return new ToolResponse({
+                result: {
+                    success: false,
+                    error: `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}`
+                },
+                isError: true
+            });
         }
     }
 
@@ -66,7 +68,7 @@ export class CommitLogseqChangesTool extends BaseChatToolWithCustomUI<
                 success: false,
                 error: "User cancelled the commit operation. Note: In memory changes not cleared."
             }
-        })
+        });
     }
 
     readonly render: ToolCallMessagePartComponent<CommitLogseqChangesArgs, LogseqCommitResult> = (
@@ -92,7 +94,9 @@ export class CommitLogseqChangesTool extends BaseChatToolWithCustomUI<
                     const cancelResult = ToolResponse.toResponse(await this.executeCancel());
                     addResult(cancelResult);
                 } else if (isApproved === true) {
-                    const commitResult = ToolResponse.toResponse(await this.executeApprove({}, {messages}));
+                    const commitResult = ToolResponse.toResponse(
+                        await this.executeApprove({}, {messages})
+                    );
                     addResult(commitResult);
                 } // else ignore if isApproved is null (showAIChangesReviewModal returns null if closed without accepting or rejecting)
             } catch (error) {
@@ -107,7 +111,8 @@ export class CommitLogseqChangesTool extends BaseChatToolWithCustomUI<
             }
         };
 
-        if (!isPending) {   // fallback to original ui when not pending
+        if (!isPending) {
+            // fallback to original ui when not pending
             return <ToolFallback {...props} />;
         }
 

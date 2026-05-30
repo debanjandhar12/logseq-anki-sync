@@ -13,6 +13,6 @@ export class DeletePageCommand implements LogseqFakeableCommand {
     }
 
     toJSON(): SerializedLogseqFakeableCommand {
-        return {type: "DeletePage", pageIdentity: this.pageIdentity};
+        return {type: "DeletePage", pageUuid: this.pageIdentity};
     }
 }

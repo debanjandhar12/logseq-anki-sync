@@ -16,6 +16,6 @@ export class RenamePageCommand implements LogseqFakeableCommand {
     }
 
     toJSON(): SerializedLogseqFakeableCommand {
-        return {type: "RenamePage", pageIdentity: this.pageIdentity, newName: this.newName};
+        return {type: "RenamePage", pageUuid: this.pageIdentity, newName: this.newName};
     }
 }

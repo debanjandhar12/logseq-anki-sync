@@ -25,7 +25,7 @@ export class LogseqInMemoryDataPrinter {
         const contentLines = (entity.content || entity.title || "").trim().split("\n");
 
         lines.push(`${bulletIndent}- ${contentLines[0]}`);
-        for (const contentLine of contentLines) {
+        for (const contentLine of contentLines.slice(1)) {
             lines.push(`${contentIndent}${contentLine}`);
         }
 

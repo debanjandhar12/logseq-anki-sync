@@ -8,7 +8,7 @@ import {RenamePageCommand} from "src/core/logseq-fakeable-transaction-tracker/co
 import {z} from "zod";
 
 const renameLogseqPageParameters = z.object({
-    pageIdentity: z.string().describe("Current name or UUID of the Logseq page to rename."),
+    pageUuid: z.string().describe("Current name or UUID of the Logseq page to rename."),
     newName: z.string().describe("New name for the Logseq page.")
 });
 
@@ -34,12 +34,12 @@ export class RenameLogseqPageTool extends BaseChatToolWithDefaultUI<
     readonly parameters = renameLogseqPageParameters;
 
     async execute(
-        {pageIdentity, newName}: RenameLogseqPageArgs,
+        {pageUuid, newName}: RenameLogseqPageArgs,
         context?: ChatToolExecutionContext
     ): Promise<RenameLogseqPageResult | ToolResponse<RenameLogseqPageResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new RenamePageCommand(pageIdentity, newName));
+            transactionTracker.addCommand(new RenamePageCommand(pageUuid, newName));
 
             await transactionTracker.executeInTheInMemoryDB();
 
@@ -50,7 +50,7 @@ export class RenameLogseqPageTool extends BaseChatToolWithDefaultUI<
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to rename Logseq page ${pageIdentity}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to rename Logseq page ${pageUuid}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }

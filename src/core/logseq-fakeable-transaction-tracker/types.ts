@@ -60,7 +60,7 @@ export type SerializedLogseqFakeableCommand =
       }
     | {
           type: "DeletePage";
-          pageIdentity: LogseqEntityIdentity;
+          pageUuid: LogseqEntityIdentity;
       }
     | {
           type: "InsertBlock";
@@ -74,7 +74,7 @@ export type SerializedLogseqFakeableCommand =
       }
     | {
           type: "RenamePage";
-          pageIdentity: LogseqEntityIdentity;
+          pageUuid: LogseqEntityIdentity;
           newName: string;
       }
     | {

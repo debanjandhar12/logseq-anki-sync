@@ -8,7 +8,7 @@ import {DeletePageCommand} from "src/core/logseq-fakeable-transaction-tracker/co
 import {z} from "zod";
 
 const deleteLogseqPageParameters = z.object({
-    pageIdentity: z.string().describe("Name or UUID of the Logseq page to delete.")
+    pageUuid: z.string().describe("UUID of the Logseq page to delete.")
 });
 
 type DeleteLogseqPageArgs = z.infer<typeof deleteLogseqPageParameters>;
@@ -33,12 +33,12 @@ export class DeleteLogseqPageTool extends BaseChatToolWithDefaultUI<
     readonly parameters = deleteLogseqPageParameters;
 
     async execute(
-        {pageIdentity}: DeleteLogseqPageArgs,
+        {pageUuid}: DeleteLogseqPageArgs,
         context?: ChatToolExecutionContext
     ): Promise<DeleteLogseqPageResult | ToolResponse<DeleteLogseqPageResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new DeletePageCommand(pageIdentity));
+            transactionTracker.addCommand(new DeletePageCommand(pageUuid));
 
             await transactionTracker.executeInTheInMemoryDB();
 
@@ -49,7 +49,7 @@ export class DeleteLogseqPageTool extends BaseChatToolWithDefaultUI<
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to delete Logseq page ${pageIdentity}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to delete Logseq page ${pageUuid}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }
