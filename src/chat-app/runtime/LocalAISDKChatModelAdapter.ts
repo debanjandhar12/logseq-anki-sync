@@ -308,7 +308,8 @@ function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["parts"][
             type: `tool-${part.toolName}`,
             toolCallId: part.toolCallId,
             state: "input-available",
-            input
+            input,
+            providerExecuted: true
         } as UIMessage["parts"][number];
     }
 
@@ -318,7 +319,8 @@ function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["parts"][
             toolCallId: part.toolCallId,
             state: "output-error",
             input,
-            errorText: typeof part.result === "string" ? part.result : JSON.stringify(part.result)
+            errorText: typeof part.result === "string" ? part.result : JSON.stringify(part.result),
+            providerExecuted: true
         } as UIMessage["parts"][number];
     }
 
@@ -327,7 +329,8 @@ function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["parts"][
         toolCallId: part.toolCallId,
         state: "output-available",
         input,
-        output: part.result
+        output: part.result,
+        providerExecuted: true
     } as UIMessage["parts"][number];
 }
 
