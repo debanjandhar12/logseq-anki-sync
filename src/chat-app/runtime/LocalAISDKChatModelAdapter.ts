@@ -104,7 +104,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
             const tokenUsage = usage ? normalizeTokenUsage(usage) : undefined;
             yield {
                 content,
-                status: hasPendingToolCall(content)
+                status: content.some((part) => part.type === "tool-call")
                     ? {type: "requires-action", reason: "tool-calls"}
                     : {type: "complete", reason: "unknown"},
                 metadata: tokenUsage ? {custom: {usage: tokenUsage}} : undefined
@@ -221,10 +221,6 @@ function getCurrentBranchMessagesWithAssistantMessage(
             createdAt: new Date()
         }
     ];
-}
-
-function hasPendingToolCall(content: NonNullable<ChatModelRunResult["content"]>): boolean {
-    return content.some((part) => part.type === "tool-call" && part.result === undefined);
 }
 
 function createErrorMessageResult(existingText: string, errorMessage: string): ChatModelRunResult {
