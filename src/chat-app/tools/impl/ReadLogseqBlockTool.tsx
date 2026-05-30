@@ -1,10 +1,11 @@
 import type {BlockEntity} from "@logseq/libs/dist/LSPlugin";
+import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
+import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
 import type {PageEntityWithBlockChildren} from "src/logseq/types";
 import {z} from "zod";
-
-import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 
 const readLogseqBlockParameters = z.object({
     uuid: z.string().describe("UUID of the Logseq block or page to read."),
@@ -34,11 +35,19 @@ export class ReadLogseqBlockTool extends BaseChatToolWithDefaultUI<
     readonly description = "Read a Logseq block or page by UUID.";
     readonly parameters = readLogseqBlockParameters;
 
-    async execute({
-        uuid,
-        includeChildren = false
-    }: ReadLogseqBlockArgs): Promise<ReadLogseqBlockResult> {
+    async execute(
+        {uuid, includeChildren = false}: ReadLogseqBlockArgs,
+        context?: ChatToolExecutionContext
+    ): Promise<ReadLogseqBlockResult> {
         try {
+            const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
+            if (transactionTracker.toJSON().commands.length > 0) {
+                return {
+                    success: false,
+                    error: "Cannot read Logseq blocks while there are uncommitted Logseq changes. Commit or clear the pending changes first."
+                };
+            }
+
             const page: PageEntityWithBlockChildren = await LogseqPropertiesHelper.getPage(uuid);
             if (page) {
                 if (includeChildren) {
