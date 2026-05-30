@@ -171,13 +171,6 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         pageName: string,
         properties: Record<string, any> = {}
     ): Promise<boolean> {
-        const existingPage = this.findPageContainingEntity(pageName);
-        if (existingPage) {
-            throw new Error(
-                `Failed to create page because it already exists in memory: ${pageName}`
-            );
-        }
-
         const now = Date.now();
         const pageUUID = await logseq.Editor.newBlockUUID();
         const page: InMemoryPageEntity = {
@@ -198,12 +191,12 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         return true;
     }
 
-    public async deletePage(pageIdentity: LogseqEntityIdentity): Promise<boolean> {
-        await this.importPageOfBlock(pageIdentity);
+    public async deletePage(pageUuid: LogseqEntityIdentity): Promise<boolean> {
+        await this.importPageOfBlock(pageUuid);
 
-        const page = this.findPageContainingEntity(pageIdentity);
+        const page = this.findPageContainingEntity(pageUuid);
         if (!page) {
-            throw new Error(`Failed to find page during deletePage: ${pageIdentity}`);
+            throw new Error(`Failed to find page during deletePage: ${pageUuid}`);
         }
 
         await this.getInMemoryPageTree(page);
@@ -211,12 +204,12 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         return true;
     }
 
-    public async renamePage(pageIdentity: LogseqEntityIdentity, newName: string): Promise<boolean> {
-        await this.importPageOfBlock(pageIdentity);
+    public async renamePage(pageUuid: LogseqEntityIdentity, newName: string): Promise<boolean> {
+        await this.importPageOfBlock(pageUuid);
 
-        const page = this.findPageContainingEntity(pageIdentity);
+        const page = this.findPageContainingEntity(pageUuid);
         if (!page) {
-            throw new Error(`Failed to find page during renamePage: ${pageIdentity}`);
+            throw new Error(`Failed to find page during renamePage: ${pageUuid}`);
         }
 
         page.name = newName;
@@ -226,20 +219,20 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         return true;
     }
 
-    private findPageContainingEntity(identity: LogseqEntityIdentity): InMemoryPageEntity | null {
+    private findPageContainingEntity(pageUuid: LogseqEntityIdentity): InMemoryPageEntity | null {
         for (const page of this.inMemoryPageDataDb.values()) {
-            if (this.matchesIdentity(page, identity)) return page;
-            if (this.findBlockInChildren(page.children || [], identity)) return page;
+            if (this.matchesIdentity(page, pageUuid)) return page;
+            if (this.findBlockInChildren(page.children || [], pageUuid)) return page;
         }
 
         return null;
     }
 
-    private findEntity(identity: LogseqEntityIdentity): InMemoryLogseqEntity | null {
+    private findEntity(uuid: LogseqEntityIdentity): InMemoryLogseqEntity | null {
         for (const page of this.inMemoryPageDataDb.values()) {
-            if (this.matchesIdentity(page, identity)) return page;
+            if (this.matchesIdentity(page, uuid)) return page;
 
-            const block = this.findBlockInChildren(page.children || [], identity);
+            const block = this.findBlockInChildren(page.children || [], uuid);
             if (block) return block;
         }
 
@@ -248,15 +241,15 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
 
     private findBlockInChildren(
         children: InMemoryLogseqEntity[],
-        identity: LogseqEntityIdentity
+        blockUuid: LogseqEntityIdentity
     ): InMemoryBlockEntity | null {
         for (const child of children) {
             if (this.isPageEntity(child)) continue;
-            if (this.matchesIdentity(child, identity)) return child;
+            if (this.matchesIdentity(child, blockUuid)) return child;
 
             const nestedChild = this.findBlockInChildren(
                 (child.children || []) as InMemoryLogseqEntity[],
-                identity
+                blockUuid
             );
             if (nestedChild) return nestedChild;
         }
@@ -300,7 +293,7 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         if (typeof identity === "number") return entity.id === identity;
         if (typeof identity === "string") {
             return (
-                entity.uuid === identity || (this.isPageEntity(entity) && entity.name === identity)
+                entity.uuid === identity
             );
         }
 
