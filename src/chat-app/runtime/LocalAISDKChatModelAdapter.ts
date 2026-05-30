@@ -16,10 +16,18 @@ type TokenUsageMetadata = {
  * Bridges assistant-ui's LocalRuntime to the AI SDK calls. This was required as useAISDKRuntime
  * internally uses ExternalStoreRuntime and does not support branching.
  *
+ * Tool calling flow:
+ * 1. The adapter's run() is called with context messages (preceding the assistant message).
+ * 2. When a tool call arrives, the adapter executes it inline and yields {content, status: requires-action}.
+ * 3. The runtime's shouldContinue() loop detects all tool calls have results and calls run() again.
+ * 4. On subsequent calls, the adapter uses unstable_getMessage() to retrieve the current assistant
+ *    message (which includes tool call results from the previous roundtrip) and appends it to the
+ *    conversation sent to the LLM.
+ *
  * Reference implementation: @assistant-ui/react-ai-sdk/src/ui/use-chat/useAISDKRuntime.ts.
  */
 export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
-    async *run({messages, abortSignal, context, unstable_assistantMessageId}) {
+    async *run({messages, abortSignal, context, unstable_assistantMessageId, unstable_getMessage}) {
         let streamError: unknown;
 
         try {
@@ -27,8 +35,24 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
             const tools = context.tools
                 ? frontendTools(toJSONSchemaToolSet(context.tools))
                 : undefined;
+
+            // On follow-up roundtrips (after tool execution), unstable_getMessage() returns the
+            // current assistant message with tool call results from the previous step. We include
+            // it in the conversation so the LLM sees the tool output.
+            const currentAssistantMessage = unstable_getMessage();
+            const hasToolResults =
+                currentAssistantMessage.role === "assistant" &&
+                currentAssistantMessage.content.length > 0 &&
+                currentAssistantMessage.content.some(
+                    (part: {type: string; result?: unknown}) =>
+                        part.type === "tool-call" && part.result !== undefined
+                );
+            const conversationMessages = hasToolResults
+                ? [...messages, currentAssistantMessage]
+                : messages;
+
             const modelMessages = await convertToModelMessages(
-                messages.map(threadMessageToUIMessage)
+                conversationMessages.map(threadMessageToUIMessage)
             );
 
             const result = streamText({
@@ -102,11 +126,16 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
             await toolExecutionQueue;
 
             const tokenUsage = usage ? normalizeTokenUsage(usage) : undefined;
+            const hasPendingToolCalls = content.some(
+                (part) => part.type === "tool-call" && part.result === undefined
+            );
             yield {
                 content,
-                status: content.some((part) => part.type === "tool-call")
+                status: hasPendingToolCalls
                     ? {type: "requires-action", reason: "tool-calls"}
-                    : {type: "complete", reason: "unknown"},
+                    : content.some((part) => part.type === "tool-call")
+                      ? {type: "requires-action", reason: "tool-calls"}
+                      : {type: "complete", reason: "unknown"},
                 metadata: tokenUsage ? {custom: {usage: tokenUsage}} : undefined
             };
         } catch (error) {
@@ -308,8 +337,7 @@ function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["parts"][
             type: `tool-${part.toolName}`,
             toolCallId: part.toolCallId,
             state: "input-available",
-            input,
-            providerExecuted: true
+            input
         } as UIMessage["parts"][number];
     }
 
@@ -319,8 +347,7 @@ function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["parts"][
             toolCallId: part.toolCallId,
             state: "output-error",
             input,
-            errorText: typeof part.result === "string" ? part.result : JSON.stringify(part.result),
-            providerExecuted: true
+            errorText: typeof part.result === "string" ? part.result : JSON.stringify(part.result)
         } as UIMessage["parts"][number];
     }
 
@@ -329,8 +356,7 @@ function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["parts"][
         toolCallId: part.toolCallId,
         state: "output-available",
         input,
-        output: part.result,
-        providerExecuted: true
+        output: part.result
     } as UIMessage["parts"][number];
 }
 

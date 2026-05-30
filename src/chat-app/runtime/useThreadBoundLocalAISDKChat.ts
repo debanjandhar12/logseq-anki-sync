@@ -34,6 +34,6 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
             history: historyAdapter,
             attachments: attachmentAdapter
         },
-        unstable_humanToolNames: ['CommitLogseqChanges']
+        unstable_humanToolNames: ["CommitLogseqChanges"]
     });
 }
