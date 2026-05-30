@@ -1,0 +1,73 @@
+import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
+import {LogseqEditor} from "../../../logseq/LogseqEditor";
+import {LogseqPropertiesHelper} from "../../../logseq/LogseqPropertiesHelper";
+import type {LogseqEntityIdentity, LogseqTransactionExecutor} from "../types";
+
+export class LogseqExecutor implements LogseqTransactionExecutor {
+    public async insertBlock(
+        parentBlockUUID: LogseqEntityIdentity,
+        content: string
+    ): Promise<boolean> {
+        const block = await logseq.Editor.insertBlock(parentBlockUUID, content);
+        if (!block) {
+            throw new Error(`Logseq failed to insert block under parent: ${parentBlockUUID}`);
+        }
+
+        return true;
+    }
+
+    public async moveBlock(
+        srcBlockUUID: LogseqEntityIdentity,
+        destBlockUUID: LogseqEntityIdentity
+    ): Promise<boolean> {
+        await logseq.Editor.moveBlock(
+            srcBlockUUID as BlockIdentity,
+            destBlockUUID as BlockIdentity,
+            {
+                children: true
+            }
+        );
+        return true;
+    }
+
+    public async updateBlock(blockUUID: LogseqEntityIdentity, content: string): Promise<boolean> {
+        await LogseqEditor.updateBlock(blockUUID, content);
+        return true;
+    }
+
+    public async createPage(
+        pageName: string,
+        properties: Record<string, any> = {}
+    ): Promise<boolean> {
+        const page = await logseq.Editor.createPage(pageName, properties, {redirect: false});
+        if (!page) {
+            throw new Error(`Logseq failed to create page: ${pageName}`);
+        }
+
+        return true;
+    }
+
+    public async deletePage(pageIdentity: LogseqEntityIdentity): Promise<boolean> {
+        const pageName = await this.getPageName(pageIdentity, "deletePage");
+        await logseq.Editor.deletePage(pageName);
+        return true;
+    }
+
+    public async renamePage(pageIdentity: LogseqEntityIdentity, newName: string): Promise<boolean> {
+        const pageName = await this.getPageName(pageIdentity, "renamePage");
+        await logseq.Editor.renamePage(pageName, newName);
+        return true;
+    }
+
+    private async getPageName(
+        identity: LogseqEntityIdentity,
+        operationName: string
+    ): Promise<string> {
+        const page = await LogseqPropertiesHelper.getPage(identity);
+        if (!page?.name) {
+            throw new Error(`Logseq failed to resolve page during ${operationName}: ${identity}`);
+        }
+
+        return page.name;
+    }
+}
