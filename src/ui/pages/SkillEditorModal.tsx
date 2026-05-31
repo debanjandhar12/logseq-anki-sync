@@ -194,7 +194,10 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
             }
 
             for (const parsedFile of parsedFiles) {
-                await SkillFileStore.saveSkillFile(getSkillFileName(parsedFile), parsedFile);
+                await SkillFileStore.saveSkillFile(
+                    getSkillFileName(parsedFile),
+                    parsedFile.content
+                );
             }
 
             returnResult(true);

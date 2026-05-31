@@ -1,11 +1,12 @@
 import {createLogger, LoggerCategory} from "../../../logger";
 import {LogseqPluginStorageManager} from "../../../logseq/LogseqPluginStorageManager";
+import {parseSkillFile} from "../../skill-parser/parseSkillFile";
 import type {SkillFileData} from "./types";
 
 const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);
 
 export class SkillFileStore {
-    static groupName: string = "skill-file";
+    static groupName: string = "skills";
 
     static async getSkillFile(fileName: string): Promise<SkillFileData | null> {
         try {
@@ -13,7 +14,7 @@ export class SkillFileStore {
                 SkillFileStore.groupName,
                 fileName
             );
-            return JSON.parse(content) as SkillFileData;
+            return parseSkillFile(content);
         } catch {
             return null;
         }
@@ -29,7 +30,7 @@ export class SkillFileStore {
                 fileName
             );
             try {
-                skillFiles.push(JSON.parse(content) as SkillFileData);
+                skillFiles.push(parseSkillFile(content));
             } catch (e) {
                 logger.warn(`Failed to parse skill file ${fileName}:`, e);
             }
@@ -38,12 +39,8 @@ export class SkillFileStore {
         return skillFiles.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    static async saveSkillFile(fileName: string, skillFileData: SkillFileData): Promise<void> {
-        await LogseqPluginStorageManager.saveFile(
-            SkillFileStore.groupName,
-            fileName,
-            JSON.stringify(skillFileData)
-        );
+    static async saveSkillFile(fileName: string, content: string): Promise<void> {
+        await LogseqPluginStorageManager.saveFile(SkillFileStore.groupName, fileName, content);
     }
 
     static async deleteSkillFile(fileName: string): Promise<void> {

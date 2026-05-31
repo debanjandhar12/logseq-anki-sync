@@ -7,7 +7,7 @@ describe("parseSkillFile", () => {
             parseSkillFile(`---
 name: Test skill
 description: Test description
-default: true
+default-installed-skill: true
 disable-model-invocation: false
 ---
 
@@ -19,13 +19,13 @@ disable-model-invocation: false
             content: `---
 name: Test skill
 description: Test description
-default: true
+default-installed-skill: true
 disable-model-invocation: false
 ---
 
 # Body
 `,
-            default: true,
+            defaultInstalledSkill: true,
             disableModelInvocation: false
         });
     });
@@ -61,12 +61,12 @@ name: Test skill
             parseSkillFile(`---
 name: Test skill
 description: Test description
-default: yes
+default-installed-skill: yes
 ---
 
 # Body
 `)
-        ).toThrow("default must be a boolean");
+        ).toThrow("default-installed-skill must be a boolean");
     });
 
     test("rejects invalid disable-model-invocation metadata", () => {
