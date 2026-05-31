@@ -1,10 +1,20 @@
-import {ThreadListItemMorePrimitive, ThreadListPrimitive} from "@assistant-ui/react";
+import {
+    ThreadListItemMorePrimitive,
+    ThreadListPrimitive,
+    type ThreadMessage,
+    useAuiState
+} from "@assistant-ui/react";
+import {getThreadMessageTokenUsage} from "@assistant-ui/react-ai-sdk";
 import {DevToolsFrame} from "@assistant-ui/react-devtools";
 import {ArrowLeftIcon, HistoryIcon, MoreHorizontalIcon, PlusIcon, XIcon} from "lucide-react";
 import {type FC, useContext, useState} from "react";
+import {ContextDisplay} from "../../shadcn/assistant-ui/context-display";
 import {TooltipIconButton} from "../../shadcn/assistant-ui/tooltip-icon-button";
 import {Button} from "../../shadcn/radix-ui/button";
+import {TooltipProvider} from "../../shadcn/radix-ui/tooltip";
 import {ChatUIContext} from "../context/ChatUIContext";
+
+const DEFAULT_MODEL_CONTEXT_WINDOW = 128_000;
 
 interface ThreadTopToolBarProps {
     isHistoryVisible: boolean;
@@ -19,6 +29,10 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
 }) => {
     const {onClose} = useContext(ChatUIContext);
     const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
+    const latestMessageWithUsage = useAuiState((s) =>
+        findLatestMessageWithUsage(s.thread.messages)
+    );
+    const contextUsage = getThreadMessageTokenUsage(latestMessageWithUsage);
 
     const handleOpenDevTools = () => {
         setIsDevToolsOpen(true);
@@ -31,22 +45,32 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
     return (
         <div className="flex h-10 shrink-0 items-center justify-end border-b bg-background px-3">
             <div className="flex items-center gap-1">
+                {contextUsage && (
+                    <TooltipProvider delayDuration={0}>
+                        <ContextDisplay.Ring
+                            modelContextWindow={DEFAULT_MODEL_CONTEXT_WINDOW}
+                            usage={contextUsage}
+                            side="bottom"
+                            className="size-6 [&_circle:first-child]:stroke-muted-foreground/10"
+                        />
+                    </TooltipProvider>
+                )}
                 <ThreadTopToolBarMore
                     onOpenDevTools={handleOpenDevTools}
                     onExportAsPage={handleExportAsPage}
                 />
                 {isHistoryVisible ? (
                     <TooltipIconButton tooltip="Back to thread" onClick={onBackToThread}>
-                        <ArrowLeftIcon className="size-4" />
+                        <ArrowLeftIcon className="size-5" />
                     </TooltipIconButton>
                 ) : (
                     <TooltipIconButton tooltip="Thread history" onClick={onShowHistory}>
-                        <HistoryIcon className="size-4" />
+                        <HistoryIcon className="size-5" />
                     </TooltipIconButton>
                 )}
                 <ThreadListPrimitive.New asChild>
                     <TooltipIconButton tooltip="New thread" onClick={onBackToThread}>
-                        <PlusIcon className="size-4" />
+                        <PlusIcon className="size-5" />
                     </TooltipIconButton>
                 </ThreadListPrimitive.New>
                 {onClose && (
@@ -54,7 +78,7 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
                         tooltip="Close chat"
                         onClick={onClose}
                         className="hover:text-destructive">
-                        <XIcon className="size-4" />
+                        <XIcon className="size-5" />
                     </TooltipIconButton>
                 )}
             </div>
@@ -113,3 +137,13 @@ const ThreadTopToolBarMore: FC<ThreadTopToolBarMoreProps> = ({onOpenDevTools, on
         </ThreadListItemMorePrimitive.Root>
     );
 };
+
+function findLatestMessageWithUsage(messages: readonly ThreadMessage[]): ThreadMessage | undefined {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+        const message = messages[index];
+        if (getThreadMessageTokenUsage(message)) {
+            return message;
+        }
+    }
+    return undefined;
+}
