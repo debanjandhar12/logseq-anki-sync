@@ -3,6 +3,10 @@ import * as fs from "fs";
 const { parseSync, traverse } = require("@babel/core");
 const generate = require("@babel/generator").default;
 
+function getStaticStringValue(node: { type: string; value?: unknown }): string | null {
+    return node.type === "StringLiteral" && typeof node.value === "string" ? node.value : null;
+}
+
 export function staticFileSyncTransformPlugin() {
     return {
         name: "staticFileSyncTransformPlugin",
@@ -36,8 +40,14 @@ export function staticFileSyncTransformPlugin() {
                         callee.object.name === "path" &&
                         callee.property.name === "join"
                     ) {
+                        const pathParts = args.map(getStaticStringValue);
+
+                        if (pathParts.some((part) => part == null)) {
+                            return;
+                        }
+
                         nodePath.replaceWithSourceString(
-                            JSON.stringify(path.join(...args.map((arg) => arg.value))),
+                            JSON.stringify(path.join(...pathParts)),
                         );
                     }
                 },
@@ -50,7 +60,12 @@ export function staticFileSyncTransformPlugin() {
                         callee.object.name === "fs" &&
                         callee.property.name === "readFileSync"
                     ) {
-                        const filePath = args[0].value;
+                        const filePath = getStaticStringValue(args[0]);
+
+                        if (filePath == null) {
+                            return;
+                        }
+
                         try {
                             const fileContents = fs.readFileSync(filePath, "utf-8");
                             nodePath.replaceWithSourceString(JSON.stringify(fileContents));
