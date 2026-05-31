@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import {LogseqEditor} from "../../logseq/LogseqEditor";
 import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
+import {getModelInvokableSkillListString} from "./getModelInvokableSkillListString";
 import {getUserPreferredDayjsFormat} from "./getUserPreferredDayjsFormat";
 
 const WEEKDAY_INDEX_BY_NAME: Record<string, number> = {
@@ -48,15 +49,18 @@ export async function createMustacheView(date: Date = new Date()): Promise<Musta
     const currentPage = await LogseqEditor.getCurrentPage();
     const currentEditingBlock = await LogseqEditor.getCurrentEditingBlock();
     const dayjsFormat = await getUserPreferredDayjsFormat();
+    const modelInvokableSkillList = await getModelInvokableSkillListString();
 
     const view: MustacheTemplateView = {
         "additional system message": additionalSystemMessage,
         "current page": currentPage ? currentPage.uuid : "No current page",
         "current editing block": currentEditingBlock?.uuid ?? "No current editing block",
+        "model invokable skill list": modelInvokableSkillList,
         additionalsystemmessage: additionalSystemMessage,
         additionalSystemMessage,
         currentpage: currentPage ? currentPage.uuid : "No current page",
         currenteditingblock: currentEditingBlock?.uuid ?? "No current editing block",
+        modelinvokableskilllist: modelInvokableSkillList,
         time: now.format("HH:mm"),
         today: now.format(dayjsFormat),
         tomorrow: now.add(1, "day").format(dayjsFormat),

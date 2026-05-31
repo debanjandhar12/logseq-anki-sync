@@ -9,6 +9,7 @@ import {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 import {InsertLogseqBlockTool} from "src/chat-app/tools/impl/InsertLogseqBlockTool";
 import {MoveLogseqBlockTool} from "src/chat-app/tools/impl/MoveLogseqBlockTool";
 import {ReadLogseqBlockTool} from "src/chat-app/tools/impl/ReadLogseqBlockTool";
+import {ReadSkillFileTool} from "src/chat-app/tools/impl/ReadSkillFileTool";
 import {RenameLogseqPageTool} from "src/chat-app/tools/impl/RenameLogseqPageTool";
 import {UpdateLogseqBlockTool} from "src/chat-app/tools/impl/UpdateLogseqBlockTool";
 
@@ -38,6 +39,7 @@ export class ChatToolRegistry {
         const registry = new ChatToolRegistry();
 
         registry.registerTool(new ReadLogseqBlockTool());
+        registry.registerTool(new ReadSkillFileTool());
         registry.registerTool(new InsertLogseqBlockTool());
         registry.registerTool(new CreateLogseqPageTool());
         registry.registerTool(new DeleteLogseqPageTool());

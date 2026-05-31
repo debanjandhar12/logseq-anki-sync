@@ -16,7 +16,7 @@ Gotchas:
 - You can load a skill when the user's request would benefit from specialized instructions.
 
 Available skills:
-
+<% modelInvokableSkillList %>
 
 Additional global agent instruction:
 <% globalAgentInstruction %>
