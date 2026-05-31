@@ -7,6 +7,15 @@ export interface ModalFooterProps {
     confirmText?: string;
     cancelText?: string;
     confirmColor?: "primary" | "outline-link";
+    cancelColor?:
+        | "primary"
+        | "default"
+        | "secondary"
+        | "success"
+        | "failed"
+        | "ghost"
+        | "link"
+        | "outline-link";
     showConfirm?: boolean;
     showCancel?: boolean;
     confirmShortcut?: string;
@@ -20,6 +29,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
     confirmText = "Confirm",
     cancelText = "Cancel",
     confirmColor = "primary",
+    cancelColor = "outline-link",
     showConfirm = true,
     showCancel = true,
     confirmShortcut = "⏎",
@@ -47,7 +57,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
                 </LogseqButton>
             )}
             {showCancel && onCancel && (
-                <LogseqButton color={"outline-link"} isFullWidth={true} onClick={onCancel}>
+                <LogseqButton color={cancelColor} isFullWidth={true} onClick={onCancel}>
                     {cancelText}
                 </LogseqButton>
             )}

@@ -5,9 +5,9 @@ import type {
     InMemoryDB,
     InMemoryPageEntity
 } from "src/core/logseq-fakeable-transaction-tracker/types";
-import {LogseqButton} from "../components/LogseqButton";
 import {Modal} from "../modals/core/Modal";
-import {SimpleModalHeader} from "../modals/core/ModalHeader";
+import {ModalFooter} from "../modals/core/ModalFooter";
+import {ModalHeader} from "../modals/core/ModalHeader";
 import {useModal} from "../modals/hooks/useModal";
 import {UI} from "../UI";
 
@@ -59,15 +59,19 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
             }}
             size="large"
             zDepth="high"
-            hasCloseButton={true}
+            hasCloseButton={false}
             className="overflow-hidden">
-            <div className="flex max-h-[90vh] flex-col p-4 text-text">
-                <SimpleModalHeader title="Review AI Changes" />
-                <p className="mb-4 text-sm opacity-80">
+            <div className="flex max-h-[90vh] flex-col text-text">
+                <ModalHeader
+                    title="Review AI Changes"
+                    onClose={() => handleCancel()}
+                    showCloseButton={true}
+                />
+                <p className="mx-4 my-3 text-sm opacity-80">
                     Review the pending Logseq graph changes before applying them.
                 </p>
 
-                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                <div className="mx-4 min-h-0 flex-1 overflow-y-auto pr-1">
                     {changes.length === 0 ? (
                         <div className="rounded border border-border bg-primary-background p-4 text-sm opacity-80">
                             No pending page changes were found.
@@ -81,14 +85,15 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
                     )}
                 </div>
 
-                <div className="mt-4 flex flex-row-reverse gap-2 border-border border-t pt-3">
-                    <LogseqButton onClick={() => handleConfirm(true)} color="primary">
-                        Apply changes
-                    </LogseqButton>
-                    <LogseqButton onClick={() => handleConfirm(false)} color="failed">
-                        Reject changes
-                    </LogseqButton>
-                </div>
+                <ModalFooter
+                    onConfirm={() => handleConfirm(true)}
+                    onCancel={() => handleConfirm(false)}
+                    confirmText="Apply changes"
+                    cancelText="Reject changes"
+                    cancelColor="failed"
+                    confirmShortcut=""
+                    className="border-border border-t px-4 pb-4 pt-3"
+                />
             </div>
         </Modal>
     );
