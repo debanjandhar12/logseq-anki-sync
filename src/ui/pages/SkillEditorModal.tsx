@@ -15,6 +15,7 @@ import {useModal} from "../modals/hooks/useModal";
 import {UI} from "../UI";
 
 const UNTITLED_FILE_NAME = "Untitled.md";
+const INVALID_FILE_NAME_CHARACTERS = new Set(["<", ">", ":", '"', "/", "\\", "|", "?"]);
 const NEW_SKILL_CONTENT = `---
 name: New skill
 description: Describe what this skill does
@@ -164,7 +165,16 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
 
                 try {
                     const parsedFile = parseSkillFile(file.content);
+                    const parsedFileName = getSkillFileName(parsedFile);
                     const normalizedName = parsedFile.name.toLocaleLowerCase();
+
+                    if (!isValidFileName(parsedFileName)) {
+                        await logseq.UI.showMsg(
+                            `Validation failed in ${fileName}: "${parsedFileName}" is not a valid file name.`,
+                            "error"
+                        );
+                        return;
+                    }
 
                     if (usedNames.has(normalizedName)) {
                         await logseq.UI.showMsg(
@@ -365,6 +375,19 @@ function getDisplayFileName(content: string): string {
 
 function getSkillFileName(skillFileData: Pick<SkillFileData, "name">): string {
     return `${skillFileData.name}.md`;
+}
+
+function isValidFileName(fileName: string): boolean {
+    return (
+        fileName.trim() === fileName &&
+        fileName.length > 0 &&
+        fileName !== "." &&
+        fileName !== ".." &&
+        Array.from(fileName).every(
+            (character) =>
+                character.charCodeAt(0) >= 32 && !INVALID_FILE_NAME_CHARACTERS.has(character)
+        )
+    );
 }
 
 function updateDisableModelInvocation(content: string, disableModelInvocation: boolean): string {
