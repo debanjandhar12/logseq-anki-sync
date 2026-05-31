@@ -1,11 +1,13 @@
 import {markdown} from "@codemirror/lang-markdown";
 import CodeMirror from "@uiw/react-codemirror";
 import matter from "gray-matter";
+import {Plus, Trash} from "lucide-react";
 import React from "react";
 import {parseSkillFile} from "src/core/skill-parser/parseSkillFile";
 import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
 import type {SkillFileData} from "src/core/stores/skill-file-store/types";
 import {LogseqButton} from "../components/LogseqButton";
+import {LogseqCheckbox} from "../components/LogseqCheckbox";
 import {Modal} from "../modals/core/Modal";
 import {ModalFooter} from "../modals/core/ModalFooter";
 import {ModalHeader} from "../modals/core/ModalHeader";
@@ -94,7 +96,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
 
     const activeFile = files.find((file) => file.id === activeFileId) ?? files[0] ?? null;
     const activeFileMetadata = activeFile ? getSkillFileMetadata(activeFile.content) : null;
-    const isActiveFileDefault = activeFileMetadata?.default === true;
+    const isActiveFileDefault = activeFileMetadata?.defaultInstalledSkill === true;
     const isModelInvocationEnabled = activeFileMetadata?.disableModelInvocation !== true;
 
     const handleAddFile = React.useCallback(() => {
@@ -110,9 +112,16 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
         if (!activeFile) return;
 
         setFiles((currentFiles) => {
+            const activeIndex = currentFiles.findIndex((file) => file.id === activeFile.id);
             const nextFiles = currentFiles.filter((file) => file.id !== activeFile.id);
+
             if (activeFileId === activeFile.id) {
-                setActiveFileId(nextFiles[0]?.id ?? null);
+                if (nextFiles.length === 0) {
+                    setActiveFileId(null);
+                } else {
+                    const nextActiveIndex = activeIndex > 0 ? activeIndex - 1 : 0;
+                    setActiveFileId(nextFiles[nextActiveIndex].id);
+                }
             }
             return nextFiles;
         });
@@ -137,11 +146,11 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
     );
 
     const handleToggleModelInvocation = React.useCallback(() => {
-        if (!activeFile) return;
+        if (!activeFile || isActiveFileDefault) return;
 
         const nextEnabled = !isModelInvocationEnabled;
         handleContentChange(updateDisableModelInvocation(activeFile.content, !nextEnabled));
-    }, [activeFile, handleContentChange, isModelInvocationEnabled]);
+    }, [activeFile, handleContentChange, isActiveFileDefault, isModelInvocationEnabled]);
 
     const handleSave = React.useCallback(async () => {
         setIsSaving(true);
@@ -208,20 +217,22 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
             hasCloseButton={false}
             className="overflow-hidden">
             <div className="flex max-h-[90vh] min-h-[70vh] flex-col text-text">
-                <ModalHeader title="Skills Editor" showCloseButton={false} />
+                <ModalHeader title="Skills Editor" showCloseButton={true} onClose={handleCancel} />
 
-                <div className="min-h-0 flex-1 overflow-hidden p-4">
+                <div className="min-h-0 flex-1 flex flex-row overflow-hidden border-border border-t">
                     {isLoading ? (
-                        <div className="rounded border border-border bg-primary-background p-4 text-sm opacity-80">
-                            Loading skill files...
-                        </div>
+                        <div className="p-4 text-sm opacity-80">Loading skill files...</div>
                     ) : (
-                        <div className="grid h-full min-h-[56vh] grid-cols-[220px_minmax(0,1fr)] overflow-hidden rounded border border-border bg-secondary-background">
-                            <aside className="flex min-h-0 flex-col border-border border-r bg-primary-background">
-                                <div className="flex items-center justify-between gap-2 border-border border-b p-2">
+                        <>
+                            <aside className="w-[220px] flex min-h-0 flex-shrink-0 flex-col border-border border-r bg-secondary-background">
+                                <div className="flex items-center justify-between gap-2 border-border border-b px-4 py-2">
                                     <span className="text-sm font-medium">Files</span>
-                                    <LogseqButton onClick={handleAddFile} color="ghost" size="xs">
-                                        New
+                                    <LogseqButton
+                                        onClick={handleAddFile}
+                                        color="primary"
+                                        size="xs"
+                                        title="New skill file">
+                                        <Plus size={16} />
                                     </LogseqButton>
                                 </div>
                                 <div className="min-h-0 flex-1 overflow-y-auto p-2">
@@ -237,10 +248,10 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                                     <button
                                                         key={file.id}
                                                         type="button"
-                                                        className={`w-full rounded px-2 py-2 text-left text-sm transition-colors ${
+                                                        className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${
                                                             isActive
-                                                                ? "bg-primary text-white"
-                                                                : "bg-transparent text-text hover:bg-tertiary"
+                                                                ? "bg-primary-background font-medium shadow-sm border border-border"
+                                                                : "bg-transparent text-text hover:bg-tertiary/50"
                                                         }`}
                                                         onClick={() => setActiveFileId(file.id)}>
                                                         <span className="block truncate">
@@ -254,43 +265,42 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                 </div>
                             </aside>
 
-                            <section className="flex min-h-0 flex-col overflow-hidden">
+                            <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-primary-background">
                                 {activeFile ? (
                                     <>
-                                        <div className="flex items-center justify-between gap-3 border-border border-b px-3 py-2">
+                                        <div className="flex items-center justify-between gap-3 border-border border-b px-4 py-2 bg-secondary-background">
                                             <div className="min-w-0">
                                                 <div className="truncate text-sm font-medium">
                                                     {getDisplayFileName(activeFile.content)}
                                                 </div>
                                                 {isActiveFileDefault && (
                                                     <div className="text-xs opacity-70">
-                                                        Default skills are read-only in the editor.
+                                                        Default skills are read-only.
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <label className="flex items-center gap-2 text-sm">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isModelInvocationEnabled}
-                                                        onChange={handleToggleModelInvocation}
-                                                    />
+                                            <div className="flex items-center gap-4">
+                                                <LogseqCheckbox
+                                                    checked={isModelInvocationEnabled}
+                                                    disabled={isActiveFileDefault}
+                                                    onChange={handleToggleModelInvocation}>
                                                     Enabled
-                                                </label>
+                                                </LogseqCheckbox>
                                                 <LogseqButton
                                                     onClick={handleDeleteFile}
                                                     color="failed"
-                                                    size="xs">
-                                                    Delete
+                                                    size="xs"
+                                                    title="Delete skill file">
+                                                    <Trash size={16} />
                                                 </LogseqButton>
                                             </div>
                                         </div>
 
-                                        <div className="min-h-0 flex-1 overflow-auto bg-primary-background">
+                                        <div className="min-h-0 flex-1 overflow-hidden">
                                             <CodeMirror
                                                 value={activeFile.content}
                                                 height="100%"
-                                                minHeight="56vh"
+                                                className="h-full [&>.cm-editor]:h-full"
                                                 extensions={[markdown()]}
                                                 editable={!isActiveFileDefault}
                                                 basicSetup={{
@@ -307,7 +317,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                     </div>
                                 )}
                             </section>
-                        </div>
+                        </>
                     )}
                 </div>
 
@@ -317,7 +327,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                     confirmText={isSaving ? "Saving..." : "Save"}
                     cancelText="Cancel"
                     confirmShortcut=""
-                    className="border-border border-t px-4 pb-4 pt-3"
+                    className="border-border border-t px-4 pb-2 pt-1 !mt-0"
                 />
             </div>
         </Modal>
@@ -326,7 +336,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
 
 function getSkillFileMetadata(
     content: string
-): Pick<SkillFileData, "name" | "default" | "disableModelInvocation"> | null {
+): Pick<SkillFileData, "name" | "defaultInstalledSkill" | "disableModelInvocation"> | null {
     try {
         if (!matter.test(content)) {
             return null;
@@ -334,12 +344,13 @@ function getSkillFileMetadata(
 
         const parsed = matter(content);
         const name = parsed.data.name;
-        const defaultValue = parsed.data.default;
+        const defaultInstalledSkill = parsed.data["default-installed-skill"];
         const disableModelInvocation = parsed.data["disable-model-invocation"];
 
         return {
             name: typeof name === "string" ? name.trim() : "",
-            default: typeof defaultValue === "boolean" ? defaultValue : undefined,
+            defaultInstalledSkill:
+                typeof defaultInstalledSkill === "boolean" ? defaultInstalledSkill : undefined,
             disableModelInvocation:
                 typeof disableModelInvocation === "boolean" ? disableModelInvocation : undefined
         };

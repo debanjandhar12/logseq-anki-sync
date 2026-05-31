@@ -2,6 +2,6 @@ export interface SkillFileData {
     name: string;
     description: string;
     content: string;
-    default?: boolean;
+    defaultInstalledSkill?: boolean;
     disableModelInvocation?: boolean;
 }
