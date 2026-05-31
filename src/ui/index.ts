@@ -9,8 +9,8 @@ export {showInputModal} from "./launchers/showInputModal";
 // Page launchers
 export type {SelectionModalItem} from "./launchers/showSelectionModal";
 export {showSelectionModal} from "./launchers/showSelectionModal";
-export type {AIChatModalProps} from "./modals/AIChatModal";
-export {AIChatModalComponent} from "./modals/AIChatModal";
+export type {AIChatModalProps} from "./pages/AIChatModal";
+export {AIChatModalComponent} from "./pages/AIChatModal";
 export type {ButtonModalProps} from "./modals/ButtonModal";
 export {ButtonModalComponent} from "./modals/ButtonModal";
 export type {ConfirmModalProps} from "./modals/ConfirmModal";

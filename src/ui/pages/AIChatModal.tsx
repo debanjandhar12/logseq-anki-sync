@@ -1,7 +1,7 @@
 import React from "react";
 import {UI} from "../UI";
-import {Modal} from "./core/Modal";
-import {useModal} from "./hooks/useModal";
+import {Modal} from "../modals/core/Modal";
+import {useModal} from "../modals/hooks/useModal";
 
 export interface AIChatModalProps {
     chatComponent: React.ReactElement;

@@ -1,5 +1,5 @@
 import React from "react";
-import {AIChatModalComponent} from "../modals/AIChatModal";
+import {AIChatModalComponent} from "../pages/AIChatModal";
 import {createModalPromise} from "../modals/utils/createModalPromise";
 
 /**
