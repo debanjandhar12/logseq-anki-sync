@@ -9,8 +9,7 @@ export {showInputModal} from "./launchers/showInputModal";
 // Page launchers
 export type {SelectionModalItem} from "./launchers/showSelectionModal";
 export {showSelectionModal} from "./launchers/showSelectionModal";
-export type {AIChatModalProps} from "./pages/AIChatModal";
-export {AIChatModalComponent} from "./pages/AIChatModal";
+export {showSkillEditorModal} from "./launchers/showSkillEditorModal";
 export type {ButtonModalProps} from "./modals/ButtonModal";
 export {ButtonModalComponent} from "./modals/ButtonModal";
 export type {ConfirmModalProps} from "./modals/ConfirmModal";
@@ -34,5 +33,9 @@ export type {ModalPromiseOptions} from "./modals/utils/createModalPromise";
 export {createModalPromise} from "./modals/utils/createModalPromise";
 // Notifications
 export {ActionNotification} from "./notifications/ActionNotification";
+export type {AIChatModalProps} from "./pages/AIChatModal";
+export {AIChatModalComponent} from "./pages/AIChatModal";
+export type {SkillEditorModalProps} from "./pages/SkillEditorModal";
+export {SkillEditorModalComponent} from "./pages/SkillEditorModal";
 // ShadowWrapper
 export {ShadowWrapper} from "./ShadowWrapper";
