@@ -109,7 +109,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
     }, []);
 
     const handleDeleteFile = React.useCallback(() => {
-        if (!activeFile) return;
+        if (!activeFile || isActiveFileDefault) return;
 
         setFiles((currentFiles) => {
             const activeIndex = currentFiles.findIndex((file) => file.id === activeFile.id);
@@ -125,7 +125,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
             }
             return nextFiles;
         });
-    }, [activeFile, activeFileId]);
+    }, [activeFile, activeFileId, isActiveFileDefault]);
 
     const handleContentChange = React.useCallback(
         (content: string) => {
@@ -273,11 +273,6 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                                 <div className="truncate text-sm font-medium">
                                                     {getDisplayFileName(activeFile.content)}
                                                 </div>
-                                                {isActiveFileDefault && (
-                                                    <div className="text-xs opacity-70">
-                                                        Default skills are read-only.
-                                                    </div>
-                                                )}
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <LogseqCheckbox
@@ -289,6 +284,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                                 <LogseqButton
                                                     onClick={handleDeleteFile}
                                                     color="failed"
+                                                    disabled={isActiveFileDefault}
                                                     size="xs"
                                                     title="Delete skill file">
                                                     <Trash size={16} />
@@ -312,7 +308,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="flex h-full items-center justify-center p-4 text-sm opacity-70">
+                                    <div className="flex h-full items-center justify-center bg-primary-background p-4 text-sm text-text opacity-70">
                                         Create a new skill file to start editing.
                                     </div>
                                 )}

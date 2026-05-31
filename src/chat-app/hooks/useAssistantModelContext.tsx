@@ -2,7 +2,7 @@ import type {AssistantClient, ModelContextProvider} from "@assistant-ui/react";
 import {useEffect, useMemo, useRef} from "react";
 import {parseTemplateString} from "../../core/template-engine/parseTemplateString";
 import {createLogger, LoggerCategory} from "../../logger";
-import systemMessageTemplate from "../prompts/SystemMessage.md?raw";
+import mainSystemMessageTemplate from "../prompts/MAIN_SYSTEM_MESSAGE.md?raw";
 import {ChatToolRegistry} from "../tools";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
@@ -26,7 +26,7 @@ export function useAssistantModelContext(aui: AssistantClient): ModelContextProv
     useEffect(() => {
         const renderSystemPrompt = async () => {
             try {
-                const renderedSystemPrompt = await parseTemplateString(systemMessageTemplate);
+                const renderedSystemPrompt = await parseTemplateString(mainSystemMessageTemplate);
                 systemPromptRef.current = renderedSystemPrompt.trim() || undefined;
             } catch (error) {
                 logger.error("Failed to render assistant system prompt", error);
