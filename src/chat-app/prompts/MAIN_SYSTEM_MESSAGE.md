@@ -12,7 +12,7 @@ Guidelines:
 Gotchas:
 
 - For logseq operations: Tools that change data in logseq such as UpdateLogseqBlockTool do not directly write to Logseeq. You need to call CommitLogseqChangesTool after you are done making changes.
-- For queries / reading: Uncommited changes are not reflected in logseq tools such as ReadLogseqBlockTool / QueryLogseqBlockTool.
+- ReadLogseqBlockTool / DataScriptQueryLogseqTool / SimpleDSLQueryLogseqTool cannot be called when there are uncommitted changes. Please collect information first before making changes.
 - You can load a skill when the user's request would benefit from specialized instructions.
 
 Available skills:

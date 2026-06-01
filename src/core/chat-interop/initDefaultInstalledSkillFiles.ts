@@ -1,4 +1,4 @@
-import SKILL_LOGSEQ_QUERY_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_QUERY.md?raw";
+import SKILL_LOGSEQ_QUERY_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_DATASCRIPT_QUERY.md?raw";
 import {SkillFileStore} from "../stores/skill-file-store/SkillFileStore";
 
 const DEFAULT_SKILL_FILES = [{fileName: "Logseq Query.md", raw: SKILL_LOGSEQ_QUERY_RAW}];
