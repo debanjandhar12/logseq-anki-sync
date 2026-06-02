@@ -123,9 +123,18 @@ export async function createBackup(): Promise<any> {
     const timestamp = Date.now();
     const decknames = await invoke("deckNames", {});
     for (const deck of decknames) {
-        if (deck.includes("::") === false) { // if deck not a sub deck
-            const safeDeckName = deck.trim().replace(/[\s/]/g, "_").replace(/[<>:"/\\|?*\x00-\x1F]/g, '');
-            logger.info(`Created backup with name LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`);
+        if (deck.includes("::") === false) {
+            // if deck not a sub deck
+            const safeDeckName = deck
+                .trim()
+                .replace(/[\s/]/g, "_")
+                .replace(/[<>:"/\\|?*]/g, "")
+                .split("")
+                .filter((character) => character.charCodeAt(0) >= 32)
+                .join("");
+            logger.info(
+                `Created backup with name LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`
+            );
             await invoke("exportPackage", {
                 deck: deck,
                 path: `./LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`,
@@ -136,8 +145,8 @@ export async function createBackup(): Promise<any> {
     return;
 }
 
-// Create a model with given name if it does not exists
-// Updates template, fields, files etc.
+// Create a model with given name if it does not exist.
+// Existing models are preserved so user-customized templates are not overwritten on sync.
 export async function upsertModel(
     modelName: string,
     fields: string[],
@@ -162,7 +171,9 @@ export async function upsertModel(
         });
         logger.info(`Created new model ${modelName}`);
     } else {
-        await updateModelFieldsIfNeeded(modelName, fields); // Handle field modifications for existing models
+        await ensureRequiredModelFields(modelName, fields);
+        logger.info(`Preserved existing model ${modelName}`);
+        return;
     }
 
     try {
@@ -246,7 +257,7 @@ export async function unsuspend(cards: number[]): Promise<any> {
 
 // -------- Internal methods ---------
 
-async function updateModelFieldsIfNeeded(
+async function ensureRequiredModelFields(
     modelName: string,
     desiredFields: string[]
 ): Promise<void> {
@@ -255,30 +266,24 @@ async function updateModelFieldsIfNeeded(
         modelName: modelName
     });
 
-    // Check if fields need to be updated
-    const fieldsNeedUpdate =
-        currentFields.length !== desiredFields.length ||
-        !currentFields.every((field, index) => field === desiredFields[index]);
-
-    if (!fieldsNeedUpdate) {
+    const fieldsToAdd = desiredFields.filter((field) => !currentFields.includes(field));
+    if (fieldsToAdd.length === 0) {
         return;
     }
 
-    logger.info(`Updating model fields for ${modelName}`, {
+    logger.info(`Adding missing model fields for ${modelName}`, {
         current: currentFields,
-        desired: desiredFields
+        missing: fieldsToAdd
     });
 
     // Create backup before modifications
-    logger.info(`Taking backup before updating model fields for ${modelName}`);
+    logger.info(`Taking backup before adding missing model fields for ${modelName}`);
     try {
         await createBackup();
     } catch (e) {
-        logger.warn('Failed to take backup', e);
+        logger.warn("Failed to take backup", e);
     }
 
-    // Add fields
-    const fieldsToAdd = desiredFields.filter((field) => !currentFields.includes(field));
     for (const fieldName of fieldsToAdd) {
         try {
             await invoke("modelFieldAdd", {
@@ -292,48 +297,5 @@ async function updateModelFieldsIfNeeded(
         }
     }
 
-    // Reorder fields to match desired order if needed
-    const updatedFields: string[] = await invoke("modelFieldNames", {
-        modelName: modelName
-    });
-    for (let i = 0; i < desiredFields.length; i++) {
-        const fieldName = desiredFields[i];
-        const currentIndex = updatedFields.indexOf(fieldName);
-
-        if (currentIndex !== -1 && currentIndex !== i) {
-            try {
-                await invoke("modelFieldReposition", {
-                    modelName: modelName,
-                    fieldName: fieldName,
-                    index: i
-                });
-                logger.info(
-                    `Repositioned field "${fieldName}" to index ${i} in model ${modelName}`
-                );
-                // Update our local copy to reflect the repositioning
-                updatedFields.splice(currentIndex, 1);
-                updatedFields.splice(i, 0, fieldName);
-            } catch (e) {
-                logger.error(`Failed to reposition field "${fieldName}" in model ${modelName}:`, e);
-                throw e;
-            }
-        }
-    }
-
-    // Remove fields that are no longer needed (This should be done after reordering to ensure proper field mapping)
-    const fieldsToRemove = currentFields.filter((field) => !desiredFields.includes(field));
-    for (const fieldName of fieldsToRemove) {
-        try {
-            await invoke("modelFieldRemove", {
-                modelName: modelName,
-                fieldName: fieldName
-            });
-            logger.info(`Removed field "${fieldName}" from model ${modelName}`);
-        } catch (e) {
-            logger.error(`Failed to remove field "${fieldName}" from model ${modelName}:`, e);
-            throw e;
-        }
-    }
-
-    logger.info(`Successfully updated model fields for ${modelName}`);
+    logger.info(`Successfully added missing model fields for ${modelName}`);
 }
