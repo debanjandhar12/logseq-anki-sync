@@ -1,13 +1,13 @@
 ---
 name: Logseq Datascript Query Pitfalls
-description: Use when a Logseq DB Datascript query fails, returns no rows, or appears to use old file-graph syntax. Covers tested DB replacements and common Datalog pitfalls.
+description: Use when a Logseq DB Datascript query fails, returns no rows, or appears to use old file-graph syntax.
 disable-model-invocation: false
 default-installed-skill: true
 ---
 
 # Logseq Datascript Query Pitfalls
 
-These pitfalls are for DB-version Logseq graphs only.
+This contains several pitfalls for DB-version Logseq.
 
 ## Removed File Graph Attributes
 
@@ -83,15 +83,6 @@ Wrong for custom tags:
 ```
 
 Right: write and pass a regression test before documenting the replacement query.
-
-## Cardinality-Many Properties
-
-Do not assume many-valued DB properties are queryable as `:user.property/<key>` attributes through `datascriptQuery`. In live testing, values were reliable through `Editor.getBlockProperties`, where cardinality-many values returned as arrays.
-
-```ts
-const properties = await logseq.Editor.getBlockProperties(block.uuid);
-expect(properties?.skill_query_authors).toEqual(["Ada Lovelace", "Alan Turing"]);
-```
 
 ## Debugging Pattern
 

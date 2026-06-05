@@ -1,17 +1,25 @@
 ---
 name: Logseq Datascript Query
-description: Use when writing DB-version Logseq Datascript queries for DataScriptQueryLogseqTool. Covers tested DB graph attributes, page/reference queries, tags/classes, inputs, and boolean clauses.
+description: Use this skill whenever the user mentions Logseq DB queries, advanced queries, Datalog or Datascript. Also trigger when the user mentions Logseq tasks, scheduled dates, deadlines, journal queries, properties, tags-as-classes.
 disable-model-invocation: false
 default-installed-skill: true
 ---
 
 # Logseq Datascript Query Skill
 
-Use `DataScriptQueryLogseqTool` for full Datascript/Datalog queries in DB graphs. The plugin does not support the old markdown/file graph schema for these skills.
+Use `DataScriptQueryLogseqTool` for full Datascript/Datalog queries in DB graphs.
 
 ## Tool Shape
 
 Pass the query as `datalogString`. Pass each `:in` value as a string in `inputs`; the tool spreads them into `logseq.DB.datascriptQuery(datalogString, ...inputs)`.
+
+Datalog Structure:
+
+```clojure
+[:find <return-values>
+ :in $ <inputs>
+ :where <clauses>]
+```
 
 Input string examples:
 
@@ -21,6 +29,11 @@ Input string examples:
 123
 :keyword
 ```
+
+Note: 
+- UUID inputs must use EDN UUID syntax
+- Use `:block/title` for block text in DB graphs.
+- Use lowercase `:block/name` for page lookup.
 
 ## DB Graph Basics
 
@@ -37,7 +50,7 @@ Use these DB-version attributes:
 - Journal page marker: `:block/journal? true`
 - Block order may exist in DB graphs, but do not rely on it until tested against the current SDK path
 
-Do not use file graph attributes like `:block/content`, `:block/marker`, `:block/properties`, `:block/scheduled`, `:block/deadline`, `:block/priority`, or `:block/left`.
+Do not use file graph attributes like `:block/content`, `:block/marker`, `:block/properties`, `:block/scheduled`, `:block/deadline`, `:block/priority`, or `:block/left`. File Graphs are something that used to exist in older versions of Logseq.
 
 ## Tested Query Patterns
 
@@ -87,6 +100,26 @@ Inputs:
  [?b :block/title ?title]
  [(clojure.string/includes? ?title "Skill query")]
  (not [?b :block/title "Skill query property block"])]
+```
+
+### Count Matching Blocks
+
+```clojure
+[:find (count ?b)
+ :where
+ [?b :block/title ?title]
+ [(clojure.string/includes? ?title "Skill query")]]
+```
+
+### Group Matching Blocks by Page
+
+```clojure
+[:find ?page-name (count ?b)
+ :where
+ [?b :block/title ?title]
+ [(clojure.string/includes? ?title "Skill query")]
+ [?b :block/page ?p]
+ [?p :block/name ?page-name]]
 ```
 
 ## Result Handling
