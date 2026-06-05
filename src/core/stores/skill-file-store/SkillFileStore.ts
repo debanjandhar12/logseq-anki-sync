@@ -8,6 +8,14 @@ const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);
 export class SkillFileStore {
     static groupName: string = "skills";
 
+    static getSkillFileName(skillFileData: Pick<SkillFileData, "name">): string {
+        return `${skillFileData.name}.md`;
+    }
+
+    static getSkillFileNameFromContent(content: string): string {
+        return SkillFileStore.getSkillFileName(parseSkillFile(content));
+    }
+
     static async getSkillFile(fileName: string): Promise<SkillFileData | null> {
         try {
             const content = await LogseqPluginStorageManager.getFileContent(
@@ -39,7 +47,9 @@ export class SkillFileStore {
         return skillFiles.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    static async saveSkillFile(fileName: string, content: string): Promise<void> {
+    static async saveSkillFile(content: string): Promise<void> {
+        const fileName = SkillFileStore.getSkillFileNameFromContent(content);
+
         await LogseqPluginStorageManager.saveFile(SkillFileStore.groupName, fileName, content);
     }
 

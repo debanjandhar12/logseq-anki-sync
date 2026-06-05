@@ -58,18 +58,12 @@ Right:
 
 Use `:block/title` when you need original/display casing.
 
-## Task Rules Are Not Automatically Available
+## DSL Rules Are Not Available in Datascript
 
-`logseq.DB.datascriptQuery` did not automatically provide Logseq's `task` Datalog rule in live testing. A query like this returned a rules error:
+`DataScriptQueryLogseqTool` did not support DSL rules such as `task`. A query like this returned a rules error:
 
 ```clojure
 (task ?b #{"Todo" "Doing"})
-```
-
-Use `SimpleDSLQueryLogseqTool` for simple task DSL only after testing it against the current graph:
-
-```clojure
-(task TODO DOING)
 ```
 
 ## Custom Tag-Style Refs Need Their Own Tests
@@ -82,7 +76,8 @@ Wrong for custom tags:
 [?tag :db/ident :logseq.class/Book]
 ```
 
-Right: write and pass a regression test before documenting the replacement query.
+Right: 
+<TBU>
 
 ## Debugging Pattern
 
