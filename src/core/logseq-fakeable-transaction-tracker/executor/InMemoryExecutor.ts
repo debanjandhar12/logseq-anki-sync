@@ -7,43 +7,24 @@ import type {
 } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {LogseqPropertiesHelper} from "../../../logseq/LogseqPropertiesHelper";
-import type {DeterminesticUUIDGenerator} from "../DeterminesticUUIDGenerator";
 import type {
     InMemoryBlockEntity,
     InMemoryDB,
     InMemoryLogseqEntity,
     InMemoryPageEntity,
-    LogseqEntityIdentity,
-    LogseqTransactionExecutor,
-    LogseqTransactionResult
+    LogseqEntityIdentity
 } from "../types";
+import {LogseqTransactionExecutor} from "./LogseqTransactionExecutor";
 
 type BlockDetachResult = {
     block: InMemoryBlockEntity;
     parent: InMemoryLogseqEntity;
 };
 
-export class InMemoryExecutor implements LogseqTransactionExecutor {
+export class InMemoryExecutor extends LogseqTransactionExecutor {
     private readonly originalInMemoryPageDataDb: InMemoryDB = new Map();
 
     private readonly inMemoryPageDataDb: InMemoryDB = new Map();
-
-    private readonly results: LogseqTransactionResult[] = [];
-
-    constructor(private readonly uuidGenerator: DeterminesticUUIDGenerator) {}
-
-    public getLastResult(): LogseqTransactionResult | undefined {
-        return this.results.at(-1);
-    }
-
-    public getResults(): readonly LogseqTransactionResult[] {
-        return this.results;
-    }
-
-    private pushAndReturn<TReturn>(result: LogseqTransactionResult, returnValue: TReturn): TReturn {
-        this.results.push(result);
-        return returnValue;
-    }
 
     public getInMemoryPageDataDb(): InMemoryDB {
         return this.inMemoryPageDataDb;

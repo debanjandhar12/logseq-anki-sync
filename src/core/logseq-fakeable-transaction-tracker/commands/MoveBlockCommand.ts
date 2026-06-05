@@ -1,7 +1,7 @@
+import type {LogseqTransactionExecutor} from "../executor/LogseqTransactionExecutor";
 import type {
     LogseqEntityIdentity,
     LogseqFakeableCommand,
-    LogseqTransactionExecutor,
     SerializedLogseqFakeableCommand
 } from "../types";
 

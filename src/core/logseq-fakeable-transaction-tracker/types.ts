@@ -5,6 +5,7 @@ import type {
     PageEntity,
     PageIdentity
 } from "@logseq/libs/dist/LSPlugin";
+import type {LogseqTransactionExecutor} from "./executor/LogseqTransactionExecutor";
 
 export type LogseqEntityIdentity = PageIdentity | BlockIdentity | EntityID;
 
@@ -37,20 +38,6 @@ export type InMemoryLogseqEntity = InMemoryPageEntity | InMemoryBlockEntity;
 export type InMemoryDB = Map<string, InMemoryPageEntity>;
 
 export type LogseqTransactionResult = InMemoryLogseqEntity | BlockEntity | PageEntity | boolean;
-
-export interface LogseqTransactionExecutor {
-    insertBlock(parentBlockUUID: LogseqEntityIdentity, content: string): Promise<boolean>;
-    moveBlock(
-        srcBlockUUID: LogseqEntityIdentity,
-        destBlockUUID: LogseqEntityIdentity
-    ): Promise<boolean>;
-    updateBlock(blockUUID: LogseqEntityIdentity, content: string): Promise<boolean>;
-    createPage(pageName: string, properties?: Record<string, any>): Promise<boolean>;
-    deletePage(pageIdentity: LogseqEntityIdentity): Promise<boolean>;
-    renamePage(pageIdentity: LogseqEntityIdentity, newName: string): Promise<boolean>;
-    getLastResult(): LogseqTransactionResult | undefined;
-    getResults(): readonly LogseqTransactionResult[];
-}
 
 export interface LogseqFakeableCommand {
     execute(executor: LogseqTransactionExecutor): Promise<void>;

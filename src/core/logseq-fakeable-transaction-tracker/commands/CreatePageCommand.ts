@@ -1,8 +1,5 @@
-import type {
-    LogseqFakeableCommand,
-    LogseqTransactionExecutor,
-    SerializedLogseqFakeableCommand
-} from "../types";
+import type {LogseqTransactionExecutor} from "../executor/LogseqTransactionExecutor";
+import type {LogseqFakeableCommand, SerializedLogseqFakeableCommand} from "../types";
 
 export class CreatePageCommand implements LogseqFakeableCommand {
     constructor(

@@ -1,31 +1,10 @@
 import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "../../../logseq/LogseqEditor";
 import {LogseqPropertiesHelper} from "../../../logseq/LogseqPropertiesHelper";
-import type {DeterminesticUUIDGenerator} from "../DeterminesticUUIDGenerator";
-import type {
-    LogseqEntityIdentity,
-    LogseqTransactionExecutor,
-    LogseqTransactionResult
-} from "../types";
+import type {LogseqEntityIdentity} from "../types";
+import {LogseqTransactionExecutor} from "./LogseqTransactionExecutor";
 
-export class LogseqExecutor implements LogseqTransactionExecutor {
-    private readonly results: LogseqTransactionResult[] = [];
-
-    constructor(private readonly uuidGenerator: DeterminesticUUIDGenerator) {}
-
-    public getLastResult(): LogseqTransactionResult | undefined {
-        return this.results.at(-1);
-    }
-
-    public getResults(): readonly LogseqTransactionResult[] {
-        return this.results;
-    }
-
-    private pushAndReturn<TReturn>(result: LogseqTransactionResult, returnValue: TReturn): TReturn {
-        this.results.push(result);
-        return returnValue;
-    }
-
+export class LogseqExecutor extends LogseqTransactionExecutor {
     public async insertBlock(
         parentBlockUUID: LogseqEntityIdentity,
         content: string
