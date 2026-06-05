@@ -11,8 +11,7 @@ const dataScriptQueryLogseqParameters = z.object({
         .array(z.string())
         .default([])
         .describe(
-            "Input strings to spread into the DataScript query after the query string." +
-                'Example inputs array: [`#uuid "6a1a83bd-50b7-40b5-8f08-e80576bf2960"`, `"string"`]'
+            "Input strings to spread into the DataScript query after the query string."
         )
 });
 
