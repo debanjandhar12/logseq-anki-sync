@@ -1,5 +1,8 @@
 import type {ThreadMessage} from "@assistant-ui/react";
-import {LogseqFakeableTransactionTracker} from "src/core/logseq-fakeable-transaction-tracker";
+import {
+    LogseqFakeableTransactionTracker,
+    LogseqFakeableTransactionTrackerSerializer
+} from "src/core/logseq-fakeable-transaction-tracker";
 import {
     LOGSEQ_FAKEABLE_TRANSACTION_TRACKER_ARTIFACT_TYPE,
     type LogseqFakeableTransactionTrackerArtifact
@@ -18,7 +21,7 @@ export const getLastLogseqFakeableTransactionTracker = (
 
             const artifact = findLogseqFakeableTransactionTrackerArtifact(part.artifact);
             if (artifact) {
-                return LogseqFakeableTransactionTracker.fromJSON(
+                return LogseqFakeableTransactionTrackerSerializer.deserialize(
                     artifact.LogseqFakeableTransactionTracker
                 );
             }

@@ -2,8 +2,7 @@ import {DeterminesticUUIDGenerator} from "./DeterminesticUUIDGenerator";
 import {InMemoryExecutor} from "./executor/InMemoryExecutor";
 import {LogseqExecutor} from "./executor/LogseqExecutor";
 import {LogseqFakeableTransactionCommandQueue} from "./LogseqFakeableTransactionCommandQueue";
-import {LogseqFakeableTransactionCommandSerializer} from "./LogseqFakeableTransactionCommandSerializer";
-import type {LogseqFakeableCommand, SerializedLogseqFakeableTransactionTracker} from "./types";
+import type {LogseqFakeableCommand} from "./types";
 
 function getThrownValueMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -32,6 +31,18 @@ export class LogseqFakeableTransactionTracker {
 
     private UUID_GENERATION_SEED = logseq.Editor.newUUID();
 
+    public getUuidGenerationSeed(): string {
+        return this.UUID_GENERATION_SEED;
+    }
+
+    public setUuidGenerationSeed(uuidGenerationSeed: string): void {
+        this.UUID_GENERATION_SEED = uuidGenerationSeed;
+    }
+
+    public getCommands(): LogseqFakeableCommand[] {
+        return this.commandQueue.getCommands();
+    }
+
     public addCommand(command: LogseqFakeableCommand): void {
         this.commandQueue.add(command);
     }
@@ -39,27 +50,6 @@ export class LogseqFakeableTransactionTracker {
     public clear(): void {
         this.commandQueue.clear();
         this.UUID_GENERATION_SEED = logseq.Editor.newUUID();
-    }
-
-    public toJSON(): SerializedLogseqFakeableTransactionTracker {
-        return {
-            uuidGenerationSeed: this.UUID_GENERATION_SEED,
-            commands: this.commandQueue
-                .getCommands()
-                .map(LogseqFakeableTransactionCommandSerializer.serialize)
-        };
-    }
-
-    static fromJSON(
-        json: SerializedLogseqFakeableTransactionTracker
-    ): LogseqFakeableTransactionTracker {
-        const tracker = new LogseqFakeableTransactionTracker();
-        tracker.UUID_GENERATION_SEED = json.uuidGenerationSeed;
-        for (const command of json.commands) {
-            tracker.addCommand(LogseqFakeableTransactionCommandSerializer.deserialize(command));
-        }
-
-        return tracker;
     }
 
     public async executeInTheInMemoryDB(): Promise<InMemoryExecutor> {

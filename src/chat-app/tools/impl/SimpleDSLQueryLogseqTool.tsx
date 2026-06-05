@@ -2,6 +2,7 @@ import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatToo
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
+import {LogseqFakeableTransactionTrackerSerializer} from "src/core/logseq-fakeable-transaction-tracker";
 import {z} from "zod";
 
 const simpleDSLQueryLogseqParameters = z.object({
@@ -36,7 +37,10 @@ export class SimpleDSLQueryLogseqTool extends BaseChatToolWithDefaultUI<
     ): Promise<SimpleDSLQueryLogseqResult> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            if (transactionTracker.toJSON().commands.length > 0) {
+            if (
+                LogseqFakeableTransactionTrackerSerializer.serialize(transactionTracker).commands
+                    .length > 0
+            ) {
                 throw new Error(
                     "Cannot query Logseq while there are uncommitted Logseq changes. Commit or clear the pending changes first."
                 );
