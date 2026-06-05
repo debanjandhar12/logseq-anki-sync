@@ -4,6 +4,7 @@ import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWit
 import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
 import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
+import type {LogseqTransactionResult} from "src/core/logseq-fakeable-transaction-tracker";
 import {CreatePageCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
 import {z} from "zod";
 
@@ -20,6 +21,7 @@ type CreateLogseqPageArgs = z.infer<typeof createLogseqPageParameters>;
 type CreateLogseqPageResult =
     | {
           success: true;
+          page: LogseqTransactionResult | undefined;
       }
     | {
           success: false;
@@ -44,10 +46,10 @@ export class CreateLogseqPageTool extends BaseChatToolWithDefaultUI<
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
             transactionTracker.addCommand(new CreatePageCommand(pageName, properties));
 
-            await transactionTracker.executeInTheInMemoryDB();
+            const executor = await transactionTracker.executeInTheInMemoryDB();
 
             return new ToolResponse({
-                result: {success: true},
+                result: {success: true, page: executor.getLastResult()},
                 artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {

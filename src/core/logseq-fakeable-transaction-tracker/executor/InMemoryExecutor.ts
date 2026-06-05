@@ -7,13 +7,15 @@ import type {
 } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {LogseqPropertiesHelper} from "../../../logseq/LogseqPropertiesHelper";
+import type {DeterminesticUUIDGenerator} from "../DeterminesticUUIDGenerator";
 import type {
     InMemoryBlockEntity,
     InMemoryDB,
     InMemoryLogseqEntity,
     InMemoryPageEntity,
     LogseqEntityIdentity,
-    LogseqTransactionExecutor
+    LogseqTransactionExecutor,
+    LogseqTransactionResult
 } from "../types";
 
 type BlockDetachResult = {
@@ -25,6 +27,23 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
     private readonly originalInMemoryPageDataDb: InMemoryDB = new Map();
 
     private readonly inMemoryPageDataDb: InMemoryDB = new Map();
+
+    private readonly results: LogseqTransactionResult[] = [];
+
+    constructor(private readonly uuidGenerator: DeterminesticUUIDGenerator) {}
+
+    public getLastResult(): LogseqTransactionResult | undefined {
+        return this.results.at(-1);
+    }
+
+    public getResults(): readonly LogseqTransactionResult[] {
+        return this.results;
+    }
+
+    private pushAndReturn<TReturn>(result: LogseqTransactionResult, returnValue: TReturn): TReturn {
+        this.results.push(result);
+        return returnValue;
+    }
 
     public getInMemoryPageDataDb(): InMemoryDB {
         return this.inMemoryPageDataDb;
@@ -106,7 +125,7 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         const now = Date.now();
         const newBlock: InMemoryBlockEntity = {
             id: -now,
-            uuid: await logseq.Editor.newBlockUUID(),
+            uuid: this.uuidGenerator.getUUID(),
             order: String((inMemoryParent.children || []).length),
             format: this.getEntityFormat(inMemoryParent),
             parent: {id: inMemoryParent.id},
@@ -122,7 +141,7 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         };
 
         this.getMutableChildren(inMemoryParent).push(newBlock);
-        return true;
+        return this.pushAndReturn(newBlock, true);
     }
 
     public async moveBlock(
@@ -151,7 +170,7 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         detachedBlock.block.parent = {id: destination.id};
         detachedBlock.block.page = {id: destinationPage.id};
         this.getMutableChildren(destination).push(detachedBlock.block);
-        return true;
+        return this.pushAndReturn(true, true);
     }
 
     public async updateBlock(blockUUID: LogseqEntityIdentity, content: string): Promise<boolean> {
@@ -164,7 +183,7 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         inMemoryBlock.title = content;
         inMemoryBlock.fullTitle = content;
         inMemoryBlock.updatedAt = Date.now();
-        return true;
+        return this.pushAndReturn(true, true);
     }
 
     public async createPage(
@@ -172,7 +191,7 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         properties: Record<string, any> = {}
     ): Promise<boolean> {
         const now = Date.now();
-        const pageUUID = await logseq.Editor.newBlockUUID();
+        const pageUUID = this.uuidGenerator.getUUID();
         const page: InMemoryPageEntity = {
             id: -now,
             uuid: pageUUID,
@@ -188,7 +207,7 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         };
 
         this.inMemoryPageDataDb.set(pageUUID, page);
-        return true;
+        return this.pushAndReturn(page, true);
     }
 
     public async deletePage(pageUuid: LogseqEntityIdentity): Promise<boolean> {
@@ -201,7 +220,7 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
 
         await this.getInMemoryPageTree(page);
         this.inMemoryPageDataDb.delete(page.uuid);
-        return true;
+        return this.pushAndReturn(true, true);
     }
 
     public async renamePage(pageUuid: LogseqEntityIdentity, newName: string): Promise<boolean> {
@@ -216,7 +235,21 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
         page.title = newName;
         page.originalName = newName;
         page.updatedAt = Date.now();
-        return true;
+        return this.pushAndReturn(true, true);
+    }
+
+    public async readBlockOrPage(
+        uuid: LogseqEntityIdentity,
+        includeChildren: boolean
+    ): Promise<InMemoryLogseqEntity | null> {
+        const entity = await this.getInMemoryDbBlock(uuid);
+        if (!entity) return null;
+
+        const result = _.cloneDeep(entity);
+        if (!includeChildren) {
+            delete (result as {children?: InMemoryLogseqEntity[]}).children;
+        }
+        return this.pushAndReturn(result, result);
     }
 
     private findPageContainingEntity(pageUuid: LogseqEntityIdentity): InMemoryPageEntity | null {
@@ -292,9 +325,7 @@ export class InMemoryExecutor implements LogseqTransactionExecutor {
     private matchesIdentity(entity: InMemoryLogseqEntity, identity: LogseqEntityIdentity): boolean {
         if (typeof identity === "number") return entity.id === identity;
         if (typeof identity === "string") {
-            return (
-                entity.uuid === identity
-            );
+            return entity.uuid === identity;
         }
 
         return Boolean(identity?.uuid && entity.uuid === identity.uuid);

@@ -1,3 +1,4 @@
+import {DeterminesticUUIDGenerator} from "./DeterminesticUUIDGenerator";
 import {InMemoryExecutor} from "./executor/InMemoryExecutor";
 import {LogseqExecutor} from "./executor/LogseqExecutor";
 import {LogseqFakeableTransactionCommandQueue} from "./LogseqFakeableTransactionCommandQueue";
@@ -29,16 +30,20 @@ function getThrownValueMessage(error: unknown): string {
 export class LogseqFakeableTransactionTracker {
     private readonly commandQueue = new LogseqFakeableTransactionCommandQueue();
 
+    private UUID_GENERATION_SEED = logseq.Editor.newUUID();
+
     public addCommand(command: LogseqFakeableCommand): void {
         this.commandQueue.add(command);
     }
 
     public clear(): void {
         this.commandQueue.clear();
+        this.UUID_GENERATION_SEED = logseq.Editor.newUUID();
     }
 
     public toJSON(): SerializedLogseqFakeableTransactionTracker {
         return {
+            uuidGenerationSeed: this.UUID_GENERATION_SEED,
             commands: this.commandQueue
                 .getCommands()
                 .map(LogseqFakeableTransactionCommandSerializer.serialize)
@@ -49,6 +54,7 @@ export class LogseqFakeableTransactionTracker {
         json: SerializedLogseqFakeableTransactionTracker
     ): LogseqFakeableTransactionTracker {
         const tracker = new LogseqFakeableTransactionTracker();
+        tracker.UUID_GENERATION_SEED = json.uuidGenerationSeed;
         for (const command of json.commands) {
             tracker.addCommand(LogseqFakeableTransactionCommandSerializer.deserialize(command));
         }
@@ -57,7 +63,9 @@ export class LogseqFakeableTransactionTracker {
     }
 
     public async executeInTheInMemoryDB(): Promise<InMemoryExecutor> {
-        const executor = new InMemoryExecutor();
+        const executor = new InMemoryExecutor(
+            new DeterminesticUUIDGenerator(this.UUID_GENERATION_SEED)
+        );
         for (const [index, command] of this.commandQueue.getCommands().entries()) {
             try {
                 await command.execute(executor);
@@ -72,8 +80,10 @@ export class LogseqFakeableTransactionTracker {
         return executor;
     }
 
-    public async executeInLogseq(): Promise<boolean> {
-        const executor = new LogseqExecutor();
+    public async executeInLogseq(): Promise<LogseqExecutor> {
+        const executor = new LogseqExecutor(
+            new DeterminesticUUIDGenerator(this.UUID_GENERATION_SEED)
+        );
         for (const [index, command] of this.commandQueue.getCommands().entries()) {
             try {
                 await command.execute(executor);
@@ -85,6 +95,6 @@ export class LogseqFakeableTransactionTracker {
             }
         }
 
-        return true;
+        return executor;
     }
 }

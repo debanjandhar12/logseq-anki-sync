@@ -1,11 +1,12 @@
 import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
+import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
+import type {LogseqTransactionResult} from "src/core/logseq-fakeable-transaction-tracker";
 import {InsertBlockCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
 import {z} from "zod";
 import {createLogseqFakeableTransactionTrackerArtifact} from "../transaction/createLogseqFakeableTransactionTrackerArtifact";
 import {getLastLogseqFakeableTransactionTracker} from "../transaction/getLastLogseqFakeableTransactionTracker";
-import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 
 const insertLogseqBlockParameters = z.object({
     parentUuid: z.string().describe("UUID of the parent Logseq block or page."),
@@ -17,6 +18,7 @@ type InsertLogseqBlockArgs = z.infer<typeof insertLogseqBlockParameters>;
 type InsertLogseqBlockResult =
     | {
           success: true;
+          block: LogseqTransactionResult | undefined;
       }
     | {
           success: false;
@@ -41,10 +43,10 @@ export class InsertLogseqBlockTool extends BaseChatToolWithDefaultUI<
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
             transactionTracker.addCommand(new InsertBlockCommand(parentUuid, content));
 
-            await transactionTracker.executeInTheInMemoryDB();
+            const executor = await transactionTracker.executeInTheInMemoryDB();
 
             return new ToolResponse({
-                result: {success: true},
+                result: {success: true, block: executor.getLastResult()},
                 artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {

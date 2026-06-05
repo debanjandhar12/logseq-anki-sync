@@ -164,6 +164,9 @@ importers:
       tw-shimmer:
         specifier: ^0.4.11
         version: 0.4.11(tailwindcss@3.4.19)
+      uuid:
+        specifier: ^14.0.0
+        version: 14.0.0
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -5692,6 +5695,10 @@ packages:
 
   util@0.12.5:
     resolution: {integrity: sha512-kZf/K6hEIrWHI6XqOFUiiMa+79wE/D8Q+NCNAWclkyg3b4d2k7s0QGepNjiABc+aR3N1PAyHL7p6UcLY6LmrnA==}
+
+  uuid@14.0.0:
+    resolution: {integrity: sha512-Qo+uWgilfSmAhXCMav1uYFynlQO7fMFiMVZsQqZRMIXp0O7rR7qjkj+cPvBHLgBqi960QCoo/PH2/6ZtVqKvrg==}
+    hasBin: true
 
   validate-npm-package-name@7.0.2:
     resolution: {integrity: sha512-hVDIBwsRruT73PbK7uP5ebUt+ezEtCmzZz3F59BSr2F6OVFnJ/6h8liuvdLrQ88Xmnk6/+xGGuq+pG9WwTuy3A==}
@@ -12095,6 +12102,8 @@ snapshots:
       is-generator-function: 1.0.10
       is-typed-array: 1.1.13
       which-typed-array: 1.1.15
+
+  uuid@14.0.0: {}
 
   validate-npm-package-name@7.0.2: {}
 

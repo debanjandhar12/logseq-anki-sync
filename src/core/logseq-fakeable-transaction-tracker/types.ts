@@ -36,6 +36,8 @@ export type InMemoryLogseqEntity = InMemoryPageEntity | InMemoryBlockEntity;
 
 export type InMemoryDB = Map<string, InMemoryPageEntity>;
 
+export type LogseqTransactionResult = InMemoryLogseqEntity | BlockEntity | PageEntity | boolean;
+
 export interface LogseqTransactionExecutor {
     insertBlock(parentBlockUUID: LogseqEntityIdentity, content: string): Promise<boolean>;
     moveBlock(
@@ -46,6 +48,8 @@ export interface LogseqTransactionExecutor {
     createPage(pageName: string, properties?: Record<string, any>): Promise<boolean>;
     deletePage(pageIdentity: LogseqEntityIdentity): Promise<boolean>;
     renamePage(pageIdentity: LogseqEntityIdentity, newName: string): Promise<boolean>;
+    getLastResult(): LogseqTransactionResult | undefined;
+    getResults(): readonly LogseqTransactionResult[];
 }
 
 export interface LogseqFakeableCommand {
@@ -84,5 +88,6 @@ export type SerializedLogseqFakeableCommand =
       };
 
 export type SerializedLogseqFakeableTransactionTracker = {
+    uuidGenerationSeed: string;
     commands: SerializedLogseqFakeableCommand[];
 };

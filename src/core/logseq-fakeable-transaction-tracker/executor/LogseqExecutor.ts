@@ -1,19 +1,43 @@
 import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "../../../logseq/LogseqEditor";
 import {LogseqPropertiesHelper} from "../../../logseq/LogseqPropertiesHelper";
-import type {LogseqEntityIdentity, LogseqTransactionExecutor} from "../types";
+import type {DeterminesticUUIDGenerator} from "../DeterminesticUUIDGenerator";
+import type {
+    LogseqEntityIdentity,
+    LogseqTransactionExecutor,
+    LogseqTransactionResult
+} from "../types";
 
 export class LogseqExecutor implements LogseqTransactionExecutor {
+    private readonly results: LogseqTransactionResult[] = [];
+
+    constructor(private readonly uuidGenerator: DeterminesticUUIDGenerator) {}
+
+    public getLastResult(): LogseqTransactionResult | undefined {
+        return this.results.at(-1);
+    }
+
+    public getResults(): readonly LogseqTransactionResult[] {
+        return this.results;
+    }
+
+    private pushAndReturn<TReturn>(result: LogseqTransactionResult, returnValue: TReturn): TReturn {
+        this.results.push(result);
+        return returnValue;
+    }
+
     public async insertBlock(
         parentBlockUUID: LogseqEntityIdentity,
         content: string
     ): Promise<boolean> {
-        const block = await logseq.Editor.insertBlock(parentBlockUUID, content);
+        const block = await logseq.Editor.insertBlock(parentBlockUUID, content, {
+            customUUID: this.uuidGenerator.getUUID()
+        });
         if (!block) {
             throw new Error(`Logseq failed to insert block under parent: ${parentBlockUUID}`);
         }
 
-        return true;
+        return this.pushAndReturn(block, true);
     }
 
     public async moveBlock(
@@ -27,36 +51,39 @@ export class LogseqExecutor implements LogseqTransactionExecutor {
                 children: true
             }
         );
-        return true;
+        return this.pushAndReturn(true, true);
     }
 
     public async updateBlock(blockUUID: LogseqEntityIdentity, content: string): Promise<boolean> {
         await LogseqEditor.updateBlock(blockUUID, content);
-        return true;
+        return this.pushAndReturn(true, true);
     }
 
     public async createPage(
         pageName: string,
         properties: Record<string, any> = {}
     ): Promise<boolean> {
-        const page = await logseq.Editor.createPage(pageName, properties, {redirect: false});
+        const page = await logseq.Editor.createPage(pageName, properties, {
+            redirect: false,
+            customUUID: this.uuidGenerator.getUUID()
+        });
         if (!page) {
             throw new Error(`Logseq failed to create page: ${pageName}`);
         }
 
-        return true;
+        return this.pushAndReturn(page, true);
     }
 
     public async deletePage(pageIdentity: LogseqEntityIdentity): Promise<boolean> {
         const pageName = await this.getPageName(pageIdentity, "deletePage");
         await logseq.Editor.deletePage(pageName);
-        return true;
+        return this.pushAndReturn(true, true);
     }
 
     public async renamePage(pageIdentity: LogseqEntityIdentity, newName: string): Promise<boolean> {
         const pageName = await this.getPageName(pageIdentity, "renamePage");
         await logseq.Editor.renamePage(pageName, newName);
-        return true;
+        return this.pushAndReturn(true, true);
     }
 
     private async getPageName(

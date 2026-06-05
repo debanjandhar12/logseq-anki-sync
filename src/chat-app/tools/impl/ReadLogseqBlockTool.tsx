@@ -1,10 +1,12 @@
-import type {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
-import type {PageEntityWithBlockChildren} from "src/logseq/types";
+import type {
+    InMemoryBlockEntity,
+    InMemoryLogseqEntity,
+    InMemoryPageEntity
+} from "src/core/logseq-fakeable-transaction-tracker";
 import {z} from "zod";
 
 const readLogseqBlockParameters = z.object({
@@ -18,7 +20,7 @@ type ReadLogseqBlockResult =
     | {
           success: true;
           type: "block" | "page";
-          block: BlockEntity | PageEntityWithBlockChildren;
+          block: InMemoryBlockEntity | InMemoryPageEntity;
       }
     | {
           success: false;
@@ -41,29 +43,14 @@ export class ReadLogseqBlockTool extends BaseChatToolWithDefaultUI<
     ): Promise<ReadLogseqBlockResult> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            if (transactionTracker.toJSON().commands.length > 0) {
-                return {
-                    success: false,
-                    error: "Cannot read Logseq blocks while there are uncommitted Logseq changes. Commit or clear the pending changes first."
-                };
-            }
-
-            const page: PageEntityWithBlockChildren = await LogseqPropertiesHelper.getPage(uuid);
-            if (page) {
-                if (includeChildren) {
-                    page.children = await LogseqPropertiesHelper.getPageBlocksTree(uuid);
-                    return {success: true, type: "page", block: page};
-                }
-
-                return {success: true, type: "page", block: page};
-            }
-
-            const block = await LogseqPropertiesHelper.getBlock(uuid, {includeChildren});
+            const executor = await transactionTracker.executeInTheInMemoryDB();
+            const block = await executor.readBlockOrPage(uuid, includeChildren);
             if (!block) {
                 return {success: false, error: `Logseq block not found: ${uuid}`};
             }
 
-            return {success: true, type: "block", block};
+            const result = executor.getLastResult() as InMemoryLogseqEntity;
+            return {success: true, type: isPageEntity(result) ? "page" : "block", block: result};
         } catch (err) {
             return {
                 success: false,
@@ -71,4 +58,8 @@ export class ReadLogseqBlockTool extends BaseChatToolWithDefaultUI<
             };
         }
     }
+}
+
+function isPageEntity(entity: InMemoryLogseqEntity): entity is InMemoryPageEntity {
+    return "name" in entity && "type" in entity;
 }
