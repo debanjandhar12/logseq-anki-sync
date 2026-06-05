@@ -10,6 +10,5 @@ export {MoveLogseqBlockTool} from "src/chat-app/tools/impl/MoveLogseqBlockTool";
 export {ReadLogseqBlockTool} from "src/chat-app/tools/impl/ReadLogseqBlockTool";
 export {ReadSkillFileTool} from "src/chat-app/tools/impl/ReadSkillFileTool";
 export {RenameLogseqPageTool} from "src/chat-app/tools/impl/RenameLogseqPageTool";
-export {SimpleDSLQueryLogseqTool} from "src/chat-app/tools/impl/SimpleDSLQueryLogseqTool";
 export {UpdateLogseqBlockTool} from "src/chat-app/tools/impl/UpdateLogseqBlockTool";
 export {ChatToolRegistry} from "./ToolRegistry";
