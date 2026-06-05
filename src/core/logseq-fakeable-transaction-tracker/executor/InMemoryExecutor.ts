@@ -21,6 +21,10 @@ type BlockDetachResult = {
     parent: InMemoryLogseqEntity;
 };
 
+type EntityReference = {id: EntityID};
+
+const DEFAULT_BLOCK_FORMAT: BlockEntity["format"] = "markdown";
+
 export class InMemoryExecutor extends LogseqTransactionExecutor {
     private readonly originalInMemoryPageDataDb: InMemoryDB = new Map();
 
@@ -34,67 +38,12 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         return this.originalInMemoryPageDataDb;
     }
 
-    private async importPageOfBlock(uuid: LogseqEntityIdentity): Promise<void> {
-        const existingPage = this.findPageContainingEntity(uuid);
-        if (existingPage) return;
-
-        const page = await this.resolvePageForIdentity(uuid);
-        if (!page) return;
-
-        const pageUUID = page.uuid;
-        if (this.inMemoryPageDataDb.has(pageUUID)) return;
-
-        const pageBlocks = await LogseqPropertiesHelper.getPageBlocksTree(pageUUID);
-        const pageWithChildren: InMemoryPageEntity = {
-            ...page,
-            children: pageBlocks
-        };
-
-        this.originalInMemoryPageDataDb.set(pageUUID, _.cloneDeep(pageWithChildren));
-        this.inMemoryPageDataDb.set(pageUUID, _.cloneDeep(pageWithChildren));
-    }
-
-    private async resolvePageForIdentity(
-        uuid: PageIdentity | BlockIdentity | EntityID
-    ): Promise<PageEntity | null> {
-        try {
-            const page = await LogseqPropertiesHelper.getPage(uuid as PageIdentity | EntityID);
-            if (page) return page;
-        } catch (_error) {
-            // Some in-memory-only entities do not exist in Logseq yet.
-        }
-
-        try {
-            const block = await LogseqPropertiesHelper.getBlock(uuid as BlockIdentity | EntityID);
-            if (!block?.page?.id) return null;
-            return await LogseqPropertiesHelper.getPage(block.page.id);
-        } catch (_error) {
-            return null;
-        }
-    }
-
-    private async getInMemoryDbBlock(
-        blockUUID: LogseqEntityIdentity
-    ): Promise<InMemoryLogseqEntity | null> {
-        await this.importPageOfBlock(blockUUID);
-        return this.findEntity(blockUUID);
-    }
-
-    private async getInMemoryPageTree(page: InMemoryPageEntity): Promise<InMemoryLogseqEntity[]> {
-        const inMemoryPage = await this.getInMemoryDbBlock(page.uuid);
-        if (!inMemoryPage || !this.isPageEntity(inMemoryPage)) {
-            throw new Error(`Failed to find page tree in memory: ${page.uuid}`);
-        }
-
-        return this.getMutableChildren(inMemoryPage);
-    }
-
     public async insertBlock(
         parentBlockUUID: LogseqEntityIdentity,
         content: string
     ): Promise<boolean> {
-        const inMemoryParent = await this.getInMemoryDbBlock(parentBlockUUID);
-        if (!inMemoryParent) {
+        const parent = await this.getImportedEntity(parentBlockUUID);
+        if (!parent) {
             throw new Error(`Failed to find parent block during insertBlock: ${parentBlockUUID}`);
         }
 
@@ -103,34 +52,17 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
             throw new Error(`Failed to find parent page during insertBlock: ${parentBlockUUID}`);
         }
 
-        const now = Date.now();
-        const newBlock: InMemoryBlockEntity = {
-            id: -now,
-            uuid: this.uuidGenerator.getUUID(),
-            order: String((inMemoryParent.children || []).length),
-            format: this.getEntityFormat(inMemoryParent),
-            parent: {id: inMemoryParent.id},
-            title: content,
-            fullTitle: content,
-            content,
-            page: {id: parentPage.id},
-            createdAt: now,
-            updatedAt: now,
-            properties: {},
-            "collapsed?": false,
-            children: []
-        };
-
-        this.getMutableChildren(inMemoryParent).push(newBlock);
-        return this.pushAndReturn(newBlock, true);
+        const newBlock = this.createBlock({content, parent, page: parentPage});
+        this.insertChild(parent, newBlock);
+        return this.pushAndReturn(_.cloneDeep(newBlock), true);
     }
 
     public async moveBlock(
         srcBlockUUID: LogseqEntityIdentity,
         destBlockUUID: LogseqEntityIdentity
     ): Promise<boolean> {
-        await this.importPageOfBlock(srcBlockUUID);
-        await this.importPageOfBlock(destBlockUUID);
+        await this.importPageOfEntity(srcBlockUUID);
+        await this.importPageOfEntity(destBlockUUID);
 
         const detachedBlock = this.detachBlock(srcBlockUUID);
         if (!detachedBlock) {
@@ -139,31 +71,32 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
 
         const destination = this.findEntity(destBlockUUID);
         if (!destination) {
-            this.getMutableChildren(detachedBlock.parent).push(detachedBlock.block);
+            this.insertChild(detachedBlock.parent, detachedBlock.block);
             throw new Error(`Failed to find destination block during moveBlock: ${destBlockUUID}`);
         }
 
         const destinationPage = this.findPageContainingEntity(destBlockUUID);
         if (!destinationPage) {
+            this.insertChild(detachedBlock.parent, detachedBlock.block);
             throw new Error(`Failed to find destination page during moveBlock: ${destBlockUUID}`);
         }
 
-        detachedBlock.block.parent = {id: destination.id};
-        detachedBlock.block.page = {id: destinationPage.id};
-        this.getMutableChildren(destination).push(detachedBlock.block);
+        this.reparentSubtree(detachedBlock.block, destination, destinationPage);
+        detachedBlock.block.order = this.getNextChildOrder(destination);
+        this.insertChild(destination, detachedBlock.block);
         return this.pushAndReturn(true, true);
     }
 
     public async updateBlock(blockUUID: LogseqEntityIdentity, content: string): Promise<boolean> {
-        const inMemoryBlock = await this.getInMemoryDbBlock(blockUUID);
-        if (!inMemoryBlock) {
+        const block = await this.getImportedEntity(blockUUID);
+        if (!block || this.isPageEntity(block)) {
             throw new Error(`Failed to find block during updateBlock: ${blockUUID}`);
         }
 
-        inMemoryBlock.content = content;
-        inMemoryBlock.title = content;
-        inMemoryBlock.fullTitle = content;
-        inMemoryBlock.updatedAt = Date.now();
+        block.content = content;
+        block.title = content;
+        block.fullTitle = content;
+        block.updatedAt = Date.now();
         return this.pushAndReturn(true, true);
     }
 
@@ -172,48 +105,50 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         properties: Record<string, any> = {}
     ): Promise<boolean> {
         const now = Date.now();
-        const pageUUID = this.uuidGenerator.getUUID();
         const page: InMemoryPageEntity = {
             id: -now,
-            uuid: pageUUID,
+            uuid: this.uuidGenerator.getUUID(),
             name: pageName,
             title: pageName,
-            format: "markdown",
+            fullTitle: pageName,
+            content: pageName,
+            format: DEFAULT_BLOCK_FORMAT,
             type: "page",
             updatedAt: now,
             createdAt: now,
             "journal?": false,
             properties,
-            children: []
+            children: this.createPagePropertyBlocks(properties, now)
         };
 
-        this.inMemoryPageDataDb.set(pageUUID, page);
-        return this.pushAndReturn(page, true);
+        this.inMemoryPageDataDb.set(page.uuid, page);
+        return this.pushAndReturn(_.cloneDeep(page), true);
     }
 
-    public async deletePage(pageUuid: LogseqEntityIdentity): Promise<boolean> {
-        await this.importPageOfBlock(pageUuid);
+    public async deletePage(pageIdentity: LogseqEntityIdentity): Promise<boolean> {
+        await this.importPageOfEntity(pageIdentity);
 
-        const page = this.findPageContainingEntity(pageUuid);
-        if (!page) {
-            throw new Error(`Failed to find page during deletePage: ${pageUuid}`);
+        const page = this.findPageContainingEntity(pageIdentity);
+        if (!page || !this.matchesIdentity(page, pageIdentity)) {
+            throw new Error(`Failed to find page during deletePage: ${pageIdentity}`);
         }
 
-        await this.getInMemoryPageTree(page);
         this.inMemoryPageDataDb.delete(page.uuid);
         return this.pushAndReturn(true, true);
     }
 
-    public async renamePage(pageUuid: LogseqEntityIdentity, newName: string): Promise<boolean> {
-        await this.importPageOfBlock(pageUuid);
+    public async renamePage(pageIdentity: LogseqEntityIdentity, newName: string): Promise<boolean> {
+        await this.importPageOfEntity(pageIdentity);
 
-        const page = this.findPageContainingEntity(pageUuid);
-        if (!page) {
-            throw new Error(`Failed to find page during renamePage: ${pageUuid}`);
+        const page = this.findPageContainingEntity(pageIdentity);
+        if (!page || !this.matchesIdentity(page, pageIdentity)) {
+            throw new Error(`Failed to find page during renamePage: ${pageIdentity}`);
         }
 
         page.name = newName;
         page.title = newName;
+        page.fullTitle = newName;
+        page.content = newName;
         page.originalName = newName;
         page.updatedAt = Date.now();
         return this.pushAndReturn(true, true);
@@ -223,7 +158,7 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         uuid: LogseqEntityIdentity,
         includeChildren: boolean
     ): Promise<InMemoryLogseqEntity | null> {
-        const entity = await this.getInMemoryDbBlock(uuid);
+        const entity = await this.getImportedEntity(uuid);
         if (!entity) return null;
 
         const result = _.cloneDeep(entity);
@@ -233,20 +168,200 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         return this.pushAndReturn(result, result);
     }
 
-    private findPageContainingEntity(pageUuid: LogseqEntityIdentity): InMemoryPageEntity | null {
+    private async importPageOfEntity(identity: LogseqEntityIdentity): Promise<void> {
+        const existingPage = this.findPageContainingEntity(identity);
+        if (existingPage) return;
+
+        const page = await this.resolvePageForIdentity(identity);
+        if (!page || this.inMemoryPageDataDb.has(page.uuid)) return;
+
+        const pageBlocks = await LogseqPropertiesHelper.getPageBlocksTree(page.uuid);
+        const pageWithChildren: InMemoryPageEntity = {
+            ...page,
+            children: this.normalizeImportedBlocks(pageBlocks)
+        };
+
+        this.originalInMemoryPageDataDb.set(page.uuid, _.cloneDeep(pageWithChildren));
+        this.inMemoryPageDataDb.set(page.uuid, _.cloneDeep(pageWithChildren));
+    }
+
+    private async resolvePageForIdentity(
+        identity: PageIdentity | BlockIdentity | EntityID
+    ): Promise<PageEntity | null> {
+        try {
+            const page = await LogseqPropertiesHelper.getPage(identity as PageIdentity | EntityID);
+            if (page) return page;
+        } catch (_error) {
+            // In-memory-only entities do not exist in Logseq yet.
+        }
+
+        try {
+            const block = await LogseqPropertiesHelper.getBlock(
+                identity as BlockIdentity | EntityID
+            );
+            const pageId = this.getReferenceId(block?.page);
+            if (!pageId) return null;
+            return await LogseqPropertiesHelper.getPage(pageId);
+        } catch (_error) {
+            return null;
+        }
+    }
+
+    private async getImportedEntity(
+        identity: LogseqEntityIdentity
+    ): Promise<InMemoryLogseqEntity | null> {
+        await this.importPageOfEntity(identity);
+        return this.findEntity(identity);
+    }
+
+    private createBlock({
+        content,
+        parent,
+        page
+    }: {
+        content: string;
+        parent: InMemoryLogseqEntity;
+        page: InMemoryPageEntity;
+    }): InMemoryBlockEntity {
+        const now = Date.now();
+        return {
+            id: -now,
+            uuid: this.uuidGenerator.getUUID(),
+            order: this.getNextChildOrder(parent),
+            format: this.getEntityFormat(parent),
+            parent: this.toEntityReference(parent),
+            title: content,
+            fullTitle: content,
+            content,
+            page: this.toEntityReference(page),
+            createdAt: now,
+            updatedAt: now,
+            properties: {},
+            "collapsed?": false,
+            children: []
+        } as InMemoryBlockEntity;
+    }
+
+    private createPagePropertyBlocks(
+        properties: Record<string, any>,
+        pageCreatedAt: number
+    ): InMemoryLogseqEntity[] {
+        return Object.entries(properties).map(([key, value], index) => {
+            const content = this.stringifyPropertyValue(value);
+            return {
+                id: -(pageCreatedAt + index + 1),
+                uuid: this.uuidGenerator.getUUID(),
+                order: `b${(0x1f + index).toString(36)}`,
+                format: DEFAULT_BLOCK_FORMAT,
+                parent: {id: -pageCreatedAt},
+                title: content,
+                fullTitle: content,
+                content,
+                page: {id: -pageCreatedAt},
+                createdAt: pageCreatedAt,
+                updatedAt: pageCreatedAt,
+                properties: {logseqPropertyKey: key},
+                "collapsed?": false,
+                children: []
+            } as InMemoryBlockEntity;
+        });
+    }
+
+    private stringifyPropertyValue(value: unknown): string {
+        if (Array.isArray(value)) return value.join(", ");
+        if (typeof value === "object" && value !== null) return JSON.stringify(value);
+        return String(value);
+    }
+
+    private insertChild(parent: InMemoryLogseqEntity, child: InMemoryLogseqEntity): void {
+        const children = this.getMutableChildren(parent);
+        const firstPropertyBlockIndex = children.findIndex((candidate) =>
+            this.isSyntheticPagePropertyBlock(candidate)
+        );
+
+        if (firstPropertyBlockIndex === -1) {
+            children.push(child);
+            return;
+        }
+
+        children.splice(firstPropertyBlockIndex, 0, child);
+    }
+
+    private getNextChildOrder(parent: InMemoryLogseqEntity): string {
+        const editableChildCount = this.getMutableChildren(parent).filter(
+            (child) => !this.isSyntheticPagePropertyBlock(child)
+        ).length;
+        return `a${editableChildCount.toString(36)}`;
+    }
+
+    private isSyntheticPagePropertyBlock(entity: InMemoryLogseqEntity): boolean {
+        return !this.isPageEntity(entity) && Boolean(entity.properties?.logseqPropertyKey);
+    }
+
+    private normalizeImportedBlocks(blocks: BlockEntity[]): InMemoryBlockEntity[] {
+        return blocks.map((block) => this.normalizeImportedBlock(block));
+    }
+
+    private normalizeImportedBlock(block: BlockEntity): InMemoryBlockEntity {
+        const normalizedBlock = _.cloneDeep(block) as InMemoryBlockEntity;
+        normalizedBlock.parent = this.normalizeReference(normalizedBlock.parent);
+        normalizedBlock.page = this.normalizeReference(normalizedBlock.page);
+        normalizedBlock.children = this.normalizeImportedBlocks(
+            (normalizedBlock.children || []) as BlockEntity[]
+        );
+        return normalizedBlock;
+    }
+
+    private normalizeReference(reference: unknown): EntityReference | undefined {
+        const id = this.getReferenceId(reference);
+        return typeof id === "number" ? {id} : undefined;
+    }
+
+    private getReferenceId(reference: unknown): EntityID | undefined {
+        if (typeof reference === "number") return reference;
+        if (typeof reference === "object" && reference !== null && "id" in reference) {
+            const id = (reference as {id?: unknown}).id;
+            return typeof id === "number" ? id : undefined;
+        }
+        return undefined;
+    }
+
+    private reparentSubtree(
+        block: InMemoryBlockEntity,
+        parent: InMemoryLogseqEntity,
+        page: InMemoryPageEntity
+    ): void {
+        block.parent = this.toEntityReference(parent);
+        this.updateSubtreePage(block, page);
+    }
+
+    private updateSubtreePage(block: InMemoryBlockEntity, page: InMemoryPageEntity): void {
+        block.page = this.toEntityReference(page);
+        for (const child of (block.children || []) as InMemoryLogseqEntity[]) {
+            if (!this.isPageEntity(child)) {
+                this.updateSubtreePage(child as InMemoryBlockEntity, page);
+            }
+        }
+    }
+
+    private toEntityReference(entity: InMemoryLogseqEntity): EntityReference {
+        return {id: entity.id};
+    }
+
+    private findPageContainingEntity(identity: LogseqEntityIdentity): InMemoryPageEntity | null {
         for (const page of this.inMemoryPageDataDb.values()) {
-            if (this.matchesIdentity(page, pageUuid)) return page;
-            if (this.findBlockInChildren(page.children || [], pageUuid)) return page;
+            if (this.matchesIdentity(page, identity)) return page;
+            if (this.findBlockInChildren(page.children || [], identity)) return page;
         }
 
         return null;
     }
 
-    private findEntity(uuid: LogseqEntityIdentity): InMemoryLogseqEntity | null {
+    private findEntity(identity: LogseqEntityIdentity): InMemoryLogseqEntity | null {
         for (const page of this.inMemoryPageDataDb.values()) {
-            if (this.matchesIdentity(page, uuid)) return page;
+            if (this.matchesIdentity(page, identity)) return page;
 
-            const block = this.findBlockInChildren(page.children || [], uuid);
+            const block = this.findBlockInChildren(page.children || [], identity);
             if (block) return block;
         }
 
@@ -255,15 +370,15 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
 
     private findBlockInChildren(
         children: InMemoryLogseqEntity[],
-        blockUuid: LogseqEntityIdentity
+        identity: LogseqEntityIdentity
     ): InMemoryBlockEntity | null {
         for (const child of children) {
             if (this.isPageEntity(child)) continue;
-            if (this.matchesIdentity(child, blockUuid)) return child;
+            if (this.matchesIdentity(child, identity)) return child;
 
             const nestedChild = this.findBlockInChildren(
                 (child.children || []) as InMemoryLogseqEntity[],
-                blockUuid
+                identity
             );
             if (nestedChild) return nestedChild;
         }
@@ -284,7 +399,7 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         parent: InMemoryLogseqEntity,
         identity: LogseqEntityIdentity
     ): BlockDetachResult | null {
-        const children = (parent.children || []) as InMemoryLogseqEntity[];
+        const children = this.getMutableChildren(parent);
         const childIndex = children.findIndex(
             (child) => !this.isPageEntity(child) && this.matchesIdentity(child, identity)
         );
@@ -305,11 +420,13 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
 
     private matchesIdentity(entity: InMemoryLogseqEntity, identity: LogseqEntityIdentity): boolean {
         if (typeof identity === "number") return entity.id === identity;
-        if (typeof identity === "string") {
-            return entity.uuid === identity;
-        }
-
+        if (typeof identity === "string")
+            return entity.uuid === identity || this.getPageName(entity) === identity;
         return Boolean(identity?.uuid && entity.uuid === identity.uuid);
+    }
+
+    private getPageName(entity: InMemoryLogseqEntity): string | undefined {
+        return this.isPageEntity(entity) ? entity.name : undefined;
     }
 
     private isPageEntity(entity: InMemoryLogseqEntity): entity is InMemoryPageEntity {
@@ -317,7 +434,7 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
     }
 
     private getEntityFormat(entity: InMemoryLogseqEntity): BlockEntity["format"] {
-        return entity.format === "org" ? "org" : "markdown";
+        return entity.format === "org" ? "org" : DEFAULT_BLOCK_FORMAT;
     }
 
     private getMutableChildren(entity: InMemoryLogseqEntity): InMemoryLogseqEntity[] {
