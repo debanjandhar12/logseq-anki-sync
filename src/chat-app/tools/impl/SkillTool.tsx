@@ -8,9 +8,9 @@ const readSkillFileParameters = z.object({
     fileName: z.string().describe("Name of the skill file to read.")
 });
 
-type ReadSkillFileArgs = z.infer<typeof readSkillFileParameters>;
+type SkillArgs = z.infer<typeof readSkillFileParameters>;
 
-type ReadSkillFileResult =
+type SkillResult =
     | {
           success: true;
           skillFileContent: string;
@@ -20,17 +20,17 @@ type ReadSkillFileResult =
           error: string;
       };
 
-export class ReadSkillFileTool extends BaseChatToolWithDefaultUI<
-    ReadSkillFileArgs,
-    ReadSkillFileResult
+export class SkillTool extends BaseChatToolWithDefaultUI<
+    SkillArgs,
+    SkillResult
 > {
-    static readonly NAME = "ReadSkillFile";
+    static readonly NAME = "skill";
 
-    readonly name = ReadSkillFileTool.NAME;
-    readonly description = "Read a stored skill file by file name.";
+    readonly name = SkillTool.NAME;
+    readonly description = "Loads stored specialized skill instructions";
     readonly parameters = readSkillFileParameters;
 
-    async execute({fileName}: ReadSkillFileArgs): Promise<ReadSkillFileResult> {
+    async execute({fileName}: SkillArgs): Promise<SkillResult> {
         try {
             const skillFile = await SkillFileStore.getSkillFile(fileName);
             if (!skillFile) {

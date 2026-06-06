@@ -21,7 +21,7 @@ type GetUserInfoResult =
       };
 
 export class GetUserInfoTool extends BaseChatToolWithDefaultUI<GetUserInfoArgs, GetUserInfoResult> {
-    static readonly NAME = "GetUserInfo";
+    static readonly NAME = "get_user_info";
 
     readonly name = GetUserInfoTool.NAME;
     readonly description =

@@ -34,6 +34,7 @@ Note:
 - UUID inputs must use EDN UUID syntax
 - Use `:block/title` for block text in DB graphs.
 - Use lowercase `:block/name` for page lookup.
+- Input strings need double wrapping when passed as params to datascript query tool: ""my page"". The datascript wrapper will then interpret it as a string.
 
 ## DB Graph Basics
 

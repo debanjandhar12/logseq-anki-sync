@@ -31,7 +31,7 @@ export class DataScriptQueryLogseqTool extends BaseChatToolWithDefaultUI<
     DataScriptQueryLogseqArgs,
     DataScriptQueryLogseqResult
 > {
-    static readonly NAME = "DataScriptQueryLogseq";
+    static readonly NAME = "datascript_query_logseq";
 
     readonly name = DataScriptQueryLogseqTool.NAME;
     readonly description = "Run a Logseq DataScript datalog query with optional string inputs.";

@@ -27,7 +27,7 @@ export class UpdateLogseqBlockTool extends BaseChatToolWithDefaultUI<
     UpdateLogseqBlockArgs,
     UpdateLogseqBlockResult
 > {
-    static readonly NAME = "UpdateLogseqBlock";
+    static readonly NAME = "update_logseq_block";
 
     readonly name = UpdateLogseqBlockTool.NAME;
     readonly description = "Update a Logseq block by UUID.";

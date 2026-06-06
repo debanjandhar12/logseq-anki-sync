@@ -31,7 +31,7 @@ export class ReadLogseqBlockTool extends BaseChatToolWithDefaultUI<
     ReadLogseqBlockArgs,
     ReadLogseqBlockResult
 > {
-    static readonly NAME = "ReadLogseqBlock";
+    static readonly NAME = "read_logseq_block";
 
     readonly name = ReadLogseqBlockTool.NAME;
     readonly description = "Read a Logseq block or page by UUID.";

@@ -27,7 +27,7 @@ export class MoveLogseqBlockTool extends BaseChatToolWithDefaultUI<
     MoveLogseqBlockArgs,
     MoveLogseqBlockResult
 > {
-    static readonly NAME = "MoveLogseqBlock";
+    static readonly NAME = "move_logseq_block";
 
     readonly name = MoveLogseqBlockTool.NAME;
     readonly description = "Move a Logseq block to a destination block by UUID.";

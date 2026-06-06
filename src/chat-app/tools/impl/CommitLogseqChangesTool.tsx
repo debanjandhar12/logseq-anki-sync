@@ -30,7 +30,7 @@ export class CommitLogseqChangesTool extends BaseChatToolWithCustomUI<
     CommitLogseqChangesArgs,
     LogseqCommitResult
 > {
-    static readonly NAME = "CommitLogseqChanges";
+    static readonly NAME = "commit_logseq_changes";
 
     readonly name = CommitLogseqChangesTool.NAME;
     readonly type = "human";

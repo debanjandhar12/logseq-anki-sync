@@ -23,7 +23,7 @@ export class ClearLogseqChangesTool extends BaseChatToolWithDefaultUI<
     ClearLogseqChangesArgs,
     ClearLogseqChangesResult
 > {
-    static readonly NAME = "ClearLogseqChanges";
+    static readonly NAME = "clear_logseq_changes";
 
     readonly name = ClearLogseqChangesTool.NAME;
     readonly description = "Clear pending Logseq graph changes made by block/page editing tools.";

@@ -26,7 +26,7 @@ export class DeleteLogseqPageTool extends BaseChatToolWithDefaultUI<
     DeleteLogseqPageArgs,
     DeleteLogseqPageResult
 > {
-    static readonly NAME = "DeleteLogseqPage";
+    static readonly NAME = "delete_logseq_page";
 
     readonly name = DeleteLogseqPageTool.NAME;
     readonly description = "Delete a Logseq page by name or UUID.";

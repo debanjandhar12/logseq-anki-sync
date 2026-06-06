@@ -29,7 +29,7 @@ export class InsertLogseqBlockTool extends BaseChatToolWithDefaultUI<
     InsertLogseqBlockArgs,
     InsertLogseqBlockResult
 > {
-    static readonly NAME = "InsertLogseqBlock";
+    static readonly NAME = "insert_logseq_block";
 
     readonly name = InsertLogseqBlockTool.NAME;
     readonly description = "Insert a Logseq block under a parent block or page by UUID.";

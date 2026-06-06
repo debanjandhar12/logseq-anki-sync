@@ -32,7 +32,7 @@ export class CreateLogseqPageTool extends BaseChatToolWithDefaultUI<
     CreateLogseqPageArgs,
     CreateLogseqPageResult
 > {
-    static readonly NAME = "CreateLogseqPage";
+    static readonly NAME = "create_logseq_page";
 
     readonly name = CreateLogseqPageTool.NAME;
     readonly description = "Create a Logseq page by name.";

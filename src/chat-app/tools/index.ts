@@ -8,7 +8,7 @@ export {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 export {InsertLogseqBlockTool} from "src/chat-app/tools/impl/InsertLogseqBlockTool";
 export {MoveLogseqBlockTool} from "src/chat-app/tools/impl/MoveLogseqBlockTool";
 export {ReadLogseqBlockTool} from "src/chat-app/tools/impl/ReadLogseqBlockTool";
-export {ReadSkillFileTool} from "src/chat-app/tools/impl/ReadSkillFileTool";
+export {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 export {RenameLogseqPageTool} from "src/chat-app/tools/impl/RenameLogseqPageTool";
 export {UpdateLogseqBlockTool} from "src/chat-app/tools/impl/UpdateLogseqBlockTool";
 export {ChatToolRegistry} from "./ToolRegistry";

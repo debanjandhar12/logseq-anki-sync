@@ -27,7 +27,7 @@ export class RenameLogseqPageTool extends BaseChatToolWithDefaultUI<
     RenameLogseqPageArgs,
     RenameLogseqPageResult
 > {
-    static readonly NAME = "RenameLogseqPage";
+    static readonly NAME = "rename_logseq_page";
 
     readonly name = RenameLogseqPageTool.NAME;
     readonly description = "Rename a Logseq page by name or UUID.";
