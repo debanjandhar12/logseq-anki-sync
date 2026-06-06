@@ -60,7 +60,7 @@ Use `:block/title` when you need original/display casing.
 
 ## DSL Rules Are Not Available in Datascript
 
-`DataScriptQueryLogseqTool` did not support DSL rules such as `task`. A query like this returned a rules error:
+`LogseqDataScriptQueryTool` did not support DSL rules such as `task`. A query like this returned a rules error:
 
 ```clojure
 (task ?b #{"Todo" "Doing"})

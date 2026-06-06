@@ -8,14 +8,14 @@ import {z} from "zod";
 import {createLogseqFakeableTransactionTrackerArtifact} from "../transaction/createLogseqFakeableTransactionTrackerArtifact";
 import {getLastLogseqFakeableTransactionTracker} from "../transaction/getLastLogseqFakeableTransactionTracker";
 
-const insertLogseqBlockParameters = z.object({
+const LogseqInsertBlockArgsZodObj = z.object({
     parentUuid: z.string().describe("UUID of the parent Logseq block or page."),
     content: z.string().describe("Content to insert into the new Logseq block.")
 });
 
-type InsertLogseqBlockArgs = z.infer<typeof insertLogseqBlockParameters>;
+type LogseqInsertBlockArgs = z.infer<typeof LogseqInsertBlockArgsZodObj>;
 
-type InsertLogseqBlockResult =
+type LogseqInsertBlockResult =
     | {
           success: true;
           block: LogseqTransactionResult | undefined;
@@ -25,20 +25,20 @@ type InsertLogseqBlockResult =
           error: string;
       };
 
-export class InsertLogseqBlockTool extends BaseChatToolWithDefaultUI<
-    InsertLogseqBlockArgs,
-    InsertLogseqBlockResult
+export class LogseqInsertBlockTool extends BaseChatToolWithDefaultUI<
+    LogseqInsertBlockArgs,
+    LogseqInsertBlockResult
 > {
-    static readonly NAME = "insert_logseq_block";
+    static readonly NAME = "logseq_insert_block";
 
-    readonly name = InsertLogseqBlockTool.NAME;
+    readonly name = LogseqInsertBlockTool.NAME;
     readonly description = "Insert a Logseq block under a parent block or page by UUID.";
-    readonly parameters = insertLogseqBlockParameters;
+    readonly parameters = LogseqInsertBlockArgsZodObj;
 
     async execute(
-        {parentUuid, content}: InsertLogseqBlockArgs,
+        {parentUuid, content}: LogseqInsertBlockArgs,
         context?: ChatToolExecutionContext
-    ): Promise<InsertLogseqBlockResult | ToolResponse<InsertLogseqBlockResult>> {
+    ): Promise<LogseqInsertBlockResult | ToolResponse<LogseqInsertBlockResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
             transactionTracker.addCommand(new InsertBlockCommand(parentUuid, content));

@@ -5,19 +5,17 @@ import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromE
 import {LogseqFakeableTransactionTrackerSerializer} from "src/core/logseq-fakeable-transaction-tracker";
 import {z} from "zod";
 
-const dataScriptQueryLogseqParameters = z.object({
+const LogseqDataScriptQueryArgsZodObj = z.object({
     datalogString: z.string().describe("Logseq DataScript datalog query string to execute."),
     inputs: z
         .array(z.string())
         .default([])
-        .describe(
-            "Input strings to spread into the DataScript query after the query string."
-        )
+        .describe("Input strings to spread into the DataScript query after the query string.")
 });
 
-type DataScriptQueryLogseqArgs = z.infer<typeof dataScriptQueryLogseqParameters>;
+type LogseqDataScriptQueryArgs = z.infer<typeof LogseqDataScriptQueryArgsZodObj>;
 
-type DataScriptQueryLogseqResult =
+type LogseqDataScriptQueryResult =
     | {
           success: true;
           result: unknown;
@@ -27,20 +25,20 @@ type DataScriptQueryLogseqResult =
           error: string;
       };
 
-export class DataScriptQueryLogseqTool extends BaseChatToolWithDefaultUI<
-    DataScriptQueryLogseqArgs,
-    DataScriptQueryLogseqResult
+export class LogseqDataScriptQueryTool extends BaseChatToolWithDefaultUI<
+    LogseqDataScriptQueryArgs,
+    LogseqDataScriptQueryResult
 > {
-    static readonly NAME = "datascript_query_logseq";
+    static readonly NAME = "logseq_datascript_query";
 
-    readonly name = DataScriptQueryLogseqTool.NAME;
+    readonly name = LogseqDataScriptQueryTool.NAME;
     readonly description = "Run a Logseq DataScript datalog query with optional string inputs.";
-    readonly parameters = dataScriptQueryLogseqParameters;
+    readonly parameters = LogseqDataScriptQueryArgsZodObj;
 
     async execute(
-        {datalogString, inputs}: DataScriptQueryLogseqArgs,
+        {datalogString, inputs}: LogseqDataScriptQueryArgs,
         context?: ChatToolExecutionContext
-    ): Promise<DataScriptQueryLogseqResult> {
+    ): Promise<LogseqDataScriptQueryResult> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
             if (

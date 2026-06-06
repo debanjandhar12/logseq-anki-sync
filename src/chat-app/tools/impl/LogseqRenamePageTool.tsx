@@ -4,17 +4,17 @@ import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWit
 import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
 import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {UpdateBlockCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
+import {RenamePageCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
 import {z} from "zod";
 
-const updateLogseqBlockParameters = z.object({
-    blockUuid: z.string().describe("UUID of the Logseq block to update."),
-    content: z.string().describe("New content for the Logseq block.")
+const LogseqRenamePageArgsZodObj = z.object({
+    pageUuid: z.string().describe("Current name or UUID of the Logseq page to rename."),
+    newName: z.string().describe("New name for the Logseq page.")
 });
 
-type UpdateLogseqBlockArgs = z.infer<typeof updateLogseqBlockParameters>;
+type LogseqRenamePageArgs = z.infer<typeof LogseqRenamePageArgsZodObj>;
 
-type UpdateLogseqBlockResult =
+type LogseqRenamePageResult =
     | {
           success: true;
       }
@@ -23,23 +23,23 @@ type UpdateLogseqBlockResult =
           error: string;
       };
 
-export class UpdateLogseqBlockTool extends BaseChatToolWithDefaultUI<
-    UpdateLogseqBlockArgs,
-    UpdateLogseqBlockResult
+export class LogseqRenamePageTool extends BaseChatToolWithDefaultUI<
+    LogseqRenamePageArgs,
+    LogseqRenamePageResult
 > {
-    static readonly NAME = "update_logseq_block";
+    static readonly NAME = "logseq_rename_page";
 
-    readonly name = UpdateLogseqBlockTool.NAME;
-    readonly description = "Update a Logseq block by UUID.";
-    readonly parameters = updateLogseqBlockParameters;
+    readonly name = LogseqRenamePageTool.NAME;
+    readonly description = "Rename a Logseq page by name or UUID.";
+    readonly parameters = LogseqRenamePageArgsZodObj;
 
     async execute(
-        {blockUuid, content}: UpdateLogseqBlockArgs,
+        {pageUuid, newName}: LogseqRenamePageArgs,
         context?: ChatToolExecutionContext
-    ): Promise<UpdateLogseqBlockResult | ToolResponse<UpdateLogseqBlockResult>> {
+    ): Promise<LogseqRenamePageResult | ToolResponse<LogseqRenamePageResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new UpdateBlockCommand(blockUuid, content));
+            transactionTracker.addCommand(new RenamePageCommand(pageUuid, newName));
 
             await transactionTracker.executeInTheInMemoryDB();
 
@@ -50,7 +50,7 @@ export class UpdateLogseqBlockTool extends BaseChatToolWithDefaultUI<
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to update Logseq block ${blockUuid}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to rename Logseq page ${pageUuid}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }

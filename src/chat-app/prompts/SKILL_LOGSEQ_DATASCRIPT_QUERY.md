@@ -7,7 +7,7 @@ default-installed-skill: true
 
 # Logseq Datascript Query Skill
 
-Use `DataScriptQueryLogseqTool` for full Datascript/Datalog queries in DB graphs.
+Use `LogseqDataScriptQueryTool` for full Datascript/Datalog queries in DB graphs.
 
 ## Tool Shape
 

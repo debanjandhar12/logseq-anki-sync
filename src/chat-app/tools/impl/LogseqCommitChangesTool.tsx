@@ -12,11 +12,11 @@ import {Button} from "src/shadcn/radix-ui/button";
 import {showAIChangesReviewModal} from "src/ui/launchers/showAIChangesReviewModal";
 import {z} from "zod";
 
-const commitLogseqChangesParameters = z.object({});
+const LogseqCommitChangesArgsZodObj = z.object({});
 
-type CommitLogseqChangesArgs = z.infer<typeof commitLogseqChangesParameters>;
+type LogseqCommitChangesArgs = z.infer<typeof LogseqCommitChangesArgsZodObj>;
 
-type LogseqCommitResult =
+type LogseqCommitChangesResult =
     | {
           success: true;
           changes: string;
@@ -26,22 +26,22 @@ type LogseqCommitResult =
           error: string;
       };
 
-export class CommitLogseqChangesTool extends BaseChatToolWithCustomUI<
-    CommitLogseqChangesArgs,
-    LogseqCommitResult
+export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
+    LogseqCommitChangesArgs,
+    LogseqCommitChangesResult
 > {
-    static readonly NAME = "commit_logseq_changes";
+    static readonly NAME = "logseq_commit_changes";
 
-    readonly name = CommitLogseqChangesTool.NAME;
+    readonly name = LogseqCommitChangesTool.NAME;
     readonly type = "human";
     readonly description =
         "Ask the user to approve committing pending Logseq graph changes made by block/page editing tools.";
-    readonly parameters = commitLogseqChangesParameters;
+    readonly parameters = LogseqCommitChangesArgsZodObj;
 
     async executeApprove(
-        _args: CommitLogseqChangesArgs = {},
+        _args: LogseqCommitChangesArgs = {},
         context?: ChatToolExecutionContext
-    ): Promise<LogseqCommitResult | ToolResponse<LogseqCommitResult>> {
+    ): Promise<LogseqCommitChangesResult | ToolResponse<LogseqCommitChangesResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
             await transactionTracker.executeInLogseq();
@@ -62,7 +62,9 @@ export class CommitLogseqChangesTool extends BaseChatToolWithCustomUI<
         }
     }
 
-    async executeCancel(): Promise<LogseqCommitResult | ToolResponse<LogseqCommitResult>> {
+    async executeCancel(): Promise<
+        LogseqCommitChangesResult | ToolResponse<LogseqCommitChangesResult>
+    > {
         return new ToolResponse({
             result: {
                 success: false,
@@ -71,9 +73,10 @@ export class CommitLogseqChangesTool extends BaseChatToolWithCustomUI<
         });
     }
 
-    readonly render: ToolCallMessagePartComponent<CommitLogseqChangesArgs, LogseqCommitResult> = (
-        props
-    ) => {
+    readonly render: ToolCallMessagePartComponent<
+        LogseqCommitChangesArgs,
+        LogseqCommitChangesResult
+    > = (props) => {
         const {result, addResult, status} = props;
         const messages = useAuiState((state) => state.thread.messages);
         const [isReviewing, setIsReviewing] = useState(false);

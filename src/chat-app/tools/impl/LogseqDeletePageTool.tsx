@@ -4,17 +4,16 @@ import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWit
 import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
 import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {RenamePageCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
+import {DeletePageCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
 import {z} from "zod";
 
-const renameLogseqPageParameters = z.object({
-    pageUuid: z.string().describe("Current name or UUID of the Logseq page to rename."),
-    newName: z.string().describe("New name for the Logseq page.")
+const LogseqDeletePageArgsZodObj = z.object({
+    pageUuid: z.string().describe("UUID of the Logseq page to delete.")
 });
 
-type RenameLogseqPageArgs = z.infer<typeof renameLogseqPageParameters>;
+type LogseqDeletePageArgs = z.infer<typeof LogseqDeletePageArgsZodObj>;
 
-type RenameLogseqPageResult =
+type LogseqDeletePageResult =
     | {
           success: true;
       }
@@ -23,23 +22,23 @@ type RenameLogseqPageResult =
           error: string;
       };
 
-export class RenameLogseqPageTool extends BaseChatToolWithDefaultUI<
-    RenameLogseqPageArgs,
-    RenameLogseqPageResult
+export class LogseqDeletePageTool extends BaseChatToolWithDefaultUI<
+    LogseqDeletePageArgs,
+    LogseqDeletePageResult
 > {
-    static readonly NAME = "rename_logseq_page";
+    static readonly NAME = "logseq_delete_page";
 
-    readonly name = RenameLogseqPageTool.NAME;
-    readonly description = "Rename a Logseq page by name or UUID.";
-    readonly parameters = renameLogseqPageParameters;
+    readonly name = LogseqDeletePageTool.NAME;
+    readonly description = "Delete a Logseq page by name or UUID.";
+    readonly parameters = LogseqDeletePageArgsZodObj;
 
     async execute(
-        {pageUuid, newName}: RenameLogseqPageArgs,
+        {pageUuid}: LogseqDeletePageArgs,
         context?: ChatToolExecutionContext
-    ): Promise<RenameLogseqPageResult | ToolResponse<RenameLogseqPageResult>> {
+    ): Promise<LogseqDeletePageResult | ToolResponse<LogseqDeletePageResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new RenamePageCommand(pageUuid, newName));
+            transactionTracker.addCommand(new DeletePageCommand(pageUuid));
 
             await transactionTracker.executeInTheInMemoryDB();
 
@@ -50,7 +49,7 @@ export class RenameLogseqPageTool extends BaseChatToolWithDefaultUI<
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to rename Logseq page ${pageUuid}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to delete Logseq page ${pageUuid}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }

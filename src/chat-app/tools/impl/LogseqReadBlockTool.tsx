@@ -9,14 +9,14 @@ import type {
 } from "src/core/logseq-fakeable-transaction-tracker";
 import {z} from "zod";
 
-const readLogseqBlockParameters = z.object({
+const LogseqReadBlockArgsZodObj = z.object({
     uuid: z.string().describe("UUID of the Logseq block or page to read."),
     includeChildren: z.boolean().optional().describe("Whether to include child blocks")
 });
 
-type ReadLogseqBlockArgs = z.infer<typeof readLogseqBlockParameters>;
+type LogseqReadBlockArgs = z.infer<typeof LogseqReadBlockArgsZodObj>;
 
-type ReadLogseqBlockResult =
+type LogseqReadBlockResult =
     | {
           success: true;
           type: "block" | "page";
@@ -27,20 +27,20 @@ type ReadLogseqBlockResult =
           error: string;
       };
 
-export class ReadLogseqBlockTool extends BaseChatToolWithDefaultUI<
-    ReadLogseqBlockArgs,
-    ReadLogseqBlockResult
+export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
+    LogseqReadBlockArgs,
+    LogseqReadBlockResult
 > {
-    static readonly NAME = "read_logseq_block";
+    static readonly NAME = "logseq_read_block";
 
-    readonly name = ReadLogseqBlockTool.NAME;
+    readonly name = LogseqReadBlockTool.NAME;
     readonly description = "Read a Logseq block or page by UUID.";
-    readonly parameters = readLogseqBlockParameters;
+    readonly parameters = LogseqReadBlockArgsZodObj;
 
     async execute(
-        {uuid, includeChildren = false}: ReadLogseqBlockArgs,
+        {uuid, includeChildren = false}: LogseqReadBlockArgs,
         context?: ChatToolExecutionContext
-    ): Promise<ReadLogseqBlockResult> {
+    ): Promise<LogseqReadBlockResult> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
             const executor = await transactionTracker.executeInTheInMemoryDB();

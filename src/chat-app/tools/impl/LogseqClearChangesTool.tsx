@@ -6,11 +6,11 @@ import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transa
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {z} from "zod";
 
-const clearLogseqChangesParameters = z.object({});
+const LogseqClearChangesArgsZodObj = z.object({});
 
-type ClearLogseqChangesArgs = z.infer<typeof clearLogseqChangesParameters>;
+type LogseqClearChangesArgs = z.infer<typeof LogseqClearChangesArgsZodObj>;
 
-type ClearLogseqChangesResult =
+type LogseqClearChangesResult =
     | {
           success: true;
       }
@@ -19,20 +19,20 @@ type ClearLogseqChangesResult =
           error: string;
       };
 
-export class ClearLogseqChangesTool extends BaseChatToolWithDefaultUI<
-    ClearLogseqChangesArgs,
-    ClearLogseqChangesResult
+export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
+    LogseqClearChangesArgs,
+    LogseqClearChangesResult
 > {
-    static readonly NAME = "clear_logseq_changes";
+    static readonly NAME = "logseq_clear_changes";
 
-    readonly name = ClearLogseqChangesTool.NAME;
+    readonly name = LogseqClearChangesTool.NAME;
     readonly description = "Clear pending Logseq graph changes made by block/page editing tools.";
-    readonly parameters = clearLogseqChangesParameters;
+    readonly parameters = LogseqClearChangesArgsZodObj;
 
     async execute(
-        _args: ClearLogseqChangesArgs = {},
+        _args: LogseqClearChangesArgs = {},
         context?: ChatToolExecutionContext
-    ): Promise<ClearLogseqChangesResult | ToolResponse<ClearLogseqChangesResult>> {
+    ): Promise<LogseqClearChangesResult | ToolResponse<LogseqClearChangesResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
             transactionTracker.clear();

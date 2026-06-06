@@ -7,14 +7,14 @@ import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromE
 import {MoveBlockCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
 import {z} from "zod";
 
-const moveLogseqBlockParameters = z.object({
+const LogseqMoveBlockArgsZodObj = z.object({
     srcBlockUuid: z.string().describe("UUID of the Logseq block to move."),
     destBlockUuid: z.string().describe("UUID of the destination Logseq block.")
 });
 
-type MoveLogseqBlockArgs = z.infer<typeof moveLogseqBlockParameters>;
+type LogseqMoveBlockArgs = z.infer<typeof LogseqMoveBlockArgsZodObj>;
 
-type MoveLogseqBlockResult =
+type LogseqMoveBlockResult =
     | {
           success: true;
       }
@@ -23,20 +23,20 @@ type MoveLogseqBlockResult =
           error: string;
       };
 
-export class MoveLogseqBlockTool extends BaseChatToolWithDefaultUI<
-    MoveLogseqBlockArgs,
-    MoveLogseqBlockResult
+export class LogseqMoveBlockTool extends BaseChatToolWithDefaultUI<
+    LogseqMoveBlockArgs,
+    LogseqMoveBlockResult
 > {
-    static readonly NAME = "move_logseq_block";
+    static readonly NAME = "logseq_move_block";
 
-    readonly name = MoveLogseqBlockTool.NAME;
+    readonly name = LogseqMoveBlockTool.NAME;
     readonly description = "Move a Logseq block to a destination block by UUID.";
-    readonly parameters = moveLogseqBlockParameters;
+    readonly parameters = LogseqMoveBlockArgsZodObj;
 
     async execute(
-        {srcBlockUuid, destBlockUuid}: MoveLogseqBlockArgs,
+        {srcBlockUuid, destBlockUuid}: LogseqMoveBlockArgs,
         context?: ChatToolExecutionContext
-    ): Promise<MoveLogseqBlockResult | ToolResponse<MoveLogseqBlockResult>> {
+    ): Promise<LogseqMoveBlockResult | ToolResponse<LogseqMoveBlockResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
             transactionTracker.addCommand(new MoveBlockCommand(srcBlockUuid, destBlockUuid));

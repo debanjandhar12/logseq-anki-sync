@@ -1,18 +1,18 @@
 import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
 import type {BaseChatTool} from "src/chat-app/tools/base/BaseChatTool";
-import {ClearLogseqChangesTool} from "src/chat-app/tools/impl/ClearLogseqChangesTool";
-import {CommitLogseqChangesTool} from "src/chat-app/tools/impl/CommitLogseqChangesTool";
-import {CreateLogseqPageTool} from "src/chat-app/tools/impl/CreateLogseqPageTool";
-import {DataScriptQueryLogseqTool} from "src/chat-app/tools/impl/DataScriptQueryLogseqTool";
-import {DeleteLogseqPageTool} from "src/chat-app/tools/impl/DeleteLogseqPageTool";
+import {LogseqClearChangesTool} from "src/chat-app/tools/impl/LogseqClearChangesTool";
+import {LogseqCommitChangesTool} from "src/chat-app/tools/impl/LogseqCommitChangesTool";
+import {LogseqCreatePageTool} from "src/chat-app/tools/impl/LogseqCreatePageTool";
+import {LogseqDataScriptQueryTool} from "src/chat-app/tools/impl/LogseqDataScriptQueryTool";
+import {LogseqDeletePageTool} from "src/chat-app/tools/impl/LogseqDeletePageTool";
 import {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
-import {InsertLogseqBlockTool} from "src/chat-app/tools/impl/InsertLogseqBlockTool";
-import {MoveLogseqBlockTool} from "src/chat-app/tools/impl/MoveLogseqBlockTool";
-import {ReadLogseqBlockTool} from "src/chat-app/tools/impl/ReadLogseqBlockTool";
+import {LogseqInsertBlockTool} from "src/chat-app/tools/impl/LogseqInsertBlockTool";
+import {LogseqMoveBlockTool} from "src/chat-app/tools/impl/LogseqMoveBlockTool";
+import {LogseqReadBlockTool} from "src/chat-app/tools/impl/LogseqReadBlockTool";
 import {SkillTool} from "src/chat-app/tools/impl/SkillTool";
-import {RenameLogseqPageTool} from "src/chat-app/tools/impl/RenameLogseqPageTool";
-import {UpdateLogseqBlockTool} from "src/chat-app/tools/impl/UpdateLogseqBlockTool";
+import {LogseqRenamePageTool} from "src/chat-app/tools/impl/LogseqRenamePageTool";
+import {LogseqUpdateBlockTool} from "src/chat-app/tools/impl/LogseqUpdateBlockTool";
 
 export class ChatToolRegistry {
     private static instance: ChatToolRegistry | undefined;
@@ -39,18 +39,18 @@ export class ChatToolRegistry {
     private static createDefault(): ChatToolRegistry {
         const registry = new ChatToolRegistry();
 
-        registry.registerTool(new ReadLogseqBlockTool());
-        registry.registerTool(new DataScriptQueryLogseqTool());
+        registry.registerTool(new LogseqReadBlockTool());
+        registry.registerTool(new LogseqDataScriptQueryTool());
         registry.registerTool(new SkillTool());
-        registry.registerTool(new InsertLogseqBlockTool());
-        registry.registerTool(new CreateLogseqPageTool());
-        registry.registerTool(new DeleteLogseqPageTool());
-        registry.registerTool(new RenameLogseqPageTool());
-        registry.registerTool(new UpdateLogseqBlockTool());
-        registry.registerTool(new MoveLogseqBlockTool());
-        registry.registerTool(new ClearLogseqChangesTool());
+        registry.registerTool(new LogseqInsertBlockTool());
+        registry.registerTool(new LogseqCreatePageTool());
+        registry.registerTool(new LogseqDeletePageTool());
+        registry.registerTool(new LogseqRenamePageTool());
+        registry.registerTool(new LogseqUpdateBlockTool());
+        registry.registerTool(new LogseqMoveBlockTool());
+        registry.registerTool(new LogseqClearChangesTool());
         registry.registerTool(new GetUserInfoTool());
-        registry.registerTool(new CommitLogseqChangesTool());
+        registry.registerTool(new LogseqCommitChangesTool());
 
         return registry;
     }

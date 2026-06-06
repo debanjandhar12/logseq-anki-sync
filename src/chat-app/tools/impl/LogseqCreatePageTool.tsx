@@ -8,7 +8,7 @@ import type {LogseqTransactionResult} from "src/core/logseq-fakeable-transaction
 import {CreatePageCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
 import {z} from "zod";
 
-const createLogseqPageParameters = z.object({
+const LogseqCreatePageArgsZodObj = z.object({
     pageName: z.string().describe("Name of the Logseq page to create."),
     properties: z
         .record(z.string(), z.any())
@@ -16,9 +16,9 @@ const createLogseqPageParameters = z.object({
         .describe("Optional Logseq page properties to set on the new page.")
 });
 
-type CreateLogseqPageArgs = z.infer<typeof createLogseqPageParameters>;
+type LogseqCreatePageArgs = z.infer<typeof LogseqCreatePageArgsZodObj>;
 
-type CreateLogseqPageResult =
+type LogseqCreatePageResult =
     | {
           success: true;
           page: LogseqTransactionResult | undefined;
@@ -28,20 +28,20 @@ type CreateLogseqPageResult =
           error: string;
       };
 
-export class CreateLogseqPageTool extends BaseChatToolWithDefaultUI<
-    CreateLogseqPageArgs,
-    CreateLogseqPageResult
+export class LogseqCreatePageTool extends BaseChatToolWithDefaultUI<
+    LogseqCreatePageArgs,
+    LogseqCreatePageResult
 > {
-    static readonly NAME = "create_logseq_page";
+    static readonly NAME = "logseq_create_page";
 
-    readonly name = CreateLogseqPageTool.NAME;
+    readonly name = LogseqCreatePageTool.NAME;
     readonly description = "Create a Logseq page by name.";
-    readonly parameters = createLogseqPageParameters;
+    readonly parameters = LogseqCreatePageArgsZodObj;
 
     async execute(
-        {pageName, properties}: CreateLogseqPageArgs,
+        {pageName, properties}: LogseqCreatePageArgs,
         context?: ChatToolExecutionContext
-    ): Promise<CreateLogseqPageResult | ToolResponse<CreateLogseqPageResult>> {
+    ): Promise<LogseqCreatePageResult | ToolResponse<LogseqCreatePageResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
             transactionTracker.addCommand(new CreatePageCommand(pageName, properties));

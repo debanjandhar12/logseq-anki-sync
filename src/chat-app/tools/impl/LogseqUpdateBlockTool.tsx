@@ -4,16 +4,17 @@ import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWit
 import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
 import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {DeletePageCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
+import {UpdateBlockCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
 import {z} from "zod";
 
-const deleteLogseqPageParameters = z.object({
-    pageUuid: z.string().describe("UUID of the Logseq page to delete.")
+const LogseqUpdateBlockArgsZodObj = z.object({
+    blockUuid: z.string().describe("UUID of the Logseq block to update."),
+    content: z.string().describe("New content for the Logseq block.")
 });
 
-type DeleteLogseqPageArgs = z.infer<typeof deleteLogseqPageParameters>;
+type LogseqUpdateBlockArgs = z.infer<typeof LogseqUpdateBlockArgsZodObj>;
 
-type DeleteLogseqPageResult =
+type LogseqUpdateBlockResult =
     | {
           success: true;
       }
@@ -22,23 +23,23 @@ type DeleteLogseqPageResult =
           error: string;
       };
 
-export class DeleteLogseqPageTool extends BaseChatToolWithDefaultUI<
-    DeleteLogseqPageArgs,
-    DeleteLogseqPageResult
+export class LogseqUpdateBlockTool extends BaseChatToolWithDefaultUI<
+    LogseqUpdateBlockArgs,
+    LogseqUpdateBlockResult
 > {
-    static readonly NAME = "delete_logseq_page";
+    static readonly NAME = "logseq_update_block";
 
-    readonly name = DeleteLogseqPageTool.NAME;
-    readonly description = "Delete a Logseq page by name or UUID.";
-    readonly parameters = deleteLogseqPageParameters;
+    readonly name = LogseqUpdateBlockTool.NAME;
+    readonly description = "Update a Logseq block by UUID.";
+    readonly parameters = LogseqUpdateBlockArgsZodObj;
 
     async execute(
-        {pageUuid}: DeleteLogseqPageArgs,
+        {blockUuid, content}: LogseqUpdateBlockArgs,
         context?: ChatToolExecutionContext
-    ): Promise<DeleteLogseqPageResult | ToolResponse<DeleteLogseqPageResult>> {
+    ): Promise<LogseqUpdateBlockResult | ToolResponse<LogseqUpdateBlockResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new DeletePageCommand(pageUuid));
+            transactionTracker.addCommand(new UpdateBlockCommand(blockUuid, content));
 
             await transactionTracker.executeInTheInMemoryDB();
 
@@ -49,7 +50,7 @@ export class DeleteLogseqPageTool extends BaseChatToolWithDefaultUI<
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to delete Logseq page ${pageUuid}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to update Logseq block ${blockUuid}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }
