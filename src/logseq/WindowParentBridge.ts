@@ -91,12 +91,12 @@ export class WindowParentBridge {
     /**
      * Get the AnkiConnect global object
      */
-    static getAnkiConnect(): any {
+    static getLogseqObject(): any {
         const parent = WindowParentBridge.getParentWindow();
-        if (!(parent as any).AnkiConnect) {
-            throw new Error("AnkiConnect not available on parent window");
+        if (!(parent as any).logseq) {
+            throw new Error("logseq not available on parent window");
         }
-        return (parent as any).AnkiConnect;
+        return (parent as any).logseq;
     }
 
     /**

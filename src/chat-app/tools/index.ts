@@ -10,5 +10,6 @@ export {LogseqMoveBlockTool} from "src/chat-app/tools/impl/LogseqMoveBlockTool";
 export {LogseqReadBlockTool} from "src/chat-app/tools/impl/LogseqReadBlockTool";
 export {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 export {LogseqRenamePageTool} from "src/chat-app/tools/impl/LogseqRenamePageTool";
+export {LogseqTextSearchTool} from "src/chat-app/tools/impl/LogseqTextSearchTool";
 export {LogseqUpdateBlockTool} from "src/chat-app/tools/impl/LogseqUpdateBlockTool";
 export {ChatToolRegistry} from "./ToolRegistry";

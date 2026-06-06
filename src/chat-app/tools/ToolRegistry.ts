@@ -12,6 +12,7 @@ import {LogseqMoveBlockTool} from "src/chat-app/tools/impl/LogseqMoveBlockTool";
 import {LogseqReadBlockTool} from "src/chat-app/tools/impl/LogseqReadBlockTool";
 import {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 import {LogseqRenamePageTool} from "src/chat-app/tools/impl/LogseqRenamePageTool";
+import {LogseqTextSearchTool} from "src/chat-app/tools/impl/LogseqTextSearchTool";
 import {LogseqUpdateBlockTool} from "src/chat-app/tools/impl/LogseqUpdateBlockTool";
 
 export class ChatToolRegistry {
@@ -46,6 +47,7 @@ export class ChatToolRegistry {
         registry.registerTool(new LogseqCreatePageTool());
         registry.registerTool(new LogseqDeletePageTool());
         registry.registerTool(new LogseqRenamePageTool());
+        registry.registerTool(new LogseqTextSearchTool());
         registry.registerTool(new LogseqUpdateBlockTool());
         registry.registerTool(new LogseqMoveBlockTool());
         registry.registerTool(new LogseqClearChangesTool());
