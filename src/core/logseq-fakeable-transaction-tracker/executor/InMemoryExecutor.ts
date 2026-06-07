@@ -6,10 +6,10 @@ import type {
     PageIdentity
 } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-import {LogseqPropertiesHelper} from "../../../logseq/LogseqPropertiesHelper";
-import type {
+import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
+import {
     InMemoryBlockEntity,
-    InMemoryDB,
+    InMemoryDB, InMemoryEntityReference,
     InMemoryLogseqEntity,
     InMemoryPageEntity,
     LogseqEntityIdentity
@@ -20,8 +20,6 @@ type BlockDetachResult = {
     block: InMemoryBlockEntity;
     parent: InMemoryLogseqEntity;
 };
-
-type EntityReference = {id: EntityID};
 
 const DEFAULT_BLOCK_FORMAT: BlockEntity["format"] = "markdown";
 
@@ -82,7 +80,6 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         }
 
         this.reparentSubtree(detachedBlock.block, destination, destinationPage);
-        detachedBlock.block.order = this.getNextChildOrder(destination);
         this.insertChild(destination, detachedBlock.block);
         return this.pushAndReturn(true, true);
     }
@@ -105,9 +102,9 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         properties: Record<string, any> = {}
     ): Promise<boolean> {
         const now = Date.now();
+        const pageUuid = this.uuidGenerator.getUUID();
         const page: InMemoryPageEntity = {
-            id: -now,
-            uuid: this.uuidGenerator.getUUID(),
+            uuid: pageUuid,
             name: pageName,
             title: pageName,
             fullTitle: pageName,
@@ -118,7 +115,7 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
             createdAt: now,
             "journal?": false,
             properties,
-            children: this.createPagePropertyBlocks(properties, now)
+            children: this.createPagePropertyBlocks(properties, pageUuid, now)
         };
 
         this.inMemoryPageDataDb.set(page.uuid, page);
@@ -177,7 +174,18 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
 
         const pageBlocks = await LogseqPropertiesHelper.getPageBlocksTree(page.uuid);
         const pageWithChildren: InMemoryPageEntity = {
-            ...page,
+            uuid: page.uuid,
+            name: page.name,
+            title: typeof page.title === "string" ? page.title : page.name,
+            fullTitle: typeof page.fullTitle === "string" ? page.fullTitle : page.name,
+            content: typeof page.content === "string" ? page.content : page.name,
+            format: DEFAULT_BLOCK_FORMAT,
+            type: "page",
+            updatedAt: page.updatedAt,
+            createdAt: page.createdAt,
+            "journal?": page["journal?"],
+            properties: page.properties,
+            originalName: page.originalName,
             children: this.normalizeImportedBlocks(pageBlocks)
         };
 
@@ -225,10 +233,9 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
     }): InMemoryBlockEntity {
         const now = Date.now();
         return {
-            id: -now,
             uuid: this.uuidGenerator.getUUID(),
-            order: this.getNextChildOrder(parent),
-            format: this.getEntityFormat(parent),
+            type: "block",
+            format: DEFAULT_BLOCK_FORMAT,
             parent: this.toEntityReference(parent),
             title: content,
             fullTitle: content,
@@ -244,20 +251,20 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
 
     private createPagePropertyBlocks(
         properties: Record<string, any>,
+        pageUuid: string,
         pageCreatedAt: number
     ): InMemoryLogseqEntity[] {
-        return Object.entries(properties).map(([key, value], index) => {
+        return Object.entries(properties).map(([key, value]) => {
             const content = this.stringifyPropertyValue(value);
             return {
-                id: -(pageCreatedAt + index + 1),
                 uuid: this.uuidGenerator.getUUID(),
-                order: `b${(0x1f + index).toString(36)}`,
+                type: "block",
                 format: DEFAULT_BLOCK_FORMAT,
-                parent: {id: -pageCreatedAt},
+                parent: {uuid: pageUuid},
                 title: content,
                 fullTitle: content,
                 content,
-                page: {id: -pageCreatedAt},
+                page: {uuid: pageUuid},
                 createdAt: pageCreatedAt,
                 updatedAt: pageCreatedAt,
                 properties: {logseqPropertyKey: key},
@@ -287,13 +294,6 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         children.splice(firstPropertyBlockIndex, 0, child);
     }
 
-    private getNextChildOrder(parent: InMemoryLogseqEntity): string {
-        const editableChildCount = this.getMutableChildren(parent).filter(
-            (child) => !this.isSyntheticPagePropertyBlock(child)
-        ).length;
-        return `a${editableChildCount.toString(36)}`;
-    }
-
     private isSyntheticPagePropertyBlock(entity: InMemoryLogseqEntity): boolean {
         return !this.isPageEntity(entity) && Boolean(entity.properties?.logseqPropertyKey);
     }
@@ -303,18 +303,24 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
     }
 
     private normalizeImportedBlock(block: BlockEntity): InMemoryBlockEntity {
-        const normalizedBlock = _.cloneDeep(block) as InMemoryBlockEntity;
+        const normalizedBlock = _.cloneDeep(block) as unknown as InMemoryBlockEntity;
+        normalizedBlock.type = "block";
+        normalizedBlock.format = DEFAULT_BLOCK_FORMAT;
         normalizedBlock.parent = this.normalizeReference(normalizedBlock.parent);
         normalizedBlock.page = this.normalizeReference(normalizedBlock.page);
         normalizedBlock.children = this.normalizeImportedBlocks(
-            (normalizedBlock.children || []) as BlockEntity[]
+            (normalizedBlock.children || []) as unknown as BlockEntity[]
         );
         return normalizedBlock;
     }
 
-    private normalizeReference(reference: unknown): EntityReference | undefined {
-        const id = this.getReferenceId(reference);
-        return typeof id === "number" ? {id} : undefined;
+    private normalizeReference(reference: unknown): InMemoryEntityReference | undefined {
+        if (typeof reference === "object" && reference !== null && "uuid" in reference) {
+            const uuid = (reference as {uuid?: unknown}).uuid;
+            return typeof uuid === "string" ? {uuid} : undefined;
+        }
+
+        return undefined;
     }
 
     private getReferenceId(reference: unknown): EntityID | undefined {
@@ -344,8 +350,8 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         }
     }
 
-    private toEntityReference(entity: InMemoryLogseqEntity): EntityReference {
-        return {id: entity.id};
+    private toEntityReference(entity: InMemoryLogseqEntity): InMemoryEntityReference {
+        return {uuid: entity.uuid};
     }
 
     private findPageContainingEntity(identity: LogseqEntityIdentity): InMemoryPageEntity | null {
@@ -419,7 +425,7 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
     }
 
     private matchesIdentity(entity: InMemoryLogseqEntity, identity: LogseqEntityIdentity): boolean {
-        if (typeof identity === "number") return entity.id === identity;
+        if (typeof identity === "number") return false;
         if (typeof identity === "string")
             return entity.uuid === identity || this.getPageName(entity) === identity;
         return Boolean(identity?.uuid && entity.uuid === identity.uuid);
@@ -430,13 +436,8 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
     }
 
     private isPageEntity(entity: InMemoryLogseqEntity): entity is InMemoryPageEntity {
-        return "name" in entity && "type" in entity;
+        return entity.type === "page";
     }
-
-    private getEntityFormat(entity: InMemoryLogseqEntity): BlockEntity["format"] {
-        return entity.format === "org" ? "org" : DEFAULT_BLOCK_FORMAT;
-    }
-
     private getMutableChildren(entity: InMemoryLogseqEntity): InMemoryLogseqEntity[] {
         const mutableEntity = entity as {children?: InMemoryLogseqEntity[]};
         mutableEntity.children = mutableEntity.children || [];

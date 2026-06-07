@@ -9,29 +9,38 @@ import type {LogseqTransactionExecutor} from "./executor/LogseqTransactionExecut
 
 export type LogseqEntityIdentity = PageIdentity | BlockIdentity | EntityID;
 
-export type InMemoryBlockEntity = BlockEntity;
+export type InMemoryEntityReference = {uuid: string};
 
-export type InMemoryPageEntity = Pick<
-    PageEntity,
-    | "id"
+type InMemoryEntityBaseKeys =
     | "uuid"
-    | "name"
     | "format"
-    | "type"
-    | "updatedAt"
-    | "createdAt"
-    | "journal?"
     | "title"
-    | "file"
-    | "originalName"
-    | "namespace"
+    | "fullTitle"
+    | "content"
+    | "createdAt"
+    | "updatedAt"
     | "properties"
-    | "journalDay"
-    | "ident"
+    | "collapsed?";
+
+type InMemoryEntityBase = Pick<BlockEntity, "uuid"> &
+    Partial<Pick<BlockEntity, Exclude<InMemoryEntityBaseKeys, "uuid">>>;
+
+export type InMemoryBlockEntity = Omit<
+    Pick<BlockEntity, InMemoryEntityBaseKeys | "parent" | "page" | "children">,
+    "parent" | "page" | "children"
 > & {
+    type?: "block";
+    parent?: InMemoryEntityReference;
+    page?: InMemoryEntityReference;
     children?: InMemoryLogseqEntity[];
-    [key: string]: unknown;
 };
+
+export type InMemoryPageEntity = InMemoryEntityBase &
+    Pick<PageEntity, "name" | "journal?"> & {
+        type: "page";
+        originalName?: PageEntity["originalName"];
+        children?: InMemoryLogseqEntity[];
+    };
 
 export type InMemoryLogseqEntity = InMemoryPageEntity | InMemoryBlockEntity;
 

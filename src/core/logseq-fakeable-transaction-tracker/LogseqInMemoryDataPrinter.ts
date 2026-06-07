@@ -10,7 +10,7 @@ export class LogseqInMemoryDataPrinter {
     private static printPage(page: InMemoryPageEntity): string {
         const lines = [];
         for (const child of page.children || []) {
-            lines.push(...LogseqInMemoryDataPrinter.printBlock(child as InMemoryLogseqEntity, 0));
+            lines.push(...LogseqInMemoryDataPrinter.printBlock(child, 0));
         }
 
         return lines.join("\n");
@@ -30,15 +30,13 @@ export class LogseqInMemoryDataPrinter {
         }
 
         for (const child of entity.children || []) {
-            lines.push(
-                ...LogseqInMemoryDataPrinter.printBlock(child as InMemoryLogseqEntity, depth + 1)
-            );
+            lines.push(...LogseqInMemoryDataPrinter.printBlock(child, depth + 1));
         }
 
         return lines;
     }
 
     private static isPageEntity(entity: InMemoryLogseqEntity): entity is InMemoryPageEntity {
-        return "name" in entity && "type" in entity;
+        return entity.type === "page";
     }
 }
