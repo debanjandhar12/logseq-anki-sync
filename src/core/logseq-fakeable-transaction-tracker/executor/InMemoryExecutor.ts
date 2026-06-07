@@ -114,8 +114,8 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
             updatedAt: now,
             createdAt: now,
             "journal?": false,
-            properties,
-            children: this.createPagePropertyBlocks(properties, pageUuid, now)
+            properties: {...properties, uuid: pageUuid},
+            children: []
         };
 
         this.inMemoryPageDataDb.set(page.uuid, page);
@@ -232,8 +232,9 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         page: InMemoryPageEntity;
     }): InMemoryBlockEntity {
         const now = Date.now();
+        const blockUuid = this.uuidGenerator.getUUID();
         return {
-            uuid: this.uuidGenerator.getUUID(),
+            uuid: blockUuid,
             type: "block",
             format: DEFAULT_BLOCK_FORMAT,
             parent: this.toEntityReference(parent),
@@ -243,41 +244,10 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
             page: this.toEntityReference(page),
             createdAt: now,
             updatedAt: now,
-            properties: {},
+            properties: {uuid: blockUuid},
             "collapsed?": false,
             children: []
         } as InMemoryBlockEntity;
-    }
-
-    private createPagePropertyBlocks(
-        properties: Record<string, any>,
-        pageUuid: string,
-        pageCreatedAt: number
-    ): InMemoryLogseqEntity[] {
-        return Object.entries(properties).map(([key, value]) => {
-            const content = this.stringifyPropertyValue(value);
-            return {
-                uuid: this.uuidGenerator.getUUID(),
-                type: "block",
-                format: DEFAULT_BLOCK_FORMAT,
-                parent: {uuid: pageUuid},
-                title: content,
-                fullTitle: content,
-                content,
-                page: {uuid: pageUuid},
-                createdAt: pageCreatedAt,
-                updatedAt: pageCreatedAt,
-                properties: {logseqPropertyKey: key},
-                "collapsed?": false,
-                children: []
-            } as InMemoryBlockEntity;
-        });
-    }
-
-    private stringifyPropertyValue(value: unknown): string {
-        if (Array.isArray(value)) return value.join(", ");
-        if (typeof value === "object" && value !== null) return JSON.stringify(value);
-        return String(value);
     }
 
     private insertChild(parent: InMemoryLogseqEntity, child: InMemoryLogseqEntity): void {

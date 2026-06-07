@@ -19,8 +19,7 @@ type InMemoryEntityBaseKeys =
     | "content"
     | "createdAt"
     | "updatedAt"
-    | "properties"
-    | "collapsed?";
+    | "properties";
 
 type InMemoryEntityBase = Pick<BlockEntity, "uuid"> &
     Partial<Pick<BlockEntity, Exclude<InMemoryEntityBaseKeys, "uuid">>>;

@@ -44,11 +44,21 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     ): Promise<LogseqCommitChangesResult | ToolResponse<LogseqCommitChangesResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
+            if (transactionTracker.getCommands().length === 0) {
+                return new ToolResponse({
+                    result: {success: true, changes: "No pending changes to commit."},
+                    artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
+                });
+            }
+
             await transactionTracker.executeInLogseq();
             transactionTracker.clear();
 
             return new ToolResponse({
-                result: {success: true, changes: "Committed pending Logseq changes."},
+                result: {
+                    success: true,
+                    changes: "All pending Logseq changes commited successfully."
+                },
                 artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {

@@ -54,7 +54,7 @@ export class LogseqFakeableTransactionTracker {
 
     public clear(): void {
         this.commandQueue.clear();
-        this.UUID_GENERATION_SEED = logseq.Editor.newUUID();
+        this.UUID_GENERATION_SEED = uuidv4();
     }
 
     public async executeInTheInMemoryDB(): Promise<InMemoryExecutor> {
