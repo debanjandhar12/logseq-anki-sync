@@ -29,8 +29,11 @@
         "@assistant-ui/react-devtools": "^1.2.1",
         "@assistant-ui/react-markdown": "^0.14.0",
         "@codemirror/lang-markdown": "^6.5.0",
+        "@codemirror/language": "^6.12.3",
+        "@codemirror/view": "^6.43.0",
         "@floating-ui/react": "^0.27.18",
         "@floating-ui/react-dom-original": "npm:@floating-ui/react-dom@2.1.7",
+        "@lezer/highlight": "^1.2.3",
         "@logseq/libs": "^0.3.3",
         "@radix-ui/react-avatar": "^1.1.11",
         "@radix-ui/react-collapsible": "^1.1.12",
@@ -74,8 +77,7 @@
         "tw-shimmer": "^0.4.11",
         "uuid": "^14.0.0",
         "zod": "^4.4.3",
-        "zustand": "^5.0.13",
-        "codemirror-themes-for-shadcn": "^1.0.3"
+        "zustand": "^5.0.13"
     },
     "devDependencies": {
         "@babel/core": "^7.0.0",
