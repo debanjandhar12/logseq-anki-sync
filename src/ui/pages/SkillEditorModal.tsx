@@ -8,6 +8,7 @@ import type {SkillFileData} from "src/core/stores/skill-file-store/types";
 import {LogseqButton} from "../components/LogseqButton";
 import {LogseqCheckbox} from "../components/LogseqCheckbox";
 import {LogseqCodeEditor} from "../components/LogseqCodeEditor";
+import {showConfirmModal} from "../launchers/showConfirmModal";
 import {Modal} from "../modals/core/Modal";
 import {ModalFooter} from "../modals/core/ModalFooter";
 import {ModalHeader} from "../modals/core/ModalHeader";
@@ -42,6 +43,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
     modalContext
 }) => {
     const [files, setFiles] = React.useState<EditableSkillFile[]>([]);
+    const [initialFilesSnapshot, setInitialFilesSnapshot] = React.useState("");
     const [originalFileNames, setOriginalFileNames] = React.useState<Set<string>>(new Set());
     const [activeFileId, setActiveFileId] = React.useState<string | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
@@ -70,6 +72,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
             }));
 
             setFiles(editableFiles);
+            setInitialFilesSnapshot(getFilesSnapshot(editableFiles));
             setOriginalFileNames(
                 new Set(
                     editableFiles
@@ -99,6 +102,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
     const activeFileMetadata = activeFile ? getSkillFileMetadata(activeFile.content) : null;
     const isActiveFileDefault = activeFileMetadata?.defaultInstalledSkill === true;
     const isModelInvocationEnabled = activeFileMetadata?.disableModelInvocation !== true;
+    const hasUnsavedChanges = getFilesSnapshot(files) !== initialFilesSnapshot;
 
     const handleAddFile = React.useCallback(() => {
         const newFile = {
@@ -213,9 +217,21 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
         }
     }, [files, originalFileNames, returnResult]);
 
-    const handleCancel = React.useCallback(() => {
+    const handleCancel = React.useCallback(async () => {
+        if (hasUnsavedChanges) {
+            const shouldClose = await showConfirmModal(
+                "You have unsaved skill changes. Close without saving?",
+                {
+                    confirmText: "Close without saving",
+                    cancelText: "Keep editing"
+                }
+            );
+
+            if (!shouldClose) return;
+        }
+
         returnResult(null);
-    }, [returnResult]);
+    }, [hasUnsavedChanges, returnResult]);
 
     return (
         <Modal
@@ -227,7 +243,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
             hasCloseButton={false}
             className="overflow-hidden">
             <div className="flex max-h-[90vh] min-h-[70vh] flex-col text-text">
-                <ModalHeader title="Skills Editor" showCloseButton={true} onClose={handleCancel} />
+                <ModalHeader title="Skills Editor" showCloseButton={false} onClose={handleCancel} />
 
                 <div className="min-h-0 flex-1 flex flex-row overflow-hidden border-border border-t">
                     {isLoading ? (
@@ -367,6 +383,15 @@ function getDisplayFileName(content: string): string {
 
 function getSkillFileName(skillFileData: Pick<SkillFileData, "name">): string {
     return `${skillFileData.name}.md`;
+}
+
+function getFilesSnapshot(files: EditableSkillFile[]): string {
+    return JSON.stringify(
+        files.map((file) => ({
+            content: file.content,
+            originalFileName: file.originalFileName ?? null
+        }))
+    );
 }
 
 function isValidFileName(fileName: string): boolean {
