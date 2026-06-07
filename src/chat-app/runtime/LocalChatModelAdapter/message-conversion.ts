@@ -9,6 +9,9 @@ export function threadMessageToUIMessage(message: ThreadMessage): UIMessage {
             case "text":
                 parts.push({type: "text", text: part.text});
                 break;
+            case "reasoning":
+                parts.push({type: "reasoning", text: part.text, state: "done"});
+                break;
             case "image":
                 parts.push({
                     type: "file",

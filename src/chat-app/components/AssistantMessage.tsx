@@ -22,6 +22,8 @@ import {cn} from "src/shadcn/lib/utils";
 /**
  * Changes:
  * (a) Removed tool grouping for CommitLogseqChanges tool.
+ * (b) Changed the group reasoning component to display as collapse by default.
+ * (c) Changed margin bottom of the group reasoning component and group tool call to 0.
  */
 export const AssistantMessage: FC = () => {
     // reserves space for action bar and compensates with `-mb` for consistent msg spacing
@@ -56,7 +58,7 @@ export const AssistantMessage: FC = () => {
                             case "group-reasoning": {
                                 const running = part.status.type === "running";
                                 return (
-                                    <ReasoningRoot defaultOpen={running}>
+                                    <ReasoningRoot defaultOpen={false} style={{marginBottom: '0px'}}>
                                         <ReasoningTrigger active={running} />
                                         <ReasoningContent aria-busy={running}>
                                             <ReasoningText>{children}</ReasoningText>
@@ -66,7 +68,7 @@ export const AssistantMessage: FC = () => {
                             }
                             case "group-tool":
                                 return (
-                                    <ToolGroupRoot>
+                                    <ToolGroupRoot style={{marginBottom: '0px'}}>
                                         <ToolGroupTrigger
                                             count={part.indices.length}
                                             active={part.status.type === "running"}

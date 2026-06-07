@@ -4,7 +4,12 @@ import {convertToModelMessages, type LanguageModelUsage, streamText} from "ai";
 import {getLLMModel} from "../../../core/ai-sdk/getLLMModel";
 import {getErrorMessage} from "./error-utils";
 import {threadMessageToUIMessage} from "./message-conversion";
-import {appendTextDelta, createErrorMessageResult, normalizeTokenUsage} from "./stream-helpers";
+import {
+    appendReasoningDelta,
+    appendTextDelta,
+    createErrorMessageResult,
+    normalizeTokenUsage
+} from "./stream-helpers";
 import {
     createToolCallMessagePart,
     executeFrontendTool,
@@ -73,6 +78,10 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                     case "text-delta":
                         partialText += part.text;
                         content = appendTextDelta(content, part.text);
+                        yield {content};
+                        break;
+                    case "reasoning-delta":
+                        content = appendReasoningDelta(content, part.text);
                         yield {content};
                         break;
                     case "tool-call": {

@@ -21,6 +21,18 @@ export function appendTextDelta(
     return [...content.slice(0, -1), {...lastPart, text: `${lastPart.text}${textDelta}`}];
 }
 
+export function appendReasoningDelta(
+    content: NonNullable<ChatModelRunResult["content"]>,
+    textDelta: string
+): NonNullable<ChatModelRunResult["content"]> {
+    const lastPart = content.at(-1);
+    if (lastPart?.type !== "reasoning") {
+        return [...content, {type: "reasoning", text: textDelta}];
+    }
+
+    return [...content.slice(0, -1), {...lastPart, text: `${lastPart.text}${textDelta}`}];
+}
+
 export function createErrorMessageResult(
     existingText: string,
     errorMessage: string
