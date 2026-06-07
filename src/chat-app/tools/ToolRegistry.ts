@@ -1,25 +1,26 @@
 import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
 import type {BaseChatTool} from "src/chat-app/tools/base/BaseChatTool";
+import {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 import {LogseqClearChangesTool} from "src/chat-app/tools/impl/LogseqClearChangesTool";
 import {LogseqCommitChangesTool} from "src/chat-app/tools/impl/LogseqCommitChangesTool";
 import {LogseqCreatePageTool} from "src/chat-app/tools/impl/LogseqCreatePageTool";
 import {LogseqDataScriptQueryTool} from "src/chat-app/tools/impl/LogseqDataScriptQueryTool";
 import {LogseqDeletePageTool} from "src/chat-app/tools/impl/LogseqDeletePageTool";
-import {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 import {LogseqInsertBlockTool} from "src/chat-app/tools/impl/LogseqInsertBlockTool";
 import {LogseqMoveBlockTool} from "src/chat-app/tools/impl/LogseqMoveBlockTool";
 import {LogseqReadBlockTool} from "src/chat-app/tools/impl/LogseqReadBlockTool";
-import {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 import {LogseqRenamePageTool} from "src/chat-app/tools/impl/LogseqRenamePageTool";
 import {LogseqTextSearchTool} from "src/chat-app/tools/impl/LogseqTextSearchTool";
 import {LogseqUpdateBlockTool} from "src/chat-app/tools/impl/LogseqUpdateBlockTool";
+import {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 
 export class ChatToolRegistry {
     private static instance: ChatToolRegistry | undefined;
 
     private readonly tools = new Map<string, Tool<any, any>>();
     private readonly toolUIs = new Map<string, ToolCallMessagePartComponent>();
+    private readonly humanToolNames = new Set<string>();
 
     static getInstance(): ChatToolRegistry {
         if (!ChatToolRegistry.instance) {
@@ -35,6 +36,10 @@ export class ChatToolRegistry {
 
     getToolUIs(): ReadonlyMap<string, ToolCallMessagePartComponent> {
         return this.toolUIs;
+    }
+
+    getHumanToolNames(): string[] {
+        return [...this.humanToolNames];
     }
 
     private static createDefault(): ChatToolRegistry {
@@ -61,6 +66,9 @@ export class ChatToolRegistry {
         tool: BaseChatTool<TArgs, TResult>
     ): void {
         this.tools.set(tool.name, tool.getDefinition());
+        if (tool.type === "human") {
+            this.humanToolNames.add(tool.name);
+        }
         if (tool.render) {
             this.toolUIs.set(tool.name, tool.render);
         }
