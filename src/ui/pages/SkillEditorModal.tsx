@@ -1,5 +1,4 @@
 import {markdown} from "@codemirror/lang-markdown";
-import CodeMirror from "@uiw/react-codemirror";
 import matter from "gray-matter";
 import {Plus, Trash} from "lucide-react";
 import React from "react";
@@ -8,6 +7,7 @@ import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
 import type {SkillFileData} from "src/core/stores/skill-file-store/types";
 import {LogseqButton} from "../components/LogseqButton";
 import {LogseqCheckbox} from "../components/LogseqCheckbox";
+import {LogseqCodeEditor} from "../components/LogseqCodeEditor";
 import {Modal} from "../modals/core/Modal";
 import {ModalFooter} from "../modals/core/ModalFooter";
 import {ModalHeader} from "../modals/core/ModalHeader";
@@ -303,16 +303,11 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                         </div>
 
                                         <div className="min-h-0 flex-1 overflow-hidden">
-                                            <CodeMirror
+                                            <LogseqCodeEditor
                                                 value={activeFile.content}
                                                 height="100%"
-                                                className="h-full [&>.cm-editor]:h-full"
                                                 extensions={[markdown()]}
                                                 editable={!isActiveFileDefault}
-                                                basicSetup={{
-                                                    foldGutter: true,
-                                                    lineNumbers: true
-                                                }}
                                                 onChange={handleContentChange}
                                             />
                                         </div>

@@ -49,6 +49,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     LogseqSettingAccessor.init();
     LogseqAppListeners.init();
     UI.init();
+    logseq.Editor.up
     await initDefaultInstalledSkillFiles();
 
     // The lines below are needed for vite build and dev to work properly.

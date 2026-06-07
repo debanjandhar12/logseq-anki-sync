@@ -89,6 +89,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      codemirror-themes-for-shadcn:
+        specifier: ^1.0.3
+        version: 1.0.3
       composed-offset-position:
         specifier: ^0.0.6
         version: 0.0.6(@floating-ui/utils@0.2.10)
@@ -3254,6 +3257,9 @@ packages:
   code-point-at@1.1.0:
     resolution: {integrity: sha512-RpAVKQA5T63xEj6/giIbUEtZwJ4UFIc3ZtvEkiaUERylqe8xb5IvqcgOurZLahv93CLKfxcw5YI+DZcUBRyLXA==}
     engines: {node: '>=0.10.0'}
+
+  codemirror-themes-for-shadcn@1.0.3:
+    resolution: {integrity: sha512-y37PLt9d+6BMJ3t9WbKcykmyM+q2bQ0kMzT95KRMKBxgCLU46yuBCmKMig4AqQXYkRQefZBLs0gcZwV8RbdVEw==}
 
   codemirror@6.0.2:
     resolution: {integrity: sha512-VhydHotNW5w1UGK0Qj96BwSk/Zqbp9WbnyK2W/eVMv4QyF41INRGpjUhFJY7/uDNuudSc33a/PKr4iDqRduvHw==}
@@ -9295,6 +9301,8 @@ snapshots:
   code-block-writer@13.0.3: {}
 
   code-point-at@1.1.0: {}
+
+  codemirror-themes-for-shadcn@1.0.3: {}
 
   codemirror@6.0.2:
     dependencies:
