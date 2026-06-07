@@ -50,7 +50,12 @@ export class LogseqDataScriptQueryTool extends BaseChatToolWithDefaultUI<
                 );
             }
 
-            const result = await logseq.DB.datascriptQuery(datalogString, ...inputs);
+            let result: any;
+            if (inputs && inputs.length > 0) {
+                result = await logseq.DB.datascriptQuery(datalogString, ...inputs);
+            } else {
+                result = await logseq.DB.datascriptQuery(datalogString);
+            }
             return {success: true, result};
         } catch (err) {
             return {
