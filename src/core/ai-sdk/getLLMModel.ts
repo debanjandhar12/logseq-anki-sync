@@ -1,5 +1,6 @@
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
 import {createOpenAI} from "@ai-sdk/openai";
+import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
 import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
 import {ProviderEnum} from "./types";
 
@@ -28,6 +29,13 @@ export async function getLLMModel() {
             apiKey: llmAPIKey
         });
         return openai.chat(llmAPIModel);
+    } else if (llmProvider === ProviderEnum.OPENAI_COMPATIBLE) {
+        const openaiCompatible = createOpenAICompatible({
+            name: "openai-compatible",
+            baseURL: llmAPIUrl,
+            apiKey: llmAPIKey
+        });
+        return openaiCompatible.chatModel(llmAPIModel);
     } else if (llmProvider === ProviderEnum.GOOGLE) {
         const google = createGoogleGenerativeAI({
             apiKey: llmAPIKey,
