@@ -3,6 +3,7 @@ import {InMemoryExecutor} from "./executor/InMemoryExecutor";
 import {LogseqExecutor} from "./executor/LogseqExecutor";
 import {LogseqFakeableTransactionCommandQueue} from "./LogseqFakeableTransactionCommandQueue";
 import type {LogseqFakeableCommand} from "./types";
+import {v4 as uuidv4} from "uuid";
 
 function getThrownValueMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -29,7 +30,11 @@ function getThrownValueMessage(error: unknown): string {
 export class LogseqFakeableTransactionTracker {
     private readonly commandQueue = new LogseqFakeableTransactionCommandQueue();
 
-    private UUID_GENERATION_SEED = logseq.Editor.newUUID();
+    private UUID_GENERATION_SEED = null;
+
+    constructor() {
+        this.UUID_GENERATION_SEED = uuidv4();
+    }
 
     public getUuidGenerationSeed(): string {
         return this.UUID_GENERATION_SEED;
