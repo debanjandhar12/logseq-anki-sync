@@ -7,9 +7,10 @@ import type {
 } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
-import {
+import type {
     InMemoryBlockEntity,
-    InMemoryDB, InMemoryEntityReference,
+    InMemoryDB,
+    InMemoryEntityReference,
     InMemoryLogseqEntity,
     InMemoryPageEntity,
     LogseqEntityIdentity
@@ -251,21 +252,7 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
     }
 
     private insertChild(parent: InMemoryLogseqEntity, child: InMemoryLogseqEntity): void {
-        const children = this.getMutableChildren(parent);
-        const firstPropertyBlockIndex = children.findIndex((candidate) =>
-            this.isSyntheticPagePropertyBlock(candidate)
-        );
-
-        if (firstPropertyBlockIndex === -1) {
-            children.push(child);
-            return;
-        }
-
-        children.splice(firstPropertyBlockIndex, 0, child);
-    }
-
-    private isSyntheticPagePropertyBlock(entity: InMemoryLogseqEntity): boolean {
-        return !this.isPageEntity(entity) && Boolean(entity.properties?.logseqPropertyKey);
+        this.getMutableChildren(parent).push(child);
     }
 
     private normalizeImportedBlocks(blocks: BlockEntity[]): InMemoryBlockEntity[] {

@@ -1,9 +1,9 @@
 import {describe, expect, test} from "vitest";
-import {LogseqInMemoryDataPrinter} from "../../../../src/core/logseq-fakeable-transaction-tracker/LogseqInMemoryDataPrinter";
+import {LogseqInMemoryDataPrinter} from "../../../../src/core/logseq-fakeable-transaction-tracker";
 import type {
     InMemoryBlockEntity,
     InMemoryPageEntity
-} from "../../../../src/core/logseq-fakeable-transaction-tracker/types";
+} from "../../../../src/core/logseq-fakeable-transaction-tracker";
 
 describe("LogseqInMemoryDataPrinter", () => {
     test("prints page properties in a new bullet and block properties inside the block bullet", () => {
@@ -20,8 +20,6 @@ describe("LogseqInMemoryDataPrinter", () => {
                 tags: ["a", "b"],
                 metadata: {done: true},
                 priority: "A",
-                "template::internal": false,
-                logseqPropertyKey: "ignored"
             },
             children: []
         };
@@ -51,8 +49,6 @@ describe("LogseqInMemoryDataPrinter", () => {
                 '* tags:: ["a","b"]',
                 '  metadata:: {"done":true}',
                 "  priority:: A",
-                "  template::internal:: false",
-                "  logseqPropertyKey:: ignored",
                 "  Block content line 1",
                 "  Block content line 2"
             ].join("\n")
