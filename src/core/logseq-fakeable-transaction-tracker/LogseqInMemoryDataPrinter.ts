@@ -42,9 +42,12 @@ export class LogseqInMemoryDataPrinter {
     }
 
     private static getPropertyLines(entity: InMemoryLogseqEntity): string[] {
-        return Object.entries(entity.properties || {}).map(
-            ([key, value]) => `${key}:: ${LogseqInMemoryDataPrinter.stringifyPropertyValue(value)}`
-        );
+        return Object.entries(entity.properties || {})
+            .filter(([key]) => key !== "uuid")
+            .map(
+                ([key, value]) =>
+                    `${key}:: ${LogseqInMemoryDataPrinter.stringifyPropertyValue(value)}`
+            );
     }
 
     private static printBullet(lines: string[], depth: number): string[] {
