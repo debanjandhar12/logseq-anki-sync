@@ -1,18 +1,11 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {describe, expect, test} from "vitest";
 import {
-    CreatePageCommand,
-    DeletePageCommand,
     DeterminesticUUIDGenerator,
     type InMemoryBlockEntity,
     InMemoryExecutor,
     type InMemoryPageLoader,
-    InsertBlockCommand,
-    LogseqFakeableTransactionTracker,
-    LogseqInMemoryDataPrinter,
-    MoveBlockCommand,
-    RenamePageCommand,
-    UpdateBlockCommand
+    LogseqInMemoryDataPrinter
 } from "../../../../src/core/logseq-fakeable-transaction-tracker";
 
 const UUID_SEED = "5f9c57d6-3466-4ba3-b6bf-01e12f11c91d";
@@ -23,22 +16,20 @@ describe("InMemoryExecutor", () => {
             const identities = generateIdentities(6);
             const [pageAUuid, rootUuid, childUuid, grandchildUuid, pageBUuid, destinationUuid] =
                 identities;
-            const tracker = new LogseqFakeableTransactionTracker();
-            tracker.setUuidGenerationSeed(UUID_SEED);
+            const executor = createExecutor();
 
-            tracker.addCommand(new CreatePageCommand("Page A", {category: "source"}));
-            tracker.addCommand(new InsertBlockCommand(pageAUuid, "Root"));
-            tracker.addCommand(new InsertBlockCommand(rootUuid, "Child"));
-            tracker.addCommand(new InsertBlockCommand(childUuid, "Grandchild"));
-            tracker.addCommand(new CreatePageCommand("Page B"));
-            tracker.addCommand(new InsertBlockCommand(pageBUuid, "Destination"));
-            tracker.addCommand(new MoveBlockCommand(rootUuid, destinationUuid));
-            tracker.addCommand(new UpdateBlockCommand(grandchildUuid, "Updated grandchild"));
-            tracker.addCommand(new RenamePageCommand(pageBUuid, "Renamed Page B"));
+            await executor.createPage("Page A", {category: "source"});
+            await executor.insertBlock(pageAUuid, "Root");
+            await executor.insertBlock(rootUuid, "Child");
+            await executor.insertBlock(childUuid, "Grandchild");
+            await executor.createPage("Page B");
+            await executor.insertBlock(pageBUuid, "Destination");
+            await executor.moveBlock(rootUuid, destinationUuid);
+            await executor.updateBlock(grandchildUuid, "Updated grandchild");
+            await executor.renamePage(pageBUuid, "Renamed Page B");
 
-            const movedExecutor = await tracker.executeInTheInMemoryDB();
-            const pageA = movedExecutor.getInMemoryPageDataDb().get(pageAUuid);
-            const pageB = movedExecutor.getInMemoryPageDataDb().get(pageBUuid);
+            const pageA = executor.getInMemoryPageDataDb().get(pageAUuid);
+            const pageB = executor.getInMemoryPageDataDb().get(pageBUuid);
             const destination = pageB?.children?.[0] as InMemoryBlockEntity;
             const movedRoot = destination.children?.[0] as InMemoryBlockEntity;
             const movedChild = movedRoot.children?.[0] as InMemoryBlockEntity;
@@ -51,9 +42,7 @@ describe("InMemoryExecutor", () => {
             expect(movedChild.page).toEqual({uuid: pageBUuid});
             expect(movedGrandchild.page).toEqual({uuid: pageBUuid});
             expect(movedGrandchild.content).toBe("Updated grandchild");
-            expect(
-                LogseqInMemoryDataPrinter.print(movedExecutor.getInMemoryPageDataDb())
-            ).toContain(
+            expect(LogseqInMemoryDataPrinter.print(executor.getInMemoryPageDataDb())).toContain(
                 [
                     "* Destination",
                     "    * Root",
@@ -62,14 +51,20 @@ describe("InMemoryExecutor", () => {
                 ].join("\n")
             );
 
-            tracker.addCommand(new DeletePageCommand(pageAUuid));
-            tracker.addCommand(new DeletePageCommand(pageBUuid));
+            await executor.deletePage(pageAUuid);
+            await executor.deletePage(pageBUuid);
+            expect(executor.getInMemoryPageDataDb()).toEqual(new Map());
+            expect(LogseqInMemoryDataPrinter.print(executor.getInMemoryPageDataDb())).toBe("");
+        });
+    });
 
-            const deletedExecutor = await tracker.executeInTheInMemoryDB();
-            expect(deletedExecutor.getInMemoryPageDataDb()).toEqual(new Map());
-            expect(LogseqInMemoryDataPrinter.print(deletedExecutor.getInMemoryPageDataDb())).toBe(
-                ""
-            );
+    describe("createPage", () => {
+        test("rejects duplicate page names", async () => {
+            const executor = createExecutor();
+
+            await executor.createPage("Page");
+
+            await expect(executor.createPage("Page")).rejects.toThrow("Page already exists: Page");
         });
     });
 
@@ -110,6 +105,43 @@ describe("InMemoryExecutor", () => {
                 ?.children?.[0] as InMemoryBlockEntity;
             expect(storedBlock.content).toBe("Block");
         });
+
+        test("imports a page by name", async () => {
+            const loader = new StubPageLoader();
+            const executor = createExecutor(loader);
+
+            const result = await executor.readBlockOrPage("Imported Page", false);
+
+            expect(loader.loadedIdentities).toEqual(["Imported Page"]);
+            expect(result).toMatchObject({uuid: "imported-page", name: "Imported Page"});
+            expect(result).not.toHaveProperty("children");
+        });
+    });
+
+    describe("renamePage", () => {
+        test("rejects duplicate page names", async () => {
+            const [pageAUuid, pageBUuid] = generateIdentities(2);
+            const executor = createExecutor();
+
+            await executor.createPage("Page A");
+            await executor.createPage("Page B");
+
+            await expect(executor.renamePage(pageBUuid, "Page A")).rejects.toThrow(
+                "Page already exists: Page A"
+            );
+            expect(executor.getInMemoryPageDataDb().get(pageAUuid)?.name).toBe("Page A");
+            expect(executor.getInMemoryPageDataDb().get(pageBUuid)?.name).toBe("Page B");
+        });
+
+        test("allows renaming a page to its current name", async () => {
+            const [pageUuid] = generateIdentities(1);
+            const executor = createExecutor();
+
+            await executor.createPage("Page");
+            await executor.renamePage(pageUuid, "Page");
+
+            expect(executor.getInMemoryPageDataDb().get(pageUuid)?.name).toBe("Page");
+        });
     });
 
     describe("imported pages", () => {
@@ -149,6 +181,8 @@ class StubPageLoader implements InMemoryPageLoader {
 
     public async loadPageForIdentity(identity: unknown) {
         this.loadedIdentities.push(identity);
+        if (identity !== "Imported Page" && identity !== "imported-block") return null;
+
         return {
             page: {
                 uuid: "imported-page",
@@ -158,7 +192,7 @@ class StubPageLoader implements InMemoryPageLoader {
                 content: "Imported Page",
                 properties: {uuid: "imported-page"},
                 "journal?": false
-            } as PageEntity,
+            } as unknown as PageEntity,
             blocks: [
                 {
                     uuid: "imported-block",
@@ -169,7 +203,7 @@ class StubPageLoader implements InMemoryPageLoader {
                     parent: {uuid: "imported-page"},
                     page: {uuid: "imported-page"},
                     children: []
-                } as BlockEntity
+                } as unknown as BlockEntity
             ]
         };
     }
