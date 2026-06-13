@@ -1,221 +1,698 @@
-# logseq-fakeable-transaction-tracker — Property & Tag Refactoring Plan
+# logseq-fakeable-transaction-tracker Refactoring Plan
 
-## Context
+## Goal
 
-The `logseq-fakeable-transaction-tracker` module uses a Command + Dual-Executor pattern:
-- **Commands** (`commands/`): `CreatePage`, `DeletePage`, `InsertBlock`, `MoveBlock`, `RenamePage`, `UpdateBlock`
-- **Executors**: `InMemoryExecutor` (in-memory tree) and `LogseqExecutor` (real `logseq.Editor.*` API)
-- **Data model**: `InMemoryDB = Map<string, InMemoryPageEntity>`. Pages have `children` (blocks). Blocks have `children` (nested blocks). Both have `properties: Record<string, any>`.
-- **Printer**: `LogseqInMemoryDataPrinter` renders the in-memory DB as indented bullets with `key:: value` lines.
+Improve `src/core/logseq-fakeable-transaction-tracker` so AI tools can stage Logseq changes in memory, print a reviewable preview, and then apply the approved transaction through `LogseqExecutor` with behavior close to the real Logseq SDK.
 
-Currently there is **zero** support for property schemas, property CRUD on blocks, tags, tag inheritance, or tag-property associations. The `properties` field on entities is a flat `Record<string, any>` with no schema awareness.
+The immediate scope is:
 
-## Reference: Logseq SDK APIs (from `logseq-source/libs/src/LSPlugin.ts`)
+- Fix unsafe block/page movement edge cases.
+- Add Logseq SDK positioning options to `insertBlock` and `moveBlock`.
+- Add DB property schema support.
+- Add block property value support.
+- Add tag/class support, including tag properties and inheritance.
+- Keep the in-memory preview deterministic, readable, and close to real Logseq behavior.
 
-The target APIs to mirror:
+## Current Architecture
 
-```
-// Property schema (DB only)
-upsertProperty(key: string, schema?: Partial<PropertySchema>, opts?: { name?: string }): Promise<IEntityID>
-removeProperty(key: string): Promise<void>
-getProperty(key: string): Promise<BlockEntity | null>
+The module already uses a good base architecture:
 
-// Block property values
-upsertBlockProperty(block: BlockIdentity | EntityID, key: string, value: any, options?: { reset?: boolean }): Promise<void>
-removeBlockProperty(block: BlockIdentity | EntityID, key: string): Promise<void>
+- `LogseqFakeableTransactionTracker` stores a queue of `LogseqFakeableCommand` instances.
+- Each command can execute against either `InMemoryExecutor` or `LogseqExecutor`.
+- `InMemoryExecutor` mutates an in-memory page/block tree for preview.
+- `LogseqExecutor` calls real `logseq.Editor.*` APIs after user approval.
+- `LogseqFakeableTransactionCommandSerializer` serializes/deserializes command history.
+- `LogseqInMemoryDataPrinter` prints the in-memory DB for review.
 
-// Tags / Classes
-createTag(tagName: string, opts?: { uuid?: string, tagProperties?: Array<{ name: string, schema?: Partial<PropertySchema>, properties?: {} }> }): Promise<PageEntity | null>
+Existing partial property support:
+
+- `InMemoryBlockEntity` and `InMemoryPageEntity` already have `properties`.
+- Imported blocks/pages already carry properties through `LogseqPropertiesHelper` and `normalizeLogseqEntity.ts`.
+- `createPage(pageName, properties)` already supports initial page properties.
+- `LogseqInMemoryDataPrinter` already prints non-`uuid` properties as `key:: value`.
+
+Missing support:
+
+- No property schema entities.
+- No command/executor methods for `upsertProperty`, `removeProperty`, `upsertBlockProperty`, or `removeBlockProperty`.
+- No tag/class model.
+- No command/executor methods for `createTag`, `addTagProperty`, `removeTagProperty`, `addTagExtends`, `removeTagExtends`, `addBlockTag`, or `removeBlockTag`.
+- No positioning options for `insertBlock` or `moveBlock`.
+- No prevention for moving a block into its own subtree.
+
+## Logseq SDK Reference
+
+Use `logseq-source/libs/src/LSPlugin.ts` and `logseq-source/libs/cljs-sdk/src/com/logseq/editor.cljs` as source-of-truth references.
+
+Relevant SDK signatures:
+
+```ts
+export type PropertySchema = {
+  type: 'default' | 'number' | 'node' | 'date' | 'checkbox' | 'url' | string
+  cardinality: 'many' | 'one'
+  hide: boolean
+  public: boolean
+}
+
+insertBlock(
+  srcBlock: BlockIdentity | EntityID,
+  content: string,
+  opts?: Partial<{
+    before: boolean
+    sibling: boolean
+    start: boolean
+    end: boolean
+    customUUID: string
+    properties: {}
+  }>
+): Promise<BlockEntity | null>
+
+moveBlock(
+  srcBlock: BlockIdentity,
+  targetBlock: BlockIdentity,
+  opts?: Partial<{ before: boolean; children: boolean }>
+): Promise<void>
+
+createTag(
+  tagName: string,
+  opts?: Partial<{
+    uuid: string
+    tagProperties: Array<{ name: string; schema?: Partial<PropertySchema>; properties?: {} }>
+  }>
+): Promise<PageEntity | null>
+
 addTagProperty(tagId: BlockIdentity, propertyIdOrName: BlockIdentity): Promise<void>
 removeTagProperty(tagId: BlockIdentity, propertyIdOrName: BlockIdentity): Promise<void>
 addTagExtends(tagId: BlockIdentity, parentTagIdOrName: BlockIdentity): Promise<void>
+removeTagExtends(tagId: BlockIdentity, parentTagIdOrName: BlockIdentity): Promise<void>
 addBlockTag(blockId: BlockIdentity, tagId: BlockIdentity): Promise<void>
 removeBlockTag(blockId: BlockIdentity, tagId: BlockIdentity): Promise<void>
 
-// Block positioning (for insertBlock and moveBlock)
-insertBlock(srcBlock, content, { before?, sibling?, start?, end? })
-moveBlock(srcBlock, targetBlock, { before?, children? })
+upsertProperty(
+  key: string,
+  schema?: Partial<PropertySchema>,
+  opts?: { name?: string }
+): Promise<IEntityID>
+removeProperty(key: string): Promise<void>
+upsertBlockProperty(
+  block: BlockIdentity | EntityID,
+  key: string,
+  value: any,
+  options?: Partial<{ reset: boolean }>
+): Promise<void>
+removeBlockProperty(block: BlockIdentity | EntityID, key: string): Promise<void>
 ```
 
-`PropertySchema` = `{ type: 'default'|'number'|'node'|'date'|'checkbox'|'url'|string, cardinality: 'many'|'one', hide: boolean, public: boolean }`
+## Design Principles
 
----
+- Preserve the current Command + Dual-Executor architecture.
+- Prefer minimal data model extensions over replacing `InMemoryDB` globally.
+- Keep command serialization backward compatible for existing saved artifacts.
+- In-memory behavior should fail fast when it detects an operation Logseq would reject.
+- Do not silently normalize invalid identities. Normalize IDs only when they can be resolved to known tag/property names.
+- Keep the review printer human-readable, not a full Logseq file formatter.
 
-## Requirements
+## Proposed Data Model
 
-### (a) Move parent-into-own-child prevention
+Keep the existing page/block tree as-is:
 
-**Current state**: `InMemoryExecutor.moveBlock()` does NOT check whether the destination is a descendant of the source. It will happily move a block inside its own subtree, creating a cycle.
-
-**Requirement**: Add a validation in `entityTree.ts` (e.g. `isDescendant(db, ancestor, candidateDescendant)`) and call it in `InMemoryExecutor.moveBlock()` BEFORE detaching. If `destBlockUUID` is a descendant of `srcBlockUUID`, throw: `"Cannot move a block inside its own subtree"`. Add a test for this case.
-
-### (b) Cross-page block move
-
-**Current state**: `InMemoryExecutor.moveBlock()` imports both source and destination pages, detaches, then reparents. This already works for cross-page moves — `reparentSubtree()` updates `page` references on the entire subtree. `LogseqExecutor.moveBlock()` calls `logseq.Editor.moveBlock()` which also supports cross-page.
-
-**Requirement**: Verify with an explicit test that moving a block from Page A to Page B works correctly (parent, page references update, children follow). If the test passes, no code changes needed — just add the test.
-
-### (c) Move a page under another page
-
-**Current state**: Pages are top-level entries in `InMemoryDB` (the Map). `moveBlock` operates on `InMemoryBlockEntity` only. `detachBlock()` skips `isPageEntity()` matches. Pages cannot currently be moved.
-
-**Requirement**: Add a `movePage(sourcePageIdentity, destPageIdentity)` method to both executors. In the in-memory executor:
-1. Remove the source page from the DB Map.
-2. Convert it to a block-like child under the destination page (set `parent` to destination page reference, keep `type: "page"` or convert to a child block node — decide based on Logseq's actual behavior).
-3. Add it to the destination page's `children`.
-
-Alternatively, if Logseq doesn't support pages-as-children-of-pages, then this requirement should be re-scoped to "move all blocks from one page to another page" instead. **Check Logseq source behavior first** before implementing.
-
-### (d) Parent of a page must be a page
-
-**Current state**: No validation exists for page parentage.
-
-**Requirement**: If (c) is implemented as "page under page", add validation in the move logic: if the entity being moved is a page (`type === "page"`), the destination must also be a page. Throw: `"A page can only be moved under another page, not under a block"`. If (c) is re-scoped, this requirement adapts accordingly.
-
-### (e) Refactoring entityTree / related files
-
-**Current state**: `entityTree.ts` has 132 lines with functions for `findEntity`, `findPageContainingEntity`, `insertChild`, `detachBlock`, `reparentSubtree`, `matchesIdentity`, `isPageEntity`. The `findBlockInChildren` helper skips page entities. `detachBlockFromParent` also skips pages.
-
-**Requirement**: Refactor as needed to support:
-- Descendant checking (for requirement a)
-- Page-aware tree operations (for requirements c/d)
-- Tag/property entity resolution (for requirement f)
-- Consider splitting into `entityTree.ts` (block operations) + `pageTree.ts` (page-level operations) if it grows beyond ~200 lines.
-
-### (f) Property and Tag support
-
-This is the largest change. The following new abstractions are needed:
-
-#### New types (in `types.ts`)
-
-- `InMemoryPropertyEntity`: `{ uuid, name, type: "property", schema: PropertySchema, properties: Record<string, any> }`
-- `InMemoryTagEntity`: `{ uuid, name, type: "tag", tagProperties: string[] /* property keys */, extends: string[] /* parent tag names/uuids */, children: InMemoryLogseqEntity[] }`
-- Update `InMemoryLogseqEntity` union to include `InMemoryPropertyEntity | InMemoryTagEntity`
-- Add a `propertySchemas` Map to `InMemoryDB` (or a separate `InMemoryPropertyDB = Map<string, InMemoryPropertyEntity>`) for property definitions
-- Add a `tags` Map to `InMemoryDB` (or separate `InMemoryTagDB = Map<string, InMemoryTagEntity>`) for tag definitions
-
-#### New abstract methods on `LogseqTransactionExecutor`
-
+```ts
+export type InMemoryDB = Map<string, InMemoryPageEntity>
 ```
-upsertProperty(key: string, schema?: Partial<PropertySchema>, opts?: { name?: string }): Promise<boolean>
+
+Add separate stores to `InMemoryExecutor` instead of changing every caller of `InMemoryDB`:
+
+```ts
+export type InMemoryPropertyDefinition = {
+  uuid: string
+  key: string
+  name?: string
+  type: 'property'
+  schema: Partial<PropertySchema>
+  properties: Record<string, any>
+}
+
+export type InMemoryTagDefinition = {
+  uuid: string
+  name: string
+  type: 'tag'
+  tagProperties: string[]
+  extends: string[]
+  properties: Record<string, any>
+}
+
+export type InMemoryMetadataDB = {
+  properties: Map<string, InMemoryPropertyDefinition>
+  tags: Map<string, InMemoryTagDefinition>
+}
+```
+
+Rationale:
+
+- Existing code and tests expect `getInMemoryPageDataDb()` to return `Map<string, InMemoryPageEntity>`.
+- Tags and properties are metadata for preview and validation, not normal block tree children.
+- The printer can accept the executor or an optional metadata DB when it needs to print schemas/tags.
+
+Add accessors to `InMemoryExecutor`:
+
+```ts
+getInMemoryMetadataDb(): InMemoryMetadataDB
+getOriginalInMemoryMetadataDb(): InMemoryMetadataDB
+```
+
+## Movement Requirements
+
+### 1. Prevent moving a block into its own subtree
+
+Current behavior is unsafe. `moveBlock(root, grandchild)` can create a cycle because the destination is looked up after detaching.
+
+Implement in `entityTree.ts`:
+
+```ts
+isDescendantOf(entity: InMemoryLogseqEntity, possibleAncestor: InMemoryLogseqEntity): boolean
+findParentOfEntity(db: InMemoryDB, identity: LogseqEntityIdentity): InMemoryLogseqEntity | null
+```
+
+In `InMemoryExecutor.moveBlock()`:
+
+- Import source and destination pages.
+- Find source and destination before detaching.
+- If destination is inside source's subtree, throw `Cannot move a block inside its own subtree`.
+- Then detach and reinsert.
+
+Add test coverage:
+
+- `moveBlock(root, child)` rejects.
+- The original tree remains unchanged after rejection.
+
+### 2. Explicitly test cross-page block moves
+
+The current implementation appears intended to support this, but it needs a dedicated regression test.
+
+Test expectations:
+
+- Moving a root block from Page A under a block on Page B succeeds.
+- Source page no longer contains the moved block.
+- Moved block's `parent` points to the destination block.
+- Moved block and all descendants have `page` pointing to Page B.
+
+### 3. Page movement: validate Logseq behavior before implementing
+
+The current plan must not assume that Logseq pages can be physically nested as children in the block tree. In Logseq, pages/classes/tags are page-like entities, and page hierarchy may be name-based or metadata-based depending on graph mode.
+
+Before implementing `movePage`, inspect Logseq source and/or SDK behavior for:
+
+- Whether there is an SDK API that moves a page under another page.
+- Whether DB graph pages/classes can have a parent page through properties.
+- Whether `moveBlock(pageUuid, targetPageUuid)` is legal for page entities.
+
+If Logseq supports page parentage:
+
+- Add explicit `movePage(sourcePageIdentity, destPageIdentity)`.
+- Destination must resolve to a page/tag/class, never a normal block.
+- Moving a page under a block must throw `A page can only be moved under another page`.
+
+If Logseq does not support page parentage through these APIs:
+
+- Do not add fake in-memory behavior that cannot be committed by `LogseqExecutor`.
+- Replace the requirement with the supported operation, for example `movePageBlocks(sourcePage, destinationPage)` or `renamePage` for namespace-style hierarchy.
+
+## Positioning Support
+
+### Insert block options
+
+Update the executor interface:
+
+```ts
+export type InsertBlockOptions = Partial<{
+  before: boolean
+  sibling: boolean
+  start: boolean
+  end: boolean
+}>
+
+insertBlock(
+  parentBlockUUID: LogseqEntityIdentity,
+  content: string,
+  options?: InsertBlockOptions
+): Promise<boolean>
+```
+
+In `LogseqExecutor`, pass through these options plus `customUUID`:
+
+```ts
+logseq.Editor.insertBlock(parentBlockUUID, content, {
+  ...options,
+  customUUID: this.uuidGenerator.getUUID()
+})
+```
+
+In `InMemoryExecutor`, implement the same positioning semantics as Logseq as closely as possible:
+
+- Default: insert as last child of `srcBlock`.
+- `start: true`: insert as first child of `srcBlock`.
+- `end: true`: insert as last child of `srcBlock`.
+- `sibling: true`: insert as sibling of `srcBlock`.
+- `sibling: true, before: true`: insert before `srcBlock`.
+- `sibling: true, before: false`: insert after `srcBlock`.
+- `before: true` without `sibling`: verify against Logseq behavior before finalizing; if Logseq treats this as insert before `srcBlock`, mirror that. Otherwise reject ambiguous option combinations.
+
+Add helpers:
+
+```ts
+insertChildAt(parent, child, index)
+insertSibling(db, targetIdentity, child, before)
+findParentAndIndex(db, identity)
+```
+
+### Move block options
+
+Update the executor interface:
+
+```ts
+export type MoveBlockOptions = Partial<{
+  before: boolean
+  children: boolean
+}>
+
+moveBlock(
+  srcBlockUUID: LogseqEntityIdentity,
+  destBlockUUID: LogseqEntityIdentity,
+  options?: MoveBlockOptions
+): Promise<boolean>
+```
+
+In `LogseqExecutor`, pass through `{ children: true, ...options }` so children continue to move by default.
+
+In `InMemoryExecutor`:
+
+- Default: move source as last child of destination.
+- `before: true`: move source as sibling immediately before destination.
+- Keep `children: true` behavior as the only supported in-memory behavior for now. If `children: false` is passed, either implement child detachment semantics after checking Logseq behavior or reject with a clear error.
+
+Update:
+
+- `InsertBlockCommand`
+- `MoveBlockCommand`
+- `SerializedLogseqFakeableCommand`
+- `LogseqFakeableTransactionCommandSerializer.deserialize()`
+- `LogseqInsertBlockTool.tsx`
+- `LogseqMoveBlockTool.tsx`
+
+## Property Schema Support
+
+### New executor methods
+
+Add to `LogseqTransactionExecutor`:
+
+```ts
+upsertProperty(
+  key: string,
+  schema?: Partial<PropertySchema>,
+  options?: { name?: string }
+): Promise<boolean>
+
 removeProperty(key: string): Promise<boolean>
-upsertBlockProperty(block: LogseqEntityIdentity, key: string, value: any, options?: { reset?: boolean }): Promise<boolean>
+```
+
+### In-memory behavior
+
+- `upsertProperty` creates or updates `metadata.properties` keyed by stable property key.
+- Generate deterministic UUIDs for newly created property definitions.
+- Preserve existing property definition UUID on repeated upsert.
+- Store display name from `options.name` separately from the stable key.
+- `removeProperty` removes the schema definition but does not automatically remove existing block property values unless real Logseq does so. Verify SDK behavior before cascading.
+
+### Logseq behavior
+
+- `LogseqExecutor.upsertProperty` calls `logseq.Editor.upsertProperty(key, schema, options)`.
+- `LogseqExecutor.removeProperty` calls `logseq.Editor.removeProperty(key)`.
+
+### Commands
+
+Add:
+
+- `UpsertPropertyCommand`
+- `RemovePropertyCommand`
+
+Update serializer and command exports.
+
+## Block Property Value Support
+
+### New executor methods
+
+```ts
+upsertBlockProperty(
+  block: LogseqEntityIdentity,
+  key: string,
+  value: any,
+  options?: Partial<{ reset: boolean }>
+): Promise<boolean>
+
 removeBlockProperty(block: LogseqEntityIdentity, key: string): Promise<boolean>
-createTag(tagName: string, opts?: { uuid?: string, tagProperties?: Array<{ name: string, schema?: Partial<PropertySchema> }> }): Promise<boolean>
+```
+
+### In-memory behavior
+
+- Resolve the target with `getImportedEntity()`.
+- Reject if the target is missing.
+- Allow page and block targets only if real Logseq's `upsertBlockProperty` accepts pages by UUID. If not, add separate page property handling later.
+- Initialize `entity.properties` when missing.
+- For one-value properties or `reset: true`, set `properties[key] = value`.
+- For many-value properties and `reset !== true`, mirror Logseq behavior if known. If unknown, use conservative replacement and document it in tests.
+- `removeBlockProperty` deletes `properties[key]`, but must not remove internal `uuid`.
+
+### Commands
+
+Add:
+
+- `UpsertBlockPropertyCommand`
+- `RemoveBlockPropertyCommand`
+
+## Tag Support
+
+### New executor methods
+
+Add all SDK tag methods, including the one omitted in the first plan:
+
+```ts
+createTag(
+  tagName: string,
+  options?: Partial<{
+    uuid: string
+    tagProperties: Array<{ name: string; schema?: Partial<PropertySchema>; properties?: {} }>
+  }>
+): Promise<boolean>
+
 addTagProperty(tagId: LogseqEntityIdentity, propertyIdOrName: LogseqEntityIdentity): Promise<boolean>
 removeTagProperty(tagId: LogseqEntityIdentity, propertyIdOrName: LogseqEntityIdentity): Promise<boolean>
 addTagExtends(tagId: LogseqEntityIdentity, parentTagIdOrName: LogseqEntityIdentity): Promise<boolean>
+removeTagExtends(tagId: LogseqEntityIdentity, parentTagIdOrName: LogseqEntityIdentity): Promise<boolean>
 addBlockTag(blockId: LogseqEntityIdentity, tagId: LogseqEntityIdentity): Promise<boolean>
 removeBlockTag(blockId: LogseqEntityIdentity, tagId: LogseqEntityIdentity): Promise<boolean>
 ```
 
-#### New command classes (one per operation)
+### In-memory tag identity rules
 
-`UpsertPropertyCommand`, `RemovePropertyCommand`, `UpsertBlockPropertyCommand`, `RemoveBlockPropertyCommand`, `CreateTagCommand`, `AddTagPropertyCommand`, `RemoveTagPropertyCommand`, `AddTagExtendsCommand`, `AddBlockTagCommand`, `RemoveBlockTagCommand`.
+Use tag names as the canonical in-memory identity for tag references. Store UUIDs for deterministic creation, but block properties and tag inheritance lists should use names.
 
-Update `SerializedLogseqFakeableCommand` union with each new command type.
+Implement helpers:
 
-#### `InMemoryExecutor` implementation notes
+```ts
+resolveTagName(identity: LogseqEntityIdentity): string
+resolvePropertyKey(identity: LogseqEntityIdentity): string
+assertMutableTag(tagName: string): void
+```
 
-- `upsertProperty`: Creates/updates an `InMemoryPropertyEntity` in a `propertySchemas` Map on the DB.
-- `upsertBlockProperty`: Finds the block, sets `block.properties[key] = value`. If `reset` is true, replaces instead of merging.
-- `removeBlockProperty`: Finds the block, deletes `block.properties[key]`.
-- `createTag`: Creates a page-like entity with `type: "tag"`, stores in a `tags` Map. If `tagProperties` provided, also creates the property schemas and links them.
-- `addTagProperty`: Finds the tag, adds the property key to `tag.tagProperties`. Creates the property schema if it doesn't exist.
-- `removeTagProperty`: Removes the property key from `tag.tagProperties`.
-- `addTagExtends`: Adds parent tag reference to `tag.extends`.
-- `addBlockTag`: Sets `block.properties["tags"]` to include the tag (or use a dedicated `tags` field on the block entity — check Logseq's convention).
-- `removeBlockTag`: Removes the tag from `block.properties["tags"]`.
+Resolution rules:
 
-#### `LogseqExecutor` implementation
+- String that matches an existing tag UUID resolves to that tag's name.
+- String that matches an existing tag name resolves to itself.
+- `{ uuid }` resolves through the tag map.
+- Numeric `EntityID` should only resolve if imported metadata contains an ID-to-name mapping. Otherwise throw.
+- Property references follow the same pattern using property key/name mappings.
 
-Each method maps directly to `logseq.Editor.*` calls.
+### Built-in tag restrictions
 
-#### Special tags
+`Page` / `#Page` is a built-in tag and must not be modified through the fakeable transaction layer.
 
-`#Page` is a built-in tag. `createTag("Page")`, `addTagProperty("Page", ...)`, `removeBlockTag(block, "Page")` etc. should all throw: `"Cannot modify built-in tag: Page"`.
+Reject these operations when the target tag resolves to `Page`:
 
-#### Tag inheritance
+- `createTag`
+- `addTagProperty`
+- `removeTagProperty`
+- `addTagExtends`
+- `removeTagExtends`
+- `addBlockTag`
+- `removeBlockTag`
 
-When a block has tag T, and T extends parent tag P, the block should inherit P's `tagProperties`. The in-memory executor should resolve inherited properties when reading block properties.
+Use a single helper so the rule is consistent.
 
-#### Normalization requirement
+### createTag behavior
 
-When the `LogseqExecutor` calls real Logseq APIs, some may return numeric entity IDs instead of UUIDs/names. The `InMemoryExecutor` must normalize these: tag IDs -> tag names, property IDs -> property names. Use the existing `normalizeAndResolveUUIDObject` pattern from `normalizeLogseqEntity.ts`.
+- If tag exists, reuse it and merge provided `tagProperties` idempotently.
+- If tag does not exist, create a deterministic UUID unless `options.uuid` is supplied.
+- For each `tagProperties` item:
+  - Upsert the property schema.
+  - Add the property key to `tag.tagProperties` if missing.
+  - Preserve `properties` metadata on the property definition if useful for preview.
 
-### (g) Positioning options for moveBlock and insertBlock
+### addTagProperty / removeTagProperty
 
-**Current state**:
-- `insertBlock(parentUUID, content)` — always appends as last child. No `before`, `sibling`, `start`, `end` options.
-- `moveBlock(srcUUID, destUUID)` — always moves as last child of destination. No `before` option.
+- Resolve tag to canonical tag name.
+- Resolve property to canonical property key.
+- Adding a missing property should either create a default schema or reject. Prefer mirroring Logseq behavior. If unclear, create a default property definition only when the property reference is a plain string key.
+- Keep operations idempotent.
 
-**Requirement**:
-- `insertBlock` signature becomes: `insertBlock(parentUUID: LogseqEntityIdentity, content: string, opts?: { before?: boolean, sibling?: boolean, start?: boolean, end?: boolean })`. In `InMemoryExecutor`: if `sibling`, insert as sibling of parent (after/before parent in its parent's children list). If `start`, insert at index 0 of children. If `before`, insert before the target in its parent's children. Default (no opts) = append as last child (current behavior).
-- `moveBlock` signature becomes: `moveBlock(srcUUID: LogseqEntityIdentity, destUUID: LogseqEntityIdentity, opts?: { before?: boolean })`. In `InMemoryExecutor`: if `before`, insert before destination in its parent's children instead of appending.
-- Update both `InsertBlockCommand` and `MoveBlockCommand` to accept and serialize these options.
-- Update `LogseqExecutor` to pass the options through to `logseq.Editor.insertBlock()` and `logseq.Editor.moveBlock()`.
-- Update the Zod schemas in `LogseqInsertBlockTool` and `LogseqMoveBlockTool` to expose these new parameters.
+### addTagExtends / removeTagExtends
 
----
+- Resolve child and parent tag names.
+- Reject self-inheritance.
+- Reject cycles in tag inheritance.
+- Store parent tag names in `tag.extends`.
 
-## Printer / Formatter Changes (`LogseqInMemoryDataPrinter`)
+### addBlockTag / removeBlockTag
 
-**Current state**: Prints `key:: value` lines for properties, filtering `uuid`. No tag or property schema display.
+- Resolve the target block/page.
+- Resolve tag name.
+- Store tags in `entity.properties.tags` as normalized tag names.
+- Keep tag lists unique and stable in insertion order.
+- Do not add or remove `Page`.
 
-**Requirement**:
-- Tags and their schemas should be displayed as page-like entries (separate top-level sections in the printer output).
-- Block tags should appear as property lines (e.g., `tags:: [[TagName]]`).
-- Property schemas should be displayed as pages with their type/cardinality info (e.g., a property `rating` with schema `{type: 'number', cardinality: 'one'}` prints as a page showing the schema definition).
-- Block property values remain stored in `block.properties` and printed as `key:: value` lines.
+### Tag inheritance
 
----
+Do not physically copy inherited properties into `block.properties`; that would hide the distinction between actual values and schema availability.
 
-## Import / Normalization Changes
+Instead, add resolver helpers:
 
-**Current state**: `normalizeImportedPage()` in `normalizeLogseqEntity.ts` copies `page.properties` directly. No tag or property schema handling.
+```ts
+getTagPropertyKeys(tagName: string): string[]
+getInheritedTagPropertyKeys(tagName: string): string[]
+getEffectiveBlockPropertySchema(blockIdentity: LogseqEntityIdentity): Map<string, InMemoryPropertyDefinition>
+```
 
-**Requirement**:
-- When importing a page, also import its tag definitions and property schemas.
-- Tag inheritance must be resolved: if a block has tag T and T extends P, the block's effective properties should include P's `tagProperties`.
-- Normalize tag IDs to tag names and property IDs to property names in the in-memory representation.
+The printer can display inherited schema availability separately from concrete block property values if needed.
 
----
+### Commands
 
-## Files to Modify/Create
+Add:
 
-| File | Action |
-|------|--------|
-| `types.ts` | Add `InMemoryPropertyEntity`, `InMemoryTagEntity`, update `InMemoryLogseqEntity` union, add new serialized command types, add `PropertySchema` type |
-| `entityTree.ts` | Add `isDescendant()`, refactor for page-aware operations |
-| `LogseqTransactionExecutor.ts` | Add 10 new abstract methods |
-| `InMemoryExecutor.ts` | Implement 10 new methods + update `moveBlock`/`insertBlock` signatures |
-| `LogseqExecutor.ts` | Implement 10 new methods + update `moveBlock`/`insertBlock` signatures |
-| `entityFactory.ts` | Add `createInMemoryProperty()`, `createInMemoryTag()` |
-| `LogseqInMemoryDataPrinter.ts` | Display tags, property schemas, block tags |
-| `normalizeLogseqEntity.ts` | Import tags, schemas, resolve inheritance, normalize IDs->names |
-| `InMemoryPageLoader.ts` | Load tag/property pages if needed |
-| `InsertBlockCommand.ts` | Add positioning options |
-| `MoveBlockCommand.ts` | Add `before` option |
-| 10 new command files | One per new operation |
-| `commands/index.ts` | Export new commands |
-| `index.ts` | Export new types |
-| `LogseqInsertBlockTool.tsx` | Add `before`, `sibling`, `start`, `end` to Zod schema |
-| `LogseqMoveBlockTool.tsx` | Add `before` to Zod schema |
-| 10 new tool files | One per new command (or a generic property/tag tool) |
-| `InMemoryExecutor.test.ts` | Add tests for (a) cycle prevention, (b) cross-page move, (c/d) page moves, (f) property/tag CRUD, (g) positioning |
-| New: `entityTree.test.ts` | Unit tests for `isDescendant`, tree operations |
-| New: property/tag tool test files | Per tool |
+- `CreateTagCommand`
+- `AddTagPropertyCommand`
+- `RemoveTagPropertyCommand`
+- `AddTagExtendsCommand`
+- `RemoveTagExtendsCommand`
+- `AddBlockTagCommand`
+- `RemoveBlockTagCommand`
 
----
+Update serializer and command exports.
 
-## Implementation Order (suggested)
+## Import and Normalization
 
-1. **Phase 1 — entityTree refactor + move validation** (requirements a, b, d, e)
-2. **Phase 2 — insertBlock/moveBlock positioning** (requirement g)
-3. **Phase 3 — Property schema + block property CRUD** (requirement f, properties part)
-4. **Phase 4 — Tag CRUD + inheritance** (requirement f, tags part)
-5. **Phase 5 — Printer/formatter updates** (display tags, schemas)
-6. **Phase 6 — Import normalization** (tag inheritance, ID->name normalization)
-7. **Phase 7 — Tool layer** (new AI tools for property/tag operations)
+Current import loads pages and page block trees. It does not load all tag/property definitions.
 
-Each phase should include corresponding tests.
+Implement in stages:
+
+### Stage 1: Normalize imported block/page property values
+
+- Preserve existing direct properties.
+- Normalize tag values in `properties.tags` to tag names when possible.
+- Normalize property references in tag metadata when possible.
+
+### Stage 2: Load metadata on demand
+
+Extend `InMemoryPageLoader` or add a separate metadata loader:
+
+```ts
+export interface InMemoryMetadataLoader {
+  loadProperty(keyOrIdentity: LogseqEntityIdentity): Promise<InMemoryPropertyDefinition | null>
+  loadTag(nameOrIdentity: LogseqEntityIdentity): Promise<InMemoryTagDefinition | null>
+}
+```
+
+Prefer a separate loader so existing page loading remains simple.
+
+### Stage 3: Resolve IDs to names
+
+- If Logseq returns property/tag IDs, resolve them through `logseq.Editor.getProperty`, `logseq.Editor.getTag`, `getAllProperties`, `getAllTags`, or datascript only if needed.
+- Cache ID-to-name and UUID-to-name mappings in metadata DB.
+- Throw when an ID cannot be resolved rather than storing opaque numeric IDs in preview output.
+
+## Printer Changes
+
+Keep `LogseqInMemoryDataPrinter.print(db: InMemoryDB)` working for existing tests.
+
+Add an overload or options object:
+
+```ts
+LogseqInMemoryDataPrinter.print(db, { metadataDb })
+```
+
+Printing rules:
+
+- Existing page/block output remains unchanged when no metadata is supplied.
+- Block/page `properties` remain printed as `key:: value` lines, excluding internal `uuid`.
+- `tags` property prints as names, preferably `[[TagName]]` for readability.
+- Property definitions print in a separate section after normal pages.
+- Tag definitions print in a separate section after property definitions.
+
+Example shape:
+
+```md
+* Block
+  tags:: [[Book]]
+  rating:: 5
+
+Properties
+* rating
+  type:: number
+  cardinality:: one
+
+Tags
+* Book
+  properties:: rating, author
+  extends:: Media
+```
+
+Do not claim this is a full Logseq formatter. It is a review printer.
+
+## Tool Layer
+
+Update existing tools:
+
+- `LogseqInsertBlockTool.tsx`: expose `before`, `sibling`, `start`, `end`.
+- `LogseqMoveBlockTool.tsx`: expose `before`. Only expose `children` if in-memory semantics are implemented.
+
+Add new tools only after executor/command behavior is tested:
+
+- `LogseqUpsertPropertyTool`
+- `LogseqRemovePropertyTool`
+- `LogseqUpsertBlockPropertyTool`
+- `LogseqRemoveBlockPropertyTool`
+- `LogseqCreateTagTool`
+- `LogseqAddTagPropertyTool`
+- `LogseqRemoveTagPropertyTool`
+- `LogseqAddTagExtendsTool`
+- `LogseqRemoveTagExtendsTool`
+- `LogseqAddBlockTagTool`
+- `LogseqRemoveBlockTagTool`
+
+If this creates too many model tools, consider a single `logseq_update_properties` tool and a single `logseq_update_tags` tool, but keep command classes granular internally.
+
+## Files to Change
+
+Core types and serialization:
+
+- `types.ts`
+- `LogseqTransactionExecutor.ts`
+- `LogseqFakeableTransactionCommandSerializer.ts`
+- `LogseqFakeableTransactionTrackerSerializer.ts` only if tracker-level metadata must be serialized separately
+
+Commands:
+
+- `commands/InsertBlockCommand.ts`
+- `commands/MoveBlockCommand.ts`
+- `commands/index.ts`
+- New property command files
+- New tag command files
+
+In-memory implementation:
+
+- `executor/InMemoryExecutor.ts`
+- `executor/in-memory-executor-utils/entityTree.ts`
+- `executor/in-memory-executor-utils/entityFactory.ts`
+- `executor/in-memory-executor-utils/normalizeLogseqEntity.ts`
+- New `executor/in-memory-executor-utils/metadataStore.ts` or similar
+- Optional new `executor/in-memory-executor-utils/InMemoryMetadataLoader.ts`
+
+Real Logseq implementation:
+
+- `executor/LogseqExecutor.ts`
+
+Preview:
+
+- `LogseqInMemoryDataPrinter.ts`
+
+Tools:
+
+- Existing insert/move tools
+- New property/tag tools once core is stable
+
+Tests:
+
+- `tests/src/core/logseq-fakeable-transaction-tracker/InMemoryExecutor.test.ts`
+- `tests/src/core/logseq-fakeable-transaction-tracker/LogseqInMemoryDataPrinter.test.ts`
+- New `entityTree.test.ts`
+- New serializer tests for all new command types
+- Tool tests if existing test infrastructure supports them
+
+## Test Plan
+
+Movement:
+
+- Reject moving a block into its own descendant.
+- Preserve original tree after failed move.
+- Move block across pages and update subtree page refs.
+- Insert block as first child, last child, sibling before, sibling after.
+- Move block before another block.
+
+Property schemas:
+
+- Upsert creates a schema with deterministic UUID.
+- Upsert existing key updates schema without changing UUID.
+- Remove deletes schema definition.
+- Serializer round trips property commands.
+
+Block properties:
+
+- Upsert property value on block.
+- Remove property value on block.
+- Reject removing internal `uuid`.
+- Imported properties are preserved.
+
+Tags:
+
+- Create tag.
+- Create tag with tag properties creates/links property schemas.
+- Add/remove tag property.
+- Add/remove tag extends.
+- Reject tag inheritance cycles.
+- Add/remove block tag.
+- Normalize tags to names in memory.
+- Reject modifications to `Page` / `#Page`.
+
+Printer:
+
+- Existing output remains unchanged without metadata.
+- Tags print as readable names.
+- Property schemas print in metadata section.
+- Tag definitions print in metadata section.
+
+## Implementation Order
+
+1. Add movement safety and positioning support.
+2. Add command serialization tests so future commands are safer to introduce.
+3. Add metadata DB and property schema executor methods.
+4. Add block property executor methods.
+5. Add tag creation and tag-property methods.
+6. Add tag inheritance, cycle prevention, and effective schema resolution.
+7. Add printer metadata output.
+8. Add import/normalization for property and tag metadata.
+9. Add or update chat tools.
+
+## Verification Commands
+
+After implementation, run targeted checks:
+
+```bash
+pnpm test tests/src/core/logseq-fakeable-transaction-tracker/InMemoryExecutor.test.ts --run
+pnpm test tests/src/core/logseq-fakeable-transaction-tracker/LogseqInMemoryDataPrinter.test.ts --run
+pnpm test tests/src/core/logseq-fakeable-transaction-tracker --run
+npx tsc --noEmit
+npm run check src/core/logseq-fakeable-transaction-tracker
+npm run check:fix src/core/logseq-fakeable-transaction-tracker
+```
+
+## Error Handling
+
+When a tool command fails in-memory execution, the tool returns a plain error object (not a `ToolResponse` with artifact), so the failed tracker is discarded and subsequent calls start fresh.
