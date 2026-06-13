@@ -1,3 +1,4 @@
+import type {PropertySchema} from "@logseq/libs/dist/LSPlugin";
 import type {DeterminesticUUIDGenerator} from "../DeterminesticUUIDGenerator";
 import type {LogseqEntityIdentity, LogseqTransactionResult} from "../types";
 
@@ -71,4 +72,21 @@ export abstract class LogseqTransactionExecutor {
         pageIdentity: LogseqEntityIdentity,
         newName: string
     ): Promise<boolean>;
+
+    public abstract upsertProperty(
+        key: string,
+        schema?: Partial<PropertySchema>,
+        options?: {name?: string}
+    ): Promise<boolean>;
+
+    public abstract removeProperty(key: string): Promise<boolean>;
+
+    public abstract upsertBlockProperty(
+        block: LogseqEntityIdentity,
+        key: string,
+        value: any,
+        options?: Partial<{reset: boolean}>
+    ): Promise<boolean>;
+
+    public abstract removeBlockProperty(block: LogseqEntityIdentity, key: string): Promise<boolean>;
 }

@@ -1,4 +1,4 @@
-import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockIdentity, PropertySchema} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "../../../logseq/LogseqEditor";
 import {LogseqPropertiesHelper} from "../../../logseq/LogseqPropertiesHelper";
 import type {LogseqEntityIdentity} from "../types";
@@ -73,6 +73,35 @@ export class LogseqExecutor extends LogseqTransactionExecutor {
     public async renamePage(pageIdentity: LogseqEntityIdentity, newName: string): Promise<boolean> {
         const pageName = await this.getPageName(pageIdentity, "renamePage");
         await logseq.Editor.renamePage(pageName, newName);
+        return this.pushAndReturn(true, true);
+    }
+
+    public async upsertProperty(
+        key: string,
+        schema?: Partial<PropertySchema>,
+        options?: {name?: string}
+    ): Promise<boolean> {
+        await logseq.Editor.upsertProperty(key, schema, options);
+        return this.pushAndReturn(true, true);
+    }
+
+    public async removeProperty(key: string): Promise<boolean> {
+        await logseq.Editor.removeProperty(key);
+        return this.pushAndReturn(true, true);
+    }
+
+    public async upsertBlockProperty(
+        block: LogseqEntityIdentity,
+        key: string,
+        value: any,
+        options?: Partial<{reset: boolean}>
+    ): Promise<boolean> {
+        await logseq.Editor.upsertBlockProperty(block as BlockIdentity, key, value, options);
+        return this.pushAndReturn(true, true);
+    }
+
+    public async removeBlockProperty(block: LogseqEntityIdentity, key: string): Promise<boolean> {
+        await logseq.Editor.removeBlockProperty(block as BlockIdentity, key);
         return this.pushAndReturn(true, true);
     }
 

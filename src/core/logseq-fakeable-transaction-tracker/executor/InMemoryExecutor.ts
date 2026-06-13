@@ -1,9 +1,11 @@
+import type {PropertySchema} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import type {DeterminesticUUIDGenerator} from "../DeterminesticUUIDGenerator";
 import type {
     InMemoryBlockEntity,
     InMemoryDB,
     InMemoryLogseqEntity,
+    InMemoryMetadataDB,
     LogseqEntityIdentity
 } from "../types";
 import {createInMemoryBlock, createInMemoryPage} from "./in-memory-executor-utils/entityFactory";
@@ -24,6 +26,10 @@ import {
     type InMemoryPageLoader,
     LogseqInMemoryPageLoader
 } from "./in-memory-executor-utils/InMemoryPageLoader";
+import {
+    createInMemoryMetadataDb,
+    removePropertyFromEntities
+} from "./in-memory-executor-utils/metadataStore";
 import {normalizeImportedPage} from "./in-memory-executor-utils/normalizeLogseqEntity";
 import {
     DEFAULT_INSERT_BLOCK_OPTIONS,
@@ -40,6 +46,10 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
 
     private readonly inMemoryPageDataDb: InMemoryDB = new Map();
 
+    private readonly originalInMemoryMetadataDb: InMemoryMetadataDB = createInMemoryMetadataDb();
+
+    private readonly inMemoryMetadataDb: InMemoryMetadataDB = createInMemoryMetadataDb();
+
     public constructor(
         uuidGenerator: DeterminesticUUIDGenerator,
         private readonly pageLoader: InMemoryPageLoader = new LogseqInMemoryPageLoader()
@@ -53,6 +63,14 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
 
     public getOriginalInMemoryPageDataDb(): InMemoryDB {
         return this.originalInMemoryPageDataDb;
+    }
+
+    public getInMemoryMetadataDb(): InMemoryMetadataDB {
+        return this.inMemoryMetadataDb;
+    }
+
+    public getOriginalInMemoryMetadataDb(): InMemoryMetadataDB {
+        return this.originalInMemoryMetadataDb;
     }
 
     public async insertBlock(
@@ -239,6 +257,83 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         return this.pushAndReturn(true, true);
     }
 
+    public async upsertProperty(
+        key: string,
+        schema: Partial<PropertySchema> = {},
+        options: {name?: string} = {}
+    ): Promise<boolean> {
+        const existingDefinition = this.inMemoryMetadataDb.properties.get(key);
+        if (existingDefinition) {
+            existingDefinition.schema = {...existingDefinition.schema, ...schema};
+            if (options.name !== undefined) {
+                existingDefinition.name = options.name;
+            }
+        } else {
+            this.inMemoryMetadataDb.properties.set(key, {
+                uuid: this.uuidGenerator.getUUID(),
+                key,
+                name: options.name,
+                type: "property",
+                schema: {...schema},
+                properties: {}
+            });
+        }
+
+        return this.pushAndReturn(true, true);
+    }
+
+    public async removeProperty(key: string): Promise<boolean> {
+        this.assertMutablePropertyKey(key);
+        this.inMemoryMetadataDb.properties.delete(key);
+        removePropertyFromEntities(this.inMemoryPageDataDb, key);
+        return this.pushAndReturn(true, true);
+    }
+
+    public async upsertBlockProperty(
+        block: LogseqEntityIdentity,
+        key: string,
+        value: any,
+        options: Partial<{reset: boolean}> = {}
+    ): Promise<boolean> {
+        const entity = await this.getImportedEntity(block);
+        if (!entity) {
+            throw new Error(`Failed to find block or page during upsertBlockProperty: ${block}`);
+        }
+
+        const properties = this.getMutableProperties(entity);
+        const propertyDefinition = this.inMemoryMetadataDb.properties.get(key);
+        if (options.reset === true || propertyDefinition?.schema.cardinality !== "many") {
+            properties[key] = value;
+        } else {
+            const existingValue = properties[key];
+            const values =
+                existingValue === undefined
+                    ? []
+                    : Array.isArray(existingValue)
+                      ? existingValue
+                      : [existingValue];
+            if (!values.some((storedValue) => _.isEqual(storedValue, value))) {
+                values.push(value);
+            }
+            properties[key] = values;
+        }
+
+        return this.pushAndReturn(true, true);
+    }
+
+    public async removeBlockProperty(block: LogseqEntityIdentity, key: string): Promise<boolean> {
+        this.assertMutablePropertyKey(key);
+        const entity = await this.getImportedEntity(block);
+        if (!entity) {
+            throw new Error(`Failed to find block or page during removeBlockProperty: ${block}`);
+        }
+
+        if (entity.properties) {
+            delete entity.properties[key];
+        }
+        return this.pushAndReturn(true, true);
+    }
+
     public async readBlockOrPage(
         uuid: LogseqEntityIdentity,
         includeChildren: boolean
@@ -278,5 +373,17 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
     ): Promise<InMemoryLogseqEntity | null> {
         await this.importPageOfEntity(identity);
         return findEntity(this.inMemoryPageDataDb, identity);
+    }
+
+    private getMutableProperties(entity: InMemoryLogseqEntity): Record<string, any> {
+        const mutableEntity = entity as {properties?: Record<string, any>};
+        mutableEntity.properties = mutableEntity.properties || {};
+        return mutableEntity.properties;
+    }
+
+    private assertMutablePropertyKey(key: string): void {
+        if (key === "uuid") {
+            throw new Error("Cannot remove internal uuid property");
+        }
     }
 }

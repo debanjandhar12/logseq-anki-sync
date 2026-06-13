@@ -3,8 +3,12 @@ import {
     DeletePageCommand,
     InsertBlockCommand,
     MoveBlockCommand,
+    RemoveBlockPropertyCommand,
+    RemovePropertyCommand,
     RenamePageCommand,
-    UpdateBlockCommand
+    UpdateBlockCommand,
+    UpsertBlockPropertyCommand,
+    UpsertPropertyCommand
 } from "./commands";
 import type {LogseqFakeableCommand, SerializedLogseqFakeableCommand} from "./types";
 
@@ -35,6 +39,19 @@ export class LogseqFakeableTransactionCommandSerializer {
                 return new RenamePageCommand(command.pageUuid, command.newName);
             case "UpdateBlock":
                 return new UpdateBlockCommand(command.blockUuid, command.content);
+            case "UpsertProperty":
+                return new UpsertPropertyCommand(command.key, command.schema, command.options);
+            case "RemoveProperty":
+                return new RemovePropertyCommand(command.key);
+            case "UpsertBlockProperty":
+                return new UpsertBlockPropertyCommand(
+                    command.blockUuid,
+                    command.key,
+                    command.value,
+                    command.options
+                );
+            case "RemoveBlockProperty":
+                return new RemoveBlockPropertyCommand(command.blockUuid, command.key);
         }
     }
 }

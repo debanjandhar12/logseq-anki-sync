@@ -3,10 +3,14 @@ import type {
     BlockIdentity,
     EntityID,
     PageEntity,
-    PageIdentity
+    PageIdentity,
+    PropertySchema
 } from "@logseq/libs/dist/LSPlugin";
-import type {LogseqTransactionExecutor} from "./executor/LogseqTransactionExecutor";
-import type {InsertBlockOptions, MoveBlockOptions} from "./executor/LogseqTransactionExecutor";
+import type {
+    InsertBlockOptions,
+    LogseqTransactionExecutor,
+    MoveBlockOptions
+} from "./executor/LogseqTransactionExecutor";
 
 export type LogseqEntityIdentity = PageIdentity | BlockIdentity | EntityID;
 
@@ -46,6 +50,19 @@ export type InMemoryLogseqEntity = InMemoryPageEntity | InMemoryBlockEntity;
 
 export type InMemoryDB = Map<string, InMemoryPageEntity>;
 
+export type InMemoryPropertyDefinition = {
+    uuid: string;
+    key: string;
+    name?: string;
+    type: "property";
+    schema: Partial<PropertySchema>;
+    properties: Record<string, any>;
+};
+
+export type InMemoryMetadataDB = {
+    properties: Map<string, InMemoryPropertyDefinition>;
+};
+
 export type LogseqTransactionResult = InMemoryLogseqEntity | BlockEntity | PageEntity | boolean;
 
 export interface LogseqFakeableCommand {
@@ -83,6 +100,28 @@ export type SerializedLogseqFakeableCommand =
           type: "UpdateBlock";
           blockUuid: LogseqEntityIdentity;
           content: string;
+      }
+    | {
+          type: "UpsertProperty";
+          key: string;
+          schema?: Partial<PropertySchema>;
+          options?: {name?: string};
+      }
+    | {
+          type: "RemoveProperty";
+          key: string;
+      }
+    | {
+          type: "UpsertBlockProperty";
+          blockUuid: LogseqEntityIdentity;
+          key: string;
+          value: any;
+          options?: Partial<{reset: boolean}>;
+      }
+    | {
+          type: "RemoveBlockProperty";
+          blockUuid: LogseqEntityIdentity;
+          key: string;
       };
 
 export type SerializedLogseqFakeableTransactionTracker = {
