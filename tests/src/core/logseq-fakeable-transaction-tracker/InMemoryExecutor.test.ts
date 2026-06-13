@@ -1,14 +1,11 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {describe, expect, test} from "vitest";
 import {
-    DeterminesticUUIDGenerator,
     type InMemoryBlockEntity,
-    InMemoryExecutor,
     type InMemoryPageLoader,
     LogseqInMemoryDataPrinter
 } from "../../../../src/core/logseq-fakeable-transaction-tracker";
-
-const UUID_SEED = "5f9c57d6-3466-4ba3-b6bf-01e12f11c91d";
+import {createInMemoryExecutor, generateIdentities} from "./helpers/createInMemoryExecutor";
 
 describe("InMemoryExecutor", () => {
     describe("transaction scenarios", () => {
@@ -16,7 +13,7 @@ describe("InMemoryExecutor", () => {
             const identities = generateIdentities(6);
             const [pageAUuid, rootUuid, childUuid, grandchildUuid, pageBUuid, destinationUuid] =
                 identities;
-            const executor = createExecutor();
+            const executor = createInMemoryExecutor();
 
             await executor.createPage("Page A", {category: "source"});
             await executor.insertBlock(pageAUuid, "Root");
@@ -60,7 +57,7 @@ describe("InMemoryExecutor", () => {
 
     describe("createPage", () => {
         test("rejects duplicate page names", async () => {
-            const executor = createExecutor();
+            const executor = createInMemoryExecutor();
 
             await executor.createPage("Page");
 
@@ -71,7 +68,7 @@ describe("InMemoryExecutor", () => {
     describe("moveBlock", () => {
         test("restores the source subtree when the destination does not exist", async () => {
             const [pageUuid, rootUuid, childUuid] = generateIdentities(3);
-            const executor = createExecutor();
+            const executor = createInMemoryExecutor();
 
             await executor.createPage("Page");
             await executor.insertBlock(pageUuid, "Root");
@@ -92,7 +89,7 @@ describe("InMemoryExecutor", () => {
     describe("readBlockOrPage", () => {
         test("returns a clone and omits children when requested", async () => {
             const [pageUuid, blockUuid] = generateIdentities(2);
-            const executor = createExecutor();
+            const executor = createInMemoryExecutor();
 
             await executor.createPage("Page");
             await executor.insertBlock(pageUuid, "Block");
@@ -108,7 +105,7 @@ describe("InMemoryExecutor", () => {
 
         test("imports a page by name", async () => {
             const loader = new StubPageLoader();
-            const executor = createExecutor(loader);
+            const executor = createInMemoryExecutor(loader);
 
             const result = await executor.readBlockOrPage("Imported Page", false);
 
@@ -121,7 +118,7 @@ describe("InMemoryExecutor", () => {
     describe("renamePage", () => {
         test("rejects duplicate page names", async () => {
             const [pageAUuid, pageBUuid] = generateIdentities(2);
-            const executor = createExecutor();
+            const executor = createInMemoryExecutor();
 
             await executor.createPage("Page A");
             await executor.createPage("Page B");
@@ -135,7 +132,7 @@ describe("InMemoryExecutor", () => {
 
         test("allows renaming a page to its current name", async () => {
             const [pageUuid] = generateIdentities(1);
-            const executor = createExecutor();
+            const executor = createInMemoryExecutor();
 
             await executor.createPage("Page");
             await executor.renamePage(pageUuid, "Page");
@@ -147,7 +144,7 @@ describe("InMemoryExecutor", () => {
     describe("imported pages", () => {
         test("keeps the original snapshot unchanged while mutating the working copy", async () => {
             const loader = new StubPageLoader();
-            const executor = createExecutor(loader);
+            const executor = createInMemoryExecutor(loader);
 
             await executor.updateBlock("imported-block", "Updated");
 
@@ -163,18 +160,6 @@ describe("InMemoryExecutor", () => {
         });
     });
 });
-
-function createExecutor(pageLoader?: InMemoryPageLoader): InMemoryExecutor {
-    return new InMemoryExecutor(
-        new DeterminesticUUIDGenerator(UUID_SEED),
-        pageLoader ?? new NullPageLoader()
-    );
-}
-
-function generateIdentities(count: number): string[] {
-    const generator = new DeterminesticUUIDGenerator(UUID_SEED);
-    return Array.from({length: count}, () => generator.getUUID());
-}
 
 class StubPageLoader implements InMemoryPageLoader {
     public readonly loadedIdentities: unknown[] = [];
@@ -206,11 +191,5 @@ class StubPageLoader implements InMemoryPageLoader {
                 } as unknown as BlockEntity
             ]
         };
-    }
-}
-
-class NullPageLoader implements InMemoryPageLoader {
-    public async loadPageForIdentity() {
-        return null;
     }
 }
