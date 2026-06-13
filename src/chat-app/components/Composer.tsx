@@ -1,4 +1,4 @@
-import {ComposerPrimitive} from "@assistant-ui/react";
+import {ComposerPrimitive, useAuiState} from "@assistant-ui/react";
 import type {FC, KeyboardEvent} from "react";
 import {AttachmentUI} from "src/chat-app/components/AttachmentUI";
 import {ComposerAction} from "src/chat-app/components/ComposerAction";
@@ -12,7 +12,17 @@ import {ComposerAction} from "src/chat-app/components/ComposerAction";
  *     ShadowDOM was unable to block this intercept.
  */
 export const Composer: FC = () => {
+    const isRunning = useAuiState((state) => state.thread.isRunning);
+    const requiresActionState = useAuiState(
+        (state) => state.thread.messages.at(-1)?.status?.type === "requires-action"
+    );
+
     const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.key === "Enter" && !event.shiftKey && (isRunning || requiresActionState)) {
+            event.preventDefault();
+            return;
+        }
+
         if (event.key !== "Enter" || !event.shiftKey) {
             return;
         }
