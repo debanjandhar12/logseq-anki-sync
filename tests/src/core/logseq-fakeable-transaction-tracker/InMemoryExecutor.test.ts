@@ -3,8 +3,12 @@ import {describe, expect, test} from "vitest";
 import {
     type InMemoryBlockEntity,
     type InMemoryPageLoader,
+    InsertBlockCommand,
+    LogseqFakeableTransactionTracker,
+    LogseqFakeableTransactionTrackerSerializer,
     LogseqInMemoryDataPrinter
 } from "../../../../src/core/logseq-fakeable-transaction-tracker";
+import {MoveBlockCommand} from "../../../../src/core/logseq-fakeable-transaction-tracker/commands";
 import {createInMemoryExecutor, generateIdentities} from "./helpers/createInMemoryExecutor";
 
 describe("InMemoryExecutor", () => {
@@ -83,6 +87,226 @@ describe("InMemoryExecutor", () => {
             expect(root.uuid).toBe(rootUuid);
             expect(root.children?.[0]?.uuid).toBe(childUuid);
             expect(root.parent).toEqual({uuid: pageUuid});
+        });
+
+        test("rejects moving a block into its own subtree without changing the tree", async () => {
+            const [pageUuid, rootUuid, childUuid, grandchildUuid] = generateIdentities(4);
+            const executor = createInMemoryExecutor();
+
+            await executor.createPage("Page");
+            await executor.insertBlock(pageUuid, "Root");
+            await executor.insertBlock(rootUuid, "Child");
+            await executor.insertBlock(childUuid, "Grandchild");
+
+            await expect(executor.moveBlock(rootUuid, grandchildUuid)).rejects.toThrow(
+                "Cannot move a block inside its own subtree"
+            );
+
+            const page = executor.getInMemoryPageDataDb().get(pageUuid);
+            const root = page?.children?.[0] as InMemoryBlockEntity;
+            const child = root.children?.[0] as InMemoryBlockEntity;
+            const grandchild = child.children?.[0] as InMemoryBlockEntity;
+            expect(root.uuid).toBe(rootUuid);
+            expect(root.parent).toEqual({uuid: pageUuid});
+            expect(child.uuid).toBe(childUuid);
+            expect(child.parent).toEqual({uuid: rootUuid});
+            expect(grandchild.uuid).toBe(grandchildUuid);
+            expect(grandchild.parent).toEqual({uuid: childUuid});
+        });
+
+        test("moves a block across pages and updates subtree page references", async () => {
+            const [pageAUuid, rootUuid, childUuid, pageBUuid, destinationUuid] =
+                generateIdentities(5);
+            const executor = createInMemoryExecutor();
+
+            await executor.createPage("Page A");
+            await executor.insertBlock(pageAUuid, "Root");
+            await executor.insertBlock(rootUuid, "Child");
+            await executor.createPage("Page B");
+            await executor.insertBlock(pageBUuid, "Destination");
+
+            await executor.moveBlock(rootUuid, destinationUuid);
+
+            const pageA = executor.getInMemoryPageDataDb().get(pageAUuid);
+            const pageB = executor.getInMemoryPageDataDb().get(pageBUuid);
+            const destination = pageB?.children?.[0] as InMemoryBlockEntity;
+            const movedRoot = destination.children?.[0] as InMemoryBlockEntity;
+            const movedChild = movedRoot.children?.[0] as InMemoryBlockEntity;
+            expect(pageA?.children).toEqual([]);
+            expect(movedRoot.uuid).toBe(rootUuid);
+            expect(movedRoot.parent).toEqual({uuid: destinationUuid});
+            expect(movedRoot.page).toEqual({uuid: pageBUuid});
+            expect(movedChild.uuid).toBe(childUuid);
+            expect(movedChild.page).toEqual({uuid: pageBUuid});
+        });
+
+        test("moves under destination by default and with children true", async () => {
+            const [pageUuid, sourceUuid, destinationUuid, secondSourceUuid] = generateIdentities(4);
+            const executor = createInMemoryExecutor();
+
+            await executor.createPage("Page");
+            await executor.insertBlock(pageUuid, "Source");
+            await executor.insertBlock(pageUuid, "Destination");
+            await executor.insertBlock(pageUuid, "Second source");
+
+            await executor.moveBlock(sourceUuid, destinationUuid);
+            await executor.moveBlock(secondSourceUuid, destinationUuid, {children: true});
+
+            const page = executor.getInMemoryPageDataDb().get(pageUuid);
+            const destination = page?.children?.[0] as InMemoryBlockEntity;
+            expect(destination.uuid).toBe(destinationUuid);
+            expect(destination.children?.map((child) => child.uuid)).toEqual([
+                sourceUuid,
+                secondSourceUuid
+            ]);
+        });
+
+        test("rejects children false", async () => {
+            const [pageUuid, sourceUuid, destinationUuid] = generateIdentities(3);
+            const executor = createInMemoryExecutor();
+
+            await executor.createPage("Page");
+            await executor.insertBlock(pageUuid, "Source");
+            await executor.insertBlock(pageUuid, "Destination");
+
+            await expect(
+                executor.moveBlock(sourceUuid, destinationUuid, {children: false})
+            ).rejects.toThrow("moveBlock with children: false is not supported");
+        });
+
+        test("moves a block before another block", async () => {
+            const [pageUuid, firstUuid, secondUuid, thirdUuid] = generateIdentities(4);
+            const executor = createInMemoryExecutor();
+
+            await executor.createPage("Page");
+            await executor.insertBlock(pageUuid, "First");
+            await executor.insertBlock(pageUuid, "Second");
+            await executor.insertBlock(pageUuid, "Third");
+
+            await executor.moveBlock(thirdUuid, secondUuid, {before: true});
+
+            const page = executor.getInMemoryPageDataDb().get(pageUuid);
+            expect(page?.children?.map((child) => child.uuid)).toEqual([
+                firstUuid,
+                thirdUuid,
+                secondUuid
+            ]);
+            const movedBlock = page?.children?.[1] as InMemoryBlockEntity;
+            expect(movedBlock.parent).toEqual({uuid: pageUuid});
+        });
+    });
+
+    describe("insertBlock", () => {
+        test("inserts as first and last child", async () => {
+            const [pageUuid, parentUuid, lastUuid, firstUuid] = generateIdentities(4);
+            const executor = createInMemoryExecutor();
+
+            await executor.createPage("Page");
+            await executor.insertBlock(pageUuid, "Parent");
+            await executor.insertBlock(parentUuid, "Last", {end: true});
+            await executor.insertBlock(parentUuid, "First", {start: true});
+
+            const page = executor.getInMemoryPageDataDb().get(pageUuid);
+            const parent = page?.children?.[0] as InMemoryBlockEntity;
+            expect(parent.children?.map((child) => child.uuid)).toEqual([firstUuid, lastUuid]);
+        });
+
+        test("inserts sibling before and after", async () => {
+            const [pageUuid, targetUuid, beforeUuid, afterUuid] = generateIdentities(4);
+            const executor = createInMemoryExecutor();
+
+            await executor.createPage("Page");
+            await executor.insertBlock(pageUuid, "Target");
+            await executor.insertBlock(targetUuid, "Before", {sibling: true, before: true});
+            await executor.insertBlock(targetUuid, "After", {sibling: true, before: false});
+
+            const page = executor.getInMemoryPageDataDb().get(pageUuid);
+            expect(page?.children?.map((child) => child.uuid)).toEqual([
+                beforeUuid,
+                targetUuid,
+                afterUuid
+            ]);
+        });
+
+        test("inserts first child with before true when source has children", async () => {
+            const [pageUuid, parentUuid, existingChildUuid, firstChildUuid] = generateIdentities(4);
+            const executor = createInMemoryExecutor();
+
+            await executor.createPage("Page");
+            await executor.insertBlock(pageUuid, "Parent");
+            await executor.insertBlock(parentUuid, "Existing child");
+            await executor.insertBlock(parentUuid, "First child", {before: true});
+
+            const page = executor.getInMemoryPageDataDb().get(pageUuid);
+            const parent = page?.children?.[0] as InMemoryBlockEntity;
+            expect(parent.children?.map((child) => child.uuid)).toEqual([
+                firstChildUuid,
+                existingChildUuid
+            ]);
+        });
+
+        test("inserts sibling before with before true when source has no children", async () => {
+            const [pageUuid, targetUuid, beforeUuid] = generateIdentities(3);
+            const executor = createInMemoryExecutor();
+
+            await executor.createPage("Page");
+            await executor.insertBlock(pageUuid, "Target");
+            await executor.insertBlock(targetUuid, "Before", {before: true});
+
+            const page = executor.getInMemoryPageDataDb().get(pageUuid);
+            expect(page?.children?.map((child) => child.uuid)).toEqual([beforeUuid, targetUuid]);
+        });
+    });
+
+    describe("serialization", () => {
+        test("round-trips insert and move command options", () => {
+            const tracker = new LogseqFakeableTransactionTracker();
+
+            tracker.addCommand(new InsertBlockCommand("parent", "content", {start: true}));
+            tracker.addCommand(new MoveBlockCommand("source", "destination", {before: true}));
+
+            const serialized = LogseqFakeableTransactionTrackerSerializer.serialize(tracker);
+            const deserialized = LogseqFakeableTransactionTrackerSerializer.deserialize(serialized);
+
+            expect(LogseqFakeableTransactionTrackerSerializer.serialize(deserialized).commands).toEqual([
+                {
+                    type: "InsertBlock",
+                    parentUuid: "parent",
+                    content: "content",
+                    options: {start: true}
+                },
+                {
+                    type: "MoveBlock",
+                    srcBlockUuid: "source",
+                    destBlockUuid: "destination",
+                    options: {before: true}
+                }
+            ]);
+        });
+
+        test("deserializes old commands without options", () => {
+            const tracker = LogseqFakeableTransactionTrackerSerializer.deserialize({
+                uuidGenerationSeed: "5f9c57d6-3466-4ba3-b6bf-01e12f11c91d",
+                commands: [
+                    {type: "InsertBlock", parentUuid: "parent", content: "content"},
+                    {type: "MoveBlock", srcBlockUuid: "source", destBlockUuid: "destination"}
+                ]
+            });
+
+            expect(LogseqFakeableTransactionTrackerSerializer.serialize(tracker).commands).toEqual([
+                {
+                    type: "InsertBlock",
+                    parentUuid: "parent",
+                    content: "content",
+                    options: undefined
+                },
+                {
+                    type: "MoveBlock",
+                    srcBlockUuid: "source",
+                    destBlockUuid: "destination",
+                    options: undefined
+                }
+            ]);
         });
     });
 

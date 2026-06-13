@@ -2,14 +2,20 @@ import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "../../../logseq/LogseqEditor";
 import {LogseqPropertiesHelper} from "../../../logseq/LogseqPropertiesHelper";
 import type {LogseqEntityIdentity} from "../types";
-import {LogseqTransactionExecutor} from "./LogseqTransactionExecutor";
+import {
+    type InsertBlockOptions,
+    type MoveBlockOptions,
+    LogseqTransactionExecutor
+} from "./LogseqTransactionExecutor";
 
 export class LogseqExecutor extends LogseqTransactionExecutor {
     public async insertBlock(
         parentBlockUUID: LogseqEntityIdentity,
-        content: string
+        content: string,
+        options: InsertBlockOptions = {}
     ): Promise<boolean> {
         const block = await logseq.Editor.insertBlock(parentBlockUUID, content, {
+            ...options,
             customUUID: this.uuidGenerator.getUUID()
         });
         if (!block) {
@@ -21,13 +27,15 @@ export class LogseqExecutor extends LogseqTransactionExecutor {
 
     public async moveBlock(
         srcBlockUUID: LogseqEntityIdentity,
-        destBlockUUID: LogseqEntityIdentity
+        destBlockUUID: LogseqEntityIdentity,
+        options: MoveBlockOptions = {}
     ): Promise<boolean> {
         await logseq.Editor.moveBlock(
             srcBlockUUID as BlockIdentity,
             destBlockUUID as BlockIdentity,
             {
-                children: true
+                children: true,
+                ...options
             }
         );
         return this.pushAndReturn(true, true);

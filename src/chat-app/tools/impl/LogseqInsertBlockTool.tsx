@@ -10,7 +10,11 @@ import {getLastLogseqFakeableTransactionTracker} from "../transaction/getLastLog
 
 const LogseqInsertBlockArgsZodObj = z.object({
     parentUuid: z.string().describe("UUID of the parent Logseq block or page."),
-    content: z.string().describe("Content to insert into the new Logseq block.")
+    content: z.string().describe("Content to insert into the new Logseq block."),
+    before: z.boolean().optional().describe("Insert before the source when used with sibling."),
+    sibling: z.boolean().optional().describe("Insert as a sibling of the source block."),
+    start: z.boolean().optional().describe("Insert as the first child of the source."),
+    end: z.boolean().optional().describe("Insert as the last child of the source.")
 });
 
 type LogseqInsertBlockArgs = z.infer<typeof LogseqInsertBlockArgsZodObj>;
@@ -36,12 +40,14 @@ export class LogseqInsertBlockTool extends BaseChatToolWithDefaultUI<
     readonly parameters = LogseqInsertBlockArgsZodObj;
 
     async execute(
-        {parentUuid, content}: LogseqInsertBlockArgs,
+        {parentUuid, content, before, sibling, start, end}: LogseqInsertBlockArgs,
         context?: ChatToolExecutionContext
     ): Promise<LogseqInsertBlockResult | ToolResponse<LogseqInsertBlockResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new InsertBlockCommand(parentUuid, content));
+            transactionTracker.addCommand(
+                new InsertBlockCommand(parentUuid, content, {before, sibling, start, end})
+            );
 
             const executor = await transactionTracker.executeInTheInMemoryDB();
 

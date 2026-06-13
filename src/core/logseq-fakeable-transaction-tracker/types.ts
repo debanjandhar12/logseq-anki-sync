@@ -6,6 +6,7 @@ import type {
     PageIdentity
 } from "@logseq/libs/dist/LSPlugin";
 import type {LogseqTransactionExecutor} from "./executor/LogseqTransactionExecutor";
+import type {InsertBlockOptions, MoveBlockOptions} from "./executor/LogseqTransactionExecutor";
 
 export type LogseqEntityIdentity = PageIdentity | BlockIdentity | EntityID;
 
@@ -65,11 +66,13 @@ export type SerializedLogseqFakeableCommand =
           type: "InsertBlock";
           parentUuid: LogseqEntityIdentity;
           content: string;
+          options?: InsertBlockOptions;
       }
     | {
           type: "MoveBlock";
           srcBlockUuid: LogseqEntityIdentity;
           destBlockUuid: LogseqEntityIdentity;
+          options?: MoveBlockOptions;
       }
     | {
           type: "RenamePage";

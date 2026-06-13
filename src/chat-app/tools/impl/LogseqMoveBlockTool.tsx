@@ -9,7 +9,12 @@ import {z} from "zod";
 
 const LogseqMoveBlockArgsZodObj = z.object({
     srcBlockUuid: z.string().describe("UUID of the Logseq block to move."),
-    destBlockUuid: z.string().describe("UUID of the destination Logseq block.")
+    destBlockUuid: z.string().describe("UUID of the destination Logseq block."),
+    before: z.boolean().optional().describe("Move the source immediately before the destination."),
+    children: z
+        .boolean()
+        .optional()
+        .describe("Keep source descendants attached. children: false is not supported in preview.")
 });
 
 type LogseqMoveBlockArgs = z.infer<typeof LogseqMoveBlockArgsZodObj>;
@@ -34,12 +39,14 @@ export class LogseqMoveBlockTool extends BaseChatToolWithDefaultUI<
     readonly parameters = LogseqMoveBlockArgsZodObj;
 
     async execute(
-        {srcBlockUuid, destBlockUuid}: LogseqMoveBlockArgs,
+        {srcBlockUuid, destBlockUuid, before, children}: LogseqMoveBlockArgs,
         context?: ChatToolExecutionContext
     ): Promise<LogseqMoveBlockResult | ToolResponse<LogseqMoveBlockResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new MoveBlockCommand(srcBlockUuid, destBlockUuid));
+            transactionTracker.addCommand(
+                new MoveBlockCommand(srcBlockUuid, destBlockUuid, {before, children})
+            );
 
             await transactionTracker.executeInTheInMemoryDB();
 

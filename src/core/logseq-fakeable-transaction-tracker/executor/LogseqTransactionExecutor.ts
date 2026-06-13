@@ -1,6 +1,18 @@
 import type {DeterminesticUUIDGenerator} from "../DeterminesticUUIDGenerator";
 import type {LogseqEntityIdentity, LogseqTransactionResult} from "../types";
 
+export type InsertBlockOptions = Partial<{
+    before: boolean;
+    sibling: boolean;
+    start: boolean;
+    end: boolean;
+}>;
+
+export type MoveBlockOptions = Partial<{
+    before: boolean;
+    children: boolean;
+}>;
+
 export abstract class LogseqTransactionExecutor {
     protected readonly results: LogseqTransactionResult[] = [];
 
@@ -24,12 +36,14 @@ export abstract class LogseqTransactionExecutor {
 
     public abstract insertBlock(
         parentBlockUUID: LogseqEntityIdentity,
-        content: string
+        content: string,
+        options?: InsertBlockOptions
     ): Promise<boolean>;
 
     public abstract moveBlock(
         srcBlockUUID: LogseqEntityIdentity,
-        destBlockUUID: LogseqEntityIdentity
+        destBlockUUID: LogseqEntityIdentity,
+        options?: MoveBlockOptions
     ): Promise<boolean>;
 
     public abstract updateBlock(blockUUID: LogseqEntityIdentity, content: string): Promise<boolean>;
