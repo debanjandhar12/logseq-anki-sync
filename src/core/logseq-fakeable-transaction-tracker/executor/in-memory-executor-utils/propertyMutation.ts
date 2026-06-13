@@ -1,10 +1,4 @@
-import type {InMemoryDB, InMemoryLogseqEntity, InMemoryMetadataDB} from "../../types";
-
-export function createInMemoryMetadataDb(): InMemoryMetadataDB {
-    return {
-        properties: new Map()
-    };
-}
+import type {InMemoryDB, InMemoryLogseqEntity} from "../../types";
 
 export function removePropertyFromEntities(db: InMemoryDB, key: string): void {
     for (const page of db.values()) {

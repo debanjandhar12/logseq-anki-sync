@@ -12,7 +12,8 @@ export function createInMemoryPage(
     pageUuid: string,
     pageName: string,
     properties: Record<string, any>,
-    now: number
+    now: number,
+    pageType: InMemoryPageEntity["pageType"] = "page"
 ): InMemoryPageEntity {
     return {
         uuid: pageUuid,
@@ -22,6 +23,7 @@ export function createInMemoryPage(
         content: pageName,
         format: DEFAULT_BLOCK_FORMAT,
         type: "page",
+        pageType,
         updatedAt: now,
         createdAt: now,
         "journal?": false,

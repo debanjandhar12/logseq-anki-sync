@@ -1,6 +1,11 @@
 import type {PropertySchema} from "@logseq/libs/dist/LSPlugin";
 import type {DeterminesticUUIDGenerator} from "../DeterminesticUUIDGenerator";
-import type {LogseqEntityIdentity, LogseqTransactionResult} from "../types";
+import type {
+    CreateTagOptions,
+    InMemoryPageEntity,
+    LogseqEntityIdentity,
+    LogseqTransactionResult
+} from "../types";
 
 export type InsertBlockOptions = Partial<{
     before: boolean;
@@ -89,4 +94,40 @@ export abstract class LogseqTransactionExecutor {
     ): Promise<boolean>;
 
     public abstract removeBlockProperty(block: LogseqEntityIdentity, key: string): Promise<boolean>;
+
+    public abstract createTag(tagName: string, options?: CreateTagOptions): Promise<boolean>;
+
+    public abstract addTagProperty(
+        tagId: LogseqEntityIdentity,
+        propertyIdOrName: LogseqEntityIdentity
+    ): Promise<boolean>;
+
+    public abstract removeTagProperty(
+        tagId: LogseqEntityIdentity,
+        propertyIdOrName: LogseqEntityIdentity
+    ): Promise<boolean>;
+
+    public abstract addTagExtends(
+        tagId: LogseqEntityIdentity,
+        parentTagIdOrName: LogseqEntityIdentity
+    ): Promise<boolean>;
+
+    public abstract removeTagExtends(
+        tagId: LogseqEntityIdentity,
+        parentTagIdOrName: LogseqEntityIdentity
+    ): Promise<boolean>;
+
+    public abstract addBlockTag(
+        blockId: LogseqEntityIdentity,
+        tagId: LogseqEntityIdentity
+    ): Promise<boolean>;
+
+    public abstract removeBlockTag(
+        blockId: LogseqEntityIdentity,
+        tagId: LogseqEntityIdentity
+    ): Promise<boolean>;
+
+    public abstract getEffectiveBlockPropertySchema(
+        blockIdentity: LogseqEntityIdentity
+    ): Promise<Map<string, InMemoryPageEntity>>;
 }

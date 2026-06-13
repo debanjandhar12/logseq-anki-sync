@@ -24,6 +24,7 @@ type InMemoryEntityBaseKeys =
     | "content"
     | "createdAt"
     | "updatedAt"
+    | "ident"
     | "properties";
 
 type InMemoryEntityBase = Pick<BlockEntity, "uuid"> &
@@ -33,6 +34,7 @@ export type InMemoryBlockEntity = Omit<
     Pick<BlockEntity, InMemoryEntityBaseKeys | "parent" | "page" | "children">,
     "parent" | "page" | "children"
 > & {
+    id?: EntityID;
     type?: "block";
     parent?: InMemoryEntityReference;
     page?: InMemoryEntityReference;
@@ -41,7 +43,9 @@ export type InMemoryBlockEntity = Omit<
 
 export type InMemoryPageEntity = InMemoryEntityBase &
     Pick<PageEntity, "name" | "journal?"> & {
+        id?: EntityID;
         type: "page";
+        pageType?: PageEntity["type"];
         originalName?: PageEntity["originalName"];
         children?: InMemoryLogseqEntity[];
     };
@@ -50,18 +54,14 @@ export type InMemoryLogseqEntity = InMemoryPageEntity | InMemoryBlockEntity;
 
 export type InMemoryDB = Map<string, InMemoryPageEntity>;
 
-export type InMemoryPropertyDefinition = {
+export type CreateTagOptions = Partial<{
     uuid: string;
-    key: string;
-    name?: string;
-    type: "property";
-    schema: Partial<PropertySchema>;
-    properties: Record<string, any>;
-};
-
-export type InMemoryMetadataDB = {
-    properties: Map<string, InMemoryPropertyDefinition>;
-};
+    tagProperties: Array<{
+        name: string;
+        schema?: Partial<PropertySchema>;
+        properties?: Record<string, any>;
+    }>;
+}>;
 
 export type LogseqTransactionResult = InMemoryLogseqEntity | BlockEntity | PageEntity | boolean;
 
@@ -122,6 +122,26 @@ export type SerializedLogseqFakeableCommand =
           type: "RemoveBlockProperty";
           blockUuid: LogseqEntityIdentity;
           key: string;
+      }
+    | {
+          type: "CreateTag";
+          tagName: string;
+          options?: CreateTagOptions;
+      }
+    | {
+          type: "AddTagProperty" | "RemoveTagProperty";
+          tagId: LogseqEntityIdentity;
+          propertyIdOrName: LogseqEntityIdentity;
+      }
+    | {
+          type: "AddTagExtends" | "RemoveTagExtends";
+          tagId: LogseqEntityIdentity;
+          parentTagIdOrName: LogseqEntityIdentity;
+      }
+    | {
+          type: "AddBlockTag" | "RemoveBlockTag";
+          blockId: LogseqEntityIdentity;
+          tagId: LogseqEntityIdentity;
       };
 
 export type SerializedLogseqFakeableTransactionTracker = {

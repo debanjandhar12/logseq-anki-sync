@@ -1,10 +1,17 @@
 import {
+    AddBlockTagCommand,
+    AddTagExtendsCommand,
+    AddTagPropertyCommand,
     CreatePageCommand,
+    CreateTagCommand,
     DeletePageCommand,
     InsertBlockCommand,
     MoveBlockCommand,
     RemoveBlockPropertyCommand,
+    RemoveBlockTagCommand,
     RemovePropertyCommand,
+    RemoveTagExtendsCommand,
+    RemoveTagPropertyCommand,
     RenamePageCommand,
     UpdateBlockCommand,
     UpsertBlockPropertyCommand,
@@ -52,6 +59,20 @@ export class LogseqFakeableTransactionCommandSerializer {
                 );
             case "RemoveBlockProperty":
                 return new RemoveBlockPropertyCommand(command.blockUuid, command.key);
+            case "CreateTag":
+                return new CreateTagCommand(command.tagName, command.options);
+            case "AddTagProperty":
+                return new AddTagPropertyCommand(command.tagId, command.propertyIdOrName);
+            case "RemoveTagProperty":
+                return new RemoveTagPropertyCommand(command.tagId, command.propertyIdOrName);
+            case "AddTagExtends":
+                return new AddTagExtendsCommand(command.tagId, command.parentTagIdOrName);
+            case "RemoveTagExtends":
+                return new RemoveTagExtendsCommand(command.tagId, command.parentTagIdOrName);
+            case "AddBlockTag":
+                return new AddBlockTagCommand(command.blockId, command.tagId);
+            case "RemoveBlockTag":
+                return new RemoveBlockTagCommand(command.blockId, command.tagId);
         }
     }
 }

@@ -2,10 +2,11 @@ import type {PropertySchema} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import type {DeterminesticUUIDGenerator} from "../DeterminesticUUIDGenerator";
 import type {
+    CreateTagOptions,
     InMemoryBlockEntity,
     InMemoryDB,
     InMemoryLogseqEntity,
-    InMemoryMetadataDB,
+    InMemoryPageEntity,
     LogseqEntityIdentity
 } from "../types";
 import {createInMemoryBlock, createInMemoryPage} from "./in-memory-executor-utils/entityFactory";
@@ -27,9 +28,22 @@ import {
     LogseqInMemoryPageLoader
 } from "./in-memory-executor-utils/InMemoryPageLoader";
 import {
-    createInMemoryMetadataDb,
-    removePropertyFromEntities
-} from "./in-memory-executor-utils/metadataStore";
+    type InMemorySchemaPageLoader,
+    LogseqInMemorySchemaPageLoader
+} from "./in-memory-executor-utils/InMemorySchemaPageLoader";
+import {removePropertyFromEntities} from "./in-memory-executor-utils/propertyMutation";
+import {
+    createPropertyPage,
+    createTagPage,
+    getPropertySchema,
+    getTagExtends,
+    getTagPropertyKeys,
+    isPropertyPage,
+    isTagPage,
+    setPropertySchema,
+    setTagExtends,
+    setTagPropertyKeys
+} from "./in-memory-executor-utils/schemaPage";
 import {normalizeImportedPage} from "./in-memory-executor-utils/normalizeLogseqEntity";
 import {
     DEFAULT_INSERT_BLOCK_OPTIONS,
@@ -40,19 +54,17 @@ import {
 } from "./LogseqTransactionExecutor";
 
 export type {InMemoryPageLoader} from "./in-memory-executor-utils/InMemoryPageLoader";
+export type {InMemorySchemaPageLoader} from "./in-memory-executor-utils/InMemorySchemaPageLoader";
 
 export class InMemoryExecutor extends LogseqTransactionExecutor {
     private readonly originalInMemoryPageDataDb: InMemoryDB = new Map();
 
     private readonly inMemoryPageDataDb: InMemoryDB = new Map();
 
-    private readonly originalInMemoryMetadataDb: InMemoryMetadataDB = createInMemoryMetadataDb();
-
-    private readonly inMemoryMetadataDb: InMemoryMetadataDB = createInMemoryMetadataDb();
-
     public constructor(
         uuidGenerator: DeterminesticUUIDGenerator,
-        private readonly pageLoader: InMemoryPageLoader = new LogseqInMemoryPageLoader()
+        private readonly pageLoader: InMemoryPageLoader = new LogseqInMemoryPageLoader(),
+        private readonly schemaPageLoader: InMemorySchemaPageLoader = new LogseqInMemorySchemaPageLoader()
     ) {
         super(uuidGenerator);
     }
@@ -63,14 +75,6 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
 
     public getOriginalInMemoryPageDataDb(): InMemoryDB {
         return this.originalInMemoryPageDataDb;
-    }
-
-    public getInMemoryMetadataDb(): InMemoryMetadataDB {
-        return this.inMemoryMetadataDb;
-    }
-
-    public getOriginalInMemoryMetadataDb(): InMemoryMetadataDB {
-        return this.originalInMemoryMetadataDb;
     }
 
     public async insertBlock(
@@ -262,21 +266,24 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         schema: Partial<PropertySchema> = {},
         options: {name?: string} = {}
     ): Promise<boolean> {
-        const existingDefinition = this.inMemoryMetadataDb.properties.get(key);
-        if (existingDefinition) {
-            existingDefinition.schema = {...existingDefinition.schema, ...schema};
+        const existingPage = await this.getOrLoadPropertyPage(key);
+        if (existingPage) {
+            setPropertySchema(existingPage, {...getPropertySchema(existingPage), ...schema});
             if (options.name !== undefined) {
-                existingDefinition.name = options.name;
+                existingPage.title = options.name;
+                existingPage.fullTitle = options.name;
+                existingPage.content = options.name;
             }
         } else {
-            this.inMemoryMetadataDb.properties.set(key, {
-                uuid: this.uuidGenerator.getUUID(),
+            const propertyPage = createPropertyPage(
+                this.uuidGenerator.getUUID(),
                 key,
-                name: options.name,
-                type: "property",
-                schema: {...schema},
-                properties: {}
-            });
+                schema,
+                options.name,
+                {},
+                Date.now()
+            );
+            this.inMemoryPageDataDb.set(propertyPage.uuid, propertyPage);
         }
 
         return this.pushAndReturn(true, true);
@@ -284,7 +291,17 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
 
     public async removeProperty(key: string): Promise<boolean> {
         this.assertMutablePropertyKey(key);
-        this.inMemoryMetadataDb.properties.delete(key);
+        const propertyPage = await this.getOrLoadPropertyPage(key);
+        if (propertyPage) {
+            this.inMemoryPageDataDb.delete(propertyPage.uuid);
+        }
+        for (const page of this.inMemoryPageDataDb.values()) {
+            if (!isTagPage(page)) continue;
+            setTagPropertyKeys(
+                page,
+                getTagPropertyKeys(page).filter((propertyKey) => propertyKey !== key)
+            );
+        }
         removePropertyFromEntities(this.inMemoryPageDataDb, key);
         return this.pushAndReturn(true, true);
     }
@@ -301,8 +318,8 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         }
 
         const properties = this.getMutableProperties(entity);
-        const propertyDefinition = this.inMemoryMetadataDb.properties.get(key);
-        if (options.reset === true || propertyDefinition?.schema.cardinality !== "many") {
+        const propertyPage = await this.getOrLoadPropertyPage(key);
+        if (options.reset === true || getPropertySchema(propertyPage).cardinality !== "many") {
             properties[key] = value;
         } else {
             const existingValue = properties[key];
@@ -332,6 +349,178 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
             delete entity.properties[key];
         }
         return this.pushAndReturn(true, true);
+    }
+
+    public async createTag(tagName: string, options: CreateTagOptions = {}): Promise<boolean> {
+        this.assertMutableTag(tagName);
+        let tagPage = await this.getOrLoadTagPage(tagName);
+        if (!tagPage) {
+            tagPage = createTagPage(
+                options.uuid || this.uuidGenerator.getUUID(),
+                tagName,
+                {},
+                Date.now()
+            );
+            this.inMemoryPageDataDb.set(tagPage.uuid, tagPage);
+        }
+
+        for (const tagProperty of options.tagProperties || []) {
+            await this.upsertProperty(tagProperty.name, tagProperty.schema);
+            const propertyPage = await this.getOrLoadPropertyPage(tagProperty.name);
+            if (propertyPage && tagProperty.properties) {
+                propertyPage.properties = {
+                    ...propertyPage.properties,
+                    ...tagProperty.properties
+                };
+            }
+            const tagPropertyKeys = getTagPropertyKeys(tagPage);
+            if (!tagPropertyKeys.includes(tagProperty.name)) {
+                setTagPropertyKeys(tagPage, [...tagPropertyKeys, tagProperty.name]);
+            }
+        }
+
+        return this.pushAndReturn(true, true);
+    }
+
+    public async addTagProperty(
+        tagId: LogseqEntityIdentity,
+        propertyIdOrName: LogseqEntityIdentity
+    ): Promise<boolean> {
+        const tagPage = await this.requireMutableTagPage(tagId, "addTagProperty");
+        const propertyKey = await this.resolvePropertyKey(propertyIdOrName, true);
+        const tagPropertyKeys = getTagPropertyKeys(tagPage);
+        if (!tagPropertyKeys.includes(propertyKey)) {
+            setTagPropertyKeys(tagPage, [...tagPropertyKeys, propertyKey]);
+        }
+        return this.pushAndReturn(true, true);
+    }
+
+    public async removeTagProperty(
+        tagId: LogseqEntityIdentity,
+        propertyIdOrName: LogseqEntityIdentity
+    ): Promise<boolean> {
+        const tagPage = await this.requireMutableTagPage(tagId, "removeTagProperty");
+        const propertyKey = await this.resolvePropertyKey(propertyIdOrName, false);
+        setTagPropertyKeys(
+            tagPage,
+            getTagPropertyKeys(tagPage).filter((key) => key !== propertyKey)
+        );
+        return this.pushAndReturn(true, true);
+    }
+
+    public async addTagExtends(
+        tagId: LogseqEntityIdentity,
+        parentTagIdOrName: LogseqEntityIdentity
+    ): Promise<boolean> {
+        const tagPage = await this.requireMutableTagPage(tagId, "addTagExtends");
+        const parentPage = await this.requireTagPage(parentTagIdOrName, "addTagExtends");
+        if (tagPage.name === parentPage.name) {
+            throw new Error(`Tag cannot extend itself: ${tagPage.name}`);
+        }
+        if (this.tagExtends(parentPage.name, tagPage.name)) {
+            throw new Error(
+                `Tag inheritance cycle detected: ${tagPage.name} -> ${parentPage.name}`
+            );
+        }
+        const extendsTags = getTagExtends(tagPage);
+        if (!extendsTags.includes(parentPage.name)) {
+            setTagExtends(tagPage, [...extendsTags, parentPage.name]);
+        }
+        return this.pushAndReturn(true, true);
+    }
+
+    public async removeTagExtends(
+        tagId: LogseqEntityIdentity,
+        parentTagIdOrName: LogseqEntityIdentity
+    ): Promise<boolean> {
+        const tagPage = await this.requireMutableTagPage(tagId, "removeTagExtends");
+        const parentName = await this.resolveTagName(parentTagIdOrName);
+        setTagExtends(
+            tagPage,
+            getTagExtends(tagPage).filter((name) => name !== parentName)
+        );
+        return this.pushAndReturn(true, true);
+    }
+
+    public async addBlockTag(
+        blockId: LogseqEntityIdentity,
+        tagId: LogseqEntityIdentity
+    ): Promise<boolean> {
+        const entity = await this.getImportedEntity(blockId);
+        if (!entity) {
+            throw new Error(`Failed to find block or page during addBlockTag: ${blockId}`);
+        }
+        const tagName = await this.resolveTagName(tagId);
+        this.assertMutableTag(tagName);
+        const tags = await this.normalizeTagValues(this.getMutableProperties(entity).tags);
+        if (!tags.includes(tagName)) tags.push(tagName);
+        this.getMutableProperties(entity).tags = tags;
+        return this.pushAndReturn(true, true);
+    }
+
+    public async removeBlockTag(
+        blockId: LogseqEntityIdentity,
+        tagId: LogseqEntityIdentity
+    ): Promise<boolean> {
+        const entity = await this.getImportedEntity(blockId);
+        if (!entity) {
+            throw new Error(`Failed to find block or page during removeBlockTag: ${blockId}`);
+        }
+        const tagName = await this.resolveTagName(tagId);
+        this.assertMutableTag(tagName);
+        const tags = await this.normalizeTagValues(entity.properties?.tags);
+        this.getMutableProperties(entity).tags = tags.filter((name) => name !== tagName);
+        return this.pushAndReturn(true, true);
+    }
+
+    public getTagPropertyKeys(tagName: string): string[] {
+        const tagPage = this.findTagPage(tagName);
+        if (!tagPage) throw new Error(`Failed to find tag: ${tagName}`);
+        return getTagPropertyKeys(tagPage);
+    }
+
+    public getInheritedTagPropertyKeys(tagName: string): string[] {
+        const keys: string[] = [];
+        const visited = new Set<string>();
+        const visit = (name: string): void => {
+            if (visited.has(name)) return;
+            visited.add(name);
+            const tagPage = this.findTagPage(name);
+            if (!tagPage) return;
+            for (const parentName of getTagExtends(tagPage)) {
+                visit(parentName);
+                for (const key of this.getTagPropertyKeys(parentName)) {
+                    if (!keys.includes(key)) keys.push(key);
+                }
+            }
+        };
+        visit(tagName);
+        return keys;
+    }
+
+    public async getEffectiveBlockPropertySchema(
+        blockIdentity: LogseqEntityIdentity
+    ): Promise<Map<string, InMemoryPageEntity>> {
+        const entity = await this.getImportedEntity(blockIdentity);
+        if (!entity) {
+            throw new Error(
+                `Failed to find block or page during getEffectiveBlockPropertySchema: ${blockIdentity}`
+            );
+        }
+        const schema = new Map<string, InMemoryPageEntity>();
+        for (const tagName of await this.normalizeTagValues(entity.properties?.tags)) {
+            const tagPage = await this.getOrLoadTagPage(tagName);
+            if (!tagPage) continue;
+            const keys = [
+                ...this.getInheritedTagPropertyKeys(tagPage.name),
+                ...this.getTagPropertyKeys(tagPage.name)
+            ];
+            for (const key of keys) {
+                const propertyPage = await this.getOrLoadPropertyPage(key);
+                if (propertyPage) schema.set(key, propertyPage);
+            }
+        }
+        return schema;
     }
 
     public async readBlockOrPage(
@@ -364,6 +553,7 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         if (!loadedPage || this.inMemoryPageDataDb.has(loadedPage.page.uuid)) return;
 
         const normalizedPage = await normalizeImportedPage(loadedPage.page, loadedPage.blocks);
+        await this.normalizeEntityTreeTags(normalizedPage);
         this.originalInMemoryPageDataDb.set(normalizedPage.uuid, _.cloneDeep(normalizedPage));
         this.inMemoryPageDataDb.set(normalizedPage.uuid, _.cloneDeep(normalizedPage));
     }
@@ -385,5 +575,170 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         if (key === "uuid") {
             throw new Error("Cannot remove internal uuid property");
         }
+    }
+
+    private async getOrLoadPropertyPage(
+        identity: LogseqEntityIdentity
+    ): Promise<InMemoryPageEntity | null> {
+        const existingPage = this.findPropertyPage(identity);
+        if (existingPage) return existingPage;
+
+        const loadedPage = await this.schemaPageLoader.loadPropertyPage(identity);
+        if (!loadedPage) return null;
+        return this.registerImportedSchemaPage(loadedPage);
+    }
+
+    private async getOrLoadTagPage(
+        identity: LogseqEntityIdentity
+    ): Promise<InMemoryPageEntity | null> {
+        const existingPage = this.findTagPage(identity);
+        if (existingPage) return existingPage;
+
+        const loadedPage = await this.schemaPageLoader.loadTagPage(identity);
+        if (!loadedPage) return null;
+        const tagPage = this.registerImportedSchemaPage(loadedPage);
+        for (const propertyKey of getTagPropertyKeys(tagPage)) {
+            await this.getOrLoadPropertyPage(propertyKey);
+        }
+        for (const parentName of getTagExtends(tagPage)) {
+            await this.getOrLoadTagPage(parentName);
+        }
+        return tagPage;
+    }
+
+    private registerImportedSchemaPage(page: InMemoryPageEntity): InMemoryPageEntity {
+        const originalPage = _.cloneDeep(page);
+        const currentPage = _.cloneDeep(page);
+        this.originalInMemoryPageDataDb.set(page.uuid, originalPage);
+        this.inMemoryPageDataDb.set(page.uuid, currentPage);
+        return currentPage;
+    }
+
+    private findPropertyPage(identity: LogseqEntityIdentity): InMemoryPageEntity | null {
+        return this.findSchemaPage(identity, isPropertyPage);
+    }
+
+    private findTagPage(identity: LogseqEntityIdentity): InMemoryPageEntity | null {
+        return this.findSchemaPage(identity, isTagPage);
+    }
+
+    private findSchemaPage(
+        identity: LogseqEntityIdentity,
+        predicate: (page: InMemoryPageEntity) => boolean
+    ): InMemoryPageEntity | null {
+        for (const page of this.inMemoryPageDataDb.values()) {
+            if (predicate(page) && this.matchesPageIdentity(page, identity)) return page;
+        }
+        return null;
+    }
+
+    private matchesPageIdentity(
+        page: InMemoryPageEntity,
+        identity: LogseqEntityIdentity
+    ): boolean {
+        if (typeof identity === "number") return page.id === identity;
+        if (typeof identity === "string") {
+            return page.uuid === identity || page.name === identity || page.ident === identity;
+        }
+        return page.uuid === identity.uuid;
+    }
+
+    private async resolvePropertyKey(
+        identity: LogseqEntityIdentity,
+        createPlainString: boolean
+    ): Promise<string> {
+        const propertyPage = await this.getOrLoadPropertyPage(identity);
+        if (propertyPage) return propertyPage.name;
+        if (createPlainString && typeof identity === "string") {
+            await this.upsertProperty(identity);
+            return identity;
+        }
+        throw new Error(`Failed to resolve property identity: ${this.stringifyIdentity(identity)}`);
+    }
+
+    private async resolveTagName(identity: LogseqEntityIdentity): Promise<string> {
+        const tagPage = await this.getOrLoadTagPage(identity);
+        if (tagPage) return tagPage.name;
+        throw new Error(`Failed to resolve tag identity: ${this.stringifyIdentity(identity)}`);
+    }
+
+    private async requireMutableTagPage(
+        identity: LogseqEntityIdentity,
+        operation: string
+    ): Promise<InMemoryPageEntity> {
+        const tagName = await this.resolveTagName(identity);
+        this.assertMutableTag(tagName);
+        return this.requireTagPage(tagName, operation);
+    }
+
+    private async requireTagPage(
+        identity: LogseqEntityIdentity,
+        operation: string
+    ): Promise<InMemoryPageEntity> {
+        const tagName = await this.resolveTagName(identity);
+        const tagPage = this.findTagPage(tagName);
+        if (!tagPage) throw new Error(`Failed to find tag during ${operation}: ${tagName}`);
+        return tagPage;
+    }
+
+    private assertMutableTag(tagName: string): void {
+        const normalizedName = tagName.startsWith("#") ? tagName.slice(1) : tagName;
+        if (normalizedName.toLowerCase() === "page") {
+            throw new Error("Built-in Page tag cannot be modified");
+        }
+    }
+
+    private tagExtends(tagName: string, expectedAncestorName: string): boolean {
+        const visited = new Set<string>();
+        const visit = (name: string): boolean => {
+            if (name === expectedAncestorName) return true;
+            if (visited.has(name)) return false;
+            visited.add(name);
+            const tagPage = this.findTagPage(name);
+            return getTagExtends(tagPage || undefined).some((parentName) => visit(parentName));
+        };
+        return visit(tagName);
+    }
+
+    private async normalizeEntityTreeTags(entity: InMemoryLogseqEntity): Promise<void> {
+        if (entity.properties && "tags" in entity.properties) {
+            entity.properties.tags = await this.normalizeTagValues(entity.properties.tags);
+        }
+        for (const child of entity.children || []) {
+            await this.normalizeEntityTreeTags(child);
+        }
+    }
+
+    private async normalizeTagValues(value: unknown): Promise<string[]> {
+        const values = value === undefined ? [] : Array.isArray(value) ? value : [value];
+        const names: string[] = [];
+        for (const tagIdentity of values) {
+            if (
+                typeof tagIdentity !== "string" &&
+                typeof tagIdentity !== "number" &&
+                !(
+                    typeof tagIdentity === "object" &&
+                    tagIdentity !== null &&
+                    "uuid" in tagIdentity &&
+                    typeof tagIdentity.uuid === "string"
+                )
+            ) {
+                continue;
+            }
+            const identity = tagIdentity as LogseqEntityIdentity;
+            const loadedPage = await this.getOrLoadTagPage(identity);
+            const name = loadedPage?.name ?? (typeof identity === "string" ? identity : undefined);
+            if (!name) {
+                throw new Error(
+                    `Failed to resolve numeric or opaque tag identity: ${this.stringifyIdentity(identity)}`
+                );
+            }
+            if (!names.includes(name)) names.push(name);
+        }
+        return names;
+    }
+
+    private stringifyIdentity(identity: LogseqEntityIdentity): string {
+        return typeof identity === "object" ? JSON.stringify(identity) : String(identity);
     }
 }

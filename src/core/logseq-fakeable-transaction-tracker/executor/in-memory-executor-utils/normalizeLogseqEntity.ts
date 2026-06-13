@@ -17,6 +17,7 @@ export async function normalizeImportedPage(
         content: typeof page.content === "string" ? page.content : page.name,
         format: DEFAULT_BLOCK_FORMAT,
         type: "page",
+        pageType: page.type,
         updatedAt: page.updatedAt,
         createdAt: page.createdAt,
         "journal?": page["journal?"],
