@@ -13,6 +13,18 @@ export type MoveBlockOptions = Partial<{
     children: boolean;
 }>;
 
+export const DEFAULT_INSERT_BLOCK_OPTIONS = {
+    before: false,
+    sibling: false,
+    start: false,
+    end: false
+} as const satisfies Required<InsertBlockOptions>;
+
+export const DEFAULT_MOVE_BLOCK_OPTIONS = {
+    before: false,
+    children: true
+} as const satisfies Required<MoveBlockOptions>;
+
 export abstract class LogseqTransactionExecutor {
     protected readonly results: LogseqTransactionResult[] = [];
 

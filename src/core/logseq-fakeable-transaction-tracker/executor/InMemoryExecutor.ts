@@ -10,8 +10,8 @@ import {createInMemoryBlock, createInMemoryPage} from "./in-memory-executor-util
 import {
     detachBlock,
     findEntity,
-    findParentOfEntity,
     findPageContainingEntity,
+    findParentOfEntity,
     insertChild,
     insertChildAt,
     insertSibling,
@@ -26,9 +26,11 @@ import {
 } from "./in-memory-executor-utils/InMemoryPageLoader";
 import {normalizeImportedPage} from "./in-memory-executor-utils/normalizeLogseqEntity";
 import {
+    DEFAULT_INSERT_BLOCK_OPTIONS,
+    DEFAULT_MOVE_BLOCK_OPTIONS,
     type InsertBlockOptions,
-    type MoveBlockOptions,
-    LogseqTransactionExecutor
+    LogseqTransactionExecutor,
+    type MoveBlockOptions
 } from "./LogseqTransactionExecutor";
 
 export type {InMemoryPageLoader} from "./in-memory-executor-utils/InMemoryPageLoader";
@@ -56,7 +58,7 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
     public async insertBlock(
         parentBlockUUID: LogseqEntityIdentity,
         content: string,
-        options: InsertBlockOptions = {}
+        options: InsertBlockOptions = DEFAULT_INSERT_BLOCK_OPTIONS
     ): Promise<boolean> {
         const parent = await this.getImportedEntity(parentBlockUUID);
         if (!parent) {
@@ -78,17 +80,29 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         if (options.sibling) {
             const siblingParent = findParentOfEntity(this.inMemoryPageDataDb, parentBlockUUID);
             if (!siblingParent) {
-                throw new Error(`Failed to find sibling parent during insertBlock: ${parentBlockUUID}`);
+                throw new Error(
+                    `Failed to find sibling parent during insertBlock: ${parentBlockUUID}`
+                );
             }
 
             reparentSubtree(newBlock, siblingParent, parentPage);
-            insertSibling(this.inMemoryPageDataDb, parentBlockUUID, newBlock, options.before === true);
-        } else if (options.start || (options.before && (parent.children?.length || isPageEntity(parent)))) {
+            insertSibling(
+                this.inMemoryPageDataDb,
+                parentBlockUUID,
+                newBlock,
+                options.before === true
+            );
+        } else if (
+            options.start ||
+            (options.before && (parent.children?.length || isPageEntity(parent)))
+        ) {
             insertChildAt(parent, newBlock, 0);
         } else if (options.before) {
             const siblingParent = findParentOfEntity(this.inMemoryPageDataDb, parentBlockUUID);
             if (!siblingParent) {
-                throw new Error(`Failed to find sibling parent during insertBlock: ${parentBlockUUID}`);
+                throw new Error(
+                    `Failed to find sibling parent during insertBlock: ${parentBlockUUID}`
+                );
             }
 
             reparentSubtree(newBlock, siblingParent, parentPage);
@@ -103,10 +117,12 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
     public async moveBlock(
         srcBlockUUID: LogseqEntityIdentity,
         destBlockUUID: LogseqEntityIdentity,
-        options: MoveBlockOptions = {}
+        options: MoveBlockOptions = DEFAULT_MOVE_BLOCK_OPTIONS
     ): Promise<boolean> {
         if (options.children === false) {
-            throw new Error("moveBlock with children: false is not supported by the in-memory executor");
+            throw new Error(
+                "moveBlock with children: false is not supported by the in-memory executor"
+            );
         }
 
         await this.importPageOfEntity(srcBlockUUID);
@@ -142,7 +158,11 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         }
 
         if (options.before) {
-            reparentSubtree(detachedBlock.block, destinationParent as InMemoryLogseqEntity, destinationPage);
+            reparentSubtree(
+                detachedBlock.block,
+                destinationParent as InMemoryLogseqEntity,
+                destinationPage
+            );
             insertSibling(this.inMemoryPageDataDb, destBlockUUID, detachedBlock.block, true);
         } else {
             reparentSubtree(detachedBlock.block, destination, destinationPage);

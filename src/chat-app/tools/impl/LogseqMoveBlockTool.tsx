@@ -5,15 +5,19 @@ import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools
 import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {MoveBlockCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
+import {DEFAULT_MOVE_BLOCK_OPTIONS} from "src/core/logseq-fakeable-transaction-tracker/executor/LogseqTransactionExecutor";
 import {z} from "zod";
 
 const LogseqMoveBlockArgsZodObj = z.object({
     srcBlockUuid: z.string().describe("UUID of the Logseq block to move."),
     destBlockUuid: z.string().describe("UUID of the destination Logseq block."),
-    before: z.boolean().optional().describe("Move the source immediately before the destination."),
+    before: z
+        .boolean()
+        .default(DEFAULT_MOVE_BLOCK_OPTIONS.before)
+        .describe("Move the source immediately before the destination."),
     children: z
         .boolean()
-        .optional()
+        .default(DEFAULT_MOVE_BLOCK_OPTIONS.children)
         .describe("Keep source descendants attached. children: false is not supported in preview.")
 });
 
