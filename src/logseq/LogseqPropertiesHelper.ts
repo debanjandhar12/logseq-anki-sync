@@ -33,6 +33,10 @@ export class LogseqPropertiesHelper {
 
         b.properties = {...b.properties, uuid: b.properties?.uuid ?? b.uuid};
 
+        if (b.link) {
+            b.properties = {...b.properties, link: b.link};
+        }
+
         if (b.children && includeChildren) {
             for (const child of b.children) {
                 await LogseqPropertiesHelper.processBlock(
@@ -93,7 +97,9 @@ export class LogseqPropertiesHelper {
     /**
      * Fetches page blocks tree with properties attached (non-cached, fresh data)
      */
-    public static async getPageBlocksTree(srcPage: PageIdentity | EntityID): Promise<BlockEntity[]> {
+    public static async getPageBlocksTree(
+        srcPage: PageIdentity | EntityID
+    ): Promise<BlockEntity[]> {
         const page = await logseq.Editor.getPage(srcPage);
         srcPage = page.uuid; // Convert to page uuid for getPageBlocksTree
 
