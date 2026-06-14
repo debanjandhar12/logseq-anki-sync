@@ -5,8 +5,11 @@ import type {
     PageEntity,
     PageIdentity
 } from "@logseq/libs/dist/LSPlugin";
-import type {LogseqTransactionExecutor} from "./executor/LogseqTransactionExecutor";
-import type {InsertBlockOptions, MoveBlockOptions} from "./executor/LogseqTransactionExecutor";
+import type {
+    InsertBlockOptions,
+    LogseqTransactionExecutor,
+    MoveBlockOptions
+} from "./executor/LogseqTransactionExecutor";
 
 export type LogseqEntityIdentity = PageIdentity | BlockIdentity | EntityID;
 
@@ -56,7 +59,6 @@ export type SerializedLogseqFakeableCommand =
     | {
           type: "CreatePage";
           pageName: string;
-          properties?: Record<string, any>;
       }
     | {
           type: "DeletePage";

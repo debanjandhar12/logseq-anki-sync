@@ -186,21 +186,13 @@ export class InMemoryExecutor extends LogseqTransactionExecutor {
         return this.pushAndReturn(true, true);
     }
 
-    public async createPage(
-        pageName: string,
-        properties: Record<string, any> = {}
-    ): Promise<boolean> {
+    public async createPage(pageName: string): Promise<boolean> {
         const existingPage = await this.findPageByName(pageName);
         if (existingPage) {
             throw new Error(`Page already exists: ${pageName}`);
         }
 
-        const page = createInMemoryPage(
-            this.uuidGenerator.getUUID(),
-            pageName,
-            properties,
-            Date.now()
-        );
+        const page = createInMemoryPage(this.uuidGenerator.getUUID(), pageName, {}, Date.now());
         this.inMemoryPageDataDb.set(page.uuid, page);
         return this.pushAndReturn(_.cloneDeep(page), true);
     }

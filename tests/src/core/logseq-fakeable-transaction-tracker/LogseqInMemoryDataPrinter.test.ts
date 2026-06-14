@@ -12,10 +12,15 @@ describe("LogseqInMemoryDataPrinter", () => {
                 const executor = createInMemoryExecutor();
                 const [pageUuid] = generateIdentities(2);
 
-                await executor.createPage("Test Page", {
+                await executor.createPage("Test Page");
+                const page = executor.getInMemoryPageDataDb().get(pageUuid);
+                if (!page) {
+                    throw new Error(`Expected page fixture to exist: ${pageUuid}`);
+                }
+                page.properties = {
                     category: "notes",
                     aliases: ["test-page"]
-                });
+                };
                 await executor.insertBlock(pageUuid, "Block content line 1\nBlock content line 2");
                 const block = executor.getInMemoryPageDataDb().get(pageUuid)
                     ?.children?.[0] as InMemoryBlockEntity;

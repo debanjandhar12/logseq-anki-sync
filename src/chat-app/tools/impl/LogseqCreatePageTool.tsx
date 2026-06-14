@@ -9,11 +9,7 @@ import {CreatePageCommand} from "src/core/logseq-fakeable-transaction-tracker/co
 import {z} from "zod";
 
 const LogseqCreatePageArgsZodObj = z.object({
-    pageName: z.string().describe("Name of the Logseq page to create."),
-    properties: z
-        .record(z.string(), z.any())
-        .optional()
-        .describe("Optional Logseq page properties to set on the new page.")
+    pageName: z.string().describe("Name of the Logseq page to create.")
 });
 
 type LogseqCreatePageArgs = z.infer<typeof LogseqCreatePageArgsZodObj>;
@@ -39,12 +35,12 @@ export class LogseqCreatePageTool extends BaseChatToolWithDefaultUI<
     readonly parameters = LogseqCreatePageArgsZodObj;
 
     async execute(
-        {pageName, properties}: LogseqCreatePageArgs,
+        {pageName}: LogseqCreatePageArgs,
         context?: ChatToolExecutionContext
     ): Promise<LogseqCreatePageResult | ToolResponse<LogseqCreatePageResult>> {
         try {
             const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new CreatePageCommand(pageName, properties));
+            transactionTracker.addCommand(new CreatePageCommand(pageName));
 
             const executor = await transactionTracker.executeInTheInMemoryDB();
 

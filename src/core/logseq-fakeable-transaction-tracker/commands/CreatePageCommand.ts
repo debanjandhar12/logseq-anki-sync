@@ -2,16 +2,13 @@ import type {LogseqTransactionExecutor} from "../executor/LogseqTransactionExecu
 import type {LogseqFakeableCommand, SerializedLogseqFakeableCommand} from "../types";
 
 export class CreatePageCommand implements LogseqFakeableCommand {
-    constructor(
-        private readonly pageName: string,
-        private readonly properties?: Record<string, any>
-    ) {}
+    constructor(private readonly pageName: string) {}
 
     async execute(executor: LogseqTransactionExecutor): Promise<void> {
-        await executor.createPage(this.pageName, this.properties);
+        await executor.createPage(this.pageName);
     }
 
     toJSON(): SerializedLogseqFakeableCommand {
-        return {type: "CreatePage", pageName: this.pageName, properties: this.properties};
+        return {type: "CreatePage", pageName: this.pageName};
     }
 }

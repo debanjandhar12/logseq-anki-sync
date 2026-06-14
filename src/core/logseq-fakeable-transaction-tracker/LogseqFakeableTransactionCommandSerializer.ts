@@ -20,7 +20,7 @@ export class LogseqFakeableTransactionCommandSerializer {
     static deserialize(command: SerializedLogseqFakeableCommand): LogseqFakeableCommand {
         switch (command.type) {
             case "CreatePage":
-                return new CreatePageCommand(command.pageName, command.properties);
+                return new CreatePageCommand(command.pageName);
             case "DeletePage":
                 return new DeletePageCommand(command.pageUuid);
             case "InsertBlock":

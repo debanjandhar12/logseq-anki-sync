@@ -19,7 +19,7 @@ describe("InMemoryExecutor", () => {
                 identities;
             const executor = createInMemoryExecutor();
 
-            await executor.createPage("Page A", {category: "source"});
+            await executor.createPage("Page A");
             await executor.insertBlock(pageAUuid, "Root");
             await executor.insertBlock(rootUuid, "Child");
             await executor.insertBlock(childUuid, "Grandchild");
@@ -268,7 +268,9 @@ describe("InMemoryExecutor", () => {
             const serialized = LogseqFakeableTransactionTrackerSerializer.serialize(tracker);
             const deserialized = LogseqFakeableTransactionTrackerSerializer.deserialize(serialized);
 
-            expect(LogseqFakeableTransactionTrackerSerializer.serialize(deserialized).commands).toEqual([
+            expect(
+                LogseqFakeableTransactionTrackerSerializer.serialize(deserialized).commands
+            ).toEqual([
                 {
                     type: "InsertBlock",
                     parentUuid: "parent",

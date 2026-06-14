@@ -60,10 +60,7 @@ export abstract class LogseqTransactionExecutor {
 
     public abstract updateBlock(blockUUID: LogseqEntityIdentity, content: string): Promise<boolean>;
 
-    public abstract createPage(
-        pageName: string,
-        properties?: Record<string, any>
-    ): Promise<boolean>;
+    public abstract createPage(pageName: string): Promise<boolean>;
 
     public abstract deletePage(pageIdentity: LogseqEntityIdentity): Promise<boolean>;
 

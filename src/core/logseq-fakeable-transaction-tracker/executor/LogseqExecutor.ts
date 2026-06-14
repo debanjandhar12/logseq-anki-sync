@@ -49,11 +49,8 @@ export class LogseqExecutor extends LogseqTransactionExecutor {
         return this.pushAndReturn(true, true);
     }
 
-    public async createPage(
-        pageName: string,
-        properties: Record<string, any> = {}
-    ): Promise<boolean> {
-        const page = await logseq.Editor.createPage(pageName, properties, {
+    public async createPage(pageName: string): Promise<boolean> {
+        const page = await logseq.Editor.createPage(pageName, undefined, {
             redirect: false,
             customUUID: this.uuidGenerator.getUUID()
         });
