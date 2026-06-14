@@ -1,7 +1,9 @@
 import {describe, expect, test} from "vitest";
+import {z} from "zod";
 import {
     CreatePageCommand,
     InsertBlockCommand,
+    InsertBlockCommandArgsSchema,
     LogseqReversibleTransactionCommandSerializer,
     LogseqReversibleTransactionTracker,
     LogseqReversibleTransactionTrackerSerializer,
@@ -30,6 +32,37 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
         ).toThrow();
     });
 
+    test("accepts a non-RFC Logseq UUID", () => {
+        const command = new InsertBlockCommand({
+            parentUuid: "00000001-2026-0614-0000-000000000000",
+            content: "Inserted content"
+        });
+
+        expect(command.args.parentUuid).toBe("00000001-2026-0614-0000-000000000000");
+    });
+
+    test("rejects a value that does not have the Logseq UUID shape", () => {
+        expect(
+            () =>
+                new InsertBlockCommand({
+                    parentUuid: "00000001-2026-0614-0000",
+                    content: "Inserted content"
+                })
+        ).toThrow("Invalid Logseq UUID");
+    });
+
+    test("includes the command-level Logseq UUID description", () => {
+        const jsonSchema = z.toJSONSchema(InsertBlockCommandArgsSchema);
+
+        expect(jsonSchema.properties?.parentUuid).toMatchObject({
+            type: "string",
+            pattern:
+                "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            description: "UUID of the parent Logseq page or block."
+        });
+        expect(jsonSchema.properties?.parentUuid).not.toHaveProperty("format");
+    });
+
     test("rejects unknown command types", () => {
         expect(() =>
             LogseqReversibleTransactionCommandSerializer.deserialize({
@@ -48,13 +81,16 @@ describe("LogseqReversibleTransactionTrackerSerializer", () => {
         tracker.addCommand(new CreatePageCommand({pageName: "Tracker Test"}));
         tracker.addCommand(
             new InsertBlockCommand({
-                parentUuid: "Tracker Test",
+                parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
                 content: "Inserted content",
                 sibling: false
             })
         );
         tracker.addCommand(
-            new UpdateBlockCommand({blockUuid: {uuid: "block-uuid"}, content: "Updated"})
+            new UpdateBlockCommand({
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29",
+                content: "Updated"
+            })
         );
 
         const serialized = LogseqReversibleTransactionTrackerSerializer.serialize(tracker);
@@ -66,11 +102,15 @@ describe("LogseqReversibleTransactionTrackerSerializer", () => {
                 {type: "CreatePage", pageName: "Tracker Test"},
                 {
                     type: "InsertBlock",
-                    parentUuid: "Tracker Test",
+                    parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
                     content: "Inserted content",
                     sibling: false
                 },
-                {type: "UpdateBlock", blockUuid: {uuid: "block-uuid"}, content: "Updated"}
+                {
+                    type: "UpdateBlock",
+                    blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29",
+                    content: "Updated"
+                }
             ]
         });
         expect(deserialized).toBeInstanceOf(LogseqReversibleTransactionTracker);

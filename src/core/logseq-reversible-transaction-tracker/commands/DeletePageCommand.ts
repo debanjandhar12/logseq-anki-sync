@@ -1,12 +1,12 @@
-import type {BlockEntity, EntityID, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockEntity, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
-import {LogseqIdentitySchema} from "./schemas";
+import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 
 export const DeletePageCommandArgsSchema = z.object({
-    pageUuid: LogseqIdentitySchema.describe("Page identity to delete.")
+    pageUuid: LogseqUUIDSchema.describe("UUID of the Logseq page to delete.")
 });
 
 export type DeletePageCommandArgs = z.infer<typeof DeletePageCommandArgsSchema>;
@@ -17,15 +17,15 @@ const DeletePageCommandDataSchema = DeletePageCommandArgsSchema.extend({
 
 export class DeletePageCommand extends BaseReversibleCommand {
     private deletedPageSnapshot: DeletedPageSnapshot | undefined;
+    public readonly args: DeletePageCommandArgs;
 
-    public constructor(public readonly args: DeletePageCommandArgs) {
+    public constructor(args: DeletePageCommandArgs) {
         super();
+        this.args = DeletePageCommandArgsSchema.parse(args);
     }
 
     public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
-        const page = await LogseqPropertiesHelper.getPage(
-            this.args.pageUuid as PageIdentity | EntityID
-        );
+        const page = await LogseqPropertiesHelper.getPage(this.args.pageUuid as PageIdentity);
         if (!page?.name) throw new Error(`Page not found: ${JSON.stringify(this.args.pageUuid)}`);
 
         this.deletedPageSnapshot = {
@@ -33,7 +33,12 @@ export class DeletePageCommand extends BaseReversibleCommand {
             blocks: await LogseqPropertiesHelper.getPageBlocksTree(page.uuid)
         };
         this.changedPages.push(page.uuid);
-        await logseq.Editor.deletePage(page.name);
+        // We need to rename page before deleting because otherwise logseq cannot create another new page with same name.
+        // If this is not done, will interfere with plugin reversion.
+        const newPageName =
+            page.name + "_" + (await logseq.Editor.newBlockUUID()) + "_" + logseq.baseInfo;
+        await logseq.Editor.renamePage(page.uuid, newPageName);
+        await logseq.Editor.deletePage(newPageName);
         return true;
     }
 

@@ -1,12 +1,13 @@
-import type {BlockIdentity, EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockIdentity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
-import {LogseqIdentitySchema} from "./schemas";
+import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
+import {normalizeBlock} from "./utils/normalizeBlock";
 
 export const UpdateBlockCommandArgsSchema = z.object({
-    blockUuid: LogseqIdentitySchema.describe("UUID or entity id of the block to update."),
+    blockUuid: LogseqUUIDSchema.describe("UUID of the Logseq block to update."),
     content: z.string().describe("New block content.")
 });
 
@@ -18,25 +19,23 @@ const UpdateBlockCommandDataSchema = UpdateBlockCommandArgsSchema.extend({
 
 export class UpdateBlockCommand extends BaseReversibleCommand {
     private originalContent: string | undefined;
+    public readonly args: UpdateBlockCommandArgs;
 
-    public constructor(public readonly args: UpdateBlockCommandArgs) {
+    public constructor(args: UpdateBlockCommandArgs) {
         super();
+        this.args = UpdateBlockCommandArgsSchema.parse(args);
     }
 
     public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
-        const originalBlock = await logseq.Editor.getBlock(
-            this.args.blockUuid as BlockIdentity | EntityID
-        );
-        if (!originalBlock)
+        const rawOriginalBlock = await logseq.Editor.getBlock(this.args.blockUuid as BlockIdentity);
+        if (!rawOriginalBlock)
             throw new Error(`Block not found: ${JSON.stringify(this.args.blockUuid)}`);
 
+        const originalBlock = await normalizeBlock(rawOriginalBlock);
         this.originalContent = originalBlock.content ?? "";
         if (originalBlock.page)
             this.changedPages.push(originalBlock.page as unknown as PageIdentity);
-        await LogseqEditor.updateBlock(
-            this.args.blockUuid as BlockIdentity | EntityID,
-            this.args.content
-        );
+        await LogseqEditor.updateBlock(this.args.blockUuid as BlockIdentity, this.args.content);
         return true;
     }
 
@@ -44,10 +43,7 @@ export class UpdateBlockCommand extends BaseReversibleCommand {
         if (this.originalContent === undefined)
             throw new Error("Execute must be called before revert");
 
-        await LogseqEditor.updateBlock(
-            this.args.blockUuid as BlockIdentity | EntityID,
-            this.originalContent
-        );
+        await LogseqEditor.updateBlock(this.args.blockUuid as BlockIdentity, this.originalContent);
     }
 }
 

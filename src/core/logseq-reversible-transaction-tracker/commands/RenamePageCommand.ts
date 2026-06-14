@@ -1,11 +1,11 @@
-import type {EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
-import {LogseqIdentitySchema} from "./schemas";
+import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 
 export const RenamePageCommandArgsSchema = z.object({
-    pageUuid: LogseqIdentitySchema.describe("Page identity to rename."),
+    pageUuid: LogseqUUIDSchema.describe("UUID of the Logseq page to rename."),
     newName: z.string().describe("New page name.")
 });
 
@@ -17,26 +17,31 @@ const RenamePageCommandDataSchema = RenamePageCommandArgsSchema.extend({
 
 export class RenamePageCommand extends BaseReversibleCommand {
     private originalName: string | undefined;
+    private pageUUID: string | undefined;
+    public readonly args: RenamePageCommandArgs;
 
-    public constructor(public readonly args: RenamePageCommandArgs) {
+    public constructor(args: RenamePageCommandArgs) {
         super();
+        this.args = RenamePageCommandArgsSchema.parse(args);
     }
 
     public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
-        const page = await logseq.Editor.getPage(this.args.pageUuid as PageIdentity | EntityID);
+        const page = await logseq.Editor.getPage(this.args.pageUuid as PageIdentity);
         if (!page?.name) throw new Error(`Page not found: ${JSON.stringify(this.args.pageUuid)}`);
 
         this.originalName = page.name;
+        this.pageUUID = page.uuid;
         this.changedPages.push(page.uuid);
-        await logseq.Editor.renamePage(page.name, this.args.newName);
+        await logseq.Editor.renamePage(page.uuid, this.args.newName);
         this.changedPages.push(this.args.newName);
         return true;
     }
 
     public async revert(): Promise<void> {
-        if (!this.originalName) throw new Error("Execute must be called before revert");
+        if (!this.originalName || !this.pageUUID)
+            throw new Error("Execute must be called before revert");
 
-        await logseq.Editor.renamePage(this.args.newName, this.originalName);
+        await logseq.Editor.renamePage(this.pageUUID, this.originalName);
     }
 }
 

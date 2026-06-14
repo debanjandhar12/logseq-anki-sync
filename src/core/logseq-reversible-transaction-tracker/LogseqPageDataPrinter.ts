@@ -6,7 +6,9 @@ export class LogseqPageDataPrinter {
         const uniquePages = LogseqPageDataPrinter.getUniquePages(changedPages);
         const printedPages = await Promise.all(
             uniquePages.map(async (pageIdentity) => {
-                const page = await LogseqPropertiesHelper.getPage(pageIdentity);
+                const pageUUID =
+                    typeof pageIdentity === "object" ? pageIdentity.uuid : pageIdentity;
+                const page = await LogseqPropertiesHelper.getPage(pageUUID);
                 if (!page)
                     return `# ${LogseqPageDataPrinter.stringifyIdentity(pageIdentity)}\n<Page not found>`;
 

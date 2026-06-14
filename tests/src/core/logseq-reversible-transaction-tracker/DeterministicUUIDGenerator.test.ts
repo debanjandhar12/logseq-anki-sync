@@ -1,15 +1,14 @@
 import {describe, expect, test} from "vitest";
 import {DeterministicUUIDGenerator} from "../../../../src/core/logseq-reversible-transaction-tracker";
+import {LogseqUUIDSchema} from "../../../../src/core/logseq-reversible-transaction-tracker/commands/LogseqUUIDSchema";
 
 describe("DeterministicUUIDGenerator", () => {
-    test("returns a valid UUID v5 string", () => {
+    test("returns a UUID v5 string compatible with the Logseq UUID format", () => {
         const generator = new DeterministicUUIDGenerator("5f9c57d6-3466-4ba3-b6bf-01e12f11c91d");
 
         const uuid = generator.getUUID();
 
-        expect(uuid).toMatch(
-            /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
-        );
+        expect(LogseqUUIDSchema.safeParse(uuid).success).toBe(true);
     });
 
     test("returns a different UUID on each invocation", () => {

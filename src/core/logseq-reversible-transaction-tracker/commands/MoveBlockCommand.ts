@@ -1,12 +1,13 @@
-import type {BlockIdentity, EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockIdentity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
-import {LogseqIdentitySchema} from "./schemas";
+import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
+import {normalizeBlock} from "./utils/normalizeBlock";
 
 export const MoveBlockCommandArgsSchema = z.object({
-    srcBlockUuid: LogseqIdentitySchema.describe("Block identity to move."),
-    destBlockUuid: LogseqIdentitySchema.describe("Destination block identity."),
+    srcBlockUuid: LogseqUUIDSchema.describe("UUID of the Logseq block to move."),
+    destBlockUuid: LogseqUUIDSchema.describe("UUID of the destination Logseq block."),
     before: z.boolean().optional().describe("Move the source immediately before the destination."),
     children: z.boolean().optional().describe("Keep source descendants attached.")
 });
@@ -18,20 +19,23 @@ const MoveBlockCommandDataSchema = MoveBlockCommandArgsSchema.extend({
 });
 
 export class MoveBlockCommand extends BaseReversibleCommand {
-    private originalParent: BlockIdentity | EntityID | undefined;
+    private originalParent: BlockIdentity | undefined;
+    public readonly args: MoveBlockCommandArgs;
 
-    public constructor(public readonly args: MoveBlockCommandArgs) {
+    public constructor(args: MoveBlockCommandArgs) {
         super();
+        this.args = MoveBlockCommandArgsSchema.parse(args);
     }
 
     public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
-        const originalBlock = await logseq.Editor.getBlock(
-            this.args.srcBlockUuid as BlockIdentity | EntityID
+        const rawOriginalBlock = await logseq.Editor.getBlock(
+            this.args.srcBlockUuid as BlockIdentity
         );
-        if (!originalBlock)
+        if (!rawOriginalBlock)
             throw new Error(`Block not found: ${JSON.stringify(this.args.srcBlockUuid)}`);
 
-        this.originalParent = originalBlock.parent.id;
+        const originalBlock = await normalizeBlock(rawOriginalBlock);
+        this.originalParent = originalBlock.parent.uuid;
         await logseq.Editor.moveBlock(
             this.args.srcBlockUuid as BlockIdentity,
             this.args.destBlockUuid as BlockIdentity,
@@ -39,9 +43,8 @@ export class MoveBlockCommand extends BaseReversibleCommand {
         );
         this.changedPages.push(originalBlock.page as unknown as PageIdentity);
 
-        const movedBlock = await logseq.Editor.getBlock(
-            this.args.srcBlockUuid as BlockIdentity | EntityID
-        );
+        const rawMovedBlock = await logseq.Editor.getBlock(this.args.srcBlockUuid as BlockIdentity);
+        const movedBlock = rawMovedBlock ? await normalizeBlock(rawMovedBlock) : null;
         if (movedBlock?.page) this.changedPages.push(movedBlock.page as unknown as PageIdentity);
 
         return true;

@@ -1,12 +1,12 @@
-import type {BlockIdentity, EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockIdentity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
-import {LogseqIdentitySchema} from "./schemas";
+import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {normalizeBlock} from "./utils/normalizeBlock";
 
 export const InsertBlockCommandArgsSchema = z.object({
-    parentUuid: LogseqIdentitySchema.describe("Parent page or block identity."),
+    parentUuid: LogseqUUIDSchema.describe("UUID of the parent Logseq page or block."),
     content: z.string().describe("Content of the block to insert."),
     before: z.boolean().optional().describe("Insert before the source when used with sibling."),
     sibling: z.boolean().optional().describe("Insert as a sibling of the source block."),
@@ -22,14 +22,16 @@ const InsertBlockCommandDataSchema = InsertBlockCommandArgsSchema.extend({
 
 export class InsertBlockCommand extends BaseReversibleCommand {
     private insertedBlockUUID: string | undefined;
+    public readonly args: InsertBlockCommandArgs;
 
-    public constructor(public readonly args: InsertBlockCommandArgs) {
+    public constructor(args: InsertBlockCommandArgs) {
         super();
+        this.args = InsertBlockCommandArgsSchema.parse(args);
     }
 
     public async execute(deterministicUUIDGenerator: DeterministicUUIDGenerator) {
         const rawBlock = await logseq.Editor.insertBlock(
-            this.args.parentUuid as BlockIdentity | EntityID,
+            this.args.parentUuid as BlockIdentity,
             this.args.content,
             {
                 before: this.args.before,

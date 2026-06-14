@@ -1,3 +1,4 @@
+import type {BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
@@ -14,8 +15,12 @@ const CreatePageCommandDataSchema = CreatePageCommandArgsSchema.extend({
 });
 
 export class CreatePageCommand extends BaseReversibleCommand {
-    public constructor(public readonly args: CreatePageCommandArgs) {
+    private pageUUID: BlockUUID | undefined;
+    public readonly args: CreatePageCommandArgs;
+
+    public constructor(args: CreatePageCommandArgs) {
         super();
+        this.args = CreatePageCommandArgsSchema.parse(args);
     }
 
     public async execute(deterministicUUIDGenerator: DeterministicUUIDGenerator) {
@@ -24,17 +29,26 @@ export class CreatePageCommand extends BaseReversibleCommand {
 
         const rawPage = await logseq.Editor.createPage(this.args.pageName, undefined, {
             redirect: false,
-            customUUID: deterministicUUIDGenerator.getUUID()
+            customUUID: deterministicUUIDGenerator.getUUID(),
+            createFirstBlock: false
         });
         if (!rawPage) throw new Error(`Logseq failed to create page: ${this.args.pageName}`);
 
         const page = await normalizePage(rawPage);
+        this.pageUUID = page.uuid;
         this.changedPages.push(page.uuid);
         return page;
     }
 
     public async revert(): Promise<void> {
-        await logseq.Editor.deletePage(this.args.pageName);
+        if (!this.pageUUID) throw new Error("Execute must be called before revert");
+
+        // We need to rename page before deleting because otherwise logseq cannot create another new page with same name.
+        // If this is not done, will interfere with plugin reversion.
+        const newPageName =
+            this.args.pageName + "_" + (await logseq.Editor.newBlockUUID()) + "_" + logseq.baseInfo;
+        await logseq.Editor.renamePage(this.pageUUID, newPageName);
+        await logseq.Editor.deletePage(newPageName);
     }
 }
 
