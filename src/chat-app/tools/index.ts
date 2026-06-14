@@ -7,19 +7,6 @@ export {LogseqDeletePageTool} from "src/chat-app/tools/impl/LogseqDeletePageTool
 export {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 export {LogseqInsertBlockTool} from "src/chat-app/tools/impl/LogseqInsertBlockTool";
 export {LogseqMoveBlockTool} from "src/chat-app/tools/impl/LogseqMoveBlockTool";
-export {
-    LogseqAddBlockTagTool,
-    LogseqAddTagExtendsTool,
-    LogseqAddTagPropertyTool,
-    LogseqCreateTagTool,
-    LogseqRemoveBlockPropertyTool,
-    LogseqRemoveBlockTagTool,
-    LogseqRemovePropertyTool,
-    LogseqRemoveTagExtendsTool,
-    LogseqRemoveTagPropertyTool,
-    LogseqUpsertBlockPropertyTool,
-    LogseqUpsertPropertyTool
-} from "src/chat-app/tools/impl/LogseqMetadataTools";
 export {LogseqReadBlockTool} from "src/chat-app/tools/impl/LogseqReadBlockTool";
 export {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 export {LogseqRenamePageTool} from "src/chat-app/tools/impl/LogseqRenamePageTool";

@@ -30,7 +30,7 @@ describe("LogseqInMemoryDataPrinter", () => {
                     [
                         "* category:: notes",
                         '  aliases:: ["test-page"]',
-                        "* tags:: [[a]], [[b]]",
+                        '* tags:: ["a","b"]',
                         '  metadata:: {"done":true}',
                         "  priority:: A",
                         "  Block content line 1",
@@ -88,32 +88,6 @@ describe("LogseqInMemoryDataPrinter", () => {
             test("prints an empty string", () => {
                 expect(LogseqInMemoryDataPrinter.print(new Map())).toBe("");
             });
-        });
-
-        test("prints readable tags and metadata sections when metadata is supplied", async () => {
-            const executor = createInMemoryExecutor();
-            const [pageUuid, blockUuid] = generateIdentities(2);
-            await executor.createPage("Page");
-            await executor.insertBlock(pageUuid, "Book block");
-            await executor.createTag("Book", {
-                tagProperties: [{name: "rating", schema: {type: "number"}}]
-            });
-            await executor.addBlockTag(blockUuid, "Book");
-
-            expect(LogseqInMemoryDataPrinter.print(executor.getInMemoryPageDataDb())).toBe(
-                [
-                    "* tags:: [[Book]]",
-                    "  Book block",
-                    "",
-                    "Properties",
-                    "* rating",
-                    "  type:: number",
-                    "",
-                    "Tags",
-                    "* Book",
-                    "  properties:: rating"
-                ].join("\n")
-            );
         });
     });
 });

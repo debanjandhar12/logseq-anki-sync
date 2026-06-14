@@ -9,19 +9,6 @@ import {LogseqDataScriptQueryTool} from "src/chat-app/tools/impl/LogseqDataScrip
 import {LogseqDeletePageTool} from "src/chat-app/tools/impl/LogseqDeletePageTool";
 import {LogseqInsertBlockTool} from "src/chat-app/tools/impl/LogseqInsertBlockTool";
 import {LogseqMoveBlockTool} from "src/chat-app/tools/impl/LogseqMoveBlockTool";
-import {
-    LogseqAddBlockTagTool,
-    LogseqAddTagExtendsTool,
-    LogseqAddTagPropertyTool,
-    LogseqCreateTagTool,
-    LogseqRemoveBlockPropertyTool,
-    LogseqRemoveBlockTagTool,
-    LogseqRemovePropertyTool,
-    LogseqRemoveTagExtendsTool,
-    LogseqRemoveTagPropertyTool,
-    LogseqUpsertBlockPropertyTool,
-    LogseqUpsertPropertyTool
-} from "src/chat-app/tools/impl/LogseqMetadataTools";
 import {LogseqReadBlockTool} from "src/chat-app/tools/impl/LogseqReadBlockTool";
 import {LogseqRenamePageTool} from "src/chat-app/tools/impl/LogseqRenamePageTool";
 import {LogseqTextSearchTool} from "src/chat-app/tools/impl/LogseqTextSearchTool";
@@ -68,17 +55,6 @@ export class ChatToolRegistry {
         registry.registerTool(new LogseqTextSearchTool());
         registry.registerTool(new LogseqUpdateBlockTool());
         registry.registerTool(new LogseqMoveBlockTool());
-        registry.registerTool(new LogseqUpsertPropertyTool());
-        registry.registerTool(new LogseqRemovePropertyTool());
-        registry.registerTool(new LogseqUpsertBlockPropertyTool());
-        registry.registerTool(new LogseqRemoveBlockPropertyTool());
-        registry.registerTool(new LogseqCreateTagTool());
-        registry.registerTool(new LogseqAddTagPropertyTool());
-        registry.registerTool(new LogseqRemoveTagPropertyTool());
-        registry.registerTool(new LogseqAddTagExtendsTool());
-        registry.registerTool(new LogseqRemoveTagExtendsTool());
-        registry.registerTool(new LogseqAddBlockTagTool());
-        registry.registerTool(new LogseqRemoveBlockTagTool());
         registry.registerTool(new LogseqClearChangesTool());
         registry.registerTool(new GetUserInfoTool());
         registry.registerTool(new LogseqCommitChangesTool());

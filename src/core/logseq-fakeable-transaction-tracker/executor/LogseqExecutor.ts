@@ -1,11 +1,7 @@
 import type {BlockIdentity, PropertySchema} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "../../../logseq/LogseqEditor";
 import {LogseqPropertiesHelper} from "../../../logseq/LogseqPropertiesHelper";
-import type {
-    CreateTagOptions,
-    InMemoryPageEntity,
-    LogseqEntityIdentity
-} from "../types";
+import type {LogseqEntityIdentity} from "../types";
 import {
     DEFAULT_INSERT_BLOCK_OPTIONS,
     DEFAULT_MOVE_BLOCK_OPTIONS,
@@ -107,81 +103,6 @@ export class LogseqExecutor extends LogseqTransactionExecutor {
     public async removeBlockProperty(block: LogseqEntityIdentity, key: string): Promise<boolean> {
         await logseq.Editor.removeBlockProperty(block as BlockIdentity, key);
         return this.pushAndReturn(true, true);
-    }
-
-    public async createTag(
-        tagName: string,
-        options?: CreateTagOptions
-    ): Promise<boolean> {
-        const tag = await logseq.Editor.createTag(tagName, options);
-        if (!tag) throw new Error(`Logseq failed to create tag: ${tagName}`);
-        return this.pushAndReturn(tag, true);
-    }
-
-    public async addTagProperty(
-        tagId: LogseqEntityIdentity,
-        propertyIdOrName: LogseqEntityIdentity
-    ): Promise<boolean> {
-        await logseq.Editor.addTagProperty(
-            tagId as BlockIdentity,
-            propertyIdOrName as BlockIdentity
-        );
-        return this.pushAndReturn(true, true);
-    }
-
-    public async removeTagProperty(
-        tagId: LogseqEntityIdentity,
-        propertyIdOrName: LogseqEntityIdentity
-    ): Promise<boolean> {
-        await logseq.Editor.removeTagProperty(
-            tagId as BlockIdentity,
-            propertyIdOrName as BlockIdentity
-        );
-        return this.pushAndReturn(true, true);
-    }
-
-    public async addTagExtends(
-        tagId: LogseqEntityIdentity,
-        parentTagIdOrName: LogseqEntityIdentity
-    ): Promise<boolean> {
-        await logseq.Editor.addTagExtends(
-            tagId as BlockIdentity,
-            parentTagIdOrName as BlockIdentity
-        );
-        return this.pushAndReturn(true, true);
-    }
-
-    public async removeTagExtends(
-        tagId: LogseqEntityIdentity,
-        parentTagIdOrName: LogseqEntityIdentity
-    ): Promise<boolean> {
-        await logseq.Editor.removeTagExtends(
-            tagId as BlockIdentity,
-            parentTagIdOrName as BlockIdentity
-        );
-        return this.pushAndReturn(true, true);
-    }
-
-    public async addBlockTag(
-        blockId: LogseqEntityIdentity,
-        tagId: LogseqEntityIdentity
-    ): Promise<boolean> {
-        await logseq.Editor.addBlockTag(blockId as BlockIdentity, tagId as BlockIdentity);
-        return this.pushAndReturn(true, true);
-    }
-
-    public async removeBlockTag(
-        blockId: LogseqEntityIdentity,
-        tagId: LogseqEntityIdentity
-    ): Promise<boolean> {
-        await logseq.Editor.removeBlockTag(blockId as BlockIdentity, tagId as BlockIdentity);
-        return this.pushAndReturn(true, true);
-    }
-
-    public async getEffectiveBlockPropertySchema(
-        _blockIdentity: LogseqEntityIdentity
-    ): Promise<Map<string, InMemoryPageEntity>> {
-        throw new Error("Effective property schema is only available in the in-memory executor");
     }
 
     private async getPageName(

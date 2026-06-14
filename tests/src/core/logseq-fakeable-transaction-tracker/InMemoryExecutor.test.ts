@@ -1,22 +1,14 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {describe, expect, test} from "vitest";
 import {
-    AddBlockTagCommand,
-    AddTagExtendsCommand,
-    AddTagPropertyCommand,
-    CreateTagCommand,
     type InMemoryBlockEntity,
     type InMemoryPageLoader,
-    type InMemorySchemaPageLoader,
     InsertBlockCommand,
     LogseqFakeableTransactionTracker,
     LogseqFakeableTransactionTrackerSerializer,
     LogseqInMemoryDataPrinter,
     RemoveBlockPropertyCommand,
-    RemoveBlockTagCommand,
     RemovePropertyCommand,
-    RemoveTagExtendsCommand,
-    RemoveTagPropertyCommand,
     UpsertBlockPropertyCommand,
     UpsertPropertyCommand
 } from "../../../../src/core/logseq-fakeable-transaction-tracker";
@@ -89,22 +81,19 @@ describe("InMemoryExecutor", () => {
             await executor.upsertProperty("rating", {type: "number"}, {name: "Rating"});
             await executor.upsertProperty("rating", {cardinality: "one", hide: true});
 
-            expect(executor.getInMemoryPageDataDb().get(propertyUuid)).toMatchObject({
+            expect(executor.getInMemoryMetadataDb().properties.get("rating")).toEqual({
                 uuid: propertyUuid,
-                name: "rating",
-                title: "Rating",
-                type: "page",
-                pageType: "property",
-                properties: {
-                    uuid: propertyUuid,
-                    ":logseq.property/schema": {
-                        type: "number",
-                        cardinality: "one",
-                        hide: true
-                    }
-                }
+                key: "rating",
+                name: "Rating",
+                type: "property",
+                schema: {
+                    type: "number",
+                    cardinality: "one",
+                    hide: true
+                },
+                properties: {}
             });
-            expect(executor.getOriginalInMemoryPageDataDb().has(propertyUuid)).toBe(false);
+            expect(executor.getOriginalInMemoryMetadataDb().properties).toEqual(new Map());
         });
 
         test("upserts and removes property values on blocks and pages", async () => {
@@ -139,7 +128,9 @@ describe("InMemoryExecutor", () => {
 
             const block = executor.getInMemoryPageDataDb().get(pageUuid)
                 ?.children?.[0] as InMemoryBlockEntity;
-            expect(executor.getInMemoryPageDataDb().get(propertyUuid)?.pageType).toBe("property");
+            expect(executor.getInMemoryMetadataDb().properties.get("authors")?.uuid).toBe(
+                propertyUuid
+            );
             expect(block.properties?.authors).toEqual([{name: "Ada"}, {name: "Grace"}]);
 
             await executor.upsertBlockProperty(blockUuid, "authors", "Reset", {reset: true});
@@ -173,11 +164,7 @@ describe("InMemoryExecutor", () => {
             await executor.removeProperty("status");
 
             const page = executor.getInMemoryPageDataDb().get("imported-page");
-            expect(
-                [...executor.getInMemoryPageDataDb().values()].some(
-                    (entity) => entity.pageType === "property" && entity.name === "status"
-                )
-            ).toBe(false);
+            expect(executor.getInMemoryMetadataDb().properties.has("status")).toBe(false);
             expect(page?.properties).not.toHaveProperty("status");
             expect(page?.children?.[0]?.properties).not.toHaveProperty("status");
             expect(page?.properties?.uuid).toBe("imported-page");
@@ -198,118 +185,6 @@ describe("InMemoryExecutor", () => {
             );
             await expect(executor.removeProperty("uuid")).rejects.toThrow(
                 "Cannot remove internal uuid property"
-            );
-        });
-    });
-
-    describe("tags", () => {
-        test("creates a tag and links property schemas idempotently", async () => {
-            const [tagUuid, propertyUuid] = generateIdentities(2);
-            const executor = createInMemoryExecutor();
-
-            await executor.createTag("Book", {
-                tagProperties: [
-                    {
-                        name: "rating",
-                        schema: {type: "number", cardinality: "one"},
-                        properties: {description: "Rating"}
-                    }
-                ]
-            });
-            await executor.createTag("Book", {
-                tagProperties: [{name: "rating", schema: {hide: true}}]
-            });
-
-            expect(executor.getInMemoryPageDataDb().get(tagUuid)).toMatchObject({
-                uuid: tagUuid,
-                name: "Book",
-                type: "page",
-                pageType: "class",
-                properties: {
-                    uuid: tagUuid,
-                    ":logseq.property.class/properties": ["rating"],
-                    ":logseq.property.class/extends": []
-                }
-            });
-            expect(executor.getInMemoryPageDataDb().get(propertyUuid)).toMatchObject({
-                uuid: propertyUuid,
-                name: "rating",
-                type: "page",
-                pageType: "property",
-                properties: {
-                    uuid: propertyUuid,
-                    ":logseq.property/schema": {
-                        type: "number",
-                        cardinality: "one",
-                        hide: true
-                    },
-                    description: "Rating"
-                }
-            });
-        });
-
-        test("adds and removes tag properties and inheritance while rejecting cycles", async () => {
-            const executor = createInMemoryExecutor();
-            await executor.createTag("Media");
-            await executor.createTag("Book");
-            await executor.addTagProperty("Book", "author");
-            await executor.addTagExtends("Book", "Media");
-
-            expect(executor.getTagPropertyKeys("Book")).toEqual(["author"]);
-            expect(
-                [...executor.getInMemoryPageDataDb().values()].find(
-                    (page) => page.pageType === "class" && page.name === "Book"
-                )?.properties?.[":logseq.property.class/extends"]
-            ).toEqual(["Media"]);
-            await expect(executor.addTagExtends("Media", "Book")).rejects.toThrow(
-                "Tag inheritance cycle detected"
-            );
-            await expect(executor.addTagExtends("Book", "Book")).rejects.toThrow(
-                "Tag cannot extend itself"
-            );
-
-            await executor.removeTagProperty("Book", "author");
-            await executor.removeTagExtends("Book", "Media");
-            expect(executor.getTagPropertyKeys("Book")).toEqual([]);
-            expect(
-                [...executor.getInMemoryPageDataDb().values()].find(
-                    (page) => page.pageType === "class" && page.name === "Book"
-                )?.properties?.[":logseq.property.class/extends"]
-            ).toEqual([]);
-        });
-
-        test("imports built-in Task metadata when tagging without adding concrete values", async () => {
-            const [pageUuid, blockUuid] = generateIdentities(2);
-            const executor = createInMemoryExecutor(undefined, new TaskSchemaPageLoader());
-            await executor.createPage("Page");
-            await executor.insertBlock(pageUuid, "Do work");
-
-            await executor.addBlockTag(blockUuid, "Task");
-
-            const block = executor.getInMemoryPageDataDb().get(pageUuid)
-                ?.children?.[0] as InMemoryBlockEntity;
-            expect(block.properties?.tags).toEqual(["Task"]);
-            expect(block.properties).not.toHaveProperty("status");
-            expect([...(await executor.getEffectiveBlockPropertySchema(blockUuid)).keys()]).toEqual([
-                "status",
-                "priority"
-            ]);
-
-            await executor.removeBlockTag(blockUuid, "Task");
-            expect(block.properties?.tags).toEqual([]);
-        });
-
-        test("rejects mutations involving Page and unresolved numeric identities", async () => {
-            const [pageUuid, blockUuid] = generateIdentities(2);
-            const executor = createInMemoryExecutor();
-            await executor.createPage("Page");
-            await executor.insertBlock(pageUuid, "Block");
-
-            await expect(executor.createTag("#Page")).rejects.toThrow(
-                "Built-in Page tag cannot be modified"
-            );
-            await expect(executor.addBlockTag(blockUuid, 123)).rejects.toThrow(
-                "Failed to resolve tag identity"
             );
         });
     });
@@ -581,28 +456,6 @@ describe("InMemoryExecutor", () => {
                 LogseqFakeableTransactionTrackerSerializer.serialize(deserialized).commands
             ).toEqual(serialized.commands);
         });
-
-        test("round-trips tag commands and creation options", () => {
-            const tracker = new LogseqFakeableTransactionTracker();
-            tracker.addCommand(
-                new CreateTagCommand("Book", {
-                    uuid: "tag-uuid",
-                    tagProperties: [{name: "rating", schema: {type: "number"}}]
-                })
-            );
-            tracker.addCommand(new AddTagPropertyCommand("Book", "author"));
-            tracker.addCommand(new RemoveTagPropertyCommand("Book", "author"));
-            tracker.addCommand(new AddTagExtendsCommand("Book", "Media"));
-            tracker.addCommand(new RemoveTagExtendsCommand("Book", "Media"));
-            tracker.addCommand(new AddBlockTagCommand("block", "Book"));
-            tracker.addCommand(new RemoveBlockTagCommand("block", "Book"));
-
-            const serialized = LogseqFakeableTransactionTrackerSerializer.serialize(tracker);
-            const deserialized = LogseqFakeableTransactionTrackerSerializer.deserialize(serialized);
-            expect(
-                LogseqFakeableTransactionTrackerSerializer.serialize(deserialized).commands
-            ).toEqual(serialized.commands);
-        });
     });
 
     describe("readBlockOrPage", () => {
@@ -709,45 +562,6 @@ class StubPageLoader implements InMemoryPageLoader {
                     children: []
                 } as unknown as BlockEntity
             ]
-        };
-    }
-}
-
-class TaskSchemaPageLoader implements InMemorySchemaPageLoader {
-    async loadPropertyPage(identity: unknown) {
-        if (identity !== "status" && identity !== "priority") return null;
-        return {
-            id: identity === "status" ? 201 : 202,
-            uuid: `${identity}-uuid`,
-            name: String(identity),
-            title: String(identity),
-            type: "page" as const,
-            pageType: "property" as const,
-            "journal?": false,
-            properties: {
-                uuid: `${identity}-uuid`,
-                ":logseq.property/schema": {type: "default", cardinality: "one"}
-            },
-            children: []
-        };
-    }
-
-    async loadTagPage(identity: unknown) {
-        if (identity !== "Task" && identity !== 101 && identity !== "task-uuid") return null;
-        return {
-            id: 101,
-            uuid: "task-uuid",
-            name: "Task",
-            title: "Task",
-            type: "page" as const,
-            pageType: "class" as const,
-            "journal?": false,
-            properties: {
-                uuid: "task-uuid",
-                ":logseq.property.class/properties": ["status", "priority"],
-                ":logseq.property.class/extends": []
-            },
-            children: []
         };
     }
 }
