@@ -49,9 +49,15 @@ logseq-reversible-transaction-tracker (inside `tests/src/core`)
 ### BaseReversibleCommand.ts
 
 We will define abstract class `BaseReversibleCommand` that all commands will extend. This will have abstract method:
-execute(deterministicUUIDGenerator?: DeterministicUUIDGenerator), revert(), getChangedPages(), changedPages : PageIdentity[] = [].
+execute(deterministicUUIDGenerator: DeterministicUUIDGenerator), revert(), getChangedPages(), changedPages : PageIdentity[] = [].
 
 The changedPages will be appended by the execute() method.
+
+`BaseReversibleCommand` defines the shared runtime behavior implemented by every command. It is
+not the type stored by the transaction tracker. The tracker and its command queue must use
+`LogseqReversibleCommand`, the codec-derived union of all supported concrete command classes,
+because every tracked command must be serializable. Concrete commands continue to extend
+`BaseReversibleCommand`. [Note: Please add this as comment somewhere in code.]
 
 ### Simplify types.ts
 
@@ -76,26 +82,30 @@ types in `types.ts`.
 ### CreatePageCommand.ts
 ```
 export class CreatePageCommand extends BaseReversibleCommand {
-    constructor(private readonly pageName: string) {}
+    constructor(public readonly args: CreatePageCommandArgs) {
+        super();
+    }
 
     async execute(deterministicUUIDGenerator: DeterministicUUIDGenerator): Promise<void> {
          // This is a special case due to which we are checking validation. For some reason,
          // logseq.Editor.createPage doesnt throw error if the page already exists. It just returns
          // the existing page.
-         const existingPage = await logseq.Editor.getPage(pageName);
+         const existingPage = await logseq.Editor.getPage(this.args.pageName);
          if (existingPage) {
-             throw new Error(`Page already exists: ${pageName}`);
+             throw new Error(`Page already exists: ${this.args.pageName}`);
          }
          
-         const page = await logseq.Editor.createPage(pageName, undefined, {
+         const rawPage = await logseq.Editor.createPage(this.args.pageName, undefined, {
             redirect: false,
             customUUID: deterministicUUIDGenerator.getUUID()
         });
+        const page = normalizePage(rawPage);
         this.changedPages.push(page.uuid);
+        return page;
     }
 
     async revert(): Promise<void> {
-        await logseq.Editor.deletePage(this.pageName);
+        await logseq.Editor.deletePage(this.args.pageName);
     }
 }
 ```
@@ -103,27 +113,26 @@ export class CreatePageCommand extends BaseReversibleCommand {
 ### UpdateBlockCommand.ts
 ```
 export class UpdateBlockCommand extends BaseReversibleCommand {
-    private readonly originalContent;
+    private originalContent;
     
-    constructor(
-    private readonly blockUuid: BlockIdentity,
-    private readonly content: string
-    ) {}
+    constructor(public readonly args: UpdateBlockCommandArgs) {
+        super();
+    }
 
     async execute(deterministicUUIDGenerator: DeterministicUUIDGenerator): Promise<void> {
-        const originalBlock = await LogseqEditor.getBlock(blockUUID);
+        const originalBlock = await LogseqEditor.getBlock(this.args.blockUUID);
         if (!originalBlock) {
-            throw new Error(`Block not found: ${blockUUID}`);
+            throw new Error(`Block not found: ${this.args.blockUUID}`);
         }
         this.originalContent = originalBlock.content;
-        await LogseqEditor.updateBlock(blockUUID, content);
+        await LogseqEditor.updateBlock(this.args.blockUUID, this.args.content);
     }
     
     async revert(): Promise<void> {
-        if (!originalContent) {
+        if (!this.originalContent) {
             throw new Error(`Execute must be called before revert`);
         }
-        await LogseqEditor.updateBlock(blockUUID, originalContent);
+        await LogseqEditor.updateBlock(this.args.blockUUID, this.originalContent);
     }
 }
 ```
@@ -137,15 +146,12 @@ export class LogseqReversibleTransactionTracker {
     
     private changedPages: PageIdentity[] = [];
 
-    constructor() {
-        this.UUID_GENERATION_SEED = uuidv4();
-    }
-    
-    constructor(UUID_GENERATION_SEED) {
-        this.UUID_GENERATION_SEED = UUID_GENERATION_SEED;
+   
+    constructor(UUID_GENERATION_SEED?: string) {
+        this.UUID_GENERATION_SEED = UUID_GENERATION_SEED ?? uuidv4();
     }
 
-    public getUuidGenerationSeed(): string {
+    public getUUIDGenerationSeed(): string {
         return this.UUID_GENERATION_SEED;
     }
     
@@ -153,12 +159,17 @@ export class LogseqReversibleTransactionTracker {
         return this.commandQueue.getCommands();
     }
 
-    public addCommand(command: BaseReversibleCommand): void {
+    public getChangedPages(): PageIdentity[] {
+        return this.changedPages;
+    }
+
+    public addCommand(command: LogseqReversibleCommand): void {
         this.commandQueue.add(command);
     }
 
     public clear(): void {
         this.commandQueue.clear();
+        this.changedPages = [];
         this.UUID_GENERATION_SEED = uuidv4();
     }
 
@@ -168,10 +179,10 @@ export class LogseqReversibleTransactionTracker {
         );
 
         let lastCommandResult = null; // for returning the result of the last command
-        const executedCommands: BaseReversibleCommand[] = [];
+        const executedCommands: LogseqReversibleCommand[] = [];
         try {
             for (const command of this.commandQueue.getCommands()) {
-                lastCommandResult = await command.execute(this.deterministicUUIDGenerator);
+                lastCommandResult = await command.execute(deterministicUUIDGenerator);
                 executedCommands.push(command);
                 this.changedPages = [
                     ...this.changedPages,
@@ -209,11 +220,11 @@ export class LogseqPageDataPrinter {
 
 Commands must normalize entities returned by Logseq before returning them. Logseq may return
 `block.parent` and `block.page` as numeric IDs or `{id}` references. The normalized block must
-always contain UUID references:
+always contain UUID references. Also, if the block or page only contains id and not uuid, we need to call getPage or getBlock to get the uuid.:
 
 ```ts
-block.parent = {uuid: parentUuid};
-block.page = {uuid: pageUuid};
+block.parent = {uuid: parentUUID};
+block.page = {uuid: pageUUID};
 ```
 
 `normalizeBlock(block)` will:
@@ -335,6 +346,11 @@ export type LogseqReversibleCommand = z.output<
 Use `z.input` for the serialized JSON type and `z.output` for the decoded command-instance type.
 The manual `SerializedLogseqFakeableCommand` union in `types.ts` is no longer required.
 
+`LogseqReversibleTransactionCommandQueue` must likewise store and expose
+`LogseqReversibleCommand[]`, rather than `BaseReversibleCommand[]`. This prevents adding a new
+runtime command to a serializable transaction without also registering its codec in
+`LogseqReversibleCommandCodec`.
+
 The command serializer becomes:
 
 ```ts
@@ -370,7 +386,7 @@ export const LogseqReversibleTransactionTrackerCodec = z.codec(
             return tracker;
         },
         encode: (tracker) => ({
-            uuidGenerationSeed: tracker.getUuidGenerationSeed(),
+            uuidGenerationSeed: tracker.getUUIDGenerationSeed(),
             commands: tracker.getCommands()
         })
     }
@@ -419,7 +435,7 @@ snapshot is available.
 Add focused utilities under `commands/utils/`, rather than duplicating traversal and restoration
 logic in both commands:
 
-- `captureBlockTree(blockUuid)` loads the block with `includeChildren: true`, fetches complete
+- `captureBlockTree(blockUUID)` loads the block with `includeChildren: true`, fetches complete
   properties through `LogseqPropertiesHelper`, and converts the result into a plain immutable
   `DeletedBlockTreeSnapshot`.
 - `capturePage(pageIdentity)` loads the page properties and its complete block tree, producing a
