@@ -1,17 +1,14 @@
 import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
-import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
-import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {DeletePageCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
-import {z} from "zod";
-
-const LogseqDeletePageArgsZodObj = z.object({
-    pageUuid: z.string().describe("UUID of the Logseq page to delete.")
-});
-
-type LogseqDeletePageArgs = z.infer<typeof LogseqDeletePageArgsZodObj>;
+import {
+    DeletePageCommand,
+    type DeletePageCommandArgs,
+    DeletePageCommandArgsSchema
+} from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqDeletePageResult =
     | {
@@ -23,33 +20,34 @@ type LogseqDeletePageResult =
       };
 
 export class LogseqDeletePageTool extends BaseChatToolWithDefaultUI<
-    LogseqDeletePageArgs,
+    DeletePageCommandArgs,
     LogseqDeletePageResult
 > {
     static readonly NAME = "logseq_delete_page";
 
     readonly name = LogseqDeletePageTool.NAME;
     readonly description = "Delete a Logseq page by name or UUID.";
-    readonly parameters = LogseqDeletePageArgsZodObj;
+    readonly parameters = DeletePageCommandArgsSchema;
 
     async execute(
-        {pageUuid}: LogseqDeletePageArgs,
+        args: DeletePageCommandArgs,
         context?: ChatToolExecutionContext
     ): Promise<LogseqDeletePageResult | ToolResponse<LogseqDeletePageResult>> {
         try {
-            const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new DeletePageCommand(pageUuid));
+            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
+            transactionTracker.addCommand(new DeletePageCommand(args));
 
-            await transactionTracker.executeInTheInMemoryDB();
+            await transactionTracker.execute();
+            await transactionTracker.revert();
 
             return new ToolResponse({
                 result: {success: true},
-                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
+                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to delete Logseq page ${pageUuid}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to delete Logseq page ${JSON.stringify(args.pageUuid)}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }

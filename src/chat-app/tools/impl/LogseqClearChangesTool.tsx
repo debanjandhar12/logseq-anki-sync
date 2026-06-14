@@ -1,8 +1,8 @@
 import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
-import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
-import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {z} from "zod";
 
@@ -34,12 +34,12 @@ export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<LogseqClearChangesResult | ToolResponse<LogseqClearChangesResult>> {
         try {
-            const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
+            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.clear();
 
             return new ToolResponse({
                 result: {success: true},
-                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
+                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {
             return {

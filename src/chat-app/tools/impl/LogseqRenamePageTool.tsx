@@ -1,18 +1,14 @@
 import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
-import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
-import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {RenamePageCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
-import {z} from "zod";
-
-const LogseqRenamePageArgsZodObj = z.object({
-    pageUuid: z.string().describe("Current name or UUID of the Logseq page to rename."),
-    newName: z.string().describe("New name for the Logseq page.")
-});
-
-type LogseqRenamePageArgs = z.infer<typeof LogseqRenamePageArgsZodObj>;
+import {
+    RenamePageCommand,
+    type RenamePageCommandArgs,
+    RenamePageCommandArgsSchema
+} from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqRenamePageResult =
     | {
@@ -24,33 +20,34 @@ type LogseqRenamePageResult =
       };
 
 export class LogseqRenamePageTool extends BaseChatToolWithDefaultUI<
-    LogseqRenamePageArgs,
+    RenamePageCommandArgs,
     LogseqRenamePageResult
 > {
     static readonly NAME = "logseq_rename_page";
 
     readonly name = LogseqRenamePageTool.NAME;
     readonly description = "Rename a Logseq page by name or UUID.";
-    readonly parameters = LogseqRenamePageArgsZodObj;
+    readonly parameters = RenamePageCommandArgsSchema;
 
     async execute(
-        {pageUuid, newName}: LogseqRenamePageArgs,
+        args: RenamePageCommandArgs,
         context?: ChatToolExecutionContext
     ): Promise<LogseqRenamePageResult | ToolResponse<LogseqRenamePageResult>> {
         try {
-            const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new RenamePageCommand(pageUuid, newName));
+            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
+            transactionTracker.addCommand(new RenamePageCommand(args));
 
-            await transactionTracker.executeInTheInMemoryDB();
+            await transactionTracker.execute();
+            await transactionTracker.revert();
 
             return new ToolResponse({
                 result: {success: true},
-                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
+                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to rename Logseq page ${pageUuid}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to rename Logseq page ${JSON.stringify(args.pageUuid)}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }

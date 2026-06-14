@@ -1,27 +1,14 @@
 import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
-import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
-import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {MoveBlockCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
-import {DEFAULT_MOVE_BLOCK_OPTIONS} from "src/core/logseq-fakeable-transaction-tracker/executor/LogseqTransactionExecutor";
-import {z} from "zod";
-
-const LogseqMoveBlockArgsZodObj = z.object({
-    srcBlockUuid: z.string().describe("UUID of the Logseq block to move."),
-    destBlockUuid: z.string().describe("UUID of the destination Logseq block."),
-    before: z
-        .boolean()
-        .default(DEFAULT_MOVE_BLOCK_OPTIONS.before)
-        .describe("Move the source immediately before the destination."),
-    children: z
-        .boolean()
-        .default(DEFAULT_MOVE_BLOCK_OPTIONS.children)
-        .describe("Keep source descendants attached. children: false is not supported in preview.")
-});
-
-type LogseqMoveBlockArgs = z.infer<typeof LogseqMoveBlockArgsZodObj>;
+import {
+    MoveBlockCommand,
+    type MoveBlockCommandArgs,
+    MoveBlockCommandArgsSchema
+} from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqMoveBlockResult =
     | {
@@ -33,35 +20,34 @@ type LogseqMoveBlockResult =
       };
 
 export class LogseqMoveBlockTool extends BaseChatToolWithDefaultUI<
-    LogseqMoveBlockArgs,
+    MoveBlockCommandArgs,
     LogseqMoveBlockResult
 > {
     static readonly NAME = "logseq_move_block";
 
     readonly name = LogseqMoveBlockTool.NAME;
     readonly description = "Move a Logseq block to a destination block by UUID.";
-    readonly parameters = LogseqMoveBlockArgsZodObj;
+    readonly parameters = MoveBlockCommandArgsSchema;
 
     async execute(
-        {srcBlockUuid, destBlockUuid, before, children}: LogseqMoveBlockArgs,
+        args: MoveBlockCommandArgs,
         context?: ChatToolExecutionContext
     ): Promise<LogseqMoveBlockResult | ToolResponse<LogseqMoveBlockResult>> {
         try {
-            const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(
-                new MoveBlockCommand(srcBlockUuid, destBlockUuid, {before, children})
-            );
+            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
+            transactionTracker.addCommand(new MoveBlockCommand(args));
 
-            await transactionTracker.executeInTheInMemoryDB();
+            await transactionTracker.execute();
+            await transactionTracker.revert();
 
             return new ToolResponse({
                 result: {success: true},
-                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
+                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to move Logseq block ${srcBlockUuid}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to move Logseq block ${JSON.stringify(args.srcBlockUuid)}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }

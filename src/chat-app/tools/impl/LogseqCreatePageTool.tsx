@@ -1,23 +1,20 @@
 import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
-import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
-import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import type {LogseqTransactionResult} from "src/core/logseq-fakeable-transaction-tracker";
-import {CreatePageCommand} from "src/core/logseq-fakeable-transaction-tracker/commands";
-import {z} from "zod";
-
-const LogseqCreatePageArgsZodObj = z.object({
-    pageName: z.string().describe("Name of the Logseq page to create.")
-});
-
-type LogseqCreatePageArgs = z.infer<typeof LogseqCreatePageArgsZodObj>;
+import {
+    CreatePageCommand,
+    type CreatePageCommandArgs,
+    CreatePageCommandArgsSchema,
+    type LogseqReversibleTransactionResult
+} from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqCreatePageResult =
     | {
           success: true;
-          page: LogseqTransactionResult | undefined;
+          page: LogseqReversibleTransactionResult | undefined;
       }
     | {
           success: false;
@@ -25,33 +22,34 @@ type LogseqCreatePageResult =
       };
 
 export class LogseqCreatePageTool extends BaseChatToolWithDefaultUI<
-    LogseqCreatePageArgs,
+    CreatePageCommandArgs,
     LogseqCreatePageResult
 > {
     static readonly NAME = "logseq_create_page";
 
     readonly name = LogseqCreatePageTool.NAME;
     readonly description = "Create a Logseq page by name.";
-    readonly parameters = LogseqCreatePageArgsZodObj;
+    readonly parameters = CreatePageCommandArgsSchema;
 
     async execute(
-        {pageName}: LogseqCreatePageArgs,
+        args: CreatePageCommandArgs,
         context?: ChatToolExecutionContext
     ): Promise<LogseqCreatePageResult | ToolResponse<LogseqCreatePageResult>> {
         try {
-            const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new CreatePageCommand(pageName));
+            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
+            transactionTracker.addCommand(new CreatePageCommand(args));
 
-            const executor = await transactionTracker.executeInTheInMemoryDB();
+            const page = await transactionTracker.execute();
+            await transactionTracker.revert();
 
             return new ToolResponse({
-                result: {success: true, page: executor.getLastResult()},
-                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
+                result: {success: true, page},
+                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to create Logseq page ${pageName}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to create Logseq page ${args.pageName}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }

@@ -2,12 +2,13 @@ import type {BlockIdentity, EntityID, PageIdentity} from "@logseq/libs/dist/LSPl
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
-import {LogseqIdentitySchema, MoveBlockOptionsSchema} from "./schemas";
+import {LogseqIdentitySchema} from "./schemas";
 
 export const MoveBlockCommandArgsSchema = z.object({
     srcBlockUuid: LogseqIdentitySchema.describe("Block identity to move."),
     destBlockUuid: LogseqIdentitySchema.describe("Destination block identity."),
-    options: MoveBlockOptionsSchema
+    before: z.boolean().optional().describe("Move the source immediately before the destination."),
+    children: z.boolean().optional().describe("Keep source descendants attached.")
 });
 
 export type MoveBlockCommandArgs = z.infer<typeof MoveBlockCommandArgsSchema>;
@@ -34,7 +35,7 @@ export class MoveBlockCommand extends BaseReversibleCommand {
         await logseq.Editor.moveBlock(
             this.args.srcBlockUuid as BlockIdentity,
             this.args.destBlockUuid as BlockIdentity,
-            this.args.options
+            {before: this.args.before, children: this.args.children}
         );
         this.changedPages.push(originalBlock.page as unknown as PageIdentity);
 

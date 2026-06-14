@@ -1,4 +1,5 @@
-import type {EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockEntity, EntityID, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
@@ -15,28 +16,61 @@ const DeletePageCommandDataSchema = DeletePageCommandArgsSchema.extend({
 });
 
 export class DeletePageCommand extends BaseReversibleCommand {
-    private executed = false;
+    private deletedPageSnapshot: DeletedPageSnapshot | undefined;
 
     public constructor(public readonly args: DeletePageCommandArgs) {
         super();
     }
 
     public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
-        const page = await logseq.Editor.getPage(this.args.pageUuid as PageIdentity | EntityID);
+        const page = await LogseqPropertiesHelper.getPage(
+            this.args.pageUuid as PageIdentity | EntityID
+        );
         if (!page?.name) throw new Error(`Page not found: ${JSON.stringify(this.args.pageUuid)}`);
 
+        this.deletedPageSnapshot = {
+            page,
+            blocks: await LogseqPropertiesHelper.getPageBlocksTree(page.uuid)
+        };
         this.changedPages.push(page.uuid);
         await logseq.Editor.deletePage(page.name);
-        this.executed = true;
         return true;
     }
 
     public async revert(): Promise<void> {
-        if (!this.executed) throw new Error("Execute must be called before revert");
+        if (!this.deletedPageSnapshot) throw new Error("Execute must be called before revert");
 
-        throw new Error(
-            "DeletePageCommand revert requires snapshot restore support and is not implemented yet"
-        );
+        const {page, blocks} = this.deletedPageSnapshot;
+        const pageName = page.originalName ?? page.name;
+        const existingPage = await logseq.Editor.getPage(page.uuid);
+        if (existingPage) throw new Error(`Page already exists: ${pageName}`);
+
+        const restoredPage = await logseq.Editor.createPage(pageName, undefined, {
+            redirect: false,
+            customUUID: page.uuid
+        });
+        if (!restoredPage) throw new Error(`Logseq failed to restore page: ${pageName}`);
+
+        for (const block of blocks) await restoreBlockTree(page.uuid, block);
+    }
+}
+
+type DeletedPageSnapshot = {
+    page: PageEntity;
+    blocks: BlockEntity[];
+};
+
+async function restoreBlockTree(parentUuid: string, block: BlockEntity): Promise<void> {
+    const restoredBlock = await logseq.Editor.insertBlock(parentUuid, block.content ?? "", {
+        customUUID: block.uuid,
+        sibling: false,
+        end: true
+    });
+    if (!restoredBlock) throw new Error(`Logseq failed to restore block: ${block.uuid}`);
+
+    for (const child of block.children ?? []) {
+        if (Array.isArray(child)) continue;
+        await restoreBlockTree(block.uuid, child);
     }
 }
 

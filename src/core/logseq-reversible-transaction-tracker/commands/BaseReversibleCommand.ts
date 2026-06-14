@@ -14,4 +14,8 @@ export abstract class BaseReversibleCommand {
     public getChangedPages(): PageIdentity[] {
         return [...this.changedPages];
     }
+
+    public resetChangedPages(): void {
+        this.changedPages = [];
+    }
 }

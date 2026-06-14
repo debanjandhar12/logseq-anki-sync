@@ -38,6 +38,7 @@ export class LogseqReversibleTransactionTracker {
     }
 
     public async execute() {
+        this.changedPages = [];
         const deterministicUUIDGenerator = new DeterministicUUIDGenerator(
             this.UUID_GENERATION_SEED
         );
@@ -46,6 +47,7 @@ export class LogseqReversibleTransactionTracker {
 
         try {
             for (const command of this.commandQueue.getCommands()) {
+                command.resetChangedPages();
                 lastCommandResult = await command.execute(deterministicUUIDGenerator);
                 executedCommands.push(command);
                 this.changedPages = [...this.changedPages, ...command.getChangedPages()];

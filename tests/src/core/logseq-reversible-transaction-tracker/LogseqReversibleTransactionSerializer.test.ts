@@ -50,7 +50,7 @@ describe("LogseqReversibleTransactionTrackerSerializer", () => {
             new InsertBlockCommand({
                 parentUuid: "Tracker Test",
                 content: "Inserted content",
-                options: {sibling: false}
+                sibling: false
             })
         );
         tracker.addCommand(
@@ -68,7 +68,7 @@ describe("LogseqReversibleTransactionTrackerSerializer", () => {
                     type: "InsertBlock",
                     parentUuid: "Tracker Test",
                     content: "Inserted content",
-                    options: {sibling: false}
+                    sibling: false
                 },
                 {type: "UpdateBlock", blockUuid: {uuid: "block-uuid"}, content: "Updated"}
             ]

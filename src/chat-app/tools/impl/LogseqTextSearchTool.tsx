@@ -1,11 +1,10 @@
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
-import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
+import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {LogseqFakeableTransactionTrackerSerializer} from "src/core/logseq-fakeable-transaction-tracker";
+import {LogseqAppInfoFetcher} from "src/logseq/LogseqAppInfoFetcher";
 import {WindowParentBridge} from "src/logseq/WindowParentBridge";
 import {z} from "zod";
-import {LogseqAppInfoFetcher} from "src/logseq/LogseqAppInfoFetcher";
 
 const LogseqTextSearchArgsZodObj = z.object({
     searchString: z.string().describe("Text to search for in Logseq.")
@@ -41,11 +40,8 @@ export class LogseqTextSearchTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<LogseqTextSearchResult> {
         try {
-            const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            if (
-                LogseqFakeableTransactionTrackerSerializer.serialize(transactionTracker).commands
-                    .length > 0
-            ) {
+            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
+            if (transactionTracker.getCommands().length > 0) {
                 throw new Error(
                     "Cannot query Logseq while there are uncommitted Logseq changes. Commit or clear the pending changes first."
                 );
@@ -53,9 +49,13 @@ export class LogseqTextSearchTool extends BaseChatToolWithDefaultUI<
 
             // @ts-ignore
             if (!LogseqAppInfoFetcher.checkHostAccess()) {
-                throw new Error("Window.parent access is required to call logseq.api.search. Plugin API does not have this method.");
+                throw new Error(
+                    "Window.parent access is required to call logseq.api.search. Plugin API does not have this method."
+                );
             }
-            const result = await (WindowParentBridge.getLogseqObject() as any).api.search(searchString);
+            const result = await (WindowParentBridge.getLogseqObject() as any).api.search(
+                searchString
+            );
             return {success: true, result};
         } catch (err) {
             return {

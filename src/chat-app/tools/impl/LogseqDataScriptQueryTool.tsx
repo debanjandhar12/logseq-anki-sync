@@ -1,8 +1,7 @@
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
-import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
+import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {LogseqFakeableTransactionTrackerSerializer} from "src/core/logseq-fakeable-transaction-tracker";
 import {z} from "zod";
 
 const LogseqDataScriptQueryArgsZodObj = z.object({
@@ -40,11 +39,8 @@ export class LogseqDataScriptQueryTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<LogseqDataScriptQueryResult> {
         try {
-            const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
-            if (
-                LogseqFakeableTransactionTrackerSerializer.serialize(transactionTracker).commands
-                    .length > 0
-            ) {
+            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
+            if (transactionTracker.getCommands().length > 0) {
                 throw new Error(
                     "Cannot query Logseq while there are uncommitted Logseq changes. Commit or clear the pending changes first."
                 );

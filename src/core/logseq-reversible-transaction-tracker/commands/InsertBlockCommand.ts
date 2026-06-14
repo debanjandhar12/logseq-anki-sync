@@ -2,13 +2,16 @@ import type {BlockIdentity, EntityID, PageIdentity} from "@logseq/libs/dist/LSPl
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
-import {InsertBlockOptionsSchema, LogseqIdentitySchema} from "./schemas";
+import {LogseqIdentitySchema} from "./schemas";
 import {normalizeBlock} from "./utils/normalizeBlock";
 
 export const InsertBlockCommandArgsSchema = z.object({
     parentUuid: LogseqIdentitySchema.describe("Parent page or block identity."),
     content: z.string().describe("Content of the block to insert."),
-    options: InsertBlockOptionsSchema
+    before: z.boolean().optional().describe("Insert before the source when used with sibling."),
+    sibling: z.boolean().optional().describe("Insert as a sibling of the source block."),
+    start: z.boolean().optional().describe("Insert as the first child of the source."),
+    end: z.boolean().optional().describe("Insert as the last child of the source.")
 });
 
 export type InsertBlockCommandArgs = z.infer<typeof InsertBlockCommandArgsSchema>;
@@ -28,7 +31,13 @@ export class InsertBlockCommand extends BaseReversibleCommand {
         const rawBlock = await logseq.Editor.insertBlock(
             this.args.parentUuid as BlockIdentity | EntityID,
             this.args.content,
-            {...this.args.options, customUUID: deterministicUUIDGenerator.getUUID()}
+            {
+                before: this.args.before,
+                sibling: this.args.sibling,
+                start: this.args.start,
+                end: this.args.end,
+                customUUID: deterministicUUIDGenerator.getUUID()
+            }
         );
         if (!rawBlock)
             throw new Error(

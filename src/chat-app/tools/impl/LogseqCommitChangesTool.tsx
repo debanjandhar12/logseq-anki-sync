@@ -4,9 +4,13 @@ import {GitCommitIcon} from "lucide-react";
 import {useState} from "react";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithCustomUI} from "src/chat-app/tools/base/BaseChatToolWithCustomUI";
-import {createLogseqFakeableTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqFakeableTransactionTrackerArtifact";
-import {getLastLogseqFakeableTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqFakeableTransactionTracker";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
+import {
+    LogseqPageDataPrinter,
+    type LogseqReversibleTransactionTracker
+} from "src/core/logseq-reversible-transaction-tracker";
 import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
 import {Button} from "src/shadcn/radix-ui/button";
 import {showAIChangesReviewModal} from "src/ui/launchers/showAIChangesReviewModal";
@@ -43,15 +47,15 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         context?: ChatToolExecutionContext
     ): Promise<LogseqCommitChangesResult | ToolResponse<LogseqCommitChangesResult>> {
         try {
-            const transactionTracker = getLastLogseqFakeableTransactionTracker(context?.messages);
+            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             if (transactionTracker.getCommands().length === 0) {
                 return new ToolResponse({
                     result: {success: true, changes: "No pending changes to commit."},
-                    artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
+                    artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 });
             }
 
-            await transactionTracker.executeInLogseq();
+            await transactionTracker.execute();
             transactionTracker.clear();
 
             return new ToolResponse({
@@ -59,7 +63,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                     success: true,
                     changes: "All pending Logseq changes commited successfully."
                 },
-                artifact: createLogseqFakeableTransactionTrackerArtifact(transactionTracker)
+                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             });
         } catch (err) {
             return new ToolResponse({
@@ -70,6 +74,23 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 isError: true
             });
         }
+    }
+
+    private async prepareReview(transactionTracker: LogseqReversibleTransactionTracker): Promise<{
+        beforeChanges: string;
+        afterChanges: string;
+    }> {
+        await transactionTracker.execute();
+        const changedPages = transactionTracker.getChangedPages();
+        let afterChanges = "";
+        try {
+            afterChanges = await LogseqPageDataPrinter.print(changedPages);
+        } finally {
+            await transactionTracker.revert();
+        }
+        const beforeChanges = await LogseqPageDataPrinter.print(changedPages);
+
+        return {beforeChanges, afterChanges};
     }
 
     async executeCancel(): Promise<
@@ -96,12 +117,9 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         const reviewAndApply = async () => {
             setIsReviewing(true);
             try {
-                const transactionTracker = getLastLogseqFakeableTransactionTracker(messages);
-                const inMemoryExecutor = await transactionTracker.executeInTheInMemoryDB();
-                const isApproved = await showAIChangesReviewModal(
-                    inMemoryExecutor.getInMemoryPageDataDb(),
-                    inMemoryExecutor.getOriginalInMemoryPageDataDb()
-                );
+                const transactionTracker = getLastLogseqReversibleTransactionTracker(messages);
+                const {beforeChanges, afterChanges} = await this.prepareReview(transactionTracker);
+                const isApproved = await showAIChangesReviewModal(beforeChanges, afterChanges);
 
                 if (isApproved === false) {
                     const cancelResult = ToolResponse.toResponse(await this.executeCancel());
