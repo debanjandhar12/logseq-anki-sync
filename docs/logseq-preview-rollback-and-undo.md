@@ -498,6 +498,7 @@ This borrows the useful part of Logseq's design: forward semantic ops plus inver
 ## Practical Conclusions
 
 - `export_edn` / `import_edn` can replace DB graph state in theory, but is too risky for preview rollback.
+- `export_edn` / `import_edn` generates undoable operations (`:gen-undo-ops? true`).
 - SQLite checkpoints are not rollback points, and SQLite backup/import is too internal and disruptive.
 - Logseq records undo for plugin operations because public APIs flow through `ui/transact!`, worker apply ops, persistence/sync, and `gen-undo-ops!`.
 - The internal way to prevent undo history is `:gen-undo-ops? false` in tx metadata.
