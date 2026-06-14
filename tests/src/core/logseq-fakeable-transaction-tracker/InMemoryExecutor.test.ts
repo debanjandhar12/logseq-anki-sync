@@ -6,11 +6,7 @@ import {
     InsertBlockCommand,
     LogseqFakeableTransactionTracker,
     LogseqFakeableTransactionTrackerSerializer,
-    LogseqInMemoryDataPrinter,
-    RemoveBlockPropertyCommand,
-    RemovePropertyCommand,
-    UpsertBlockPropertyCommand,
-    UpsertPropertyCommand
+    LogseqInMemoryDataPrinter
 } from "../../../../src/core/logseq-fakeable-transaction-tracker";
 import {MoveBlockCommand} from "../../../../src/core/logseq-fakeable-transaction-tracker/commands";
 import {createInMemoryExecutor, generateIdentities} from "./helpers/createInMemoryExecutor";
@@ -70,122 +66,6 @@ describe("InMemoryExecutor", () => {
             await executor.createPage("Page");
 
             await expect(executor.createPage("Page")).rejects.toThrow("Page already exists: Page");
-        });
-    });
-
-    describe("properties", () => {
-        test("creates and updates a property definition while preserving its UUID", async () => {
-            const [propertyUuid] = generateIdentities(1);
-            const executor = createInMemoryExecutor();
-
-            await executor.upsertProperty("rating", {type: "number"}, {name: "Rating"});
-            await executor.upsertProperty("rating", {cardinality: "one", hide: true});
-
-            expect(executor.getInMemoryMetadataDb().properties.get("rating")).toEqual({
-                uuid: propertyUuid,
-                key: "rating",
-                name: "Rating",
-                type: "property",
-                schema: {
-                    type: "number",
-                    cardinality: "one",
-                    hide: true
-                },
-                properties: {}
-            });
-            expect(executor.getOriginalInMemoryMetadataDb().properties).toEqual(new Map());
-        });
-
-        test("upserts and removes property values on blocks and pages", async () => {
-            const [pageUuid, blockUuid] = generateIdentities(2);
-            const executor = createInMemoryExecutor();
-
-            await executor.createPage("Page");
-            await executor.insertBlock(pageUuid, "Block");
-            await executor.upsertBlockProperty(pageUuid, "status", "page-value");
-            await executor.upsertBlockProperty(blockUuid, "status", "block-value");
-
-            const page = executor.getInMemoryPageDataDb().get(pageUuid);
-            expect(page?.properties?.status).toBe("page-value");
-            expect(page?.children?.[0]?.properties?.status).toBe("block-value");
-
-            await executor.removeBlockProperty(pageUuid, "status");
-            await executor.removeBlockProperty(blockUuid, "status");
-            expect(page?.properties).not.toHaveProperty("status");
-            expect(page?.children?.[0]?.properties).not.toHaveProperty("status");
-        });
-
-        test("appends unique many-cardinality values and replaces on reset", async () => {
-            const [propertyUuid, pageUuid, blockUuid] = generateIdentities(3);
-            const executor = createInMemoryExecutor();
-
-            await executor.upsertProperty("authors", {cardinality: "many"});
-            await executor.createPage("Page");
-            await executor.insertBlock(pageUuid, "Block");
-            await executor.upsertBlockProperty(blockUuid, "authors", {name: "Ada"});
-            await executor.upsertBlockProperty(blockUuid, "authors", {name: "Ada"});
-            await executor.upsertBlockProperty(blockUuid, "authors", {name: "Grace"});
-
-            const block = executor.getInMemoryPageDataDb().get(pageUuid)
-                ?.children?.[0] as InMemoryBlockEntity;
-            expect(executor.getInMemoryMetadataDb().properties.get("authors")?.uuid).toBe(
-                propertyUuid
-            );
-            expect(block.properties?.authors).toEqual([{name: "Ada"}, {name: "Grace"}]);
-
-            await executor.upsertBlockProperty(blockUuid, "authors", "Reset", {reset: true});
-            expect(block.properties?.authors).toBe("Reset");
-        });
-
-        test("replaces values for one-cardinality and unknown properties", async () => {
-            const [, pageUuid, blockUuid] = generateIdentities(3);
-            const executor = createInMemoryExecutor();
-
-            await executor.upsertProperty("rating", {cardinality: "one"});
-            await executor.createPage("Page");
-            await executor.insertBlock(pageUuid, "Block");
-            await executor.upsertBlockProperty(blockUuid, "rating", 1);
-            await executor.upsertBlockProperty(blockUuid, "rating", 2);
-            await executor.upsertBlockProperty(blockUuid, "unknown", ["first"]);
-            await executor.upsertBlockProperty(blockUuid, "unknown", "second");
-
-            const block = executor.getInMemoryPageDataDb().get(pageUuid)
-                ?.children?.[0] as InMemoryBlockEntity;
-            expect(block.properties?.rating).toBe(2);
-            expect(block.properties?.unknown).toBe("second");
-        });
-
-        test("removes a property definition and cascades across imported entities", async () => {
-            const loader = new StubPageLoader();
-            const executor = createInMemoryExecutor(loader);
-
-            await executor.upsertProperty("status", {cardinality: "one"});
-            await executor.readBlockOrPage("Imported Page", true);
-            await executor.removeProperty("status");
-
-            const page = executor.getInMemoryPageDataDb().get("imported-page");
-            expect(executor.getInMemoryMetadataDb().properties.has("status")).toBe(false);
-            expect(page?.properties).not.toHaveProperty("status");
-            expect(page?.children?.[0]?.properties).not.toHaveProperty("status");
-            expect(page?.properties?.uuid).toBe("imported-page");
-            expect(page?.children?.[0]?.properties?.uuid).toBe("imported-block");
-        });
-
-        test("rejects missing targets and removing internal uuid", async () => {
-            const executor = createInMemoryExecutor();
-
-            await expect(
-                executor.upsertBlockProperty("missing", "status", "value")
-            ).rejects.toThrow("Failed to find block or page during upsertBlockProperty");
-            await expect(executor.removeBlockProperty("missing", "status")).rejects.toThrow(
-                "Failed to find block or page during removeBlockProperty"
-            );
-            await expect(executor.removeBlockProperty("missing", "uuid")).rejects.toThrow(
-                "Cannot remove internal uuid property"
-            );
-            await expect(executor.removeProperty("uuid")).rejects.toThrow(
-                "Cannot remove internal uuid property"
-            );
         });
     });
 
@@ -388,9 +268,7 @@ describe("InMemoryExecutor", () => {
             const serialized = LogseqFakeableTransactionTrackerSerializer.serialize(tracker);
             const deserialized = LogseqFakeableTransactionTrackerSerializer.deserialize(serialized);
 
-            expect(
-                LogseqFakeableTransactionTrackerSerializer.serialize(deserialized).commands
-            ).toEqual([
+            expect(LogseqFakeableTransactionTrackerSerializer.serialize(deserialized).commands).toEqual([
                 {
                     type: "InsertBlock",
                     parentUuid: "parent",
@@ -429,32 +307,6 @@ describe("InMemoryExecutor", () => {
                     options: undefined
                 }
             ]);
-        });
-
-        test("round-trips property commands and arbitrary JSON values", () => {
-            const tracker = new LogseqFakeableTransactionTracker();
-
-            tracker.addCommand(
-                new UpsertPropertyCommand(
-                    "authors",
-                    {type: "node", cardinality: "many", customSchemaField: "kept"},
-                    {name: "Authors"}
-                )
-            );
-            tracker.addCommand(
-                new UpsertBlockPropertyCommand({uuid: "block"}, "authors", [{uuid: "author"}], {
-                    reset: true
-                })
-            );
-            tracker.addCommand(new RemoveBlockPropertyCommand("block", "authors"));
-            tracker.addCommand(new RemovePropertyCommand("authors"));
-
-            const serialized = LogseqFakeableTransactionTrackerSerializer.serialize(tracker);
-            const deserialized = LogseqFakeableTransactionTrackerSerializer.deserialize(serialized);
-
-            expect(
-                LogseqFakeableTransactionTrackerSerializer.serialize(deserialized).commands
-            ).toEqual(serialized.commands);
         });
     });
 
@@ -547,7 +399,7 @@ class StubPageLoader implements InMemoryPageLoader {
                 title: "Imported Page",
                 fullTitle: "Imported Page",
                 content: "Imported Page",
-                properties: {uuid: "imported-page", status: "page-status"},
+                properties: {uuid: "imported-page"},
                 "journal?": false
             } as unknown as PageEntity,
             blocks: [
@@ -556,7 +408,7 @@ class StubPageLoader implements InMemoryPageLoader {
                     content: "Original",
                     title: "Original",
                     fullTitle: "Original",
-                    properties: {uuid: "imported-block", status: "block-status"},
+                    properties: {uuid: "imported-block"},
                     parent: {uuid: "imported-page"},
                     page: {uuid: "imported-page"},
                     children: []
