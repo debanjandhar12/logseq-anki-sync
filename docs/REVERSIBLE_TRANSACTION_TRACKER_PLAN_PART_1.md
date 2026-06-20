@@ -82,30 +82,45 @@ types in `types.ts`.
 ### CreatePageCommand.ts
 ```
 export class CreatePageCommand extends BaseReversibleCommand {
+    private pageUUID: BlockUUID | undefined;
+
     constructor(public readonly args: CreatePageCommandArgs) {
         super();
     }
 
     async execute(deterministicUUIDGenerator: DeterministicUUIDGenerator): Promise<void> {
-         // This is a special case due to which we are checking validation. For some reason,
-         // logseq.Editor.createPage doesnt throw error if the page already exists. It just returns
-         // the existing page.
-         const existingPage = await logseq.Editor.getPage(this.args.pageName);
-         if (existingPage) {
-             throw new Error(`Page already exists: ${this.args.pageName}`);
-         }
-         
-         const rawPage = await logseq.Editor.createPage(this.args.pageName, undefined, {
+        // This is a special case due to which we are checking validation. For some reason,
+        // logseq.Editor.createPage doesnt throw error if the page already exists. It just returns
+        // the existing page. Also, getPage can return a page that is currently in Logseq's
+        // recycle state. Recycled pages should be restored, not treated as active duplicates.
+        const existingPage = await logseq.Editor.getPage(this.args.pageName);
+        if (existingPage && !isDeletedPage(existingPage)) {
+            throw new Error(`Page already exists: ${this.args.pageName}`);
+        }
+
+        if (existingPage) {
+            // @ts-ignore restorePage exists in unreleased Logseq APIs but is not in current plugin types.
+            await logseq.Editor.restorePage(existingPage.uuid);
+            const page = normalizePage(await logseq.Editor.getPage(existingPage.uuid));
+            this.pageUUID = page.uuid;
+            this.changedPages.push(page.uuid);
+            return page;
+        }
+
+        const rawPage = await logseq.Editor.createPage(this.args.pageName, undefined, {
             redirect: false,
             customUUID: deterministicUUIDGenerator.getUUID()
         });
         const page = normalizePage(rawPage);
+        this.pageUUID = page.uuid;
         this.changedPages.push(page.uuid);
         return page;
     }
 
     async revert(): Promise<void> {
-        await logseq.Editor.deletePage(this.args.pageName);
+        if (!this.pageUUID) throw new Error("Execute must be called before revert");
+
+        await logseq.Editor.deletePage(this.pageUUID);
     }
 }
 ```
@@ -425,30 +440,36 @@ Inside LogseqCommitChangesTool, we will use the LogseqReversibleTransactionTrack
 
 ## Reverting block and page deletion
 
-`DeleteBlockCommand` and `DeletePageCommand` cannot revert from an entity UUID alone. Before
-deleting anything, `execute()` must capture an immutable snapshot containing all data required to
-recreate the deleted entity at the same logical location. The snapshot is execution state, not a
-constructor argument: command serialization should continue to describe the requested operation,
-while `revert()` must fail with a clear `execute() must be called before revert()` error when no
-snapshot is available.
+The original implementation plan assumed deleted pages were permanently lost and had to be manually
+recreated from snapshots. That assumption was wrong: Logseq keeps deleted pages in a recycle state
+and exposes an unreleased `logseq.Editor.restorePage(pageNameOrUuid)` command that restores the page
+and its blocks.
+
+`logseq.Editor.getPage(...)` can return recycled pages. A recycled page can be detected by the raw
+page field `:logseq.property/deleted-at`. Command validation must therefore distinguish active pages
+from recycled pages instead of treating every `getPage` result as an existing active page.
+
+`DeleteBlockCommand` still cannot revert from an entity UUID alone. Before deleting a block,
+`execute()` must capture an immutable snapshot containing all data required to recreate the deleted
+entity at the same logical location. The snapshot is execution state, not a constructor argument:
+command serialization should continue to describe the requested operation, while `revert()` must fail
+with a clear `execute() must be called before revert()` error when no snapshot is available.
 
 Add focused utilities under `commands/utils/`, rather than duplicating traversal and restoration
-logic in both commands:
+logic:
 
 - `captureBlockTree(blockUUID)` loads the block with `includeChildren: true`, fetches complete
   properties through `LogseqPropertiesHelper`, and converts the result into a plain immutable
   `DeletedBlockTreeSnapshot`.
-- `capturePage(pageIdentity)` loads the page properties and its complete block tree, producing a
-  `DeletedPageSnapshot`.
 - `restoreBlockTree(snapshot, destination)` recreates a block tree recursively.
-- `restorePage(snapshot)` recreates the page first, restores page properties, and then restores all
-  top-level block trees in their original order.
+- `isDeletedPage(page)` checks `page[":logseq.property/deleted-at"] != null` to identify recycled
+  pages returned by `getPage`.
 
-The snapshots should retain the complete `BlockEntity` and `PageEntity` values returned by Logseq,
-including fields that are not currently needed by the restore implementation. Keeping the full
-entities avoids losing graph-specific metadata and gives future restoration logic access to fields
-that Logseq may make writable later. The restore utilities should still extract the supported
-writable fields instead of passing the captured entities directly to editor APIs.
+Block snapshots should retain the complete `BlockEntity` values returned by Logseq, including fields
+that are not currently needed by the restore implementation. Keeping the full entities avoids losing
+graph-specific metadata and gives future restoration logic access to fields that Logseq may make
+writable later. The restore utilities should still extract the supported writable fields instead of
+passing the captured entities directly to editor APIs.
 
 ### Block snapshot requirements
 
@@ -476,35 +497,40 @@ change surrounding blocks. The fallback index provides deterministic behavior wh
 are unavailable, but exact placement cannot be guaranteed if external edits occur between
 `execute()` and `revert()`.
 
-### Page snapshot requirements
+### Page recycle requirements
 
-`DeletedPageSnapshot` must contain:
+`DeletePageCommand` should rely on Logseq's recycle/restore behavior instead of manually recreating
+the page and block tree.
 
-- The page object (along with page.properties and page.tags).
-- All writable page properties, excluding synthetic/read-only fields.
-- Every top-level block as an ordered `DeletedBlockTreeSnapshot`, recursively including properties,
-  tags, descendants, and UUIDs.
+`DeletePageCommand.execute()` should:
 
-`DeletePageCommand.execute()` must finish capturing the page and all descendant blocks before
-deleting the page. It should record the deleted page UUID in `changedPages` before deletion so the
-printer can still identify the affected page through the command snapshot.
+1. Load the page by UUID.
+2. Fail if the page does not exist or is already recycled. Because `getPage` returns recycled pages,
+   this requires checking `:logseq.property/deleted-at`, not just nullability.
+3. Store the page object as execution state so `revert()` knows which page was deleted.
+4. Record the page UUID in `changedPages`.
+5. Call `logseq.Editor.deletePage(page.uuid)` directly.
 
 `DeletePageCommand.revert()` should:
 
-1. Fail if a page with the original UUID or canonical name already exists. Overwriting or merging
-   into a newly created page would risk data loss.
-2. Recreate the page with its original name and UUID.
-3. Restore writable page properties and supported journal/namespace metadata.
-4. Restore top-level blocks in order with their original UUIDs, then recursively restore their
-   descendants.
-5. Verify the restored page snapshot and report any unsupported or mismatched fields.
+1. Fail if `execute()` has not stored the deleted page.
+2. Call `logseq.Editor.getPage(page.uuid)` and allow the returned recycled page.
+3. Fail only if a page with the same UUID is active, meaning it does not have
+   `:logseq.property/deleted-at`.
+4. Call `logseq.Editor.restorePage(page.uuid)`. This API may need `// @ts-ignore` until the Logseq
+   plugin types include it.
+
+`CreatePageCommand.execute()` has the symmetrical recycled-page case: if `getPage(pageName)` returns
+a recycled page, it should restore that page instead of calling `createPage`. If `getPage(pageName)`
+returns an active page, it must still fail with `Page already exists`.
 
 ### Failure handling and tests
 
-Restoration is a multi-step operation and can fail after creating part of the tree. The restore
+Block restoration is a multi-step operation and can fail after creating part of the tree. The restore
 utilities must track entities created during the current attempt and perform best-effort cleanup in
 reverse order before rethrowing the original error. Cleanup errors should be attached to the
-reported revert error, not replace it.
+reported revert error, not replace it. Page restoration should be delegated to Logseq's
+`restorePage` API instead of implementing a manual multi-step page rebuild.
 
 Tests must cover:
 
@@ -517,7 +543,13 @@ Tests must cover:
 - Missing parents/anchors, conflicting page names or UUIDs, partial restore failure, repeated
   `revert()`, and `revert()` before `execute()`.
 - Separate behavior for file graphs and DB graphs because property and tag storage differ.
+- Recycled-page behavior: `CreatePageCommand.execute()` restores a recycled page with the requested
+  name, `DeletePageCommand.execute()` refuses to delete an already recycled page, and
+  `DeletePageCommand.revert()` accepts the recycled page returned by `getPage` before calling
+  `restorePage`.
 
 Before implementation, add an integration spike against a running Logseq instance to confirm which
-fields can be round-tripped through `insertBlock`, `createPage`, and property APIs. The command
-contract should promise exact restoration only for fields proven writable by those APIs.
+fields can be round-tripped through `insertBlock` and property APIs for block deletion, and confirm
+the exact runtime behavior of `deletePage`, recycled-page `getPage`, and `restorePage` for page
+deletion. The command contract should promise exact restoration only for fields proven writable or
+restorable by those APIs.
