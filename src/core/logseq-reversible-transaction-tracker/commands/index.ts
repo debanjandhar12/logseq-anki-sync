@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {CreatePageCommandCodec} from "./CreatePageCommand";
+import {DeleteBlockCommandCodec} from "./DeleteBlockCommand";
 import {DeletePageCommandCodec} from "./DeletePageCommand";
 import {InsertBlockCommandCodec} from "./InsertBlockCommand";
 import {MoveBlockCommandCodec} from "./MoveBlockCommand";
@@ -12,6 +13,11 @@ export {
     type CreatePageCommandArgs,
     CreatePageCommandArgsSchema
 } from "./CreatePageCommand";
+export {
+    DeleteBlockCommand,
+    type DeleteBlockCommandArgs,
+    DeleteBlockCommandArgsSchema
+} from "./DeleteBlockCommand";
 export {
     DeletePageCommand,
     type DeletePageCommandArgs,
@@ -37,9 +43,15 @@ export {
     type UpdateBlockCommandArgs,
     UpdateBlockCommandArgsSchema
 } from "./UpdateBlockCommand";
+export {
+    BlockTreeDeletionSnapshot,
+    type DeletedBlockTreeSnapshot,
+    type RestoreBlockTreeDestination
+} from "./utils/BlockTreeDeletionSnapshot";
 
 export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
     CreatePageCommandCodec,
+    DeleteBlockCommandCodec,
     DeletePageCommandCodec,
     InsertBlockCommandCodec,
     MoveBlockCommandCodec,

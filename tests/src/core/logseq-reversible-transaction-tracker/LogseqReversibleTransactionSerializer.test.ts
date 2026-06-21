@@ -2,6 +2,7 @@ import {describe, expect, test} from "vitest";
 import {z} from "zod";
 import {
     CreatePageCommand,
+    DeleteBlockCommand,
     InsertBlockCommand,
     InsertBlockCommandArgsSchema,
     LogseqReversibleTransactionCommandSerializer,
@@ -39,6 +40,33 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
         });
 
         expect(command.args.parentUuid).toBe("00000001-2026-0614-0000-000000000000");
+    });
+
+    test("round trips a delete block command", () => {
+        const command = new DeleteBlockCommand({
+            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
+        });
+
+        const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
+        const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
+
+        expect(serialized).toEqual({
+            type: "DeleteBlock",
+            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
+        });
+        expect(deserialized).toBeInstanceOf(DeleteBlockCommand);
+        expect(deserialized).toEqual(command);
+    });
+
+    test("does not serialize delete block execution snapshots", () => {
+        const command = new DeleteBlockCommand({
+            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
+        });
+
+        expect(LogseqReversibleTransactionCommandSerializer.serialize(command)).toEqual({
+            type: "DeleteBlock",
+            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
+        });
     });
 
     test("rejects a value that does not have the Logseq UUID shape", () => {
