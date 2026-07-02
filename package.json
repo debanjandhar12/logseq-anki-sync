@@ -17,7 +17,8 @@
     },
     "logseq": {
         "id": "_rw1zys140",
-        "icon": "/icon.png"
+        "icon": "/icon.png",
+        "effect": true
     },
     "dependencies": {
         "@ai-sdk/google": "^3.0.79",

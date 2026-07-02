@@ -1,4 +1,5 @@
 import "@logseq/libs";
+
 import type {LSPluginBaseInfo} from "@logseq/libs/dist/LSPlugin";
 import {Buffer} from "buffer/";
 import GITHUB_ICON from "../node_modules/@tabler/icons/icons/outline/brand-github.svg?raw";
@@ -14,12 +15,13 @@ import {
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
+import {LogseqHttpProxy} from "./logseq/LogseqHttpProxy";
 import {LogseqPluginStorageManager} from "./logseq/LogseqPluginStorageManager";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
 import {registerToolbar} from "./registerToolbar";
 import {addSettingsToLogseq} from "./settings";
-import {showButtonModal, showConfirmModal} from "./ui";
+import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
 
 const logger = createLogger(LoggerCategory.MISC);
@@ -33,6 +35,8 @@ async function main(baseInfo: LSPluginBaseInfo) {
         );
         return;
     }
+
+    LogseqHttpProxy.init();
 
     // Register UI and Commands
     await initAIChat();
