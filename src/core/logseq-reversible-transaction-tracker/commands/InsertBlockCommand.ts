@@ -4,6 +4,7 @@ import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {normalizeBlock} from "./utils/normalizeBlock";
+import {requireActiveBlock} from "./utils/validations";
 
 export const InsertBlockCommandArgsSchema = z.object({
     parentUuid: LogseqUUIDSchema.describe("UUID of the parent Logseq page or block."),
@@ -30,6 +31,8 @@ export class InsertBlockCommand extends BaseReversibleCommand {
     }
 
     public async execute(deterministicUUIDGenerator: DeterministicUUIDGenerator) {
+        await requireActiveBlock(this.args.parentUuid as BlockIdentity, "Parent");
+
         const rawBlock = await logseq.Editor.insertBlock(
             this.args.parentUuid as BlockIdentity,
             this.args.content,

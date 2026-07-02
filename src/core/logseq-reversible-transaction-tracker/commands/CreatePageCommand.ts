@@ -2,8 +2,8 @@ import type {BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
-import {isDeletedPage} from "./utils/isDeletedPage";
 import {normalizePage} from "./utils/normalizePage";
+import {isPageSoftDeleted} from "src/core/logseq-reversible-transaction-tracker/commands/utils/isPageSoftDeleted";
 
 export const CreatePageCommandArgsSchema = z.object({
     pageName: z.string().describe("Name of the Logseq page to create.")
@@ -26,7 +26,7 @@ export class CreatePageCommand extends BaseReversibleCommand {
 
     public async execute(deterministicUUIDGenerator: DeterministicUUIDGenerator) {
         const existingPage = await logseq.Editor.getPage(this.args.pageName);
-        if (existingPage && !isDeletedPage(existingPage)) {
+        if (existingPage && !isPageSoftDeleted(existingPage)) {
             throw new Error(`Page already exists: ${this.args.pageName}`);
         }
 

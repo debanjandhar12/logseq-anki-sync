@@ -3,6 +3,7 @@ import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
+import {requireActivePage} from "./utils/validations";
 
 export const RenamePageCommandArgsSchema = z.object({
     pageUuid: LogseqUUIDSchema.describe("UUID of the Logseq page to rename."),
@@ -26,8 +27,7 @@ export class RenamePageCommand extends BaseReversibleCommand {
     }
 
     public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
-        const page = await logseq.Editor.getPage(this.args.pageUuid as PageIdentity);
-        if (!page?.name) throw new Error(`Page not found: ${JSON.stringify(this.args.pageUuid)}`);
+        const page = await requireActivePage(this.args.pageUuid as PageIdentity);
 
         this.originalName = page.name;
         this.pageUUID = page.uuid;

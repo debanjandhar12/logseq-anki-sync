@@ -94,7 +94,7 @@ export class CreatePageCommand extends BaseReversibleCommand {
         // the existing page. Also, getPage can return a page that is currently in Logseq's
         // recycle state. Recycled pages should be restored, not treated as active duplicates.
         const existingPage = await logseq.Editor.getPage(this.args.pageName);
-        if (existingPage && !isDeletedPage(existingPage)) {
+        if (existingPage && !isPageSoftDeleted(existingPage)) {
             throw new Error(`Page already exists: ${this.args.pageName}`);
         }
 
@@ -462,7 +462,7 @@ logic:
   properties through `LogseqPropertiesHelper`, and converts the result into a plain immutable
   `DeletedBlockTreeSnapshot`.
 - `restoreBlockTree(snapshot, destination)` recreates a block tree recursively.
-- `isDeletedPage(page)` checks `page[":logseq.property/deleted-at"] != null` to identify recycled
+- `isPageSoftDeleted(page)` checks `page[":logseq.property/deleted-at"] != null` to identify recycled
   pages returned by `getPage`.
 
 Block snapshots should retain the complete `BlockEntity` values returned by Logseq, including fields

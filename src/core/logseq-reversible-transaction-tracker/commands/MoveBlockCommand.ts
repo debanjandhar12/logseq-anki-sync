@@ -4,6 +4,7 @@ import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {normalizeBlock} from "./utils/normalizeBlock";
+import {requireActiveBlock} from "./utils/validations";
 
 export const MoveBlockCommandArgsSchema = z.object({
     srcBlockUuid: LogseqUUIDSchema.describe("UUID of the Logseq block to move."),
@@ -28,13 +29,12 @@ export class MoveBlockCommand extends BaseReversibleCommand {
     }
 
     public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
-        const rawOriginalBlock = await logseq.Editor.getBlock(
-            this.args.srcBlockUuid as BlockIdentity
+        const originalBlock = await requireActiveBlock(
+            this.args.srcBlockUuid as BlockIdentity,
+            "Source"
         );
-        if (!rawOriginalBlock)
-            throw new Error(`Block not found: ${JSON.stringify(this.args.srcBlockUuid)}`);
+        await requireActiveBlock(this.args.destBlockUuid as BlockIdentity, "Destination");
 
-        const originalBlock = await normalizeBlock(rawOriginalBlock);
         this.originalParent = originalBlock.parent.uuid;
         await logseq.Editor.moveBlock(
             this.args.srcBlockUuid as BlockIdentity,

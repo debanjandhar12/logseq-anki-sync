@@ -43,12 +43,6 @@ export {
     type UpdateBlockCommandArgs,
     UpdateBlockCommandArgsSchema
 } from "./UpdateBlockCommand";
-export {
-    BlockTreeDeletionSnapshot,
-    type DeletedBlockTreeSnapshot,
-    type RestoreBlockTreeDestination
-} from "./utils/BlockTreeDeletionSnapshot";
-
 export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
     CreatePageCommandCodec,
     DeleteBlockCommandCodec,

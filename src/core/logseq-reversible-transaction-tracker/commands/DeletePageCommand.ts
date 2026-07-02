@@ -1,10 +1,10 @@
 import type {PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
-import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
-import {isDeletedPage} from "./utils/isDeletedPage";
+import {isPageSoftDeleted} from "./utils/isPageSoftDeleted";
+import {requireActivePage} from "./utils/validations";
 
 export const DeletePageCommandArgsSchema = z.object({
     pageUuid: LogseqUUIDSchema.describe("UUID of the Logseq page to delete.")
@@ -26,10 +26,7 @@ export class DeletePageCommand extends BaseReversibleCommand {
     }
 
     public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
-        const page = await LogseqPropertiesHelper.getPage(this.args.pageUuid as PageIdentity);
-        if (!page?.name || isDeletedPage(page)) {
-            throw new Error(`Page not found: ${JSON.stringify(this.args.pageUuid)}`);
-        }
+        const page = await requireActivePage(this.args.pageUuid as PageIdentity);
 
         this.deletedPage = page;
         this.changedPages.push(page.uuid);
@@ -43,7 +40,7 @@ export class DeletePageCommand extends BaseReversibleCommand {
         const page = this.deletedPage;
         const pageName = page.originalName ?? page.name;
         const existingPage = await logseq.Editor.getPage(page.uuid);
-        if (existingPage && !isDeletedPage(existingPage)) {
+        if (existingPage && !isPageSoftDeleted(existingPage)) {
             throw new Error(`Page already exists: ${pageName}`);
         }
 

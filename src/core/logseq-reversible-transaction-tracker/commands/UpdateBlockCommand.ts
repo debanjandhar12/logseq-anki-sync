@@ -4,7 +4,7 @@ import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
-import {normalizeBlock} from "./utils/normalizeBlock";
+import {requireActiveBlock} from "./utils/validations";
 
 export const UpdateBlockCommandArgsSchema = z.object({
     blockUuid: LogseqUUIDSchema.describe("UUID of the Logseq block to update."),
@@ -27,11 +27,7 @@ export class UpdateBlockCommand extends BaseReversibleCommand {
     }
 
     public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
-        const rawOriginalBlock = await logseq.Editor.getBlock(this.args.blockUuid as BlockIdentity);
-        if (!rawOriginalBlock)
-            throw new Error(`Block not found: ${JSON.stringify(this.args.blockUuid)}`);
-
-        const originalBlock = await normalizeBlock(rawOriginalBlock);
+        const originalBlock = await requireActiveBlock(this.args.blockUuid as BlockIdentity);
         this.originalContent = originalBlock.content ?? "";
         if (originalBlock.page)
             this.changedPages.push(originalBlock.page as unknown as PageIdentity);
