@@ -1,7 +1,6 @@
 import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
 import {RenamePageCommand} from "../../../../../src/core/logseq-reversible-transaction-tracker/commands/RenamePageCommand";
-import {DeterministicUUIDGenerator} from "../../../../../src/core/logseq-reversible-transaction-tracker/DeterministicUUIDGenerator";
 
 const pageName = "rename-page-command-test-page-" + Date.now();
 const renamedPageName = "rename-page-command-renamed-page-" + Date.now();
@@ -35,10 +34,9 @@ describe.skipIf(!shouldRunTests())("RenamePageCommand", () => {
     }, 60_000);
 
     it("should rename page and revert it.", async () => {
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new RenamePageCommand({pageUuid: page.uuid, newName: renamedPageName});
 
-        await command.execute(gen);
+        await command.execute();
         await waitForLogseqDb();
 
         const renamedPage = await logseq.Editor.getPage(page.uuid);

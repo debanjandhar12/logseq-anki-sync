@@ -1,6 +1,5 @@
 import type {PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {z} from "zod";
-import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {requireActivePage} from "./utils/validations";
@@ -26,7 +25,7 @@ export class RenamePageCommand extends BaseReversibleCommand {
         this.args = RenamePageCommandArgsSchema.parse(args);
     }
 
-    public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
+    public async execute() {
         const page = await requireActivePage(this.args.pageUuid as PageIdentity);
 
         this.originalName = page.name;

@@ -55,8 +55,6 @@ function isLogseqReversibleTransactionTrackerArtifactItem(
     return (
         typeof trackerJson === "object" &&
         trackerJson !== null &&
-        "uuidGenerationSeed" in trackerJson &&
-        typeof trackerJson.uuidGenerationSeed === "string" &&
         "commands" in trackerJson &&
         Array.isArray(trackerJson.commands)
     );

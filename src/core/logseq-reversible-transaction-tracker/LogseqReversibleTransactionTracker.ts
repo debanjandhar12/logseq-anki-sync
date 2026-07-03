@@ -1,21 +1,11 @@
-import type {PageIdentity} from "@logseq/libs/dist/LSPlugin";
-import {v4 as uuidv4} from "uuid";
 import type {LogseqReversibleCommand} from "./commands";
-import {DeterministicUUIDGenerator} from "./DeterministicUUIDGenerator";
 import {LogseqReversibleTransactionCommandQueue} from "./LogseqReversibleTransactionCommandQueue";
 
 export class LogseqReversibleTransactionTracker {
     private readonly commandQueue = new LogseqReversibleTransactionCommandQueue();
-    private UUID_GENERATION_SEED: string;
     private changedPages: string[] = [];
 
-    public constructor(UUID_GENERATION_SEED?: string) {
-        this.UUID_GENERATION_SEED = UUID_GENERATION_SEED ?? uuidv4();
-    }
-
-    public getUUIDGenerationSeed(): string {
-        return this.UUID_GENERATION_SEED;
-    }
+    public constructor() {}
 
     public getCommands(): LogseqReversibleCommand[] {
         return this.commandQueue.getCommands();
@@ -34,21 +24,17 @@ export class LogseqReversibleTransactionTracker {
     public clear(): void {
         this.commandQueue.clear();
         this.changedPages = [];
-        this.UUID_GENERATION_SEED = uuidv4();
     }
 
     public async execute() {
         this.changedPages = [];
-        const deterministicUUIDGenerator = new DeterministicUUIDGenerator(
-            this.UUID_GENERATION_SEED
-        );
         let lastCommandResult = null;
         const executedCommands: LogseqReversibleCommand[] = [];
 
         try {
             for (const command of this.commandQueue.getCommands()) {
                 command.resetChangedPages();
-                lastCommandResult = await command.execute(deterministicUUIDGenerator);
+                lastCommandResult = await command.execute();
                 executedCommands.push(command);
                 this.changedPages = [...this.changedPages, ...command.getChangedPages()];
             }

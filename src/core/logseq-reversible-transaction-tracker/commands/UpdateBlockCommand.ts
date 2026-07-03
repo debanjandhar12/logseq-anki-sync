@@ -1,7 +1,6 @@
-import type {BlockIdentity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
-import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {resolvePageUUID} from "./utils/normalizeBlock";
@@ -27,11 +26,10 @@ export class UpdateBlockCommand extends BaseReversibleCommand {
         this.args = UpdateBlockCommandArgsSchema.parse(args);
     }
 
-    public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
+    public async execute() {
         const originalBlock = await requireActiveBlock(this.args.blockUuid as BlockIdentity);
         this.originalContent = originalBlock.content ?? "";
-        if (originalBlock.page)
-            this.changedPages.push(await resolvePageUUID(originalBlock.page));
+        if (originalBlock.page) this.changedPages.push(await resolvePageUUID(originalBlock.page));
         await LogseqEditor.updateBlock(this.args.blockUuid as BlockIdentity, this.args.content);
         return true;
     }

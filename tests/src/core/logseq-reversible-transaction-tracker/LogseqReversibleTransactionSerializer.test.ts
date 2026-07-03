@@ -18,9 +18,52 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
         const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
         const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
 
-        expect(serialized).toEqual({type: "CreatePage", pageName: "Codec Test"});
+        expect(serialized).toEqual({
+            type: "CreatePage",
+            pageName: "Codec Test",
+            pageUuid: expect.any(String)
+        });
         expect(deserialized).toBeInstanceOf(CreatePageCommand);
         expect(deserialized).toEqual(command);
+    });
+
+    test("round trips generated create page UUID state", () => {
+        const command = new CreatePageCommand({pageName: "UUID State Test"});
+        const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
+
+        const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
+        const reserialized = LogseqReversibleTransactionCommandSerializer.serialize(deserialized);
+
+        expect(reserialized).toEqual(serialized);
+    });
+
+    test("round trips generated insert block UUID state", () => {
+        const command = new InsertBlockCommand({
+            parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
+            content: "Inserted content"
+        });
+        const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
+
+        const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
+        const reserialized = LogseqReversibleTransactionCommandSerializer.serialize(deserialized);
+
+        expect(serialized).toEqual({
+            type: "InsertBlock",
+            parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
+            content: "Inserted content",
+            sibling: true,
+            blockUuid: expect.any(String)
+        });
+        expect(reserialized).toEqual(serialized);
+    });
+
+    test("rejects serialized create commands without UUID state", () => {
+        expect(() =>
+            LogseqReversibleTransactionCommandSerializer.deserialize({
+                type: "CreatePage",
+                pageName: "Legacy Codec Test"
+            })
+        ).toThrow();
     });
 
     test("rejects malformed command fields", () => {
@@ -103,9 +146,7 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
 
 describe("LogseqReversibleTransactionTrackerSerializer", () => {
     test("round trips a tracker with nested commands", () => {
-        const tracker = new LogseqReversibleTransactionTracker(
-            "5f9c57d6-3466-4ba3-b6bf-01e12f11c91d"
-        );
+        const tracker = new LogseqReversibleTransactionTracker();
         tracker.addCommand(new CreatePageCommand({pageName: "Tracker Test"}));
         tracker.addCommand(
             new InsertBlockCommand({
@@ -125,14 +166,14 @@ describe("LogseqReversibleTransactionTrackerSerializer", () => {
         const deserialized = LogseqReversibleTransactionTrackerSerializer.deserialize(serialized);
 
         expect(serialized).toEqual({
-            uuidGenerationSeed: "5f9c57d6-3466-4ba3-b6bf-01e12f11c91d",
             commands: [
-                {type: "CreatePage", pageName: "Tracker Test"},
+                {type: "CreatePage", pageName: "Tracker Test", pageUuid: expect.any(String)},
                 {
                     type: "InsertBlock",
                     parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
                     content: "Inserted content",
-                    sibling: false
+                    sibling: false,
+                    blockUuid: expect.any(String)
                 },
                 {
                     type: "UpdateBlock",
@@ -147,12 +188,26 @@ describe("LogseqReversibleTransactionTrackerSerializer", () => {
         expect(deserialized.getCommands()[2]).toBeInstanceOf(UpdateBlockCommand);
     });
 
-    test("rejects invalid tracker artifacts", () => {
-        expect(() =>
-            LogseqReversibleTransactionTrackerSerializer.deserialize({
-                uuidGenerationSeed: "not-a-uuid",
-                commands: []
-            })
-        ).toThrow();
+    test("keeps serialized command UUIDs stable when command order changes", () => {
+        const createPageCommand = new CreatePageCommand({pageName: "Tracker Test"});
+        const insertBlockCommand = new InsertBlockCommand({
+            parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
+            content: "Inserted content",
+            sibling: false
+        });
+        const tracker = new LogseqReversibleTransactionTracker();
+        tracker.addCommand(createPageCommand);
+        tracker.addCommand(insertBlockCommand);
+
+        const originalSerialized = LogseqReversibleTransactionTrackerSerializer.serialize(tracker);
+        const reorderedTracker = new LogseqReversibleTransactionTracker();
+        reorderedTracker.addCommand(insertBlockCommand);
+        reorderedTracker.addCommand(createPageCommand);
+
+        const reorderedSerialized =
+            LogseqReversibleTransactionTrackerSerializer.serialize(reorderedTracker);
+
+        expect(reorderedSerialized.commands[0]).toEqual(originalSerialized.commands[1]);
+        expect(reorderedSerialized.commands[1]).toEqual(originalSerialized.commands[0]);
     });
 });

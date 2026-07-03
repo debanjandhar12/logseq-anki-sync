@@ -1,7 +1,6 @@
 import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
-import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {isPageSoftDeleted} from "./utils/isPageSoftDeleted";
@@ -33,7 +32,7 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
         this.args = DeleteBlockCommandArgsSchema.parse(args);
     }
 
-    public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
+    public async execute() {
         const block = await requireActiveBlock(this.args.blockUuid as BlockIdentity);
         const isPageBlock = logseq.Editor.isPageBlock(block);
         if (isPageBlock === true) {

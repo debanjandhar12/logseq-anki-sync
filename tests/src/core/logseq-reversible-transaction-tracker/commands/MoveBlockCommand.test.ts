@@ -1,7 +1,6 @@
 import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
 import {MoveBlockCommand} from "../../../../../src/core/logseq-reversible-transaction-tracker/commands/MoveBlockCommand";
-import {DeterministicUUIDGenerator} from "../../../../../src/core/logseq-reversible-transaction-tracker/DeterministicUUIDGenerator";
 
 const pageName1 = "MoveBlockCommandTestPage1_" + Date.now();
 const pageName2 = "MoveBlockCommandTestPage2_" + Date.now();
@@ -44,14 +43,13 @@ describe.skipIf(!shouldRunTests())("MoveBlockCommand", () => {
         const srcBlock = await logseq.Editor.appendBlockInPage(page1.uuid, "Test Block A");
         const destPageUuid = page2.uuid;
 
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new MoveBlockCommand({
             srcBlockUuid: srcBlock!.uuid,
             destBlockUuid: destPageUuid,
             children: true
         });
 
-        await command.execute(gen);
+        await command.execute();
 
         const movedBlock = await logseq.Editor.getBlock(srcBlock!.uuid);
         expect(movedBlock).not.toBeNull();
@@ -62,40 +60,39 @@ describe.skipIf(!shouldRunTests())("MoveBlockCommand", () => {
 
     // This works in logseq but errors out in the plugin. This is ok for now as we dont know how to revert this op yet.
     // it("Trying to move a page under another page works with children true works.", async () => {
-    //     const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
     //     const command = new MoveBlockCommand({
     //         srcBlockUuid: page1.uuid,
     //         destBlockUuid: page2.uuid,
     //         children: true
     //     });
     //
-    //     await command.execute(gen);
+    //     await command.execute();
     //     await command.revert();
     // }, 60_000);
 
     it("Trying to move a page under another page throws.", async () => {
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new MoveBlockCommand({
             srcBlockUuid: page1.uuid,
             destBlockUuid: page2.uuid,
             children: false
         });
 
-        await expect(command.execute(gen)).rejects.toThrow("Cannot move a page. Src block UUID must be a block UUID.");
+        await expect(command.execute()).rejects.toThrow(
+            "Cannot move a page. Src block UUID must be a block UUID."
+        );
     }, 60_000);
 
     it("Moving block from one place to another block works. Use block uuid for desk.", async () => {
         const srcBlock = await logseq.Editor.appendBlockInPage(page1.uuid, "Source Block D");
         const destBlock = await logseq.Editor.appendBlockInPage(page2.uuid, "Dest Block D");
 
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new MoveBlockCommand({
             srcBlockUuid: srcBlock!.uuid,
             destBlockUuid: destBlock!.uuid,
             children: true
         });
 
-        await command.execute(gen);
+        await command.execute();
 
         const movedBlock = await logseq.Editor.getBlock(srcBlock!.uuid);
         expect(movedBlock!.parent.id).toBe(destBlock!.id);
@@ -109,14 +106,13 @@ describe.skipIf(!shouldRunTests())("MoveBlockCommand", () => {
             sibling: false
         });
 
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new MoveBlockCommand({
             srcBlockUuid: parentBlock!.uuid,
             destBlockUuid: childBlock!.uuid,
             children: true
         });
 
-        await expect(command.execute(gen)).rejects.toThrow();
+        await expect(command.execute()).rejects.toThrow();
     }, 60_000);
 
     it("should throw error when children is true and before is true.", () => {

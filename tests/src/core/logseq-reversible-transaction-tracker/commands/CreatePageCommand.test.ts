@@ -1,6 +1,5 @@
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
 import {CreatePageCommand} from "../../../../../src/core/logseq-reversible-transaction-tracker/commands/CreatePageCommand";
-import {DeterministicUUIDGenerator} from "../../../../../src/core/logseq-reversible-transaction-tracker/DeterministicUUIDGenerator";
 
 const pageName = "CreatePageCommandTestPage_" + Date.now();
 const deletedPageName = "CreatePageCommandDeletedPageTestPage_" + Date.now();
@@ -28,17 +27,16 @@ describe.skipIf(!shouldRunTests())("CreatePageCommand", () => {
     }, 60_000);
 
     it("Create page using execute() and then revert and then execute again works.", async () => {
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new CreatePageCommand({pageName});
 
-        const createdPage = await command.execute(gen);
+        const createdPage = await command.execute();
         expect(createdPage.uuid).toBeTruthy();
         expect(await logseq.Editor.getPage(pageName)).not.toBeNull();
 
         await command.revert();
         await waitForLogseqDb();
 
-        const recreatedPage = await command.execute(gen);
+        const recreatedPage = await command.execute();
         expect(recreatedPage.uuid).toBe(createdPage.uuid);
         expect(await logseq.Editor.getPage(pageName)).not.toBeNull();
     }, 60_000);
@@ -51,10 +49,9 @@ describe.skipIf(!shouldRunTests())("CreatePageCommand", () => {
         await logseq.Editor.deletePage(deletedPageName);
         await waitForLogseqDb();
 
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new CreatePageCommand({pageName: deletedPageName});
 
-        await expect(command.execute(gen)).rejects.toThrow(
+        await expect(command.execute()).rejects.toThrow(
             `Page already exists as deleted: ${deletedPageName}`
         );
     }, 60_000);
@@ -66,11 +63,8 @@ describe.skipIf(!shouldRunTests())("CreatePageCommand", () => {
         });
         await waitForLogseqDb();
 
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new CreatePageCommand({pageName: existingPageName});
 
-        await expect(command.execute(gen)).rejects.toThrow(
-            `Page already exists: ${existingPageName}`
-        );
+        await expect(command.execute()).rejects.toThrow(`Page already exists: ${existingPageName}`);
     }, 60_000);
 });

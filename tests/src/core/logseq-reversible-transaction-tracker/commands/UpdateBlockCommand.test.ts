@@ -1,7 +1,6 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
 import {UpdateBlockCommand} from "../../../../../src/core/logseq-reversible-transaction-tracker/commands/UpdateBlockCommand";
-import {DeterministicUUIDGenerator} from "../../../../../src/core/logseq-reversible-transaction-tracker/DeterministicUUIDGenerator";
 
 const pageName = "UpdateBlockCommandTestPage_" + Date.now();
 const originalContent = "Original update block content";
@@ -35,10 +34,9 @@ describe.skipIf(!shouldRunTests())("UpdateBlockCommand", () => {
     }, 60_000);
 
     it("should update block content and revert it.", async () => {
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new UpdateBlockCommand({blockUuid: block.uuid, content: updatedContent});
 
-        await command.execute(gen);
+        await command.execute();
 
         const updatedBlock = await logseq.Editor.getBlock(block.uuid);
         expect(updatedBlock?.content).toBe(updatedContent);

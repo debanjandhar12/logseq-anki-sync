@@ -1,7 +1,6 @@
 import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
 import {InsertBlockCommand} from "../../../../../src/core/logseq-reversible-transaction-tracker/commands/InsertBlockCommand";
-import {DeterministicUUIDGenerator} from "../../../../../src/core/logseq-reversible-transaction-tracker/DeterministicUUIDGenerator";
 
 const pageName = "InsertBlockCommandTestPage_" + Date.now();
 const waitForLogseqDb = () => new Promise((resolve) => setTimeout(resolve, 300));
@@ -33,14 +32,13 @@ describe.skipIf(!shouldRunTests())("InsertBlockCommand", () => {
     }, 60_000);
 
     it("should insert block into a page by page uuid, and revert it", async () => {
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new InsertBlockCommand({
             parentUuid: page.uuid,
             content: "Test Block 1",
             sibling: false
         });
 
-        const block = await command.execute(gen);
+        const block = await command.execute();
         expect(block.content).toBe("Test Block 1");
 
         const insertedBlock = await logseq.Editor.getBlock(block.uuid);
@@ -57,14 +55,13 @@ describe.skipIf(!shouldRunTests())("InsertBlockCommand", () => {
         const parentBlock = (await logseq.Editor.getBlock(parentBlockRaw!.uuid))!;
         expect(parentBlock).not.toBeNull();
 
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new InsertBlockCommand({
             parentUuid: parentBlock!.uuid,
             content: "Test Block 2",
             sibling: true // Insert as sibling to parentBlock
         });
 
-        const block = await command.execute(gen);
+        const block = await command.execute();
         expect(block.content).toBe("Test Block 2");
 
         const insertedBlock = await logseq.Editor.getBlock(block.uuid);
@@ -81,14 +78,13 @@ describe.skipIf(!shouldRunTests())("InsertBlockCommand", () => {
         const parentBlock = await logseq.Editor.appendBlockInPage(page.uuid, "Parent Block 3");
         expect(parentBlock).not.toBeNull();
 
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new InsertBlockCommand({
             parentUuid: parentBlock!.uuid,
             content: "Test Block 3 (child)",
             sibling: false
         });
 
-        const block = await command.execute(gen);
+        const block = await command.execute();
         expect(block.content).toBe("Test Block 3 (child)");
 
         const insertedBlock = await logseq.Editor.getBlock(block.uuid);

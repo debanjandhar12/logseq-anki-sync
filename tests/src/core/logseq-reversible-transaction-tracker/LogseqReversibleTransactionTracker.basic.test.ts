@@ -32,7 +32,7 @@ describe.skipIf(!shouldRunTests())("LogseqReversibleTransactionTracker basic", (
     }, 60_000);
 
     it("executes and reverts page creation, then executes and reverts a transaction with an inserted block", async () => {
-        let tracker = new LogseqReversibleTransactionTracker(crypto.randomUUID());
+        let tracker = new LogseqReversibleTransactionTracker();
         tracker.addCommand(new CreatePageCommand({pageName}));
 
         const createdPage = (await tracker.execute()) as PageEntity;

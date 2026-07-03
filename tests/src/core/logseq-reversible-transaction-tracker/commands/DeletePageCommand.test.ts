@@ -1,7 +1,6 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
 import {DeletePageCommand} from "../../../../../src/core/logseq-reversible-transaction-tracker/commands/DeletePageCommand";
-import {DeterministicUUIDGenerator} from "../../../../../src/core/logseq-reversible-transaction-tracker/DeterministicUUIDGenerator";
 
 const pageName = "DeletePageCommandTestPage_" + Date.now();
 const blockContent = "DeletePageCommand test block";
@@ -35,10 +34,9 @@ describe.skipIf(!shouldRunTests())("DeletePageCommand", () => {
     }, 60_000);
 
     it("Delete page using execute() and then revert works.", async () => {
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new DeletePageCommand({pageUuid: page.uuid});
 
-        await command.execute(gen);
+        await command.execute();
         await waitForLogseqDb();
 
         await command.revert();
@@ -50,10 +48,9 @@ describe.skipIf(!shouldRunTests())("DeletePageCommand", () => {
     }, 60_000);
 
     it("Trying to delete a block as a page throws.", async () => {
-        const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new DeletePageCommand({pageUuid: block.uuid});
 
-        await expect(command.execute(gen)).rejects.toThrow(
+        await expect(command.execute()).rejects.toThrow(
             "Cannot delete a block. Page UUID provided must be that of a page."
         );
     }, 60_000);
