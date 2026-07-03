@@ -3,7 +3,7 @@ import {isPageSoftDeleted} from "src/core/logseq-reversible-transaction-tracker/
 import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
 
 export class LogseqPageDataPrinter {
-    public static async print(changedPages: string[]): Promise<string> {
+    public static async print(changedPages: PageIdentity[]): Promise<string> {
         const printedPages: string[] = [];
         const printedPageUUIDs = new Set<string>();
         const printedMissingPageKeys = new Set<string>();

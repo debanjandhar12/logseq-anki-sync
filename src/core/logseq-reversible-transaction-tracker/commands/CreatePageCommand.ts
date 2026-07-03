@@ -1,4 +1,4 @@
-import type {BlockUUID} from "@logseq/libs/dist/LSPlugin";
+import type {BlockUUID, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {isPageSoftDeleted} from "src/core/logseq-reversible-transaction-tracker/commands/utils/isPageSoftDeleted";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
@@ -17,6 +17,7 @@ const CreatePageCommandDataSchema = CreatePageCommandArgsSchema.extend({
 
 export class CreatePageCommand extends BaseReversibleCommand {
     private pageUUID: BlockUUID | undefined;
+    private deletedPage: PageEntity | undefined;
     public readonly args: CreatePageCommandArgs;
 
     public constructor(args: CreatePageCommandArgs) {
@@ -34,6 +35,10 @@ export class CreatePageCommand extends BaseReversibleCommand {
         const customUUID = deterministicUUIDGenerator.getUUID();
 
         if (existingPage) {
+            if (existingPage.uuid !== this.deletedPage?.uuid) {
+                throw new Error(`Page already exists as deleted: ${this.args.pageName}`);
+            }
+
             // @ts-ignore restorePage exists in unreleased Logseq APIs but is not in current plugin types.
             await logseq.Editor.restorePage(existingPage.uuid);
 
@@ -42,6 +47,7 @@ export class CreatePageCommand extends BaseReversibleCommand {
 
             const page = await normalizePage(rawPage);
             this.pageUUID = page.uuid;
+            this.deletedPage = undefined;
             this.changedPages.push(page.uuid);
             return page;
         }
@@ -62,6 +68,10 @@ export class CreatePageCommand extends BaseReversibleCommand {
     public async revert(): Promise<void> {
         if (!this.pageUUID) throw new Error("Execute must be called before revert");
 
+        const page = await logseq.Editor.getPage(this.pageUUID);
+        if (!page || isPageSoftDeleted(page)) throw new Error("Created page is already deleted");
+
+        this.deletedPage = await normalizePage(page);
         await logseq.Editor.deletePage(this.pageUUID);
     }
 }

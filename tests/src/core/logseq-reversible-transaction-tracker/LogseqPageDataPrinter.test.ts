@@ -10,7 +10,8 @@ vi.mock("../../../../src/logseq/LogseqPropertiesHelper", () => ({
     }
 }));
 
-const logseqPropertiesHelper = vi.mocked(LogseqPropertiesHelper);
+const getPage = vi.mocked(LogseqPropertiesHelper.getPage);
+const getPageBlocksTree = vi.mocked(LogseqPropertiesHelper.getPageBlocksTree);
 
 function page(overrides: Partial<PageEntity> = {}): PageEntity {
     return {
@@ -38,10 +39,10 @@ describe("LogseqPageDataPrinter", () => {
     });
 
     test("prints a resolved page only once when multiple identities point to it", async () => {
-        logseqPropertiesHelper.getPage.mockResolvedValue(
+        getPage.mockResolvedValue(
             page({uuid: "page-uuid", name: "hello worldxs29", originalName: "hello worldxs29"})
         );
-        logseqPropertiesHelper.getPageBlocksTree.mockResolvedValue([
+        getPageBlocksTree.mockResolvedValue([
             block({uuid: "parent-uuid", content: "Parent Block"})
         ]);
 
@@ -52,8 +53,8 @@ describe("LogseqPageDataPrinter", () => {
 
         expect(printedPages).toBe(`# hello worldxs29
 * Parent Block`);
-        expect(logseqPropertiesHelper.getPage).toHaveBeenCalledTimes(2);
-        expect(logseqPropertiesHelper.getPageBlocksTree).toHaveBeenCalledTimes(1);
+        expect(getPage).toHaveBeenCalledTimes(2);
+        expect(getPageBlocksTree).toHaveBeenCalledTimes(1);
     });
 
     test("prints soft deleted pages as blank pages", () => {
