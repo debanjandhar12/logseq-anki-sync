@@ -16,11 +16,11 @@ const firstPulledEntity = (rows: unknown[][]): Record<string, unknown> =>
 describe("Logseq DB query skill examples", () => {
     let page: PageEntity;
 
-    const shouldRunDbQueryTests = () =>
+    const shouldRunTests = () =>
         globalThis.isLogseqAvailable === true && globalThis.isLogseqCurrentIsDBGraph === true;
 
     beforeAll(async () => {
-        if (!shouldRunDbQueryTests()) return;
+        if (!shouldRunTests()) return;
 
         page = await logseq.Editor.createPage(pageName, {}, {createFirstBlock: false});
 
@@ -29,16 +29,16 @@ describe("Logseq DB query skill examples", () => {
         await logseq.Editor.appendBlockInPage(page.uuid, "Skill query property block");
 
         await waitForLogseqDb();
-    }, 30_000);
+    }, 60_000);
 
     afterAll(async () => {
-        if (!shouldRunDbQueryTests()) return;
+        if (!shouldRunTests()) return;
 
         await logseq.Editor.deletePage(pageName);
         await waitForLogseqDb();
-    }, 30_000);
+    }, 60_000);
 
-    test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+    test.skipIf(!shouldRunTests())(
         "SKILL_LOGSEQ_DATASCRIPT_QUERY: queries blocks by title text",
         async () => {
             const rows = await runDatalog(`
@@ -52,7 +52,7 @@ describe("Logseq DB query skill examples", () => {
         }
     );
 
-    test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+    test.skipIf(!shouldRunTests())(
         "SKILL_LOGSEQ_DATASCRIPT_QUERY: queries blocks by lowercase page name input",
         async () => {
             const rows = await runDatalog(
@@ -72,7 +72,7 @@ describe("Logseq DB query skill examples", () => {
         }
     );
 
-    test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+    test.skipIf(!shouldRunTests())(
         "SKILL_LOGSEQ_DATASCRIPT_QUERY: queries pages by name",
         async () => {
             const pages = await runDatalog(`
@@ -85,7 +85,7 @@ describe("Logseq DB query skill examples", () => {
         }
     );
 
-    test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+    test.skipIf(!shouldRunTests())(
         "SKILL_LOGSEQ_DATASCRIPT_QUERY: queries with not clauses",
         async () => {
             const notRows = await runDatalog(`
@@ -100,7 +100,7 @@ describe("Logseq DB query skill examples", () => {
         }
     );
 
-    test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+    test.skipIf(!shouldRunTests())(
         "SKILL_LOGSEQ_DATALOG_QUERY: supports aggregation queries",
         async () => {
             const blockCount = await runDatalog(`
@@ -132,7 +132,7 @@ describe("Logseq DB query skill examples", () => {
         }
     );
 
-    test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+    test.skipIf(!shouldRunTests())(
         "SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS: confirms DB replacements for removed file graph attributes",
         async () => {
             const blockTitleRows = await runDatalog(`
