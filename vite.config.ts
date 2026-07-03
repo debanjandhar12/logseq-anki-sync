@@ -68,6 +68,9 @@ export default defineConfig(({mode}) => {
             pool: "forks",
             singleFork: true,
             fileParallelism: false,
+            sequence: {
+                concurrent: false
+            },
             server: {
                 deps: {
                     inline: [/@floating-ui/]

@@ -5,17 +5,14 @@ import {DeterministicUUIDGenerator} from "../../../../../src/core/logseq-reversi
 
 const pageName = "InsertBlockCommandTestPage_" + Date.now();
 const waitForLogseqDb = () => new Promise((resolve) => setTimeout(resolve, 300));
+const shouldRunTests = () =>
+    globalThis.isLogseqAvailable === true && globalThis.isLogseqCurrentIsDBGraph === true;
 
-describe.sequential("InsertBlockCommand", () => {
+describe.skipIf(!shouldRunTests())("InsertBlockCommand", () => {
     let page: PageEntity;
 
-    const shouldRunTests = () =>
-        globalThis.isLogseqAvailable === true && globalThis.isLogseqCurrentIsDBGraph === true;
-
     beforeAll(async () => {
-        if (!shouldRunTests()) return;
-
-        let existingPage = await logseq.Editor.getPage(pageName);
+        const existingPage = await logseq.Editor.getPage(pageName);
         if (existingPage) {
             await logseq.Editor.deletePage(pageName);
             await waitForLogseqDb();
@@ -31,15 +28,11 @@ describe.sequential("InsertBlockCommand", () => {
     }, 60_000);
 
     afterAll(async () => {
-        if (!shouldRunTests()) return;
-
         await logseq.Editor.deletePage(pageName);
         await waitForLogseqDb();
     }, 60_000);
 
     it("should insert block into a page by page uuid, and revert it", async () => {
-        if (!shouldRunTests()) return;
-
         const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new InsertBlockCommand({
             parentUuid: page.uuid,
@@ -60,8 +53,6 @@ describe.sequential("InsertBlockCommand", () => {
     }, 60_000);
 
     it("should insert block by block uuid, and revert it", async () => {
-        if (!shouldRunTests()) return;
-
         const parentBlockRaw = await logseq.Editor.appendBlockInPage(page.uuid, "Parent Block");
         const parentBlock = (await logseq.Editor.getBlock(parentBlockRaw!.uuid))!;
         expect(parentBlock).not.toBeNull();
@@ -87,8 +78,6 @@ describe.sequential("InsertBlockCommand", () => {
     }, 60_000);
 
     it("should insert block as child when sibling is false", async () => {
-        if (!shouldRunTests()) return;
-
         const parentBlock = await logseq.Editor.appendBlockInPage(page.uuid, "Parent Block 3");
         expect(parentBlock).not.toBeNull();
 
