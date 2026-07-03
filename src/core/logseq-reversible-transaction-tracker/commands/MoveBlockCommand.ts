@@ -48,7 +48,23 @@ export class MoveBlockCommand extends BaseReversibleCommand {
             this.args.srcBlockUuid as BlockIdentity,
             "Source"
         );
-        await requireActiveBlock(this.args.destBlockUuid as BlockIdentity, "Destination");
+        const destBlock = await requireActiveBlock(
+            this.args.destBlockUuid as BlockIdentity,
+            "Destination"
+        );
+
+        if (originalBlock.id === destBlock.id) {
+            throw new Error("Cannot move a block to itself.");
+        }
+
+        let currentParentId = destBlock.parent?.id;
+        while (currentParentId != null) {
+            if (currentParentId === originalBlock.id) {
+                throw new Error("Cannot move a parent block into its own descendant.");
+            }
+            const parentBlock = await logseq.Editor.getBlock(currentParentId);
+            currentParentId = parentBlock?.parent?.id;
+        }
 
         const previousBlock = await LogseqEditor.getPreviousBlock(
             this.args.srcBlockUuid as BlockIdentity,
