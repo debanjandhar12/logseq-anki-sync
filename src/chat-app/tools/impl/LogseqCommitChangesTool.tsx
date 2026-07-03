@@ -90,6 +90,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         }
         const beforeChanges = await LogseqPageDataPrinter.print(changedPages);
 
+        console.log("prepareReview", beforeChanges, afterChanges);
         return {beforeChanges, afterChanges};
     }
 
