@@ -1,4 +1,5 @@
 import type {BlockEntity, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {isPageSoftDeleted} from "src/core/logseq-reversible-transaction-tracker/commands/utils/isPageSoftDeleted";
 import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
 
 export class LogseqPageDataPrinter {
@@ -30,6 +31,8 @@ export class LogseqPageDataPrinter {
 
     public static printPageTree(page: PageEntity, blocks: BlockEntity[]): string {
         const lines = [`# ${page.originalName ?? page.name}`];
+        if (isPageSoftDeleted(page)) return lines.join("\n");
+
         const pagePropertyLines = LogseqPageDataPrinter.getPropertyLines(page);
         if (pagePropertyLines.length > 0) {
             lines.push(...LogseqPageDataPrinter.printBullet(pagePropertyLines, 0));
