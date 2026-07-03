@@ -1,9 +1,9 @@
 import type {BlockUUID} from "@logseq/libs/dist/LSPlugin";
+import {isPageSoftDeleted} from "src/core/logseq-reversible-transaction-tracker/commands/utils/isPageSoftDeleted";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {normalizePage} from "./utils/normalizePage";
-import {isPageSoftDeleted} from "src/core/logseq-reversible-transaction-tracker/commands/utils/isPageSoftDeleted";
 
 export const CreatePageCommandArgsSchema = z.object({
     pageName: z.string().describe("Name of the Logseq page to create.")
@@ -30,7 +30,12 @@ export class CreatePageCommand extends BaseReversibleCommand {
             throw new Error(`Page already exists: ${this.args.pageName}`);
         }
 
+        // Need to comsume uuid for both restore and create to avoid issues with execute -> revert -> execute.
+        const customUUID = deterministicUUIDGenerator.getUUID();
+
         if (existingPage) {
+            deterministicUUIDGenerator.getUUID();
+
             // @ts-ignore restorePage exists in unreleased Logseq APIs but is not in current plugin types.
             await logseq.Editor.restorePage(existingPage.uuid);
 
@@ -45,7 +50,7 @@ export class CreatePageCommand extends BaseReversibleCommand {
 
         const rawPage = await logseq.Editor.createPage(this.args.pageName, undefined, {
             redirect: false,
-            customUUID: deterministicUUIDGenerator.getUUID(),
+            customUUID: customUUID,
             createFirstBlock: false
         });
         if (!rawPage) throw new Error(`Logseq failed to create page: ${this.args.pageName}`);

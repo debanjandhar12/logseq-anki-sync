@@ -66,11 +66,17 @@ export async function normalizeBlock(block: BlockEntity): Promise<BlockEntity> {
 
     if (!block?.uuid) throw new Error("Block UUID is missing");
 
-    const normalizedBlock = {
-        ...block,
-        parent: {uuid: await resolveParentUUID(block.parent)},
-        page: {uuid: await resolvePageUUID(block.page)}
-    } as unknown as BlockEntity;
+    const normalizedBlock = block;
+    if (block.page?.id) {
+        normalizedBlock.page = {
+            uuid: await resolvePageUUID(block.page)
+        } as unknown as BlockEntity["page"];
+    }
+    if (block.parent?.id) {
+        normalizedBlock.parent = {
+            uuid: await resolveParentUUID(block.parent)
+        } as unknown as BlockEntity["parent"];
+    }
 
     if (Array.isArray(block.children)) {
         normalizedBlock.children = await Promise.all(
