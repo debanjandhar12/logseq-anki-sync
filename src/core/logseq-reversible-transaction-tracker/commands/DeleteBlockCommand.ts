@@ -1,4 +1,5 @@
 import type {BlockIdentity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
@@ -17,9 +18,8 @@ const DeleteBlockCommandDataSchema = DeleteBlockCommandArgsSchema.extend({
 });
 
 type DeletedBlockLocation = {
-    parentUuid: string;
-    previousSiblingUuid?: string;
-    nextSiblingUuid?: string;
+    previousBlockUuid: string;
+    isPreviousBlockParent: boolean;
 };
 
 export class DeleteBlockCommand extends BaseReversibleCommand {
@@ -35,13 +35,15 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
     public async execute(_deterministicUUIDGenerator: DeterministicUUIDGenerator) {
         const block = await requireActiveBlock(this.args.blockUuid as BlockIdentity);
 
-        const previousSibling = await logseq.Editor.getPreviousSiblingBlock(block.uuid);
-        const nextSibling = await logseq.Editor.getNextSiblingBlock(block.uuid);
+        const previousBlock = await LogseqEditor.getPreviousBlock(block.uuid, {parent: true});
+        const isPreviousBlockParent = await LogseqEditor.getWhetherPreviousBlockIsParent(
+            block.uuid
+        );
+        if (!previousBlock) throw new Error("Deleted block has no previous block or parent");
 
         this.deletedBlockLocation = {
-            parentUuid: block.parent.uuid,
-            previousSiblingUuid: previousSibling?.uuid,
-            nextSiblingUuid: nextSibling?.uuid
+            previousBlockUuid: previousBlock.uuid,
+            isPreviousBlockParent
         };
 
         const tempPageName = `deleted_block_${block.uuid}_${Date.now()}`;
@@ -67,7 +69,7 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
             throw new Error("Execute must be called before revert");
         }
 
-        const {parentUuid, previousSiblingUuid, nextSiblingUuid} = this.deletedBlockLocation;
+        const {previousBlockUuid, isPreviousBlockParent} = this.deletedBlockLocation;
 
         // @ts-ignore restorePage exists in unreleased Logseq APIs but is not in current plugin types.
         await logseq.Editor.restorePage(this.tempPageUUID);
@@ -78,23 +80,31 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
         }
 
         // The block retains its UUID through the soft-delete, so move it back to its original spot.
-        if (previousSiblingUuid) {
+        if (!isPreviousBlockParent) {
             await logseq.Editor.moveBlock(
                 this.args.blockUuid as BlockIdentity,
-                previousSiblingUuid as BlockIdentity,
-                {children: true}
-            );
-        } else if (nextSiblingUuid) {
-            await logseq.Editor.moveBlock(
-                this.args.blockUuid as BlockIdentity,
-                nextSiblingUuid as BlockIdentity,
-                {before: true, children: true}
+                previousBlockUuid as BlockIdentity,
+                {}
             );
         } else {
+            const nextBlock = await LogseqEditor.getNextBlock(previousBlockUuid as BlockIdentity, {
+                children: true
+            });
+
+            if (!nextBlock) {
+                await logseq.Editor.moveBlock(
+                    this.args.blockUuid as BlockIdentity,
+                    previousBlockUuid as BlockIdentity,
+                    {children: true}
+                );
+                await logseq.Editor.deletePage(this.tempPageUUID);
+                return;
+            }
+
             await logseq.Editor.moveBlock(
                 this.args.blockUuid as BlockIdentity,
-                parentUuid as BlockIdentity,
-                {children: true}
+                nextBlock.uuid as BlockIdentity,
+                {before: true}
             );
         }
 

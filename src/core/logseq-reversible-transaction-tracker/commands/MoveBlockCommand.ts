@@ -1,4 +1,5 @@
 import type {BlockIdentity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
@@ -6,12 +7,25 @@ import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {normalizeBlock} from "./utils/normalizeBlock";
 import {requireActiveBlock} from "./utils/validations";
 
-export const MoveBlockCommandArgsSchema = z.object({
-    srcBlockUuid: LogseqUUIDSchema.describe("UUID of the Logseq block to move."),
-    destBlockUuid: LogseqUUIDSchema.describe("UUID of the destination Logseq block."),
-    before: z.boolean().optional().describe("Move the source immediately before the destination."),
-    children: z.boolean().optional().describe("Keep source descendants attached.")
-});
+export const MoveBlockCommandArgsSchema = z
+    .object({
+        srcBlockUuid: LogseqUUIDSchema.describe("UUID of the Logseq block to move."),
+        destBlockUuid: LogseqUUIDSchema.describe("UUID of the destination Logseq block."),
+        before: z
+            .boolean()
+            .optional()
+            .describe(
+                "Move src as a sibling BEFORE dest. Only meaningful with children=false. Omit when children=true."
+            ),
+        children: z
+            .boolean()
+            .default(false)
+            .describe("Make src a child of dest. When true, `before` must be omitted.")
+    })
+    .refine((args) => !(args.children === true && args.before !== undefined), {
+        message: "`before` is meaningless when `children` is true. Omit `before`.",
+        path: ["before"]
+    });
 
 export type MoveBlockCommandArgs = z.infer<typeof MoveBlockCommandArgsSchema>;
 
@@ -20,10 +34,11 @@ const MoveBlockCommandDataSchema = MoveBlockCommandArgsSchema.extend({
 });
 
 export class MoveBlockCommand extends BaseReversibleCommand {
-    private originalParent: BlockIdentity | undefined;
+    private originalPreviousBlockUuid: string | undefined;
+    private originalIsPreviousBlockParent: boolean | undefined;
     public readonly args: MoveBlockCommandArgs;
 
-    public constructor(args: MoveBlockCommandArgs) {
+    public constructor(args: z.input<typeof MoveBlockCommandArgsSchema>) {
         super();
         this.args = MoveBlockCommandArgsSchema.parse(args);
     }
@@ -35,7 +50,18 @@ export class MoveBlockCommand extends BaseReversibleCommand {
         );
         await requireActiveBlock(this.args.destBlockUuid as BlockIdentity, "Destination");
 
-        this.originalParent = originalBlock.parent.uuid;
+        const previousBlock = await LogseqEditor.getPreviousBlock(
+            this.args.srcBlockUuid as BlockIdentity,
+            {parent: true}
+        );
+        const isPreviousBlockParent = await LogseqEditor.getWhetherPreviousBlockIsParent(
+            this.args.srcBlockUuid as BlockIdentity
+        );
+        if (!previousBlock) throw new Error("Source block has no previous block or parent");
+
+        this.originalPreviousBlockUuid = previousBlock.uuid;
+        this.originalIsPreviousBlockParent = isPreviousBlockParent;
+
         await logseq.Editor.moveBlock(
             this.args.srcBlockUuid as BlockIdentity,
             this.args.destBlockUuid as BlockIdentity,
@@ -51,13 +77,37 @@ export class MoveBlockCommand extends BaseReversibleCommand {
     }
 
     public async revert(): Promise<void> {
-        if (!this.originalParent) throw new Error("Execute must be called before revert");
+        if (!this.originalPreviousBlockUuid || this.originalIsPreviousBlockParent === undefined) {
+            throw new Error("Execute must be called before revert");
+        }
 
-        await logseq.Editor.moveBlock(
-            this.args.srcBlockUuid as BlockIdentity,
-            this.originalParent as BlockIdentity,
-            {children: true}
-        );
+        if (!this.originalIsPreviousBlockParent) {
+            await logseq.Editor.moveBlock(
+                this.args.srcBlockUuid as BlockIdentity,
+                this.originalPreviousBlockUuid as BlockIdentity,
+                {}
+            );
+        } else {
+            const nextBlock = await LogseqEditor.getNextBlock(
+                this.originalPreviousBlockUuid as BlockIdentity,
+                {children: true}
+            );
+
+            if (!nextBlock) {
+                await logseq.Editor.moveBlock(
+                    this.args.srcBlockUuid as BlockIdentity,
+                    this.originalPreviousBlockUuid as BlockIdentity,
+                    {children: true}
+                );
+                return;
+            }
+
+            await logseq.Editor.moveBlock(
+                this.args.srcBlockUuid as BlockIdentity,
+                nextBlock.uuid as BlockIdentity,
+                {before: true}
+            );
+        }
     }
 }
 
