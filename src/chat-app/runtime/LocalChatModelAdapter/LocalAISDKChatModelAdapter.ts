@@ -67,11 +67,10 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 }
             });
 
-            // Preserved so stream errors can keep already-rendered text before appending the error.
             let partialText = "";
             let content: NonNullable<ChatModelRunResult["content"]> = [];
             let usage: LanguageModelUsage | undefined;
-            let toolExecutionQueue = Promise.resolve();
+            const toolCallsToExecute: import("./tool-execution").ToolCallMessagePart[] = [];
 
             for await (const part of result.fullStream) {
                 switch (part.type) {
@@ -94,20 +93,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
 
                         const tool = context.tools?.[toolCall.toolName];
                         if (tool?.type !== "human" && tool?.execute) {
-                            toolExecutionQueue = toolExecutionQueue.then(async () => {
-                                const toolResult = await executeFrontendTool(
-                                    tool,
-                                    toolCall,
-                                    abortSignal,
-                                    getCurrentBranchMessages(messages, unstable_getMessage())
-                                );
-                                content = content.map((contentPart) =>
-                                    contentPart.type === "tool-call" &&
-                                    contentPart.toolCallId === toolCall.toolCallId
-                                        ? {...contentPart, ...toolResult}
-                                        : contentPart
-                                );
-                            });
+                            toolCallsToExecute.push(toolCall);
                         }
                         break;
                     }
@@ -122,7 +108,27 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 }
             }
 
-            await toolExecutionQueue;
+            for (const toolCall of toolCallsToExecute) {
+                const tool = context.tools![toolCall.toolName]!;
+                const toolResult = await executeFrontendTool(
+                    tool,
+                    toolCall,
+                    abortSignal,
+                    getCurrentBranchMessages(messages, unstable_getMessage())
+                );
+
+                content = content.map((contentPart) =>
+                    contentPart.type === "tool-call" &&
+                    contentPart.toolCallId === toolCall.toolCallId
+                        ? {...contentPart, ...toolResult}
+                        : contentPart
+                );
+
+                yield {
+                    content,
+                    status: {type: "requires-action", reason: "tool-calls"}
+                };
+            }
 
             const tokenUsage = usage ? normalizeTokenUsage(usage) : undefined;
             const hasToolCalls = content.some((part) => part.type === "tool-call");
