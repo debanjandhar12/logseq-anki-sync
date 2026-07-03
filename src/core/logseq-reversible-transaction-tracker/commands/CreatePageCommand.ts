@@ -34,8 +34,6 @@ export class CreatePageCommand extends BaseReversibleCommand {
         const customUUID = deterministicUUIDGenerator.getUUID();
 
         if (existingPage) {
-            deterministicUUIDGenerator.getUUID();
-
             // @ts-ignore restorePage exists in unreleased Logseq APIs but is not in current plugin types.
             await logseq.Editor.restorePage(existingPage.uuid);
 

@@ -41,22 +41,21 @@ export class LogseqTextSearchTool extends BaseChatToolWithDefaultUI<
     ): Promise<LogseqTextSearchResult> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
-            if (transactionTracker.getCommands().length > 0) {
-                throw new Error(
-                    "Cannot query Logseq while there are uncommitted Logseq changes. Commit or clear the pending changes first."
+            await transactionTracker.execute();
+            try {
+                // @ts-ignore
+                if (!LogseqAppInfoFetcher.checkHostAccess()) {
+                    throw new Error(
+                        "Window.parent access is required to call logseq.api.search. Plugin API does not have this method."
+                    );
+                }
+                const result = await (WindowParentBridge.getLogseqObject() as any).api.search(
+                    searchString
                 );
+                return {success: true, result};
+            } finally {
+                await transactionTracker.revert();
             }
-
-            // @ts-ignore
-            if (!LogseqAppInfoFetcher.checkHostAccess()) {
-                throw new Error(
-                    "Window.parent access is required to call logseq.api.search. Plugin API does not have this method."
-                );
-            }
-            const result = await (WindowParentBridge.getLogseqObject() as any).api.search(
-                searchString
-            );
-            return {success: true, result};
         } catch (err) {
             return {
                 success: false,

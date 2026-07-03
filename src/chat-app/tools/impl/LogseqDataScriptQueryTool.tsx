@@ -40,19 +40,18 @@ export class LogseqDataScriptQueryTool extends BaseChatToolWithDefaultUI<
     ): Promise<LogseqDataScriptQueryResult> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
-            if (transactionTracker.getCommands().length > 0) {
-                throw new Error(
-                    "Cannot query Logseq while there are uncommitted Logseq changes. Commit or clear the pending changes first."
-                );
+            await transactionTracker.execute();
+            try {
+                let result: any;
+                if (inputs && inputs.length > 0) {
+                    result = await logseq.DB.datascriptQuery(datalogString, ...inputs);
+                } else {
+                    result = await logseq.DB.datascriptQuery(datalogString);
+                }
+                return {success: true, result};
+            } finally {
+                await transactionTracker.revert();
             }
-
-            let result: any;
-            if (inputs && inputs.length > 0) {
-                result = await logseq.DB.datascriptQuery(datalogString, ...inputs);
-            } else {
-                result = await logseq.DB.datascriptQuery(datalogString);
-            }
-            return {success: true, result};
         } catch (err) {
             return {
                 success: false,

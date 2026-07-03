@@ -43,15 +43,17 @@ export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
             await transactionTracker.execute();
             try {
                 const block = await LogseqPropertiesHelper.getBlock(uuid, {includeChildren});
-                const page = block ? null : await LogseqPropertiesHelper.getPage(uuid);
+                const page = logseq.Editor.isPageBlock(block)
+                    ? await LogseqPropertiesHelper.getPage(uuid)
+                    : block;
 
                 if (!block && !page) {
                     return {success: false, error: `Logseq block not found: ${uuid}`};
                 }
 
-                return block
-                    ? {success: true, type: "block", block}
-                    : {success: true, type: "page", block: page};
+                return page
+                    ? {success: true, type: "page", block: page}
+                    : {success: true, type: "block", block};
             } finally {
                 await transactionTracker.revert();
             }
