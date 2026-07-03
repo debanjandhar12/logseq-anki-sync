@@ -3,7 +3,7 @@ import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import type {LogseqReversibleTransactionResult} from "../types";
 
 export abstract class BaseReversibleCommand {
-    protected changedPages: PageIdentity[] = [];
+    protected changedPages: string[] = [];
 
     public abstract execute(
         deterministicUUIDGenerator: DeterministicUUIDGenerator
@@ -11,7 +11,7 @@ export abstract class BaseReversibleCommand {
 
     public abstract revert(): Promise<void>;
 
-    public getChangedPages(): PageIdentity[] {
+    public getChangedPages(): string[] {
         return [...this.changedPages];
     }
 

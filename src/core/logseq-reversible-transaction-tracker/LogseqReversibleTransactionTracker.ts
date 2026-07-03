@@ -7,7 +7,7 @@ import {LogseqReversibleTransactionCommandQueue} from "./LogseqReversibleTransac
 export class LogseqReversibleTransactionTracker {
     private readonly commandQueue = new LogseqReversibleTransactionCommandQueue();
     private UUID_GENERATION_SEED: string;
-    private changedPages: PageIdentity[] = [];
+    private changedPages: string[] = [];
 
     public constructor(UUID_GENERATION_SEED?: string) {
         this.UUID_GENERATION_SEED = UUID_GENERATION_SEED ?? uuidv4();
@@ -21,7 +21,7 @@ export class LogseqReversibleTransactionTracker {
         return this.commandQueue.getCommands();
     }
 
-    public getChangedPages(): PageIdentity[] {
+    public getChangedPages(): string[] {
         return [...this.changedPages];
     }
 

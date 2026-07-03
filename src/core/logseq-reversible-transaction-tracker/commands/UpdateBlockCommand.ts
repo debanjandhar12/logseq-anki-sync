@@ -4,6 +4,7 @@ import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
+import {resolvePageUUID} from "./utils/normalizeBlock";
 import {requireActiveBlock} from "./utils/validations";
 
 export const UpdateBlockCommandArgsSchema = z.object({
@@ -30,7 +31,7 @@ export class UpdateBlockCommand extends BaseReversibleCommand {
         const originalBlock = await requireActiveBlock(this.args.blockUuid as BlockIdentity);
         this.originalContent = originalBlock.content ?? "";
         if (originalBlock.page)
-            this.changedPages.push(originalBlock.page as unknown as PageIdentity);
+            this.changedPages.push(await resolvePageUUID(originalBlock.page));
         await LogseqEditor.updateBlock(this.args.blockUuid as BlockIdentity, this.args.content);
         return true;
     }

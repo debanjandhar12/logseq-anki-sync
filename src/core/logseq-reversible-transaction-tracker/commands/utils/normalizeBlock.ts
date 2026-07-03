@@ -2,7 +2,7 @@ import type {BlockEntity, EntityID, PageEntity} from "@logseq/libs/dist/LSPlugin
 
 type EntityReferenceWithID = {id: EntityID};
 type EntityReferenceWithUUID = {uuid: string};
-type ResolvableEntityReference = EntityID | EntityReferenceWithID | EntityReferenceWithUUID;
+export type ResolvableEntityReference = EntityID | EntityReferenceWithID | EntityReferenceWithUUID;
 
 function hasUUID(value: unknown): value is EntityReferenceWithUUID {
     return typeof value === "object" && value !== null && "uuid" in value;
@@ -18,7 +18,7 @@ function getEntityID(value: unknown): EntityID | undefined {
     return undefined;
 }
 
-async function resolvePageUUID(reference: ResolvableEntityReference | undefined): Promise<string> {
+export async function resolvePageUUID(reference: ResolvableEntityReference | undefined): Promise<string> {
     if (hasUUID(reference)) return reference.uuid;
 
     const id = getEntityID(reference);

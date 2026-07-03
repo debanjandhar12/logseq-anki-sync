@@ -5,6 +5,7 @@ import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {isPageSoftDeleted} from "./utils/isPageSoftDeleted";
+import {resolvePageUUID} from "./utils/normalizeBlock";
 import {requireActiveBlock} from "./utils/validations";
 
 export const DeleteBlockCommandArgsSchema = z.object({
@@ -59,7 +60,7 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
             children: true
         });
 
-        this.changedPages.push(block.page as unknown as PageIdentity);
+        this.changedPages.push(await resolvePageUUID(block.page));
         await logseq.Editor.deletePage(tempPage.uuid);
         return true;
     }

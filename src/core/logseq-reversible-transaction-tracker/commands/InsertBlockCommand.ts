@@ -3,7 +3,7 @@ import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
-import {normalizeBlock} from "./utils/normalizeBlock";
+import {normalizeBlock, resolvePageUUID} from "./utils/normalizeBlock";
 import {requireActiveBlock} from "./utils/validations";
 
 export const InsertBlockCommandArgsSchema = z
@@ -80,7 +80,7 @@ export class InsertBlockCommand extends BaseReversibleCommand {
 
         const block = await normalizeBlock(rawBlock);
         this.insertedBlockUUID = block.uuid;
-        this.changedPages.push(block.page as unknown as PageIdentity);
+        this.changedPages.push(await resolvePageUUID(block.page));
         return block;
     }
 

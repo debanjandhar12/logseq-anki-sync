@@ -4,7 +4,7 @@ import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
-import {normalizeBlock} from "./utils/normalizeBlock";
+import {normalizeBlock, resolvePageUUID} from "./utils/normalizeBlock";
 import {requireActiveBlock} from "./utils/validations";
 
 export const MoveBlockCommandArgsSchema = z
@@ -67,11 +67,11 @@ export class MoveBlockCommand extends BaseReversibleCommand {
             this.args.destBlockUuid as BlockIdentity,
             {before: this.args.before, children: this.args.children}
         );
-        this.changedPages.push(originalBlock.page as unknown as PageIdentity);
+        this.changedPages.push(await resolvePageUUID(originalBlock.page));
 
         const rawMovedBlock = await logseq.Editor.getBlock(this.args.srcBlockUuid as BlockIdentity);
         const movedBlock = rawMovedBlock ? await normalizeBlock(rawMovedBlock) : null;
-        if (movedBlock?.page) this.changedPages.push(movedBlock.page as unknown as PageIdentity);
+        if (movedBlock?.page) this.changedPages.push(await resolvePageUUID(movedBlock.page));
 
         return true;
     }
