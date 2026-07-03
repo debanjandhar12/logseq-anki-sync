@@ -73,7 +73,7 @@ describe.skipIf(!shouldRunTests())("MoveBlockCommand", () => {
     //     await command.revert();
     // }, 60_000);
 
-    it("Trying to move a page under anoter page works with children false throws.", async () => {
+    it("Trying to move a page under another page throws.", async () => {
         const gen = new DeterministicUUIDGenerator(crypto.randomUUID());
         const command = new MoveBlockCommand({
             srcBlockUuid: page1.uuid,
@@ -81,7 +81,7 @@ describe.skipIf(!shouldRunTests())("MoveBlockCommand", () => {
             children: false
         });
 
-        await expect(command.execute(gen)).rejects.toThrow();
+        await expect(command.execute(gen)).rejects.toThrow("Cannot move a page. Src block UUID must be a block UUID.");
     }, 60_000);
 
     it("Moving block from one place to another block works. Use block uuid for desk.", async () => {

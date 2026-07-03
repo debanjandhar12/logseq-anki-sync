@@ -1,4 +1,4 @@
-import type {BlockIdentity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
 import type {DeterministicUUIDGenerator} from "../DeterministicUUIDGenerator";
@@ -48,6 +48,10 @@ export class MoveBlockCommand extends BaseReversibleCommand {
             this.args.srcBlockUuid as BlockIdentity,
             "Source"
         );
+        if (logseq.Editor.isPageBlock(originalBlock)) {
+            throw new Error("Cannot move a page. Src block UUID must be a block UUID.");
+        }
+
         const destBlock = await requireActiveBlock(
             this.args.destBlockUuid as BlockIdentity,
             "Destination"
