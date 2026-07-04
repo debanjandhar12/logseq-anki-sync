@@ -3,6 +3,7 @@ import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatToo
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
+import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
 import {z} from "zod";
 
@@ -43,13 +44,10 @@ export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
             await transactionTracker.execute();
             try {
                 const block = await LogseqPropertiesHelper.getBlock(uuid, {includeChildren});
-                const page = logseq.Editor.isPageBlock(block)
-                    ? await LogseqPropertiesHelper.getPage(uuid)
-                    : block;
 
-                if (!block && !page) {
-                    return {success: false, error: `Logseq block not found: ${uuid}`};
-                }
+                const page = (block && !await LogseqEditor.isPageBlock(block))
+                    ? null
+                    : await LogseqPropertiesHelper.getPage(uuid);
 
                 return page
                     ? {success: true, type: "page", block: page}
