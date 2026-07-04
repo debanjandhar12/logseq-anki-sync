@@ -34,9 +34,19 @@ export const getLastLogseqReversibleTransactionTracker = (
 function findLogseqReversibleTransactionTrackerArtifact(
     artifact: unknown
 ): LogseqReversibleTransactionTrackerArtifact | undefined {
-    if (!Array.isArray(artifact)) return undefined;
+    if (typeof artifact !== "object" || artifact === null) return undefined;
+    if (!(LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_ARTIFACT_TYPE in artifact)) {
+        return undefined;
+    }
 
-    return artifact.find(isLogseqReversibleTransactionTrackerArtifactItem);
+    const transactionTrackerArtifact = artifact[
+        LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_ARTIFACT_TYPE
+    ] as unknown;
+    if (!isLogseqReversibleTransactionTrackerArtifactItem(transactionTrackerArtifact)) {
+        return undefined;
+    }
+
+    return transactionTrackerArtifact;
 }
 
 function isLogseqReversibleTransactionTrackerArtifactItem(

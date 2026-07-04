@@ -1,25 +1,28 @@
+import type {ReadonlyJSONObject, ReadonlyJSONValue} from "assistant-stream/utils";
 import {
     type LogseqReversibleTransactionTracker,
-    LogseqReversibleTransactionTrackerSerializer,
-    type SerializedLogseqReversibleTransactionTracker
+    LogseqReversibleTransactionTrackerSerializer
 } from "src/core/logseq-reversible-transaction-tracker";
 
 export const LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_ARTIFACT_TYPE =
     "LogseqReversibleTransactionTracker";
 
-export type LogseqReversibleTransactionTrackerArtifact = {
+export type LogseqReversibleTransactionTrackerArtifact = ReadonlyJSONObject & {
     type: typeof LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_ARTIFACT_TYPE;
-    LogseqReversibleTransactionTracker: SerializedLogseqReversibleTransactionTracker;
+    LogseqReversibleTransactionTracker: ReadonlyJSONValue;
 };
 
-export type ToolResponseArtifact = LogseqReversibleTransactionTrackerArtifact[];
+export type ToolResponseArtifact = ReadonlyJSONObject & {
+    [LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_ARTIFACT_TYPE]: LogseqReversibleTransactionTrackerArtifact;
+};
 
 export const createLogseqReversibleTransactionTrackerArtifact = (
     tracker: LogseqReversibleTransactionTracker
-): ToolResponseArtifact => [
-    {
+): ToolResponseArtifact => ({
+    [LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_ARTIFACT_TYPE]: {
         type: LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_ARTIFACT_TYPE,
-        LogseqReversibleTransactionTracker:
-            LogseqReversibleTransactionTrackerSerializer.serialize(tracker)
+        LogseqReversibleTransactionTracker: LogseqReversibleTransactionTrackerSerializer.serialize(
+            tracker
+        ) as ReadonlyJSONValue
     }
-];
+});
