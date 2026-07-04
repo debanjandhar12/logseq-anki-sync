@@ -54,10 +54,10 @@ Recommended rules:
 > 1. If data is part of the serialized command shape, make it a named readonly command property or keep it
 >    in `args`. If data is only needed while reverting the current in-memory execution, keep it private and
 >    do not include it in the codec.
-> 2. The durable-identifiers constructor parameter type is always derived from the serialized schema
+> 2. The `serializedState` constructor parameter type is always derived from the serialized schema
 >    (`Omit<XCommandSerialized, "type" | keyof XCommandArgs>`), never hand-written.
-> 3. Every command constructor has the same shape — `constructor(args, durableIdentifiers?: Partial<...>)`
->    — even when it has no durable identifiers (the derived type then resolves to `{}`).
+> 3. Every command constructor has the same shape — `constructor(args, serializedState?: Partial<...>)`
+>    — even when it has no serialized state beyond `args` (the derived type then resolves to `{}`).
 > 4. Every command file starts with a JSDoc block that enumerates its fields in two groups —
 >    **Serialized (durable) data** and **Runtime-only data** — so a reader can see at a glance what
 >    survives serialization and what is in-memory undo state. Example:
@@ -77,8 +77,8 @@ Each command should have only the pieces it actually needs:
 
 - `ArgsSchema`: validates model/user intent and remains exported for tool schemas.
 - `Args` type: inferred from `ArgsSchema`.
-- `SerializedSchema`: `ArgsSchema` plus `type` and any durable generated identifiers.
-- Command class: stores `args` and durable identifiers as public readonly properties.
+- `SerializedSchema`: `ArgsSchema` plus `type` and any serialized state fields (e.g. generated UUIDs).
+- Command class: stores `args` and serialized state as public readonly properties.
 - Codec: delegates repeated encode/decode mechanics to a small helper.
 - **File-level JSDoc** documenting serialized vs. runtime-only fields (see below).
 
@@ -106,7 +106,7 @@ const CreatePageCommandSerializedSchema = CreatePageCommandArgsSchema.extend({
     pageUuid: LogseqUUIDSchema
 });
 
-export type CreatePageCommandDurableIdentifiers = Omit<
+export type CreatePageCommandSerializedState = Omit<
     z.infer<typeof CreatePageCommandSerializedSchema>,
     "type" | keyof CreatePageCommandArgs
 >;
@@ -117,11 +117,11 @@ export class CreatePageCommand extends BaseReversibleCommand {
 
     public constructor(
         args: CreatePageCommandArgs,
-        durableIdentifiers?: Partial<CreatePageCommandDurableIdentifiers>
+        serializedState?: Partial<CreatePageCommandSerializedState>
     ) {
         super();
         this.args = CreatePageCommandArgsSchema.parse(args);
-        this.pageUuid = LogseqUUIDSchema.parse(durableIdentifiers?.pageUuid ?? uuidv4());
+        this.pageUuid = LogseqUUIDSchema.parse(serializedState?.pageUuid ?? uuidv4());
     }
 }
 ```
@@ -138,22 +138,23 @@ export const CreatePageCommandCodec = createReversibleCommandCodec({
 });
 ```
 
-### Deriving the durable-identifiers type
+### Deriving the serialized-state type
 
-Do not hand-write the `durableIdentifiers` parameter type. Derive it from the serialized schema so it
+Do not hand-write the `serializedState` parameter type. Derive it from the serialized schema so it
 can never drift from what the codec actually encodes:
 
 ```ts
-export type CreatePageCommandDurableIdentifiers = Omit<
+export type CreatePageCommandSerializedState = Omit<
     z.infer<typeof CreatePageCommandSerializedSchema>,
     "type" | keyof CreatePageCommandArgs
 >;
 ```
 
-This subtracts the discriminant and everything already in `args`, leaving exactly the durable generated
-fields (`pageUuid` here). The constructor takes `Partial<...>` of it so callers may omit every key when
-they want new UUIDs generated. For commands with no durable identifiers the derived type is `{}`, and
-the constructor's second parameter is still accepted (and optional) — see "Constructor Style" below.
+This subtracts the discriminant and everything already in `args`, leaving exactly the serialized
+fields beyond `args` (`pageUuid` here). The constructor takes `Partial<...>` of it so callers may omit
+every key when they want new UUIDs generated. For commands with no serialized state beyond `args` the
+derived type is `{}`, and the constructor's second parameter is still accepted (and optional) — see
+"Constructor Style" below.
 
 ## Codec Helper
 
@@ -220,37 +221,38 @@ Recommended names:
 
 ## Constructor Style
 
-Every command constructor has the same two-parameter shape, regardless of whether it owns durable
-generated identifiers:
+Every command constructor has the same two-parameter shape, regardless of whether it has any
+serialized state beyond `args`:
 
 ```ts
-constructor(args: XCommandArgs, durableIdentifiers?: Partial<XCommandDurableIdentifiers>)
+constructor(args: XCommandArgs, serializedState?: Partial<XCommandSerializedState>)
 ```
 
 Rules:
 
-- **Always use this shape** — even for commands with no durable identifiers. For those, the derived
-  `XCommandDurableIdentifiers` resolves to `{}`, so the second parameter is effectively ignored, but the
-  signature stays uniform across all seven commands. A reader never has to check whether a given command
-  takes a second argument; it always does.
-- The argument object contains **only** durable generated identifiers that survive serialization.
+- **Always use this shape** — even for commands with no serialized state beyond `args`. For those, the
+  derived `XCommandSerializedState` resolves to `{}`, so the second parameter is effectively ignored,
+  but the signature stays uniform across all seven commands. A reader never has to check whether a given
+  command takes a second argument; it always does.
+- The argument object contains **only** fields that survive serialization (typically generated UUIDs).
   Runtime-only undo snapshots (`originalContent`, `deletedPage`, move-position snapshots, etc.) stay
   private instance fields and are **never** passed through this object.
-- Never use bare positional identifiers (`new XCommand(args, pageUuid)`) and never use a generic name
-  like `state`. The parameter is always named `durableIdentifiers`.
+- Never use bare positional identifiers (`new XCommand(args, pageUuid)`). The parameter is always named
+  `serializedState` — not the bare, ambiguous `state` (which collides conceptually with in-memory undo
+  state), and not a command-specific name.
 - The `Partial<...>` wrapper means callers omit any key they want generated fresh, and a caller creating
   a brand-new command can pass nothing (or `{}`) for the second argument.
 
 Current call sites:
 
 ```ts
-new CreatePageCommand(args);                // durableIdentifiers omitted → fresh pageUuid generated
-new InsertBlockCommand(args);               // durableIdentifiers omitted → fresh blockUuid generated
-new UpdateBlockCommand(args);               // durableIdentifiers omitted; type is {}
-new MoveBlockCommand(args);                 // durableIdentifiers omitted; type is {}
+new CreatePageCommand(args);                // serializedState omitted → fresh pageUuid generated
+new InsertBlockCommand(args);               // serializedState omitted → fresh blockUuid generated
+new UpdateBlockCommand(args);               // serializedState omitted; type is {}
+new MoveBlockCommand(args);                 // serializedState omitted; type is {}
 ```
 
-Codec decode call sites pass the deserialized identifiers back in:
+Codec decode call sites pass the deserialized state back in:
 
 ```ts
 new CreatePageCommand(args, {pageUuid});
@@ -301,7 +303,7 @@ The refactor should not change persisted command shape unless explicitly chosen 
 5. Rename `*DataSchema` to `*SerializedSchema` while touching each file.
 6. Keep all runtime undo snapshots private and out of serialization.
 7. Add the file-level JSDoc block (Serialized data / Runtime-only data) to each command file as it is touched.
-8. Confirm every command constructor takes durable identifiers (if any) as a single object argument named `durableIdentifiers`.
+8. Confirm every command constructor takes a `serializedState` second argument (as `Partial<XCommandSerializedState>`) so the shape is uniform across all commands.
 9. Update serializer tests to assert the serialized JSON is unchanged.
 10. Run command serializer tests, TypeScript, and Biome checks for modified files.
 
