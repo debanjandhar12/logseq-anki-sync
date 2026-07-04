@@ -1,24 +1,21 @@
-import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {LogseqEditor} from "src/logseq/LogseqEditor";
-import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
-import {z} from "zod";
-
-const LogseqReadBlockArgsZodObj = z.object({
-    uuid: z.string().describe("UUID of the Logseq block or page to read."),
-    includeChildren: z.boolean().optional().describe("Whether to include child blocks")
-});
-
-type LogseqReadBlockArgs = z.infer<typeof LogseqReadBlockArgsZodObj>;
+import {
+    ReadBlockCommand,
+    type ReadBlockCommandArgs,
+    ReadBlockCommandArgsSchema,
+    type ReadBlockCommandResult
+} from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqReadBlockResult =
     | {
           success: true;
-          type: "block" | "page";
-          block: BlockEntity | PageEntity;
+          type: ReadBlockCommandResult["type"];
+          block: ReadBlockCommandResult["block"];
       }
     | {
           success: false;
@@ -26,39 +23,34 @@ type LogseqReadBlockResult =
       };
 
 export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
-    LogseqReadBlockArgs,
+    ReadBlockCommandArgs,
     LogseqReadBlockResult
 > {
     static readonly NAME = "logseq_read_block";
 
     readonly name = LogseqReadBlockTool.NAME;
     readonly description = "Read a Logseq block or page by UUID.";
-    readonly parameters = LogseqReadBlockArgsZodObj;
+    readonly parameters = ReadBlockCommandArgsSchema;
 
     async execute(
-        {uuid, includeChildren = false}: LogseqReadBlockArgs,
+        args: ReadBlockCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqReadBlockResult> {
+    ): Promise<LogseqReadBlockResult | ToolResponse<LogseqReadBlockResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
-            await transactionTracker.execute();
-            try {
-                const block = await LogseqPropertiesHelper.getBlock(uuid, {includeChildren});
+            transactionTracker.addCommand(new ReadBlockCommand(args));
 
-                const page = (block && !await LogseqEditor.isPageBlock(block))
-                    ? null
-                    : await LogseqPropertiesHelper.getPage(uuid);
+            const result = (await transactionTracker.execute()) as ReadBlockCommandResult;
+            await transactionTracker.revert();
 
-                return page
-                    ? {success: true, type: "page", block: page}
-                    : {success: true, type: "block", block};
-            } finally {
-                await transactionTracker.revert();
-            }
+            return new ToolResponse({
+                result: {success: true, ...result},
+                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            });
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to read Logseq block ${uuid}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to read Logseq block ${args.uuid}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }

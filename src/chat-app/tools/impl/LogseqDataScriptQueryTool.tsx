@@ -1,18 +1,14 @@
+import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {z} from "zod";
-
-const LogseqDataScriptQueryArgsZodObj = z.object({
-    datalogString: z.string().describe("Logseq DataScript datalog query string to execute."),
-    inputs: z
-        .array(z.string())
-        .default([])
-        .describe("Input strings to spread into the DataScript query after the query string.")
-});
-
-type LogseqDataScriptQueryArgs = z.infer<typeof LogseqDataScriptQueryArgsZodObj>;
+import {
+    DataScriptQueryCommand,
+    type DataScriptQueryCommandArgs,
+    DataScriptQueryCommandArgsSchema
+} from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqDataScriptQueryResult =
     | {
@@ -25,33 +21,30 @@ type LogseqDataScriptQueryResult =
       };
 
 export class LogseqDataScriptQueryTool extends BaseChatToolWithDefaultUI<
-    LogseqDataScriptQueryArgs,
+    DataScriptQueryCommandArgs,
     LogseqDataScriptQueryResult
 > {
     static readonly NAME = "logseq_datascript_query";
 
     readonly name = LogseqDataScriptQueryTool.NAME;
     readonly description = "Run a Logseq DataScript datalog query with optional string inputs.";
-    readonly parameters = LogseqDataScriptQueryArgsZodObj;
+    readonly parameters = DataScriptQueryCommandArgsSchema;
 
     async execute(
-        {datalogString, inputs}: LogseqDataScriptQueryArgs,
+        args: DataScriptQueryCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqDataScriptQueryResult> {
+    ): Promise<LogseqDataScriptQueryResult | ToolResponse<LogseqDataScriptQueryResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
-            await transactionTracker.execute();
-            try {
-                let result: any;
-                if (inputs && inputs.length > 0) {
-                    result = await logseq.DB.datascriptQuery(datalogString, ...inputs);
-                } else {
-                    result = await logseq.DB.datascriptQuery(datalogString);
-                }
-                return {success: true, result};
-            } finally {
-                await transactionTracker.revert();
-            }
+            transactionTracker.addCommand(new DataScriptQueryCommand(args));
+
+            const result = await transactionTracker.execute();
+            await transactionTracker.revert();
+
+            return new ToolResponse({
+                result: {success: true, result},
+                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            });
         } catch (err) {
             return {
                 success: false,

@@ -1,11 +1,14 @@
 import {z} from "zod";
 import {CreatePageCommandCodec} from "./CreatePageCommand";
+import {DataScriptQueryCommandCodec} from "./DataScriptQueryCommand";
 import {DeleteBlockCommandCodec} from "./DeleteBlockCommand";
 import {DeletePageCommandCodec} from "./DeletePageCommand";
 import {InsertBlockCommandCodec} from "./InsertBlockCommand";
 import {MoveBlockCommandCodec} from "./MoveBlockCommand";
+import {ReadBlockCommandCodec} from "./ReadBlockCommand";
 import {RenamePageCommandCodec} from "./RenamePageCommand";
 import {RestorePageCommandCodec} from "./RestorePageCommand";
+import {TextSearchCommandCodec} from "./TextSearchCommand";
 import {UpdateBlockCommandCodec} from "./UpdateBlockCommand";
 
 export {BaseReversibleCommand} from "./BaseReversibleCommand";
@@ -15,6 +18,12 @@ export {
     type CreatePageCommandArgsInput,
     CreatePageCommandArgsSchema
 } from "./CreatePageCommand";
+export {
+    DataScriptQueryCommand,
+    type DataScriptQueryCommandArgs,
+    type DataScriptQueryCommandArgsInput,
+    DataScriptQueryCommandArgsSchema
+} from "./DataScriptQueryCommand";
 export {
     DeleteBlockCommand,
     type DeleteBlockCommandArgs,
@@ -40,6 +49,13 @@ export {
     MoveBlockCommandArgsSchema
 } from "./MoveBlockCommand";
 export {
+    ReadBlockCommand,
+    type ReadBlockCommandArgs,
+    type ReadBlockCommandArgsInput,
+    ReadBlockCommandArgsSchema,
+    type ReadBlockCommandResult
+} from "./ReadBlockCommand";
+export {
     RenamePageCommand,
     type RenamePageCommandArgs,
     type RenamePageCommandArgsInput,
@@ -52,6 +68,12 @@ export {
     RestorePageCommandArgsSchema
 } from "./RestorePageCommand";
 export {
+    TextSearchCommand,
+    type TextSearchCommandArgs,
+    type TextSearchCommandArgsInput,
+    TextSearchCommandArgsSchema
+} from "./TextSearchCommand";
+export {
     UpdateBlockCommand,
     type UpdateBlockCommandArgs,
     type UpdateBlockCommandArgsInput,
@@ -59,12 +81,15 @@ export {
 } from "./UpdateBlockCommand";
 export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
     CreatePageCommandCodec,
+    DataScriptQueryCommandCodec,
     DeleteBlockCommandCodec,
     DeletePageCommandCodec,
     InsertBlockCommandCodec,
     MoveBlockCommandCodec,
+    ReadBlockCommandCodec,
     RenamePageCommandCodec,
     RestorePageCommandCodec,
+    TextSearchCommandCodec,
     UpdateBlockCommandCodec
 ]);
 
