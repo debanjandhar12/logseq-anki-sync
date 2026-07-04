@@ -5,6 +5,7 @@ import {DeletePageCommandCodec} from "./DeletePageCommand";
 import {InsertBlockCommandCodec} from "./InsertBlockCommand";
 import {MoveBlockCommandCodec} from "./MoveBlockCommand";
 import {RenamePageCommandCodec} from "./RenamePageCommand";
+import {RestorePageCommandCodec} from "./RestorePageCommand";
 import {UpdateBlockCommandCodec} from "./UpdateBlockCommand";
 
 export {BaseReversibleCommand} from "./BaseReversibleCommand";
@@ -45,6 +46,12 @@ export {
     RenamePageCommandArgsSchema
 } from "./RenamePageCommand";
 export {
+    RestorePageCommand,
+    type RestorePageCommandArgs,
+    type RestorePageCommandArgsInput,
+    RestorePageCommandArgsSchema
+} from "./RestorePageCommand";
+export {
     UpdateBlockCommand,
     type UpdateBlockCommandArgs,
     type UpdateBlockCommandArgsInput,
@@ -57,6 +64,7 @@ export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
     InsertBlockCommandCodec,
     MoveBlockCommandCodec,
     RenamePageCommandCodec,
+    RestorePageCommandCodec,
     UpdateBlockCommandCodec
 ]);
 
