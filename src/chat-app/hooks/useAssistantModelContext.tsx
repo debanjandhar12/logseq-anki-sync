@@ -8,7 +8,7 @@ import {ChatToolRegistry} from "../tools";
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 export function useAssistantModelContext(aui: AssistantClient): ModelContextProvider {
-    const systemPromptRef = useRef<string>();
+    const systemPromptRef = useRef<string | undefined>(undefined);
     const toolRegistry = useMemo(() => ChatToolRegistry.getInstance(), []);
 
     useEffect(() => {

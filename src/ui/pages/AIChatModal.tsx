@@ -1,11 +1,11 @@
 import React from "react";
-import {UI} from "../UI";
 import {Modal} from "../modals/core/Modal";
 import {useModal} from "../modals/hooks/useModal";
+import {UI} from "../UI";
 
 export interface AIChatModalProps {
-    chatComponent: React.ReactElement;
-    resolve: (value: void) => void;
+    chatComponent: React.ReactElement<{onClose?: () => void}>;
+    resolve: (value: undefined) => void;
     reject: (error: any) => void;
     modalContext?: {modalId: string | null};
 }
@@ -13,10 +13,9 @@ export interface AIChatModalProps {
 export const AIChatModalComponent: React.FC<AIChatModalProps> = ({
     chatComponent,
     resolve,
-    reject,
     modalContext
 }) => {
-    const {open, setOpen, returnResult} = useModal<void>(resolve, {
+    const {open, setOpen, returnResult} = useModal<undefined>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         enableOutsideClickClose: false,

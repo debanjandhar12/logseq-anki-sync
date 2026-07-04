@@ -26,6 +26,11 @@ function getReactDOMInstance(): CombinedReactDOM {
 
 const ReactDOM = getReactDOMInstance();
 
+// biome-ignore lint/suspicious/noExplicitAny: ReactDOM internals needed for react-dom/client compatibility
+const ReactDOMInternals = ReactDOM as any;
+// biome-ignore lint/suspicious/noExplicitAny: ReactDOM internals needed for react-dom/client compatibility
+const OriginalReactDOMInternals = OriginalReactDOM as any;
+
 const getDefaultPortalContainer = (): Element | DocumentFragment | null => {
     return (globalThis as any).__LOGSEQ_AI_CHAT_PORTAL_CONTAINERS__?.at(-1) ?? null;
 };
@@ -65,8 +70,12 @@ export const unmountComponentAtNode = ReactDOM.unmountComponentAtNode;
 export const unstable_batchedUpdates = ReactDOM.unstable_batchedUpdates;
 export const unstable_renderSubtreeIntoContainer = ReactDOM.unstable_renderSubtreeIntoContainer;
 export const version = ReactDOM.version;
-// biome-ignore lint/suspicious/noExplicitAny: ReactDOM internals needed for compatibility
-export const __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = (ReactDOM as any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+export const __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED =
+    ReactDOMInternals.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED ??
+    OriginalReactDOMInternals.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+export const __DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
+    ReactDOMInternals.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE ??
+    OriginalReactDOMInternals.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
 
 export type {Renderer} from "react-dom";
 export type {Root} from "react-dom/client";

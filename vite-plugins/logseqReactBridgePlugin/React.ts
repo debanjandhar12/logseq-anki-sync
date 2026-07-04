@@ -15,10 +15,17 @@ function getReactInstance(): typeof ReactTypes {
 
 const React = getReactInstance();
 
+// biome-ignore lint/suspicious/noExplicitAny: React internals needed for react-dom compatibility
+const ReactInternals = React as any;
+// biome-ignore lint/suspicious/noExplicitAny: React internals needed for react-dom compatibility
+const OriginalReactInternals = OriginalReact as any;
+
 export default React;
 
 export const useState = React.useState;
 export const useEffect = React.useEffect;
+export const use = ReactInternals.use;
+export const useActionState = ReactInternals.useActionState;
 export const useCallback = React.useCallback;
 export const useMemo = React.useMemo;
 export const useRef = React.useRef;
@@ -32,7 +39,10 @@ export const useId = React.useId;
 export const useTransition = React.useTransition;
 export const useDeferredValue = React.useDeferredValue;
 export const useInsertionEffect = React.useInsertionEffect;
+export const useEffectEvent = ReactInternals.useEffectEvent;
+export const useOptimistic = ReactInternals.useOptimistic;
 
+export const Activity = ReactInternals.Activity;
 export const Component = React.Component;
 export const PureComponent = React.PureComponent;
 export const Fragment = React.Fragment;
@@ -53,8 +63,16 @@ export const act = React.act;
 export const createFactory = React.createFactory;
 export const createRef = React.createRef;
 export const version = React.version;
+export const cache = ReactInternals.cache;
+export const cacheSignal = ReactInternals.cacheSignal;
+export const __COMPILER_RUNTIME = ReactInternals.__COMPILER_RUNTIME;
 // biome-ignore lint/suspicious/noExplicitAny: React internals needed for react-dom compatibility
-export const __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = (React as any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+export const __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED =
+    ReactInternals.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED ??
+    OriginalReactInternals.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+export const __CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
+    ReactInternals.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE ??
+    OriginalReactInternals.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
 
 export type {
     ComponentProps,
