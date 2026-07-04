@@ -38,13 +38,13 @@ export class LogseqReversibleTransactionTracker {
                 executedCommands.push(command);
                 this.changedPages = [...this.changedPages, ...command.getChangedPages()];
                 // Add slight delay to ensure the command is actually commited before continuing
-                await new Promise((resolve) => setTimeout(resolve, 120));
+                await new Promise((resolve) => setTimeout(resolve, 320));
             }
         } catch (error) {
             for (const command of executedCommands.reverse()) {
                 await command.revert();
                 // Add slight delay to ensure the command is actually commited before continuing
-                await new Promise((resolve) => setTimeout(resolve, 120));
+                await new Promise((resolve) => setTimeout(resolve, 320));
             }
             throw error;
         }
