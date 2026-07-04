@@ -49,11 +49,27 @@ This makes the model harder to reason about because two different concepts are m
 
 Use explicit public readonly properties for durable command data. Do not use `getState()`.
 
-Recommended rule:
+Recommended rules:
 
-> If data is part of the serialized command shape, make it a named readonly command property or keep it
-> in `args`. If data is only needed while reverting the current in-memory execution, keep it private and
-> do not include it in the codec.
+> 1. If data is part of the serialized command shape, make it a named readonly command property or keep it
+>    in `args`. If data is only needed while reverting the current in-memory execution, keep it private and
+>    do not include it in the codec.
+> 2. The durable-identifiers constructor parameter type is always derived from the serialized schema
+>    (`Omit<XCommandSerialized, "type" | keyof XCommandArgs>`), never hand-written.
+> 3. Every command constructor has the same shape — `constructor(args, durableIdentifiers?: Partial<...>)`
+>    — even when it has no durable identifiers (the derived type then resolves to `{}`).
+> 4. Every command file starts with a JSDoc block that enumerates its fields in two groups —
+>    **Serialized (durable) data** and **Runtime-only data** — so a reader can see at a glance what
+>    survives serialization and what is in-memory undo state. Example:
+>
+>    ```ts
+>    /**
+>     * Moves a block to a destination block or page.
+>     *
+>     * Serialized data: srcBlockUuid, destBlockUuid, before, children
+>     * Runtime-only data: original position snapshot (previousBlockUuid, isPreviousBlockParent) — used only to revert the current in-memory execution.
+>     */
+>    ```
 
 ## Proposed Command Shape
 
@@ -64,10 +80,21 @@ Each command should have only the pieces it actually needs:
 - `SerializedSchema`: `ArgsSchema` plus `type` and any durable generated identifiers.
 - Command class: stores `args` and durable identifiers as public readonly properties.
 - Codec: delegates repeated encode/decode mechanics to a small helper.
+- **File-level JSDoc** documenting serialized vs. runtime-only fields (see below).
 
 Example target shape for `CreatePageCommand`:
 
 ```ts
+/**
+ * Creates a Logseq page with a stable UUID.
+ *
+ * Serialized (durable) data:
+ *   - args.pageName
+ *   - pageUuid
+ *
+ * Runtime-only (not serialized):
+ *   - none
+ */
 export const CreatePageCommandArgsSchema = z.object({
     pageName: z.string().describe("Name of the Logseq page to create.")
 });
@@ -79,14 +106,22 @@ const CreatePageCommandSerializedSchema = CreatePageCommandArgsSchema.extend({
     pageUuid: LogseqUUIDSchema
 });
 
+export type CreatePageCommandDurableIdentifiers = Omit<
+    z.infer<typeof CreatePageCommandSerializedSchema>,
+    "type" | keyof CreatePageCommandArgs
+>;
+
 export class CreatePageCommand extends BaseReversibleCommand {
     public readonly args: CreatePageCommandArgs;
     public readonly pageUuid: string;
 
-    public constructor(args: CreatePageCommandArgs, pageUuid = uuidv4()) {
+    public constructor(
+        args: CreatePageCommandArgs,
+        durableIdentifiers?: Partial<CreatePageCommandDurableIdentifiers>
+    ) {
         super();
         this.args = CreatePageCommandArgsSchema.parse(args);
-        this.pageUuid = LogseqUUIDSchema.parse(pageUuid);
+        this.pageUuid = LogseqUUIDSchema.parse(durableIdentifiers?.pageUuid ?? uuidv4());
     }
 }
 ```
@@ -98,10 +133,27 @@ export const CreatePageCommandCodec = createReversibleCommandCodec({
     type: "CreatePage",
     serializedSchema: CreatePageCommandSerializedSchema,
     commandSchema: z.instanceof(CreatePageCommand),
-    decode: ({pageUuid, ...args}) => new CreatePageCommand(args, pageUuid),
+    decode: ({pageUuid, ...args}) => new CreatePageCommand(args, {pageUuid}),
     encodeData: (command) => ({...command.args, pageUuid: command.pageUuid})
 });
 ```
+
+### Deriving the durable-identifiers type
+
+Do not hand-write the `durableIdentifiers` parameter type. Derive it from the serialized schema so it
+can never drift from what the codec actually encodes:
+
+```ts
+export type CreatePageCommandDurableIdentifiers = Omit<
+    z.infer<typeof CreatePageCommandSerializedSchema>,
+    "type" | keyof CreatePageCommandArgs
+>;
+```
+
+This subtracts the discriminant and everything already in `args`, leaving exactly the durable generated
+fields (`pageUuid` here). The constructor takes `Partial<...>` of it so callers may omit every key when
+they want new UUIDs generated. For commands with no durable identifiers the derived type is `{}`, and
+the constructor's second parameter is still accepted (and optional) — see "Constructor Style" below.
 
 ## Codec Helper
 
@@ -168,32 +220,49 @@ Recommended names:
 
 ## Constructor Style
 
-Prefer passing durable generated identifiers directly instead of wrapping them in a `state` object.
+Every command constructor has the same two-parameter shape, regardless of whether it owns durable
+generated identifiers:
 
-Current:
+```ts
+constructor(args: XCommandArgs, durableIdentifiers?: Partial<XCommandDurableIdentifiers>)
+```
+
+Rules:
+
+- **Always use this shape** — even for commands with no durable identifiers. For those, the derived
+  `XCommandDurableIdentifiers` resolves to `{}`, so the second parameter is effectively ignored, but the
+  signature stays uniform across all seven commands. A reader never has to check whether a given command
+  takes a second argument; it always does.
+- The argument object contains **only** durable generated identifiers that survive serialization.
+  Runtime-only undo snapshots (`originalContent`, `deletedPage`, move-position snapshots, etc.) stay
+  private instance fields and are **never** passed through this object.
+- Never use bare positional identifiers (`new XCommand(args, pageUuid)`) and never use a generic name
+  like `state`. The parameter is always named `durableIdentifiers`.
+- The `Partial<...>` wrapper means callers omit any key they want generated fresh, and a caller creating
+  a brand-new command can pass nothing (or `{}`) for the second argument.
+
+Current call sites:
+
+```ts
+new CreatePageCommand(args);                // durableIdentifiers omitted → fresh pageUuid generated
+new InsertBlockCommand(args);               // durableIdentifiers omitted → fresh blockUuid generated
+new UpdateBlockCommand(args);               // durableIdentifiers omitted; type is {}
+new MoveBlockCommand(args);                 // durableIdentifiers omitted; type is {}
+```
+
+Codec decode call sites pass the deserialized identifiers back in:
 
 ```ts
 new CreatePageCommand(args, {pageUuid});
 new InsertBlockCommand(args, {blockUuid});
+new UpdateBlockCommand(args, {});           // or simply (args) — both valid when type is {}
 ```
 
-Proposed:
-
-```ts
-new CreatePageCommand(args, pageUuid);
-new InsertBlockCommand(args, blockUuid);
-```
-
-This removes `Partial<CreatePageCommandState>` and `Partial<InsertBlockCommandState>`. There is no
-benefit to a partial state object when each command currently has one durable generated identifier.
-
-If a future command has multiple durable generated identifiers, prefer a clearly named second argument:
+A hypothetical future command that creates multiple durable entities uses the same shape:
 
 ```ts
 new SomeCommand(args, {createdPageUuid, createdBlockUuid});
 ```
-
-Do not call that object `state`; call it `identifiers`, `durableData`, or another command-specific name.
 
 ## Serialization Behavior
 
@@ -231,8 +300,10 @@ The refactor should not change persisted command shape unless explicitly chosen 
 4. Convert `UpdateBlockCommand`, `DeleteBlockCommand`, `DeletePageCommand`, `MoveBlockCommand`, and `RenamePageCommand` to the shared codec helper.
 5. Rename `*DataSchema` to `*SerializedSchema` while touching each file.
 6. Keep all runtime undo snapshots private and out of serialization.
-7. Update serializer tests to assert the serialized JSON is unchanged.
-8. Run command serializer tests, TypeScript, and Biome checks for modified files.
+7. Add the file-level JSDoc block (Serialized data / Runtime-only data) to each command file as it is touched.
+8. Confirm every command constructor takes durable identifiers (if any) as a single object argument named `durableIdentifiers`.
+9. Update serializer tests to assert the serialized JSON is unchanged.
+10. Run command serializer tests, TypeScript, and Biome checks for modified files.
 
 ## Non-Goals
 
@@ -246,10 +317,21 @@ The refactor should not change persisted command shape unless explicitly chosen 
 
 Runtime undo snapshots should remain in-memory only.
 
-The snapshot may be used a long time after it was captured if it is serialized into an artifact. By
-then, the graph may have changed substantially: blocks can move, pages can be renamed, content can be
-edited, and deleted entities can be recreated. Replaying an old snapshot as if it still describes the
-current graph risks corrupting newer user work.
+A command instance is typically used in one of two lifecycle patterns:
+
+1. **In-memory (the common case):** `execute()` runs, then `revert()` runs immediately after within the
+   same in-memory transaction (e.g. during preview/preview-rollback, or when the model's tool sequence
+   is undone before the artifact is sealed). The runtime snapshot is captured and consumed in the same
+   process while the graph is still in the expected state.
+2. **Replayed after a round trip:** the command is serialized into the artifact, deserialized later, and
+   may be `execute()`d (and optionally `revert()`ed) long after — potentially across sessions. Between
+   serialization and replay the graph may have changed substantially: blocks can move, pages can be
+   renamed, content can be edited, and deleted entities can be recreated. An old runtime snapshot captured
+   against the old graph no longer describes reality and would corrupt newer user work if replayed.
+
+Because the second pattern is real but the snapshot is only safe in the first, snapshots are kept
+runtime-only and dropped on serialize. After a round trip, `execute()` re-captures a fresh snapshot from
+the current graph, so pattern 2 still supports an immediate `execute()` → `revert()` pair.
 
 Only durable command identity should be serialized, such as generated `pageUuid` and `blockUuid` values
 owned by create-style commands. Execution-time rollback data such as `originalContent`, `deletedPage`,
