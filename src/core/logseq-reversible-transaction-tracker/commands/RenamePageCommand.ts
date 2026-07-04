@@ -1,6 +1,7 @@
 import type {PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
+import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {requireActivePage} from "./utils/validations";
 
@@ -9,18 +10,34 @@ export const RenamePageCommandArgsSchema = z.object({
     newName: z.string().describe("New page name.")
 });
 
-export type RenamePageCommandArgs = z.infer<typeof RenamePageCommandArgsSchema>;
+export type RenamePageCommandArgsInput = z.input<typeof RenamePageCommandArgsSchema>;
+export type RenamePageCommandArgs = z.output<typeof RenamePageCommandArgsSchema>;
 
-const RenamePageCommandDataSchema = RenamePageCommandArgsSchema.extend({
+const RenamePageCommandSerializedSchema = RenamePageCommandArgsSchema.extend({
     type: z.literal("RenamePage")
 });
 
+export type RenamePageCommandSerializedState = Omit<
+    z.output<typeof RenamePageCommandSerializedSchema>,
+    "type" | keyof RenamePageCommandArgs
+>;
+
+/**
+ * Renames a Logseq page.
+ *
+ * Serialized data:
+ * - args
+ *
+ * Runtime-only data:
+ * - originalName
+ * - pageUUID
+ */
 export class RenamePageCommand extends BaseReversibleCommand {
     private originalName: string | undefined;
     private pageUUID: string | undefined;
     public readonly args: RenamePageCommandArgs;
 
-    public constructor(args: RenamePageCommandArgs) {
+    public constructor(args: RenamePageCommandArgsInput) {
         super();
         this.args = RenamePageCommandArgsSchema.parse(args);
     }
@@ -44,11 +61,10 @@ export class RenamePageCommand extends BaseReversibleCommand {
     }
 }
 
-export const RenamePageCommandCodec = z.codec(
-    RenamePageCommandDataSchema,
-    z.instanceof(RenamePageCommand),
-    {
-        decode: ({type: _, ...args}) => new RenamePageCommand(args),
-        encode: (command) => ({type: "RenamePage" as const, ...command.args})
-    }
-);
+export const RenamePageCommandCodec = createReversibleCommandCodec({
+    type: "RenamePage",
+    serializedSchema: RenamePageCommandSerializedSchema,
+    commandSchema: z.instanceof(RenamePageCommand),
+    decode: (args) => new RenamePageCommand(args),
+    encodeData: (command) => command.args
+});

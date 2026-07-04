@@ -2,6 +2,7 @@ import {isPageSoftDeleted} from "src/core/logseq-reversible-transaction-tracker/
 import {v4 as uuidv4} from "uuid";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
+import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {normalizePage} from "./utils/normalizePage";
 
@@ -9,23 +10,40 @@ export const CreatePageCommandArgsSchema = z.object({
     pageName: z.string().describe("Name of the Logseq page to create.")
 });
 
-export type CreatePageCommandArgs = z.infer<typeof CreatePageCommandArgsSchema>;
+export type CreatePageCommandArgsInput = z.input<typeof CreatePageCommandArgsSchema>;
+export type CreatePageCommandArgs = z.output<typeof CreatePageCommandArgsSchema>;
 
-const CreatePageCommandDataSchema = CreatePageCommandArgsSchema.extend({
+const CreatePageCommandSerializedSchema = CreatePageCommandArgsSchema.extend({
     type: z.literal("CreatePage"),
     pageUuid: LogseqUUIDSchema
 });
 
-type CreatePageCommandState = Pick<z.infer<typeof CreatePageCommandDataSchema>, "pageUuid">;
+export type CreatePageCommandSerializedState = Omit<
+    z.output<typeof CreatePageCommandSerializedSchema>,
+    "type" | keyof CreatePageCommandArgs
+>;
 
+/**
+ * Creates a Logseq page with a stable UUID.
+ *
+ * Serialized data:
+ * - args
+ * - pageUuid
+ *
+ * Runtime-only data:
+ * - none
+ */
 export class CreatePageCommand extends BaseReversibleCommand {
-    private readonly pageUuid: string;
     public readonly args: CreatePageCommandArgs;
+    public readonly pageUuid: string;
 
-    public constructor(args: CreatePageCommandArgs, state?: Partial<CreatePageCommandState>) {
+    public constructor(
+        args: CreatePageCommandArgsInput,
+        serializedState?: Partial<CreatePageCommandSerializedState>
+    ) {
         super();
         this.args = CreatePageCommandArgsSchema.parse(args);
-        this.pageUuid = LogseqUUIDSchema.parse(state?.pageUuid ?? uuidv4());
+        this.pageUuid = LogseqUUIDSchema.parse(serializedState?.pageUuid ?? uuidv4());
     }
 
     public async execute() {
@@ -73,23 +91,12 @@ export class CreatePageCommand extends BaseReversibleCommand {
 
         await logseq.Editor.deletePage(this.pageUuid);
     }
-
-    public getState(): CreatePageCommandState {
-        return {
-            pageUuid: this.pageUuid
-        };
-    }
 }
 
-export const CreatePageCommandCodec = z.codec(
-    CreatePageCommandDataSchema,
-    z.instanceof(CreatePageCommand),
-    {
-        decode: ({type: _, pageUuid, ...args}) => new CreatePageCommand(args, {pageUuid}),
-        encode: (command) => ({
-            type: "CreatePage" as const,
-            ...command.args,
-            ...command.getState()
-        })
-    }
-);
+export const CreatePageCommandCodec = createReversibleCommandCodec({
+    type: "CreatePage",
+    serializedSchema: CreatePageCommandSerializedSchema,
+    commandSchema: z.instanceof(CreatePageCommand),
+    decode: ({pageUuid, ...args}) => new CreatePageCommand(args, {pageUuid}),
+    encodeData: (command) => ({...command.args, pageUuid: command.pageUuid})
+});

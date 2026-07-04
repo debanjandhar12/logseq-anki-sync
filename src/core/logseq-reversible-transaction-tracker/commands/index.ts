@@ -11,36 +11,43 @@ export {BaseReversibleCommand} from "./BaseReversibleCommand";
 export {
     CreatePageCommand,
     type CreatePageCommandArgs,
+    type CreatePageCommandArgsInput,
     CreatePageCommandArgsSchema
 } from "./CreatePageCommand";
 export {
     DeleteBlockCommand,
     type DeleteBlockCommandArgs,
+    type DeleteBlockCommandArgsInput,
     DeleteBlockCommandArgsSchema
 } from "./DeleteBlockCommand";
 export {
     DeletePageCommand,
     type DeletePageCommandArgs,
+    type DeletePageCommandArgsInput,
     DeletePageCommandArgsSchema
 } from "./DeletePageCommand";
 export {
     InsertBlockCommand,
     type InsertBlockCommandArgs,
+    type InsertBlockCommandArgsInput,
     InsertBlockCommandArgsSchema
 } from "./InsertBlockCommand";
 export {
     MoveBlockCommand,
     type MoveBlockCommandArgs,
+    type MoveBlockCommandArgsInput,
     MoveBlockCommandArgsSchema
 } from "./MoveBlockCommand";
 export {
     RenamePageCommand,
     type RenamePageCommandArgs,
+    type RenamePageCommandArgsInput,
     RenamePageCommandArgsSchema
 } from "./RenamePageCommand";
 export {
     UpdateBlockCommand,
     type UpdateBlockCommandArgs,
+    type UpdateBlockCommandArgsInput,
     UpdateBlockCommandArgsSchema
 } from "./UpdateBlockCommand";
 export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [

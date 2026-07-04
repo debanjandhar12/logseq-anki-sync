@@ -2,6 +2,7 @@ import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
+import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {resolvePageUUID} from "./utils/normalizeBlock";
 import {requireActiveBlock} from "./utils/validations";
@@ -11,17 +12,32 @@ export const UpdateBlockCommandArgsSchema = z.object({
     content: z.string().describe("New block content.")
 });
 
-export type UpdateBlockCommandArgs = z.infer<typeof UpdateBlockCommandArgsSchema>;
+export type UpdateBlockCommandArgsInput = z.input<typeof UpdateBlockCommandArgsSchema>;
+export type UpdateBlockCommandArgs = z.output<typeof UpdateBlockCommandArgsSchema>;
 
-const UpdateBlockCommandDataSchema = UpdateBlockCommandArgsSchema.extend({
+const UpdateBlockCommandSerializedSchema = UpdateBlockCommandArgsSchema.extend({
     type: z.literal("UpdateBlock")
 });
 
+export type UpdateBlockCommandSerializedState = Omit<
+    z.output<typeof UpdateBlockCommandSerializedSchema>,
+    "type" | keyof UpdateBlockCommandArgs
+>;
+
+/**
+ * Updates a Logseq block's content.
+ *
+ * Serialized data:
+ * - args
+ *
+ * Runtime-only data:
+ * - originalContent
+ */
 export class UpdateBlockCommand extends BaseReversibleCommand {
     private originalContent: string | undefined;
     public readonly args: UpdateBlockCommandArgs;
 
-    public constructor(args: UpdateBlockCommandArgs) {
+    public constructor(args: UpdateBlockCommandArgsInput) {
         super();
         this.args = UpdateBlockCommandArgsSchema.parse(args);
     }
@@ -42,11 +58,10 @@ export class UpdateBlockCommand extends BaseReversibleCommand {
     }
 }
 
-export const UpdateBlockCommandCodec = z.codec(
-    UpdateBlockCommandDataSchema,
-    z.instanceof(UpdateBlockCommand),
-    {
-        decode: ({type: _, ...args}) => new UpdateBlockCommand(args),
-        encode: (command) => ({type: "UpdateBlock" as const, ...command.args})
-    }
-);
+export const UpdateBlockCommandCodec = createReversibleCommandCodec({
+    type: "UpdateBlock",
+    serializedSchema: UpdateBlockCommandSerializedSchema,
+    commandSchema: z.instanceof(UpdateBlockCommand),
+    decode: (args) => new UpdateBlockCommand(args),
+    encodeData: (command) => command.args
+});

@@ -3,11 +3,14 @@ import {z} from "zod";
 import {
     CreatePageCommand,
     DeleteBlockCommand,
+    DeletePageCommand,
     InsertBlockCommand,
     InsertBlockCommandArgsSchema,
     LogseqReversibleTransactionCommandSerializer,
     LogseqReversibleTransactionTracker,
     LogseqReversibleTransactionTrackerSerializer,
+    MoveBlockCommand,
+    RenamePageCommand,
     UpdateBlockCommand
 } from "../../../../src/core/logseq-reversible-transaction-tracker";
 
@@ -110,6 +113,100 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
             type: "DeleteBlock",
             blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
         });
+    });
+
+    test("serializes every command shape without runtime snapshots", () => {
+        const commands = [
+            new CreatePageCommand(
+                {pageName: "Codec Test"},
+                {pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f28"}
+            ),
+            new InsertBlockCommand(
+                {
+                    parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
+                    content: "Inserted content"
+                },
+                {blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"}
+            ),
+            new UpdateBlockCommand({
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f30",
+                content: "Updated content"
+            }),
+            new DeleteBlockCommand({
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f31"
+            }),
+            new DeletePageCommand({
+                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f32"
+            }),
+            new MoveBlockCommand({
+                srcBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f33",
+                destBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f34"
+            }),
+            new RenamePageCommand({
+                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f35",
+                newName: "Renamed Page"
+            })
+        ];
+
+        expect(commands.map(LogseqReversibleTransactionCommandSerializer.serialize)).toEqual([
+            {
+                type: "CreatePage",
+                pageName: "Codec Test",
+                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f28"
+            },
+            {
+                type: "InsertBlock",
+                parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
+                content: "Inserted content",
+                sibling: true,
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
+            },
+            {
+                type: "UpdateBlock",
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f30",
+                content: "Updated content"
+            },
+            {
+                type: "DeleteBlock",
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f31"
+            },
+            {
+                type: "DeletePage",
+                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f32"
+            },
+            {
+                type: "MoveBlock",
+                srcBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f33",
+                destBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f34",
+                children: false
+            },
+            {
+                type: "RenamePage",
+                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f35",
+                newName: "Renamed Page"
+            }
+        ]);
+    });
+
+    test("round trips defaulted command args", () => {
+        const insertBlockCommand = new InsertBlockCommand(
+            {
+                parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
+                content: "Inserted content"
+            },
+            {blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"}
+        );
+        const moveBlockCommand = new MoveBlockCommand({
+            srcBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f33",
+            destBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f34"
+        });
+
+        expect(
+            LogseqReversibleTransactionCommandSerializer.serialize(insertBlockCommand)
+        ).toMatchObject({sibling: true});
+        expect(
+            LogseqReversibleTransactionCommandSerializer.serialize(moveBlockCommand)
+        ).toMatchObject({children: false});
     });
 
     test("rejects a value that does not have the Logseq UUID shape", () => {

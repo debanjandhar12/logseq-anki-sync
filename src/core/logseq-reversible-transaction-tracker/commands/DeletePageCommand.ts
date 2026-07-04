@@ -1,6 +1,7 @@
 import type {BlockIdentity, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
+import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {isPageSoftDeleted} from "./utils/isPageSoftDeleted";
 import {requireActivePage} from "./utils/validations";
@@ -9,17 +10,32 @@ export const DeletePageCommandArgsSchema = z.object({
     pageUuid: LogseqUUIDSchema.describe("UUID of the Logseq page to delete.")
 });
 
-export type DeletePageCommandArgs = z.infer<typeof DeletePageCommandArgsSchema>;
+export type DeletePageCommandArgsInput = z.input<typeof DeletePageCommandArgsSchema>;
+export type DeletePageCommandArgs = z.output<typeof DeletePageCommandArgsSchema>;
 
-const DeletePageCommandDataSchema = DeletePageCommandArgsSchema.extend({
+const DeletePageCommandSerializedSchema = DeletePageCommandArgsSchema.extend({
     type: z.literal("DeletePage")
 });
 
+export type DeletePageCommandSerializedState = Omit<
+    z.output<typeof DeletePageCommandSerializedSchema>,
+    "type" | keyof DeletePageCommandArgs
+>;
+
+/**
+ * Deletes a Logseq page.
+ *
+ * Serialized data:
+ * - args
+ *
+ * Runtime-only data:
+ * - deletedPage
+ */
 export class DeletePageCommand extends BaseReversibleCommand {
     private deletedPage: PageEntity | undefined;
     public readonly args: DeletePageCommandArgs;
 
-    public constructor(args: DeletePageCommandArgs) {
+    public constructor(args: DeletePageCommandArgsInput) {
         super();
         this.args = DeletePageCommandArgsSchema.parse(args);
     }
@@ -54,11 +70,10 @@ export class DeletePageCommand extends BaseReversibleCommand {
     }
 }
 
-export const DeletePageCommandCodec = z.codec(
-    DeletePageCommandDataSchema,
-    z.instanceof(DeletePageCommand),
-    {
-        decode: ({type: _, ...args}) => new DeletePageCommand(args),
-        encode: (command) => ({type: "DeletePage" as const, ...command.args})
-    }
-);
+export const DeletePageCommandCodec = createReversibleCommandCodec({
+    type: "DeletePage",
+    serializedSchema: DeletePageCommandSerializedSchema,
+    commandSchema: z.instanceof(DeletePageCommand),
+    decode: (args) => new DeletePageCommand(args),
+    encodeData: (command) => command.args
+});

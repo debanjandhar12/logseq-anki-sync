@@ -2,6 +2,7 @@ import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
+import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {isPageSoftDeleted} from "./utils/isPageSoftDeleted";
 import {resolvePageUUID} from "./utils/normalizeBlock";
@@ -11,23 +12,39 @@ export const DeleteBlockCommandArgsSchema = z.object({
     blockUuid: LogseqUUIDSchema.describe("UUID of the Logseq block to delete.")
 });
 
-export type DeleteBlockCommandArgs = z.infer<typeof DeleteBlockCommandArgsSchema>;
+export type DeleteBlockCommandArgsInput = z.input<typeof DeleteBlockCommandArgsSchema>;
+export type DeleteBlockCommandArgs = z.output<typeof DeleteBlockCommandArgsSchema>;
 
-const DeleteBlockCommandDataSchema = DeleteBlockCommandArgsSchema.extend({
+const DeleteBlockCommandSerializedSchema = DeleteBlockCommandArgsSchema.extend({
     type: z.literal("DeleteBlock")
 });
+
+export type DeleteBlockCommandSerializedState = Omit<
+    z.output<typeof DeleteBlockCommandSerializedSchema>,
+    "type" | keyof DeleteBlockCommandArgs
+>;
 
 type DeletedBlockLocation = {
     previousBlockUuid: string;
     isPreviousBlockParent: boolean;
 };
 
+/**
+ * Deletes a Logseq block.
+ *
+ * Serialized data:
+ * - args
+ *
+ * Runtime-only data:
+ * - deletedBlockLocation
+ * - tempPageUUID
+ */
 export class DeleteBlockCommand extends BaseReversibleCommand {
     private deletedBlockLocation: DeletedBlockLocation | undefined;
     private tempPageUUID: string | undefined;
     public readonly args: DeleteBlockCommandArgs;
 
-    public constructor(args: DeleteBlockCommandArgs) {
+    public constructor(args: DeleteBlockCommandArgsInput) {
         super();
         this.args = DeleteBlockCommandArgsSchema.parse(args);
     }
@@ -116,11 +133,10 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
     }
 }
 
-export const DeleteBlockCommandCodec = z.codec(
-    DeleteBlockCommandDataSchema,
-    z.instanceof(DeleteBlockCommand),
-    {
-        decode: ({type: _, ...args}) => new DeleteBlockCommand(args),
-        encode: (command) => ({type: "DeleteBlock" as const, ...command.args})
-    }
-);
+export const DeleteBlockCommandCodec = createReversibleCommandCodec({
+    type: "DeleteBlock",
+    serializedSchema: DeleteBlockCommandSerializedSchema,
+    commandSchema: z.instanceof(DeleteBlockCommand),
+    decode: (args) => new DeleteBlockCommand(args),
+    encodeData: (command) => command.args
+});

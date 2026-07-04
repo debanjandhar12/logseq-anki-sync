@@ -2,6 +2,7 @@ import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
+import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {normalizeBlock, resolvePageUUID} from "./utils/normalizeBlock";
 import {requireActiveBlock} from "./utils/validations";
@@ -26,18 +27,34 @@ export const MoveBlockCommandArgsSchema = z
         path: ["before"]
     });
 
-export type MoveBlockCommandArgs = z.infer<typeof MoveBlockCommandArgsSchema>;
+export type MoveBlockCommandArgsInput = z.input<typeof MoveBlockCommandArgsSchema>;
+export type MoveBlockCommandArgs = z.output<typeof MoveBlockCommandArgsSchema>;
 
-const MoveBlockCommandDataSchema = MoveBlockCommandArgsSchema.extend({
+const MoveBlockCommandSerializedSchema = MoveBlockCommandArgsSchema.extend({
     type: z.literal("MoveBlock")
 });
 
+export type MoveBlockCommandSerializedState = Omit<
+    z.output<typeof MoveBlockCommandSerializedSchema>,
+    "type" | keyof MoveBlockCommandArgs
+>;
+
+/**
+ * Moves a block to a destination block or page.
+ *
+ * Serialized data:
+ * - args
+ *
+ * Runtime-only data:
+ * - originalPreviousBlockUuid
+ * - originalIsPreviousBlockParent
+ */
 export class MoveBlockCommand extends BaseReversibleCommand {
     private originalPreviousBlockUuid: string | undefined;
     private originalIsPreviousBlockParent: boolean | undefined;
     public readonly args: MoveBlockCommandArgs;
 
-    public constructor(args: z.input<typeof MoveBlockCommandArgsSchema>) {
+    public constructor(args: MoveBlockCommandArgsInput) {
         super();
         this.args = MoveBlockCommandArgsSchema.parse(args);
     }
@@ -130,11 +147,10 @@ export class MoveBlockCommand extends BaseReversibleCommand {
     }
 }
 
-export const MoveBlockCommandCodec = z.codec(
-    MoveBlockCommandDataSchema,
-    z.instanceof(MoveBlockCommand),
-    {
-        decode: ({type: _, ...args}) => new MoveBlockCommand(args),
-        encode: (command) => ({type: "MoveBlock" as const, ...command.args})
-    }
-);
+export const MoveBlockCommandCodec = createReversibleCommandCodec({
+    type: "MoveBlock",
+    serializedSchema: MoveBlockCommandSerializedSchema,
+    commandSchema: z.instanceof(MoveBlockCommand),
+    decode: (args) => new MoveBlockCommand(args),
+    encodeData: (command) => command.args
+});

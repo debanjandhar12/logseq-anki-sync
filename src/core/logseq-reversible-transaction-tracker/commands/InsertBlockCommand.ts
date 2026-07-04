@@ -2,6 +2,7 @@ import type {BlockIdentity} from "@logseq/libs/dist/LSPlugin";
 import {v4 as uuidv4} from "uuid";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
+import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {isBlockSoftDeleted} from "./utils/isBlockSoftDeleted";
 import {normalizeBlock, resolvePageUUID} from "./utils/normalizeBlock";
@@ -45,26 +46,40 @@ export const InsertBlockCommandArgsSchema = z
         }
     );
 
-export type InsertBlockCommandArgs = z.infer<typeof InsertBlockCommandArgsSchema>;
+export type InsertBlockCommandArgsInput = z.input<typeof InsertBlockCommandArgsSchema>;
+export type InsertBlockCommandArgs = z.output<typeof InsertBlockCommandArgsSchema>;
 
-const InsertBlockCommandDataSchema = InsertBlockCommandArgsSchema.extend({
+const InsertBlockCommandSerializedSchema = InsertBlockCommandArgsSchema.extend({
     type: z.literal("InsertBlock"),
     blockUuid: LogseqUUIDSchema
 });
 
-type InsertBlockCommandState = Pick<z.infer<typeof InsertBlockCommandDataSchema>, "blockUuid">;
+export type InsertBlockCommandSerializedState = Omit<
+    z.output<typeof InsertBlockCommandSerializedSchema>,
+    "type" | keyof InsertBlockCommandArgs
+>;
 
+/**
+ * Inserts a Logseq block with a stable UUID.
+ *
+ * Serialized data:
+ * - args
+ * - blockUuid
+ *
+ * Runtime-only data:
+ * - none
+ */
 export class InsertBlockCommand extends BaseReversibleCommand {
-    private readonly blockUuid: string;
     public readonly args: InsertBlockCommandArgs;
+    public readonly blockUuid: string;
 
     public constructor(
-        args: z.input<typeof InsertBlockCommandArgsSchema>,
-        state?: Partial<InsertBlockCommandState>
+        args: InsertBlockCommandArgsInput,
+        serializedState?: Partial<InsertBlockCommandSerializedState>
     ) {
         super();
         this.args = InsertBlockCommandArgsSchema.parse(args);
-        this.blockUuid = LogseqUUIDSchema.parse(state?.blockUuid ?? uuidv4());
+        this.blockUuid = LogseqUUIDSchema.parse(serializedState?.blockUuid ?? uuidv4());
     }
 
     public async execute() {
@@ -113,23 +128,12 @@ export class InsertBlockCommand extends BaseReversibleCommand {
 
         await logseq.Editor.removeBlock(this.blockUuid);
     }
-
-    public getState(): InsertBlockCommandState {
-        return {
-            blockUuid: this.blockUuid
-        };
-    }
 }
 
-export const InsertBlockCommandCodec = z.codec(
-    InsertBlockCommandDataSchema,
-    z.instanceof(InsertBlockCommand),
-    {
-        decode: ({type: _, blockUuid, ...args}) => new InsertBlockCommand(args, {blockUuid}),
-        encode: (command) => ({
-            type: "InsertBlock" as const,
-            ...command.args,
-            ...command.getState()
-        })
-    }
-);
+export const InsertBlockCommandCodec = createReversibleCommandCodec({
+    type: "InsertBlock",
+    serializedSchema: InsertBlockCommandSerializedSchema,
+    commandSchema: z.instanceof(InsertBlockCommand),
+    decode: ({blockUuid, ...args}) => new InsertBlockCommand(args, {blockUuid}),
+    encodeData: (command) => ({...command.args, blockUuid: command.blockUuid})
+});
