@@ -51,7 +51,7 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
 
     public async execute() {
         const block = await requireActiveBlock(this.args.blockUuid as BlockIdentity);
-        const isPageBlock = logseq.Editor.isPageBlock(block);
+        const isPageBlock = await LogseqEditor.isPageBlock(block);
         if (isPageBlock === true) {
             throw new Error("Cannot delete a page. Block UUID provided must be that of a block.");
         }

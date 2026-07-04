@@ -1,4 +1,5 @@
 import type {BlockIdentity, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
@@ -42,7 +43,7 @@ export class DeletePageCommand extends BaseReversibleCommand {
 
     public async execute() {
         const block = await logseq.Editor.getBlock(this.args.pageUuid as BlockIdentity);
-        const isPageBlock = block ? await logseq.Editor.isPageBlock(block) : false;
+        const isPageBlock = block ? await LogseqEditor.isPageBlock(block) : false;
         if (block && isPageBlock !== true && !("name" in block && typeof block.name === "string")) {
             throw new Error("Cannot delete a block. Page UUID provided must be that of a page.");
         }

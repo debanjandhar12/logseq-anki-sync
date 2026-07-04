@@ -1,4 +1,5 @@
 import type {BlockEntity, EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {isPageSoftDeleted} from "./isPageSoftDeleted";
 
 type EntityReferenceWithID = {id: EntityID};
@@ -17,7 +18,8 @@ function resolvePageIdentity(reference: BlockEntity["page"]): EntityID | PageIde
 }
 
 export async function isBlockSoftDeleted(block: BlockEntity): Promise<boolean> {
-    const pageIdentity = logseq.Editor.isPageBlock(block) ? block.id
+    const pageIdentity = (await LogseqEditor.isPageBlock(block))
+        ? block.id
         : resolvePageIdentity(block.page);
     if (!pageIdentity) throw new Error(`Block page reference is missing: ${block.uuid}`);
 

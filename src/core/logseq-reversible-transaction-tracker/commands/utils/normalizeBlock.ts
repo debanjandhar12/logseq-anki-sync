@@ -1,4 +1,5 @@
 import type {BlockEntity, EntityID, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import {LogseqEditor} from "src/logseq/LogseqEditor";
 
 type EntityReferenceWithID = {id: EntityID};
 type EntityReferenceWithUUID = {uuid: string};
@@ -18,7 +19,9 @@ function getEntityID(value: unknown): EntityID | undefined {
     return undefined;
 }
 
-export async function resolvePageUUID(reference: ResolvableEntityReference | undefined): Promise<string> {
+export async function resolvePageUUID(
+    reference: ResolvableEntityReference | undefined
+): Promise<string> {
     if (hasUUID(reference)) return reference.uuid;
 
     const id = getEntityID(reference);
@@ -41,7 +44,7 @@ async function resolveParentUUID(
     const entity = (await logseq.Editor.getBlock(id)) as BlockEntity | PageEntity | null;
     if (!entity?.uuid) throw new Error(`Unable to resolve parent reference: ${id}`);
 
-    if (logseq.Editor.isPageBlock(entity)) {
+    if (await LogseqEditor.isPageBlock(entity)) {
         const page = await logseq.Editor.getPage(id);
         if (!page?.uuid) throw new Error(`Unable to resolve parent page reference: ${id}`);
         return page.uuid;

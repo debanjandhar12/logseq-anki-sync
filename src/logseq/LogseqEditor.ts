@@ -19,6 +19,17 @@ export class LogseqEditor {
         await logseq.Editor.updateBlock(srcBlock, content);
     }
 
+    static async isPageBlock(block: BlockEntity | PageEntity): Promise<boolean> {
+        try {
+            // @ts-ignore The await is required. DO NOT REMOVE!
+            return Boolean(await logseq.Editor.isPageBlock(block));
+        } catch {
+            // Fallback required for test mode (logseq http server doesnt support isPageBlock)
+            const blockById = await logseq.Editor.getBlock(block.id);
+            return blockById?.page?.id === block.id;
+        }
+    }
+
     static async getPreviousBlock(
         blockIdentity: BlockIdentity,
         opts: Partial<{parent: boolean}> = {}
@@ -37,7 +48,7 @@ export class LogseqEditor {
             throw new Error(`Unable to resolve parent reference: ${block.parent.id}`);
         }
 
-        if (logseq.Editor.isPageBlock(parentBlock)) {
+        if (await LogseqEditor.isPageBlock(parentBlock)) {
             const parentPage = await LogseqPropertiesHelper.getPage(block.parent.id);
             if (!parentPage?.uuid) {
                 throw new Error(`Unable to resolve parent page reference: ${block.parent.id}`);

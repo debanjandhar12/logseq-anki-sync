@@ -64,7 +64,7 @@ export class MoveBlockCommand extends BaseReversibleCommand {
             this.args.srcBlockUuid as BlockIdentity,
             "Source"
         );
-        if (logseq.Editor.isPageBlock(originalBlock)) {
+        if (await LogseqEditor.isPageBlock(originalBlock)) {
             throw new Error("Cannot move a page. Src block UUID must be a block UUID.");
         }
 
