@@ -103,15 +103,12 @@ Add only narrowly scoped helpers to `src/logseq/LogseqEditor.ts`.
 
 ### `LogseqEditor.getProperty`
 
-`logseq.Editor.getProperty` does not work with property UUIDs. Add `LogseqEditor.getProperty(propertyPageUuid)` to resolve a property page UUID into the key/ident that `logseq.Editor.getProperty` accepts.
+Add `LogseqEditor.getProperty(propertyIndent)` as a narrow wrapper around `logseq.Editor.getProperty(propertyIndent)`.
 
-Algorithm:
+Behavior:
 
-1. Call `logseq.Editor.getBlock(propertyPageUuid, { includePage: true })` or the equivalent option required by the API.
-2. Read the returned property block's ident field. In Logseq source this is `:db/ident`; verify the exact JS key shape exposed by the plugin API before implementation.
-3. Convert the ident to the property key/name expected by `logseq.Editor.getProperty`.
-4. Call `logseq.Editor.getProperty(propertyKey)`.
-5. Return the same entity shape returned by `logseq.Editor.getProperty`.
+1. Call `logseq.Editor.getProperty(propertyIndent)`.
+2. Return the same entity shape returned by `logseq.Editor.getProperty`.
 
 This method should not invent a custom property result type. Callers should type it around the real Logseq property entity return shape.
 
@@ -121,7 +118,6 @@ Add `isTagBlock(blockOrUuid)`.
 
 Behavior:
 
-- Resolve the UUID to a block/page entity when needed.
 - Return `true` when `logseq.Editor.getTag(uuid)` returns a tag entity.
 - Return `false` when `getTag` returns null/undefined.
 - Propagate unexpected API errors only if they are not normal "not a tag" behavior.
@@ -132,8 +128,8 @@ Add `isPropertyBlock(blockOrUuid)`.
 
 Behavior:
 
-- Resolve the UUID to a block/page entity when needed.
-- Return `true` when the fetched entity has a property ident field that can be used to resolve `logseq.Editor.getProperty`.
+- Resolve the UUID to a block entity when needed.
+- Return `true` when the entity is a property page or has a Logseq `ident` that can be used with `LogseqEditor.getProperty`.
 - Return `false` otherwise.
 
 ### Direct API Calls
@@ -518,9 +514,10 @@ Current behavior:
 
 Proposed behavior:
 
-- Keep the existing `uuid` arg.
-- Keep UUID-only identity input. Do not allow tag names, property names, or numeric entity IDs in the tool schema.
-- Do not add a manual entity type discriminator. Resolve the entity kind automatically from Logseq metadata and the fallback order below.
+- Accept either `uuid` or `propertyIndent`; exactly one must be provided.
+- Keep UUID-only identity input for block/page/tag reads and fallback property page auto-detection. Do not allow tag names or numeric entity IDs in the tool schema.
+- `propertyIndent` is not an entity identity. It is the property ident/key required by `logseq.Editor.getProperty`.
+- Do not add a manual entity type discriminator. Resolve property reads through `propertyIndent` first, then resolve UUID reads from Logseq metadata and the fallback order below.
 
 Extended result should use real Logseq return types where possible:
 
@@ -536,9 +533,9 @@ The tag branch should normalize the `getTag` result with `normalizeTagPage` befo
 
 Resolution order:
 
-1. Fetch the raw entity with `logseq.Editor.getBlock(uuid, { includePage: true })` or the equivalent option required by the API.
-2. If `LogseqEditor.isTagBlock(rawEntity)` returns true, return `type: "tag"` using `logseq.Editor.getTag(uuid)` and `normalizeTagPage`.
-3. If `LogseqEditor.isPropertyBlock(rawEntity)` returns true, return `type: "property"` using `LogseqEditor.getProperty(uuid)`.
+1. If `propertyIndent` is provided, return `type: "property"` using `LogseqEditor.getProperty(propertyIndent)`.
+2. If `LogseqEditor.isTagBlock(uuid)` returns true, return `type: "tag"` using `logseq.Editor.getTag(uuid)` and `normalizeTagPage`.
+3. If `LogseqEditor.isPropertyBlock(uuid)` returns true, resolve the entity's `ident` and return `type: "property"` using `LogseqEditor.getProperty(ident)`.
 4. If the raw entity is a normal content block, return `type: "block"` using `normalizeBlock`.
 5. If `logseq.Editor.getPage(uuid)` returns a page, return `type: "page"` using `normalizePage` and optional page children.
 6. Otherwise return `type: "block"` using `normalizeBlock`.
@@ -657,8 +654,9 @@ Read tests:
 - Read normal block still works.
 - Read normal page still works.
 - Read tag page returns `type: "tag"` before it can be misclassified as a page or block.
-- Read property page returns `type: "property"` before it can be misclassified as a page or block.
-- Read property page uses `LogseqEditor.getProperty` because `logseq.Editor.getProperty` does not accept UUIDs.
+- Read property page with `propertyIndent` returns `type: "property"`.
+- Read property page UUID fallback returns `type: "property"` through `LogseqEditor.isPropertyBlock`.
+- Invalid tag UUIDs and invalid property indents return the normal null read result for their branch.
 - `includeChildren` behavior remains unchanged for normal pages/blocks.
 
 Normalization tests:
@@ -673,24 +671,6 @@ Printer tests:
 - Existing page/block output remains unchanged except normalized tag values.
 - Tag pages print readable tag metadata.
 - Property pages print schema metadata.
-- Changed pages are de-duplicated.
-
-## Implementation Order
-
-1. Add tag reference normalization utilities and tests.
-2. Update `normalizeBlock` and `normalizePage` to normalize tags.
-3. Add `normalizeTagPage`.
-4. Add `LogseqEditor.getProperty`, `LogseqEditor.isTagBlock`, and `LogseqEditor.isPropertyBlock`.
-5. Extend `ReadBlockCommand` and `LogseqReadBlockTool` for tag/property/page/block resolution.
-6. Implement property page commands.
-7. Implement property-to-block commands.
-8. Implement tag page commands.
-9. Add matching tools and registry exports.
-10. Extend preview printing only if normal page printing is insufficient.
-11. Add serializer and command tests.
-12. Run typecheck, targeted tests, and Biome checks.
-
-## Verification Commands
 
 After implementation:
 
@@ -715,7 +695,5 @@ npm run check:fix <modified-files>
 
 ## Remaining Implementation Checks
 
-- Verify the exact JS key for property ident returned by `logseq.Editor.getBlock(propertyPageUuid, { includePage: true })`; the source field is `:db/ident`.
-- Verify the exact plugin option spelling required for `getBlock` to include page entities in the installed Logseq plugin API.
-- Verify whether `removeTagProperty` accepts property page UUID directly in the plugin API. If not, resolve the property UUID to the property key through `LogseqEditor.getProperty` before calling it.
+- Verify whether `removeTagProperty` accepts property page UUID directly in the plugin API. If not, resolve the property identity to the property key before calling it.
 - Verify the exact property snapshot query needed to restore all affected values after `DeletePropertyPageCommand`.

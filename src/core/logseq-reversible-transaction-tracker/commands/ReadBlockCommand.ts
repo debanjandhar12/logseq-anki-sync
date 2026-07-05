@@ -8,12 +8,19 @@ import {normalizeBlock} from "./utils/normalizeBlock";
 import {normalizePage} from "./utils/normalizePage";
 import {normalizeTagPage} from "./utils/normalizeTagPage";
 
-export const ReadBlockCommandArgsSchema = z.object({
-    uuid: z
+const ReadBlockCommandArgsBaseSchema = z.object({
+    uuid: z.string().optional().describe("UUID of the Logseq block, page, or tag page to read."),
+    propertyIndent: z
         .string()
-        .describe("UUID of the Logseq block, page, tag page, or property page to read."),
+        .optional()
+        .describe("Property ident/key to read with logseq.Editor.getProperty."),
     includeChildren: z.boolean().optional().describe("Whether to include child blocks")
 });
+
+export const ReadBlockCommandArgsSchema = ReadBlockCommandArgsBaseSchema.refine(
+    (args) => Boolean(args.uuid) !== Boolean(args.propertyIndent),
+    "Pass exactly one of uuid or propertyIndent."
+);
 
 export type ReadBlockCommandArgsInput = z.input<typeof ReadBlockCommandArgsSchema>;
 export type ReadBlockCommandArgs = z.output<typeof ReadBlockCommandArgsSchema>;
@@ -36,12 +43,14 @@ export type ReadBlockCommandResult =
           block: Omit<PageEntity, "children"> & {children?: BlockEntity[]};
       };
 
-const ReadBlockCommandSerializedSchema = ReadBlockCommandArgsSchema.extend({
+const ReadBlockCommandSerializedSchema = ReadBlockCommandArgsBaseSchema.extend({
     type: z.literal("ReadBlock")
+}).refine((args) => Boolean(args.uuid) !== Boolean(args.propertyIndent), {
+    message: "Pass exactly one of uuid or propertyIndent."
 });
 
 /**
- * Reads a Logseq block, page, tag page, or property page by UUID.
+ * Reads a Logseq block/page/tag by UUID, or a property by property ident/key.
  *
  * Serialized data:
  * - args
@@ -58,27 +67,43 @@ export class ReadBlockCommand extends BaseReversibleCommand {
     }
 
     public async execute(): Promise<ReadBlockCommandResult> {
-        if (await LogseqEditor.isTagBlock(this.args.uuid)) {
-            const tag = await logseq.Editor.getTag(this.args.uuid);
+        if (this.args.propertyIndent) {
+            return {
+                type: "property",
+                block: await LogseqEditor.getProperty(this.args.propertyIndent)
+            };
+        }
+
+        const uuid = this.args.uuid;
+        if (!uuid) throw new Error("ReadBlockCommand requires uuid or propertyIndent.");
+
+        if (await LogseqEditor.isTagBlock(uuid)) {
+            const tag = await logseq.Editor.getTag(uuid);
             return {type: "tag", block: tag ? await normalizeTagPage(tag) : null};
         }
 
-        if (await LogseqEditor.isPropertyBlock(this.args.uuid)) {
-            return {type: "property", block: await LogseqEditor.getProperty(this.args.uuid)};
+        const propertyBlock = await logseq.Editor.getBlock(uuid);
+        if (propertyBlock && (await LogseqEditor.isPropertyBlock(propertyBlock))) {
+            return {
+                type: "property",
+                block: propertyBlock.ident
+                    ? await LogseqEditor.getProperty(propertyBlock.ident)
+                    : null
+            };
         }
 
-        const block = await LogseqPropertiesHelper.getBlock(this.args.uuid, {
+        const block = await LogseqPropertiesHelper.getBlock(uuid, {
             includeChildren: this.args.includeChildren ?? false
         });
 
         const page =
             block && typeof block.content === "string"
                 ? null
-                : await LogseqPropertiesHelper.getPage(this.args.uuid);
+                : await LogseqPropertiesHelper.getPage(uuid);
 
         if (page) {
             if (this.args.includeChildren) {
-                const children = await LogseqPropertiesHelper.getPageBlocksTree(this.args.uuid);
+                const children = await LogseqPropertiesHelper.getPageBlocksTree(uuid);
                 const normalizedPage = await normalizePage({
                     ...page,
                     children

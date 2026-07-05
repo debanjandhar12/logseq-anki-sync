@@ -16,6 +16,15 @@ const shouldRunTests = () =>
 const getChildContent = (child: BlockEntity | [string, string]) =>
     Array.isArray(child) ? undefined : child.content;
 
+describe("ReadBlockCommand args", () => {
+    it("Requires exactly one of uuid or propertyIndent.", () => {
+        expect(() => new ReadBlockCommand({})).toThrow();
+        expect(() => new ReadBlockCommand({uuid: pageName, propertyIndent: propertyKey})).toThrow();
+        expect(() => new ReadBlockCommand({uuid: pageName})).not.toThrow();
+        expect(() => new ReadBlockCommand({propertyIndent: propertyKey})).not.toThrow();
+    });
+});
+
 describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
     let page: PageEntity;
     let parentBlock: BlockEntity;
@@ -122,8 +131,8 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
         expect(result.block?.uuid).toBe(tagPage.uuid);
     }, 60_000);
 
-    it("Can read property pages using the property page UUID.", async () => {
-        const command = new ReadBlockCommand({uuid: propertyPage.uuid});
+    it("Can read property pages using the property indent.", async () => {
+        const command = new ReadBlockCommand({propertyIndent: propertyKey});
 
         const result = await command.execute();
 
@@ -131,14 +140,28 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
         expect(result.block?.uuid).toBe(propertyPage.uuid);
     }, 60_000);
 
-    it("Does not classify invalid tag or property UUIDs as metadata pages.", async () => {
-        const missingUuid = crypto.randomUUID();
+    it("Can auto-detect property pages using the property page UUID.", async () => {
+        const command = new ReadBlockCommand({uuid: propertyPage.uuid});
 
-        await expect(LogseqEditor.isTagBlock(parentBlock.uuid)).resolves.toBe(false);
-        await expect(LogseqEditor.isPropertyBlock(page.uuid)).resolves.toBe(false);
-        await expect(LogseqEditor.isTagBlock(missingUuid)).resolves.toBe(false);
-        await expect(LogseqEditor.isPropertyBlock(missingUuid)).resolves.toBe(false);
-        await expect(LogseqEditor.getProperty(missingUuid)).resolves.toBeNull();
+        const result = await command.execute();
+
+        await expect(LogseqEditor.isPropertyBlock(propertyPage)).resolves.toBe(true);
+        expect(result.type).toBe("property");
+        expect(result.block?.uuid).toBe(propertyPage.uuid);
+    }, 60_000);
+
+    it("Does not classify invalid tag UUIDs and invalid property indents as metadata pages.", async () => {
+        const missingUuid = crypto.randomUUID();
+        const missingPropertyIndent = `missing-property-${Date.now()}`;
+
+        const tagResult = await new ReadBlockCommand({uuid: missingUuid}).execute();
+        const propertyResult = await new ReadBlockCommand({
+            propertyIndent: missingPropertyIndent
+        }).execute();
+
+        await expect(LogseqEditor.isPropertyBlock(page)).resolves.toBe(false);
+        expect(tagResult).toEqual({type: "block", block: null});
+        expect(propertyResult).toEqual({type: "property", block: null});
     }, 60_000);
 
     it("Revert is a no-op.", async () => {

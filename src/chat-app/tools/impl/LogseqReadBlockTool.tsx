@@ -29,7 +29,8 @@ export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
     static readonly NAME = "logseq_read_block";
 
     readonly name = LogseqReadBlockTool.NAME;
-    readonly description = "Read a Logseq block, page, tag page, or property page by UUID.";
+    readonly description =
+        "Read a Logseq block, page, or tag page by UUID, or a property by propertyIndent.";
     readonly parameters = ReadBlockCommandArgsSchema;
 
     async execute(
@@ -50,7 +51,7 @@ export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
         } catch (err) {
             return {
                 success: false,
-                error: `Failed to read Logseq block ${args.uuid}: ${getErrorMessageFromErrObj(err)}`
+                error: `Failed to read Logseq entity ${args.uuid ?? args.propertyIndent}: ${getErrorMessageFromErrObj(err)}`
             };
         }
     }
