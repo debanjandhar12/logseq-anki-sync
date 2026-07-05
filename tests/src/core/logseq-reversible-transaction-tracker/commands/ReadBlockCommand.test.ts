@@ -1,9 +1,12 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
 import {ReadBlockCommand} from "../../../../../src/core/logseq-reversible-transaction-tracker/commands/ReadBlockCommand";
+import {LogseqEditor} from "../../../../../src/logseq/LogseqEditor";
 
 const pageName = "ReadBlockCommandTestPage_" + Date.now();
 const deletedPageName = "ReadBlockCommandDeletedPageTestPage_" + Date.now();
+const tagName = "ReadBlockCommandTestTag_" + Date.now();
+const propertyKey = "ReadBlockCommandTestProperty_" + Date.now();
 const pageBlockContent = "ReadBlockCommand page child";
 const parentBlockContent = "ReadBlockCommand parent block";
 const childBlockContent = "ReadBlockCommand child block";
@@ -17,6 +20,8 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
     let page: PageEntity;
     let parentBlock: BlockEntity;
     let deletedPage: PageEntity;
+    let tagPage: PageEntity;
+    let propertyPage: BlockEntity;
 
     beforeAll(async () => {
         for (const testPageName of [pageName, deletedPageName]) {
@@ -25,6 +30,18 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
                 await logseq.Editor.deletePage(testPageName);
                 await waitForLogseqDb();
             }
+        }
+
+        const existingTag = await logseq.Editor.getTag(tagName);
+        if (existingTag) {
+            await logseq.Editor.deletePage(existingTag.uuid);
+            await waitForLogseqDb();
+        }
+
+        const existingProperty = await logseq.Editor.getProperty(propertyKey);
+        if (existingProperty) {
+            await logseq.Editor.removeProperty(propertyKey);
+            await waitForLogseqDb();
         }
 
         page = await logseq.Editor.createPage(pageName, {}, {createFirstBlock: false});
@@ -46,10 +63,18 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
         if (!deletedPage) deletedPage = (await logseq.Editor.getPage(deletedPageName))!;
         await logseq.Editor.deletePage(deletedPage.uuid);
 
+        tagPage =
+            (await logseq.Editor.createTag(tagName)) ?? (await logseq.Editor.getTag(tagName))!;
+
+        await logseq.Editor.upsertProperty(propertyKey, {type: "default"});
+        propertyPage = (await logseq.Editor.getProperty(propertyKey))!;
+
         await waitForLogseqDb();
     }, 60_000);
 
     afterAll(async () => {
+        await logseq.Editor.removeProperty(propertyKey);
+        await logseq.Editor.deletePage(tagPage?.uuid ?? tagName);
         await logseq.Editor.deletePage(pageName);
         await logseq.Editor.deletePage(deletedPageName);
         await waitForLogseqDb();
@@ -86,6 +111,34 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
 
         expect(result.type).toBe("page");
         expect(result.block.uuid).toBe(deletedPage.uuid);
+    }, 60_000);
+
+    it("Can read tag pages using the tag page UUID.", async () => {
+        const command = new ReadBlockCommand({uuid: tagPage.uuid});
+
+        const result = await command.execute();
+
+        expect(result.type).toBe("tag");
+        expect(result.block?.uuid).toBe(tagPage.uuid);
+    }, 60_000);
+
+    it("Can read property pages using the property page UUID.", async () => {
+        const command = new ReadBlockCommand({uuid: propertyPage.uuid});
+
+        const result = await command.execute();
+
+        expect(result.type).toBe("property");
+        expect(result.block?.uuid).toBe(propertyPage.uuid);
+    }, 60_000);
+
+    it("Does not classify invalid tag or property UUIDs as metadata pages.", async () => {
+        const missingUuid = crypto.randomUUID();
+
+        await expect(LogseqEditor.isTagBlock(parentBlock.uuid)).resolves.toBe(false);
+        await expect(LogseqEditor.isPropertyBlock(page.uuid)).resolves.toBe(false);
+        await expect(LogseqEditor.isTagBlock(missingUuid)).resolves.toBe(false);
+        await expect(LogseqEditor.isPropertyBlock(missingUuid)).resolves.toBe(false);
+        await expect(LogseqEditor.getProperty(missingUuid)).resolves.toBeNull();
     }, 60_000);
 
     it("Revert is a no-op.", async () => {

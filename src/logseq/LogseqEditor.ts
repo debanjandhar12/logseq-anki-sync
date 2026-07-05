@@ -1,10 +1,99 @@
 import type {BlockEntity, BlockIdentity, EntityID, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 
+type MetadataEntity = BlockEntity | PageEntity;
+type MetadataEntityWithPropertyIdent = MetadataEntity & {
+    "db/ident"?: unknown;
+    ":db/ident"?: unknown;
+};
+
 export class LogseqEditor {
+    private static getUuid(entityOrUuid: MetadataEntity | string): string | null {
+        if (typeof entityOrUuid === "string") return entityOrUuid;
+        return typeof entityOrUuid.uuid === "string" ? entityOrUuid.uuid : null;
+    }
+
+    private static async getMetadataEntity(
+        entityOrUuid: MetadataEntity | string
+    ): Promise<MetadataEntity | null> {
+        if (typeof entityOrUuid !== "string") return entityOrUuid;
+
+        const getBlockWithPageFallback = logseq.Editor.getBlock as unknown as (
+            srcBlock: BlockIdentity | EntityID,
+            opts?: Partial<{includeChildren: boolean; includePage: boolean}>
+        ) => Promise<MetadataEntity | null>;
+
+        const block = await getBlockWithPageFallback(entityOrUuid, {includePage: true});
+        if (block) return block;
+
+        return await logseq.Editor.getPage(entityOrUuid);
+    }
+
+    private static getPropertyKeyCandidates(entity: MetadataEntity | null): string[] {
+        if (!entity) return [];
+
+        const entityWithIdent = entity as MetadataEntityWithPropertyIdent & Record<string, unknown>;
+        const candidates = [
+            entityWithIdent.ident,
+            entityWithIdent["db/ident"],
+            entityWithIdent[":db/ident"],
+            entityWithIdent.name,
+            entityWithIdent.originalName,
+            entityWithIdent.title,
+            entityWithIdent.content
+        ];
+
+        return candidates.filter(
+            (candidate): candidate is string =>
+                typeof candidate === "string" && candidate.length > 0
+        );
+    }
+
+    private static async resolveProperty(
+        entityOrUuid: MetadataEntity | string
+    ): Promise<Awaited<ReturnType<typeof logseq.Editor.getProperty>>> {
+        const entity = await LogseqEditor.getMetadataEntity(entityOrUuid);
+        const uuid =
+            LogseqEditor.getUuid(entityOrUuid) || (entity ? LogseqEditor.getUuid(entity) : null);
+
+        for (const propertyKey of LogseqEditor.getPropertyKeyCandidates(entity)) {
+            const property = await logseq.Editor.getProperty(propertyKey);
+            if (!property) continue;
+            if (uuid && property.uuid && property.uuid !== uuid) continue;
+            return property;
+        }
+
+        return null;
+    }
+
     static async getCurrentPage(): Promise<PageEntity | null> {
         const currentPage = await logseq.Editor.getCurrentPage();
         return currentPage as PageEntity;
+    }
+
+    static async getProperty(
+        propertyPageUuid: string
+    ): Promise<Awaited<ReturnType<typeof logseq.Editor.getProperty>>> {
+        return await LogseqEditor.resolveProperty(propertyPageUuid);
+    }
+
+    static async isTagBlock(blockOrUuid: MetadataEntity | string): Promise<boolean> {
+        const uuid = LogseqEditor.getUuid(blockOrUuid);
+        if (!uuid) return false;
+
+        try {
+            return Boolean(await logseq.Editor.getTag(uuid));
+        } catch {
+            return false;
+        }
+    }
+
+    static async isPropertyBlock(blockOrUuid: MetadataEntity | string): Promise<boolean> {
+        try {
+            return Boolean(await LogseqEditor.resolveProperty(blockOrUuid));
+        } catch {
+            return false;
+        }
     }
 
     static async getCurrentEditingBlock(): Promise<BlockEntity | null> {

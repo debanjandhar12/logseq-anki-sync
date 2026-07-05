@@ -520,11 +520,7 @@ Proposed behavior:
 
 - Keep the existing `uuid` arg.
 - Keep UUID-only identity input. Do not allow tag names, property names, or numeric entity IDs in the tool schema.
-- Add optional discriminator:
-
-```ts
-entityType?: "auto" | "block" | "page" | "tag" | "property"
-```
+- Do not add a manual entity type discriminator. Resolve the entity kind automatically from Logseq metadata and the fallback order below.
 
 Extended result should use real Logseq return types where possible:
 
@@ -538,15 +534,14 @@ type ReadBlockCommandResult =
 
 The tag branch should normalize the `getTag` result with `normalizeTagPage` before returning it. The page and block branches should continue to normalize through `normalizePage` and `normalizeBlock` before returning results.
 
-Resolution order for `entityType: "auto"`:
+Resolution order:
 
 1. Fetch the raw entity with `logseq.Editor.getBlock(uuid, { includePage: true })` or the equivalent option required by the API.
 2. If `LogseqEditor.isTagBlock(rawEntity)` returns true, return `type: "tag"` using `logseq.Editor.getTag(uuid)` and `normalizeTagPage`.
 3. If `LogseqEditor.isPropertyBlock(rawEntity)` returns true, return `type: "property"` using `LogseqEditor.getProperty(uuid)`.
-4. If `logseq.Editor.getPage(uuid)` returns a page, return `type: "page"` using `normalizePage` and optional page children.
-5. Otherwise return `type: "block"` using `normalizeBlock`.
-
-When `entityType` is explicit, validate that the UUID resolves to that entity kind. Return a structured error if it does not.
+4. If the raw entity is a normal content block, return `type: "block"` using `normalizeBlock`.
+5. If `logseq.Editor.getPage(uuid)` returns a page, return `type: "page"` using `normalizePage` and optional page children.
+6. Otherwise return `type: "block"` using `normalizeBlock`.
 
 ## Printer And Review Output
 

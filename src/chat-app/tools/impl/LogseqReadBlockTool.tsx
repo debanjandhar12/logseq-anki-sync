@@ -29,7 +29,7 @@ export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
     static readonly NAME = "logseq_read_block";
 
     readonly name = LogseqReadBlockTool.NAME;
-    readonly description = "Read a Logseq block or page by UUID.";
+    readonly description = "Read a Logseq block, page, tag page, or property page by UUID.";
     readonly parameters = ReadBlockCommandArgsSchema;
 
     async execute(
