@@ -1,5 +1,8 @@
 import type {BlockEntity, EntityID, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "src/logseq/LogseqEditor";
+import {normalizeTagReferences} from "./normalizeTagReferences";
+import {LogseqAppInfoFetcher} from "src/logseq/LogseqAppInfoFetcher";
+import {getEntityID} from "src/core/logseq-reversible-transaction-tracker/commands/utils/getEntityID";
 
 type EntityReferenceWithID = {id: EntityID};
 type EntityReferenceWithUUID = {uuid: string};
@@ -7,16 +10,6 @@ export type ResolvableEntityReference = EntityID | EntityReferenceWithID | Entit
 
 function hasUUID(value: unknown): value is EntityReferenceWithUUID {
     return typeof value === "object" && value !== null && "uuid" in value;
-}
-
-function getEntityID(value: unknown): EntityID | undefined {
-    if (typeof value === "number") return value;
-    if (typeof value === "object" && value !== null && "id" in value) {
-        const id = (value as EntityReferenceWithID).id;
-        if (typeof id === "number") return id;
-    }
-
-    return undefined;
 }
 
 export async function resolvePageUUID(
@@ -69,7 +62,15 @@ export async function normalizeBlock(block: BlockEntity): Promise<BlockEntity> {
 
     if (!block?.uuid) throw new Error("Block UUID is missing");
 
-    const normalizedBlock = block;
+    if (await LogseqAppInfoFetcher.checkCurrentIsDbGraph()) {
+        const properties = await logseq.Editor.getBlockProperties(block.uuid);
+        if (properties) block.properties = {...properties, ...block.properties};
+        // TODO: Link is not actually a property. This may cause confusion with llm.
+        // Logseq likely doesnt provide any api for handling references...
+        if (block.link) block.properties = {...block.properties, link: block.link};
+    }
+
+    const normalizedBlock = await normalizeTagReferences(block);
     if (block.page?.id) {
         normalizedBlock.page = {
             uuid: await resolvePageUUID(block.page)

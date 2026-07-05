@@ -1,5 +1,6 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {normalizeBlock} from "./normalizeBlock";
+import {normalizeTagReferences} from "./normalizeTagReferences";
 
 function isBlockEntity(value: unknown): value is BlockEntity {
     return typeof value === "object" && value !== null && "id" in value && "uuid" in value;
@@ -24,5 +25,5 @@ export async function normalizePage(page: PageEntity): Promise<PageEntity> {
         )) as PageEntity[];
     }
 
-    return normalizedPage;
+    return await normalizeTagReferences(normalizedPage);
 }
