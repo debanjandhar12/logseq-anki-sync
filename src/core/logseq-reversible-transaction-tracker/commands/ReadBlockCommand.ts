@@ -86,9 +86,7 @@ export class ReadBlockCommand extends BaseReversibleCommand {
         if (propertyBlock && (await LogseqEditor.isPropertyBlock(propertyBlock))) {
             return {
                 type: "property",
-                block: propertyBlock.ident
-                    ? await LogseqEditor.getProperty(propertyBlock.ident)
-                    : null
+                block: await LogseqEditor.getProperty(uuid)
             };
         }
 

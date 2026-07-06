@@ -4,6 +4,7 @@ import {
     CreatePageCommand,
     DeleteBlockCommand,
     DeletePageCommand,
+    DeletePropertyFromBlockCommand,
     InsertBlockCommand,
     InsertBlockCommandArgsSchema,
     LogseqReversibleTransactionCommandSerializer,
@@ -11,7 +12,9 @@ import {
     LogseqReversibleTransactionTrackerSerializer,
     MoveBlockCommand,
     RenamePageCommand,
-    UpdateBlockCommand
+    UpdateBlockCommand,
+    UpsertPropertyPageCommand,
+    UpsertPropertyToBlockCommand
 } from "../../../../src/core/logseq-reversible-transaction-tracker";
 
 describe("LogseqReversibleTransactionCommandSerializer", () => {
@@ -145,6 +148,20 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
             new RenamePageCommand({
                 pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f35",
                 newName: "Renamed Page"
+            }),
+            new UpsertPropertyPageCommand({
+                propertyUuidOrIndent: "rating",
+                schema: {type: "number", cardinality: "one"},
+                opts: {name: "Rating"}
+            }),
+            new UpsertPropertyToBlockCommand({
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f37",
+                propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f38",
+                value: {score: 5}
+            }),
+            new DeletePropertyFromBlockCommand({
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f39",
+                propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f40"
             })
         ];
 
@@ -184,8 +201,45 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
                 type: "RenamePage",
                 pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f35",
                 newName: "Renamed Page"
+            },
+            {
+                type: "UpsertPropertyPage",
+                propertyUuidOrIndent: "rating",
+                schema: {type: "number", cardinality: "one"},
+                opts: {name: "Rating"}
+            },
+            {
+                type: "UpsertPropertyToBlock",
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f37",
+                propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f38",
+                value: {score: 5}
+            },
+            {
+                type: "DeletePropertyFromBlock",
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f39",
+                propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f40"
             }
         ]);
+    });
+
+    test("round trips arbitrary property command values", () => {
+        const command = new UpsertPropertyToBlockCommand({
+            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f37",
+            propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f38",
+            value: {nested: ["a", 1, true], value: null}
+        });
+
+        const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
+        const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
+
+        expect(serialized).toEqual({
+            type: "UpsertPropertyToBlock",
+            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f37",
+            propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f38",
+            value: {nested: ["a", 1, true], value: null}
+        });
+        expect(deserialized).toBeInstanceOf(UpsertPropertyToBlockCommand);
+        expect(deserialized).toEqual(command);
     });
 
     test("round trips defaulted command args", () => {

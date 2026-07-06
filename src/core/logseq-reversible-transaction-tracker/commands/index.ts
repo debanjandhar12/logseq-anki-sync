@@ -3,6 +3,7 @@ import {CreatePageCommandCodec} from "./CreatePageCommand";
 import {DataScriptQueryCommandCodec} from "./DataScriptQueryCommand";
 import {DeleteBlockCommandCodec} from "./DeleteBlockCommand";
 import {DeletePageCommandCodec} from "./DeletePageCommand";
+import {DeletePropertyFromBlockCommandCodec} from "./DeletePropertyFromBlockCommand";
 import {InsertBlockCommandCodec} from "./InsertBlockCommand";
 import {MoveBlockCommandCodec} from "./MoveBlockCommand";
 import {ReadBlockCommandCodec} from "./ReadBlockCommand";
@@ -10,6 +11,8 @@ import {RenamePageCommandCodec} from "./RenamePageCommand";
 import {RestorePageCommandCodec} from "./RestorePageCommand";
 import {TextSearchCommandCodec} from "./TextSearchCommand";
 import {UpdateBlockCommandCodec} from "./UpdateBlockCommand";
+import {UpsertPropertyPageCommandCodec} from "./UpsertPropertyPageCommand";
+import {UpsertPropertyToBlockCommandCodec} from "./UpsertPropertyToBlockCommand";
 
 export {BaseReversibleCommand} from "./BaseReversibleCommand";
 export {
@@ -36,6 +39,12 @@ export {
     type DeletePageCommandArgsInput,
     DeletePageCommandArgsSchema
 } from "./DeletePageCommand";
+export {
+    DeletePropertyFromBlockCommand,
+    type DeletePropertyFromBlockCommandArgs,
+    type DeletePropertyFromBlockCommandArgsInput,
+    DeletePropertyFromBlockCommandArgsSchema
+} from "./DeletePropertyFromBlockCommand";
 export {
     InsertBlockCommand,
     type InsertBlockCommandArgs,
@@ -79,18 +88,33 @@ export {
     type UpdateBlockCommandArgsInput,
     UpdateBlockCommandArgsSchema
 } from "./UpdateBlockCommand";
+export {
+    UpsertPropertyPageCommand,
+    type UpsertPropertyPageCommandArgs,
+    type UpsertPropertyPageCommandArgsInput,
+    UpsertPropertyPageCommandArgsSchema
+} from "./UpsertPropertyPageCommand";
+export {
+    UpsertPropertyToBlockCommand,
+    type UpsertPropertyToBlockCommandArgs,
+    type UpsertPropertyToBlockCommandArgsInput,
+    UpsertPropertyToBlockCommandArgsSchema
+} from "./UpsertPropertyToBlockCommand";
 export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
     CreatePageCommandCodec,
     DataScriptQueryCommandCodec,
     DeleteBlockCommandCodec,
     DeletePageCommandCodec,
+    DeletePropertyFromBlockCommandCodec,
     InsertBlockCommandCodec,
     MoveBlockCommandCodec,
     ReadBlockCommandCodec,
     RenamePageCommandCodec,
     RestorePageCommandCodec,
     TextSearchCommandCodec,
-    UpdateBlockCommandCodec
+    UpdateBlockCommandCodec,
+    UpsertPropertyPageCommandCodec,
+    UpsertPropertyToBlockCommandCodec
 ]);
 
 export type SerializedLogseqReversibleCommand = z.input<typeof LogseqReversibleCommandCodec>;

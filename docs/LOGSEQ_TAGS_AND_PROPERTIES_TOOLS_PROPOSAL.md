@@ -1,6 +1,6 @@
 # Logseq Tags And Properties Tool Support Proposal
 
-Status: **Proposal - not implemented.**
+Status: **Partially implemented.** Property page and block property commands/tools are implemented. Tag commands/tools remain proposal-only.
 
 ## Summary
 

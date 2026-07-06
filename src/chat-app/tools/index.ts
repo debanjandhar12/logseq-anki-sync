@@ -5,6 +5,7 @@ export {LogseqCommitChangesTool} from "src/chat-app/tools/impl/LogseqCommitChang
 export {LogseqCreatePageTool} from "src/chat-app/tools/impl/LogseqCreatePageTool";
 export {LogseqDataScriptQueryTool} from "src/chat-app/tools/impl/LogseqDataScriptQueryTool";
 export {LogseqDeletePageTool} from "src/chat-app/tools/impl/LogseqDeletePageTool";
+export {LogseqDeletePropertyFromBlockTool} from "src/chat-app/tools/impl/LogseqDeletePropertyFromBlockTool";
 export {LogseqInsertBlockTool} from "src/chat-app/tools/impl/LogseqInsertBlockTool";
 export {LogseqMoveBlockTool} from "src/chat-app/tools/impl/LogseqMoveBlockTool";
 export {LogseqReadBlockTool} from "src/chat-app/tools/impl/LogseqReadBlockTool";
@@ -12,5 +13,7 @@ export {LogseqRenamePageTool} from "src/chat-app/tools/impl/LogseqRenamePageTool
 export {LogseqRestorePageTool} from "src/chat-app/tools/impl/LogseqRestorePageTool";
 export {LogseqTextSearchTool} from "src/chat-app/tools/impl/LogseqTextSearchTool";
 export {LogseqUpdateBlockTool} from "src/chat-app/tools/impl/LogseqUpdateBlockTool";
+export {LogseqUpsertPropertyPageTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyPageTool";
+export {LogseqUpsertPropertyToBlockTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyToBlockTool";
 export {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 export {ChatToolRegistry} from "./ToolRegistry";

@@ -1,4 +1,5 @@
 import type {BlockEntity, BlockIdentity, EntityID, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import {validatePropertyUuidOrIndent} from "src/core/logseq-reversible-transaction-tracker/commands/utils/validations/propertyValidations";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 
 export class LogseqEditor {
@@ -8,9 +9,31 @@ export class LogseqEditor {
     }
 
     static async getProperty(
-        propertyIndent: string
+        propertyUuidOrIndent: string
     ): Promise<Awaited<ReturnType<typeof logseq.Editor.getProperty>>> {
+        propertyUuidOrIndent = validatePropertyUuidOrIndent(propertyUuidOrIndent);
+
+        const propertyBlock = await logseq.Editor.getBlock(propertyUuidOrIndent);
+        const propertyIndent = propertyBlock
+            ? LogseqEditor.getPropertyIndentFromEntity(propertyBlock)
+            : propertyUuidOrIndent;
+
+        if (!propertyIndent) return null;
         return await logseq.Editor.getProperty(propertyIndent);
+    }
+
+    private static getPropertyIndentFromEntity(
+        property: BlockEntity | PageEntity
+    ): string | undefined {
+        const record = property as unknown as Record<string, unknown>;
+        const ident = record.ident ?? record["db/ident"] ?? record[":db/ident"];
+        if (typeof ident === "string" && ident.includes("/")) {
+            return ident.replace(/^:/, "").split("/").at(-1);
+        }
+
+        if (typeof ident === "string" && ident.trim()) return ident;
+
+        return undefined;
     }
 
     static async isTagBlock(blockOrUuid: BlockEntity | PageEntity | string): Promise<boolean> {
