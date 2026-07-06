@@ -27,9 +27,9 @@ export type DeletePropertyFromBlockCommandArgs = z.output<
 >;
 
 const DeletePropertyFromBlockCommandSerializedSchema =
-DeletePropertyFromBlockCommandArgsBaseSchema.extend({
-    type: z.literal("DeletePropertyFromBlock")
-});
+    DeletePropertyFromBlockCommandArgsBaseSchema.extend({
+        type: z.literal("DeletePropertyFromBlock")
+    });
 
 /**
  * Removes a property value from a Logseq block.
@@ -61,7 +61,7 @@ export class DeletePropertyFromBlockCommand extends BaseReversibleCommand {
         if (!originalBlock) throw new Error(`Block not found: ${this.args.blockUuid}`);
         this.propertyKey = property.ident;
         try {
-            this.previousValue = await LogseqBlockPropertyHelper.getBlockProperty(
+            this.previousValue = await LogseqBlockPropertyHelper.getBlockPropertyInputValue(
                 this.args.blockUuid,
                 this.propertyKey
             );
@@ -75,10 +75,7 @@ export class DeletePropertyFromBlockCommand extends BaseReversibleCommand {
 
         if (originalBlock.page) this.changedPages.push(await resolvePageUUID(originalBlock.page));
 
-        await logseq.Editor.removeBlockProperty(
-            this.args.blockUuid,
-            this.propertyKey
-        );
+        await logseq.Editor.removeBlockProperty(this.args.blockUuid, this.propertyKey);
 
         const updatedBlock = await logseq.Editor.getBlock(this.args.blockUuid as BlockIdentity);
         if (!updatedBlock) throw new Error(`Updated block not found: ${this.args.blockUuid}`);

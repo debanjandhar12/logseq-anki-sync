@@ -13,12 +13,8 @@ proxyLogseq({
 // Check Logseq availability
 try {
     // @ts-ignore
-    await logseq.App.getUserInfo();
-    globalThis.isLogseqAvailable = true;
-
-    // Check if current graph is DB graph
-    // @ts-ignore
     const isDBGraphAPIResponse = await logseq.App.checkCurrentIsDbGraph();
+    globalThis.isLogseqAvailable = typeof isDBGraphAPIResponse === "boolean";
     globalThis.isLogseqCurrentIsDBGraph =
         typeof isDBGraphAPIResponse === "boolean" ? isDBGraphAPIResponse : false;
 } catch {

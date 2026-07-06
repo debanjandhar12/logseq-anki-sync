@@ -31,10 +31,6 @@ const UpsertPropertyToBlockCommandSerializedSchema =
         type: z.literal("UpsertPropertyToBlock")
     });
 
-function isInternalUuidProperty(propertyKey: string): boolean {
-    return propertyKey.replace(/^:/, "").split("/").at(-1) === "uuid";
-}
-
 /**
  * Sets a property value on a Logseq block.
  *
@@ -65,7 +61,7 @@ export class UpsertPropertyToBlockCommand extends BaseReversibleCommand {
         if (!originalBlock) throw new Error(`Block not found: ${this.args.blockUuid}`);
         this.propertyKey = property.ident;
         try {
-            this.previousValue = await LogseqBlockPropertyHelper.getBlockProperty(
+            this.previousValue = await LogseqBlockPropertyHelper.getBlockPropertyInputValue(
                 this.args.blockUuid,
                 this.propertyKey
             );

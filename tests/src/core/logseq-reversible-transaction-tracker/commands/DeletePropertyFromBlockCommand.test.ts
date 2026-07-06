@@ -1,7 +1,7 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
-import {afterAll, beforeAll, describe, expect, it} from "vitest";
 import {DeletePropertyFromBlockCommand} from "src/core/logseq-reversible-transaction-tracker";
 import {LogseqBlockPropertyHelper} from "src/logseq/LogseqBlockPropertyHelper";
+import {afterAll, beforeAll, describe, expect, it} from "vitest";
 
 const testId = Date.now();
 const pageName = `DeletePropertyFromBlockPage_${testId}`;
@@ -78,5 +78,29 @@ describe.skipIf(!shouldRunTests())("DeletePropertyFromBlockCommand", () => {
         await expect(
             LogseqBlockPropertyHelper.getBlockProperty(block.uuid, propertyKey)
         ).resolves.toBe("delete me");
+    }, 60_000);
+
+    it("execute and revert works with property indent", async () => {
+        await logseq.Editor.upsertBlockProperty(block.uuid, propertyKey, "delete by indent", {
+            reset: true
+        });
+        await waitForLogseqDb();
+
+        const command = new DeletePropertyFromBlockCommand({
+            blockUuid: block.uuid,
+            propertyUuidOrIndent: propertyKey
+        });
+
+        await command.execute();
+        await waitForLogseqDb();
+        expect(await logseq.Editor.getBlockProperty(block.uuid, propertyKey)).toBeNull();
+
+        await command.revert();
+        await waitForLogseqDb();
+
+        await expect(
+            LogseqBlockPropertyHelper.getBlockProperty(block.uuid, propertyKey)
+        ).resolves.toBe("delete by indent");
+        await logseq.Editor.removeBlockProperty(block.uuid, propertyKey);
     }, 60_000);
 });

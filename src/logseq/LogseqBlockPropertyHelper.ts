@@ -8,6 +8,40 @@ export class LogseqBlockPropertyNotFoundError extends Error {
 }
 
 export class LogseqBlockPropertyHelper {
+    public static async getRawBlockProperty(
+        block: BlockIdentity | EntityID,
+        propertyIndent: string
+    ): Promise<unknown> {
+        const property = await LogseqEditor.getProperty(propertyIndent);
+        if (!property) throw new Error(`Property not found: ${propertyIndent}`);
+
+        const blockProperties = await logseq.Editor.getBlockProperties(block);
+        if (!LogseqBlockPropertyHelper.hasProperty(blockProperties, property, propertyIndent)) {
+            throw new LogseqBlockPropertyNotFoundError(propertyIndent);
+        }
+
+        return await logseq.Editor.getBlockProperty(block, propertyIndent);
+    }
+
+    public static async getBlockPropertyInputValue(
+        block: BlockIdentity | EntityID,
+        propertyIndent: string
+    ): Promise<unknown> {
+        const property = await LogseqEditor.getProperty(propertyIndent);
+        if (!property) throw new Error(`Property not found: ${propertyIndent}`);
+
+        const value = await LogseqBlockPropertyHelper.getRawBlockProperty(block, propertyIndent);
+        const shouldWriteEntityId = LogseqBlockPropertyHelper.isRefProperty(property);
+        return Array.isArray(value)
+            ? value.map((item) =>
+                  LogseqBlockPropertyHelper.normalizePropertyValueForWrite(
+                      item,
+                      shouldWriteEntityId
+                  )
+              )
+            : LogseqBlockPropertyHelper.normalizePropertyValueForWrite(value, shouldWriteEntityId);
+    }
+
     public static async getBlockProperty(
         block: BlockIdentity | EntityID,
         propertyIndent: string
@@ -20,7 +54,7 @@ export class LogseqBlockPropertyHelper {
             throw new LogseqBlockPropertyNotFoundError(propertyIndent);
         }
 
-        const value = await logseq.Editor.getBlockProperty(block, propertyIndent);
+        const value = await LogseqBlockPropertyHelper.getRawBlockProperty(block, propertyIndent);
         if (LogseqBlockPropertyHelper.isManyCardinality(property)) {
             return Array.isArray(value)
                 ? value.map(LogseqBlockPropertyHelper.normalizePropertyValue)
@@ -56,10 +90,31 @@ export class LogseqBlockPropertyHelper {
         return typeof cardinality === "string" && cardinality.includes("many");
     }
 
+    private static isRefProperty(
+        property: NonNullable<Awaited<ReturnType<typeof LogseqEditor.getProperty>>>
+    ): boolean {
+        const record = property as unknown as Record<string, unknown>;
+        const type =
+            record.type ?? record["logseq.property/type"] ?? record[":logseq.property/type"];
+        return typeof type === "string" && ["date", "node", "asset"].includes(type);
+    }
+
     private static normalizePropertyValue(value: unknown): unknown {
         if (typeof value !== "object" || value === null || !("id" in value)) return value;
 
         const record = value as Record<string, unknown>;
         return record.value ?? record.content ?? record.title ?? record.fullTitle;
+    }
+
+    private static normalizePropertyValueForWrite(
+        value: unknown,
+        shouldWriteEntityId: boolean
+    ): unknown {
+        if (typeof value !== "object" || value === null || !("id" in value)) return value;
+
+        const record = value as Record<string, unknown>;
+        return shouldWriteEntityId
+            ? record.id
+            : (record.value ?? record.content ?? record.title ?? record.fullTitle);
     }
 }
