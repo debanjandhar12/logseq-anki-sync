@@ -1,0 +1,4 @@
+[:find (pull ?p [:block/uuid :block/title :block/name :block/type])
+ :in $ ?page-name
+ :where
+ [?p :block/name ?page-name]]

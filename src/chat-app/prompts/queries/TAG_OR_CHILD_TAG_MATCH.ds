@@ -1,0 +1,9 @@
+[:find (pull ?b [:block/uuid :block/title])
+ :in $ ?tag-title
+ :where
+ [?b :block/tags ?tag]
+ (or-join [?tag ?tag-title]
+   [?tag :block/title ?tag-title]
+   (and
+    [?tag :logseq.property.class/extends ?parent]
+    [?parent :block/title ?tag-title]))]

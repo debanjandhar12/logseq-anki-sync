@@ -1,0 +1,14 @@
+[:find (pull ?b [:block/uuid :block/title])
+ :in $ ?status-titles
+ :where
+ [?b :block/tags ?task-tag]
+ [?task-tag :block/title "Task"]
+ (or-join [?b ?status-titles]
+   (and
+    [?b :logseq.property/status ?status]
+    [?status :block/title ?status-title]
+    [(contains? ?status-titles ?status-title)])
+   (and
+    [(contains? ?status-titles "Todo")]
+    (not-join [?b]
+      [?b :logseq.property/status _])))]

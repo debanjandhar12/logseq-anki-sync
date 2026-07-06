@@ -1,0 +1,11 @@
+[:find (pull ?b [:block/uuid :block/title])
+ :in $ ?priority-property ?priority-titles ?archived-tag-title
+ :where
+ [?b :block/tags ?task-tag]
+ [?task-tag :block/title "Task"]
+ [?b ?priority-property ?priority]
+ [?priority :block/title ?priority-title]
+ [(contains? ?priority-titles ?priority-title)]
+ (not-join [?b ?archived-tag-title]
+   [?b :block/tags ?archived-tag]
+   [?archived-tag :block/title ?archived-tag-title])]

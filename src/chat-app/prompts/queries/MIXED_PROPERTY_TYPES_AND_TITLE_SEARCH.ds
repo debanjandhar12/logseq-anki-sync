@@ -1,0 +1,11 @@
+[:find (pull ?b [:block/uuid :block/title])
+ :in $ ?title-pattern ?checkbox-property ?number-property ?node-property ?min-number ?node-title
+ :where
+ [?b :block/title ?title]
+ [(re-pattern ?title-pattern) ?pattern]
+ [(re-find ?pattern ?title)]
+ [?b ?checkbox-property true]
+ [?b ?number-property ?number]
+ [(>= ?number ?min-number)]
+ [?b ?node-property ?node]
+ [?node :block/title ?node-title]]

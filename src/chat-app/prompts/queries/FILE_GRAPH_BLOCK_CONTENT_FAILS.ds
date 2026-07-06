@@ -1,0 +1,6 @@
+[:find (pull ?b [:block/uuid :block/title])
+ :in $ ?title-pattern
+ :where
+ [?b :block/content ?content]
+ [(re-pattern ?title-pattern) ?pattern]
+ [(re-find ?pattern ?content)]]

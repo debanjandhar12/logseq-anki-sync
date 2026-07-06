@@ -1,0 +1,30 @@
+[:find (pull ?b [:block/uuid :block/title])
+ :in $ ?title-pattern ?status-titles ?priority-property ?priority-titles ?scheduled-property ?start-day ?end-day ?node-property ?node-titles ?excluded-tag-title
+ :where
+ [?b :block/tags ?task-tag]
+ [?task-tag :block/title "Task"]
+ [?b :block/title ?title]
+ [(re-pattern ?title-pattern) ?pattern]
+ [(re-find ?pattern ?title)]
+ (or-join [?b ?status-titles]
+   (and
+    [?b :logseq.property/status ?status]
+    [?status :block/title ?status-title]
+    [(contains? ?status-titles ?status-title)])
+   (and
+    [(contains? ?status-titles "Todo")]
+    (not-join [?b]
+      [?b :logseq.property/status _])))
+ [?b ?priority-property ?priority]
+ [?priority :block/title ?priority-title]
+ [(contains? ?priority-titles ?priority-title)]
+ [?b ?scheduled-property ?scheduled-page]
+ [?scheduled-page :block/journal-day ?day]
+ [(>= ?day ?start-day)]
+ [(<= ?day ?end-day)]
+ [?b ?node-property ?node]
+ [?node :block/title ?node-title]
+ [(contains? ?node-titles ?node-title)]
+ (not-join [?b ?excluded-tag-title]
+   [?b :block/tags ?excluded-tag]
+   [?excluded-tag :block/title ?excluded-tag-title])]

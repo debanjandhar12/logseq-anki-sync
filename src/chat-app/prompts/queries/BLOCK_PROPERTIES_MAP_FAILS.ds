@@ -1,0 +1,5 @@
+[:find (pull ?b [:block/uuid :block/title])
+ :in $ ?property-key
+ :where
+ [?b :block/properties ?properties]
+ [(get ?properties ?property-key) ?value]]

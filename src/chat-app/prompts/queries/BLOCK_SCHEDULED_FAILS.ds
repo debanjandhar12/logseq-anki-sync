@@ -1,0 +1,6 @@
+[:find (pull ?b [:block/uuid :block/title])
+ :in $ ?start-day ?end-day
+ :where
+ [?b :block/scheduled ?day]
+ [(>= ?day ?start-day)]
+ [(<= ?day ?end-day)]]

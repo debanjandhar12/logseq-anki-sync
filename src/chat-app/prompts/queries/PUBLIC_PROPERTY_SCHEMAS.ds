@@ -1,0 +1,5 @@
+[:find (pull ?p [:db/ident :block/title :db/cardinality :logseq.property/type :logseq.property/public?])
+ :where
+ [?p :block/tags ?property-tag]
+ [?property-tag :db/ident :logseq.class/Property]
+ (not [?p :logseq.property/public? false])]

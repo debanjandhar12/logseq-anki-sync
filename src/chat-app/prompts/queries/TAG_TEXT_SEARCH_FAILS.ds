@@ -1,4 +1,5 @@
 [:find (pull ?b [:block/uuid :block/title])
+ :in $ ?tag-text
  :where
  [?b :block/title ?title]
- [(clojure.string/includes? ?title "unique title keyword")]]
+ [(clojure.string/includes? ?title ?tag-text)]]

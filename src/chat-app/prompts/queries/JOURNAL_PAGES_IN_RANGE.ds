@@ -1,0 +1,6 @@
+[:find (pull ?p [:db/id :block/uuid :block/title :block/journal-day])
+ :in $ ?start-day ?end-day
+ :where
+ [?p :block/journal-day ?day]
+ [(>= ?day ?start-day)]
+ [(<= ?day ?end-day)]]
