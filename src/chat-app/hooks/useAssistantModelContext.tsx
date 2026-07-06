@@ -2,7 +2,7 @@ import type {AssistantClient, ModelContextProvider} from "@assistant-ui/react";
 import {useEffect, useMemo, useRef} from "react";
 import {parseTemplateString} from "../../core/template-engine/parseTemplateString";
 import {createLogger, LoggerCategory} from "../../logger";
-import mainSystemMessageTemplate from "../prompts/MAIN_SYSTEM_MESSAGE.md?raw";
+import mainSystemMessageTemplate from "../prompts/MAIN_SYSTEM_MESSAGE.md?inlineSkill";
 import {ChatToolRegistry} from "../tools";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);

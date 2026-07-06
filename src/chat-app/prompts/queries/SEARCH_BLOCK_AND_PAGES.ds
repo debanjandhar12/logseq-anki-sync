@@ -1,0 +1,4 @@
+[:find (pull ?b [:block/uuid :block/title])
+ :where
+ [?b :block/title ?title]
+ [(clojure.string/includes? ?title "unique title keyword")]]

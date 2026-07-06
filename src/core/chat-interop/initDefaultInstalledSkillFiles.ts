@@ -1,6 +1,6 @@
-import SKILL_LOGSEQ_QUERY_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_DATASCRIPT_QUERY.md?raw";
-import SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS.md?raw";
-import SKILL_LOGSEQ_PROPERTIES_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_PROPERTIES.md?raw";
+import SKILL_LOGSEQ_QUERY_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_DATASCRIPT_QUERY.md?inlineSkill";
+import SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS.md?inlineSkill";
+import SKILL_LOGSEQ_PROPERTIES_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_PROPERTIES.md?inlineSkill";
 import {SkillFileStore} from "../stores/skill-file-store/SkillFileStore";
 
 const DEFAULT_SKILL_FILES = [

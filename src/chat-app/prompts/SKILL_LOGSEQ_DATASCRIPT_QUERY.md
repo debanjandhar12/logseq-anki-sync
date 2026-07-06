@@ -58,10 +58,7 @@ Do not use file graph attributes like `:block/content`, `:block/marker`, `:block
 ### Blocks by Title Text
 
 ```clojure
-[:find (pull ?b [:block/uuid :block/title])
- :where
- [?b :block/title ?title]
- [(clojure.string/includes? ?title "keyword")]]
+<% #includeFile %>queries/SEARCH_BLOCK_AND_PAGES.ds<% /includeFile %>
 ```
 
 ### Blocks on a Page
