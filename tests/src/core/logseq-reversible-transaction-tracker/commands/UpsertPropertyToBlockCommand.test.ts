@@ -44,11 +44,13 @@ describe.skipIf(!shouldRunTests())("UpsertPropertyToBlockCommand", () => {
         page =
             (await logseq.Editor.createPage(pageName, {}, {createFirstBlock: false})) ??
             (await logseq.Editor.getPage(pageName))!;
+        await waitForLogseqDb();
         block = (await logseq.Editor.appendBlockInPage(page.uuid, `Upsert block ${testId}`))!;
+        await waitForLogseqDb();
         await logseq.Editor.upsertProperty(propertyKey, {type: "default", cardinality: "one"});
         propertyPage = (await logseq.Editor.getProperty(propertyKey))!;
         await waitForLogseqDb();
-    }, 60_000);
+    }, 120_000);
 
     afterAll(async () => {
         if (await logseq.Editor.getProperty(propertyKey))

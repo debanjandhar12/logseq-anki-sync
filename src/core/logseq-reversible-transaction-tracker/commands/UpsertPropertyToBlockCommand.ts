@@ -9,7 +9,6 @@ import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {normalizeBlock, resolvePageUUID} from "./utils/normalizeBlock";
-import {snapshotPagePropertiesSchema} from "./utils/snapshotPagePropertiesSchema";
 import {PropertyUuidOrIndentSchema} from "./utils/validations/propertyValidations";
 
 const UpsertPropertyToBlockCommandArgsBaseSchema = z.object({
@@ -62,17 +61,13 @@ export class UpsertPropertyToBlockCommand extends BaseReversibleCommand {
         const property = await LogseqEditor.getProperty(this.args.propertyUuidOrIndent);
         if (!property) throw new Error("Property page not found");
 
-        const propertySnapshot = snapshotPagePropertiesSchema(property);
-        if (isInternalUuidProperty(propertySnapshot.propertyIndent))
-            throw new Error("Cannot mutate internal uuid property");
-
         const originalBlock = await logseq.Editor.getBlock(this.args.blockUuid as BlockIdentity);
         if (!originalBlock) throw new Error(`Block not found: ${this.args.blockUuid}`);
-        this.propertyKey = propertySnapshot.propertyIndent;
+        this.propertyKey = property.ident;
         try {
             this.previousValue = await LogseqBlockPropertyHelper.getBlockProperty(
                 this.args.blockUuid,
-                propertySnapshot.propertyIndent
+                this.propertyKey
             );
             this.hadPreviousValue = true;
         } catch (error) {
@@ -86,7 +81,7 @@ export class UpsertPropertyToBlockCommand extends BaseReversibleCommand {
 
         await logseq.Editor.upsertBlockProperty(
             this.args.blockUuid,
-            propertySnapshot.propertyIndent,
+            this.propertyKey,
             this.args.value,
             {reset: true}
         );

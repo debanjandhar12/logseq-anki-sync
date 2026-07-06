@@ -1,7 +1,7 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
-import {DeletePropertyFromBlockCommand} from "../../../../../src/core/logseq-reversible-transaction-tracker";
-import {LogseqBlockPropertyHelper} from "../../../../../src/logseq/LogseqBlockPropertyHelper";
+import {DeletePropertyFromBlockCommand} from "src/core/logseq-reversible-transaction-tracker";
+import {LogseqBlockPropertyHelper} from "src/logseq/LogseqBlockPropertyHelper";
 
 const testId = Date.now();
 const pageName = `DeletePropertyFromBlockPage_${testId}`;
@@ -42,11 +42,13 @@ describe.skipIf(!shouldRunTests())("DeletePropertyFromBlockCommand", () => {
         page =
             (await logseq.Editor.createPage(pageName, {}, {createFirstBlock: false})) ??
             (await logseq.Editor.getPage(pageName))!;
+        await waitForLogseqDb();
         block = (await logseq.Editor.appendBlockInPage(page.uuid, `Delete block ${testId}`))!;
+        await waitForLogseqDb();
         await logseq.Editor.upsertProperty(propertyKey, {type: "default", cardinality: "one"});
         propertyPage = (await logseq.Editor.getProperty(propertyKey))!;
         await waitForLogseqDb();
-    }, 60_000);
+    }, 120_000);
 
     afterAll(async () => {
         if (await logseq.Editor.getProperty(propertyKey))

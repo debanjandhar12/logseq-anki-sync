@@ -9,7 +9,6 @@ import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
 import {normalizeBlock, resolvePageUUID} from "./utils/normalizeBlock";
-import {snapshotPagePropertiesSchema} from "./utils/snapshotPagePropertiesSchema";
 import {PropertyUuidOrIndentSchema} from "./utils/validations/propertyValidations";
 
 const DeletePropertyFromBlockCommandArgsBaseSchema = z.object({
@@ -28,13 +27,9 @@ export type DeletePropertyFromBlockCommandArgs = z.output<
 >;
 
 const DeletePropertyFromBlockCommandSerializedSchema =
-    DeletePropertyFromBlockCommandArgsBaseSchema.extend({
-        type: z.literal("DeletePropertyFromBlock")
-    });
-
-function isInternalUuidProperty(propertyKey: string): boolean {
-    return propertyKey.replace(/^:/, "").split("/").at(-1) === "uuid";
-}
+DeletePropertyFromBlockCommandArgsBaseSchema.extend({
+    type: z.literal("DeletePropertyFromBlock")
+});
 
 /**
  * Removes a property value from a Logseq block.
@@ -62,17 +57,13 @@ export class DeletePropertyFromBlockCommand extends BaseReversibleCommand {
         const property = await LogseqEditor.getProperty(this.args.propertyUuidOrIndent);
         if (!property) throw new Error("Property page not found");
 
-        const propertySnapshot = snapshotPagePropertiesSchema(property);
-        if (isInternalUuidProperty(propertySnapshot.propertyIndent))
-            throw new Error("Cannot delete internal uuid property");
-
         const originalBlock = await logseq.Editor.getBlock(this.args.blockUuid as BlockIdentity);
         if (!originalBlock) throw new Error(`Block not found: ${this.args.blockUuid}`);
-        this.propertyKey = propertySnapshot.propertyIndent;
+        this.propertyKey = property.ident;
         try {
             this.previousValue = await LogseqBlockPropertyHelper.getBlockProperty(
                 this.args.blockUuid,
-                propertySnapshot.propertyIndent
+                this.propertyKey
             );
             this.hadPreviousValue = true;
         } catch (error) {
@@ -86,7 +77,7 @@ export class DeletePropertyFromBlockCommand extends BaseReversibleCommand {
 
         await logseq.Editor.removeBlockProperty(
             this.args.blockUuid,
-            propertySnapshot.propertyIndent
+            this.propertyKey
         );
 
         const updatedBlock = await logseq.Editor.getBlock(this.args.blockUuid as BlockIdentity);
