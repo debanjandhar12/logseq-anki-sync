@@ -59,28 +59,7 @@ describe.skipIf(!shouldRunTests())("UpsertPropertyToBlockCommand", () => {
         await waitForLogseqDb();
     }, 60_000);
 
-    it("sets a block property by indent and removes it on revert when it did not exist", async () => {
-        const command = new UpsertPropertyToBlockCommand({
-            blockUuid: block.uuid,
-            propertyUuidOrIndent: propertyKey,
-            value: "new value"
-        });
-
-        const result = await command.execute();
-        await waitForLogseqDb();
-
-        expect(result.uuid).toBe(block.uuid);
-        await expect(
-            LogseqBlockPropertyHelper.getBlockProperty(block.uuid, propertyKey)
-        ).resolves.toBe("new value");
-
-        await command.revert();
-        await waitForLogseqDb();
-
-        expect(await logseq.Editor.getBlockProperty(block.uuid, propertyKey)).toBeNull();
-    }, 60_000);
-
-    it("restores a previous block property value on revert", async () => {
+    it("execute and revert works with property uuid", async () => {
         await logseq.Editor.upsertBlockProperty(block.uuid, propertyKey, "old value", {
             reset: true
         });

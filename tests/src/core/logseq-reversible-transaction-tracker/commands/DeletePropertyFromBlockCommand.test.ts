@@ -57,7 +57,7 @@ describe.skipIf(!shouldRunTests())("DeletePropertyFromBlockCommand", () => {
         await waitForLogseqDb();
     }, 60_000);
 
-    it("removes a block property by UUID and restores it on revert", async () => {
+    it("execute and revert works with property uuid", async () => {
         await logseq.Editor.upsertBlockProperty(block.uuid, propertyKey, "delete me", {
             reset: true
         });
