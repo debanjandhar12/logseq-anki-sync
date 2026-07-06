@@ -1,8 +1,9 @@
 import type {BlockEntity, EntityID, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import {getEntityID} from "src/core/logseq-reversible-transaction-tracker/commands/utils/getEntityID";
+import {LogseqAppInfoFetcher} from "src/logseq/LogseqAppInfoFetcher";
 import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {normalizeTagReferences} from "./normalizeTagReferences";
-import {LogseqAppInfoFetcher} from "src/logseq/LogseqAppInfoFetcher";
-import {getEntityID} from "src/core/logseq-reversible-transaction-tracker/commands/utils/getEntityID";
+import {removeRefFromObj} from "./removeRefFromObj";
 
 type EntityReferenceWithID = {id: EntityID};
 type EntityReferenceWithUUID = {uuid: string};
@@ -70,7 +71,7 @@ export async function normalizeBlock(block: BlockEntity): Promise<BlockEntity> {
         if (block.link) block.properties = {...block.properties, link: block.link};
     }
 
-    const normalizedBlock = await normalizeTagReferences(block);
+    const normalizedBlock = await normalizeTagReferences(removeRefFromObj(block));
     if (block.page?.id) {
         normalizedBlock.page = {
             uuid: await resolvePageUUID(block.page)

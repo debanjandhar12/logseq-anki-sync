@@ -138,6 +138,7 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
 
         expect(result.type).toBe("property");
         expect(result.block?.uuid).toBe(propertyPage.uuid);
+        expect(result.block).not.toHaveProperty("refs");
     }, 60_000);
 
     it("Can auto-detect property pages using the property page UUID.", async () => {
@@ -148,6 +149,7 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
         await expect(LogseqEditor.isPropertyBlock(propertyPage)).resolves.toBe(true);
         expect(result.type).toBe("property");
         expect(result.block?.uuid).toBe(propertyPage.uuid);
+        expect(result.block).not.toHaveProperty("refs");
     }, 60_000);
 
     it("Does not classify invalid tag UUIDs and invalid property indents as metadata pages.", async () => {

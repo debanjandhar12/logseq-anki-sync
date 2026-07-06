@@ -6,6 +6,7 @@ import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {normalizeBlock} from "./utils/normalizeBlock";
 import {normalizePage} from "./utils/normalizePage";
+import {normalizePropertyPage} from "./utils/normalizePropertyPage";
 import {normalizeTagPage} from "./utils/normalizeTagPage";
 
 const ReadBlockCommandArgsBaseSchema = z.object({
@@ -68,9 +69,10 @@ export class ReadBlockCommand extends BaseReversibleCommand {
 
     public async execute(): Promise<ReadBlockCommandResult> {
         if (this.args.propertyIndent) {
+            const property = await LogseqEditor.getProperty(this.args.propertyIndent);
             return {
                 type: "property",
-                block: await LogseqEditor.getProperty(this.args.propertyIndent)
+                block: property ? normalizePropertyPage(property) : null
             };
         }
 
@@ -84,9 +86,10 @@ export class ReadBlockCommand extends BaseReversibleCommand {
 
         const propertyBlock = await logseq.Editor.getBlock(uuid);
         if (propertyBlock && (await LogseqEditor.isPropertyBlock(propertyBlock))) {
+            const property = await LogseqEditor.getProperty(uuid);
             return {
                 type: "property",
-                block: await LogseqEditor.getProperty(uuid)
+                block: property ? normalizePropertyPage(property) : null
             };
         }
 

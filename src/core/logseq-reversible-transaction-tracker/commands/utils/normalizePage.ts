@@ -1,6 +1,7 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {normalizeBlock} from "./normalizeBlock";
 import {normalizeTagReferences} from "./normalizeTagReferences";
+import {removeRefFromObj} from "./removeRefFromObj";
 
 function isBlockEntity(value: unknown): value is BlockEntity {
     return typeof value === "object" && value !== null && "id" in value && "uuid" in value;
@@ -15,7 +16,7 @@ export async function normalizePage(page: PageEntity): Promise<PageEntity> {
 
     if (!page?.uuid) throw new Error("Page UUID is missing");
 
-    const normalizedPage = {...page} as PageEntity;
+    const normalizedPage = removeRefFromObj({...page} as PageEntity);
     if (Array.isArray(page.children)) {
         normalizedPage.children = (await Promise.all(
             page.children.map(async (child) => {
