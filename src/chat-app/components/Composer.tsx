@@ -11,6 +11,7 @@ import {ComposerAction} from "src/chat-app/components/ComposerAction";
  * (d) Handles Shift+Enter explicitly because this does not work in Logseq sidebar as logseq intercepts it.
  *     ShadowDOM was unable to block this intercept.
  * (e) Hid the attachment scrollbar while preserving horizontal scrolling
+ * (f) Keeps the upstream composer visual treatment and mobile enter-key hint.
  */
 export const Composer: FC = () => {
     const isRunning = useAuiState((state) => state.thread.isRunning);
@@ -48,13 +49,14 @@ export const Composer: FC = () => {
         <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
             <div
                 data-slot="aui_composer-shell"
-                className="flex w-full flex-col gap-2 rounded-(--composer-radius) border bg-background p-(--composer-padding) transition-shadow focus-within:border-ring/75 focus-within:ring-2 focus-within:ring-ring/20 data-[dragging=true]:border-ring data-[dragging=true]:border-dashed data-[dragging=true]:bg-accent/50">
+                className="border-border/60 focus-within:border-border dark:border-muted-foreground/15 dark:focus-within:border-muted-foreground/30 flex w-full flex-col gap-2 rounded-(--composer-radius) border bg-(--composer-bg) p-(--composer-padding) shadow-[0_4px_16px_-8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] transition-[border-color,box-shadow] focus-within:shadow-[0_6px_24px_-8px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none">
                 <ComposerAttachments />
                 <ComposerPrimitive.Input
                     placeholder="Send a message..."
-                    className="aui-composer-input max-h-32 min-h-10 w-full resize-none bg-transparent px-1.75 py-1 text-sm outline-none placeholder:text-muted-foreground/80"
+                    className="aui-composer-input caret-primary placeholder:text-muted-foreground/80 max-h-32 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base outline-none"
                     rows={1}
                     autoFocus
+                    enterKeyHint="send"
                     aria-label="Message input"
                     onKeyDown={handleKeyDown}
                 />

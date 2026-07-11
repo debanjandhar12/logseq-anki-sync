@@ -1,6 +1,7 @@
-import {getMcpAppFromToolPart, MessagePrimitive} from "@assistant-ui/react";
+import {type GroupByContext, groupPartByType, MessagePrimitive} from "@assistant-ui/react";
 import type {FC} from "react";
 import {AssistantActionBar} from "src/chat-app/components/AssistantActionBar";
+import {ToolFallback} from "src/chat-app/components/ToolFallback";
 import {LogseqCommitChangesTool} from "src/chat-app/tools/impl/LogseqCommitChangesTool";
 import {MarkdownText} from "src/shadcn/assistant-ui/markdown-text";
 import {
@@ -17,40 +18,41 @@ import {
     ToolGroupTrigger
 } from "src/shadcn/assistant-ui/tool-group";
 import {cn} from "src/shadcn/lib/utils";
-import {ToolFallback} from "src/chat-app/components/ToolFallback";
+
+const groupByType = groupPartByType<"group-chainOfThought" | "group-reasoning" | "group-tool">({
+    reasoning: ["group-chainOfThought", "group-reasoning"],
+    "tool-call": ["group-chainOfThought", "group-tool"],
+    "standalone-tool-call": []
+});
+
+export const groupMessagePart = (
+    part: Parameters<typeof groupByType>[0],
+    context?: GroupByContext
+) => {
+    if (part.type === "tool-call" && part.toolName === LogseqCommitChangesTool.NAME) return [];
+    return groupByType(part, context);
+};
 
 /**
  * Changes:
  * (a) Removed tool grouping for CommitLogseqChanges tool.
  * (b) Changed the group reasoning component to display as collapse by default.
  * (c) Changed margin bottom of the group reasoning component and group tool call to 0.
+ * (d) Preserves standalone tool UIs and renders data and indicator parts.
  */
 export const AssistantMessage: FC = () => {
-    // reserves space for action bar and compensates with `-mb` for consistent msg spacing
-    // keeps hovered action bar from shifting layout (autohide doesn't support absolute positioning well)
-    // for pt-[n] use -mb-[n + 6] & min-h-[n + 6] to preserve compensation
     const ACTION_BAR_PT = "pt-1.5";
-    const ACTION_BAR_HEIGHT = `-mb-7.5 min-h-7.5 ${ACTION_BAR_PT}`;
+    const ACTION_BAR_HEIGHT = `min-h-7.5 ${ACTION_BAR_PT}`;
 
     return (
         <MessagePrimitive.Root
             data-slot="aui_assistant-message-root"
             data-role="assistant"
-            className="fade-in slide-in-from-bottom-1 relative animate-in duration-150 [contain-intrinsic-size:auto_300px] [content-visibility:auto]">
+            className="fade-in slide-in-from-bottom-1 animate-in relative -mb-7.5 pb-7.5 duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto]">
             <div
                 data-slot="aui_assistant-message-content"
                 className="wrap-break-word px-2 text-foreground leading-relaxed">
-                <MessagePrimitive.GroupedParts
-                    groupBy={(part) => {
-                        if (part.type === "reasoning")
-                            return ["group-chainOfThought", "group-reasoning"];
-                        if (part.type === "tool-call") {
-                            if (getMcpAppFromToolPart(part)) return null;
-                            if (part.toolName === LogseqCommitChangesTool.NAME) return null;
-                            return ["group-chainOfThought", "group-tool"];
-                        }
-                        return null;
-                    }}>
+                <MessagePrimitive.GroupedParts groupBy={groupMessagePart}>
                     {({part, children}) => {
                         switch (part.type) {
                             case "group-chainOfThought":
@@ -58,7 +60,9 @@ export const AssistantMessage: FC = () => {
                             case "group-reasoning": {
                                 const running = part.status.type === "running";
                                 return (
-                                    <ReasoningRoot defaultOpen={false} style={{marginBottom: '0px'}}>
+                                    <ReasoningRoot
+                                        defaultOpen={false}
+                                        style={{marginBottom: "0px"}}>
                                         <ReasoningTrigger active={running} />
                                         <ReasoningContent aria-busy={running}>
                                             <ReasoningText>{children}</ReasoningText>
@@ -68,7 +72,7 @@ export const AssistantMessage: FC = () => {
                             }
                             case "group-tool":
                                 return (
-                                    <ToolGroupRoot style={{marginBottom: '0px'}}>
+                                    <ToolGroupRoot style={{marginBottom: "0px"}}>
                                         <ToolGroupTrigger
                                             count={part.indices.length}
                                             active={part.status.type === "running"}
@@ -82,6 +86,18 @@ export const AssistantMessage: FC = () => {
                                 return <Reasoning {...part} />;
                             case "tool-call":
                                 return part.toolUI ?? <ToolFallback {...part} />;
+                            case "data":
+                                return part.dataRendererUI;
+                            case "indicator":
+                                return (
+                                    <span
+                                        data-slot="aui_assistant-message-indicator"
+                                        className="animate-pulse font-sans"
+                                        role="status"
+                                        aria-label="Assistant is working">
+                                        {"●"}
+                                    </span>
+                                );
                             default:
                                 return null;
                         }

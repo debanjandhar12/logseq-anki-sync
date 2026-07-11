@@ -9,6 +9,7 @@ import {Button} from "src/shadcn/radix-ui/button";
  * Changes:
  * (a) Removed ComposerAddAttachment button and added empty div instead for flex positioning
  * (b) Shows a disabled cancel button while the assistant is waiting for a required user action
+ * (c) Retains project-owned controls while matching current upstream sizing.
  */
 export const ComposerAction: FC = () => {
     const requiresActionState = useAuiState(
@@ -27,9 +28,9 @@ export const ComposerAction: FC = () => {
                         type="button"
                         variant="default"
                         size="icon"
-                        className="aui-composer-send size-8 rounded-full"
+                        className="aui-composer-send size-7 rounded-full"
                         aria-label="Send message">
-                        <ArrowUpIcon className="aui-composer-send-icon size-4" />
+                        <ArrowUpIcon className="aui-composer-send-icon size-4.5" />
                     </TooltipIconButton>
                 </ComposerPrimitive.Send>
             </AuiIf>
@@ -39,10 +40,10 @@ export const ComposerAction: FC = () => {
                         type="button"
                         variant="default"
                         size="icon"
-                        className="aui-composer-cancel size-8 rounded-full"
+                        className="aui-composer-cancel size-7 rounded-full"
                         aria-label="Stop generating"
                         disabled={requiresActionState}>
-                        <SquareIcon className="aui-composer-cancel-icon size-3 fill-current" />
+                        <SquareIcon className="aui-composer-cancel-icon size-3.5 fill-current" />
                     </Button>
                 </ComposerPrimitive.Cancel>
             </AuiIf>

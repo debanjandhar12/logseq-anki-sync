@@ -20,10 +20,11 @@ interface ThreadListProps {
  * Changes:
  * (a) Added onThreadSelected callback by decomposing ThreadListItem
  * (b) Added h-full overflow-y-auto css.
+ * (c) Keeps project rename/delete behavior while adopting current focus and active-state styling.
  */
 export const ThreadList: FC<ThreadListProps> = ({onThreadSelected}) => {
     return (
-        <ThreadListPrimitive.Root className="aui-root aui-thread-list-root flex flex-col gap-1 p-2 h-full overflow-y-auto">
+        <ThreadListPrimitive.Root className="aui-root aui-thread-list-root flex h-full flex-col gap-0.5 overflow-y-auto p-2">
             <AuiIf condition={(s) => s.threads.isLoading}>
                 <ThreadListSkeleton />
             </AuiIf>
@@ -42,11 +43,14 @@ export const ThreadList: FC<ThreadListProps> = ({onThreadSelected}) => {
  */
 const ThreadListItem: FC<ThreadListProps> = ({onThreadSelected}) => {
     return (
-        <ThreadListItemPrimitive.Root className="aui-thread-list-item group flex h-9 items-center gap-2 rounded-lg transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none data-active:bg-muted">
+        <ThreadListItemPrimitive.Root
+            data-slot="aui_thread-list-item"
+            className="group hover:bg-muted focus-visible:bg-muted data-active:bg-muted has-focus-visible:bg-muted has-data-[state=open]:bg-muted relative flex h-8 items-center rounded-md transition-colors focus-visible:outline-none">
             <ThreadListItemPrimitive.Trigger
-                className="aui-thread-list-item-trigger flex h-full min-w-0 flex-1 items-center px-3 text-start text-sm"
+                data-slot="aui_thread-list-item-trigger"
+                className="focus-visible:ring-ring/50 flex h-full min-w-0 flex-1 items-center rounded-md px-2.5 text-start text-sm outline-none group-hover:pe-9 group-has-focus-visible:pe-9 group-has-data-[state=open]:pe-9 group-data-active:pe-9 focus-visible:ring-[3px]"
                 onClick={onThreadSelected}>
-                <span className="aui-thread-list-item-title min-w-0 flex-1 truncate">
+                <span data-slot="aui_thread-list-item-title" className="min-w-0 flex-1 truncate">
                     <ThreadListItemPrimitive.Title fallback="New Chat" />
                 </span>
             </ThreadListItemPrimitive.Trigger>
@@ -77,13 +81,14 @@ const ThreadListItemMore: FC = () => {
     };
 
     return (
-        <ThreadListItemMorePrimitive.Root>
+        <ThreadListItemMorePrimitive.Root sharedFocusGroup>
             <ThreadListItemMorePrimitive.Trigger asChild>
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="aui-thread-list-item-more me-2 size-7 p-0 opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:bg-accent data-[state=open]:opacity-100 group-data-active:opacity-100">
-                    <MoreHorizontalIcon className="size-4" />
+                    data-slot="aui_thread-list-item-more"
+                    className="data-[state=open]:bg-accent absolute end-1.5 top-1/2 size-6 -translate-y-1/2 p-0 opacity-0 group-hover:opacity-100 group-has-focus-visible:opacity-100 group-data-active:opacity-100 data-[state=open]:opacity-100">
+                    <MoreHorizontalIcon className="size-3.5" />
                     <span className="sr-only">More options</span>
                 </Button>
             </ThreadListItemMorePrimitive.Trigger>

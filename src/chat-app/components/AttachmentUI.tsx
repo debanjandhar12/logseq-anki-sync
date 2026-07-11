@@ -1,11 +1,20 @@
 import {AttachmentPrimitive, useAui, useAuiState} from "@assistant-ui/react";
-import {CircleParkingIcon, FileIcon, FileTextIcon, HashIcon, TextSelectIcon} from "lucide-react";
+import {
+    AlertCircleIcon,
+    CircleParkingIcon,
+    FileIcon,
+    FileTextIcon,
+    HashIcon,
+    Loader2Icon,
+    TextSelectIcon
+} from "lucide-react";
 import type {FC} from "react";
 import {
     AttachmentPreviewDialog,
     AttachmentRemove,
     AttachmentThumb
 } from "src/shadcn/assistant-ui/attachment";
+import {cn} from "src/shadcn/lib/utils";
 import {
     Tooltip,
     TooltipContent,
@@ -21,6 +30,7 @@ import {LOGSEQ_ATTACHMENT_TYPES} from "../runtime/LogseqAttachmentAdapter";
  * (a) Added Logseq entity attachment types and icons
  * (b) Reduced attachment width and prevented shrinking in scroll containers
  * (c) Change the ui style to pills instead of boxes.
+ * (d) Shows current upstream upload and failure states.
  */
 export const AttachmentUI: FC = () => {
     const aui = useAui();
@@ -49,6 +59,12 @@ export const AttachmentUI: FC = () => {
                 return type;
         }
     });
+    const isUploading = useAuiState((state) => state.attachment.status.type === "running");
+    const hasUploadError = useAuiState(
+        (state) =>
+            state.attachment.status.type === "incomplete" &&
+            state.attachment.status.reason === "error"
+    );
 
     return (
         <TooltipProvider delayDuration={0}>
@@ -58,14 +74,33 @@ export const AttachmentUI: FC = () => {
                         <TooltipTrigger asChild>
                             <button
                                 type="button"
-                                className="aui-attachment-tile flex h-9 max-w-40 cursor-pointer items-center gap-1 overflow-hidden rounded-full border bg-muted px-2.5 pr-3 transition-colors hover:bg-muted/75"
-                                aria-label={`${typeLabel} attachment`}>
+                                className={cn(
+                                    "aui-attachment-tile relative flex h-9 max-w-40 cursor-pointer items-center gap-1 overflow-hidden rounded-full border bg-muted px-2.5 pr-3 transition-colors hover:bg-muted/75",
+                                    hasUploadError && "border-destructive"
+                                )}
+                                aria-label={`${typeLabel} attachment${
+                                    hasUploadError
+                                        ? ", upload failed"
+                                        : isUploading
+                                          ? ", uploading"
+                                          : ""
+                                }`}>
                                 <span className="size-5 shrink-0 overflow-hidden rounded-sm">
                                     <LogseqAttachmentThumb />
                                 </span>
                                 <span className="truncate text-xs">
                                     <AttachmentPrimitive.Name />
                                 </span>
+                                {isUploading && (
+                                    <span className="bg-background/60 absolute inset-0 flex items-center justify-center backdrop-blur-[1px]">
+                                        <Loader2Icon className="text-muted-foreground size-4 animate-spin" />
+                                    </span>
+                                )}
+                                {hasUploadError && (
+                                    <span className="bg-destructive/10 absolute inset-0 flex items-center justify-center">
+                                        <AlertCircleIcon className="text-destructive size-4" />
+                                    </span>
+                                )}
                             </button>
                         </TooltipTrigger>
                     </AttachmentPreviewDialog>
@@ -73,6 +108,7 @@ export const AttachmentUI: FC = () => {
                 </AttachmentPrimitive.Root>
                 <TooltipContent side="top">
                     <AttachmentPrimitive.Name />
+                    {hasUploadError && <p>Upload failed</p>}
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>

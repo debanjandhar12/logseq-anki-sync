@@ -25,7 +25,7 @@ const toolGroupVariants = cva("aui-tool-group-root group/tool-group w-full", {
     variant: {
       outline: "rounded-lg border py-3",
       ghost: "",
-      muted: "rounded-lg border border-muted-foreground/30 bg-muted/30 py-3",
+      muted: "border-muted-foreground/30 bg-muted/30 rounded-lg border py-3",
     },
   },
   defaultVariants: { variant: "outline" },
@@ -59,9 +59,7 @@ function ToolGroupRoot({
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      if (!open) {
-        lockScroll();
-      }
+      lockScroll();
       if (!isControlled) {
         setUncontrolledOpen(open);
       }
@@ -109,7 +107,8 @@ function ToolGroupTrigger({
     <CollapsibleTrigger
       data-slot="tool-group-trigger"
       className={cn(
-        "aui-tool-group-trigger group/trigger flex items-center gap-2 text-sm transition-colors",
+        "aui-tool-group-trigger group/trigger flex origin-left items-center gap-2 text-sm transition-[color,scale] active:scale-[0.98]",
+        "group-data-[variant=ghost]/tool-group-root:text-muted-foreground group-data-[variant=ghost]/tool-group-root:hover:text-foreground group-data-[variant=ghost]/tool-group-root:py-1.5",
         "group-data-[variant=outline]/tool-group-root:w-full group-data-[variant=outline]/tool-group-root:px-4",
         "group-data-[variant=muted]/tool-group-root:w-full group-data-[variant=muted]/tool-group-root:px-4",
         className,
@@ -119,23 +118,24 @@ function ToolGroupTrigger({
       {active && (
         <LoaderIcon
           data-slot="tool-group-trigger-loader"
-          className="aui-tool-group-trigger-loader size-4 shrink-0 animate-spin"
+          className="aui-tool-group-trigger-loader size-3 shrink-0 animate-spin [animation-duration:0.6s]"
         />
       )}
       <span
         data-slot="tool-group-trigger-label"
         className={cn(
-          "aui-tool-group-trigger-label-wrapper relative inline-block text-start font-medium leading-none",
+          "aui-tool-group-trigger-label-wrapper relative inline-block text-start leading-none font-medium",
+          "group-data-[variant=ghost]/tool-group-root:font-normal",
           "group-data-[variant=outline]/tool-group-root:grow",
           "group-data-[variant=muted]/tool-group-root:grow",
         )}
       >
-        <span>{label}</span>
+        <span className="text-xs">{label}</span>
         {active && (
           <span
             aria-hidden
             data-slot="tool-group-trigger-shimmer"
-            className="aui-tool-group-trigger-shimmer shimmer pointer-events-none absolute inset-0 motion-reduce:animate-none"
+            className="aui-tool-group-trigger-shimmer shimmer pointer-events-none absolute inset-0 text-xs motion-reduce:animate-none"
           >
             {label}
           </span>
@@ -144,10 +144,11 @@ function ToolGroupTrigger({
       <ChevronDownIcon
         data-slot="tool-group-trigger-chevron"
         className={cn(
-          "aui-tool-group-trigger-chevron size-4 shrink-0",
-          "transition-transform duration-(--animation-duration) ease-out",
-          "group-data-[state=closed]/trigger:-rotate-90",
-          "group-data-[state=open]/trigger:rotate-0",
+          "aui-tool-group-trigger-chevron size-3 shrink-0",
+          "transition-transform duration-(--animation-duration) ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+          "-rotate-90",
+          "group-data-open/trigger:rotate-0",
+          "group-data-panel-open/trigger:rotate-0",
         )}
       />
     </CollapsibleTrigger>
@@ -164,13 +165,13 @@ function ToolGroupContent({
       data-slot="tool-group-content"
       className={cn(
         "aui-tool-group-content relative overflow-hidden text-sm outline-none",
-        "group/collapsible-content ease-out",
-        "data-[state=closed]:animate-collapsible-up",
-        "data-[state=open]:animate-collapsible-down",
-        "data-[state=closed]:fill-mode-forwards",
-        "data-[state=closed]:pointer-events-none",
-        "data-[state=open]:duration-(--animation-duration)",
-        "data-[state=closed]:duration-(--animation-duration)",
+        "group/collapsible-content ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:animate-none",
+        "data-closed:animate-collapsible-up",
+        "data-open:animate-collapsible-down",
+        "data-closed:fill-mode-forwards",
+        "data-closed:pointer-events-none",
+        "data-open:duration-(--animation-duration)",
+        "data-closed:duration-(--animation-duration)",
         className,
       )}
       {...props}
@@ -178,8 +179,15 @@ function ToolGroupContent({
       <div
         className={cn(
           "mt-2 flex flex-col gap-2",
+          "group-data-[variant=ghost]/tool-group-root:mt-1 group-data-[variant=ghost]/tool-group-root:gap-1",
           "group-data-[variant=outline]/tool-group-root:mt-3 group-data-[variant=outline]/tool-group-root:border-t group-data-[variant=outline]/tool-group-root:px-4 group-data-[variant=outline]/tool-group-root:pt-3",
           "group-data-[variant=muted]/tool-group-root:mt-3 group-data-[variant=muted]/tool-group-root:border-t group-data-[variant=muted]/tool-group-root:px-4 group-data-[variant=muted]/tool-group-root:pt-3",
+          "[&>*]:animate-in [&>*]:fade-in-0 [&>*]:blur-in-[2px] [&>*]:slide-in-from-top-1 [&>*]:duration-(--animation-duration) [&>*]:ease-[cubic-bezier(0.32,0.72,0,1)]",
+          "[&>*]:motion-reduce:animate-none",
+          "[&>*:nth-child(2)]:[animation-delay:40ms]",
+          "[&>*:nth-child(3)]:[animation-delay:80ms]",
+          "[&>*:nth-child(4)]:[animation-delay:120ms]",
+          "[&>*:nth-child(n+5)]:[animation-delay:160ms]",
         )}
       >
         {children}

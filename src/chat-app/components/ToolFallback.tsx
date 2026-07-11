@@ -1,4 +1,8 @@
-import type {ToolCallMessagePartComponent, ToolCallMessagePartStatus} from "@assistant-ui/react";
+import {
+    type ToolCallMessagePartComponent,
+    type ToolCallMessagePartStatus,
+    useToolCallElapsed
+} from "@assistant-ui/react";
 import {
     ChevronDownIcon,
     CircleAlertIcon,
@@ -6,7 +10,7 @@ import {
     CircleXIcon,
     LoaderCircleIcon
 } from "lucide-react";
-import {memo} from "react";
+import {memo, useEffect, useState} from "react";
 import {
     ToolFallbackArgs,
     ToolFallbackContent,
@@ -21,6 +25,7 @@ import {CollapsibleTrigger} from "src/shadcn/radix-ui/collapsible";
  * Changes:
  * (a) Decomposed to customize icon
  * (b) Uses the tool error flag and consistent circular Lucide status icons
+ * (c) Keeps required-action tools expanded without exposing unsupported generic approval controls
  */
 const ToolFallbackImpl: ToolCallMessagePartComponent = ({
     toolName,
@@ -30,9 +35,18 @@ const ToolFallbackImpl: ToolCallMessagePartComponent = ({
     isError
 }) => {
     const isCancelled = status?.type === "incomplete" && status.reason === "cancelled";
+    const isRequiresAction = status?.type === "requires-action";
+    const [open, setOpen] = useState(isRequiresAction);
+
+    useEffect(() => {
+        if (isRequiresAction) setOpen(true);
+    }, [isRequiresAction]);
 
     return (
-        <ToolFallbackRoot className={cn(isCancelled && "border-muted-foreground/30 bg-muted/30")}>
+        <ToolFallbackRoot
+            open={open}
+            onOpenChange={setOpen}
+            className={cn(isCancelled && "text-muted-foreground")}>
             <ToolFallbackTrigger toolName={toolName} status={status} isError={isError} />
             <ToolFallbackContent>
                 <ToolFallbackError status={status} />
@@ -50,6 +64,25 @@ const statusIconMap: Record<ToolStatus, React.ElementType> = {
     complete: CircleCheckIcon,
     incomplete: CircleXIcon,
     "requires-action": CircleAlertIcon
+};
+
+const formatToolDuration = (milliseconds: number) => {
+    if (milliseconds < 1000) return "<1s";
+    const seconds = milliseconds / 1000;
+    if (seconds < 10) return `${(Math.floor(seconds * 10) / 10).toFixed(1)}s`;
+    if (seconds < 60) return `${Math.floor(seconds)}s`;
+    return `${Math.floor(seconds / 60)}m ${Math.floor(seconds % 60)}s`;
+};
+
+const ToolFallbackDuration = () => {
+    const elapsedMilliseconds = useToolCallElapsed();
+    if (elapsedMilliseconds === undefined) return null;
+
+    return (
+        <span className="aui-tool-fallback-duration text-muted-foreground text-xs tabular-nums">
+            {formatToolDuration(elapsedMilliseconds)}
+        </span>
+    );
 };
 
 function ToolFallbackTrigger({
@@ -75,7 +108,7 @@ function ToolFallbackTrigger({
         <CollapsibleTrigger
             data-slot="tool-fallback-trigger"
             className={cn(
-                "aui-tool-fallback-trigger group/trigger flex w-full items-center gap-2 px-4 text-sm transition-colors",
+                "aui-tool-fallback-trigger group/trigger text-muted-foreground hover:text-foreground flex w-fit origin-left items-center gap-2 py-1.5 text-sm transition-[color,scale] active:scale-[0.98]",
                 className
             )}
             {...props}>
@@ -91,7 +124,7 @@ function ToolFallbackTrigger({
             <span
                 data-slot="tool-fallback-trigger-label"
                 className={cn(
-                    "aui-tool-fallback-trigger-label-wrapper relative inline-block grow text-start leading-none",
+                    "aui-tool-fallback-trigger-label-wrapper relative inline-block text-start leading-none",
                     isCancelled && "text-muted-foreground line-through"
                 )}>
                 <span>
@@ -106,13 +139,15 @@ function ToolFallbackTrigger({
                     </span>
                 )}
             </span>
+            <ToolFallbackDuration />
             <ChevronDownIcon
                 data-slot="tool-fallback-trigger-chevron"
                 className={cn(
                     "aui-tool-fallback-trigger-chevron size-4 shrink-0",
-                    "transition-transform duration-(--animation-duration) ease-out",
-                    "group-data-[state=closed]/trigger:-rotate-90",
-                    "group-data-[state=open]/trigger:rotate-0"
+                    "transition-transform duration-(--animation-duration) ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none",
+                    "-rotate-90",
+                    "group-data-open/trigger:rotate-0",
+                    "group-data-panel-open/trigger:rotate-0"
                 )}
             />
         </CollapsibleTrigger>

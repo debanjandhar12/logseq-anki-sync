@@ -1,8 +1,7 @@
-import {ActionBarMorePrimitive, ActionBarPrimitive, AuiIf} from "@assistant-ui/react";
-import {CheckIcon, CopyIcon, DownloadIcon, MoreHorizontalIcon, RefreshCwIcon} from "lucide-react";
-import {type FC, useContext} from "react";
+import {ActionBarPrimitive, AuiIf} from "@assistant-ui/react";
+import {CheckIcon, CopyIcon, RefreshCwIcon} from "lucide-react";
+import type {FC} from "react";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
-import {ShadowRootContext} from "src/ui/ShadowWrapper";
 
 /**
  * This is the toolbar under assistant message.
@@ -15,14 +14,14 @@ export const AssistantActionBar: FC = () => {
     return (
         <ActionBarPrimitive.Root
             hideWhenRunning
-            className="aui-assistant-action-bar-root col-start-3 row-start-2 -ms-1 flex gap-1 text-muted-foreground">
+            className="aui-assistant-action-bar-root text-muted-foreground animate-in fade-in col-start-3 row-start-2 -ms-1 flex gap-1 duration-200">
             <ActionBarPrimitive.Copy asChild>
                 <TooltipIconButton tooltip="Copy">
                     <AuiIf condition={(s) => s.message.isCopied}>
-                        <CheckIcon />
+                        <CheckIcon className="animate-in zoom-in-50 fade-in duration-200 ease-out" />
                     </AuiIf>
                     <AuiIf condition={(s) => !s.message.isCopied}>
-                        <CopyIcon />
+                        <CopyIcon className="animate-in zoom-in-75 fade-in duration-150" />
                     </AuiIf>
                 </TooltipIconButton>
             </ActionBarPrimitive.Copy>
