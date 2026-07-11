@@ -17,7 +17,11 @@ describe.skipIf(!shouldRunTests())("InsertBlockCommand", () => {
             await waitForLogseqDb();
         }
 
-        page = await logseq.Editor.createPage(pageName, {}, {createFirstBlock: true});
+        page = await logseq.Editor.createPage(
+            pageName,
+            {},
+            {redirect: false, createFirstBlock: true}
+        );
         if (!page) {
             // in some cases logseq creates the page but returns null if it already existed
             page = (await logseq.Editor.getPage(pageName))!;

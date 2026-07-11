@@ -18,7 +18,11 @@ describe.skipIf(!shouldRunTests())("DataScriptQueryCommand", () => {
             await waitForLogseqDb();
         }
 
-        page = await logseq.Editor.createPage(pageName, {}, {createFirstBlock: false});
+        page = await logseq.Editor.createPage(
+            pageName,
+            {},
+            {redirect: false, createFirstBlock: false}
+        );
         if (!page) page = (await logseq.Editor.getPage(pageName))!;
         await logseq.Editor.appendBlockInPage(page.uuid, blockContent);
         await waitForLogseqDb();

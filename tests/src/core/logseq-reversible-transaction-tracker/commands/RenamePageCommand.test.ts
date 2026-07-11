@@ -21,7 +21,11 @@ describe.skipIf(!shouldRunTests())("RenamePageCommand", () => {
             }
         }
 
-        page = await logseq.Editor.createPage(pageName, {}, {createFirstBlock: false});
+        page = await logseq.Editor.createPage(
+            pageName,
+            {},
+            {redirect: false, createFirstBlock: false}
+        );
         if (!page) page = (await logseq.Editor.getPage(pageName))!;
 
         await waitForLogseqDb();

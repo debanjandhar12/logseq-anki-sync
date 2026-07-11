@@ -21,13 +21,21 @@ describe.skipIf(!shouldRunTests())("RestorePageCommand", () => {
             }
         }
 
-        const createdPage = await logseq.Editor.createPage(pageName, {}, {createFirstBlock: true});
+        const createdPage = await logseq.Editor.createPage(
+            pageName,
+            {},
+            {
+                redirect: false,
+                createFirstBlock: true
+            }
+        );
         page = createdPage ?? (await logseq.Editor.getPage(pageName))!;
 
         const createdActivePage = await logseq.Editor.createPage(
             activePageName,
             {},
             {
+                redirect: false,
                 createFirstBlock: true
             }
         );

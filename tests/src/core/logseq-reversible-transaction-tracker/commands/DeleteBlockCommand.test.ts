@@ -20,7 +20,11 @@ describe.skipIf(!shouldRunTests())("DeleteBlockCommand", () => {
             await waitForLogseqDb();
         }
 
-        page = await logseq.Editor.createPage(pageName, {}, {createFirstBlock: true});
+        page = await logseq.Editor.createPage(
+            pageName,
+            {},
+            {redirect: false, createFirstBlock: true}
+        );
         if (!page) page = (await logseq.Editor.getPage(pageName))!;
 
         await logseq.Editor.appendBlockInPage(page.uuid, anchorBlockContent);

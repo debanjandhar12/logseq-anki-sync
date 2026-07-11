@@ -133,17 +133,27 @@ describe.skipIf(!shouldRunTests())("UpsertPropertyToBlockCommand", () => {
         }
 
         page =
-            (await logseq.Editor.createPage(pageName, {}, {createFirstBlock: false})) ??
-            (await logseq.Editor.getPage(pageName))!;
+            (await logseq.Editor.createPage(
+                pageName,
+                {},
+                {redirect: false, createFirstBlock: false}
+            )) ?? (await logseq.Editor.getPage(pageName))!;
         await waitForLogseqDb();
         nodePage =
-            (await logseq.Editor.createPage(`${pageName}_Node`, {}, {createFirstBlock: false})) ??
-            (await logseq.Editor.getPage(`${pageName}_Node`))!;
+            (await logseq.Editor.createPage(
+                `${pageName}_Node`,
+                {},
+                {
+                    redirect: false,
+                    createFirstBlock: false
+                }
+            )) ?? (await logseq.Editor.getPage(`${pageName}_Node`))!;
         updatedNodePage =
             (await logseq.Editor.createPage(
                 `${pageName}_UpdatedNode`,
                 {},
                 {
+                    redirect: false,
                     createFirstBlock: false
                 }
             )) ?? (await logseq.Editor.getPage(`${pageName}_UpdatedNode`))!;

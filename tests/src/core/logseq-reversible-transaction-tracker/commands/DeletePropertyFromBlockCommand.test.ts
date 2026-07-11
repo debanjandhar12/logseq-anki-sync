@@ -40,8 +40,11 @@ describe.skipIf(!shouldRunTests())("DeletePropertyFromBlockCommand", () => {
         }
 
         page =
-            (await logseq.Editor.createPage(pageName, {}, {createFirstBlock: false})) ??
-            (await logseq.Editor.getPage(pageName))!;
+            (await logseq.Editor.createPage(
+                pageName,
+                {},
+                {redirect: false, createFirstBlock: false}
+            )) ?? (await logseq.Editor.getPage(pageName))!;
         await waitForLogseqDb();
         block = (await logseq.Editor.appendBlockInPage(page.uuid, `Delete block ${testId}`))!;
         await waitForLogseqDb();

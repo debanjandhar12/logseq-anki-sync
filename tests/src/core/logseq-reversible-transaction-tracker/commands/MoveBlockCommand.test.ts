@@ -24,10 +24,18 @@ describe.skipIf(!shouldRunTests())("MoveBlockCommand", () => {
             await waitForLogseqDb();
         }
 
-        page1 = await logseq.Editor.createPage(pageName1, {}, {createFirstBlock: true});
+        page1 = await logseq.Editor.createPage(
+            pageName1,
+            {},
+            {redirect: false, createFirstBlock: true}
+        );
         if (!page1) page1 = (await logseq.Editor.getPage(pageName1))!;
 
-        page2 = await logseq.Editor.createPage(pageName2, {}, {createFirstBlock: true});
+        page2 = await logseq.Editor.createPage(
+            pageName2,
+            {},
+            {redirect: false, createFirstBlock: true}
+        );
         if (!page2) page2 = (await logseq.Editor.getPage(pageName2))!;
 
         await waitForLogseqDb();

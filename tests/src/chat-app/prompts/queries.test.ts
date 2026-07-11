@@ -108,8 +108,11 @@ describe.skipIf(!shouldRunTests())("Datascript queries documented in skill files
 
     beforeAll(async () => {
         page =
-            (await logseq.Editor.createPage(pageName, {}, {createFirstBlock: false})) ??
-            (await logseq.Editor.getPage(pageName))!;
+            (await logseq.Editor.createPage(
+                pageName,
+                {},
+                {redirect: false, createFirstBlock: false}
+            )) ?? (await logseq.Editor.getPage(pageName))!;
         titleBlock = (await logseq.Editor.appendBlockInPage(
             page.uuid,
             `Skill Query Mixed Case Keyword ${testId}`

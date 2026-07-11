@@ -53,7 +53,11 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
             await waitForLogseqDb();
         }
 
-        page = await logseq.Editor.createPage(pageName, {}, {createFirstBlock: false});
+        page = await logseq.Editor.createPage(
+            pageName,
+            {},
+            {redirect: false, createFirstBlock: false}
+        );
         if (!page) page = (await logseq.Editor.getPage(pageName))!;
 
         await logseq.Editor.appendBlockInPage(page.uuid, pageBlockContent);
@@ -67,7 +71,7 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
         deletedPage = await logseq.Editor.createPage(
             deletedPageName,
             {},
-            {createFirstBlock: false}
+            {redirect: false, createFirstBlock: false}
         );
         if (!deletedPage) deletedPage = (await logseq.Editor.getPage(deletedPageName))!;
         await logseq.Editor.deletePage(deletedPage.uuid);
