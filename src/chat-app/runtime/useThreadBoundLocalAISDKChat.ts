@@ -20,10 +20,11 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
     const remoteThreadId = useAuiState((state) => state.threadListItem.remoteId);
     const threadId = remoteThreadId ?? localThreadId;
     const toolRegistry = useMemo(() => ChatToolRegistry.getInstance(), []);
+    const humanToolNames = useMemo(() => toolRegistry.getHumanToolNames(), [toolRegistry]);
 
     const historyAdapter = useMemo(() => {
-        return new LocalThreadHistoryAdapter(threadId);
-    }, [threadId]);
+        return new LocalThreadHistoryAdapter(threadId, humanToolNames);
+    }, [threadId, humanToolNames]);
 
     const attachmentAdapter = useMemo(() => {
         return new CompositeAttachmentAdapter([
@@ -43,6 +44,6 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
             attachments: attachmentAdapter
         },
         maxSteps: 5,
-        unstable_humanToolNames: toolRegistry.getHumanToolNames()
+        unstable_humanToolNames: humanToolNames
     });
 }
