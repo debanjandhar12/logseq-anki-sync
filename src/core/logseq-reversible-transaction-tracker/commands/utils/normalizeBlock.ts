@@ -16,10 +16,11 @@ function hasUUID(value: unknown): value is EntityReferenceWithUUID {
 export async function resolvePageUUID(
     reference: ResolvableEntityReference | undefined
 ): Promise<string> {
-    if (hasUUID(reference)) return reference.uuid;
-
     const id = getEntityID(reference);
-    if (id === undefined) throw new Error("Block page reference is missing or invalid");
+    if (id === undefined) {
+        if (hasUUID(reference)) return reference.uuid;
+        throw new Error("Block page reference is missing or invalid");
+    }
 
     const page = await logseq.Editor.getPage(id);
     if (!page?.uuid) throw new Error(`Unable to resolve page reference: ${id}`);

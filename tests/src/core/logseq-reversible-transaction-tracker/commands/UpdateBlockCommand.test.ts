@@ -38,6 +38,7 @@ describe.skipIf(!shouldRunTests())("UpdateBlockCommand", () => {
 
         await command.execute();
 
+        expect(command.getChangedPages()).toEqual([page.uuid]);
         const updatedBlock = await logseq.Editor.getBlock(block.uuid);
         expect(updatedBlock?.content).toBe(updatedContent);
 

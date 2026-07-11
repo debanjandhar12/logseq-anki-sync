@@ -11,7 +11,8 @@
         "dev": "vite",
         "build": "export NODE_OPTIONS=--max_old_space_size=4096 && vite build",
         "preinstall": "npx only-allow pnpm",
-        "test": "vitest",
+        "test": "vitest run --exclude tests/src/chat-app/prompts/**",
+        "test:prompts": "vitest run tests/src/chat-app/prompts",
         "check": "biome check",
         "check:fix": "biome check --write"
     },

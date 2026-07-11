@@ -31,6 +31,7 @@ describe.skipIf(!shouldRunTests())("LogseqReversibleTransactionTracker basic", (
         await waitForLogseqDb();
     }, 60_000);
 
+    // tests serialization
     it("executes and reverts page creation, then executes and reverts a transaction with an inserted block", async () => {
         let tracker = new LogseqReversibleTransactionTracker();
         tracker.addCommand(new CreatePageCommand({pageName}));

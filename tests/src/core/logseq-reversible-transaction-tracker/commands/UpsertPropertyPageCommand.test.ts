@@ -40,6 +40,7 @@ describe.skipIf(!shouldRunTests())("UpsertPropertyPageCommand", () => {
         await waitForLogseqDb();
 
         expect(property?.uuid).toBeTruthy();
+        expect(command.getChangedPages()).toEqual([property?.uuid]);
         expect(await logseq.Editor.getProperty(createPropertyKey)).toBeTruthy();
 
         await command.revert();
@@ -61,8 +62,9 @@ describe.skipIf(!shouldRunTests())("UpsertPropertyPageCommand", () => {
             schema: {type: "number", cardinality: "one"}
         });
 
-        await command.execute();
+        const updatedProperty = await command.execute();
         await waitForLogseqDb();
+        expect(command.getChangedPages()).toEqual([updatedProperty?.uuid]);
         expect(getPropertyType(await logseq.Editor.getProperty(restorePropertyKey))).toBe("number");
 
         await command.revert();

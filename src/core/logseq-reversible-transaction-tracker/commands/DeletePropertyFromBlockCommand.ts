@@ -73,7 +73,7 @@ export class DeletePropertyFromBlockCommand extends BaseReversibleCommand {
         }
         this.previousValueSnapshotTaken = true;
 
-        if (originalBlock.page) this.changedPages.push(await resolvePageUUID(originalBlock.page));
+        this.changedPages.push(await resolvePageUUID(originalBlock.page ?? originalBlock));
 
         await logseq.Editor.removeBlockProperty(this.args.blockUuid, this.propertyKey);
 

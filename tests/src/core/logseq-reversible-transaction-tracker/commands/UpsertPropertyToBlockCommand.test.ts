@@ -201,6 +201,25 @@ describe.skipIf(!shouldRunTests())("UpsertPropertyToBlockCommand", () => {
         });
     }, 60_000);
 
+    it("records the page when adding a property to its page block", async () => {
+        const command = new UpsertPropertyToBlockCommand({
+            blockUuid: page.uuid,
+            propertyUuidOrIndent: propertyKey,
+            value: "page property value"
+        });
+
+        await command.execute();
+        await waitForLogseqDb();
+
+        expect(command.getChangedPages()).toEqual([page.uuid]);
+        await expect(
+            LogseqBlockPropertyHelper.getBlockProperty(page.uuid, propertyKey)
+        ).resolves.toBe("page property value");
+
+        await command.revert();
+        await waitForLogseqDb();
+    }, 60_000);
+
     it("execute and revert works on many cardinality default property", async () => {
         const targetPropertyKey = `${propertyKey}_many_default`;
         const property = await createProperty(targetPropertyKey, {

@@ -103,4 +103,26 @@ describe.skipIf(!shouldRunTests())("DeletePropertyFromBlockCommand", () => {
         ).resolves.toBe("delete by indent");
         await logseq.Editor.removeBlockProperty(block.uuid, propertyKey);
     }, 60_000);
+
+    it("records the page when deleting a property from its page block", async () => {
+        await logseq.Editor.upsertBlockProperty(page.uuid, propertyKey, "delete from page", {
+            reset: true
+        });
+        await waitForLogseqDb();
+
+        const command = new DeletePropertyFromBlockCommand({
+            blockUuid: page.uuid,
+            propertyUuidOrIndent: propertyKey
+        });
+
+        await command.execute();
+        await waitForLogseqDb();
+
+        expect(command.getChangedPages()).toEqual([page.uuid]);
+        expect(await logseq.Editor.getBlockProperty(page.uuid, propertyKey)).toBeNull();
+
+        await command.revert();
+        await waitForLogseqDb();
+        await logseq.Editor.removeBlockProperty(page.uuid, propertyKey);
+    }, 60_000);
 });
