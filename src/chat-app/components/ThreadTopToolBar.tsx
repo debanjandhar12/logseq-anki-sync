@@ -5,7 +5,7 @@ import {
     useAuiState
 } from "@assistant-ui/react";
 import {getThreadMessageTokenUsage} from "@assistant-ui/react-ai-sdk";
-import {DevToolsFrame} from "@assistant-ui/react-devtools";
+import {DevToolsPanel} from "@assistant-ui/react-devtools";
 import {ArrowLeftIcon, HistoryIcon, MoreHorizontalIcon, PlusIcon, XIcon} from "lucide-react";
 import {type FC, useContext, useState} from "react";
 import {ContextDisplay} from "../../shadcn/assistant-ui/context-display";
@@ -85,14 +85,7 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
             {isDevToolsOpen && import.meta.env.DEV && (
                 <div className="fixed inset-0 z-[10000] bg-background/80 p-6">
                     <div className="relative h-full overflow-hidden rounded-xl border bg-background shadow-xl">
-                        <button
-                            type="button"
-                            aria-label="Close Devtools"
-                            className="absolute top-2 right-2 z-10 rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            onClick={() => setIsDevToolsOpen(false)}>
-                            <XIcon className="size-4" />
-                        </button>
-                        <DevToolsFrame className="h-full w-full border-0" />
+                        <DevToolsPanel onClose={() => setIsDevToolsOpen(false)} />
                     </div>
                 </div>
             )}
