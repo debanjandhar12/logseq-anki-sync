@@ -2,13 +2,12 @@ import type {AssistantClient} from "@assistant-ui/react";
 import {useEffect} from "react";
 import type {ChatRuntimeCommand} from "../../core/chat-interop";
 import {
-    AddLogseqBlockAsAttachmentCommand,
+    AddAttachmentCommand,
     ChatInteropCommandQueue,
     NewThreadCommand
 } from "../../core/chat-interop";
 import {createLogger, LoggerCategory} from "../../logger";
-import {LogseqPropertiesHelper} from "../../logseq/LogseqPropertiesHelper";
-import {createLogseqBlockAttachment} from "../runtime/LogseqBlockAttachmentAdapter";
+import {createLogseqAttachmentFromUuid} from "../runtime/LogseqAttachmentAdapter";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
@@ -30,18 +29,13 @@ async function executeRuntimeCommand(
             return;
         }
 
-        if (command.type === AddLogseqBlockAsAttachmentCommand.TYPE) {
+        if (command.type === AddAttachmentCommand.TYPE) {
             const uuid = command.payload?.uuid;
             if (typeof uuid !== "string") {
-                throw new Error("Cannot add Logseq block attachment without a block UUID.");
+                throw new Error("Cannot add a Logseq attachment without a UUID.");
             }
 
-            const block = await LogseqPropertiesHelper.getBlock(uuid, {includeChildren: true});
-            if (!block) {
-                throw new Error(`Logseq block not found: ${uuid}`);
-            }
-
-            await aui.composer().addAttachment(createLogseqBlockAttachment(block));
+            await aui.composer().addAttachment(await createLogseqAttachmentFromUuid(uuid));
         }
     } catch (error) {
         logger.error("Failed to execute AI Chat runtime command", error);

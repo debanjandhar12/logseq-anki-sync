@@ -1,10 +1,24 @@
 import type {BlockEntity, BlockIdentity, EntityID, PageEntity} from "@logseq/libs/dist/LSPlugin";
-import {
-    validatePropertyUuidOrIndent
-} from "src/core/logseq-reversible-transaction-tracker/commands/utils/validations/propertyValidations";
+import {ATTACHMENT_IMAGE_FORMAT} from "src/constants";
+import {validatePropertyUuidOrIndent} from "src/core/logseq-reversible-transaction-tracker/commands/utils/validations/propertyValidations";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 
 export class LogseqEditor {
+    static getAssetFormat(block: BlockEntity | PageEntity): string {
+        const format = (block as unknown as Record<string, unknown>)[":logseq.property.asset/type"];
+        return typeof format === "string" ? format.toLowerCase() : "";
+    }
+
+    static isPdfAssetBlock(block: BlockEntity | PageEntity): boolean {
+        return LogseqEditor.getAssetFormat(block) === "pdf";
+    }
+
+    static isImageAssetBlock(block: BlockEntity | PageEntity): boolean {
+        return (ATTACHMENT_IMAGE_FORMAT as readonly string[]).includes(
+            LogseqEditor.getAssetFormat(block)
+        );
+    }
+
     static async getCurrentPage(): Promise<PageEntity | null> {
         const currentPage = await logseq.Editor.getCurrentPage();
         return currentPage as PageEntity;
@@ -94,7 +108,10 @@ export class LogseqEditor {
         if (!opts.parent) return null;
 
         const block = await logseq.Editor.getBlock(blockIdentity);
-        const parentId =  block?.parent?.id || block?.page?.id || ((await LogseqEditor.isPageBlock(block)) ? block.id : null);
+        const parentId =
+            block?.parent?.id ||
+            block?.page?.id ||
+            ((await LogseqEditor.isPageBlock(block)) ? block.id : null);
         if (!parentId) {
             throw new Error(`Cannot resolve parent id from block: ${JSON.stringify(block)}`);
         }

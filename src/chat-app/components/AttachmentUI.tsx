@@ -1,30 +1,31 @@
-import {AttachmentPrimitive, ComposerPrimitive, useAui, useAuiState} from "@assistant-ui/react";
+import {AttachmentPrimitive, useAui, useAuiState} from "@assistant-ui/react";
+import {CircleParkingIcon, FileIcon, FileTextIcon, HashIcon, TextSelectIcon} from "lucide-react";
 import type {FC} from "react";
 import {
     AttachmentPreviewDialog,
     AttachmentRemove,
     AttachmentThumb
 } from "src/shadcn/assistant-ui/attachment";
-import {cn} from "src/shadcn/lib/utils";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger
 } from "src/shadcn/radix-ui/tooltip";
-import {LOGSEQ_BLOCK_ATTACHMENT_TYPE} from "../runtime/LogseqBlockAttachmentAdapter";
+import {LOGSEQ_ATTACHMENT_TYPES} from "../runtime/LogseqAttachmentAdapter";
 
 /**
  * This is the attachment ui manger.
  *
  * Changes:
- * (a) Added logseq block type
+ * (a) Added Logseq entity attachment types and icons
+ * (b) Reduced attachment width and prevented shrinking in scroll containers
+ * (c) Change the ui style to pills instead of boxes.
  */
 export const AttachmentUI: FC = () => {
     const aui = useAui();
     const isComposer = aui.attachment.source !== "message";
 
-    const isImage = useAuiState((s) => s.attachment.type === "image");
     const typeLabel = useAuiState((s) => {
         const type = s.attachment.type;
         switch (type) {
@@ -34,8 +35,16 @@ export const AttachmentUI: FC = () => {
                 return "Document";
             case "file":
                 return "File";
-            case LOGSEQ_BLOCK_ATTACHMENT_TYPE:
-                return "logseq-block";
+            case LOGSEQ_ATTACHMENT_TYPES.block:
+                return "Logseq block";
+            case LOGSEQ_ATTACHMENT_TYPES.page:
+                return "Logseq page";
+            case LOGSEQ_ATTACHMENT_TYPES.propertyPage:
+                return "Logseq property page";
+            case LOGSEQ_ATTACHMENT_TYPES.tagPage:
+                return "Logseq tag page";
+            case LOGSEQ_ATTACHMENT_TYPES.pdf:
+                return "Logseq PDF";
             default:
                 return type;
         }
@@ -44,18 +53,19 @@ export const AttachmentUI: FC = () => {
     return (
         <TooltipProvider delayDuration={0}>
             <Tooltip>
-                <AttachmentPrimitive.Root
-                    className={cn(
-                        "aui-attachment-root relative",
-                        isImage && "aui-attachment-root-composer only:*:first:size-24"
-                    )}>
+                <AttachmentPrimitive.Root className="aui-attachment-root relative max-w-40 shrink-0">
                     <AttachmentPreviewDialog>
                         <TooltipTrigger asChild>
                             <button
                                 type="button"
-                                className="aui-attachment-tile size-14 cursor-pointer overflow-hidden rounded-[calc(var(--composer-radius)-var(--composer-padding))] border bg-muted transition-opacity hover:opacity-75"
+                                className="aui-attachment-tile flex h-9 max-w-40 cursor-pointer items-center gap-1 overflow-hidden rounded-full border bg-muted px-2.5 pr-3 transition-colors hover:bg-muted/75"
                                 aria-label={`${typeLabel} attachment`}>
-                                <AttachmentThumb />
+                                <span className="size-5 shrink-0 overflow-hidden rounded-sm">
+                                    <LogseqAttachmentThumb />
+                                </span>
+                                <span className="truncate text-xs">
+                                    <AttachmentPrimitive.Name />
+                                </span>
                             </button>
                         </TooltipTrigger>
                     </AttachmentPreviewDialog>
@@ -67,4 +77,24 @@ export const AttachmentUI: FC = () => {
             </Tooltip>
         </TooltipProvider>
     );
+};
+
+const LogseqAttachmentThumb: FC = () => {
+    const type = useAuiState((s) => s.attachment.type);
+    const iconClassName = "size-4 text-muted-foreground";
+
+    switch (type) {
+        case LOGSEQ_ATTACHMENT_TYPES.block:
+            return <TextSelectIcon className={iconClassName} />;
+        case LOGSEQ_ATTACHMENT_TYPES.page:
+            return <FileIcon className={iconClassName} />;
+        case LOGSEQ_ATTACHMENT_TYPES.propertyPage:
+            return <CircleParkingIcon className={iconClassName} />;
+        case LOGSEQ_ATTACHMENT_TYPES.tagPage:
+            return <HashIcon className={iconClassName} />;
+        case LOGSEQ_ATTACHMENT_TYPES.pdf:
+            return <FileTextIcon className={iconClassName} />;
+        default:
+            return <AttachmentThumb />;
+    }
 };

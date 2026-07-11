@@ -10,6 +10,7 @@ import {ComposerAction} from "src/chat-app/components/ComposerAction";
  * (c) Decomposed ComposerAttachments for using custom AttachmentUI
  * (d) Handles Shift+Enter explicitly because this does not work in Logseq sidebar as logseq intercepts it.
  *     ShadowDOM was unable to block this intercept.
+ * (e) Hid the attachment scrollbar while preserving horizontal scrolling
  */
 export const Composer: FC = () => {
     const isRunning = useAuiState((state) => state.thread.isRunning);
@@ -65,7 +66,7 @@ export const Composer: FC = () => {
 
 const ComposerAttachments: FC = () => {
     return (
-        <div className="aui-composer-attachments flex w-full flex-row items-center gap-2 overflow-x-auto empty:hidden">
+        <div className="aui-composer-attachments flex w-full touch-pan-x flex-row items-center gap-2 overflow-x-auto overscroll-x-contain [scrollbar-width:none] empty:hidden [&::-webkit-scrollbar]:hidden">
             <ComposerPrimitive.Attachments>{() => <AttachmentUI />}</ComposerPrimitive.Attachments>
         </div>
     );

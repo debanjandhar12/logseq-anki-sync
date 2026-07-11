@@ -9,7 +9,7 @@ import {useEffect, useMemo} from "react";
 import {ChatToolRegistry} from "../tools";
 import {LocalAISDKChatModelAdapter} from "./LocalChatModelAdapter";
 import {LocalThreadHistoryAdapter} from "./LocalThreadHistoryAdapter.js";
-import {LogseqBlockAttachmentAdapter} from "./LogseqBlockAttachmentAdapter";
+import {LogseqAttachmentAdapter} from "./LogseqAttachmentAdapter";
 
 /**
  * Creates a thread-bound LocalRuntime backed by the AI SDK.
@@ -26,8 +26,8 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
 
     const attachmentAdapter = useMemo(() => {
         return new CompositeAttachmentAdapter([
-            new SimpleImageAttachmentAdapter(),
-            new LogseqBlockAttachmentAdapter()
+            new SimpleImageAttachmentAdapter(), // currently unused
+            new LogseqAttachmentAdapter() // logseq images, pdfs, blocks, pages etc are handled here
         ]);
     }, []);
 
