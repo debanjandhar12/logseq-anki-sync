@@ -11,13 +11,13 @@ import {
     ReasoningTrigger
 } from "src/shadcn/assistant-ui/reasoning";
 import {BranchPicker, MessageError} from "src/shadcn/assistant-ui/thread";
-import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
 import {
     ToolGroupContent,
     ToolGroupRoot,
     ToolGroupTrigger
 } from "src/shadcn/assistant-ui/tool-group";
 import {cn} from "src/shadcn/lib/utils";
+import {ToolFallback} from "src/chat-app/components/ToolFallback";
 
 /**
  * Changes:

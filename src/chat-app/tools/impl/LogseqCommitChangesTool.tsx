@@ -18,6 +18,7 @@ import {
 import {Button} from "src/shadcn/radix-ui/button";
 import {showAIChangesReviewModal} from "src/ui/launchers/showAIChangesReviewModal";
 import {z} from "zod";
+import {ToolFallback} from "src/chat-app/components/ToolFallback";
 
 const LogseqCommitChangesArgsZodObj = z.object({});
 

@@ -16,7 +16,6 @@ import {
   ToolGroupRoot,
   ToolGroupTrigger,
 } from "src/shadcn/assistant-ui/tool-group";
-import { ToolFallback } from "src/shadcn/assistant-ui/tool-fallback";
 import { TooltipIconButton } from "src/shadcn/assistant-ui/tooltip-icon-button";
 import { Button } from "src/shadcn/radix-ui/button";
 import { cn } from "src/shadcn/lib/utils";
@@ -47,6 +46,7 @@ import {
   SquareIcon,
 } from "lucide-react";
 import type { FC } from "react";
+import {ToolFallback} from "src/chat-app/components/ToolFallback";
 
 const Thread: FC = () => {
   return (
