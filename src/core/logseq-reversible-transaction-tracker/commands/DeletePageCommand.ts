@@ -50,6 +50,14 @@ export class DeletePageCommand extends BaseReversibleCommand {
 
         const page = await requireActivePage(this.args.pageUuid as PageIdentity);
 
+        if (await LogseqEditor.isTagBlock(page.uuid)) {
+            throw new Error("Cannot delete a tag page using DeletePageCommand.");
+        }
+
+        if (await LogseqEditor.isPropertyBlock(page.uuid)) {
+            throw new Error("Cannot delete a property page using DeletePageCommand.");
+        }
+
         this.deletedPage = page;
         this.changedPages.push(page.uuid);
         await logseq.Editor.deletePage(page.uuid);

@@ -58,4 +58,33 @@ describe.skipIf(!shouldRunTests())("DeletePageCommand", () => {
             "Cannot delete a block. Page UUID provided must be that of a page."
         );
     }, 60_000);
+
+    it("Trying to delete a tag page throws.", async () => {
+        const tagPageName = `DeletePageCommandTestTag_${Date.now()}`;
+        const tag = await logseq.Editor.createTag(tagPageName);
+        await waitForLogseqDb();
+
+        const command = new DeletePageCommand({pageUuid: tag!.uuid});
+        await expect(command.execute()).rejects.toThrow(
+            "Cannot delete a tag page using DeletePageCommand."
+        );
+
+        await logseq.Editor.deletePage(tag!.uuid);
+        await waitForLogseqDb();
+    }, 60_000);
+
+    it("Trying to delete a property page throws.", async () => {
+        const propertyKey = `DeletePageCommandTestProperty_${Date.now()}`;
+        await logseq.Editor.upsertProperty(propertyKey, {type: "default", cardinality: "one"});
+        await waitForLogseqDb();
+        const property = await logseq.Editor.getProperty(propertyKey);
+
+        const command = new DeletePageCommand({pageUuid: property!.uuid});
+        await expect(command.execute()).rejects.toThrow(
+            "Cannot delete a property page using DeletePageCommand."
+        );
+
+        await logseq.Editor.removeProperty(propertyKey);
+        await waitForLogseqDb();
+    }, 60_000);
 });
