@@ -78,14 +78,20 @@ export class MoveBlockCommand extends BaseReversibleCommand {
         }
 
         let currentParentIdentity = destBlock.parent?.id ?? destBlock.parent?.uuid;
+        const visitedParentIdentities = new Set<BlockIdentity>();
         while (currentParentIdentity != null) {
-            if (
-                currentParentIdentity === originalBlock.id ||
-                currentParentIdentity === originalBlock.uuid
-            ) {
+            if (visitedParentIdentities.has(currentParentIdentity as BlockIdentity)) {
+                throw new Error("Cannot resolve destination ancestry due to a parent cycle.");
+            }
+            visitedParentIdentities.add(currentParentIdentity as BlockIdentity);
+
+            const parentBlock = await logseq.Editor.getBlock(currentParentIdentity);
+            if (!parentBlock) {
+                throw new Error(`Unable to resolve destination parent: ${currentParentIdentity}`);
+            }
+            if (parentBlock.uuid === originalBlock.uuid) {
                 throw new Error("Cannot move a parent block into its own descendant.");
             }
-            const parentBlock = await logseq.Editor.getBlock(currentParentIdentity);
             currentParentIdentity = parentBlock?.parent?.id ?? parentBlock?.parent?.uuid;
         }
 

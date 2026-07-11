@@ -82,7 +82,7 @@ export class LogseqEditor {
 
         // Required for tests as Logseq HTTP test server does not support isPageBlock.
         const fetchedBlock = await logseq.Editor.getBlock(block.id || block.uuid);
-        return fetchedBlock?.page?.id === fetchedBlock?.id;
+        return fetchedBlock?.page?.id === undefined || fetchedBlock?.page?.id === fetchedBlock?.id;
     }
 
     static async getPreviousBlock(
@@ -94,17 +94,18 @@ export class LogseqEditor {
         if (!opts.parent) return null;
 
         const block = await logseq.Editor.getBlock(blockIdentity);
-        if (!block?.parent) {
-            throw new Error(`Block has no resolvable parent: ${JSON.stringify(blockIdentity)}`);
+        const parentId =  block?.parent?.id || block?.page?.id || ((await LogseqEditor.isPageBlock(block)) ? block.id : null);
+        if (!parentId) {
+            throw new Error(`Cannot resolve parent id from block: ${JSON.stringify(block)}`);
         }
 
-        const parentBlock = await LogseqPropertiesHelper.getBlock(block.parent.id);
+        const parentBlock = await LogseqPropertiesHelper.getBlock(parentId);
         if (!parentBlock?.uuid) {
             // In logseq API version, logseq.api.get_block doesnt seem to return page as block? (not sure)
-            const parentPage = await LogseqPropertiesHelper.getPage(block.parent.id);
+            const parentPage = await LogseqPropertiesHelper.getPage(parentId);
             if (parentPage?.uuid) return parentPage;
 
-            throw new Error(`Unable to resolve parent reference: ${block.parent.id}`);
+            throw new Error(`Unable to resolve parent reference: ${parentId}`);
         }
 
         if (await LogseqEditor.isPageBlock(parentBlock)) {
