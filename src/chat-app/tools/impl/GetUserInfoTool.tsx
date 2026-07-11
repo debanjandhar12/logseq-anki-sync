@@ -3,8 +3,8 @@ import dayjs from "dayjs";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {
     ChatToolResponse,
-    type ToolErrorResult,
-    type ToolSuccessResult
+    type ChatToolErrorResult,
+    type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {getUserPreferredDayjsFormat} from "src/core/template-engine/getUserPreferredDayjsFormat";
@@ -15,7 +15,7 @@ const getUserInfoParameters = z.object({});
 
 type GetUserInfoArgs = z.infer<typeof getUserInfoParameters>;
 
-type GetUserInfoResult = ToolSuccessResult<{userInfo: AppUserInfo | null}> | ToolErrorResult;
+type GetUserInfoResult = ChatToolSuccessResult<{userInfo: AppUserInfo | null}> | ChatToolErrorResult;
 
 export class GetUserInfoTool extends BaseChatToolWithDefaultUI<GetUserInfoArgs, GetUserInfoResult> {
     static readonly NAME = "get_user_info";

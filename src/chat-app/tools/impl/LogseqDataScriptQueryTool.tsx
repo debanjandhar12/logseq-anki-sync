@@ -2,8 +2,8 @@ import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatToo
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {
     ChatToolResponse,
-    type ToolErrorResult,
-    type ToolSuccessResult
+    type ChatToolErrorResult,
+    type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
@@ -14,7 +14,7 @@ import {
     DataScriptQueryCommandArgsSchema
 } from "src/core/logseq-reversible-transaction-tracker";
 
-type LogseqDataScriptQueryResult = ToolSuccessResult<{result: unknown}> | ToolErrorResult;
+type LogseqDataScriptQueryResult = ChatToolSuccessResult<{result: unknown}> | ChatToolErrorResult;
 
 export class LogseqDataScriptQueryTool extends BaseChatToolWithDefaultUI<
     DataScriptQueryCommandArgs,

@@ -2,8 +2,8 @@ import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatToo
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {
     ChatToolResponse,
-    type ToolErrorResult,
-    type ToolSuccessResult
+    type ChatToolErrorResult,
+    type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
@@ -16,8 +16,8 @@ import {
 } from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqRemovePropertyFromTagPageResult =
-    | ToolSuccessResult<{tag: LogseqReversibleTransactionResult}>
-    | ToolErrorResult;
+    | ChatToolSuccessResult<{tag: LogseqReversibleTransactionResult}>
+    | ChatToolErrorResult;
 
 export class LogseqRemovePropertyFromTagPageTool extends BaseChatToolWithDefaultUI<
     RemovePropertyFromTagPageCommandArgs,

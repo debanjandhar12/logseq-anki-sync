@@ -5,8 +5,8 @@ import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatToo
 import {BaseChatToolWithCustomUI} from "src/chat-app/tools/base/BaseChatToolWithCustomUI";
 import {
     ChatToolResponse,
-    type ToolErrorResult,
-    type ToolSuccessResult
+    type ChatToolErrorResult,
+    type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
@@ -15,7 +15,6 @@ import {
     LogseqPageDataPrinter,
     type LogseqReversibleTransactionTracker
 } from "src/core/logseq-reversible-transaction-tracker";
-import {ToolFallback} from "src/shadcn/assistant-ui/tool-fallback";
 import {Button} from "src/shadcn/radix-ui/button";
 import {showAIChangesReviewModal} from "src/ui/launchers/showAIChangesReviewModal";
 import {z} from "zod";
@@ -24,7 +23,7 @@ const LogseqCommitChangesArgsZodObj = z.object({});
 
 type LogseqCommitChangesArgs = z.infer<typeof LogseqCommitChangesArgsZodObj>;
 
-type LogseqCommitChangesResult = ToolSuccessResult<{changes: string}> | ToolErrorResult;
+type LogseqCommitChangesResult = ChatToolSuccessResult<{changes: string}> | ChatToolErrorResult;
 
 export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     LogseqCommitChangesArgs,

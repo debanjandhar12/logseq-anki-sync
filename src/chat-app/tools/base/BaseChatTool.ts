@@ -1,6 +1,6 @@
 import type {ThreadMessage, ToolCallMessagePartComponent} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
-import type {ChatToolResponse, ToolResult} from "src/chat-app/tools/base/ChatToolResponse";
+import type {ChatToolResponse, ChatToolResult} from "src/chat-app/tools/base/ChatToolResponse";
 import type {z} from "zod";
 
 export type ChatToolExecutionContext = {
@@ -12,7 +12,7 @@ export type ChatToolExecutionContext = {
 
 export abstract class BaseChatTool<
     TArgs extends Record<string, unknown> = Record<string, unknown>,
-    TResult extends ToolResult = ToolResult
+    TResult extends ChatToolResult = ChatToolResult
 > {
     /** The unique identifier for the tool */
     abstract readonly name: string;

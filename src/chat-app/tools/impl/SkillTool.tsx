@@ -1,8 +1,8 @@
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {
     ChatToolResponse,
-    type ToolErrorResult,
-    type ToolSuccessResult
+    type ChatToolErrorResult,
+    type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
@@ -14,7 +14,7 @@ const readSkillFileParameters = z.object({
 
 type SkillArgs = z.infer<typeof readSkillFileParameters>;
 
-type SkillResult = ToolSuccessResult<{skillFileContent: string}> | ToolErrorResult;
+type SkillResult = ChatToolSuccessResult<{skillFileContent: string}> | ChatToolErrorResult;
 
 export class SkillTool extends BaseChatToolWithDefaultUI<SkillArgs, SkillResult> {
     static readonly NAME = "skill";

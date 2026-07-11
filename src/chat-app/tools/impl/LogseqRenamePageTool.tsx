@@ -1,6 +1,6 @@
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
-import {ChatToolResponse, type ToolResult} from "src/chat-app/tools/base/ChatToolResponse";
+import {ChatToolResponse, type ChatToolErrorResult, type ChatToolSuccessResult} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -10,7 +10,7 @@ import {
     RenamePageCommandArgsSchema
 } from "src/core/logseq-reversible-transaction-tracker";
 
-type LogseqRenamePageResult = ToolResult;
+type LogseqRenamePageResult = ChatToolSuccessResult | ChatToolErrorResult;
 
 export class LogseqRenamePageTool extends BaseChatToolWithDefaultUI<
     RenamePageCommandArgs,

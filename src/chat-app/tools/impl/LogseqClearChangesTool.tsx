@@ -1,6 +1,6 @@
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
-import {ChatToolResponse, type ToolResult} from "src/chat-app/tools/base/ChatToolResponse";
+import {ChatToolResponse, type ChatToolErrorResult, type ChatToolSuccessResult} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -10,7 +10,7 @@ const LogseqClearChangesArgsZodObj = z.object({});
 
 type LogseqClearChangesArgs = z.infer<typeof LogseqClearChangesArgsZodObj>;
 
-type LogseqClearChangesResult = ToolResult;
+type LogseqClearChangesResult = ChatToolSuccessResult | ChatToolErrorResult;
 
 export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
     LogseqClearChangesArgs,

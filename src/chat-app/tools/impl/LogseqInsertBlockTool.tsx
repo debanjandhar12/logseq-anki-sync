@@ -2,8 +2,8 @@ import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatToo
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {
     ChatToolResponse,
-    type ToolErrorResult,
-    type ToolSuccessResult
+    type ChatToolErrorResult,
+    type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
@@ -16,10 +16,10 @@ import {createLogseqReversibleTransactionTrackerArtifact} from "../transaction/c
 import {getLastLogseqReversibleTransactionTracker} from "../transaction/getLastLogseqReversibleTransactionTracker";
 
 type LogseqInsertBlockResult =
-    | ToolSuccessResult<{
+    | ChatToolSuccessResult<{
           block: LogseqReversibleTransactionResult | undefined;
       }>
-    | ToolErrorResult;
+    | ChatToolErrorResult;
 
 export class LogseqInsertBlockTool extends BaseChatToolWithDefaultUI<
     InsertBlockCommandArgs,

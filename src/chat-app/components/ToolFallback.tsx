@@ -115,7 +115,7 @@ function ToolFallbackTrigger({
     );
 }
 
-const ToolFallback = memo(
+export const ToolFallback = memo(
     ToolFallbackImpl,
 ) as unknown as ToolCallMessagePartComponent & {
     Root: typeof ToolFallbackRoot;
