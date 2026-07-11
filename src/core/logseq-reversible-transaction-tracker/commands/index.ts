@@ -1,5 +1,8 @@
 import {z} from "zod";
+import {AddPropertyToTagPageCommandCodec} from "./AddPropertyToTagPageCommand";
+import {AddTagToBlockCommandCodec} from "./AddTagToBlockCommand";
 import {CreatePageCommandCodec} from "./CreatePageCommand";
+import {CreateTagPageCommandCodec} from "./CreateTagPageCommand";
 import {DataScriptQueryCommandCodec} from "./DataScriptQueryCommand";
 import {DeleteBlockCommandCodec} from "./DeleteBlockCommand";
 import {DeletePageCommandCodec} from "./DeletePageCommand";
@@ -7,6 +10,8 @@ import {DeletePropertyFromBlockCommandCodec} from "./DeletePropertyFromBlockComm
 import {InsertBlockCommandCodec} from "./InsertBlockCommand";
 import {MoveBlockCommandCodec} from "./MoveBlockCommand";
 import {ReadBlockCommandCodec} from "./ReadBlockCommand";
+import {RemovePropertyFromTagPageCommandCodec} from "./RemovePropertyFromTagPageCommand";
+import {RemoveTagFromBlockCommandCodec} from "./RemoveTagFromBlockCommand";
 import {RenamePageCommandCodec} from "./RenamePageCommand";
 import {RestorePageCommandCodec} from "./RestorePageCommand";
 import {TextSearchCommandCodec} from "./TextSearchCommand";
@@ -14,6 +19,18 @@ import {UpdateBlockCommandCodec} from "./UpdateBlockCommand";
 import {UpsertPropertyPageCommandCodec} from "./UpsertPropertyPageCommand";
 import {UpsertPropertyToBlockCommandCodec} from "./UpsertPropertyToBlockCommand";
 
+export {
+    AddPropertyToTagPageCommand,
+    type AddPropertyToTagPageCommandArgs,
+    type AddPropertyToTagPageCommandArgsInput,
+    AddPropertyToTagPageCommandArgsSchema
+} from "./AddPropertyToTagPageCommand";
+export {
+    AddTagToBlockCommand,
+    type AddTagToBlockCommandArgs,
+    type AddTagToBlockCommandArgsInput,
+    AddTagToBlockCommandArgsSchema
+} from "./AddTagToBlockCommand";
 export {BaseReversibleCommand} from "./BaseReversibleCommand";
 export {
     CreatePageCommand,
@@ -21,6 +38,12 @@ export {
     type CreatePageCommandArgsInput,
     CreatePageCommandArgsSchema
 } from "./CreatePageCommand";
+export {
+    CreateTagPageCommand,
+    type CreateTagPageCommandArgs,
+    type CreateTagPageCommandArgsInput,
+    CreateTagPageCommandArgsSchema
+} from "./CreateTagPageCommand";
 export {
     DataScriptQueryCommand,
     type DataScriptQueryCommandArgs,
@@ -65,6 +88,18 @@ export {
     type ReadBlockCommandResult
 } from "./ReadBlockCommand";
 export {
+    RemovePropertyFromTagPageCommand,
+    type RemovePropertyFromTagPageCommandArgs,
+    type RemovePropertyFromTagPageCommandArgsInput,
+    RemovePropertyFromTagPageCommandArgsSchema
+} from "./RemovePropertyFromTagPageCommand";
+export {
+    RemoveTagFromBlockCommand,
+    type RemoveTagFromBlockCommandArgs,
+    type RemoveTagFromBlockCommandArgsInput,
+    RemoveTagFromBlockCommandArgsSchema
+} from "./RemoveTagFromBlockCommand";
+export {
     RenamePageCommand,
     type RenamePageCommandArgs,
     type RenamePageCommandArgsInput,
@@ -101,7 +136,10 @@ export {
     UpsertPropertyToBlockCommandArgsSchema
 } from "./UpsertPropertyToBlockCommand";
 export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
+    AddPropertyToTagPageCommandCodec,
+    AddTagToBlockCommandCodec,
     CreatePageCommandCodec,
+    CreateTagPageCommandCodec,
     DataScriptQueryCommandCodec,
     DeleteBlockCommandCodec,
     DeletePageCommandCodec,
@@ -109,6 +147,8 @@ export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
     InsertBlockCommandCodec,
     MoveBlockCommandCodec,
     ReadBlockCommandCodec,
+    RemovePropertyFromTagPageCommandCodec,
+    RemoveTagFromBlockCommandCodec,
     RenamePageCommandCodec,
     RestorePageCommandCodec,
     TextSearchCommandCodec,

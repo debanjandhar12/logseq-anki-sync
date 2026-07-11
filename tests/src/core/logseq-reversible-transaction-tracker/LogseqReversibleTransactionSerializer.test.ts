@@ -1,7 +1,10 @@
 import {describe, expect, test} from "vitest";
 import {z} from "zod";
 import {
+    AddPropertyToTagPageCommand,
+    AddTagToBlockCommand,
     CreatePageCommand,
+    CreateTagPageCommand,
     DeleteBlockCommand,
     DeletePageCommand,
     DeletePropertyFromBlockCommand,
@@ -11,6 +14,8 @@ import {
     LogseqReversibleTransactionTracker,
     LogseqReversibleTransactionTrackerSerializer,
     MoveBlockCommand,
+    RemovePropertyFromTagPageCommand,
+    RemoveTagFromBlockCommand,
     RenamePageCommand,
     UpdateBlockCommand,
     UpsertPropertyPageCommand,
@@ -43,6 +48,21 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
         expect(reserialized).toEqual(serialized);
     });
 
+    test("round trips generated create tag page UUID state", () => {
+        const command = new CreateTagPageCommand({tagName: "Book"});
+        const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
+
+        const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
+        const reserialized = LogseqReversibleTransactionCommandSerializer.serialize(deserialized);
+
+        expect(serialized).toEqual({
+            type: "CreateTagPage",
+            tagName: "Book",
+            tagPageUuid: expect.any(String)
+        });
+        expect(reserialized).toEqual(serialized);
+    });
+
     test("round trips generated insert block UUID state", () => {
         const command = new InsertBlockCommand({
             parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
@@ -68,6 +88,12 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
             LogseqReversibleTransactionCommandSerializer.deserialize({
                 type: "CreatePage",
                 pageName: "Legacy Codec Test"
+            })
+        ).toThrow();
+        expect(() =>
+            LogseqReversibleTransactionCommandSerializer.deserialize({
+                type: "CreateTagPage",
+                tagName: "Book"
             })
         ).toThrow();
     });
@@ -149,6 +175,26 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
                 pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f35",
                 newName: "Renamed Page"
             }),
+            new CreateTagPageCommand(
+                {tagName: "Book"},
+                {tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f36"}
+            ),
+            new AddPropertyToTagPageCommand({
+                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f41",
+                propertyPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f42"
+            }),
+            new RemovePropertyFromTagPageCommand({
+                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f43",
+                propertyPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f44"
+            }),
+            new AddTagToBlockCommand({
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f45",
+                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f46"
+            }),
+            new RemoveTagFromBlockCommand({
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f47",
+                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f48"
+            }),
             new UpsertPropertyPageCommand({
                 propertyUuidOrIndent: "rating",
                 schema: {type: "number", cardinality: "one"},
@@ -201,6 +247,31 @@ describe("LogseqReversibleTransactionCommandSerializer", () => {
                 type: "RenamePage",
                 pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f35",
                 newName: "Renamed Page"
+            },
+            {
+                type: "CreateTagPage",
+                tagName: "Book",
+                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f36"
+            },
+            {
+                type: "AddPropertyToTagPage",
+                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f41",
+                propertyPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f42"
+            },
+            {
+                type: "RemovePropertyFromTagPage",
+                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f43",
+                propertyPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f44"
+            },
+            {
+                type: "AddTagToBlock",
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f45",
+                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f46"
+            },
+            {
+                type: "RemoveTagFromBlock",
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f47",
+                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f48"
             },
             {
                 type: "UpsertPropertyPage",
