@@ -4,8 +4,9 @@
 
 1. Every tool must return `{ success: true, ...data }` on success or `{ success: false, error: string }` on error.
 2. This convention must be **enforced at compile time**, not just by convention.
-3. Tools that need to attach artifacts (e.g. `LogseqReversibleTransactionTracker`) should be able to do so cleanly.
-4. `addResult()` calls in custom UI tools must also use the same wrapper.
+3. `isError` on `ChatToolResponse` must be `true` when `success` is `false`, and `false` when `success` is `true`. Enforced via static methods, not the constructor.
+4. Tools that need to attach artifacts (e.g. `LogseqReversibleTransactionTracker`) should be able to do so cleanly.
+5. `addResult()` calls in custom UI tools must also use the same wrapper.
 
 ## Current State
 
@@ -14,14 +15,21 @@
 - Tools return a mix of plain objects and `ToolResponse` instances from `assistant-stream`.
 - `addResult` (from `@assistant-ui/core`) accepts `TResult | ToolResponse<TResult>`. Since `ChatToolResponse<TResult>` extends `ToolResponse<TResult>`, it is automatically compatible — no override needed.
 
-## Approach: Subclass ToolResponse
+## Approach: Subclass ToolResponse with static `success()` / `error()` methods
 
-Create `ChatToolResponse<TResult>` that extends `ToolResponse<TResult>`. No static methods — just constructor usage. The subclass exists to enforce the `ToolResult` constraint on `TResult` and provide a distinct type for our tools.
+`ChatToolResponse<TResult>` extends `ToolResponse<TResult>` and constrains `TResult extends ToolResult`.
+
+Static methods enforce the coupling between `success`/`error` shape and `isError` flag:
+- `ChatToolResponse.success(result, artifact?)` — `isError` is always `false`
+- `ChatToolResponse.error(error, artifact?)` — `isError` is always `true`
+
+The constructor is not used directly by tools.
 
 ### Step 1: Create `src/chat-app/tools/base/ChatToolResponse.ts`
 
 ```typescript
 import { ToolResponse, type ToolResponseLike } from "assistant-stream";
+import type { ReadonlyJSONValue } from "assistant-stream/utils/json/json-value";
 
 export type ToolSuccessResult<TData extends Record<string, unknown> = Record<string, never>> =
     { success: true } & TData;
@@ -33,8 +41,27 @@ export type ToolResult<TData extends Record<string, unknown> = Record<string, ne
     | ToolErrorResult;
 
 export class ChatToolResponse<TResult extends ToolResult> extends ToolResponse<TResult> {
-    constructor(options: ToolResponseLike<TResult>) {
+    private constructor(options: ToolResponseLike<TResult>) {
         super(options);
+    }
+
+    static success(): ChatToolResponse<ToolSuccessResult>;
+    static success<T extends Record<string, unknown>>(data: T): ChatToolResponse<ToolSuccessResult<T>>;
+    static success<T extends Record<string, unknown>>(
+        data: T, artifact: ReadonlyJSONValue
+    ): ChatToolResponse<ToolSuccessResult<T>>;
+    static success<T extends Record<string, unknown>>(
+        data?: T, artifact?: ReadonlyJSONValue
+    ): ChatToolResponse<ToolSuccessResult<T>> {
+        const result = { success: true as const, ...data } as ToolSuccessResult<T>;
+        return new ChatToolResponse({ result, artifact }) as any;
+    }
+
+    static error(error: string): ChatToolResponse<ToolErrorResult>;
+    static error(error: string, artifact: ReadonlyJSONValue): ChatToolResponse<ToolErrorResult>;
+    static error(error: string, artifact?: ReadonlyJSONValue): ChatToolResponse<ToolErrorResult> {
+        const result: ToolErrorResult = { success: false, error };
+        return new ChatToolResponse({ result, artifact, isError: true }) as any;
     }
 }
 ```
@@ -54,7 +81,6 @@ TResult extends ToolResult = ToolResult
 This means:
 - A tool declaring `TResult = ToolResult<{ block: Block }>` is valid.
 - A tool declaring `TResult = any` or `TResult = { foo: string }` is a **type error**.
-- `execute` must return `ChatToolResponse<TResult>` (or `Promise<...>`).
 
 ### Step 3: Force `execute` return type
 
@@ -86,13 +112,13 @@ We cannot further restrict `addResult` to only accept `ChatToolResponse` without
 
 For each tool:
 
-1. Remove local `type XxxResult` definition.
+1. Remove local `type XxxResult` discriminated union definition.
 2. Replace with `type XxxResult = ToolResult<{ ...specific fields... }>` (or just `ToolResult` if no extra data).
-3. Replace `return { success: true, ...data }` with `return new ChatToolResponse({ result: { success: true, ...data } })`.
-4. Replace `return { success: false, error: "..." }` with `return new ChatToolResponse({ result: { success: false, error: "..." }, isError: true })`.
-5. Replace `return new ToolResponse({ result: { success: true, ... }, artifact })` with `return new ChatToolResponse({ result: { success: true, ... }, artifact })`.
-6. Replace `return new ToolResponse({ result: { success: false, error }, isError: true })` with `return new ChatToolResponse({ result: { success: false, error }, isError: true })`.
-7. Replace `addResult(new ToolResponse({ ... }))` with `addResult(new ChatToolResponse({ ... }))`.
+3. Replace `return { success: true, ...data }` → `return ChatToolResponse.success(data)`.
+4. Replace `return { success: false, error: "..." }` → `return ChatToolResponse.error("...")`.
+5. Replace `return new ToolResponse({ result: { success: true, ... }, artifact })` → `return ChatToolResponse.success(data, artifact)`.
+6. Replace `return new ToolResponse({ result: { success: false, error }, isError: true })` → `return ChatToolResponse.error(error)`.
+7. Replace `addResult(new ToolResponse({ ... }))` → `addResult(ChatToolResponse.error(...))` or `addResult(ChatToolResponse.success(...))`.
 
 ### Example: LogseqInsertBlockTool (tool with artifact)
 
@@ -122,15 +148,12 @@ type LogseqInsertBlockResult = ToolResult<{
 async execute(...): Promise<ChatToolResponse<LogseqInsertBlockResult>> {
     try {
         ...
-        return new ChatToolResponse({
-            result: { success: true, block },
-            artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-        });
+        return ChatToolResponse.success(
+            { block },
+            createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+        );
     } catch (err) {
-        return new ChatToolResponse({
-            result: { success: false, error: `Failed to ...` },
-            isError: true
-        });
+        return ChatToolResponse.error(`Failed to ...`);
     }
 }
 ```
@@ -147,12 +170,7 @@ addResult(
 );
 
 // After
-addResult(
-    new ChatToolResponse({
-        result: { success: false, error: getErrorMessageFromErrObj(error) },
-        isError: true
-    })
-);
+addResult(ChatToolResponse.error(getErrorMessageFromErrObj(error)));
 ```
 
 ### Example: GetUserInfoTool (simple, no artifact)
@@ -178,12 +196,9 @@ type GetUserInfoResult = ToolResult<{ userInfo: AppUserInfo | null }>;
 async execute(): Promise<ChatToolResponse<GetUserInfoResult>> {
     try {
         ...
-        return new ChatToolResponse({ result: { success: true, userInfo } });
+        return ChatToolResponse.success({ userInfo });
     } catch (err) {
-        return new ChatToolResponse({
-            result: { success: false, error: `Failed to ...` },
-            isError: true
-        });
+        return ChatToolResponse.error(`Failed to ...`);
     }
 }
 ```
@@ -192,7 +207,7 @@ async execute(): Promise<ChatToolResponse<GetUserInfoResult>> {
 
 | File | Change |
 |---|---|
-| `src/chat-app/tools/base/ChatToolResponse.ts` | **NEW** — subclass + shared types |
+| `src/chat-app/tools/base/ChatToolResponse.ts` | **NEW** — subclass + shared types + static methods |
 | `src/chat-app/tools/base/BaseChatTool.ts` | Constrain `TResult extends ToolResult`, change `execute` return type |
 | `src/chat-app/tools/base/BaseChatToolWithDefaultUI.ts` | Constrain `TResult extends ToolResult`, change `execute` return type |
 | `src/chat-app/tools/base/BaseChatToolWithCustomUI.ts` | Constrain `TResult extends ToolResult` |
