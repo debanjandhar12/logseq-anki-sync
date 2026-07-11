@@ -1,6 +1,10 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {
+    ChatToolResponse,
+    type ToolErrorResult,
+    type ToolSuccessResult
+} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -12,15 +16,11 @@ import {
 } from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqReadBlockResult =
-    | {
-          success: true;
+    | ToolSuccessResult<{
           type: ReadBlockCommandResult["type"];
           block: ReadBlockCommandResult["block"];
-      }
-    | {
-          success: false;
-          error: string;
-      };
+      }>
+    | ToolErrorResult;
 
 export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
     ReadBlockCommandArgs,
@@ -36,7 +36,7 @@ export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
     async execute(
         args: ReadBlockCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqReadBlockResult | ToolResponse<LogseqReadBlockResult>> {
+    ): Promise<ChatToolResponse<LogseqReadBlockResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.addCommand(new ReadBlockCommand(args));
@@ -44,15 +44,14 @@ export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
             const result = (await transactionTracker.execute()) as ReadBlockCommandResult;
             await transactionTracker.revert();
 
-            return new ToolResponse({
-                result: {success: true, ...result},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {...result},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to read Logseq entity ${args.uuid ?? args.propertyIndent}: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to read Logseq entity ${args.uuid ?? args.propertyIndent}: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

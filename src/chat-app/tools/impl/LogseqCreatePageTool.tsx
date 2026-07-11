@@ -1,6 +1,10 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {
+    ChatToolResponse,
+    type ToolErrorResult,
+    type ToolSuccessResult
+} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -12,14 +16,8 @@ import {
 } from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqCreatePageResult =
-    | {
-          success: true;
-          page: LogseqReversibleTransactionResult | undefined;
-      }
-    | {
-          success: false;
-          error: string;
-      };
+    | ToolSuccessResult<{page: LogseqReversibleTransactionResult | undefined}>
+    | ToolErrorResult;
 
 export class LogseqCreatePageTool extends BaseChatToolWithDefaultUI<
     CreatePageCommandArgs,
@@ -34,7 +32,7 @@ export class LogseqCreatePageTool extends BaseChatToolWithDefaultUI<
     async execute(
         args: CreatePageCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqCreatePageResult | ToolResponse<LogseqCreatePageResult>> {
+    ): Promise<ChatToolResponse<LogseqCreatePageResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.addCommand(new CreatePageCommand(args));
@@ -42,15 +40,14 @@ export class LogseqCreatePageTool extends BaseChatToolWithDefaultUI<
             const page = await transactionTracker.execute();
             await transactionTracker.revert();
 
-            return new ToolResponse({
-                result: {success: true, page},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {page},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to create Logseq page ${args.pageName}: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to create Logseq page ${args.pageName}: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

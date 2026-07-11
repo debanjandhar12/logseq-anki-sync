@@ -1,13 +1,12 @@
-import type {ToolResponse} from "assistant-stream";
-import {BaseChatTool} from "src/chat-app/tools";
-import {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
+import {BaseChatTool, type ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
+import type {ChatToolResponse, ToolResult} from "src/chat-app/tools/base/ChatToolResponse";
 
 export abstract class BaseChatToolWithDefaultUI<
     TArgs extends Record<string, unknown> = Record<string, unknown>,
-    TResult = any
+    TResult extends ToolResult = ToolResult
 > extends BaseChatTool<TArgs, TResult> {
     abstract execute(
         args: TArgs,
         context?: ChatToolExecutionContext
-    ): Promise<TResult | ToolResponse<TResult>>;
+    ): Promise<ChatToolResponse<TResult>>;
 }

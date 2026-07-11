@@ -1,6 +1,10 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {
+    ChatToolResponse,
+    type ToolErrorResult,
+    type ToolSuccessResult
+} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -12,8 +16,8 @@ import {
 } from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqAddPropertyToTagPageResult =
-    | {success: true; tag: LogseqReversibleTransactionResult}
-    | {success: false; error: string};
+    | ToolSuccessResult<{tag: LogseqReversibleTransactionResult}>
+    | ToolErrorResult;
 
 export class LogseqAddPropertyToTagPageTool extends BaseChatToolWithDefaultUI<
     AddPropertyToTagPageCommandArgs,
@@ -29,22 +33,21 @@ export class LogseqAddPropertyToTagPageTool extends BaseChatToolWithDefaultUI<
     async execute(
         args: AddPropertyToTagPageCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqAddPropertyToTagPageResult | ToolResponse<LogseqAddPropertyToTagPageResult>> {
+    ): Promise<ChatToolResponse<LogseqAddPropertyToTagPageResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.addCommand(new AddPropertyToTagPageCommand(args));
             const tag = await transactionTracker.execute();
             await transactionTracker.revert();
 
-            return new ToolResponse({
-                result: {success: true, tag},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {tag},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to add property ${args.propertyPageUuid} to tag ${args.tagPageUuid}: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to add property ${args.propertyPageUuid} to tag ${args.tagPageUuid}: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

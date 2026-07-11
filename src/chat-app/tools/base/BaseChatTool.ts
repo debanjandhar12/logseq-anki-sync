@@ -1,5 +1,6 @@
 import type {ThreadMessage, ToolCallMessagePartComponent} from "@assistant-ui/react";
-import type {Tool, ToolResponse} from "assistant-stream";
+import type {Tool} from "assistant-stream";
+import type {ChatToolResponse, ToolResult} from "src/chat-app/tools/base/ChatToolResponse";
 import type {z} from "zod";
 
 export type ChatToolExecutionContext = {
@@ -11,7 +12,7 @@ export type ChatToolExecutionContext = {
 
 export abstract class BaseChatTool<
     TArgs extends Record<string, unknown> = Record<string, unknown>,
-    TResult = any
+    TResult extends ToolResult = ToolResult
 > {
     /** The unique identifier for the tool */
     abstract readonly name: string;
@@ -34,10 +35,7 @@ export abstract class BaseChatTool<
      * The actual execution logic for the tool.
      * Human tools with custom UI can omit this because their UI supplies the result.
      */
-    execute?(
-        args: TArgs,
-        context?: ChatToolExecutionContext
-    ): Promise<TResult | ToolResponse<TResult>>;
+    execute?(args: TArgs, context?: ChatToolExecutionContext): Promise<ChatToolResponse<TResult>>;
 
     /**
      * Retrieves the tool definition compatible with `assistant-stream`.
@@ -57,4 +55,3 @@ export abstract class BaseChatTool<
         } as Tool<TArgs, TResult>;
     }
 }
-

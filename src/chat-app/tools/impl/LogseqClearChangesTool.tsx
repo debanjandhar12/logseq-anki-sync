@@ -1,6 +1,6 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {ChatToolResponse, type ToolResult} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -10,14 +10,7 @@ const LogseqClearChangesArgsZodObj = z.object({});
 
 type LogseqClearChangesArgs = z.infer<typeof LogseqClearChangesArgsZodObj>;
 
-type LogseqClearChangesResult =
-    | {
-          success: true;
-      }
-    | {
-          success: false;
-          error: string;
-      };
+type LogseqClearChangesResult = ToolResult;
 
 export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
     LogseqClearChangesArgs,
@@ -32,20 +25,19 @@ export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
     async execute(
         _args: LogseqClearChangesArgs = {},
         context?: ChatToolExecutionContext
-    ): Promise<LogseqClearChangesResult | ToolResponse<LogseqClearChangesResult>> {
+    ): Promise<ChatToolResponse<LogseqClearChangesResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.clear();
 
-            return new ToolResponse({
-                result: {success: true},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to clear Logseq changes: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to clear Logseq changes: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

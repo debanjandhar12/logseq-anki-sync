@@ -1,6 +1,6 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {ChatToolResponse, type ToolResult} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -10,14 +10,7 @@ import {
     MoveBlockCommandArgsSchema
 } from "src/core/logseq-reversible-transaction-tracker";
 
-type LogseqMoveBlockResult =
-    | {
-          success: true;
-      }
-    | {
-          success: false;
-          error: string;
-      };
+type LogseqMoveBlockResult = ToolResult;
 
 export class LogseqMoveBlockTool extends BaseChatToolWithDefaultUI<
     MoveBlockCommandArgs,
@@ -32,7 +25,7 @@ export class LogseqMoveBlockTool extends BaseChatToolWithDefaultUI<
     async execute(
         args: MoveBlockCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqMoveBlockResult | ToolResponse<LogseqMoveBlockResult>> {
+    ): Promise<ChatToolResponse<LogseqMoveBlockResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.addCommand(new MoveBlockCommand(args));
@@ -40,15 +33,14 @@ export class LogseqMoveBlockTool extends BaseChatToolWithDefaultUI<
             await transactionTracker.execute();
             await transactionTracker.revert();
 
-            return new ToolResponse({
-                result: {success: true},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to move Logseq block ${JSON.stringify(args.srcBlockUuid)}: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to move Logseq block ${JSON.stringify(args.srcBlockUuid)}: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

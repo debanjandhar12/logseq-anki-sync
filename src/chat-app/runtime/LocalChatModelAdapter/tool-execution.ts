@@ -1,5 +1,6 @@
 import type {ChatModelRunResult, ThreadMessage} from "@assistant-ui/react";
 import {type Tool, ToolResponse, toJSONSchema} from "assistant-stream";
+import {ChatToolResponse} from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessage, isRecord} from "./error-utils";
 
 type ToolCallStreamPart = {
@@ -33,9 +34,12 @@ export async function executeFrontendTool(
 ): Promise<Pick<ToolCallMessagePart, "result" | "isError" | "artifact">> {
     try {
         if (!tool.execute) {
+            const errorResponse = ChatToolResponse.error(
+                `Tool cannot be executed: ${toolCall.toolName}`
+            );
             return {
-                result: {error: `Tool cannot be executed: ${toolCall.toolName}`},
-                isError: true
+                result: errorResponse.result,
+                isError: errorResponse.isError
             };
         }
 
@@ -54,7 +58,11 @@ export async function executeFrontendTool(
             isError: response.isError
         };
     } catch (error) {
-        return {result: {error: getErrorMessage(error)}, isError: true};
+        const errorResponse = ChatToolResponse.error(getErrorMessage(error));
+        return {
+            result: errorResponse.result,
+            isError: errorResponse.isError
+        };
     }
 }
 

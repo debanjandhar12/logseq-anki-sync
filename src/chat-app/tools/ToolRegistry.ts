@@ -1,6 +1,7 @@
 import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
 import type {BaseChatTool} from "src/chat-app/tools/base/BaseChatTool";
+import type {ToolResult} from "src/chat-app/tools/base/ChatToolResponse";
 import {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 import {LogseqAddPropertyToTagPageTool} from "src/chat-app/tools/impl/LogseqAddPropertyToTagPageTool";
 import {LogseqAddTagToBlockTool} from "src/chat-app/tools/impl/LogseqAddTagToBlockTool";
@@ -80,7 +81,7 @@ export class ChatToolRegistry {
         return registry;
     }
 
-    private registerTool<TArgs extends Record<string, unknown>, TResult>(
+    private registerTool<TArgs extends Record<string, unknown>, TResult extends ToolResult>(
         tool: BaseChatTool<TArgs, TResult>
     ): void {
         this.tools.set(tool.name, tool.getDefinition());

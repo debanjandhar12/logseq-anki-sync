@@ -1,6 +1,10 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {
+    ChatToolResponse,
+    type ToolErrorResult,
+    type ToolSuccessResult
+} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -12,14 +16,8 @@ import {
 } from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqRestorePageResult =
-    | {
-          success: true;
-          page: LogseqReversibleTransactionResult | undefined;
-      }
-    | {
-          success: false;
-          error: string;
-      };
+    | ToolSuccessResult<{page: LogseqReversibleTransactionResult | undefined}>
+    | ToolErrorResult;
 
 export class LogseqRestorePageTool extends BaseChatToolWithDefaultUI<
     RestorePageCommandArgs,
@@ -34,7 +32,7 @@ export class LogseqRestorePageTool extends BaseChatToolWithDefaultUI<
     async execute(
         args: RestorePageCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqRestorePageResult | ToolResponse<LogseqRestorePageResult>> {
+    ): Promise<ChatToolResponse<LogseqRestorePageResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.addCommand(new RestorePageCommand(args));
@@ -42,15 +40,14 @@ export class LogseqRestorePageTool extends BaseChatToolWithDefaultUI<
             const page = await transactionTracker.execute();
             await transactionTracker.revert();
 
-            return new ToolResponse({
-                result: {success: true, page},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {page},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to restore Logseq page ${JSON.stringify(args.pageUuid)}: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to restore Logseq page ${JSON.stringify(args.pageUuid)}: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

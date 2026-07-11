@@ -1,6 +1,10 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {
+    ChatToolResponse,
+    type ToolErrorResult,
+    type ToolSuccessResult
+} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -10,15 +14,7 @@ import {
     DataScriptQueryCommandArgsSchema
 } from "src/core/logseq-reversible-transaction-tracker";
 
-type LogseqDataScriptQueryResult =
-    | {
-          success: true;
-          result: unknown;
-      }
-    | {
-          success: false;
-          error: string;
-      };
+type LogseqDataScriptQueryResult = ToolSuccessResult<{result: unknown}> | ToolErrorResult;
 
 export class LogseqDataScriptQueryTool extends BaseChatToolWithDefaultUI<
     DataScriptQueryCommandArgs,
@@ -33,7 +29,7 @@ export class LogseqDataScriptQueryTool extends BaseChatToolWithDefaultUI<
     async execute(
         args: DataScriptQueryCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqDataScriptQueryResult | ToolResponse<LogseqDataScriptQueryResult>> {
+    ): Promise<ChatToolResponse<LogseqDataScriptQueryResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.addCommand(new DataScriptQueryCommand(args));
@@ -41,15 +37,14 @@ export class LogseqDataScriptQueryTool extends BaseChatToolWithDefaultUI<
             const result = await transactionTracker.execute();
             await transactionTracker.revert();
 
-            return new ToolResponse({
-                result: {success: true, result},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {result},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to run Logseq DataScript query: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to run Logseq DataScript query: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

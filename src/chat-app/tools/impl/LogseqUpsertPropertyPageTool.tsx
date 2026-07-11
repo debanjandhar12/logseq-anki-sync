@@ -1,6 +1,10 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {
+    ChatToolResponse,
+    type ToolErrorResult,
+    type ToolSuccessResult
+} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -12,14 +16,8 @@ import {
 } from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqUpsertPropertyPageResult =
-    | {
-          success: true;
-          property: LogseqReversibleTransactionResult;
-      }
-    | {
-          success: false;
-          error: string;
-      };
+    | ToolSuccessResult<{property: LogseqReversibleTransactionResult}>
+    | ToolErrorResult;
 
 export class LogseqUpsertPropertyPageTool extends BaseChatToolWithDefaultUI<
     UpsertPropertyPageCommandArgs,
@@ -35,7 +33,7 @@ export class LogseqUpsertPropertyPageTool extends BaseChatToolWithDefaultUI<
     async execute(
         args: UpsertPropertyPageCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqUpsertPropertyPageResult | ToolResponse<LogseqUpsertPropertyPageResult>> {
+    ): Promise<ChatToolResponse<LogseqUpsertPropertyPageResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.addCommand(new UpsertPropertyPageCommand(args));
@@ -43,15 +41,14 @@ export class LogseqUpsertPropertyPageTool extends BaseChatToolWithDefaultUI<
             const property = await transactionTracker.execute();
             await transactionTracker.revert();
 
-            return new ToolResponse({
-                result: {success: true, property},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {property},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to upsert Logseq property page ${args.propertyUuidOrIndent}: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to upsert Logseq property page ${args.propertyUuidOrIndent}: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

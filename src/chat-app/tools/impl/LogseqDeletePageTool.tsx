@@ -1,6 +1,6 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {ChatToolResponse, type ToolResult} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -10,14 +10,7 @@ import {
     DeletePageCommandArgsSchema
 } from "src/core/logseq-reversible-transaction-tracker";
 
-type LogseqDeletePageResult =
-    | {
-          success: true;
-      }
-    | {
-          success: false;
-          error: string;
-      };
+type LogseqDeletePageResult = ToolResult;
 
 export class LogseqDeletePageTool extends BaseChatToolWithDefaultUI<
     DeletePageCommandArgs,
@@ -32,7 +25,7 @@ export class LogseqDeletePageTool extends BaseChatToolWithDefaultUI<
     async execute(
         args: DeletePageCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqDeletePageResult | ToolResponse<LogseqDeletePageResult>> {
+    ): Promise<ChatToolResponse<LogseqDeletePageResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.addCommand(new DeletePageCommand(args));
@@ -40,15 +33,14 @@ export class LogseqDeletePageTool extends BaseChatToolWithDefaultUI<
             await transactionTracker.execute();
             await transactionTracker.revert();
 
-            return new ToolResponse({
-                result: {success: true},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to delete Logseq page ${JSON.stringify(args.pageUuid)}: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to delete Logseq page ${JSON.stringify(args.pageUuid)}: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

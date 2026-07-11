@@ -1,24 +1,21 @@
 import type {AppUserInfo} from "@logseq/libs/dist/LSPlugin";
 import dayjs from "dayjs";
+import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {
+    ChatToolResponse,
+    type ToolErrorResult,
+    type ToolSuccessResult
+} from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {getUserPreferredDayjsFormat} from "src/core/template-engine/getUserPreferredDayjsFormat";
 import {getUserTimeZone} from "src/core/template-engine/getUserTimeZone";
 import {z} from "zod";
-import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 
 const getUserInfoParameters = z.object({});
 
 type GetUserInfoArgs = z.infer<typeof getUserInfoParameters>;
 
-type GetUserInfoResult =
-    | {
-          success: true;
-          userInfo: AppUserInfo | null;
-      }
-    | {
-          success: false;
-          error: string;
-      };
+type GetUserInfoResult = ToolSuccessResult<{userInfo: AppUserInfo | null}> | ToolErrorResult;
 
 export class GetUserInfoTool extends BaseChatToolWithDefaultUI<GetUserInfoArgs, GetUserInfoResult> {
     static readonly NAME = "get_user_info";
@@ -28,7 +25,7 @@ export class GetUserInfoTool extends BaseChatToolWithDefaultUI<GetUserInfoArgs, 
         "Get user's present time, logseq details such as current graph, page, block detail, etc.";
     readonly parameters = getUserInfoParameters;
 
-    async execute(): Promise<GetUserInfoResult> {
+    async execute(): Promise<ChatToolResponse<GetUserInfoResult>> {
         try {
             const userConfig = await logseq.App.getUserConfigs();
             const graphInfo = await logseq.App.getCurrentGraph();
@@ -47,12 +44,11 @@ export class GetUserInfoTool extends BaseChatToolWithDefaultUI<GetUserInfoArgs, 
                 currentPageUUID: currentPage?.uuid,
                 curentBlockUUID: curentBlock?.uuid
             };
-            return {success: true, userInfo};
+            return ChatToolResponse.success({userInfo});
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to get Logseq user info: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to get Logseq user info: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

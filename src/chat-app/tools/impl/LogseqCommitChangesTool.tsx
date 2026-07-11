@@ -1,9 +1,13 @@
 import {type ToolCallMessagePartComponent, useAuiState} from "@assistant-ui/react";
-import {ToolResponse} from "assistant-stream";
 import {GitCommitIcon} from "lucide-react";
 import {useState} from "react";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithCustomUI} from "src/chat-app/tools/base/BaseChatToolWithCustomUI";
+import {
+    ChatToolResponse,
+    type ToolErrorResult,
+    type ToolSuccessResult
+} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -20,15 +24,7 @@ const LogseqCommitChangesArgsZodObj = z.object({});
 
 type LogseqCommitChangesArgs = z.infer<typeof LogseqCommitChangesArgsZodObj>;
 
-type LogseqCommitChangesResult =
-    | {
-          success: true;
-          changes: string;
-      }
-    | {
-          success: false;
-          error: string;
-      };
+type LogseqCommitChangesResult = ToolSuccessResult<{changes: string}> | ToolErrorResult;
 
 export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     LogseqCommitChangesArgs,
@@ -45,34 +41,27 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     async executeApprove(
         _args: LogseqCommitChangesArgs = {},
         context?: ChatToolExecutionContext
-    ): Promise<LogseqCommitChangesResult | ToolResponse<LogseqCommitChangesResult>> {
+    ): Promise<ChatToolResponse<LogseqCommitChangesResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             if (transactionTracker.getCommands().length === 0) {
-                return new ToolResponse({
-                    result: {success: true, changes: "No pending changes to commit."},
-                    artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-                });
+                return ChatToolResponse.success(
+                    {changes: "No pending changes to commit."},
+                    createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+                );
             }
 
             await transactionTracker.execute();
             transactionTracker.clear();
 
-            return new ToolResponse({
-                result: {
-                    success: true,
-                    changes: "All pending Logseq changes commited successfully."
-                },
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {changes: "All pending Logseq changes commited successfully."},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return new ToolResponse({
-                result: {
-                    success: false,
-                    error: `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}`
-                },
-                isError: true
-            });
+            return ChatToolResponse.error(
+                `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 
@@ -94,15 +83,10 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         return {beforeChanges, afterChanges};
     }
 
-    async executeCancel(): Promise<
-        LogseqCommitChangesResult | ToolResponse<LogseqCommitChangesResult>
-    > {
-        return new ToolResponse({
-            result: {
-                success: false,
-                error: "User cancelled the commit operation. Note: In memory changes not cleared."
-            }
-        });
+    async executeCancel(): Promise<ChatToolResponse<LogseqCommitChangesResult>> {
+        return ChatToolResponse.error(
+            "User cancelled the commit operation. Note: In memory changes not cleared."
+        );
     }
 
     readonly render: ToolCallMessagePartComponent<
@@ -123,21 +107,12 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 const isApproved = await showAIChangesReviewModal(beforeChanges, afterChanges);
 
                 if (isApproved === false) {
-                    const cancelResult = ToolResponse.toResponse(await this.executeCancel());
-                    addResult(cancelResult);
+                    addResult(await this.executeCancel());
                 } else if (isApproved === true) {
-                    const commitResult = ToolResponse.toResponse(
-                        await this.executeApprove({}, {messages})
-                    );
-                    addResult(commitResult);
+                    addResult(await this.executeApprove({}, {messages}));
                 } // else ignore if isApproved is null (showAIChangesReviewModal returns null if closed without accepting or rejecting)
             } catch (error) {
-                addResult(
-                    new ToolResponse({
-                        result: {success: false, error: getErrorMessageFromErrObj(error)},
-                        isError: true
-                    })
-                );
+                addResult(ChatToolResponse.error(getErrorMessageFromErrObj(error)));
             } finally {
                 setIsReviewing(false);
             }

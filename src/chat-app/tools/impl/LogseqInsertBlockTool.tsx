@@ -1,6 +1,10 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {
+    ChatToolResponse,
+    type ToolErrorResult,
+    type ToolSuccessResult
+} from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     InsertBlockCommand,
@@ -12,14 +16,10 @@ import {createLogseqReversibleTransactionTrackerArtifact} from "../transaction/c
 import {getLastLogseqReversibleTransactionTracker} from "../transaction/getLastLogseqReversibleTransactionTracker";
 
 type LogseqInsertBlockResult =
-    | {
-          success: true;
+    | ToolSuccessResult<{
           block: LogseqReversibleTransactionResult | undefined;
-      }
-    | {
-          success: false;
-          error: string;
-      };
+      }>
+    | ToolErrorResult;
 
 export class LogseqInsertBlockTool extends BaseChatToolWithDefaultUI<
     InsertBlockCommandArgs,
@@ -34,7 +34,7 @@ export class LogseqInsertBlockTool extends BaseChatToolWithDefaultUI<
     async execute(
         args: InsertBlockCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqInsertBlockResult | ToolResponse<LogseqInsertBlockResult>> {
+    ): Promise<ChatToolResponse<LogseqInsertBlockResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.addCommand(new InsertBlockCommand(args));
@@ -42,15 +42,14 @@ export class LogseqInsertBlockTool extends BaseChatToolWithDefaultUI<
             const block = await transactionTracker.execute();
             await transactionTracker.revert();
 
-            return new ToolResponse({
-                result: {success: true, block},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {block},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to insert Logseq block under ${JSON.stringify(args.parentUuid)}: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to insert Logseq block under ${JSON.stringify(args.parentUuid)}: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

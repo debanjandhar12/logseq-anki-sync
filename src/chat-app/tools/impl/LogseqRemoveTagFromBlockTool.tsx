@@ -1,6 +1,10 @@
-import {ToolResponse} from "assistant-stream";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
+import {
+    ChatToolResponse,
+    type ToolErrorResult,
+    type ToolSuccessResult
+} from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -12,8 +16,8 @@ import {
 } from "src/core/logseq-reversible-transaction-tracker";
 
 type LogseqRemoveTagFromBlockResult =
-    | {success: true; block: LogseqReversibleTransactionResult}
-    | {success: false; error: string};
+    | ToolSuccessResult<{block: LogseqReversibleTransactionResult}>
+    | ToolErrorResult;
 
 export class LogseqRemoveTagFromBlockTool extends BaseChatToolWithDefaultUI<
     RemoveTagFromBlockCommandArgs,
@@ -28,22 +32,21 @@ export class LogseqRemoveTagFromBlockTool extends BaseChatToolWithDefaultUI<
     async execute(
         args: RemoveTagFromBlockCommandArgs,
         context?: ChatToolExecutionContext
-    ): Promise<LogseqRemoveTagFromBlockResult | ToolResponse<LogseqRemoveTagFromBlockResult>> {
+    ): Promise<ChatToolResponse<LogseqRemoveTagFromBlockResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             transactionTracker.addCommand(new RemoveTagFromBlockCommand(args));
             const block = await transactionTracker.execute();
             await transactionTracker.revert();
 
-            return new ToolResponse({
-                result: {success: true, block},
-                artifact: createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
-            });
+            return ChatToolResponse.success(
+                {block},
+                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+            );
         } catch (err) {
-            return {
-                success: false,
-                error: `Failed to remove tag ${args.tagPageUuid} from block ${args.blockUuid}: ${getErrorMessageFromErrObj(err)}`
-            };
+            return ChatToolResponse.error(
+                `Failed to remove tag ${args.tagPageUuid} from block ${args.blockUuid}: ${getErrorMessageFromErrObj(err)}`
+            );
         }
     }
 }

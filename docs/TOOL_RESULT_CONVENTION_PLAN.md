@@ -34,17 +34,15 @@ Create `src/chat-app/tools/base/ChatToolResponse.ts`:
 
 ```typescript
 import {ToolResponse, type ToolResponseLike} from "assistant-stream";
-import type {ReadonlyJSONValue} from "assistant-stream/utils/json/json-value";
+import type {ReadonlyJSONValue} from "assistant-stream/utils";
 
 export type ToolSuccessResult<
-    TData extends Record<string, unknown> = Record<string, never>
+    TData extends Record<string, unknown> = Record<string, unknown>
 > = {success: true} & TData;
 
 export type ToolErrorResult = {success: false; error: string};
 
-export type ToolResult<
-    TData extends Record<string, unknown> = Record<string, never>
-> = ToolSuccessResult<TData> | ToolErrorResult;
+export type ToolResult = ToolSuccessResult | ToolErrorResult;
 
 type SuccessData<TData extends Record<string, unknown>> = TData & {
     success?: never;
@@ -84,6 +82,7 @@ export class ChatToolResponse<TResult extends ToolResult> extends ToolResponse<T
 
 Key details:
 
+- `ToolResult` is non-generic: `ToolSuccessResult | ToolErrorResult`. The generic parameter lives on `ToolSuccessResult<TData>`.
 - Spread `data` before `success` so runtime input cannot overwrite the discriminator.
 - Reject `success` and `error` in success data at compile time to keep those fields owned by the
   factories.
@@ -91,6 +90,14 @@ Key details:
 - Keep the constructor private so project code must use the factories.
 - Avoid `as any` in the implementation. Confirm the exact `ReadonlyJSONValue` import against the
   installed `assistant-stream` package exports during implementation.
+
+Tool result types use the union explicitly:
+
+```typescript
+type MyToolResult = ToolSuccessResult<{block: Block}> | ToolErrorResult;
+// or for no-data success:
+type MyToolResult = ToolResult;
+```
 
 ## Base Class Changes
 
@@ -127,7 +134,7 @@ Discover the migration set from the code instead of relying on a fixed count:
 
 For each tool:
 
-1. Replace its duplicated union with `ToolResult<TData>`, or `ToolResult` when success has no data.
+1. Replace its duplicated union with `ToolSuccessResult<TData> | ToolErrorResult`, or `ToolResult` when success has no data.
 2. Return `ChatToolResponse.success(data, artifact?)` on success.
 3. Return `ChatToolResponse.error(message, artifact?)` on failure.
 4. Change helper methods such as `executeApprove()` and `executeCancel()` too; they do not override
@@ -138,9 +145,9 @@ For each tool:
 Example:
 
 ```typescript
-type LogseqInsertBlockResult = ToolResult<{
+type LogseqInsertBlockResult = ToolSuccessResult<{
     block: LogseqReversibleTransactionResult | undefined;
-}>;
+}> | ToolErrorResult;
 
 async execute(...): Promise<ChatToolResponse<LogseqInsertBlockResult>> {
     try {
