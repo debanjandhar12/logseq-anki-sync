@@ -1,5 +1,7 @@
 import type {BlockEntity, BlockIdentity, EntityID, PageEntity} from "@logseq/libs/dist/LSPlugin";
-import {validatePropertyUuidOrIndent} from "src/core/logseq-reversible-transaction-tracker/commands/utils/validations/propertyValidations";
+import {
+    validatePropertyUuidOrIndent
+} from "src/core/logseq-reversible-transaction-tracker/commands/utils/validations/propertyValidations";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 
 export class LogseqEditor {
@@ -71,14 +73,16 @@ export class LogseqEditor {
     }
 
     static async isPageBlock(block: BlockEntity | PageEntity): Promise<boolean> {
-        try {
-            // @ts-ignore The await is required. DO NOT REMOVE!
-            return Boolean(await logseq.Editor.isPageBlock(block));
-        } catch {
-            // Fallback required for test mode (logseq http server doesnt support isPageBlock)
-            const blockById = await logseq.Editor.getBlock(block.id);
-            return blockById?.page?.id === block.id;
+        if (process.env.NODE_ENV !== "test") {
+            try {
+                const result: unknown = logseq.Editor.isPageBlock(block);
+                if (typeof result === "boolean") return result;
+            } catch {}
         }
+
+        // Required for tests as Logseq HTTP test server does not support isPageBlock.
+        const fetchedBlock = await logseq.Editor.getBlock(block.id || block.uuid);
+        return fetchedBlock?.page?.id === fetchedBlock?.id;
     }
 
     static async getPreviousBlock(
@@ -96,6 +100,10 @@ export class LogseqEditor {
 
         const parentBlock = await LogseqPropertiesHelper.getBlock(block.parent.id);
         if (!parentBlock?.uuid) {
+            // In logseq API version, logseq.api.get_block doesnt seem to return page as block? (not sure)
+            const parentPage = await LogseqPropertiesHelper.getPage(block.parent.id);
+            if (parentPage?.uuid) return parentPage;
+
             throw new Error(`Unable to resolve parent reference: ${block.parent.id}`);
         }
 

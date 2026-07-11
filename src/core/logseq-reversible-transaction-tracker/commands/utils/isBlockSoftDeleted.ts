@@ -19,9 +19,9 @@ function resolvePageIdentity(reference: BlockEntity["page"]): EntityID | PageIde
 
 export async function isBlockSoftDeleted(block: BlockEntity): Promise<boolean> {
     const pageIdentity = (await LogseqEditor.isPageBlock(block))
-        ? block.id
-        : resolvePageIdentity(block.page);
-    if (!pageIdentity) throw new Error(`Block page reference is missing: ${block.uuid}`);
+        ? (block.id || {uuid: block.uuid})
+        : resolvePageIdentity(await logseq.Editor.getBlock(block.id || {uuid: block.uuid}));
+    if (!pageIdentity) throw new Error(`Block page reference is missing: ${pageIdentity}`);
 
     const page = await logseq.Editor.getPage(pageIdentity);
     if (!page) throw new Error(`Page not found for block: ${block.uuid}`);
