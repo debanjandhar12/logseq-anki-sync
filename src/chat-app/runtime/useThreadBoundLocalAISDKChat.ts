@@ -5,11 +5,12 @@ import {
     useAuiState,
     useLocalRuntime
 } from "@assistant-ui/react";
-import {useEffect, useMemo} from "react";
+import {useMemo} from "react";
 import {ChatToolRegistry} from "../tools";
 import {LocalAISDKChatModelAdapter} from "./LocalChatModelAdapter";
 import {LocalThreadHistoryAdapter} from "./LocalThreadHistoryAdapter.js";
 import {LogseqAttachmentAdapter} from "./LogseqAttachmentAdapter";
+import {withRoundtripPersistence} from "./withRoundtripPersistence";
 
 /**
  * Creates a thread-bound LocalRuntime backed by the AI SDK.
@@ -31,7 +32,12 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
         ]);
     }, []);
 
-    const runtime = useLocalRuntime(LocalAISDKChatModelAdapter, {
+    const chatModelAdapter = useMemo(
+        () => withRoundtripPersistence(LocalAISDKChatModelAdapter, historyAdapter),
+        [historyAdapter]
+    );
+
+    return useLocalRuntime(chatModelAdapter, {
         adapters: {
             history: historyAdapter,
             attachments: attachmentAdapter
@@ -39,26 +45,4 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
         maxSteps: 5,
         unstable_humanToolNames: toolRegistry.getHumanToolNames()
     });
-
-    // Workaround: assistant-ui does not save messages with `requires-action` status. (local-thread-runtime-core.ts)
-    // Subscribe to runEnd and persist the assistant message if it has pending human tools.
-    useEffect(() => {
-        return runtime.thread.unstable_on("runEnd", () => {
-            const messages = runtime.thread.getState().messages;
-            const lastMessage = messages[messages.length - 1];
-            if (
-                lastMessage?.role === "assistant" &&
-                lastMessage.status?.type === "requires-action"
-            ) {
-                const messageRuntime = runtime.thread.getMessageById(lastMessage.id);
-                const parentId = messageRuntime.getState().parentId;
-                historyAdapter.append({
-                    parentId,
-                    message: lastMessage
-                });
-            }
-        });
-    }, [runtime, historyAdapter]);
-
-    return runtime;
 }
