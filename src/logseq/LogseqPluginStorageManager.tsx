@@ -1,5 +1,6 @@
 import "@logseq/libs";
 import type {IAsyncStorage} from "@logseq/libs/dist/modules/LSPlugin.Storage";
+import {WindowParentBridge} from "./WindowParentBridge";
 
 /**
  * TBU: This should be synchronization safe..
@@ -36,12 +37,18 @@ export class LogseqPluginStorageManager {
         return await LogseqPluginStorageManager.store.removeItem(`${group}/${fileName}`);
     }
 
+    static async getPluginStorageLocation(): Promise<string> {
+        LogseqPluginStorageManager.validateOperation();
+
+        return `${(await logseq.App.getCurrentGraph()).path}/assets/storages/${logseq.baseInfo.id}`;
+    }
+
     static async openStorage() {
         LogseqPluginStorageManager.validateOperation();
 
         try {
-            console.log(await logseq.Assets.listFilesOfCurrentGraph());
-            // TBU: figure out how to open storage
+            const storageLocation = await LogseqPluginStorageManager.getPluginStorageLocation();
+            WindowParentBridge.openPath(storageLocation);
         } catch (error) {
             await logseq.UI.showMsg("Failed to access plugin storage.", "error");
             throw error;

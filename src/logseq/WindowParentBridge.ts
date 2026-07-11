@@ -146,6 +146,14 @@ export class WindowParentBridge {
     }
 
     /**
+     * Open local file path
+     * @param path - The URL to open
+     */
+    static openPath(path: string): Window | null {
+        return WindowParentBridge.getParentWindow().apis.openPath(path);
+    }
+
+    /**
      * Add event listener to parent window
      * @param event - Event name
      * @param handler - Event handler function
