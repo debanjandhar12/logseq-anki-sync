@@ -1,5 +1,6 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
+import {ChatToolRegistry} from "./chat-app/tools";
 import {DONATE_ICON} from "./constants";
 import {ProviderEnum} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
@@ -14,6 +15,7 @@ export interface PluginSettings {
     llmAPIModel?: string;
     globalAgentInstruction?: string;
     openChatInSidebar?: boolean;
+    enableWebTools?: boolean;
     jinaApiKey?: string;
     debug?: LoggerCategory[];
     lastWelcomeVersion?: string;
@@ -81,10 +83,18 @@ export const addSettingsToLogseq = async () => {
             default: null
         },
         {
+            key: "enableWebTools",
+            type: "boolean",
+            default: false,
+            title: "Enable Web Tools",
+            description:
+                "When enabled, the web_page_get and web_search tools are made available to the AI."
+        },
+        {
             key: "jinaApiKey",
             type: "string",
             default: "",
-            title: "Jina AI API Key",
+            title: "Jina AI API Key (Mandatory)",
             description:
                 "API key for Jina AI (https://jina.ai). Required by the web_page_get and web_search tools."
         },
@@ -128,6 +138,10 @@ export const addSettingsToLogseq = async () => {
             if (!_.isEqual(newSettings.debug, oldSettings.debug)) {
                 updateLoggerLevels();
             }
+            // Handle web tools toggle - rebuild the tool registry so the change takes effect
+            if (newSettings.enableWebTools !== oldSettings.enableWebTools) {
+                ChatToolRegistry.reset();
+            }
         }
     );
     logseq.provideStyle(`
@@ -140,17 +154,26 @@ export const addSettingsToLogseq = async () => {
         }
     `);
 
-    // Hide inheritPropertiesFromTags setting for non-DB graphs
-    // TBU: remove below
-    // const isDbGraph = await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
-    // logseq.provideStyle({
-    //     key: "hide-inherit-properties-from-tags",
-    //     style: isDbGraph
-    //         ? ``
-    //         : `
-    //         [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="inheritPropertiesFromTags"] {
-    //             display: none;
-    //         }
-    //     `
-    // });
+    // Hide the Jina API key setting when web tools are disabled
+    const applyJinaKeyVisibility = (settings: PluginSettings) => {
+        const {id} = logseq.baseInfo;
+        logseq.provideStyle({
+            key: "hide-jina-api-key",
+            style: settings.enableWebTools
+                ? `
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="jinaApiKey"] {
+                    display: block !important;
+                }
+            `
+                : `
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="jinaApiKey"] {
+                    display: none;
+                }
+            `
+        });
+    };
+    applyJinaKeyVisibility(LogseqSettingAccessor.getPluginSettings());
+    LogseqSettingAccessor.registerSettingsChangeListener((newSettings) => {
+        applyJinaKeyVisibility(newSettings);
+    });
 };

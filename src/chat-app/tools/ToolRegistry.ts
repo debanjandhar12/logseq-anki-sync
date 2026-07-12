@@ -43,6 +43,10 @@ export class ChatToolRegistry {
         return ChatToolRegistry.instance;
     }
 
+    static reset(): void {
+        ChatToolRegistry.instance = undefined;
+    }
+
     getTools(): Record<string, Tool<any, any>> {
         return Object.fromEntries(this.tools);
     }
@@ -80,8 +84,11 @@ export class ChatToolRegistry {
         registry.registerTool(new LogseqClearChangesTool());
         registry.registerTool(new GetUserInfoTool());
         registry.registerTool(new LogseqCommitChangesTool());
-        registry.registerTool(new WebPageGetTool());
-        registry.registerTool(new WebSearchTool());
+
+        if (LogseqSettingAccessor.getPluginSettings().enableWebTools) {
+            registry.registerTool(new WebPageGetTool());
+            registry.registerTool(new WebSearchTool());
+        }
 
         return registry;
     }
