@@ -1,4 +1,4 @@
-import {logseqColor} from "./logseqColor.mjs";
+export const logseqColor = (cssVariable, fallback) => `var(${cssVariable}, ${fallback})`;
 
 const backgroundColor = logseqColor(
     "--ls-primary-background-color",
@@ -10,6 +10,9 @@ const mutedColor = logseqColor(
 );
 const accentColor = logseqColor("--ls-menu-hover-color", "hsl(var(--accent, 210 40% 96.1%))");
 
+/**
+ * Define tailwind colors using imported logseq variables
+ */
 /** @type {import('tailwindcss').Config} */
 export default {
     darkMode: ["class"],

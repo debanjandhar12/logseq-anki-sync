@@ -3,13 +3,6 @@ import {type FC, type KeyboardEvent, useLayoutEffect, useRef} from "react";
 import {AttachmentUI} from "src/chat-app/components/AttachmentUI";
 import {ComposerAction} from "src/chat-app/components/ComposerAction";
 
-const resizeComposerInput = (textarea: HTMLTextAreaElement) => {
-    if (textarea.clientWidth === 0) return;
-
-    textarea.style.height = "0px";
-    textarea.style.height = `${textarea.scrollHeight}px`;
-};
-
 /**
  * Changes:
  * (a) Removed attachment dropzone
@@ -111,4 +104,11 @@ const ComposerAttachments: FC = () => {
             <ComposerPrimitive.Attachments>{() => <AttachmentUI />}</ComposerPrimitive.Attachments>
         </div>
     );
+};
+
+const resizeComposerInput = (textarea: HTMLTextAreaElement) => {
+    if (textarea.clientWidth === 0) return;
+
+    textarea.style.height = "0px";
+    textarea.style.height = `${textarea.scrollHeight}px`;
 };

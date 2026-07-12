@@ -19,20 +19,6 @@ import {
 } from "src/shadcn/assistant-ui/tool-group";
 import {cn} from "src/shadcn/lib/utils";
 
-const groupByType = groupPartByType<"group-chainOfThought" | "group-reasoning" | "group-tool">({
-    reasoning: ["group-chainOfThought", "group-reasoning"],
-    "tool-call": ["group-chainOfThought", "group-tool"],
-    "standalone-tool-call": []
-});
-
-export const groupMessagePart = (
-    part: Parameters<typeof groupByType>[0],
-    context?: GroupByContext
-) => {
-    if (part.type === "tool-call" && part.toolName === LogseqCommitChangesTool.NAME) return [];
-    return groupByType(part, context);
-};
-
 /**
  * Changes:
  * (a) Removed tool grouping for CommitLogseqChanges tool.
@@ -115,4 +101,18 @@ export const AssistantMessage: FC = () => {
             </div>
         </MessagePrimitive.Root>
     );
+};
+
+const groupByType = groupPartByType<"group-chainOfThought" | "group-reasoning" | "group-tool">({
+    reasoning: ["group-chainOfThought", "group-reasoning"],
+    "tool-call": ["group-chainOfThought", "group-tool"],
+    "standalone-tool-call": []
+});
+
+export const groupMessagePart = (
+    part: Parameters<typeof groupByType>[0],
+    context?: GroupByContext
+) => {
+    if (part.type === "tool-call" && part.toolName === LogseqCommitChangesTool.NAME) return [];
+    return groupByType(part, context);
 };

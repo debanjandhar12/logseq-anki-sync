@@ -14,7 +14,7 @@ const isNewChatView = (state: AssistantState) =>
 
 /**
  * Changes:
- * (a) Uses project-owned message and composer components.
+ * (a) Decompose message and composer.
  * (b) Defines composer sizing here while Composer owns its semantic colors and border.
  */
 export const Thread: FC = () => {

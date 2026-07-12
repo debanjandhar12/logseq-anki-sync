@@ -595,8 +595,10 @@ ToolFallback.Error = ToolFallbackError;
 ToolFallback.Approval = ToolFallbackApproval;
 
 export {
+  // ToolFallback,
   ToolFallbackRoot,
   ToolFallbackContent,
+  // ToolFallbackTrigger,
   ToolFallbackArgs,
   ToolFallbackResult,
   ToolFallbackError,

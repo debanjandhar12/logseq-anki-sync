@@ -98,6 +98,10 @@ interface ThreadTopToolBarMoreProps {
     onExportAsPage: () => void;
 }
 
+/**
+ * Changes:
+ * (a) Changed the more menu button's hover background to bg-background for better visibility over bg-muted rows
+ */
 const ThreadTopToolBarMore: FC<ThreadTopToolBarMoreProps> = ({onOpenDevTools, onExportAsPage}) => {
     return (
         <ThreadListItemMorePrimitive.Root>
@@ -116,13 +120,13 @@ const ThreadTopToolBarMore: FC<ThreadTopToolBarMoreProps> = ({onOpenDevTools, on
                 className="aui-thread-list-item-more-content z-50 min-w-36 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
                 {import.meta.env.DEV && (
                     <ThreadListItemMorePrimitive.Item
-                        className="aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        className="aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-background hover:text-accent-foreground focus:bg-background focus:text-accent-foreground"
                         onClick={onOpenDevTools}>
                         Devtools
                     </ThreadListItemMorePrimitive.Item>
                 )}
                 <ThreadListItemMorePrimitive.Item
-                    className="aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                    className="aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-background hover:text-accent-foreground focus:bg-background focus:text-accent-foreground"
                     onClick={onExportAsPage}>
                     Export as Page
                 </ThreadListItemMorePrimitive.Item>

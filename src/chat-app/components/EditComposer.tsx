@@ -4,7 +4,7 @@ import {Button} from "src/shadcn/radix-ui/button";
 
 /**
  * Changes:
- * (a) Kept as a project-owned component for ThreadMessage decomposition.
+ * (a) Decompose ThreadMessage.
  * (b) Uses the same visible semantic background and border as the main composer.
  */
 export const EditComposer: FC = () => {

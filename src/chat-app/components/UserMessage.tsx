@@ -6,7 +6,7 @@ import {BranchPicker, UserActionBar} from "src/shadcn/assistant-ui/thread";
 /**
  * Changes:
  * (a) Decomposed to modify UserMessageAttachments and use custom AttachmentUI
- * (b) Preserves the compact Logseq attachment layout.
+ * (b) Preserves the Logseq attachment pill layout.
  */
 export const UserMessage: FC = () => {
     return (

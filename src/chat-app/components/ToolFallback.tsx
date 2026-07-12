@@ -23,9 +23,8 @@ import {CollapsibleTrigger} from "src/shadcn/radix-ui/collapsible";
 
 /**
  * Changes:
- * (a) Decomposed to customize icon
- * (b) Uses the tool error flag and consistent circular Lucide status icons
- * (c) Keeps required-action tools expanded without exposing unsupported generic approval controls
+ * (a) Decomposed to customize Lucide icons
+ * (b) Keeps required-action tools expanded without exposing unsupported generic approval controls
  */
 const ToolFallbackImpl: ToolCallMessagePartComponent = ({
     toolName,

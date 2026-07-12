@@ -64,6 +64,7 @@ const ThreadListItem: FC<ThreadListProps> = ({onThreadSelected}) => {
  * Changes:
  * (a) Remove ThreadListItemPrimitive.Archive
  * (b) Added Rename item with showInputModal and useAui/useAuiState hooks
+ * (c) Changed the more menu button's hover background to bg-background for better visibility over bg-muted rows
  */
 const ThreadListItemMore: FC = () => {
     const threadId = useAuiState((s) => s.threadListItem.id);
@@ -104,7 +105,7 @@ const ThreadListItemMore: FC = () => {
                 {/*    </ThreadListItemMorePrimitive.Item>*/}
                 {/*</ThreadListItemPrimitive.Archive>*/}
                 <ThreadListItemMorePrimitive.Item
-                    className="aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                    className="aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-background hover:text-accent-foreground focus:bg-background focus:text-accent-foreground"
                     onClick={handleRename}>
                     <EditIcon className="size-4" />
                     Rename
