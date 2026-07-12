@@ -60,6 +60,122 @@
     ::file-selector-button {
         border-color: var(--color-border);
     }
+
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
+/* Preserve the pre-v4 Logseq color-function behavior for semantic opacity modifiers. */
+.border-border\/50 {
+    border-color: color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.border-border\/60 {
+    border-color: color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.border-muted-foreground\/15,
+.dark\:border-muted-foreground\/15:where(.dark, .dark *) {
+    border-color: color-mix(in srgb, var(--color-muted-foreground) 15%, transparent);
+}
+
+.border-muted-foreground\/20 {
+    border-color: color-mix(in srgb, var(--color-muted-foreground) 20%, transparent);
+}
+
+.border-muted-foreground\/30,
+.dark\:focus-within\:border-muted-foreground\/30:where(.dark, .dark *):focus-within {
+    border-color: color-mix(in srgb, var(--color-muted-foreground) 30%, transparent);
+}
+
+.bg-background\/60 {
+    background-color: color-mix(in srgb, var(--color-background) 60%, transparent);
+}
+
+.bg-background\/80 {
+    background-color: color-mix(in srgb, var(--color-background) 80%, transparent);
+}
+
+.bg-destructive\/5,
+.dark\:bg-destructive\/5:where(.dark, .dark *) {
+    background-color: color-mix(in srgb, var(--color-destructive) 5%, transparent);
+}
+
+.bg-destructive\/10,
+.hover\:bg-destructive\/10:hover,
+.focus\:bg-destructive\/10:focus {
+    background-color: color-mix(in srgb, var(--color-destructive) 10%, transparent);
+}
+
+.hover\:bg-destructive\/90:hover {
+    background-color: color-mix(in srgb, var(--color-destructive) 90%, transparent);
+}
+
+.bg-foreground\/60 {
+    background-color: color-mix(in srgb, var(--color-foreground) 60%, transparent);
+}
+
+.hover\:bg-accent\/50:hover {
+    background-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+}
+
+.hover\:bg-muted-foreground\/15:hover {
+    background-color: color-mix(in srgb, var(--color-muted-foreground) 15%, transparent);
+}
+
+.dark\:hover\:bg-muted-foreground\/30:where(.dark, .dark *):hover {
+    background-color: color-mix(in srgb, var(--color-muted-foreground) 30%, transparent);
+}
+
+.bg-muted\/30 {
+    background-color: color-mix(in srgb, var(--color-muted) 30%, transparent);
+}
+
+.bg-muted\/50 {
+    background-color: color-mix(in srgb, var(--color-muted) 50%, transparent);
+}
+
+.hover\:bg-muted\/75:hover {
+    background-color: color-mix(in srgb, var(--color-muted) 75%, transparent);
+}
+
+.hover\:bg-muted\/80:hover {
+    background-color: color-mix(in srgb, var(--color-muted) 80%, transparent);
+}
+
+.bg-popover\/95 {
+    background-color: color-mix(in srgb, var(--color-popover) 95%, transparent);
+}
+
+.bg-primary\/90,
+.hover\:bg-primary\/90:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 90%, transparent);
+}
+
+.hover\:bg-secondary\/80:hover {
+    background-color: color-mix(in srgb, var(--color-secondary) 80%, transparent);
+}
+
+.hover\:bg-tertiary\/50:hover {
+    background-color: color-mix(in srgb, var(--color-tertiary) 50%, transparent);
+}
+
+.text-foreground\/90 {
+    color: color-mix(in srgb, var(--color-foreground) 90%, transparent);
+}
+
+.placeholder\:text-muted-foreground\/80::placeholder {
+    color: color-mix(in srgb, var(--color-muted-foreground) 80%, transparent);
+}
+
+.hover\:text-primary\/80:hover {
+    color: color-mix(in srgb, var(--color-primary) 80%, transparent);
+}
+
+.focus-visible\:ring-ring\/50:focus-visible {
+    --tw-ring-color: color-mix(in srgb, var(--color-ring) 50%, transparent);
 }
 
 /* Theme variables will be set dynamically by UI.loadThemeVariables() */
