@@ -2,10 +2,7 @@
     border-radius: calc(var(--radius, 2rem) - 2px);
 }
 
-.aui-composer-root > div {
-    padding: 4px;
-}
-
 div[data-radix-popper-content-wrapper=""] {
+    /* biome-ignore lint/complexity/noImportantStyles: Radix sets this stacking value inline. */
     z-index: 10000 !important;
 }

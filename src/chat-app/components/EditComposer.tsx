@@ -11,7 +11,7 @@ export const EditComposer: FC = () => {
         <MessagePrimitive.Root
             data-slot="aui_edit-composer-wrapper"
             className="flex flex-col px-2 [contain-intrinsic-size:auto_200px] [content-visibility:auto]">
-            <ComposerPrimitive.Root className="aui-edit-composer-root border-border/60 dark:border-muted-foreground/15 ms-auto flex w-full max-w-[85%] flex-col rounded-(--composer-radius) border bg-(--composer-bg) shadow-[0_4px_16px_-8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none">
+            <ComposerPrimitive.Root className="aui-edit-composer-root border-secondary-border bg-secondary-background ms-auto flex w-full max-w-[85%] flex-col rounded-(--composer-radius) border shadow-[0_4px_16px_-8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none">
                 <ComposerPrimitive.Input
                     className="aui-edit-composer-input text-foreground min-h-14 w-full resize-none bg-transparent px-4 pt-3 pb-1 text-base outline-none"
                     autoFocus

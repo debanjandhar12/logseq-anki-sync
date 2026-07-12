@@ -37,7 +37,7 @@ export const groupMessagePart = (
  * Changes:
  * (a) Removed tool grouping for CommitLogseqChanges tool.
  * (b) Changed the group reasoning component to display as collapse by default.
- * (c) Changed margin bottom of the group reasoning component and group tool call to 0.
+ * (c) Uses compact ghost variants for consistent reasoning and tool-call spacing.
  * (d) Preserves standalone tool UIs and renders data and indicator parts.
  */
 export const AssistantMessage: FC = () => {
@@ -62,7 +62,8 @@ export const AssistantMessage: FC = () => {
                                 return (
                                     <ReasoningRoot
                                         defaultOpen={false}
-                                        style={{marginBottom: "0px"}}>
+                                        variant="ghost"
+                                        className="mb-0">
                                         <ReasoningTrigger active={running} />
                                         <ReasoningContent aria-busy={running}>
                                             <ReasoningText>{children}</ReasoningText>
@@ -72,7 +73,7 @@ export const AssistantMessage: FC = () => {
                             }
                             case "group-tool":
                                 return (
-                                    <ToolGroupRoot style={{marginBottom: "0px"}}>
+                                    <ToolGroupRoot variant="ghost">
                                         <ToolGroupTrigger
                                             count={part.indices.length}
                                             active={part.status.type === "running"}

@@ -20,8 +20,6 @@ export const Thread: FC = () => {
             className="aui-root aui-thread-root bg-background @container flex h-full flex-col"
             style={{
                 ["--thread-max-width" as string]: "44rem",
-                ["--composer-bg" as string]:
-                    "color-mix(in oklab, var(--color-muted) 30%, var(--color-background))",
                 ["--composer-radius" as string]: "24px",
                 ["--composer-padding" as string]: "10px"
             }}>
