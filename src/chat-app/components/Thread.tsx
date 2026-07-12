@@ -12,6 +12,11 @@ import {cn} from "src/shadcn/lib/utils";
 const isNewChatView = (state: AssistantState) =>
     state.thread.messages.length === 0 && (!state.thread.isLoading || state.threads.isLoading);
 
+/**
+ * Changes:
+ * (a) Uses project-owned message and composer components.
+ * (b) Defines composer sizing here while Composer owns its semantic colors and border.
+ */
 export const Thread: FC = () => {
     const isEmpty = useAuiState(isNewChatView);
 
