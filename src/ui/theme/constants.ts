@@ -1,5 +1,5 @@
 /**
- * Core theme variables used by Tailwind (see tailwind.config.mjs)
+ * Core theme variables used by Tailwind (see src/ui/styles/main.css)
  * These variables are fetched from Logseq's theme system and applied to the UI
  */
 export const LOGSEQ_THEME_VARIABLES = [

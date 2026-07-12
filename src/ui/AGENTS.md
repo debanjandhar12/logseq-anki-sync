@@ -2,7 +2,7 @@
 This provides UI framework for the plugin.
 
 ## Styling & Theming
-- Import colors from Logseq via tailwind.config.mjs (e.g., `bg-primary`)
+- Import colors from Logseq via the Tailwind theme in `src/ui/styles/main.css` (e.g., `bg-primary`)
 - For custom colors not in theme, use Tailwind directly (e.g., `bg-green-600`) - no config changes needed
 - Theme variables are managed by `ThemeManager` in `src/ui/theme/` - fetches and applies Logseq theme variables
 - **Iframe context (modals)**: Theme applied to body via `UI.ts` using `ThemeManager.applyThemeToBody()`

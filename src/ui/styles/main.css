@@ -1,7 +1,66 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "tw-shimmer";
-@config "../theme/tailwind.config.mjs";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+    --font-sans: var(--ls-font-family, Inter), sans-serif;
+    --font-mono: MonoLisa, monospace;
+    --color-border: var(--ls-border-color, hsl(var(--border, 214.3 31.8% 91.4%)));
+    --color-input: var(--ls-secondary-border-color, hsl(var(--input, 214.3 31.8% 91.4%)));
+    --color-ring: var(--ls-link-text-color, hsl(var(--ring, 200 97% 37%)));
+    --color-background: var(--ls-primary-background-color, hsl(var(--background, 0 0% 100%)));
+    --color-foreground: var(
+        --ls-primary-text-color,
+        var(--lx-gray-11, var(--rx-gray-11, hsl(var(--foreground, 222.2 84% 4.9%))))
+    );
+    --color-primary: var(--ls-button-background, hsl(var(--primary, 200 97% 37%)));
+    --color-primary-background: var(--ls-button-background, hsl(var(--primary, 200 97% 37%)));
+    --color-primary-foreground: var(
+        --ls-button-text-color,
+        var(--lx-gray-1, var(--rx-gray-1, hsl(var(--primary-foreground, 210 40% 98%))))
+    );
+    --color-primary-border: var(--ls-border-color, hsl(var(--border, 214.3 31.8% 91.4%)));
+    --color-secondary: var(--ls-secondary-background-color, hsl(var(--secondary)));
+    --color-secondary-background: var(--ls-secondary-background-color, hsl(var(--background)));
+    --color-secondary-border: var(--ls-secondary-border-color, hsl(var(--border)));
+    --color-secondary-foreground: var(--ls-secondary-text-color, hsl(var(--secondary-foreground)));
+    --color-tertiary: var(--ls-tertiary-background-color, hsl(var(--tertiary)));
+    --color-tertiary-background: var(--ls-tertiary-background-color, hsl(var(--tertiary)));
+    --color-tertiary-border: var(--ls-tertiary-border-color, hsl(var(--border)));
+    --color-destructive: var(--ls-error-color, hsl(var(--destructive, 0 84.2% 60.2%)));
+    --color-destructive-foreground: var(
+        --ls-button-text-color,
+        hsl(var(--destructive-foreground, 210 40% 98%))
+    );
+    --color-muted: var(--ls-secondary-background-color, hsl(var(--muted, 210 40% 96.1%)));
+    --color-muted-foreground: var(
+        --ls-secondary-text-color,
+        hsl(var(--muted-foreground, 215.4 16.3% 46.9%))
+    );
+    --color-accent: var(--ls-menu-hover-color, hsl(var(--accent, 210 40% 96.1%)));
+    --color-accent-foreground: var(
+        --ls-primary-text-color,
+        hsl(var(--accent-foreground, 222.2 47.4% 11.2%))
+    );
+    --color-popover: var(--ls-secondary-background-color, hsl(var(--popover, 0 0% 100%)));
+    --color-popover-foreground: var(
+        --ls-primary-text-color,
+        hsl(var(--popover-foreground, 222.2 84% 4.9%))
+    );
+    --color-highlight: var(--ls-block-highlight-color, hsl(var(--accent)));
+}
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-border);
+    }
+}
 
 /* Theme variables will be set dynamically by UI.loadThemeVariables() */
 /* No defaults needed - Logseq provides all theme variables */
