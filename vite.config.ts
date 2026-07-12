@@ -1,4 +1,5 @@
 import path from "node:path";
+import tailwindcss from "@tailwindcss/vite";
 import reactPlugin from "@vitejs/plugin-react";
 import {defineConfig, loadEnv} from "vite";
 import {nodePolyfills} from "vite-plugin-node-polyfills";
@@ -26,6 +27,7 @@ export default defineConfig(({mode}) => {
             }
         },
         plugins: [
+            tailwindcss(),
             inlineSkillFilePlugin(),
             stripUseClientDirectivePlugin(),
             logseqReactBridgePlugin(), // Must be first to intercept React imports
@@ -52,14 +54,6 @@ export default defineConfig(({mode}) => {
             target: "esnext",
             minify: "esbuild",
             emptyOutDir: true
-        },
-        css: {
-            postcss: {
-                plugins: [
-                    require("tailwindcss")({config: "./src/ui/theme/tailwind.config.js"}),
-                    require("autoprefixer")
-                ]
-            }
         },
         test: {
             include: ["**/*.test.ts"],

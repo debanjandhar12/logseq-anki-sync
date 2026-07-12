@@ -1,7 +1,7 @@
-import {logseqColor} from "./logseqColor";
+import {logseqColor} from "./logseqColor.mjs";
 
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
     darkMode: ["class"],
     content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
     theme: {
@@ -109,6 +109,5 @@ module.exports = {
                 highlight: logseqColor("--ls-block-highlight-color", "hsl(var(--accent))")
             }
         }
-    },
-    plugins: [require("tailwindcss-animate")]
+    }
 };

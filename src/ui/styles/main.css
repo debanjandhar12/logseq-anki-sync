@@ -1,7 +1,7 @@
+@import "tailwindcss";
+@import "tw-animate-css";
 @import "tw-shimmer";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config "../theme/tailwind.config.mjs";
 
 /* Theme variables will be set dynamically by UI.loadThemeVariables() */
 /* No defaults needed - Logseq provides all theme variables */
@@ -20,7 +20,7 @@ code,
 kbd,
 pre,
 samp {
-    font-family: MonoLisa;
+    font-family: MonoLisa, monospace;
 }
 
 #app {
@@ -115,23 +115,29 @@ samp {
 
 @custom-variant data-open (&:where([data-state="open"], [data-open]:not([data-open="false"])));
 
-@custom-variant data-closed (&:where([data-state="closed"], [data-closed]:not([data-closed="false"])));
+@custom-variant data-closed (&:where(
+    [data-state="closed"],
+    [data-closed]:not([data-closed="false"])
+));
 
 @theme inline {
-  @keyframes collapsible-down {
-  from {
-    height: 0;
+    --animate-collapsible-down: collapsible-down var(--animation-duration) ease-out;
+    --animate-collapsible-up: collapsible-up var(--animation-duration) ease-out;
+
+    @keyframes collapsible-down {
+        from {
+            height: 0;
         }
-  to {
-    height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto));
+        to {
+            height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto));
         }
     }
-  @keyframes collapsible-up {
-  from {
-    height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto));
+    @keyframes collapsible-up {
+        from {
+            height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto));
         }
-  to {
-    height: 0;
+        to {
+            height: 0;
         }
     }
 }
