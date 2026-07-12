@@ -1,9 +1,10 @@
 import {ToolResponse, type ToolResponseLike} from "assistant-stream";
 import type {ReadonlyJSONValue} from "assistant-stream/utils";
 
-export type ChatToolSuccessResult<TData extends Record<string, unknown> = Record<string, unknown>> = {
-    success: true;
-} & TData;
+export type ChatToolSuccessResult<TData extends Record<string, unknown> = Record<string, unknown>> =
+    {
+        success: true;
+    } & TData;
 
 export type ChatToolErrorResult = {success: false; error: string};
 
@@ -32,7 +33,10 @@ export class ChatToolResponse<TResult extends ChatToolResult> extends ToolRespon
         return new ChatToolResponse<ChatToolSuccessResult<TData>>({result, artifact});
     }
 
-    static error(error: string, artifact?: ReadonlyJSONValue): ChatToolResponse<ChatToolErrorResult> {
+    static error(
+        error: string,
+        artifact?: ReadonlyJSONValue
+    ): ChatToolResponse<ChatToolErrorResult> {
         return new ChatToolResponse<ChatToolErrorResult>({
             result: {success: false, error},
             artifact,

@@ -4,8 +4,8 @@ import {createLogger, LoggerCategory} from "../../logger";
 // Import main.css as a raw string using Vite's ?inline feature
 import mainCss from "../styles/main.css?inline";
 import {ThemeManager} from "../theme/ThemeManager";
-import {splitAtPropertyRules, useHoistCssPropertyRules} from "./useHoistCssPropertyRules";
 import {installReactPopperShadowDomCompatibilityPatch} from "./installReactPopperShadowDomCompatibilityPatch";
+import {splitAtPropertyRules, useHoistCssPropertyRules} from "./useHoistCssPropertyRules";
 
 const logger = createLogger(LoggerCategory.OTHER_UI);
 

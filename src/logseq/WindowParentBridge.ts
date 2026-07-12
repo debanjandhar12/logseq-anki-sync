@@ -124,7 +124,7 @@ export class WindowParentBridge {
         let result = null;
         try {
             result = await logseq.Assets.makeUrl(path);
-            result = result.replace('assets://', '');
+            result = result.replace("assets://", "");
         } catch {}
         return result || path;
     }

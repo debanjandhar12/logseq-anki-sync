@@ -1,4 +1,4 @@
-import {EntityID} from "@logseq/libs/dist/LSPlugin";
+import type {EntityID} from "@logseq/libs/dist/LSPlugin";
 
 /**
  * Utility method to safely get entity id

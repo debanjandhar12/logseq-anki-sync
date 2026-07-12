@@ -2,8 +2,8 @@ import type {AppUserInfo} from "@logseq/libs/dist/LSPlugin";
 import dayjs from "dayjs";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {
-    ChatToolResponse,
     type ChatToolErrorResult,
+    ChatToolResponse,
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
@@ -15,7 +15,9 @@ const getUserInfoParameters = z.object({});
 
 type GetUserInfoArgs = z.infer<typeof getUserInfoParameters>;
 
-type GetUserInfoResult = ChatToolSuccessResult<{userInfo: AppUserInfo | null}> | ChatToolErrorResult;
+type GetUserInfoResult =
+    | ChatToolSuccessResult<{userInfo: AppUserInfo | null}>
+    | ChatToolErrorResult;
 
 export class GetUserInfoTool extends BaseChatToolWithDefaultUI<GetUserInfoArgs, GetUserInfoResult> {
     static readonly NAME = "get_user_info";

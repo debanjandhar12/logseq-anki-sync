@@ -1,8 +1,8 @@
 import {AuiIf, ComposerPrimitive, useAuiState} from "@assistant-ui/react";
 import {ArrowUpIcon, SquareIcon} from "lucide-react";
 import type {FC} from "react";
-import {Button} from "src/shadcn/radix-ui/button";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
+import {Button} from "src/shadcn/radix-ui/button";
 // import {ComposerAddAttachment} from "src/shadcn/assistant-ui/attachment";
 
 /**

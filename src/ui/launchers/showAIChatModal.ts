@@ -1,6 +1,6 @@
 import React from "react";
-import {AIChatModalComponent} from "../pages/AIChatModal";
 import {createModalPromise} from "../modals/utils/createModalPromise";
+import {AIChatModalComponent} from "../pages/AIChatModal";
 
 /**
  * Opens the AI Chat modal in development mode.
