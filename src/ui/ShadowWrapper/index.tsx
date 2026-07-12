@@ -4,9 +4,13 @@ import {createLogger, LoggerCategory} from "../../logger";
 // Import main.css as a raw string using Vite's ?inline feature
 import mainCss from "../styles/main.css?inline";
 import {ThemeManager} from "../theme/ThemeManager";
+import {splitAtPropertyRules, useHoistCssPropertyRules} from "./useHoistCssPropertyRules";
 import {installReactPopperShadowDomCompatibilityPatch} from "./installReactPopperShadowDomCompatibilityPatch";
 
 const logger = createLogger(LoggerCategory.OTHER_UI);
+
+// Split at module level since mainCss is a static build-time import
+const {propertyRules, shadowCss} = splitAtPropertyRules(mainCss);
 
 interface ShadowWrapperProps {
     children: React.ReactNode;
@@ -17,6 +21,9 @@ interface ShadowWrapperProps {
  *
  * Wraps children in a Shadow DOM to prevent CSS leaking to/from Logseq's UI.
  * Injects both the core CSS (main.css) and Logseq theme variables into the shadow root.
+ *
+ * Tailwind v4 `@property` rules are hoisted to the host document since they
+ * only work at the document level and are ignored inside Shadow DOM.
  */
 export const ShadowRootContext = React.createContext<HTMLDivElement | null>(null);
 
@@ -61,6 +68,8 @@ export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
         };
     }, [host]);
 
+    useHoistCssPropertyRules(host, propertyRules);
+
     // Listen for theme changes from Logseq
     useEffect(() => {
         if (!container) {
@@ -90,7 +99,7 @@ export const ShadowWrapper: React.FC<ShadowWrapperProps> = ({children}) => {
 
     return (
         <root.div ref={setHost} mode="open">
-            <style>{mainCss}</style>
+            <style>{shadowCss}</style>
             <div
                 ref={setContainer}
                 style={{height: "100%", width: "100%", transform: "translate(0, 0)"}}>
