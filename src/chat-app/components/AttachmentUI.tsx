@@ -75,7 +75,7 @@ export const AttachmentUI: FC = () => {
                             <button
                                 type="button"
                                 className={cn(
-                                    "aui-attachment-tile relative flex h-9 max-w-40 cursor-pointer items-center gap-1 overflow-hidden rounded-full border bg-muted px-2.5 pr-3 transition-colors hover:bg-muted/75",
+                                    "aui-attachment-tile relative flex h-7 max-w-40 cursor-pointer items-center gap-1 overflow-hidden rounded-full border bg-muted px-2.5 pr-3 transition-colors hover:bg-muted/75",
                                     hasUploadError && "border-destructive"
                                 )}
                                 aria-label={`${typeLabel} attachment${
