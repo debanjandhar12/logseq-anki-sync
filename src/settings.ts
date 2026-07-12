@@ -14,6 +14,7 @@ export interface PluginSettings {
     llmAPIModel?: string;
     globalAgentInstruction?: string;
     openChatInSidebar?: boolean;
+    jinaApiKey?: string;
     debug?: LoggerCategory[];
     lastWelcomeVersion?: string;
 }
@@ -71,6 +72,21 @@ export const addSettingsToLogseq = async () => {
             title: "Global Agent Instruction",
             description:
                 "Optional instructions sent as part of the system prompt for every AI chat response."
+        },
+        {
+            key: "webToolsHeading",
+            title: "🌐 Web Tools (Jina)",
+            description: "",
+            type: "heading",
+            default: null
+        },
+        {
+            key: "jinaApiKey",
+            type: "string",
+            default: "",
+            title: "Jina AI API Key",
+            description:
+                "API key for Jina AI (https://jina.ai). Required by the web_page_get and web_search tools."
         },
         {
             key: "displaySettingsHeading",

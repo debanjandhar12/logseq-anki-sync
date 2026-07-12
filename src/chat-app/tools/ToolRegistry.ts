@@ -24,6 +24,9 @@ import {LogseqUpdateBlockTool} from "src/chat-app/tools/impl/LogseqUpdateBlockTo
 import {LogseqUpsertPropertyPageTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyPageTool";
 import {LogseqUpsertPropertyToBlockTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyToBlockTool";
 import {SkillTool} from "src/chat-app/tools/impl/SkillTool";
+import {WebPageGetTool} from "src/chat-app/tools/impl/WebPageGetTool";
+import {WebSearchTool} from "src/chat-app/tools/impl/WebSearchTool";
+import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
 
 export class ChatToolRegistry {
     private static instance: ChatToolRegistry | undefined;
@@ -77,6 +80,8 @@ export class ChatToolRegistry {
         registry.registerTool(new LogseqClearChangesTool());
         registry.registerTool(new GetUserInfoTool());
         registry.registerTool(new LogseqCommitChangesTool());
+        registry.registerTool(new WebPageGetTool());
+        registry.registerTool(new WebSearchTool());
 
         return registry;
     }
