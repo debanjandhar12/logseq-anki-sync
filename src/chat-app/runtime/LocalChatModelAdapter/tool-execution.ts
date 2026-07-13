@@ -1,5 +1,5 @@
 import type {ChatModelRunResult, ThreadMessage} from "@assistant-ui/react";
-import {type Tool, ToolResponse, toJSONSchema} from "assistant-stream";
+import {type Tool, ToolResponse} from "assistant-stream";
 import {ChatToolResponse} from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessage, isRecord} from "./error-utils";
 
@@ -31,7 +31,7 @@ export async function executeFrontendTool(
     toolCall: ToolCallMessagePart,
     abortSignal: AbortSignal,
     messages: readonly ThreadMessage[]
-): Promise<Pick<ToolCallMessagePart, "result" | "isError" | "artifact">> {
+): Promise<Pick<ToolCallMessagePart, "result" | "isError" | "artifact" | "modelContent">> {
     try {
         if (!tool.execute) {
             const errorResponse = ChatToolResponse.error(
@@ -52,10 +52,20 @@ export async function executeFrontendTool(
             }
         } as any);
         const response = ToolResponse.toResponse(output);
+        const modelContent =
+            response.modelContent ??
+            (!response.isError && tool.toModelOutput
+                ? await tool.toModelOutput({
+                      toolCallId: toolCall.toolCallId,
+                      input: toolCall.args,
+                      output: response.result
+                  })
+                : undefined);
         return {
             result: response.result,
             artifact: response.artifact as ToolCallMessagePart["artifact"],
-            isError: response.isError
+            isError: response.isError,
+            modelContent
         };
     } catch (error) {
         const errorResponse = ChatToolResponse.error(getErrorMessage(error));
@@ -64,18 +74,4 @@ export async function executeFrontendTool(
             isError: errorResponse.isError
         };
     }
-}
-
-export function toJSONSchemaToolSet(
-    tools: Record<string, Tool>
-): Record<string, {description?: string; parameters: any}> {
-    return Object.fromEntries(
-        Object.entries(tools).map(([toolName, tool]) => [
-            toolName,
-            {
-                ...(tool.description ? {description: tool.description} : {}),
-                parameters: tool.parameters ? toJSONSchema(tool.parameters) : {type: "object"}
-            }
-        ])
-    );
 }

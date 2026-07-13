@@ -68,7 +68,10 @@ export function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["p
         toolCallId: part.toolCallId,
         state: "output-available",
         input,
-        output: part.result
+        output:
+            part.modelContent === undefined
+                ? part.result
+                : {__aui_modelContent: part.modelContent, value: part.result}
     } as UIMessage["parts"][number];
 }
 

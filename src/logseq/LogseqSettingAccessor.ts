@@ -26,4 +26,8 @@ export class LogseqSettingAccessor {
     static getPluginSettings(): PluginSettings {
         return logseq.settings as PluginSettings;
     }
+
+    static async updatePluginSettings(partialSettings: Partial<PluginSettings>): Promise<void> {
+        await logseq.updateSettings(partialSettings);
+    }
 }

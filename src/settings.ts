@@ -1,8 +1,7 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-import {ChatToolRegistry} from "./chat-app/tools";
 import {DONATE_ICON} from "./constants";
-import {ProviderEnum} from "./core/ai-sdk/types";
+import {ProviderEnum, WebToolsProviderEnum} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 
@@ -15,7 +14,7 @@ export interface PluginSettings {
     llmAPIModel?: string;
     globalAgentInstruction?: string;
     openChatInSidebar?: boolean;
-    enableWebTools?: boolean;
+    webToolsProvider?: WebToolsProviderEnum;
     jinaApiKey?: string;
     debug?: LoggerCategory[];
     lastWelcomeVersion?: string;
@@ -51,7 +50,8 @@ export const addSettingsToLogseq = async () => {
             type: "string",
             default: "",
             title: "LLM API Url",
-            description: "The base URL for the LLM API provider (e.g. https://api.openai.com/v1)"
+            description:
+                "The base URL for the LLM API provider (e.g. https://api.openai.com/v1). Only required for OpenAI Compatible Provider."
         },
         {
             key: "llmAPIKey",
@@ -77,18 +77,19 @@ export const addSettingsToLogseq = async () => {
         },
         {
             key: "webToolsHeading",
-            title: "🌐 Web Tools (Jina)",
+            title: "🌐 Web Tools",
             description: "",
             type: "heading",
             default: null
         },
         {
-            key: "enableWebTools",
-            type: "boolean",
-            default: false,
-            title: "Enable Web Tools",
-            description:
-                "When enabled, the web_page_get and web_search tools are made available to the AI."
+            key: "webToolsProvider",
+            type: "enum",
+            default: WebToolsProviderEnum.DISABLED,
+            title: "Web Search Provider",
+            description: "Choose how the AI searches the web.",
+            enumChoices: Object.values(WebToolsProviderEnum),
+            enumPicker: "select"
         },
         {
             key: "jinaApiKey",
@@ -96,7 +97,7 @@ export const addSettingsToLogseq = async () => {
             default: "",
             title: "Jina AI API Key (Mandatory)",
             description:
-                "API key for Jina AI (https://jina.ai). Required by the web_page_get and web_search tools."
+                "API key for Jina AI (https://jina.ai). Required when Web Search Provider is set to Jina.ai."
         },
         {
             key: "displaySettingsHeading",
@@ -138,9 +139,20 @@ export const addSettingsToLogseq = async () => {
             if (!_.isEqual(newSettings.debug, oldSettings.debug)) {
                 updateLoggerLevels();
             }
-            // Handle web tools toggle - rebuild the tool registry so the change takes effect
-            if (newSettings.enableWebTools !== oldSettings.enableWebTools) {
-                ChatToolRegistry.reset();
+
+            // Model Native only works with OpenAI or Google providers
+            if (
+                newSettings.webToolsProvider === WebToolsProviderEnum.MODEL_NATIVE &&
+                newSettings.llmProvider !== ProviderEnum.OPENAI &&
+                newSettings.llmProvider !== ProviderEnum.GOOGLE
+            ) {
+                logseq.UI.showMsg(
+                    "Model Native web search is only available with OpenAI or Google providers. Please change the LLM Provider or Web Search Provider.",
+                    "error"
+                );
+                LogseqSettingAccessor.updatePluginSettings({
+                    webToolsProvider: WebToolsProviderEnum.DISABLED
+                });
             }
         }
     );
@@ -154,12 +166,29 @@ export const addSettingsToLogseq = async () => {
         }
     `);
 
-    // Hide the Jina API key setting when web tools are disabled
-    const applyJinaKeyVisibility = (settings: PluginSettings) => {
+    const applySettingsVisibility = (settings: PluginSettings) => {
         const {id} = logseq.baseInfo;
+        const showLlmApiUrl = settings.llmProvider === ProviderEnum.OPENAI_COMPATIBLE;
+        const showJinaApiKey = settings.webToolsProvider === WebToolsProviderEnum.JINA;
+
+        logseq.provideStyle({
+            key: "hide-llm-api-url",
+            style: showLlmApiUrl
+                ? `
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llmAPIUrl"] {
+                    display: block !important;
+                }
+            `
+                : `
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llmAPIUrl"] {
+                    display: none;
+                }
+            `
+        });
+
         logseq.provideStyle({
             key: "hide-jina-api-key",
-            style: settings.enableWebTools
+            style: showJinaApiKey
                 ? `
                 [data-id="${id}"] .cp__plugins-settings-inner [data-key="jinaApiKey"] {
                     display: block !important;
@@ -172,8 +201,8 @@ export const addSettingsToLogseq = async () => {
             `
         });
     };
-    applyJinaKeyVisibility(LogseqSettingAccessor.getPluginSettings());
+    applySettingsVisibility(LogseqSettingAccessor.getPluginSettings());
     LogseqSettingAccessor.registerSettingsChangeListener((newSettings) => {
-        applyJinaKeyVisibility(newSettings);
+        applySettingsVisibility(newSettings);
     });
 };

@@ -1,7 +1,15 @@
 import type {ChatModelAdapter, ChatModelRunResult, ThreadMessage} from "@assistant-ui/react";
 import {frontendTools} from "@assistant-ui/react-ai-sdk";
-import {convertToModelMessages, type LanguageModelUsage, streamText} from "ai";
+import {
+    convertToModelMessages,
+    type FinishReason,
+    type LanguageModelUsage,
+    streamText,
+    type ToolSet
+} from "ai";
+import {toToolsJSONSchema} from "assistant-stream";
 import {getLLMModel} from "../../../core/ai-sdk/getLLMModel";
+import {getLLMProviderTools} from "../../../core/ai-sdk/getLLMProviderTools";
 import {getErrorMessage} from "./error-utils";
 import {threadMessageToUIMessage} from "./message-conversion";
 import {
@@ -10,11 +18,7 @@ import {
     createErrorMessageResult,
     normalizeTokenUsage
 } from "./stream-helpers";
-import {
-    createToolCallMessagePart,
-    executeFrontendTool,
-    toJSONSchemaToolSet
-} from "./tool-execution";
+import {createToolCallMessagePart, executeFrontendTool} from "./tool-execution";
 
 /**
  * Bridges assistant-ui's LocalRuntime to the AI SDK.
@@ -40,19 +44,19 @@ import {
 export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
     async *run({messages, abortSignal, context, unstable_getMessage}) {
         let streamError: unknown;
+        let content: NonNullable<ChatModelRunResult["content"]> = [];
 
         try {
             const model = await getLLMModel();
-            const tools = context.tools
-                ? frontendTools(toJSONSchemaToolSet(context.tools))
-                : undefined;
+            const tools = buildStreamTextTools(context.tools, getLLMProviderTools());
 
             const currentAssistantMessage = unstable_getMessage();
             const conversationMessages = hasToolResults(currentAssistantMessage)
                 ? [...messages, currentAssistantMessage]
                 : messages;
             const modelMessages = await convertToModelMessages(
-                conversationMessages.map(threadMessageToUIMessage)
+                conversationMessages.map(threadMessageToUIMessage),
+                {tools}
             );
 
             const result = streamText({
@@ -67,15 +71,14 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 }
             });
 
-            let partialText = "";
-            let content: NonNullable<ChatModelRunResult["content"]> = [];
             let usage: LanguageModelUsage | undefined;
+            let finishReason: FinishReason | undefined;
+            let hasClientToolCalls = false;
             const toolCallsToExecute: import("./tool-execution").ToolCallMessagePart[] = [];
 
             for await (const part of result.fullStream) {
                 switch (part.type) {
                     case "text-delta":
-                        partialText += part.text;
                         content = appendTextDelta(content, part.text);
                         yield {content};
                         break;
@@ -84,6 +87,10 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                         yield {content};
                         break;
                     case "tool-call": {
+                        if (part.providerExecuted) {
+                            break;
+                        }
+                        hasClientToolCalls = true;
                         const toolCall = createToolCallMessagePart(part);
                         content = [...content, toolCall];
                         yield {
@@ -97,12 +104,26 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                         }
                         break;
                     }
+                    case "source":
+                        content = [...content, part];
+                        yield {content};
+                        break;
                     case "finish":
                         usage = part.totalUsage;
+                        finishReason = part.finishReason;
+                        break;
+                    case "abort":
+                        yield {
+                            content,
+                            status: {type: "incomplete", reason: "cancelled"}
+                        };
+                        return;
+                    case "tool-error":
+                    case "tool-result":
                         break;
                     case "error": {
                         const errorMessage = getErrorMessage(part.error);
-                        yield createErrorMessageResult(partialText, errorMessage);
+                        yield createErrorMessageResult(content, errorMessage);
                         return;
                     }
                 }
@@ -131,19 +152,65 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
             }
 
             const tokenUsage = usage ? normalizeTokenUsage(usage) : undefined;
-            const hasToolCalls = content.some((part) => part.type === "tool-call");
             yield {
                 content,
-                status: hasToolCalls
+                status: hasClientToolCalls
                     ? {type: "requires-action", reason: "tool-calls"}
-                    : {type: "complete", reason: "unknown"},
-                metadata: tokenUsage ? {custom: {usage: tokenUsage}} : undefined
+                    : toMessageStatus(finishReason),
+                metadata: {
+                    steps: [
+                        {
+                            usage:
+                                usage?.inputTokens !== undefined && usage.outputTokens !== undefined
+                                    ? {
+                                          inputTokens: usage.inputTokens,
+                                          outputTokens: usage.outputTokens
+                                      }
+                                    : undefined
+                        }
+                    ],
+                    ...(tokenUsage ? {custom: {usage: tokenUsage}} : {})
+                }
             };
         } catch (error) {
-            yield createErrorMessageResult("", getErrorMessage(streamError ?? error));
+            yield createErrorMessageResult(content, getErrorMessage(streamError ?? error));
         }
     }
 };
+
+function buildStreamTextTools(
+    frontendToolDefinitions: Parameters<ChatModelAdapter["run"]>[0]["context"]["tools"],
+    providerTools: ToolSet
+): ToolSet {
+    const convertedFrontendTools =
+        frontendToolDefinitions && Object.keys(frontendToolDefinitions).length > 0
+            ? frontendTools(toToolsJSONSchema(frontendToolDefinitions))
+            : {};
+
+    return {
+        ...convertedFrontendTools,
+        ...providerTools
+    };
+}
+
+function toMessageStatus(finishReason: FinishReason | undefined): ChatModelRunResult["status"] {
+    switch (finishReason) {
+        case "stop":
+            return {type: "complete", reason: "stop"};
+        case "length":
+            return {type: "incomplete", reason: "length"};
+        case "content-filter":
+            return {type: "incomplete", reason: "content-filter"};
+        case "tool-calls":
+            return {type: "incomplete", reason: "tool-calls"};
+        case "error":
+            return {type: "incomplete", reason: "error"};
+        case "other":
+            return {type: "incomplete", reason: "other"};
+        default:
+            return {type: "complete", reason: "unknown"};
+    }
+}
 
 function hasToolResults(message: ThreadMessage): boolean {
     return (

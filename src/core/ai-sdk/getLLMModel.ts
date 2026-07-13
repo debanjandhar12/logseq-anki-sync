@@ -13,9 +13,6 @@ export async function getLLMModel() {
     if (!llmProvider) {
         throw new Error("LLM provider not set");
     }
-    if (!llmAPIUrl) {
-        throw new Error("LLM API URL not set");
-    }
     if (!llmAPIKey) {
         throw new Error("LLM API Key not set");
     }
@@ -25,11 +22,13 @@ export async function getLLMModel() {
 
     if (llmProvider === ProviderEnum.OPENAI) {
         const openai = createOpenAI({
-            baseURL: llmAPIUrl,
             apiKey: llmAPIKey
         });
-        return openai.chat(llmAPIModel);
+        return openai.responses(llmAPIModel); // responses() is required for provider-defined tools like web_search
     } else if (llmProvider === ProviderEnum.OPENAI_COMPATIBLE) {
+        if (!llmAPIUrl) {
+            throw new Error("LLM API URL not set");
+        }
         const openaiCompatible = createOpenAICompatible({
             name: "openai-compatible",
             baseURL: llmAPIUrl,
@@ -38,8 +37,7 @@ export async function getLLMModel() {
         return openaiCompatible.chatModel(llmAPIModel);
     } else if (llmProvider === ProviderEnum.GOOGLE) {
         const google = createGoogleGenerativeAI({
-            apiKey: llmAPIKey,
-            baseURL: llmAPIUrl
+            apiKey: llmAPIKey
         });
         return google.chat(llmAPIModel);
     }

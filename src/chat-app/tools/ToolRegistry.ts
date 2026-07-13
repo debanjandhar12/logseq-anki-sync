@@ -26,6 +26,7 @@ import {LogseqUpsertPropertyToBlockTool} from "src/chat-app/tools/impl/LogseqUps
 import {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 import {WebPageGetTool} from "src/chat-app/tools/impl/WebPageGetTool";
 import {WebSearchTool} from "src/chat-app/tools/impl/WebSearchTool";
+import {WebToolsProviderEnum} from "src/core/ai-sdk/types";
 import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
 
 export class ChatToolRegistry {
@@ -84,10 +85,11 @@ export class ChatToolRegistry {
         registry.registerTool(new LogseqClearChangesTool());
         registry.registerTool(new GetUserInfoTool());
         registry.registerTool(new LogseqCommitChangesTool());
-
-        if (LogseqSettingAccessor.getPluginSettings().enableWebTools) {
-            registry.registerTool(new WebPageGetTool());
+        if (
+            LogseqSettingAccessor.getPluginSettings().webToolsProvider === WebToolsProviderEnum.JINA
+        ) {
             registry.registerTool(new WebSearchTool());
+            registry.registerTool(new WebPageGetTool());
         }
 
         return registry;

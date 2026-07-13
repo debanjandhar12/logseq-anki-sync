@@ -34,12 +34,12 @@ export function appendReasoningDelta(
 }
 
 export function createErrorMessageResult(
-    existingText: string,
+    content: NonNullable<ChatModelRunResult["content"]>,
     errorMessage: string
 ): ChatModelRunResult {
-    const text = existingText ? `${existingText}\n\n${errorMessage}` : errorMessage;
+    const text = content.at(-1)?.type === "text" ? `\n\n${errorMessage}` : errorMessage;
     return {
-        content: [{type: "text", text}],
+        content: appendTextDelta(content, text),
         status: {type: "incomplete", reason: "error", error: errorMessage}
     };
 }
