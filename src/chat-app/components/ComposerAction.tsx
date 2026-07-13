@@ -22,16 +22,18 @@ export const ComposerAction: FC = () => {
             {/*<ComposerAddAttachment />*/}
             <div></div>
             <AuiIf condition={(state) => !state.thread.isRunning && !requiresActionState}>
-                <TooltipIconButton
-                    tooltip="Send message"
-                    side="top"
-                    type="button"
-                    variant="default"
-                    size="icon"
-                    className="aui-composer-send size-7 rounded-full"
-                    aria-label="Send message">
-                    <ArrowUpIcon className="aui-composer-send-icon size-4.5" />
-                </TooltipIconButton>
+                <ComposerPrimitive.Send asChild>
+                    <TooltipIconButton
+                        tooltip="Send message"
+                        side="top"
+                        type="button"
+                        variant="default"
+                        size="icon"
+                        className="aui-composer-send size-7 rounded-full"
+                        aria-label="Send message">
+                        <ArrowUpIcon className="aui-composer-send-icon size-4.5" />
+                    </TooltipIconButton>
+                </ComposerPrimitive.Send>
             </AuiIf>
             <AuiIf condition={(state) => state.thread.isRunning || requiresActionState}>
                 <ComposerPrimitive.Cancel asChild>
