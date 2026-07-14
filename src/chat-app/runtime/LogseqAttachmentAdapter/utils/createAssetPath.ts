@@ -13,5 +13,5 @@ export function createAssetPath(entity: LogseqEntity): string {
     ) {
         throw new Error("Cannot resolve the Logseq asset path.");
     }
-    return `../assets/${title}.${format}`;
+    return `../assets/${entity.uuid}.${format}`;
 }

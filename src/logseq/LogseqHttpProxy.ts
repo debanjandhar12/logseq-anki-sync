@@ -30,8 +30,8 @@ export class LogseqHttpProxy {
      * The host proxy buffers responses, so this returns a normal non-streaming Response.
      */
     private static async fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-        const urlStr =
-            typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        const request = new Request(input, init);
+        const urlStr = request.url;
 
         if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://")) {
             return LogseqHttpProxy.getOriginalFetch()(input, init);
@@ -43,9 +43,9 @@ export class LogseqHttpProxy {
 
         const result = await LogseqHttpProxy.experRequest({
             url: urlStr,
-            method: LogseqHttpProxy.getMethod(init),
-            headers: LogseqHttpProxy.getHeaders(init?.headers),
-            body: init?.body
+            method: LogseqHttpProxy.getMethod(request.method),
+            headers: LogseqHttpProxy.getHeaders(request.headers),
+            body: await LogseqHttpProxy.getRequestBody(request)
         });
 
         return LogseqHttpProxy.toResponse(result);
@@ -70,7 +70,7 @@ export class LogseqHttpProxy {
         url: string;
         method: HttpMethod;
         headers: Record<string, string>;
-        body?: BodyInit | null;
+        body?: unknown;
     }): Promise<unknown> {
         const host = logseq as typeof logseq & {
             _execCallableAPIAsync: (
@@ -83,7 +83,7 @@ export class LogseqHttpProxy {
             url: options.url,
             method: options.method,
             headers: options.headers,
-            data: LogseqHttpProxy.getBody(options.body),
+            data: options.body,
             returnType: "text",
             includeResponse: true
         });
@@ -118,8 +118,8 @@ export class LogseqHttpProxy {
         );
     }
 
-    private static getMethod(init?: RequestInit): HttpMethod {
-        const method = init?.method?.toUpperCase() ?? "GET";
+    private static getMethod(requestMethod: string): HttpMethod {
+        const method = requestMethod.toUpperCase();
         if (["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) {
             return method as HttpMethod;
         }
@@ -128,6 +128,19 @@ export class LogseqHttpProxy {
 
     private static getHeaders(headersInit?: HeadersInit): Record<string, string> {
         return Object.fromEntries(new Headers(headersInit).entries());
+    }
+
+    private static async getRequestBody(request: Request): Promise<unknown> {
+        if (request.body === null) return undefined;
+
+        const contentType = request.headers.get("content-type") ?? "";
+        if (contentType.includes("application/json")) {
+            return LogseqHttpProxy.getBody(await request.clone().text());
+        }
+        if (contentType.startsWith("text/")) {
+            return await request.clone().text();
+        }
+        return await request.clone().arrayBuffer();
     }
 
     private static getBody(body: BodyInit | null | undefined): unknown {

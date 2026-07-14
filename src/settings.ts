@@ -1,7 +1,7 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {DONATE_ICON} from "./constants";
-import {ProviderEnum, WebToolsProviderEnum} from "./core/ai-sdk/types";
+import {ContentParsingProviderEnum, ProviderEnum, WebToolsProviderEnum} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 
@@ -16,6 +16,9 @@ export interface PluginSettings {
     openChatInSidebar?: boolean;
     webToolsProvider?: WebToolsProviderEnum;
     jinaApiKey?: string;
+    contentParsingProvider?: ContentParsingProviderEnum;
+    unstructuredApiKey?: string;
+    unstructuredApiUrl?: string;
     debug?: LoggerCategory[];
     lastWelcomeVersion?: string;
 }
@@ -100,6 +103,38 @@ export const addSettingsToLogseq = async () => {
                 "API key for Jina AI (https://jina.ai). Required when Web Search Provider is set to Jina.ai."
         },
         {
+            key: "contentParsingHeading",
+            title: "Content Parsing (Pdf)",
+            description: "",
+            type: "heading",
+            default: null
+        },
+        {
+            key: "contentParsingProvider",
+            type: "enum",
+            default: ContentParsingProviderEnum.DISABLED,
+            title: "Content Parsing Provider",
+            description: "Choose how the AI extracts content from PDF files.",
+            enumChoices: Object.values(ContentParsingProviderEnum),
+            enumPicker: "select"
+        },
+        {
+            key: "unstructuredApiUrl",
+            type: "string",
+            default: "https://platform-api.transform.unstructured.io/api/v1",
+            title: "Unstructured.io Transform API URL (Mandatory)",
+            description:
+                "Transform API URL associated with the API key. Copy this URL from your Unstructured.io account."
+        },
+        {
+            key: "unstructuredApiKey",
+            type: "string",
+            default: "",
+            title: "Unstructured.io API Key (Mandatory)",
+            description:
+                "API key for Unstructured.io. Required when Content Parsing Provider is set to Unstructured.io."
+        },
+        {
             key: "displaySettingsHeading",
             title: "🎨 Display Settings",
             description: "",
@@ -170,6 +205,8 @@ export const addSettingsToLogseq = async () => {
         const {id} = logseq.baseInfo;
         const showLlmApiUrl = settings.llmProvider === ProviderEnum.OPENAI_COMPATIBLE;
         const showJinaApiKey = settings.webToolsProvider === WebToolsProviderEnum.JINA;
+        const showUnstructuredApiKey =
+            settings.contentParsingProvider === ContentParsingProviderEnum.UNSTRUCTURED;
 
         logseq.provideStyle({
             key: "hide-llm-api-url",
@@ -196,6 +233,36 @@ export const addSettingsToLogseq = async () => {
             `
                 : `
                 [data-id="${id}"] .cp__plugins-settings-inner [data-key="jinaApiKey"] {
+                    display: none;
+                }
+            `
+        });
+
+        logseq.provideStyle({
+            key: "hide-unstructured-api-url",
+            style: showUnstructuredApiKey
+                ? `
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="unstructuredApiUrl"] {
+                    display: block !important;
+                }
+            `
+                : `
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="unstructuredApiUrl"] {
+                    display: none;
+                }
+            `
+        });
+
+        logseq.provideStyle({
+            key: "hide-unstructured-api-key",
+            style: showUnstructuredApiKey
+                ? `
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="unstructuredApiKey"] {
+                    display: block !important;
+                }
+            `
+                : `
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="unstructuredApiKey"] {
                     display: none;
                 }
             `

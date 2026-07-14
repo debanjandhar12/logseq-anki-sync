@@ -9,3 +9,8 @@ export enum WebToolsProviderEnum {
     JINA = "Jina.ai",
     MODEL_NATIVE = "Model Native (OpenAI / Google)"
 }
+
+export enum ContentParsingProviderEnum {
+    DISABLED = "Disable Content Parsing",
+    UNSTRUCTURED = "Unstructured.io"
+}

@@ -23,10 +23,11 @@ import {LogseqTextSearchTool} from "src/chat-app/tools/impl/LogseqTextSearchTool
 import {LogseqUpdateBlockTool} from "src/chat-app/tools/impl/LogseqUpdateBlockTool";
 import {LogseqUpsertPropertyPageTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyPageTool";
 import {LogseqUpsertPropertyToBlockTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyToBlockTool";
+import {ReadPdfTool} from "src/chat-app/tools/impl/ReadPdfTool";
 import {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 import {WebPageGetTool} from "src/chat-app/tools/impl/WebPageGetTool";
 import {WebSearchTool} from "src/chat-app/tools/impl/WebSearchTool";
-import {WebToolsProviderEnum} from "src/core/ai-sdk/types";
+import {ContentParsingProviderEnum, WebToolsProviderEnum} from "src/core/ai-sdk/types";
 import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
 
 export class ChatToolRegistry {
@@ -90,6 +91,12 @@ export class ChatToolRegistry {
         ) {
             registry.registerTool(new WebSearchTool());
             registry.registerTool(new WebPageGetTool());
+        }
+        if (
+            LogseqSettingAccessor.getPluginSettings().contentParsingProvider ===
+            ContentParsingProviderEnum.UNSTRUCTURED
+        ) {
+            registry.registerTool(new ReadPdfTool());
         }
 
         return registry;
