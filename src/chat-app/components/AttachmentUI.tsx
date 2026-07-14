@@ -5,6 +5,7 @@ import {
     FileIcon,
     FileTextIcon,
     HashIcon,
+    ImageIcon,
     Loader2Icon,
     TextSelectIcon
 } from "lucide-react";
@@ -120,6 +121,8 @@ const LogseqAttachmentThumb: FC = () => {
     const iconClassName = "size-4 text-muted-foreground";
 
     switch (type) {
+        case "image":
+            return <ImageIcon className={iconClassName} />;
         case LOGSEQ_ATTACHMENT_TYPES.block:
             return <TextSelectIcon className={iconClassName} />;
         case LOGSEQ_ATTACHMENT_TYPES.page:
