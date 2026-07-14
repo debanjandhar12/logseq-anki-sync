@@ -17,4 +17,5 @@ export interface UnstructuredWrapperOptions {
     fetcher?: typeof fetch;
     pollIntervalMs?: number;
     timeoutMs?: number;
+    requestTimeoutMs?: number;
 }

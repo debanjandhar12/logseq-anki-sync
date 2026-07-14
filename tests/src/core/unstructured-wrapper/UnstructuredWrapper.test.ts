@@ -189,4 +189,184 @@ describe("UnstructuredWrapper", () => {
         expect(error).toBeInstanceOf(UnstructuredApiError);
         expect(error.statusCode).toBe(401);
     });
+
+    test("rejects output that cannot be correlated by filename", async () => {
+        const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+            const url = input.toString();
+            if (url.endsWith("/jobs/") && init?.method === "POST") {
+                return jsonResponse({id: "job-1", status: "SCHEDULED"});
+            }
+            if (url.endsWith("/jobs/job-1")) {
+                return jsonResponse({
+                    id: "job-1",
+                    status: "COMPLETED",
+                    output_node_files: [
+                        {node_id: "node-1", file_id: "output-1", node_type: "partition"}
+                    ]
+                });
+            }
+            if (url.includes("file_id=output-1")) {
+                return jsonResponse([{element_id: "block-uuid", text: "Unmapped page"}]);
+            }
+            throw new Error(`Unexpected request: ${url}`);
+        }) as typeof fetch;
+        const wrapper = new UnstructuredWrapper({
+            apiKey: "api-key",
+            apiUrl: "https://example.com/api/v1",
+            fetcher
+        });
+        const page: PreparedPdfPage = {
+            pageNo: 1,
+            fileName: "source-page-1.pdf",
+            bytes: new Uint8Array([1]),
+            hash: "one"
+        };
+
+        await expect(wrapper.parsePages([page])).rejects.toThrow(
+            "could not be mapped to a requested PDF page by filename"
+        );
+    });
+
+    test("retries transient server errors with exponential backoff", async () => {
+        vi.useFakeTimers();
+        try {
+            let createAttempts = 0;
+            const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const url = input.toString();
+                if (url.endsWith("/jobs/") && init?.method === "POST") {
+                    createAttempts++;
+                    return createAttempts === 1
+                        ? jsonResponse({detail: "temporary"}, 503)
+                        : jsonResponse({id: "job-1", status: "SCHEDULED"});
+                }
+                if (url.endsWith("/jobs/job-1")) {
+                    return jsonResponse({
+                        id: "job-1",
+                        status: "COMPLETED",
+                        output_node_files: [
+                            {node_id: "node-1", file_id: "output-1", node_type: "partition"}
+                        ]
+                    });
+                }
+                if (url.includes("file_id=output-1")) {
+                    return jsonResponse([
+                        {text: "Page", metadata: {filename: "source-page-1.pdf"}}
+                    ]);
+                }
+                throw new Error(`Unexpected request: ${url}`);
+            }) as typeof fetch;
+            const wrapper = new UnstructuredWrapper({
+                apiKey: "api-key",
+                apiUrl: "https://example.com/api/v1",
+                fetcher
+            });
+            const page: PreparedPdfPage = {
+                pageNo: 1,
+                fileName: "source-page-1.pdf",
+                bytes: new Uint8Array([1]),
+                hash: "one"
+            };
+
+            const result = wrapper.parsePages([page]);
+            await vi.advanceTimersByTimeAsync(3_000);
+
+            await expect(result).resolves.toMatchObject([{pageNo: 1, content: "Page"}]);
+            expect(createAttempts).toBe(2);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    test("times out stalled requests", async () => {
+        vi.useFakeTimers();
+        try {
+            const fetcher = vi.fn(
+                (_input: RequestInfo | URL, init?: RequestInit) =>
+                    new Promise<Response>((_resolve, reject) => {
+                        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), {
+                            once: true
+                        });
+                    })
+            ) as typeof fetch;
+            const wrapper = new UnstructuredWrapper({
+                apiKey: "api-key",
+                apiUrl: "https://example.com/api/v1",
+                fetcher,
+                requestTimeoutMs: 10
+            });
+            const page: PreparedPdfPage = {
+                pageNo: 1,
+                fileName: "source-page-1.pdf",
+                bytes: new Uint8Array([1]),
+                hash: "one"
+            };
+
+            const result = wrapper.parsePages([page]);
+            const rejection = expect(result).rejects.toThrow(
+                "request did not complete within 10 ms"
+            );
+            await vi.runAllTimersAsync();
+
+            await rejection;
+            expect(fetcher).toHaveBeenCalledTimes(4);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    test("polls every ten seconds by default", async () => {
+        vi.useFakeTimers();
+        try {
+            let pollCount = 0;
+            const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const url = input.toString();
+                if (url.endsWith("/jobs/") && init?.method === "POST") {
+                    return jsonResponse({id: "job-1", status: "SCHEDULED"});
+                }
+                if (url.endsWith("/jobs/job-1")) {
+                    pollCount++;
+                    return pollCount === 1
+                        ? jsonResponse({id: "job-1", status: "IN_PROGRESS"})
+                        : jsonResponse({
+                              id: "job-1",
+                              status: "COMPLETED",
+                              output_node_files: [
+                                  {
+                                      node_id: "node-1",
+                                      file_id: "output-1",
+                                      node_type: "partition"
+                                  }
+                              ]
+                          });
+                }
+                if (url.includes("file_id=output-1")) {
+                    return jsonResponse([
+                        {text: "Page", metadata: {filename: "source-page-1.pdf"}}
+                    ]);
+                }
+                throw new Error(`Unexpected request: ${url}`);
+            }) as typeof fetch;
+            const wrapper = new UnstructuredWrapper({
+                apiKey: "api-key",
+                apiUrl: "https://example.com/api/v1",
+                fetcher
+            });
+            const page: PreparedPdfPage = {
+                pageNo: 1,
+                fileName: "source-page-1.pdf",
+                bytes: new Uint8Array([1]),
+                hash: "one"
+            };
+
+            const result = wrapper.parsePages([page]);
+            await vi.advanceTimersByTimeAsync(9_999);
+            expect(pollCount).toBe(1);
+            await vi.advanceTimersByTimeAsync(1);
+
+            await expect(result).resolves.toMatchObject([{pageNo: 1}]);
+            expect(pollCount).toBe(2);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
 });

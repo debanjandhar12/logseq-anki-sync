@@ -1,8 +1,13 @@
+import pRetry from "p-retry";
 import {PDFDocument} from "pdf-lib";
 import type {ParsedPdfPage, PreparedPdfPage, UnstructuredWrapperOptions} from "./types";
 
 const DEFAULT_POLL_INTERVAL_MS = 5_000;
 const DEFAULT_TIMEOUT_MS = 10 * 60_000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 60_000;
+const RETRY_COUNT = 3;
+const RETRY_INITIAL_INTERVAL_MS = 3_000;
+const RETRY_BACKOFF_FACTOR = 1.88;
 
 type JobStatus = "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "STOPPED" | "FAILED";
 
@@ -32,6 +37,7 @@ export class UnstructuredWrapper {
     private readonly fetcher: typeof fetch;
     private readonly pollIntervalMs: number;
     private readonly timeoutMs: number;
+    private readonly requestTimeoutMs: number;
 
     constructor(options: UnstructuredWrapperOptions) {
         this.apiKey = options.apiKey.trim();
@@ -39,6 +45,7 @@ export class UnstructuredWrapper {
         this.fetcher = options.fetcher ?? fetch;
         this.pollIntervalMs = options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
         this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+        this.requestTimeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
     }
 
     async splitPdfPages(
@@ -86,10 +93,7 @@ export class UnstructuredWrapper {
             activeJobId = undefined;
             return await this.downloadResults(completedJob, pages, abortSignal);
         } catch (error) {
-            if (
-                activeJobId &&
-                (abortSignal?.aborted || error instanceof UnstructuredJobTimeoutError)
-            ) {
+            if (activeJobId) {
                 await this.cancelJob(activeJobId);
             }
             throw error;
@@ -137,22 +141,33 @@ export class UnstructuredWrapper {
     }
 
     private async waitForJob(jobId: string, abortSignal?: AbortSignal): Promise<JobResponse> {
-        const deadline = Date.now() + this.timeoutMs;
-        while (true) {
-            const job = await this.fetchJson<JobResponse>(`${this.apiUrl}/jobs/${jobId}`, {
-                headers: this.getHeaders(),
-                signal: abortSignal
-            });
-            if (job.status === "COMPLETED") return job;
-            if (job.status === "FAILED" || job.status === "STOPPED") {
-                throw new Error(`Unstructured.io job ${jobId} ended with status ${job.status}.`);
+        const timeoutError = new UnstructuredJobTimeoutError(
+            `Unstructured.io job ${jobId} did not complete within ${this.timeoutMs} ms.`
+        );
+        const timeoutController = new AbortController();
+        const timeout = setTimeout(() => timeoutController.abort(timeoutError), this.timeoutMs);
+        const combinedSignal = UnstructuredWrapper.combineAbortSignals(
+            abortSignal,
+            timeoutController.signal
+        );
+
+        try {
+            while (true) {
+                const job = await this.fetchJson<JobResponse>(`${this.apiUrl}/jobs/${jobId}`, {
+                    headers: this.getHeaders(),
+                    signal: combinedSignal.signal
+                });
+                if (job.status === "COMPLETED") return job;
+                if (job.status === "FAILED" || job.status === "STOPPED") {
+                    throw new Error(
+                        `Unstructured.io job ${jobId} ended with status ${job.status}.`
+                    );
+                }
+                await UnstructuredWrapper.wait(this.pollIntervalMs, combinedSignal.signal);
             }
-            if (Date.now() >= deadline) {
-                throw new UnstructuredJobTimeoutError(
-                    `Unstructured.io job ${jobId} did not complete within ${this.timeoutMs} ms.`
-                );
-            }
-            await UnstructuredWrapper.wait(this.pollIntervalMs, abortSignal);
+        } finally {
+            clearTimeout(timeout);
+            combinedSignal.cleanup();
         }
     }
 
@@ -190,36 +205,33 @@ export class UnstructuredWrapper {
         const pagesByFileName = new Map(pages.map((page) => [page.fileName, page]));
         const assignedPageNumbers = new Set<number>();
         const results: ParsedPdfPage[] = [];
-        const unassignedResults: Array<{elements: Array<Record<string, unknown>>}> = [];
 
         for (const result of downloadedResults) {
             const page = result.fileName ? pagesByFileName.get(result.fileName) : undefined;
-            if (!page || assignedPageNumbers.has(page.pageNo)) {
-                unassignedResults.push(result);
-                continue;
+            if (!page) {
+                throw new Error(
+                    "Unstructured.io output could not be mapped to a requested PDF page by filename."
+                );
+            }
+            if (assignedPageNumbers.has(page.pageNo)) {
+                throw new Error(`Unstructured.io returned duplicate output for ${page.fileName}.`);
             }
             assignedPageNumbers.add(page.pageNo);
             results.push(UnstructuredWrapper.toParsedPage(page.pageNo, result.elements));
         }
 
-        const unassignedPages = pages.filter((page) => !assignedPageNumbers.has(page.pageNo));
-        if (unassignedPages.length !== unassignedResults.length) {
+        if (assignedPageNumbers.size !== pages.length) {
             throw new Error(
                 "Unstructured.io output files could not be mapped to the requested PDF pages."
             );
         }
-        unassignedPages.forEach((page, index) => {
-            results.push(
-                UnstructuredWrapper.toParsedPage(page.pageNo, unassignedResults[index].elements)
-            );
-        });
 
         return results.sort((a, b) => a.pageNo - b.pageNo);
     }
 
     private async cancelJob(jobId: string): Promise<void> {
         try {
-            await this.fetcher(`${this.apiUrl}/jobs/${jobId}/cancel`, {
+            await this.fetchResponse(`${this.apiUrl}/jobs/${jobId}/cancel`, {
                 method: "POST",
                 headers: this.getHeaders()
             });
@@ -227,15 +239,62 @@ export class UnstructuredWrapper {
     }
 
     private async fetchJson<T>(url: string, init: RequestInit): Promise<T> {
-        const response = await this.fetcher(url, init);
-        if (!response.ok) {
-            const body = await response.text();
-            throw new UnstructuredApiError(
-                response.status,
-                `Unstructured.io request failed with status ${response.status}: ${body}`
-            );
-        }
-        return (await response.json()) as T;
+        return await this.fetchResponse(
+            url,
+            init,
+            async (response) => (await response.json()) as T
+        );
+    }
+
+    private async fetchResponse<T = void>(
+        url: string,
+        init: RequestInit,
+        parseResponse?: (response: Response) => Promise<T>
+    ): Promise<T> {
+        return await pRetry(
+            async () => {
+                const requestTimeoutError = new UnstructuredRequestTimeoutError(
+                    `Unstructured.io request did not complete within ${this.requestTimeoutMs} ms.`
+                );
+                const timeoutController = new AbortController();
+                const timeout = setTimeout(
+                    () => timeoutController.abort(requestTimeoutError),
+                    this.requestTimeoutMs
+                );
+                const combinedSignal = UnstructuredWrapper.combineAbortSignals(
+                    init.signal ?? undefined,
+                    timeoutController.signal
+                );
+
+                try {
+                    const response = await this.fetcher(url, {
+                        ...init,
+                        signal: combinedSignal.signal
+                    });
+                    if (!response.ok) {
+                        const body = await response.text();
+                        throw new UnstructuredApiError(
+                            response.status,
+                            `Unstructured.io request failed with status ${response.status}: ${body}`
+                        );
+                    }
+                    return parseResponse ? await parseResponse(response) : (undefined as T);
+                } finally {
+                    clearTimeout(timeout);
+                    combinedSignal.cleanup();
+                }
+            },
+            {
+                retries: RETRY_COUNT,
+                factor: RETRY_BACKOFF_FACTOR,
+                minTimeout: RETRY_INITIAL_INTERVAL_MS,
+                signal: init.signal ?? undefined,
+                shouldRetry: ({error}) =>
+                    error instanceof TypeError ||
+                    error instanceof UnstructuredRequestTimeoutError ||
+                    (error instanceof UnstructuredApiError && error.statusCode >= 500)
+            }
+        );
     }
 
     private getHeaders(): HeadersInit {
@@ -297,6 +356,36 @@ export class UnstructuredWrapper {
             abortSignal?.addEventListener("abort", onAbort, {once: true});
         });
     }
+
+    private static combineAbortSignals(...signals: Array<AbortSignal | undefined>): {
+        signal: AbortSignal;
+        cleanup: () => void;
+    } {
+        const controller = new AbortController();
+        const activeSignals = signals.filter(
+            (signal): signal is AbortSignal => signal !== undefined
+        );
+        const onAbort = (event: Event) => {
+            const signal = event.target as AbortSignal;
+            controller.abort(signal.reason);
+        };
+
+        for (const signal of activeSignals) {
+            if (signal.aborted) {
+                controller.abort(signal.reason);
+                break;
+            }
+            signal.addEventListener("abort", onAbort, {once: true});
+        }
+
+        return {
+            signal: controller.signal,
+            cleanup: () => {
+                for (const signal of activeSignals) signal.removeEventListener("abort", onAbort);
+            }
+        };
+    }
 }
 
 class UnstructuredJobTimeoutError extends Error {}
+class UnstructuredRequestTimeoutError extends Error {}

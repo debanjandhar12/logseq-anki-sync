@@ -143,6 +143,9 @@ importers:
       p-memoize:
         specifier: ^8.0.0
         version: 8.0.0
+      p-retry:
+        specifier: ^7.1.1
+        version: 7.1.1
       parse-diff:
         specifier: ^0.12.0
         version: 0.12.0
@@ -4753,6 +4756,10 @@ packages:
     resolution: {integrity: sha512-E+zBKpQ2t6MEo1VsonYmluk9NxGrbzpeeLC2xIViuO2EjU2xsXsBPwTr3Ykv9l08UYEVEdWeRZNouaZqF6RN0w==}
     engines: {node: '>= 0.4'}
 
+  is-network-error@1.3.2:
+    resolution: {integrity: sha512-PhBY86zaxNZUuWP6h13Vu5oFe0XY6/UlKzQnYFELzGVHygP3MxmvTfYSG7GN3aIab/iWudSMgjSnG9Dq+nHrgA==}
+    engines: {node: '>=16'}
+
   is-number@7.0.0:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
     engines: {node: '>=0.12.0'}
@@ -5392,6 +5399,10 @@ packages:
 
   p-memoize@8.0.0:
     resolution: {integrity: sha512-jdZ10MCxavHoIHwJ5oweOtYy6ElPixEHaMkz0AuaEMovR1MRpVvYFzIEHRxgMEpXYzNpRVByFAniAzwmd1/uug==}
+    engines: {node: '>=20'}
+
+  p-retry@7.1.1:
+    resolution: {integrity: sha512-J5ApzjyRkkf601HpEeykoiCvzHQjWxPAHhyjFcEUP2SWq0+35NKh8TLhpLw+Dkq5TZBFvUM6UigdE9hIVYTl5w==}
     engines: {node: '>=20'}
 
   p-try@2.2.0:
@@ -11446,6 +11457,8 @@ snapshots:
       call-bind: 1.0.7
       define-properties: 1.2.1
 
+  is-network-error@1.3.2: {}
+
   is-number@7.0.0: {}
 
   is-obj@3.0.0: {}
@@ -12245,6 +12258,10 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
       type-fest: 4.41.0
+
+  p-retry@7.1.1:
+    dependencies:
+      is-network-error: 1.3.2
 
   p-try@2.2.0: {}
 
