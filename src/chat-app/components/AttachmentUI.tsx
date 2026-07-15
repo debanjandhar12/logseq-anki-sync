@@ -10,6 +10,8 @@ import {
     TextSelectIcon
 } from "lucide-react";
 import type {FC} from "react";
+import {createLogger, LoggerCategory} from "src/logger";
+import {LogseqNavigator} from "src/logseq/LogseqNavigator";
 import {
     AttachmentPreviewDialog,
     AttachmentRemove,
@@ -24,6 +26,14 @@ import {
 } from "src/shadcn/radix-ui/tooltip";
 import {LOGSEQ_ATTACHMENT_TYPES} from "../runtime/LogseqAttachmentAdapter";
 
+const logger = createLogger(LoggerCategory.CHAT_UI);
+const NAVIGABLE_ATTACHMENT_TYPES = new Set<string>([
+    LOGSEQ_ATTACHMENT_TYPES.block,
+    LOGSEQ_ATTACHMENT_TYPES.page,
+    LOGSEQ_ATTACHMENT_TYPES.propertyPage,
+    LOGSEQ_ATTACHMENT_TYPES.tagPage
+]);
+
 /**
  * This is the attachment ui manger.
  *
@@ -36,6 +46,9 @@ import {LOGSEQ_ATTACHMENT_TYPES} from "../runtime/LogseqAttachmentAdapter";
 export const AttachmentUI: FC = () => {
     const aui = useAui();
     const isComposer = aui.attachment.source !== "message";
+    const attachmentId = useAuiState((s) => s.attachment.id);
+    const attachmentType = useAuiState((s) => s.attachment.type);
+    const canNavigate = NAVIGABLE_ATTACHMENT_TYPES.has(attachmentType);
 
     const typeLabel = useAuiState((s) => {
         const type = s.attachment.type;
@@ -67,6 +80,24 @@ export const AttachmentUI: FC = () => {
             state.attachment.status.reason === "error"
     );
 
+    const navigateToAttachment = () => {
+        if (!canNavigate) return;
+
+        if (!attachmentId) {
+            logger.error("Unable to navigate to Logseq attachment with an invalid ID", {
+                attachmentId,
+                attachmentType
+            });
+            return;
+        }
+
+        try {
+            LogseqNavigator.goToBlock(attachmentId);
+        } catch (error) {
+            logger.error("Failed to navigate to Logseq attachment", error);
+        }
+    };
+
     return (
         <TooltipProvider delayDuration={0}>
             <Tooltip>
@@ -75,6 +106,7 @@ export const AttachmentUI: FC = () => {
                         <TooltipTrigger asChild>
                             <button
                                 type="button"
+                                onClick={navigateToAttachment}
                                 className={cn(
                                     "aui-attachment-tile relative flex h-7 max-w-40 cursor-pointer items-center gap-1 overflow-hidden rounded-full border bg-muted px-2.5 pr-3 transition-colors hover:bg-muted/75",
                                     hasUploadError && "border-destructive"

@@ -15,7 +15,7 @@ export function createTextAttachment({
     text
 }: TextAttachmentOptions): CreateAttachment {
     return {
-        id: `${type}:${uuid}`,
+        id: uuid,
         type,
         name,
         contentType: LOGSEQ_ATTACHMENT_CONTENT_TYPE,

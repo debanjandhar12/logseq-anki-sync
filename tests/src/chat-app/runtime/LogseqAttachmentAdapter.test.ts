@@ -81,7 +81,7 @@ describe.skipIf(!shouldRunTests())("LogseqAttachmentAdapter", () => {
         const attachment = await createLogseqAttachmentFromUuid(page.uuid);
 
         expect(attachment.type).toBe(LOGSEQ_ATTACHMENT_TYPES.page);
-        expect(attachment.id).toBe(`${LOGSEQ_ATTACHMENT_TYPES.page}:${page.uuid}`);
+        expect(attachment.id).toBe(page.uuid);
         expect(attachment.content).toEqual([{type: "text", text: `Page UUID: ${page.uuid}`}]);
     }, 60_000);
 
@@ -89,7 +89,7 @@ describe.skipIf(!shouldRunTests())("LogseqAttachmentAdapter", () => {
         const attachment = await createLogseqAttachmentFromUuid(block.uuid);
 
         expect(attachment.type).toBe(LOGSEQ_ATTACHMENT_TYPES.block);
-        expect(attachment.id).toBe(`${LOGSEQ_ATTACHMENT_TYPES.block}:${block.uuid}`);
+        expect(attachment.id).toBe(block.uuid);
         expect(attachment.content).toEqual([{type: "text", text: `Block UUID: ${block.uuid}`}]);
     }, 60_000);
 
@@ -106,7 +106,7 @@ describe.skipIf(!shouldRunTests())("LogseqAttachmentAdapter", () => {
         const attachment = await createLogseqAttachmentFromUuid(tagPage.uuid);
 
         expect(attachment.type).toBe(LOGSEQ_ATTACHMENT_TYPES.tagPage);
-        expect(attachment.id).toBe(`${LOGSEQ_ATTACHMENT_TYPES.tagPage}:${tagPage.uuid}`);
+        expect(attachment.id).toBe(tagPage.uuid);
         expect(attachment.content).toEqual([
             {type: "text", text: `Tag Page UUID: ${tagPage.uuid}`}
         ]);
@@ -116,7 +116,7 @@ describe.skipIf(!shouldRunTests())("LogseqAttachmentAdapter", () => {
         const attachment = await createLogseqAttachmentFromUuid(propertyPage.uuid);
 
         expect(attachment.type).toBe(LOGSEQ_ATTACHMENT_TYPES.propertyPage);
-        expect(attachment.id).toBe(`${LOGSEQ_ATTACHMENT_TYPES.propertyPage}:${propertyPage.uuid}`);
+        expect(attachment.id).toBe(propertyPage.uuid);
         expect(attachment.content).toEqual([
             {type: "text", text: `Property Page UUID: ${propertyPage.uuid}`}
         ]);

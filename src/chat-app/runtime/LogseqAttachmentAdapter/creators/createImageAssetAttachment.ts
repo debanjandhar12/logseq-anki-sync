@@ -13,7 +13,7 @@ export async function createImageAssetAttachment(
     const image = await WindowParentBridge.makeAssetUrl(path);
 
     return {
-        id: `logseq-image:${uuid}`,
+        id: uuid,
         type: "image",
         name: path.split("/").at(-1) ?? path,
         contentType: `image/${format}`,
