@@ -53,6 +53,9 @@ importers:
       '@lezer/highlight':
         specifier: ^1.2.3
         version: 1.2.3
+      '@llamaindex/llama-cloud':
+        specifier: ^2.11.0
+        version: 2.11.0
       '@logseq/libs':
         specifier: ^0.3.3
         version: 0.3.3
@@ -1635,6 +1638,9 @@ packages:
 
   '@lezer/markdown@1.6.4':
     resolution: {integrity: sha512-N0SxazMj4k65DBfaf1azqtMZd6u7MqluP84/NZnB/io8Td9aleFmAhz9hcbvSfsxT5tdYlJ5qgv5aMJGY4zEtA==}
+
+  '@llamaindex/llama-cloud@2.11.0':
+    resolution: {integrity: sha512-NcztAf1YnKyuN7N5E9cqzk0RVtLKwH3N4nf0h85tT9Sq2uE+1j1nSn2ozVntSflkKllmlb767izIvi8+L1XsPA==}
 
   '@logseq/libs@0.0.15':
     resolution: {integrity: sha512-Z4YrYGfu8Y3s9LTqVnPGkxlO+KZtP1YalH/A63zYgxP61cV5QtKlnHWNcjsKxsD5CkaSL4MlSN4mf7wNx/Fm0A==}
@@ -8216,6 +8222,8 @@ snapshots:
     dependencies:
       '@lezer/common': 1.5.2
       '@lezer/highlight': 1.2.3
+
+  '@llamaindex/llama-cloud@2.11.0': {}
 
   '@logseq/libs@0.0.15':
     dependencies:

@@ -17,8 +17,7 @@ export interface PluginSettings {
     webToolsProvider?: WebToolsProviderEnum;
     jinaApiKey?: string;
     contentParsingProvider?: ContentParsingProviderEnum;
-    unstructuredApiKey?: string;
-    unstructuredApiUrl?: string;
+    llamaCloudApiKey?: string;
     debug?: LoggerCategory[];
     lastWelcomeVersion?: string;
 }
@@ -119,20 +118,12 @@ export const addSettingsToLogseq = async () => {
             enumPicker: "select"
         },
         {
-            key: "unstructuredApiUrl",
-            type: "string",
-            default: "https://platform-api.transform.unstructured.io/api/v1",
-            title: "Unstructured.io Transform API URL (Mandatory)",
-            description:
-                "Transform API URL associated with the API key. Copy this URL from your Unstructured.io account."
-        },
-        {
-            key: "unstructuredApiKey",
+            key: "llamaCloudApiKey",
             type: "string",
             default: "",
-            title: "Unstructured.io API Key (Mandatory)",
+            title: "LlamaCloud API Key (Mandatory)",
             description:
-                "API key for Unstructured.io. Required when Content Parsing Provider is set to Unstructured.io."
+                "API key for LlamaCloud. Required when Content Parsing Provider is set to LlamaCloud."
         },
         {
             key: "displaySettingsHeading",
@@ -205,8 +196,8 @@ export const addSettingsToLogseq = async () => {
         const {id} = logseq.baseInfo;
         const showLlmApiUrl = settings.llmProvider === ProviderEnum.OPENAI_COMPATIBLE;
         const showJinaApiKey = settings.webToolsProvider === WebToolsProviderEnum.JINA;
-        const showUnstructuredApiKey =
-            settings.contentParsingProvider === ContentParsingProviderEnum.UNSTRUCTURED;
+        const showLlamaCloudApiKey =
+            settings.contentParsingProvider === ContentParsingProviderEnum.LLAMA_CLOUD;
 
         logseq.provideStyle({
             key: "hide-llm-api-url",
@@ -239,30 +230,15 @@ export const addSettingsToLogseq = async () => {
         });
 
         logseq.provideStyle({
-            key: "hide-unstructured-api-url",
-            style: showUnstructuredApiKey
+            key: "hide-llama-cloud-api-key",
+            style: showLlamaCloudApiKey
                 ? `
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="unstructuredApiUrl"] {
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llamaCloudApiKey"] {
                     display: block !important;
                 }
             `
                 : `
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="unstructuredApiUrl"] {
-                    display: none;
-                }
-            `
-        });
-
-        logseq.provideStyle({
-            key: "hide-unstructured-api-key",
-            style: showUnstructuredApiKey
-                ? `
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="unstructuredApiKey"] {
-                    display: block !important;
-                }
-            `
-                : `
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="unstructuredApiKey"] {
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llamaCloudApiKey"] {
                     display: none;
                 }
             `

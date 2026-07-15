@@ -12,5 +12,5 @@ export enum WebToolsProviderEnum {
 
 export enum ContentParsingProviderEnum {
     DISABLED = "Disable Content Parsing",
-    UNSTRUCTURED = "Unstructured.io"
+    LLAMA_CLOUD = "LlamaCloud"
 }

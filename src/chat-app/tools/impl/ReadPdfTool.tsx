@@ -1,3 +1,4 @@
+import {AuthenticationError, LlamaCloud, toFile} from "@llamaindex/llama-cloud";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {
@@ -6,13 +7,9 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import type {UnstructuredParseData} from "src/core/stores/unstructured-parse-store/types";
-import {UnstructuredParseStore} from "src/core/stores/unstructured-parse-store/UnstructuredParseStore";
-import type {PreparedPdfPage} from "src/core/unstructured-wrapper/types";
-import {
-    UnstructuredApiError,
-    UnstructuredWrapper
-} from "src/core/unstructured-wrapper/UnstructuredWrapper";
+import {PdfPageSplitter, type PreparedPdfPage} from "src/core/pdf/PdfPageSplitter";
+import {LlamaCloudPdfPageStore} from "src/core/stores/llama-cloud-pdf-page-store/LlamaCloudPdfPageStore";
+import type {LlamaCloudPdfPageData} from "src/core/stores/llama-cloud-pdf-page-store/types";
 import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
 import {WindowParentBridge} from "src/logseq/WindowParentBridge";
 import {z} from "zod";
@@ -74,35 +71,18 @@ export class ReadPdfTool extends BaseChatToolWithDefaultUI<ReadPdfArgs, ReadPdfR
     ): Promise<ChatToolResponse<ReadPdfResult>> {
         try {
             const settings = LogseqSettingAccessor.getPluginSettings();
-            const unstructuredApiKey = settings.unstructuredApiKey?.trim();
-            if (!unstructuredApiKey) {
-                return ChatToolResponse.error(
-                    "Unstructured.io API key is not configured. Set it in Content Parsing (Pdf) settings."
-                );
-            }
-            const unstructuredApiUrl = settings.unstructuredApiUrl?.trim();
-            if (!unstructuredApiUrl) {
-                return ChatToolResponse.error(
-                    "Unstructured.io Transform API URL is not configured. Set it in Content Parsing (Pdf) settings."
-                );
-            }
-
-            const wrapper = new UnstructuredWrapper({
-                apiKey: unstructuredApiKey,
-                apiUrl: unstructuredApiUrl
-            });
             const pdfBytes = await this.loadPdf(pdfPath, context?.abortSignal);
-            const preparedPages = await wrapper.splitPdfPages(
+            const preparedPages = await PdfPageSplitter.split(
                 pdfBytes,
                 startPage,
                 endPage,
                 this.getPdfFileName(pdfPath)
             );
-            const parsedPagesByPageNo = new Map<number, UnstructuredParseData>();
+            const parsedPagesByPageNo = new Map<number, LlamaCloudPdfPageData>();
             const cacheMisses: PreparedPdfPage[] = [];
 
             for (const preparedPage of preparedPages) {
-                const cachedPage = await UnstructuredParseStore.get(preparedPage.hash);
+                const cachedPage = await LlamaCloudPdfPageStore.get(preparedPage.hash);
                 if (cachedPage) {
                     parsedPagesByPageNo.set(preparedPage.pageNo, cachedPage);
                 } else {
@@ -110,22 +90,56 @@ export class ReadPdfTool extends BaseChatToolWithDefaultUI<ReadPdfArgs, ReadPdfR
                 }
             }
 
-            const parsedCacheMisses =
-                cacheMisses.length > 0
-                    ? await wrapper.parsePages(cacheMisses, context?.abortSignal)
-                    : [];
-            for (const parsedPage of parsedCacheMisses) {
-                const preparedPage = cacheMisses.find((page) => page.pageNo === parsedPage.pageNo);
-                if (!preparedPage) {
-                    throw new Error(`Unexpected parsed PDF page ${parsedPage.pageNo}.`);
+            if (cacheMisses.length > 0) {
+                const llamaCloudApiKey = settings.llamaCloudApiKey?.trim();
+                if (!llamaCloudApiKey) {
+                    return ChatToolResponse.error(
+                        "LlamaCloud API key is not configured. Set it in Content Parsing (Pdf) settings."
+                    );
                 }
-                const storedPage: UnstructuredParseData = {
-                    version: 1,
-                    elements: parsedPage.elements,
-                    content: parsedPage.content
-                };
-                await UnstructuredParseStore.save(preparedPage.hash, storedPage);
-                parsedPagesByPageNo.set(parsedPage.pageNo, storedPage);
+
+                const llamaCloud = new LlamaCloud({apiKey: llamaCloudApiKey});
+                for (const preparedPage of cacheMisses) {
+                    const result = await llamaCloud.parsing.parse(
+                        {
+                            upload_file: await toFile(preparedPage.bytes, preparedPage.fileName, {
+                                type: "application/pdf"
+                            }),
+                            tier: "agentic",
+                            version: "latest",
+                            processing_options: {
+                                cost_optimizer: {enable: true}
+                            },
+                            expand: ["markdown", "items"]
+                        },
+                        {
+                            signal: context?.abortSignal,
+                            timeout: 10 * 60
+                        }
+                    );
+                    const markdownPage = result.markdown?.pages.find(
+                        (page) => page.page_number === 1
+                    );
+                    const itemsPage = result.items?.pages.find((page) => page.page_number === 1);
+                    if (!markdownPage || markdownPage.success === false) {
+                        throw new Error(
+                            `LlamaCloud did not return markdown for ${preparedPage.fileName}.`
+                        );
+                    }
+                    if (!itemsPage || itemsPage.success === false) {
+                        throw new Error(
+                            `LlamaCloud did not return items for ${preparedPage.fileName}.`
+                        );
+                    }
+
+                    const storedPage: LlamaCloudPdfPageData = {
+                        version: 1,
+                        items: itemsPage.items as unknown as Array<Record<string, unknown>>,
+                        content: markdownPage.markdown
+                    };
+                    await LlamaCloudPdfPageStore.save(preparedPage.hash, storedPage);
+                    parsedPagesByPageNo.set(preparedPage.pageNo, storedPage);
+                }
             }
 
             const pageResults: ReadPdfPageResult[] = preparedPages.map((page) => {
@@ -141,9 +155,9 @@ export class ReadPdfTool extends BaseChatToolWithDefaultUI<ReadPdfArgs, ReadPdfR
                 pages: pageResults
             });
         } catch (error) {
-            if (error instanceof UnstructuredApiError && error.statusCode === 401) {
+            if (error instanceof AuthenticationError) {
                 return ChatToolResponse.error(
-                    "Unstructured.io rejected the configured API key. Verify the key in Content Parsing (Pdf)."
+                    "LlamaCloud rejected the configured API key. Verify the key in Content Parsing (Pdf)."
                 );
             }
             return ChatToolResponse.error(

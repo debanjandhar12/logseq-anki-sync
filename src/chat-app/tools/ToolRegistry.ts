@@ -94,7 +94,7 @@ export class ChatToolRegistry {
         }
         if (
             LogseqSettingAccessor.getPluginSettings().contentParsingProvider ===
-            ContentParsingProviderEnum.UNSTRUCTURED
+            ContentParsingProviderEnum.LLAMA_CLOUD
         ) {
             registry.registerTool(new ReadPdfTool());
         }
