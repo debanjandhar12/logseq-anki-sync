@@ -8,12 +8,16 @@ type ToolCallStreamPart = {
     toolCallId: string;
     toolName: string;
     input: unknown;
+    providerExecuted?: boolean;
 };
 
 export type ToolCallMessagePart = Extract<
     NonNullable<ChatModelRunResult["content"]>[number],
     {type: "tool-call"}
->;
+> & {
+    /** AI SDK provider-native calls must remain in assistant content. */
+    providerExecuted?: boolean;
+};
 
 export function createToolCallMessagePart(part: ToolCallStreamPart): ToolCallMessagePart {
     const args = isRecord(part.input) ? (part.input as ToolCallMessagePart["args"]) : {};
@@ -22,7 +26,8 @@ export function createToolCallMessagePart(part: ToolCallStreamPart): ToolCallMes
         toolCallId: part.toolCallId,
         toolName: part.toolName,
         args,
-        argsText: JSON.stringify(args)
+        argsText: JSON.stringify(args),
+        ...(part.providerExecuted !== undefined ? {providerExecuted: part.providerExecuted} : {})
     };
 }
 

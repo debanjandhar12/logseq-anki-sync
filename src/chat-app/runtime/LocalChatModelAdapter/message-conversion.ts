@@ -49,7 +49,10 @@ export function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["p
             type: `tool-${part.toolName}`,
             toolCallId: part.toolCallId,
             state: "input-available",
-            input
+            input,
+            ...(part.providerExecuted !== undefined
+                ? {providerExecuted: part.providerExecuted}
+                : {})
         } as UIMessage["parts"][number];
     }
 
@@ -59,7 +62,10 @@ export function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["p
             toolCallId: part.toolCallId,
             state: "output-error",
             input,
-            errorText: typeof part.result === "string" ? part.result : JSON.stringify(part.result)
+            errorText: typeof part.result === "string" ? part.result : JSON.stringify(part.result),
+            ...(part.providerExecuted !== undefined
+                ? {providerExecuted: part.providerExecuted}
+                : {})
         } as UIMessage["parts"][number];
     }
 
@@ -71,7 +77,8 @@ export function createToolUIMessagePart(part: ToolCallMessagePart): UIMessage["p
         output:
             part.modelContent === undefined
                 ? part.result
-                : {__aui_modelContent: part.modelContent, value: part.result}
+                : {__aui_modelContent: part.modelContent, value: part.result},
+        ...(part.providerExecuted !== undefined ? {providerExecuted: part.providerExecuted} : {})
     } as UIMessage["parts"][number];
 }
 

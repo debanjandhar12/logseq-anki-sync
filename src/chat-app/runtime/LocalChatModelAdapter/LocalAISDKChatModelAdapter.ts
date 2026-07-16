@@ -18,7 +18,11 @@ import {
     createErrorMessageResult,
     normalizeTokenUsage
 } from "./stream-helpers";
-import {createToolCallMessagePart, executeFrontendTool} from "./tool-execution";
+import {
+    createToolCallMessagePart,
+    executeFrontendTool,
+    type ToolCallMessagePart
+} from "./tool-execution";
 
 /**
  * Bridges assistant-ui's LocalRuntime to the AI SDK.
@@ -74,7 +78,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
             let usage: LanguageModelUsage | undefined;
             let finishReason: FinishReason | undefined;
             let hasClientToolCalls = false;
-            const toolCallsToExecute: import("./tool-execution").ToolCallMessagePart[] = [];
+            const toolCallsToExecute: ToolCallMessagePart[] = [];
 
             for await (const part of result.fullStream) {
                 switch (part.type) {
@@ -87,11 +91,15 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                         yield {content};
                         break;
                     case "tool-call": {
+                        const toolCall = createToolCallMessagePart(part);
+
                         if (part.providerExecuted) {
+                            content = [...content, toolCall];
+                            yield {content};
                             break;
                         }
+
                         hasClientToolCalls = true;
-                        const toolCall = createToolCallMessagePart(part);
                         content = [...content, toolCall];
                         yield {
                             content,
@@ -108,6 +116,17 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                         content = [...content, part];
                         yield {content};
                         break;
+                    case "file":
+                        content = [
+                            ...content,
+                            {
+                                type: "file",
+                                data: `data:${part.file.mediaType};base64,${part.file.base64}`,
+                                mimeType: part.file.mediaType
+                            }
+                        ];
+                        yield {content};
+                        break;
                     case "finish":
                         usage = part.totalUsage;
                         finishReason = part.finishReason;
@@ -118,8 +137,23 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                             status: {type: "incomplete", reason: "cancelled"}
                         };
                         return;
-                    case "tool-error":
                     case "tool-result":
+                        if (part.providerExecuted) {
+                            content = updateProviderToolCall(content, part.toolCallId, {
+                                result: part.output === undefined ? null : part.output,
+                                isError: false
+                            });
+                            yield {content};
+                        }
+                        break;
+                    case "tool-error":
+                        if (part.providerExecuted) {
+                            content = updateProviderToolCall(content, part.toolCallId, {
+                                result: getErrorMessage(part.error),
+                                isError: true
+                            });
+                            yield {content};
+                        }
                         break;
                     case "error": {
                         const errorMessage = getErrorMessage(part.error);
@@ -224,4 +258,16 @@ function getCurrentBranchMessages(
     assistantMessage: ThreadMessage
 ): readonly ThreadMessage[] {
     return assistantMessage.content.length ? [...messages, assistantMessage] : messages;
+}
+
+function updateProviderToolCall(
+    content: NonNullable<ChatModelRunResult["content"]>,
+    toolCallId: string,
+    update: Pick<ToolCallMessagePart, "result" | "isError">
+): NonNullable<ChatModelRunResult["content"]> {
+    return content.map((part) =>
+        part.type === "tool-call" && part.toolCallId === toolCallId
+            ? {...part, ...update, providerExecuted: true}
+            : part
+    );
 }
