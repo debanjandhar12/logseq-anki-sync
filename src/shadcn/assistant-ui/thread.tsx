@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  ComposerAddAttachment,
-  ComposerAttachments,
-  UserMessageAttachments,
-} from "src/shadcn/assistant-ui/attachment";
+import { ComposerAddAttachment } from "src/shadcn/assistant-ui/attachment";
 import { ThreadFollowupSuggestions } from "src/shadcn/assistant-ui/follow-up-suggestions";
 import { MarkdownText } from "src/shadcn/assistant-ui/markdown-text";
 import {

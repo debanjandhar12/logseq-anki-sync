@@ -65,7 +65,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
 
             const result = streamText({
                 model,
-                system: context.system,
+                instructions: context.system,
                 messages: modelMessages,
                 tools,
                 abortSignal,
@@ -80,7 +80,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
             let hasClientToolCalls = false;
             const toolCallsToExecute: ToolCallMessagePart[] = [];
 
-            for await (const part of result.fullStream) {
+            for await (const part of result.stream) {
                 switch (part.type) {
                     case "text-delta":
                         content = appendTextDelta(content, part.text);

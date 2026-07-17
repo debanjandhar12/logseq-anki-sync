@@ -49,8 +49,8 @@ export function normalizeTokenUsage(usage: LanguageModelUsage): TokenUsageMetada
         inputTokens: usage.inputTokens,
         outputTokens: usage.outputTokens,
         totalTokens: usage.totalTokens,
-        reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? usage.reasoningTokens,
-        cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens ?? usage.cachedInputTokens
+        reasoningTokens: usage.outputTokenDetails?.reasoningTokens,
+        cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens
     };
     const entries = Object.entries(metadata).filter(([, value]) => value !== undefined);
     return entries.length ? Object.fromEntries(entries) : undefined;
