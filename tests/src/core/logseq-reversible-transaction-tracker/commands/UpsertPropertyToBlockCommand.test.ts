@@ -367,4 +367,34 @@ describe.skipIf(!shouldRunTests())("UpsertPropertyToBlockCommand", () => {
             updatedValue: "https://example.com/updated"
         });
     }, 60_000);
+
+    it("execute and revert works on a Query block query property", async () => {
+        const queryBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            `All query property test blocks ${testId}`
+        ))!;
+        const queryTag =
+            (await logseq.Editor.getTag("Query")) ?? (await logseq.Editor.createTag("Query"))!;
+        const query =
+            "[:find (pull ?b [:block/uuid :block/title]) :where [?b :block/tags ?tag] [?tag :db/ident :logseq.class/Math-block]]";
+
+        await logseq.Editor.addBlockTag(queryBlock.uuid, queryTag.uuid);
+        await waitForLogseqDb();
+
+        const command = new UpsertPropertyToBlockCommand({
+            blockUuid: queryBlock.uuid,
+            propertyUuidOrIndent: ":logseq.property/query",
+            value: query
+        });
+
+        await command.execute();
+        await waitForLogseqDb();
+
+        await expect(
+            LogseqBlockPropertyHelper.getBlockProperty(queryBlock.uuid, ":logseq.property/query")
+        ).resolves.toBe(query);
+
+        await command.revert();
+        await waitForLogseqDb();
+    }, 180_000);
 });

@@ -12,6 +12,7 @@ import PAGE_BY_NAME from "../../../../src/chat-app/prompts/queries/PAGE_BY_NAME.
 import PAGE_REFERENCE_BACKLINKS from "../../../../src/chat-app/prompts/queries/PAGE_REFERENCE_BACKLINKS.ds?raw";
 import PROPERTY_NODE_LIST_ANY from "../../../../src/chat-app/prompts/queries/PROPERTY_NODE_LIST_ANY.ds?raw";
 import PUBLIC_PROPERTY_SCHEMAS from "../../../../src/chat-app/prompts/queries/PUBLIC_PROPERTY_SCHEMAS.ds?raw";
+import TAG_IDENT_MATCH from "../../../../src/chat-app/prompts/queries/TAG_IDENT_MATCH.ds?raw";
 import TAG_OR_CHILD_TAG_MATCH from "../../../../src/chat-app/prompts/queries/TAG_OR_CHILD_TAG_MATCH.ds?raw";
 import TAG_TEXT_SEARCH_FAILS from "../../../../src/chat-app/prompts/queries/TAG_TEXT_SEARCH_FAILS.ds?raw";
 import TASKS_BY_STATUS_OR_IMPLICIT_TODO from "../../../../src/chat-app/prompts/queries/TASKS_BY_STATUS_OR_IMPLICIT_TODO.ds?raw";
@@ -291,6 +292,13 @@ describe.skipIf(!shouldRunTests())("Datascript queries documented in skill files
 
         expectEntityWithUuid(result, parentTaggedBlock.uuid);
         expectEntityWithUuid(result, childTaggedBlock.uuid);
+    }, 30_000);
+
+    it("TAG_IDENT_MATCH.ds finds blocks tagged with a known built-in tag ident", async () => {
+        const result = await logseq.DB.datascriptQuery(TAG_IDENT_MATCH, ":logseq.class/Task");
+
+        expectEntityWithUuid(result, actionableTaskBlock.uuid);
+        expectEntityWithUuid(result, archivedTaskBlock.uuid);
     }, 30_000);
 
     it("tag text-search failure query does not find DB graph tag refs", async () => {

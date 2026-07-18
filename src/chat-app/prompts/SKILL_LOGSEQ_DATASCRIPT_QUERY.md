@@ -173,6 +173,18 @@ Inputs:
 "\"Task\""
 ```
 
+When the exact tag/class ident is already known, prefer the narrower ident form. This is especially useful for built-in tags such as `:logseq.class/Task`, `:logseq.class/Query`, or `:logseq.class/Math-block`.
+
+```clojure
+<% #includeFile %>queries/TAG_IDENT_MATCH.ds<% /includeFile %>
+```
+
+Inputs:
+
+```text
+":logseq.class/Math-block"
+```
+
 ### 5. Public Property Schemas
 
 Use before property queries to discover exact idents and value types.

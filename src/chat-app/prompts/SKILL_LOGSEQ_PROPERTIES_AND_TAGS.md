@@ -36,7 +36,7 @@ Tags are DB entities that behave like **classes**. Think of them as a two-layer 
 Several special tags change the visual look or behavior of a normal block:
 
 - `#Code` converts the block to a code block.
-- `#Math` converts block content to a math block. For example, `x^2` renders as a math expression. Markdown math is also valid.
+- `#Math` converts block content to a math block. For example, `x^2` renders as a math expression. Alternatively, use markdown math syntax. However, do not use markdown $$ syntax together with math tag.
 - `#Task` converts the block to a task. Change `logseq.property/status` to values such as `Todo`, `Backlog`, `Canceled`, `Doing`, `Done` or empty string (default: empty string).
 - `#Query` converts the block to a query block. The block content is the query title; `logseq.property/query` stores the query.
 
@@ -52,3 +52,6 @@ Several special properties change rendering or behavior:
 - All journal pages are tagged with `#Journal` / `:logseq.class/Journal`.
 
 For low-level query shapes, use the Logseq Datascript Query skill instead of repeating query logic here.
+                       
+# Gotchas
+- When storing a Datascript query in `logseq.property/query`, the stored query must be self-contained unless Logseq query-block inputs are also configured. Do not directly copy `LogseqDataScriptQueryTool` examples that use `:in $ ?value` plus a separate `inputs` array into `logseq.property/query`; rewrite constants into the stored query or use a built-in ident such as `:logseq.class/Math-block`.

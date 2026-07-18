@@ -1,0 +1,5 @@
+[:find (pull ?b [:block/uuid :block/title])
+ :in $ ?tag-ident
+ :where
+ [?tag :db/ident ?tag-ident]
+ [?b :block/tags ?tag]]
