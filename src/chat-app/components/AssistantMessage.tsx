@@ -12,18 +12,12 @@ import {
     ReasoningTrigger
 } from "src/shadcn/assistant-ui/reasoning";
 import {BranchPicker, MessageError} from "src/shadcn/assistant-ui/thread";
-import {
-    ToolGroupContent,
-    ToolGroupRoot,
-    ToolGroupTrigger
-} from "src/shadcn/assistant-ui/tool-group";
 import {cn} from "src/shadcn/lib/utils";
 
 /**
  * Changes:
  * (a) Removed tool grouping for CommitLogseqChanges tool.
- * (b) Changed the group reasoning component to display as collapse by default.
- * (c) Uses compact ghost variants for consistent reasoning and tool-call spacing.
+ * (b) Groups reasoning and tool calls in one collapsed chain-of-thought block.
  * (d) Preserves standalone tool UIs and renders data and indicator parts.
  */
 export const AssistantMessage: FC = () => {
@@ -41,13 +35,12 @@ export const AssistantMessage: FC = () => {
                 <MessagePrimitive.GroupedParts groupBy={groupMessagePart}>
                     {({part, children}) => {
                         switch (part.type) {
-                            case "group-chainOfThought":
-                                return <div data-slot="aui_chain-of-thought">{children}</div>;
-                            case "group-reasoning": {
+                            case "group-chainOfThought": {
                                 const running = part.status.type === "running";
                                 return (
                                     <ReasoningRoot
                                         defaultOpen={false}
+                                        streaming={running}
                                         variant="ghost"
                                         className="mb-0">
                                         <ReasoningTrigger active={running} />
@@ -57,16 +50,6 @@ export const AssistantMessage: FC = () => {
                                     </ReasoningRoot>
                                 );
                             }
-                            case "group-tool":
-                                return (
-                                    <ToolGroupRoot variant="ghost">
-                                        <ToolGroupTrigger
-                                            count={part.indices.length}
-                                            active={part.status.type === "running"}
-                                        />
-                                        <ToolGroupContent>{children}</ToolGroupContent>
-                                    </ToolGroupRoot>
-                                );
                             case "text":
                                 return <MarkdownText />;
                             case "reasoning":
@@ -103,9 +86,9 @@ export const AssistantMessage: FC = () => {
     );
 };
 
-const groupByType = groupPartByType<"group-chainOfThought" | "group-reasoning" | "group-tool">({
-    reasoning: ["group-chainOfThought", "group-reasoning"],
-    "tool-call": ["group-chainOfThought", "group-tool"],
+const groupByType = groupPartByType<"group-chainOfThought">({
+    reasoning: ["group-chainOfThought"],
+    "tool-call": ["group-chainOfThought"],
     "standalone-tool-call": []
 });
 
