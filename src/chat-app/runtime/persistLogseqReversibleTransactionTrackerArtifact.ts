@@ -52,13 +52,16 @@ export async function persistLogseqReversibleTransactionTrackerArtifact(options:
     threadId: string;
     location: LogseqReversibleTransactionTrackerArtifactLocation;
     tracker: LogseqReversibleTransactionTracker;
+    updateRuntime?: boolean;
 }): Promise<void> {
-    const runtimeRepository = patchLogseqReversibleTransactionTrackerArtifact(
-        options.aui.thread().export(),
-        options.location,
-        options.tracker
-    );
-    options.aui.thread().import(runtimeRepository);
+    if (options.updateRuntime !== false) {
+        const runtimeRepository = patchLogseqReversibleTransactionTrackerArtifact(
+            options.aui.thread().export(),
+            options.location,
+            options.tracker
+        );
+        options.aui.thread().import(runtimeRepository);
+    }
 
     const threadData = await ThreadStore.loadThread(options.threadId);
     if (!threadData?.exportedMessageRepository) return;

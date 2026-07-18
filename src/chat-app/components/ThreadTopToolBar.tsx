@@ -1,7 +1,7 @@
 import {
     ThreadListItemMorePrimitive,
+    ThreadListPrimitive,
     type ThreadMessage,
-    useAui,
     useAuiState
 } from "@assistant-ui/react";
 import {getThreadMessageTokenUsage} from "@assistant-ui/react-ai-sdk";
@@ -13,7 +13,6 @@ import {TooltipIconButton} from "../../shadcn/assistant-ui/tooltip-icon-button";
 import {Button} from "../../shadcn/radix-ui/button";
 import {TooltipProvider} from "../../shadcn/radix-ui/tooltip";
 import {ChatUIContext} from "../context/ChatUIContext";
-import {useLogseqReversibleTransactionLifecycleContext} from "../context/LogseqReversibleTransactionLifecycleContext";
 
 const DEFAULT_MODEL_CONTEXT_WINDOW = 128_000;
 
@@ -29,8 +28,6 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
     onShowHistory
 }) => {
     const {onClose} = useContext(ChatUIContext);
-    const api = useAui();
-    const {cleanupBeforeNavigation} = useLogseqReversibleTransactionLifecycleContext();
     const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
     const latestMessageWithUsage = useAuiState((s) =>
         findLatestMessageWithUsage(s.thread.messages)
@@ -43,12 +40,6 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
 
     const handleExportAsPage = () => {
         logseq.UI.showMsg("not implemented");
-    };
-
-    const handleNewThread = async () => {
-        await cleanupBeforeNavigation();
-        await api.threads().switchToNewThread();
-        onBackToThread();
     };
 
     return (
@@ -77,9 +68,11 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
                         <HistoryIcon className="size-5" />
                     </TooltipIconButton>
                 )}
-                <TooltipIconButton tooltip="New thread" onClick={handleNewThread}>
-                    <PlusIcon className="size-5" />
-                </TooltipIconButton>
+                <ThreadListPrimitive.New asChild>
+                    <TooltipIconButton tooltip="New thread" onClick={onBackToThread}>
+                        <PlusIcon className="size-5" />
+                    </TooltipIconButton>
+                </ThreadListPrimitive.New>
                 {onClose && (
                     <TooltipIconButton
                         tooltip="Close chat"

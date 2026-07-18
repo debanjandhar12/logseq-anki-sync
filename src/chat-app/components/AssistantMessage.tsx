@@ -1,7 +1,6 @@
 import {type GroupByContext, groupPartByType, MessagePrimitive} from "@assistant-ui/react";
 import type {FC} from "react";
 import {AssistantActionBar} from "src/chat-app/components/AssistantActionBar";
-import {BranchPicker} from "src/chat-app/components/BranchPicker";
 import {ToolFallback} from "src/chat-app/components/ToolFallback";
 import {LogseqCommitChangesTool} from "src/chat-app/tools/impl/LogseqCommitChangesTool";
 import {MarkdownText} from "src/shadcn/assistant-ui/markdown-text";
@@ -12,7 +11,7 @@ import {
     ReasoningText,
     ReasoningTrigger
 } from "src/shadcn/assistant-ui/reasoning";
-import {MessageError} from "src/shadcn/assistant-ui/thread";
+import {BranchPicker, MessageError} from "src/shadcn/assistant-ui/thread";
 import {
     ToolGroupContent,
     ToolGroupRoot,
@@ -26,7 +25,6 @@ import {cn} from "src/shadcn/lib/utils";
  * (b) Changed the group reasoning component to display as collapse by default.
  * (c) Uses compact ghost variants for consistent reasoning and tool-call spacing.
  * (d) Preserves standalone tool UIs and renders data and indicator parts.
- * (e) Uses guarded branch navigation so temporary graph changes are reverted first.
  */
 export const AssistantMessage: FC = () => {
     const ACTION_BAR_PT = "pt-1.5";

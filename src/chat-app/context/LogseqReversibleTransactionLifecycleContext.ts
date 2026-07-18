@@ -5,7 +5,6 @@ export interface LogseqReversibleTransactionLifecycleContextValue {
     hasTemporaryChanges: boolean;
     remainingSeconds: number | null;
     cancelScheduledRevert: () => void;
-    cleanupBeforeNavigation: () => Promise<void>;
     persistTrackerArtifact: (
         locatedTracker: LocatedLogseqReversibleTransactionTracker
     ) => Promise<void>;
@@ -15,7 +14,6 @@ const defaultValue: LogseqReversibleTransactionLifecycleContextValue = {
     hasTemporaryChanges: false,
     remainingSeconds: null,
     cancelScheduledRevert: () => {},
-    cleanupBeforeNavigation: async () => {},
     persistTrackerArtifact: async () => {}
 };
 

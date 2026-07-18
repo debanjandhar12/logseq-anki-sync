@@ -11,25 +11,20 @@ import {createLogseqAttachmentFromUuid} from "../runtime/LogseqAttachmentAdapter
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
-export function useChatCommandHandler(
-    aui: AssistantClient,
-    cleanupBeforeNavigation: () => Promise<void>
-): void {
+export function useChatCommandHandler(aui: AssistantClient): void {
     useEffect(() => {
         return ChatInteropCommandQueue.subscribe(async (command) => {
-            await executeRuntimeCommand(aui, command, cleanupBeforeNavigation);
+            await executeRuntimeCommand(aui, command);
         });
-    }, [aui, cleanupBeforeNavigation]);
+    }, [aui]);
 }
 
 async function executeRuntimeCommand(
     aui: AssistantClient,
-    command: ChatRuntimeCommand,
-    cleanupBeforeNavigation: () => Promise<void>
+    command: ChatRuntimeCommand
 ): Promise<void> {
     try {
         if (command.type === NewThreadCommand.TYPE) {
-            await cleanupBeforeNavigation();
             await aui.threads().switchToNewThread();
             return;
         }
