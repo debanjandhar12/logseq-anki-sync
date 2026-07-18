@@ -56,4 +56,4 @@ For low-level query shapes, use the Logseq Datascript Query skill instead of rep
 # Gotchas
 
 - Do not write `(tags ...)` as if it were Datalog / Datascript. 
-- When storing a Datalog query in a query block, the stored query must be self-contained unless Logseq query-block inputs are also configured. Do not directly copy `LogseqDataScriptQueryTool` examples that use `:in $ ?value` plus a separate `inputs` array into a query block; rewrite constants into the stored query or use a built-in ident such as `:logseq.class/Math-block`.
+- When storing a Datalog query in a query block, the stored query must be self-contained unless Logseq query-block inputs are also configured. Do not directly copy `LogseqDataScriptQueryTool` examples that use `:in $ ?value` plus a separate `inputs` array into a query block; rewrite constants into the stored query, preferably with the tested tag-entity/title patterns.

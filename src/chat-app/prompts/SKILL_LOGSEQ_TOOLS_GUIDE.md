@@ -47,8 +47,7 @@ To create a query block with tools:
 2. Add the `#Query` tag/class to the visible block.
 3. Set the visible block's `logseq.property/query` property to the query text. This creates or updates the query-value block.
 4. Read the visible block and locate the returned `logseq.property/query` value block when you need to edit query metadata directly.
-5. For an advanced query, set these properties on the query-value block, not the visible block:
-    - `logseq.property.node/display-type = code`
+5. For an advanced query, add the `#Code` tag on the query-value block (not the visible block) and set this property:
     - `logseq.property.code/lang = clojure`
 
 Use these query text shapes:
@@ -67,7 +66,8 @@ Use these query text shapes:
 ;; True Datalog advanced query map
 {:query [:find (pull ?b [:block/uuid :block/title])
          :where
-         [?b :block/tags :logseq.class/Task]]}
+         [?b :block/tags ?task-tag]
+         [?task-tag :block/title "Task"]]}
 ```
 
 Do not put the query EDN in the visible block content unless the user wants it shown as the title. Do not expect the query-value block to contain `logseq.property/query`; it is itself the value of that property.

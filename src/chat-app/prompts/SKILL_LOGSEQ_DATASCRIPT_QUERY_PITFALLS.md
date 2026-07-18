@@ -68,7 +68,7 @@ Workaround: use the tested tag/class query in the main skill when direct tags or
 
 Built-in classes may have stable idents such as `:logseq.class/Property`. User-created tags/classes should usually be matched by `:block/title` unless their exact ident has been verified.
 
-Workaround: use tag/class title matching unless the graph has already returned the exact `:db/ident` for the custom class.
+Workaround: use tag/class title matching unless the graph has already returned the exact `:db/ident` for the custom class. For LogseqDataScriptQueryTool inputs, do not resolve tag inputs with an extra `:db/ident` clause; use the tested ident query from the main skill.
 
 ## Failure: File Graph Properties Map
 

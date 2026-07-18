@@ -173,7 +173,7 @@ Inputs:
 "\"Task\""
 ```
 
-When the exact tag/class ident is already known, prefer the narrower ident form. This is especially useful for built-in tags such as `:logseq.class/Task`, `:logseq.class/Query`, or `:logseq.class/Math-block`.
+When the exact built-in tag/class ident is already known, pass that ident as input and derive its class title in the query. This is especially useful for built-in tags such as `:logseq.class/Task`, `:logseq.class/Query`, or `:logseq.class/Math-block`. Do not add a separate `:db/ident` lookup clause for this pattern; blocks created through the Logseq editor APIs are reliably matched through the tag entity attached in `:block/tags`.
 
 ```clojure
 <% #includeFile %>queries/TAG_IDENT_MATCH.ds<% /includeFile %>
