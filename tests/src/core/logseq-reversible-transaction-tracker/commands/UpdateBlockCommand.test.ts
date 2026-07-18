@@ -51,4 +51,48 @@ describe.skipIf(!shouldRunTests())("UpdateBlockCommand", () => {
         const revertedBlock = await logseq.Editor.getBlock(block.uuid);
         expect(revertedBlock?.content).toBe(originalContent);
     }, 60_000);
+
+    it("Trying to update a page as a block throws.", async () => {
+        const command = new UpdateBlockCommand({blockUuid: page.uuid, content: updatedContent});
+
+        await expect(command.execute()).rejects.toThrow(
+            "Cannot update a page. Block UUID provided must be that of a block."
+        );
+    }, 60_000);
+
+    it("Trying to update a tag page throws.", async () => {
+        const tagPageName = `UpdateBlockCommandTestTag_${Date.now()}`;
+        const tag = await logseq.Editor.createTag(tagPageName);
+        await waitForLogseqDb();
+
+        try {
+            const command = new UpdateBlockCommand({blockUuid: tag!.uuid, content: updatedContent});
+            await expect(command.execute()).rejects.toThrow(
+                "Cannot update a tag page using UpdateBlockCommand."
+            );
+        } finally {
+            await logseq.Editor.deletePage(tag!.uuid);
+            await waitForLogseqDb();
+        }
+    }, 60_000);
+
+    it("Trying to update a property page throws.", async () => {
+        const propertyKey = `UpdateBlockCommandTestProperty_${Date.now()}`;
+        await logseq.Editor.upsertProperty(propertyKey, {type: "default", cardinality: "one"});
+        await waitForLogseqDb();
+        const property = await logseq.Editor.getProperty(propertyKey);
+
+        try {
+            const command = new UpdateBlockCommand({
+                blockUuid: property!.uuid,
+                content: updatedContent
+            });
+            await expect(command.execute()).rejects.toThrow(
+                "Cannot update a property page using UpdateBlockCommand."
+            );
+        } finally {
+            await logseq.Editor.removeProperty(propertyKey);
+            await waitForLogseqDb();
+        }
+    }, 60_000);
 });

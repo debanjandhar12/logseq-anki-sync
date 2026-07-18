@@ -41,6 +41,19 @@ export class UpdateBlockCommand extends BaseReversibleCommand<UpdateBlockCommand
     public async execute() {
         this.assertCanExecute();
         const originalBlock = await requireActiveBlock(this.args.blockUuid as BlockIdentity);
+
+        if (await LogseqEditor.isTagBlock(originalBlock)) {
+            throw new Error("Cannot update a tag page using UpdateBlockCommand.");
+        }
+
+        if (await LogseqEditor.isPropertyBlock(originalBlock)) {
+            throw new Error("Cannot update a property page using UpdateBlockCommand.");
+        }
+
+        if (await LogseqEditor.isPageBlock(originalBlock)) {
+            throw new Error("Cannot update a page. Block UUID provided must be that of a block.");
+        }
+
         this.commandState.originalContent = originalBlock.content ?? "";
         if (originalBlock.page) this.changedPages.push(await resolvePageUUID(originalBlock.page));
         await LogseqEditor.updateBlock(this.args.blockUuid as BlockIdentity, this.args.content);
