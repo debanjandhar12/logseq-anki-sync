@@ -26,6 +26,7 @@ describe.skipIf(!shouldRunTests())("CreateTagPageCommand", () => {
         await waitForLogseqDb();
     }, 60_000);
 
+    // This failure is expected. Currently, createTag does not respect uuid param.
     it("Create tag using execute() and then revert and then execute again works.", async () => {
         const command = new CreateTagPageCommand({tagName});
 

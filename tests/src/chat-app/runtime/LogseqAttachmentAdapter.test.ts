@@ -82,7 +82,9 @@ describe.skipIf(!shouldRunTests())("LogseqAttachmentAdapter", () => {
 
         expect(attachment.type).toBe(LOGSEQ_ATTACHMENT_TYPES.page);
         expect(attachment.id).toBe(page.uuid);
-        expect(attachment.content).toEqual([{type: "text", text: `Page UUID: ${page.uuid}`}]);
+        expect(attachment.content).toEqual([
+            {type: "text", text: `Page UUID: ${page.uuid}\nPage Name: ${pageName}`}
+        ]);
     }, 60_000);
 
     it("creates simple block attachments using the block UUID", async () => {
@@ -98,7 +100,7 @@ describe.skipIf(!shouldRunTests())("LogseqAttachmentAdapter", () => {
 
         expect(attachment.type).toBe(LOGSEQ_ATTACHMENT_TYPES.page);
         expect(attachment.content).toEqual([
-            {type: "text", text: `Page UUID: ${deletedPage.uuid}`}
+            {type: "text", text: `Page UUID: ${deletedPage.uuid}\nPage Name: ${deletedPageName}`}
         ]);
     }, 60_000);
 
@@ -108,7 +110,7 @@ describe.skipIf(!shouldRunTests())("LogseqAttachmentAdapter", () => {
         expect(attachment.type).toBe(LOGSEQ_ATTACHMENT_TYPES.tagPage);
         expect(attachment.id).toBe(tagPage.uuid);
         expect(attachment.content).toEqual([
-            {type: "text", text: `Tag Page UUID: ${tagPage.uuid}`}
+            {type: "text", text: `Tag Page UUID: ${tagPage.uuid}\nTag Page Name: ${tagName}`}
         ]);
     }, 60_000);
 
@@ -118,7 +120,10 @@ describe.skipIf(!shouldRunTests())("LogseqAttachmentAdapter", () => {
         expect(attachment.type).toBe(LOGSEQ_ATTACHMENT_TYPES.propertyPage);
         expect(attachment.id).toBe(propertyPage.uuid);
         expect(attachment.content).toEqual([
-            {type: "text", text: `Property Page UUID: ${propertyPage.uuid}`}
+            {
+                type: "text",
+                text: `Property Page UUID: ${propertyPage.uuid}\nProperty Page Name: ${propertyKey}`
+            }
         ]);
     }, 60_000);
 
