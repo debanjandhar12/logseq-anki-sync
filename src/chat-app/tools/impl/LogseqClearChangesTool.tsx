@@ -33,7 +33,7 @@ export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             if (transactionTracker.hasAppliedGraphMutations()) {
-                await transactionTracker.revertImmediately({signal: context?.abortSignal});
+                await transactionTracker.revertImmediately();
             }
             transactionTracker.clear();
 

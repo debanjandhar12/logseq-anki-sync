@@ -25,10 +25,7 @@ export class LogseqReversibleTransactionTracker {
     }
 
     public hasAppliedGraphMutations(): boolean {
-        return this.commandQueue
-            .getCommands()
-            .slice(0, this.appliedCommandCount)
-            .some((command) => command.isGraphMutation());
+        return this.changedPages.length > 0;
     }
 
     // BaseReversibleCommand defines shared runtime behavior, but the tracker stores

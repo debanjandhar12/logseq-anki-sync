@@ -78,10 +78,6 @@ export class ReadBlockCommand extends BaseReversibleCommand<ReadBlockCommandStat
         this.commandState.status = "new";
     }
 
-    public override isGraphMutation(): boolean {
-        return false;
-    }
-
     private async read(): Promise<ReadBlockCommandResult> {
         if (this.args.propertyIndent) {
             const property = await LogseqEditor.getProperty(this.args.propertyIndent);

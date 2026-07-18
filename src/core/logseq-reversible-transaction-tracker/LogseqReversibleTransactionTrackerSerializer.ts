@@ -1,10 +1,8 @@
 import {z} from "zod";
 import {LogseqReversibleCommandCodec} from "./commands";
-import {migrateLegacyCommand} from "./LogseqReversibleTransactionCommandSerializer";
 import {LogseqReversibleTransactionTracker} from "./LogseqReversibleTransactionTracker";
 
 const LogseqReversibleTransactionTrackerDataSchema = z.object({
-    version: z.literal(2),
     commands: z.array(LogseqReversibleCommandCodec),
     appliedCommandCount: z.number().int().nonnegative(),
     changedPages: z.array(z.string())
@@ -32,7 +30,6 @@ export const LogseqReversibleTransactionTrackerCodec = z.codec(
             return tracker;
         },
         encode: (tracker) => ({
-            version: 2 as const,
             commands: tracker.getCommands(),
             appliedCommandCount: tracker.getAppliedCommandCount(),
             changedPages: tracker.getChangedPages()
@@ -54,21 +51,7 @@ export class LogseqReversibleTransactionTrackerSerializer {
     public static deserialize(json: unknown): LogseqReversibleTransactionTracker {
         return z.decode(
             LogseqReversibleTransactionTrackerCodec,
-            migrateLegacyTracker(json) as SerializedLogseqReversibleTransactionTracker
+            json as SerializedLogseqReversibleTransactionTracker
         );
     }
-}
-
-function migrateLegacyTracker(json: unknown): unknown {
-    if (typeof json !== "object" || json === null || !("commands" in json)) return json;
-    const tracker = json as Record<string, unknown>;
-    const commands = Array.isArray(tracker.commands)
-        ? tracker.commands.map((command) => migrateLegacyCommand(command))
-        : tracker.commands;
-    return {
-        version: 2,
-        commands,
-        appliedCommandCount: tracker.appliedCommandCount ?? 0,
-        changedPages: tracker.changedPages ?? []
-    };
 }

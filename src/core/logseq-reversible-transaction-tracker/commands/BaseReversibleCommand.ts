@@ -18,10 +18,6 @@ export abstract class BaseReversibleCommand<
         return {...this.commandState};
     }
 
-    public isGraphMutation(): boolean {
-        return true;
-    }
-
     protected assertCanExecute(): void {
         if (this.commandState.status === "executed") {
             throw new Error("Command has already been executed");
