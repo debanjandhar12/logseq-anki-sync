@@ -2,6 +2,7 @@ import {type ToolCallMessagePartComponent, useAuiState} from "@assistant-ui/reac
 import {GitCommitIcon} from "lucide-react";
 import {useState} from "react";
 import {ToolFallback} from "src/chat-app/components/ToolFallback";
+import {useLogseqReversibleTransactionLifecycleContext} from "src/chat-app/context/LogseqReversibleTransactionLifecycleContext";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithCustomUI} from "src/chat-app/tools/base/BaseChatToolWithCustomUI";
 import {
@@ -10,7 +11,10 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
+import {
+    findLastLogseqReversibleTransactionTracker,
+    getLastLogseqReversibleTransactionTracker
+} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     LogseqPageDataPrinter,
@@ -111,15 +115,23 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         const {result, addResult, status} = props;
         const messages = useAuiState((state) => state.thread.messages);
         const [isReviewing, setIsReviewing] = useState(false);
+        const {cancelScheduledRevert, persistTrackerArtifact} =
+            useLogseqReversibleTransactionLifecycleContext();
 
         const isPending = result === undefined && status?.type !== "incomplete";
 
         const reviewAndApply = async () => {
             setIsReviewing(true);
             try {
-                const transactionTracker = getLastLogseqReversibleTransactionTracker(messages);
+                cancelScheduledRevert();
+                const locatedTracker = findLastLogseqReversibleTransactionTracker(messages);
+                const transactionTracker =
+                    locatedTracker?.tracker ?? getLastLogseqReversibleTransactionTracker(messages);
                 const {beforeChanges, afterChanges, hasGraphMutations} =
                     await this.prepareReview(transactionTracker);
+                if (locatedTracker) {
+                    await persistTrackerArtifact({...locatedTracker, tracker: transactionTracker});
+                }
                 if (!hasGraphMutations) {
                     addResult(await this.executeApprove({}, {messages}, transactionTracker));
                     return;

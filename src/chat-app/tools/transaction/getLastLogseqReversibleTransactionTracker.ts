@@ -8,9 +8,15 @@ import {
     type LogseqReversibleTransactionTrackerArtifact
 } from "./createLogseqReversibleTransactionTrackerArtifact";
 
-export const getLastLogseqReversibleTransactionTracker = (
+export interface LocatedLogseqReversibleTransactionTracker {
+    tracker: LogseqReversibleTransactionTracker;
+    messageId: string;
+    toolCallId: string;
+}
+
+export const findLastLogseqReversibleTransactionTracker = (
     messages: readonly ThreadMessage[] = []
-): LogseqReversibleTransactionTracker => {
+): LocatedLogseqReversibleTransactionTracker | null => {
     for (let messageIndex = messages.length - 1; messageIndex >= 0; messageIndex -= 1) {
         const message = messages[messageIndex];
         if (!message) continue;
@@ -21,14 +27,27 @@ export const getLastLogseqReversibleTransactionTracker = (
 
             const artifact = findLogseqReversibleTransactionTrackerArtifact(part.artifact);
             if (artifact) {
-                return LogseqReversibleTransactionTrackerSerializer.deserialize(
-                    artifact.LogseqReversibleTransactionTracker
-                );
+                return {
+                    tracker: LogseqReversibleTransactionTrackerSerializer.deserialize(
+                        artifact.LogseqReversibleTransactionTracker
+                    ),
+                    messageId: message.id,
+                    toolCallId: part.toolCallId
+                };
             }
         }
     }
 
-    return new LogseqReversibleTransactionTracker();
+    return null;
+};
+
+export const getLastLogseqReversibleTransactionTracker = (
+    messages: readonly ThreadMessage[] = []
+): LogseqReversibleTransactionTracker => {
+    return (
+        findLastLogseqReversibleTransactionTracker(messages)?.tracker ??
+        new LogseqReversibleTransactionTracker()
+    );
 };
 
 function findLogseqReversibleTransactionTrackerArtifact(

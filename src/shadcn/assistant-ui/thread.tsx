@@ -548,6 +548,7 @@ const EditComposer: FC = () => {
   );
 };
 
+// Overridden by src/chat-app/components/BranchPicker.tsx to await transaction cleanup.
 const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
   className,
   ...rest
@@ -585,5 +586,4 @@ export {
   ThreadSuggestionItem,
   MessageError,
   UserActionBar,
-  BranchPicker,
 };

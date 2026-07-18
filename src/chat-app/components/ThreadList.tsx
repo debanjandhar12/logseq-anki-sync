@@ -8,6 +8,7 @@ import {
 } from "@assistant-ui/react";
 import {EditIcon, MoreHorizontalIcon, TrashIcon} from "lucide-react";
 import type {FC} from "react";
+import {useLogseqReversibleTransactionLifecycleContext} from "src/chat-app/context/LogseqReversibleTransactionLifecycleContext";
 import {ThreadListSkeleton} from "src/shadcn/assistant-ui/thread-list";
 import {Button} from "src/shadcn/radix-ui/button";
 import {showInputModal} from "src/ui/launchers/showInputModal";
@@ -21,6 +22,7 @@ interface ThreadListProps {
  * (a) Added onThreadSelected callback by decomposing ThreadListItem
  * (b) Added h-full overflow-y-auto css.
  * (c) Keeps project rename/delete behavior while adopting current focus and active-state styling.
+ * (d) Waits for temporary Logseq changes to be reverted before switching threads.
  */
 export const ThreadList: FC<ThreadListProps> = ({onThreadSelected}) => {
     return (
@@ -43,18 +45,29 @@ export const ThreadList: FC<ThreadListProps> = ({onThreadSelected}) => {
  * (b) Added h-9 and shrink-0 to prevent resize from flex container.
  */
 const ThreadListItem: FC<ThreadListProps> = ({onThreadSelected}) => {
+    const api = useAui();
+    const threadId = useAuiState((state) => state.threadListItem.id);
+    const {cleanupBeforeNavigation} = useLogseqReversibleTransactionLifecycleContext();
+
+    const handleSelect = async () => {
+        await cleanupBeforeNavigation();
+        await api.threads().switchToThread(threadId);
+        onThreadSelected?.();
+    };
+
     return (
         <ThreadListItemPrimitive.Root
             data-slot="aui_thread-list-item"
             className="group hover:bg-muted focus-visible:bg-muted data-active:bg-muted has-focus-visible:bg-muted has-data-[state=open]:bg-muted relative flex h-9 items-center gap-2 rounded-lg transition-colors focus-visible:outline-none">
-            <ThreadListItemPrimitive.Trigger
+            <button
+                type="button"
                 data-slot="aui_thread-list-item-trigger"
                 className="focus-visible:ring-ring/50 flex h-9 shrink-0 min-w-0 flex-1 items-center rounded-md px-3 text-start text-sm outline-none group-hover:pe-10 group-has-focus-visible:pe-10 group-has-data-[state=open]:pe-10 group-data-active:pe-10 focus-visible:ring-[3px]"
-                onClick={onThreadSelected}>
+                onClick={handleSelect}>
                 <span data-slot="aui_thread-list-item-title" className="min-w-0 flex-1 truncate">
                     <ThreadListItemPrimitive.Title fallback="New Chat" />
                 </span>
-            </ThreadListItemPrimitive.Trigger>
+            </button>
             <ThreadListItemMore />
         </ThreadListItemPrimitive.Root>
     );
