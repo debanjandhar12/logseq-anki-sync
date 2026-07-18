@@ -81,14 +81,16 @@ export const Composer: FC = () => {
 
     return (
         <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
-            {hasTemporaryChanges && remainingSeconds !== null && (
-                <div className="px-2 pb-1 text-muted-foreground text-xs" role="status">
-                    Reverting temporary changes in {remainingSeconds}s
-                </div>
-            )}
             <div
                 data-slot="aui_composer-shell"
                 className="border-secondary-border bg-secondary-background focus-within:border-ring/75 focus-within:ring-ring/20 flex w-full flex-col gap-2 rounded-(--composer-radius) border p-(--composer-padding) shadow-[0_4px_16px_-8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] transition-[border-color,box-shadow] focus-within:ring-2 focus-within:shadow-[0_6px_24px_-8px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none">
+                {hasTemporaryChanges && remainingSeconds !== null && (
+                    <div
+                        className="border-secondary-border bg-muted text-muted-foreground -mx-[var(--composer-padding)] -mt-[var(--composer-padding)] rounded-t-[calc(var(--composer-radius)-1px)] border-b px-4 py-2 text-xs"
+                        role="status">
+                        Reverting temporary changes in {remainingSeconds}s
+                    </div>
+                )}
                 <ComposerAttachments />
                 <ComposerPrimitive.Input
                     ref={inputRef}
