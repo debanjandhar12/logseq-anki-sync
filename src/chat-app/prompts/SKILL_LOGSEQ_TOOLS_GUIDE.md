@@ -1,6 +1,6 @@
 ---
 name: Logseq Tools Guide
-description: Use before marking changes in logseq with tools. Contains syntax information of logseq markdown.
+description: Use before marking changes in logseq with tools. Contains syntax information and guide to create query blocks, math, code etc
 disable-model-invocation: false
 default-installed-skill: true
 ---

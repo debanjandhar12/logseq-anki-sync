@@ -36,15 +36,17 @@ export const AssistantMessage: FC = () => {
                     {({part, children}) => {
                         switch (part.type) {
                             case "group-chainOfThought": {
-                                const running = part.status.type === "running";
+                                const active =
+                                    part.status.type === "running" ||
+                                    part.status.type === "requires-action";
                                 return (
                                     <ReasoningRoot
                                         defaultOpen={false}
-                                        streaming={running}
+                                        streaming={active}
                                         variant="ghost"
                                         className="mb-0">
-                                        <ReasoningTrigger active={running} />
-                                        <ReasoningContent aria-busy={running}>
+                                        <ReasoningTrigger active={active} />
+                                        <ReasoningContent aria-busy={active}>
                                             <ReasoningText>{children}</ReasoningText>
                                         </ReasoningContent>
                                     </ReasoningRoot>

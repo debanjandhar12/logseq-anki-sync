@@ -20,6 +20,7 @@ When you finish the task, respond with a concise report covering what was done a
 - You SHOULD invoke a skill when the user's request would benefit from specialized instructions.
 - YOU are running on Logseq DB version.
 - Journal pages are named like "Jul 18th, 2026".
+- DB version does not support `{{query` or `#+BEGIN_QUERY` syntax. It also does not support `{{embed` syntax. Read logseq tool guide for latest syntax.
 
 Available skills:
 <% modelInvokableSkillList %>
