@@ -26,10 +26,16 @@ export type DeletePropertyFromBlockCommandArgs = z.output<
     typeof DeletePropertyFromBlockCommandArgsSchema
 >;
 
-const DeletePropertyFromBlockCommandSerializedSchema =
-    DeletePropertyFromBlockCommandArgsBaseSchema.extend({
-        type: z.literal("DeletePropertyFromBlock")
-    });
+export const DeletePropertyFromBlockCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"]),
+    propertyKey: z.string().optional(),
+    previousValue: z.unknown().optional(),
+    hadPreviousValue: z.boolean().optional(),
+    previousValueSnapshotTaken: z.boolean().default(false)
+});
+export type DeletePropertyFromBlockCommandState = z.output<
+    typeof DeletePropertyFromBlockCommandStateSchema
+>;
 
 /**
  * Removes a property value from a Logseq block.
@@ -41,67 +47,77 @@ const DeletePropertyFromBlockCommandSerializedSchema =
  * - propertyKey
  * - previousValue
  */
-export class DeletePropertyFromBlockCommand extends BaseReversibleCommand {
-    private propertyKey: string | undefined;
-    private previousValue: unknown;
-    private hadPreviousValue = false;
-    private previousValueSnapshotTaken = false;
+export class DeletePropertyFromBlockCommand extends BaseReversibleCommand<DeletePropertyFromBlockCommandState> {
     public readonly args: DeletePropertyFromBlockCommandArgs;
 
-    public constructor(args: DeletePropertyFromBlockCommandArgsInput) {
-        super();
+    public constructor(
+        args: DeletePropertyFromBlockCommandArgsInput,
+        commandState?: DeletePropertyFromBlockCommandState
+    ) {
+        super(
+            DeletePropertyFromBlockCommandStateSchema.parse(
+                commandState ?? {status: "new", previousValueSnapshotTaken: false}
+            )
+        );
         this.args = DeletePropertyFromBlockCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         const property = await LogseqEditor.getProperty(this.args.propertyUuidOrIndent);
         if (!property) throw new Error("Property page not found");
 
         const originalBlock = await logseq.Editor.getBlock(this.args.blockUuid as BlockIdentity);
         if (!originalBlock) throw new Error(`Block not found: ${this.args.blockUuid}`);
-        this.propertyKey = property.ident;
+        this.commandState.propertyKey = property.ident;
         try {
-            this.previousValue = await LogseqBlockPropertyHelper.getBlockPropertyInputValue(
-                this.args.blockUuid,
-                this.propertyKey
-            );
-            this.hadPreviousValue = true;
+            this.commandState.previousValue =
+                await LogseqBlockPropertyHelper.getBlockPropertyInputValue(
+                    this.args.blockUuid,
+                    this.commandState.propertyKey
+                );
+            this.commandState.hadPreviousValue = true;
         } catch (error) {
             if (!(error instanceof LogseqBlockPropertyNotFoundError)) throw error;
-            this.previousValue = undefined;
-            this.hadPreviousValue = false;
+            this.commandState.previousValue = undefined;
+            this.commandState.hadPreviousValue = false;
         }
-        this.previousValueSnapshotTaken = true;
+        this.commandState.previousValueSnapshotTaken = true;
 
         this.changedPages.push(await resolvePageUUID(originalBlock.page ?? originalBlock));
 
-        await logseq.Editor.removeBlockProperty(this.args.blockUuid, this.propertyKey);
+        await logseq.Editor.removeBlockProperty(this.args.blockUuid, this.commandState.propertyKey);
 
         const updatedBlock = await logseq.Editor.getBlock(this.args.blockUuid as BlockIdentity);
         if (!updatedBlock) throw new Error(`Updated block not found: ${this.args.blockUuid}`);
+        this.commandState.status = "executed";
         return await normalizeBlock(updatedBlock);
     }
 
     public async revert(): Promise<void> {
-        if (!this.propertyKey || !this.previousValueSnapshotTaken) {
-            throw new Error("Execute must be called before revert");
+        this.assertCanRevert();
+        const {propertyKey, previousValue, hadPreviousValue, previousValueSnapshotTaken} =
+            this.commandState;
+        if (!propertyKey || !previousValueSnapshotTaken) {
+            throw new Error("Missing previous property value");
         }
 
-        if (!this.hadPreviousValue) return;
+        if (hadPreviousValue) {
+            await logseq.Editor.upsertBlockProperty(
+                this.args.blockUuid,
+                propertyKey,
+                previousValue,
+                {reset: true}
+            );
+        }
 
-        await logseq.Editor.upsertBlockProperty(
-            this.args.blockUuid,
-            this.propertyKey,
-            this.previousValue,
-            {reset: true}
-        );
+        this.commandState.status = "new";
     }
 }
 
 export const DeletePropertyFromBlockCommandCodec = createReversibleCommandCodec({
     type: "DeletePropertyFromBlock",
-    serializedSchema: DeletePropertyFromBlockCommandSerializedSchema,
-    commandSchema: z.instanceof(DeletePropertyFromBlockCommand),
-    decode: (args) => new DeletePropertyFromBlockCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: DeletePropertyFromBlockCommandArgsSchema,
+    commandStateSchema: DeletePropertyFromBlockCommandStateSchema,
+    commandClass: DeletePropertyFromBlockCommand
 });

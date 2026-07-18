@@ -18,39 +18,46 @@ export type AddPropertyToTagPageCommandArgs = z.output<
     typeof AddPropertyToTagPageCommandArgsSchema
 >;
 
-const AddPropertyToTagPageCommandSerializedSchema =
-    AddPropertyToTagPageCommandArgsBaseSchema.extend({type: z.literal("AddPropertyToTagPage")});
+export const AddPropertyToTagPageCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"])
+});
+export type AddPropertyToTagPageCommandState = z.output<
+    typeof AddPropertyToTagPageCommandStateSchema
+>;
 
-export class AddPropertyToTagPageCommand extends BaseReversibleCommand {
-    private executed = false;
+export class AddPropertyToTagPageCommand extends BaseReversibleCommand<AddPropertyToTagPageCommandState> {
     public readonly args: AddPropertyToTagPageCommandArgs;
 
-    public constructor(args: AddPropertyToTagPageCommandArgsInput) {
-        super();
+    public constructor(
+        args: AddPropertyToTagPageCommandArgsInput,
+        commandState?: AddPropertyToTagPageCommandState
+    ) {
+        super(AddPropertyToTagPageCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = AddPropertyToTagPageCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         await requireTagWithoutProperty(this.args.tagPageUuid, this.args.propertyPageUuid);
         await logseq.Editor.addTagProperty(this.args.tagPageUuid, this.args.propertyPageUuid);
-        this.executed = true;
         this.changedPages.push(this.args.tagPageUuid);
         const updatedTag = await logseq.Editor.getTag(this.args.tagPageUuid);
         if (!updatedTag) throw new Error(`Updated tag page not found: ${this.args.tagPageUuid}`);
-        return await normalizeTagPage(updatedTag);
+        const tag = await normalizeTagPage(updatedTag);
+        this.commandState.status = "executed";
+        return tag;
     }
 
     public async revert(): Promise<void> {
-        if (!this.executed) throw new Error("Execute must be called before revert");
+        this.assertCanRevert();
         await logseq.Editor.removeTagProperty(this.args.tagPageUuid, this.args.propertyPageUuid);
-        this.executed = false;
+        this.commandState.status = "new";
     }
 }
 
 export const AddPropertyToTagPageCommandCodec = createReversibleCommandCodec({
     type: "AddPropertyToTagPage",
-    serializedSchema: AddPropertyToTagPageCommandSerializedSchema,
-    commandSchema: z.instanceof(AddPropertyToTagPageCommand),
-    decode: (args) => new AddPropertyToTagPageCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: AddPropertyToTagPageCommandArgsSchema,
+    commandStateSchema: AddPropertyToTagPageCommandStateSchema,
+    commandClass: AddPropertyToTagPageCommand
 });

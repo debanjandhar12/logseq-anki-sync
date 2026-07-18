@@ -15,19 +15,13 @@ export const DeleteBlockCommandArgsSchema = z.object({
 export type DeleteBlockCommandArgsInput = z.input<typeof DeleteBlockCommandArgsSchema>;
 export type DeleteBlockCommandArgs = z.output<typeof DeleteBlockCommandArgsSchema>;
 
-const DeleteBlockCommandSerializedSchema = DeleteBlockCommandArgsSchema.extend({
-    type: z.literal("DeleteBlock")
+export const DeleteBlockCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"]),
+    previousBlockUuid: LogseqUUIDSchema.optional(),
+    isPreviousBlockParent: z.boolean().optional(),
+    temporaryPageUuid: LogseqUUIDSchema.optional()
 });
-
-export type DeleteBlockCommandSerializedState = Omit<
-    z.output<typeof DeleteBlockCommandSerializedSchema>,
-    "type" | keyof DeleteBlockCommandArgs
->;
-
-type DeletedBlockLocation = {
-    previousBlockUuid: string;
-    isPreviousBlockParent: boolean;
-};
+export type DeleteBlockCommandState = z.output<typeof DeleteBlockCommandStateSchema>;
 
 /**
  * Deletes a Logseq block.
@@ -39,17 +33,16 @@ type DeletedBlockLocation = {
  * - deletedBlockLocation
  * - tempPageUUID
  */
-export class DeleteBlockCommand extends BaseReversibleCommand {
-    private deletedBlockLocation: DeletedBlockLocation | undefined;
-    private tempPageUUID: string | undefined;
+export class DeleteBlockCommand extends BaseReversibleCommand<DeleteBlockCommandState> {
     public readonly args: DeleteBlockCommandArgs;
 
-    public constructor(args: DeleteBlockCommandArgsInput) {
-        super();
+    public constructor(args: DeleteBlockCommandArgsInput, commandState?: DeleteBlockCommandState) {
+        super(DeleteBlockCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = DeleteBlockCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         const block = await requireActiveBlock(this.args.blockUuid as BlockIdentity);
         const isPageBlock = await LogseqEditor.isPageBlock(block);
         if (isPageBlock === true) {
@@ -62,10 +55,8 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
         );
         if (!previousBlock) throw new Error("Deleted block has no previous block or parent");
 
-        this.deletedBlockLocation = {
-            previousBlockUuid: previousBlock.uuid,
-            isPreviousBlockParent
-        };
+        this.commandState.previousBlockUuid = previousBlock.uuid;
+        this.commandState.isPreviousBlockParent = isPreviousBlockParent;
 
         const tempPageName = `deleted_block_${block.uuid}_${Date.now()}`;
         const tempPage = await logseq.Editor.createPage(tempPageName, undefined, {
@@ -74,7 +65,7 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
         });
         if (!tempPage) throw new Error(`Logseq failed to create temp page: ${tempPageName}`);
 
-        this.tempPageUUID = tempPage.uuid;
+        this.commandState.temporaryPageUuid = tempPage.uuid;
 
         await logseq.Editor.moveBlock(block.uuid, tempPage.uuid as BlockIdentity, {
             children: true
@@ -82,22 +73,23 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
 
         this.changedPages.push(await resolvePageUUID(block.page));
         await logseq.Editor.deletePage(tempPage.uuid);
+        this.commandState.status = "executed";
         return true;
     }
 
     public async revert(): Promise<void> {
-        if (!this.deletedBlockLocation || !this.tempPageUUID) {
-            throw new Error("Execute must be called before revert");
+        this.assertCanRevert();
+        const {previousBlockUuid, isPreviousBlockParent, temporaryPageUuid} = this.commandState;
+        if (!previousBlockUuid || isPreviousBlockParent === undefined || !temporaryPageUuid) {
+            throw new Error("Missing deleted block rollback state");
         }
 
-        const {previousBlockUuid, isPreviousBlockParent} = this.deletedBlockLocation;
-
         // @ts-ignore restorePage exists in unreleased Logseq APIs but is not in current plugin types.
-        await logseq.Editor.restorePage(this.tempPageUUID);
+        await logseq.Editor.restorePage(temporaryPageUuid);
 
-        const restoredPage = await logseq.Editor.getPage(this.tempPageUUID);
+        const restoredPage = await logseq.Editor.getPage(temporaryPageUuid);
         if (!restoredPage || isPageSoftDeleted(restoredPage)) {
-            throw new Error(`Failed to restore temp page: ${this.tempPageUUID}`);
+            throw new Error(`Failed to restore temp page: ${temporaryPageUuid}`);
         }
 
         // The block retains its UUID through the soft-delete, so move it back to its original spot.
@@ -118,7 +110,8 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
                     previousBlockUuid as BlockIdentity,
                     {children: true}
                 );
-                await logseq.Editor.deletePage(this.tempPageUUID);
+                await logseq.Editor.deletePage(temporaryPageUuid);
+                this.commandState.status = "new";
                 return;
             }
 
@@ -129,14 +122,14 @@ export class DeleteBlockCommand extends BaseReversibleCommand {
             );
         }
 
-        await logseq.Editor.deletePage(this.tempPageUUID);
+        await logseq.Editor.deletePage(temporaryPageUuid);
+        this.commandState.status = "new";
     }
 }
 
 export const DeleteBlockCommandCodec = createReversibleCommandCodec({
     type: "DeleteBlock",
-    serializedSchema: DeleteBlockCommandSerializedSchema,
-    commandSchema: z.instanceof(DeleteBlockCommand),
-    decode: (args) => new DeleteBlockCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: DeleteBlockCommandArgsSchema,
+    commandStateSchema: DeleteBlockCommandStateSchema,
+    commandClass: DeleteBlockCommand
 });

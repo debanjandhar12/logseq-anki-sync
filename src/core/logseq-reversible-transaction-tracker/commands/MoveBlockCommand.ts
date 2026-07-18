@@ -30,14 +30,12 @@ export const MoveBlockCommandArgsSchema = z
 export type MoveBlockCommandArgsInput = z.input<typeof MoveBlockCommandArgsSchema>;
 export type MoveBlockCommandArgs = z.output<typeof MoveBlockCommandArgsSchema>;
 
-const MoveBlockCommandSerializedSchema = MoveBlockCommandArgsSchema.extend({
-    type: z.literal("MoveBlock")
+export const MoveBlockCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"]),
+    originalPreviousBlockUuid: LogseqUUIDSchema.optional(),
+    originalIsPreviousBlockParent: z.boolean().optional()
 });
-
-export type MoveBlockCommandSerializedState = Omit<
-    z.output<typeof MoveBlockCommandSerializedSchema>,
-    "type" | keyof MoveBlockCommandArgs
->;
+export type MoveBlockCommandState = z.output<typeof MoveBlockCommandStateSchema>;
 
 /**
  * Moves a block to a destination block or page.
@@ -49,17 +47,16 @@ export type MoveBlockCommandSerializedState = Omit<
  * - originalPreviousBlockUuid
  * - originalIsPreviousBlockParent
  */
-export class MoveBlockCommand extends BaseReversibleCommand {
-    private originalPreviousBlockUuid: string | undefined;
-    private originalIsPreviousBlockParent: boolean | undefined;
+export class MoveBlockCommand extends BaseReversibleCommand<MoveBlockCommandState> {
     public readonly args: MoveBlockCommandArgs;
 
-    public constructor(args: MoveBlockCommandArgsInput) {
-        super();
+    public constructor(args: MoveBlockCommandArgsInput, commandState?: MoveBlockCommandState) {
+        super(MoveBlockCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = MoveBlockCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         const originalBlock = await requireActiveBlock(
             this.args.srcBlockUuid as BlockIdentity,
             "Source"
@@ -104,8 +101,8 @@ export class MoveBlockCommand extends BaseReversibleCommand {
         );
         if (!previousBlock) throw new Error("Source block has no previous block or parent");
 
-        this.originalPreviousBlockUuid = previousBlock.uuid;
-        this.originalIsPreviousBlockParent = isPreviousBlockParent;
+        this.commandState.originalPreviousBlockUuid = previousBlock.uuid;
+        this.commandState.originalIsPreviousBlockParent = isPreviousBlockParent;
 
         await logseq.Editor.moveBlock(
             this.args.srcBlockUuid as BlockIdentity,
@@ -118,32 +115,36 @@ export class MoveBlockCommand extends BaseReversibleCommand {
         const movedBlock = rawMovedBlock ? await normalizeBlock(rawMovedBlock) : null;
         if (movedBlock?.page) this.changedPages.push(await resolvePageUUID(movedBlock.page));
 
+        this.commandState.status = "executed";
         return true;
     }
 
     public async revert(): Promise<void> {
-        if (!this.originalPreviousBlockUuid || this.originalIsPreviousBlockParent === undefined) {
-            throw new Error("Execute must be called before revert");
+        this.assertCanRevert();
+        const {originalPreviousBlockUuid, originalIsPreviousBlockParent} = this.commandState;
+        if (!originalPreviousBlockUuid || originalIsPreviousBlockParent === undefined) {
+            throw new Error("Missing original block location");
         }
 
-        if (!this.originalIsPreviousBlockParent) {
+        if (!originalIsPreviousBlockParent) {
             await logseq.Editor.moveBlock(
                 this.args.srcBlockUuid as BlockIdentity,
-                this.originalPreviousBlockUuid as BlockIdentity,
+                originalPreviousBlockUuid as BlockIdentity,
                 {}
             );
         } else {
             const nextBlock = await LogseqEditor.getNextBlock(
-                this.originalPreviousBlockUuid as BlockIdentity,
+                originalPreviousBlockUuid as BlockIdentity,
                 {children: true}
             );
 
             if (!nextBlock) {
                 await logseq.Editor.moveBlock(
                     this.args.srcBlockUuid as BlockIdentity,
-                    this.originalPreviousBlockUuid as BlockIdentity,
+                    originalPreviousBlockUuid as BlockIdentity,
                     {children: true}
                 );
+                this.commandState.status = "new";
                 return;
             }
 
@@ -153,13 +154,13 @@ export class MoveBlockCommand extends BaseReversibleCommand {
                 {before: true}
             );
         }
+        this.commandState.status = "new";
     }
 }
 
 export const MoveBlockCommandCodec = createReversibleCommandCodec({
     type: "MoveBlock",
-    serializedSchema: MoveBlockCommandSerializedSchema,
-    commandSchema: z.instanceof(MoveBlockCommand),
-    decode: (args) => new MoveBlockCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: MoveBlockCommandArgsSchema,
+    commandStateSchema: MoveBlockCommandStateSchema,
+    commandClass: MoveBlockCommand
 });

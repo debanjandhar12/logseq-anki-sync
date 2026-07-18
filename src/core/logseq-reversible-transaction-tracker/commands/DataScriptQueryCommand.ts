@@ -13,9 +13,10 @@ export const DataScriptQueryCommandArgsSchema = z.object({
 export type DataScriptQueryCommandArgsInput = z.input<typeof DataScriptQueryCommandArgsSchema>;
 export type DataScriptQueryCommandArgs = z.output<typeof DataScriptQueryCommandArgsSchema>;
 
-const DataScriptQueryCommandSerializedSchema = DataScriptQueryCommandArgsSchema.extend({
-    type: z.literal("DataScriptQuery")
+export const DataScriptQueryCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"])
 });
+export type DataScriptQueryCommandState = z.output<typeof DataScriptQueryCommandStateSchema>;
 
 /**
  * Runs a Logseq DataScript query.
@@ -26,29 +27,43 @@ const DataScriptQueryCommandSerializedSchema = DataScriptQueryCommandArgsSchema.
  * Runtime-only data:
  * - none
  */
-export class DataScriptQueryCommand extends BaseReversibleCommand {
+export class DataScriptQueryCommand extends BaseReversibleCommand<DataScriptQueryCommandState> {
     public readonly args: DataScriptQueryCommandArgs;
 
-    public constructor(args: DataScriptQueryCommandArgsInput) {
-        super();
+    public constructor(
+        args: DataScriptQueryCommandArgsInput,
+        commandState?: DataScriptQueryCommandState
+    ) {
+        super(DataScriptQueryCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = DataScriptQueryCommandArgsSchema.parse(args);
     }
 
     public async execute(): Promise<any> {
+        this.assertCanExecute();
+        let result: unknown;
         if (this.args.inputs.length > 0) {
-            return await logseq.DB.datascriptQuery(this.args.datalogString, ...this.args.inputs);
+            result = await logseq.DB.datascriptQuery(this.args.datalogString, ...this.args.inputs);
+        } else {
+            result = await logseq.DB.datascriptQuery(this.args.datalogString);
         }
 
-        return await logseq.DB.datascriptQuery(this.args.datalogString);
+        this.commandState.status = "executed";
+        return result;
     }
 
-    public async revert(): Promise<void> {}
+    public async revert(): Promise<void> {
+        this.assertCanRevert();
+        this.commandState.status = "new";
+    }
+
+    public override isGraphMutation(): boolean {
+        return false;
+    }
 }
 
 export const DataScriptQueryCommandCodec = createReversibleCommandCodec({
     type: "DataScriptQuery",
-    serializedSchema: DataScriptQueryCommandSerializedSchema,
-    commandSchema: z.instanceof(DataScriptQueryCommand),
-    decode: (args) => new DataScriptQueryCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: DataScriptQueryCommandArgsSchema,
+    commandStateSchema: DataScriptQueryCommandStateSchema,
+    commandClass: DataScriptQueryCommand
 });

@@ -17,41 +17,45 @@ export type RemoveTagFromBlockCommandArgsInput = z.input<
 >;
 export type RemoveTagFromBlockCommandArgs = z.output<typeof RemoveTagFromBlockCommandArgsSchema>;
 
-const RemoveTagFromBlockCommandSerializedSchema = RemoveTagFromBlockCommandArgsBaseSchema.extend({
-    type: z.literal("RemoveTagFromBlock")
+export const RemoveTagFromBlockCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"])
 });
+export type RemoveTagFromBlockCommandState = z.output<typeof RemoveTagFromBlockCommandStateSchema>;
 
-export class RemoveTagFromBlockCommand extends BaseReversibleCommand {
-    private executed = false;
+export class RemoveTagFromBlockCommand extends BaseReversibleCommand<RemoveTagFromBlockCommandState> {
     public readonly args: RemoveTagFromBlockCommandArgs;
 
-    public constructor(args: RemoveTagFromBlockCommandArgsInput) {
-        super();
+    public constructor(
+        args: RemoveTagFromBlockCommandArgsInput,
+        commandState?: RemoveTagFromBlockCommandState
+    ) {
+        super(RemoveTagFromBlockCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = RemoveTagFromBlockCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         const originalBlock = await requireBlockWithTag(this.args.blockUuid, this.args.tagPageUuid);
         this.changedPages.push(await resolvePageUUID(originalBlock.page ?? originalBlock));
 
         await logseq.Editor.removeBlockTag(this.args.blockUuid, this.args.tagPageUuid);
-        this.executed = true;
         const updatedBlock = await logseq.Editor.getBlock(this.args.blockUuid as BlockIdentity);
         if (!updatedBlock) throw new Error(`Updated block not found: ${this.args.blockUuid}`);
-        return await normalizeBlock(updatedBlock);
+        const block = await normalizeBlock(updatedBlock);
+        this.commandState.status = "executed";
+        return block;
     }
 
     public async revert(): Promise<void> {
-        if (!this.executed) throw new Error("Execute must be called before revert");
+        this.assertCanRevert();
         await logseq.Editor.addBlockTag(this.args.blockUuid, this.args.tagPageUuid);
-        this.executed = false;
+        this.commandState.status = "new";
     }
 }
 
 export const RemoveTagFromBlockCommandCodec = createReversibleCommandCodec({
     type: "RemoveTagFromBlock",
-    serializedSchema: RemoveTagFromBlockCommandSerializedSchema,
-    commandSchema: z.instanceof(RemoveTagFromBlockCommand),
-    decode: (args) => new RemoveTagFromBlockCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: RemoveTagFromBlockCommandArgsSchema,
+    commandStateSchema: RemoveTagFromBlockCommandStateSchema,
+    commandClass: RemoveTagFromBlockCommand
 });

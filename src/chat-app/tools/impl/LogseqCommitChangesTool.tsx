@@ -40,10 +40,12 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
 
     async executeApprove(
         _args: LogseqCommitChangesArgs = {},
-        context?: ChatToolExecutionContext
+        context?: ChatToolExecutionContext,
+        preparedTracker?: LogseqReversibleTransactionTracker
     ): Promise<ChatToolResponse<LogseqCommitChangesResult>> {
         try {
-            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
+            const transactionTracker =
+                preparedTracker ?? getLastLogseqReversibleTransactionTracker(context?.messages);
             if (transactionTracker.getCommands().length === 0) {
                 return ChatToolResponse.success(
                     {changes: "No pending changes to commit."},
@@ -51,7 +53,14 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 );
             }
 
-            await transactionTracker.execute();
+            await transactionTracker.execute({signal: context?.abortSignal});
+            if (!transactionTracker.hasAppliedGraphMutations()) {
+                transactionTracker.clear();
+                return ChatToolResponse.success(
+                    {changes: "No pending changes to commit."},
+                    createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+                );
+            }
             transactionTracker.clear();
 
             return ChatToolResponse.success(
@@ -65,27 +74,33 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         }
     }
 
-    private async prepareReview(transactionTracker: LogseqReversibleTransactionTracker): Promise<{
-        beforeChanges: string;
-        afterChanges: string;
-    }> {
+    private async prepareReview(
+        transactionTracker: LogseqReversibleTransactionTracker
+    ): Promise<{beforeChanges: string; afterChanges: string; hasGraphMutations: boolean}> {
         await transactionTracker.execute();
+        if (!transactionTracker.hasAppliedGraphMutations()) {
+            return {beforeChanges: "", afterChanges: "", hasGraphMutations: false};
+        }
         const changedPages = transactionTracker.getChangedPages();
         let afterChanges = "";
         try {
             afterChanges = await LogseqPageDataPrinter.print(changedPages);
         } finally {
-            await transactionTracker.revert();
+            await transactionTracker.revertImmediately();
         }
         const beforeChanges = await LogseqPageDataPrinter.print(changedPages);
 
-        console.log("prepareReview", beforeChanges, afterChanges);
-        return {beforeChanges, afterChanges};
+        return {beforeChanges, afterChanges, hasGraphMutations: true};
     }
 
-    async executeCancel(): Promise<ChatToolResponse<LogseqCommitChangesResult>> {
+    async executeCancel(
+        transactionTracker?: LogseqReversibleTransactionTracker
+    ): Promise<ChatToolResponse<LogseqCommitChangesResult>> {
         return ChatToolResponse.error(
-            "User cancelled the commit operation. Note: In memory changes not cleared."
+            "User cancelled the commit operation. Pending changes remain available.",
+            transactionTracker
+                ? createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+                : undefined
         );
     }
 
@@ -103,14 +118,19 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             setIsReviewing(true);
             try {
                 const transactionTracker = getLastLogseqReversibleTransactionTracker(messages);
-                const {beforeChanges, afterChanges} = await this.prepareReview(transactionTracker);
+                const {beforeChanges, afterChanges, hasGraphMutations} =
+                    await this.prepareReview(transactionTracker);
+                if (!hasGraphMutations) {
+                    addResult(await this.executeApprove({}, {messages}, transactionTracker));
+                    return;
+                }
                 const isApproved = await showAIChangesReviewModal(beforeChanges, afterChanges);
 
-                if (isApproved === false) {
-                    addResult(await this.executeCancel());
-                } else if (isApproved === true) {
-                    addResult(await this.executeApprove({}, {messages}));
-                } // else ignore if isApproved is null (showAIChangesReviewModal returns null if closed without accepting or rejecting)
+                if (isApproved !== true) {
+                    addResult(await this.executeCancel(transactionTracker));
+                } else {
+                    addResult(await this.executeApprove({}, {messages}, transactionTracker));
+                }
             } catch (error) {
                 addResult(ChatToolResponse.error(getErrorMessageFromErrObj(error)));
             } finally {

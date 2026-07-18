@@ -15,14 +15,10 @@ export const RestorePageCommandArgsSchema = z.object({
 export type RestorePageCommandArgsInput = z.input<typeof RestorePageCommandArgsSchema>;
 export type RestorePageCommandArgs = z.output<typeof RestorePageCommandArgsSchema>;
 
-const RestorePageCommandSerializedSchema = RestorePageCommandArgsSchema.extend({
-    type: z.literal("RestorePage")
+export const RestorePageCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"])
 });
-
-export type RestorePageCommandSerializedState = Omit<
-    z.output<typeof RestorePageCommandSerializedSchema>,
-    "type" | keyof RestorePageCommandArgs
->;
+export type RestorePageCommandState = z.output<typeof RestorePageCommandStateSchema>;
 
 /**
  * Restores a soft-deleted Logseq page.
@@ -33,15 +29,16 @@ export type RestorePageCommandSerializedState = Omit<
  * Runtime-only data:
  * - none
  */
-export class RestorePageCommand extends BaseReversibleCommand {
+export class RestorePageCommand extends BaseReversibleCommand<RestorePageCommandState> {
     public readonly args: RestorePageCommandArgs;
 
-    public constructor(args: RestorePageCommandArgsInput) {
-        super();
+    public constructor(args: RestorePageCommandArgsInput, commandState?: RestorePageCommandState) {
+        super(RestorePageCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = RestorePageCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         const block = await logseq.Editor.getBlock(this.args.pageUuid as BlockIdentity);
         const isPageBlock = block ? await LogseqEditor.isPageBlock(block) : false;
         if (block && isPageBlock !== true && !("name" in block && typeof block.name === "string")) {
@@ -62,22 +59,21 @@ export class RestorePageCommand extends BaseReversibleCommand {
 
         const restoredPage = await normalizePage(rawPage);
         this.changedPages.push(restoredPage.uuid);
+        this.commandState.status = "executed";
         return restoredPage;
     }
 
     public async revert(): Promise<void> {
+        this.assertCanRevert();
         const page = await logseq.Editor.getPage(this.args.pageUuid);
-        if (!page) return;
-        if (isPageSoftDeleted(page)) return;
-
-        await logseq.Editor.deletePage(this.args.pageUuid);
+        if (page && !isPageSoftDeleted(page)) await logseq.Editor.deletePage(this.args.pageUuid);
+        this.commandState.status = "new";
     }
 }
 
 export const RestorePageCommandCodec = createReversibleCommandCodec({
     type: "RestorePage",
-    serializedSchema: RestorePageCommandSerializedSchema,
-    commandSchema: z.instanceof(RestorePageCommand),
-    decode: (args) => new RestorePageCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: RestorePageCommandArgsSchema,
+    commandStateSchema: RestorePageCommandStateSchema,
+    commandClass: RestorePageCommand
 });

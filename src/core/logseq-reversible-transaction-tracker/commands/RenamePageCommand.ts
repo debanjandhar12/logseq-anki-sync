@@ -13,14 +13,11 @@ export const RenamePageCommandArgsSchema = z.object({
 export type RenamePageCommandArgsInput = z.input<typeof RenamePageCommandArgsSchema>;
 export type RenamePageCommandArgs = z.output<typeof RenamePageCommandArgsSchema>;
 
-const RenamePageCommandSerializedSchema = RenamePageCommandArgsSchema.extend({
-    type: z.literal("RenamePage")
+export const RenamePageCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"]),
+    originalName: z.string().optional()
 });
-
-export type RenamePageCommandSerializedState = Omit<
-    z.output<typeof RenamePageCommandSerializedSchema>,
-    "type" | keyof RenamePageCommandArgs
->;
+export type RenamePageCommandState = z.output<typeof RenamePageCommandStateSchema>;
 
 /**
  * Renames a Logseq page.
@@ -32,39 +29,38 @@ export type RenamePageCommandSerializedState = Omit<
  * - originalName
  * - pageUUID
  */
-export class RenamePageCommand extends BaseReversibleCommand {
-    private originalName: string | undefined;
-    private pageUUID: string | undefined;
+export class RenamePageCommand extends BaseReversibleCommand<RenamePageCommandState> {
     public readonly args: RenamePageCommandArgs;
 
-    public constructor(args: RenamePageCommandArgsInput) {
-        super();
+    public constructor(args: RenamePageCommandArgsInput, commandState?: RenamePageCommandState) {
+        super(RenamePageCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = RenamePageCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         const page = await requireActivePage(this.args.pageUuid as PageIdentity);
 
-        this.originalName = page.name;
-        this.pageUUID = page.uuid;
+        this.commandState.originalName = page.name;
         this.changedPages.push(page.uuid);
         await logseq.Editor.renamePage(page.uuid, this.args.newName);
         this.changedPages.push(this.args.newName);
+        this.commandState.status = "executed";
         return true;
     }
 
     public async revert(): Promise<void> {
-        if (!this.originalName || !this.pageUUID)
-            throw new Error("Execute must be called before revert");
+        this.assertCanRevert();
+        if (!this.commandState.originalName) throw new Error("Missing original page name");
 
-        await logseq.Editor.renamePage(this.pageUUID, this.originalName);
+        await logseq.Editor.renamePage(this.args.pageUuid, this.commandState.originalName);
+        this.commandState.status = "new";
     }
 }
 
 export const RenamePageCommandCodec = createReversibleCommandCodec({
     type: "RenamePage",
-    serializedSchema: RenamePageCommandSerializedSchema,
-    commandSchema: z.instanceof(RenamePageCommand),
-    decode: (args) => new RenamePageCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: RenamePageCommandArgsSchema,
+    commandStateSchema: RenamePageCommandStateSchema,
+    commandClass: RenamePageCommand
 });

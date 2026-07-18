@@ -32,6 +32,9 @@ export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
     ): Promise<ChatToolResponse<LogseqClearChangesResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
+            if (transactionTracker.hasAppliedGraphMutations()) {
+                await transactionTracker.revertImmediately({signal: context?.abortSignal});
+            }
             transactionTracker.clear();
 
             return ChatToolResponse.success(

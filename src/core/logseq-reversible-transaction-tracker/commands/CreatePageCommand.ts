@@ -13,15 +13,11 @@ export const CreatePageCommandArgsSchema = z.object({
 export type CreatePageCommandArgsInput = z.input<typeof CreatePageCommandArgsSchema>;
 export type CreatePageCommandArgs = z.output<typeof CreatePageCommandArgsSchema>;
 
-const CreatePageCommandSerializedSchema = CreatePageCommandArgsSchema.extend({
-    type: z.literal("CreatePage"),
+export const CreatePageCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"]),
     pageUuid: LogseqUUIDSchema
 });
-
-export type CreatePageCommandSerializedState = Omit<
-    z.output<typeof CreatePageCommandSerializedSchema>,
-    "type" | keyof CreatePageCommandArgs
->;
+export type CreatePageCommandState = z.output<typeof CreatePageCommandStateSchema>;
 
 /**
  * Creates a Logseq page with a stable UUID.
@@ -33,20 +29,22 @@ export type CreatePageCommandSerializedState = Omit<
  * Runtime-only data:
  * - none
  */
-export class CreatePageCommand extends BaseReversibleCommand {
+export class CreatePageCommand extends BaseReversibleCommand<CreatePageCommandState> {
     public readonly args: CreatePageCommandArgs;
-    public readonly pageUuid: string;
 
-    public constructor(
-        args: CreatePageCommandArgsInput,
-        serializedState?: Partial<CreatePageCommandSerializedState>
-    ) {
-        super();
+    public constructor(args: CreatePageCommandArgsInput, commandState?: CreatePageCommandState) {
+        super(
+            CreatePageCommandStateSchema.parse(commandState ?? {status: "new", pageUuid: uuidv4()})
+        );
         this.args = CreatePageCommandArgsSchema.parse(args);
-        this.pageUuid = LogseqUUIDSchema.parse(serializedState?.pageUuid ?? uuidv4());
+    }
+
+    public get pageUuid(): string {
+        return this.commandState.pageUuid;
     }
 
     public async execute() {
+        this.assertCanExecute();
         const existingPage = await logseq.Editor.getPage(this.args.pageName);
         if (existingPage) {
             const page = await normalizePage(existingPage);
@@ -58,6 +56,7 @@ export class CreatePageCommand extends BaseReversibleCommand {
 
             if (!isPageSoftDeleted(page)) {
                 this.changedPages.push(page.uuid);
+                this.commandState.status = "executed";
                 return page;
             }
 
@@ -69,6 +68,7 @@ export class CreatePageCommand extends BaseReversibleCommand {
 
             const restoredPage = await normalizePage(rawPage);
             this.changedPages.push(restoredPage.uuid);
+            this.commandState.status = "executed";
             return restoredPage;
         }
 
@@ -81,22 +81,23 @@ export class CreatePageCommand extends BaseReversibleCommand {
 
         const page = await normalizePage(rawPage);
         this.changedPages.push(page.uuid);
+        this.commandState.status = "executed";
         return page;
     }
 
     public async revert(): Promise<void> {
+        this.assertCanRevert();
         const page = await logseq.Editor.getPage(this.pageUuid);
         if (!page) throw new Error(`Created page is missing: ${this.pageUuid}`);
-        if (isPageSoftDeleted(page)) return;
+        if (!isPageSoftDeleted(page)) await logseq.Editor.deletePage(this.pageUuid);
 
-        await logseq.Editor.deletePage(this.pageUuid);
+        this.commandState.status = "new";
     }
 }
 
 export const CreatePageCommandCodec = createReversibleCommandCodec({
     type: "CreatePage",
-    serializedSchema: CreatePageCommandSerializedSchema,
-    commandSchema: z.instanceof(CreatePageCommand),
-    decode: ({pageUuid, ...args}) => new CreatePageCommand(args, {pageUuid}),
-    encodeData: (command) => ({...command.args, pageUuid: command.pageUuid})
+    argsSchema: CreatePageCommandArgsSchema,
+    commandStateSchema: CreatePageCommandStateSchema,
+    commandClass: CreatePageCommand
 });

@@ -6,7 +6,6 @@ export type PagePropertiesSchemaSnapshot = {
     propertyIdent: string | undefined;
     schema: Partial<PropertySchema> | undefined;
     opts: {name?: string} | undefined;
-    property: NonNullable<Awaited<ReturnType<typeof LogseqEditor.getProperty>>>;
 };
 
 type PropertyEntity = NonNullable<Awaited<ReturnType<typeof LogseqEditor.getProperty>>>;
@@ -84,7 +83,6 @@ export function snapshotPagePropertiesSchema(
         propertyIndent,
         propertyIdent,
         schema: Object.keys(schema).length > 0 ? schema : undefined,
-        opts: name ? {name} : undefined,
-        property
+        opts: name ? {name} : undefined
     };
 }

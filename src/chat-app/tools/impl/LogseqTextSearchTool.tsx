@@ -6,7 +6,7 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
+import {executeLogseqReversibleCommand} from "src/chat-app/tools/transaction/executeLogseqReversibleCommand";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     TextSearchCommand,
@@ -34,15 +34,15 @@ export class LogseqTextSearchTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqTextSearchResult>> {
         try {
-            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new TextSearchCommand(args));
-
-            const result = await transactionTracker.execute();
-            await transactionTracker.revert();
+            const {result, tracker} = await executeLogseqReversibleCommand({
+                command: new TextSearchCommand(args),
+                messages: context?.messages,
+                signal: context?.abortSignal
+            });
 
             return ChatToolResponse.success(
                 {result},
-                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+                createLogseqReversibleTransactionTrackerArtifact(tracker)
             );
         } catch (err) {
             return ChatToolResponse.error(

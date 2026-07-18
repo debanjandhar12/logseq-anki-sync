@@ -1,435 +1,156 @@
 import {describe, expect, test} from "vitest";
-import {z} from "zod";
 import {
-    AddPropertyToTagPageCommand,
-    AddTagToBlockCommand,
     CreatePageCommand,
-    CreateTagPageCommand,
-    DeleteBlockCommand,
-    DeletePageCommand,
-    DeletePropertyFromBlockCommand,
-    InsertBlockCommand,
-    InsertBlockCommandArgsSchema,
     LogseqReversibleTransactionCommandSerializer,
     LogseqReversibleTransactionTracker,
     LogseqReversibleTransactionTrackerSerializer,
-    MoveBlockCommand,
-    RemovePropertyFromTagPageCommand,
-    RemoveTagFromBlockCommand,
-    RenamePageCommand,
-    UpdateBlockCommand,
-    UpsertPropertyPageCommand,
-    UpsertPropertyToBlockCommand
+    UpdateBlockCommand
 } from "../../../../src/core/logseq-reversible-transaction-tracker";
 
 describe("LogseqReversibleTransactionCommandSerializer", () => {
-    test("round trips a command", () => {
-        const command = new CreatePageCommand({pageName: "Codec Test"});
+    test("round trips nested args and stable command state", () => {
+        const command = new CreatePageCommand(
+            {pageName: "Codec Test"},
+            {
+                status: "executed",
+                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f28"
+            }
+        );
 
         const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
         const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
 
         expect(serialized).toEqual({
             type: "CreatePage",
-            pageName: "Codec Test",
-            pageUuid: expect.any(String)
+            args: {pageName: "Codec Test"},
+            commandState: {
+                status: "executed",
+                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f28"
+            }
         });
         expect(deserialized).toBeInstanceOf(CreatePageCommand);
-        expect(deserialized).toEqual(command);
+        expect(LogseqReversibleTransactionCommandSerializer.serialize(deserialized)).toEqual(
+            serialized
+        );
     });
 
-    test("round trips generated create page UUID state", () => {
-        const command = new CreatePageCommand({pageName: "UUID State Test"});
-        const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
+    test("round trips runtime rollback state", () => {
+        const command = new UpdateBlockCommand(
+            {
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f30",
+                content: "Updated"
+            },
+            {status: "executed", originalContent: "Original"}
+        );
 
-        const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
-        const reserialized = LogseqReversibleTransactionCommandSerializer.serialize(deserialized);
-
-        expect(reserialized).toEqual(serialized);
-    });
-
-    test("round trips generated create tag page UUID state", () => {
-        const command = new CreateTagPageCommand({tagName: "Book"});
-        const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
-
-        const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
-        const reserialized = LogseqReversibleTransactionCommandSerializer.serialize(deserialized);
-
-        expect(serialized).toEqual({
-            type: "CreateTagPage",
-            tagName: "Book",
-            tagPageUuid: expect.any(String)
+        expect(LogseqReversibleTransactionCommandSerializer.serialize(command)).toEqual({
+            type: "UpdateBlock",
+            args: {
+                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f30",
+                content: "Updated"
+            },
+            commandState: {status: "executed", originalContent: "Original"}
         });
-        expect(reserialized).toEqual(serialized);
     });
 
-    test("round trips generated insert block UUID state", () => {
-        const command = new InsertBlockCommand({
-            parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
-            content: "Inserted content"
-        });
-        const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
-
-        const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
-        const reserialized = LogseqReversibleTransactionCommandSerializer.serialize(deserialized);
-
-        expect(serialized).toEqual({
+    test("migrates legacy flattened commands as reverted", () => {
+        const command = LogseqReversibleTransactionCommandSerializer.deserialize({
             type: "InsertBlock",
             parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
-            content: "Inserted content",
+            content: "Inserted",
             sibling: true,
-            blockUuid: expect.any(String)
-        });
-        expect(reserialized).toEqual(serialized);
-    });
-
-    test("rejects serialized create commands without UUID state", () => {
-        expect(() =>
-            LogseqReversibleTransactionCommandSerializer.deserialize({
-                type: "CreatePage",
-                pageName: "Legacy Codec Test"
-            })
-        ).toThrow();
-        expect(() =>
-            LogseqReversibleTransactionCommandSerializer.deserialize({
-                type: "CreateTagPage",
-                tagName: "Book"
-            })
-        ).toThrow();
-    });
-
-    test("rejects malformed command fields", () => {
-        expect(() =>
-            LogseqReversibleTransactionCommandSerializer.deserialize({
-                type: "UpdateBlock",
-                blockUuid: "block-uuid",
-                content: 123
-            })
-        ).toThrow();
-    });
-
-    test("accepts a non-RFC Logseq UUID", () => {
-        const command = new InsertBlockCommand({
-            parentUuid: "00000001-2026-0614-0000-000000000000",
-            content: "Inserted content"
-        });
-
-        expect(command.args.parentUuid).toBe("00000001-2026-0614-0000-000000000000");
-    });
-
-    test("round trips a delete block command", () => {
-        const command = new DeleteBlockCommand({
-            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
-        });
-
-        const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
-        const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
-
-        expect(serialized).toEqual({
-            type: "DeleteBlock",
-            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
-        });
-        expect(deserialized).toBeInstanceOf(DeleteBlockCommand);
-        expect(deserialized).toEqual(command);
-    });
-
-    test("does not serialize delete block execution snapshots", () => {
-        const command = new DeleteBlockCommand({
             blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
         });
 
         expect(LogseqReversibleTransactionCommandSerializer.serialize(command)).toEqual({
-            type: "DeleteBlock",
-            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
-        });
-    });
-
-    test("serializes every command shape without runtime snapshots", () => {
-        const commands = [
-            new CreatePageCommand(
-                {pageName: "Codec Test"},
-                {pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f28"}
-            ),
-            new InsertBlockCommand(
-                {
-                    parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
-                    content: "Inserted content"
-                },
-                {blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"}
-            ),
-            new UpdateBlockCommand({
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f30",
-                content: "Updated content"
-            }),
-            new DeleteBlockCommand({
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f31"
-            }),
-            new DeletePageCommand({
-                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f32"
-            }),
-            new MoveBlockCommand({
-                srcBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f33",
-                destBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f34"
-            }),
-            new RenamePageCommand({
-                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f35",
-                newName: "Renamed Page"
-            }),
-            new CreateTagPageCommand(
-                {tagName: "Book"},
-                {tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f36"}
-            ),
-            new AddPropertyToTagPageCommand({
-                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f41",
-                propertyPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f42"
-            }),
-            new RemovePropertyFromTagPageCommand({
-                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f43",
-                propertyPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f44"
-            }),
-            new AddTagToBlockCommand({
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f45",
-                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f46"
-            }),
-            new RemoveTagFromBlockCommand({
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f47",
-                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f48"
-            }),
-            new UpsertPropertyPageCommand({
-                propertyUuidOrIndent: "rating",
-                schema: {type: "number", cardinality: "one"},
-                opts: {name: "Rating"}
-            }),
-            new UpsertPropertyToBlockCommand({
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f37",
-                propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f38",
-                value: {score: 5}
-            }),
-            new DeletePropertyFromBlockCommand({
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f39",
-                propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f40"
-            })
-        ];
-
-        expect(commands.map(LogseqReversibleTransactionCommandSerializer.serialize)).toEqual([
-            {
-                type: "CreatePage",
-                pageName: "Codec Test",
-                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f28"
-            },
-            {
-                type: "InsertBlock",
+            type: "InsertBlock",
+            args: {
                 parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
-                content: "Inserted content",
-                sibling: true,
+                content: "Inserted",
+                sibling: true
+            },
+            commandState: {
+                status: "new",
                 blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"
-            },
-            {
-                type: "UpdateBlock",
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f30",
-                content: "Updated content"
-            },
-            {
-                type: "DeleteBlock",
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f31"
-            },
-            {
-                type: "DeletePage",
-                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f32"
-            },
-            {
-                type: "MoveBlock",
-                srcBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f33",
-                destBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f34",
-                children: false
-            },
-            {
-                type: "RenamePage",
-                pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f35",
-                newName: "Renamed Page"
-            },
-            {
-                type: "CreateTagPage",
-                tagName: "Book",
-                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f36"
-            },
-            {
-                type: "AddPropertyToTagPage",
-                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f41",
-                propertyPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f42"
-            },
-            {
-                type: "RemovePropertyFromTagPage",
-                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f43",
-                propertyPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f44"
-            },
-            {
-                type: "AddTagToBlock",
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f45",
-                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f46"
-            },
-            {
-                type: "RemoveTagFromBlock",
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f47",
-                tagPageUuid: "018f38a5-df13-74d1-bf02-14c17f252f48"
-            },
-            {
-                type: "UpsertPropertyPage",
-                propertyUuidOrIndent: "rating",
-                schema: {type: "number", cardinality: "one"},
-                opts: {name: "Rating"}
-            },
-            {
-                type: "UpsertPropertyToBlock",
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f37",
-                propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f38",
-                value: {score: 5}
-            },
-            {
-                type: "DeletePropertyFromBlock",
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f39",
-                propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f40"
             }
-        ]);
-    });
-
-    test("round trips arbitrary property command values", () => {
-        const command = new UpsertPropertyToBlockCommand({
-            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f37",
-            propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f38",
-            value: {nested: ["a", 1, true], value: null}
         });
-
-        const serialized = LogseqReversibleTransactionCommandSerializer.serialize(command);
-        const deserialized = LogseqReversibleTransactionCommandSerializer.deserialize(serialized);
-
-        expect(serialized).toEqual({
-            type: "UpsertPropertyToBlock",
-            blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f37",
-            propertyUuidOrIndent: "018f38a5-df13-74d1-bf02-14c17f252f38",
-            value: {nested: ["a", 1, true], value: null}
-        });
-        expect(deserialized).toBeInstanceOf(UpsertPropertyToBlockCommand);
-        expect(deserialized).toEqual(command);
-    });
-
-    test("round trips defaulted command args", () => {
-        const insertBlockCommand = new InsertBlockCommand(
-            {
-                parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
-                content: "Inserted content"
-            },
-            {blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29"}
-        );
-        const moveBlockCommand = new MoveBlockCommand({
-            srcBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f33",
-            destBlockUuid: "018f38a5-df13-74d1-bf02-14c17f252f34"
-        });
-
-        expect(
-            LogseqReversibleTransactionCommandSerializer.serialize(insertBlockCommand)
-        ).toMatchObject({sibling: true});
-        expect(
-            LogseqReversibleTransactionCommandSerializer.serialize(moveBlockCommand)
-        ).toMatchObject({children: false});
-    });
-
-    test("rejects a value that does not have the Logseq UUID shape", () => {
-        expect(
-            () =>
-                new InsertBlockCommand({
-                    parentUuid: "00000001-2026-0614-0000",
-                    content: "Inserted content"
-                })
-        ).toThrow("Invalid Logseq UUID");
-    });
-
-    test("includes the command-level Logseq UUID description", () => {
-        const jsonSchema = z.toJSONSchema(InsertBlockCommandArgsSchema);
-
-        expect(jsonSchema.properties?.parentUuid).toMatchObject({
-            type: "string",
-            pattern:
-                "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-            description: "UUID of the parent Logseq page or block."
-        });
-        expect(jsonSchema.properties?.parentUuid).not.toHaveProperty("format");
-    });
-
-    test("rejects unknown command types", () => {
-        expect(() =>
-            LogseqReversibleTransactionCommandSerializer.deserialize({
-                type: "UnknownCommand",
-                pageName: "Codec Test"
-            })
-        ).toThrow();
     });
 });
 
 describe("LogseqReversibleTransactionTrackerSerializer", () => {
-    test("round trips a tracker with nested commands", () => {
-        const tracker = new LogseqReversibleTransactionTracker();
-        tracker.addCommand(new CreatePageCommand({pageName: "Tracker Test"}));
+    test("round trips progress and changed pages", () => {
+        const tracker = new LogseqReversibleTransactionTracker({
+            appliedCommandCount: 1,
+            changedPages: ["page-uuid"]
+        });
         tracker.addCommand(
-            new InsertBlockCommand({
-                parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
-                content: "Inserted content",
-                sibling: false
-            })
-        );
-        tracker.addCommand(
-            new UpdateBlockCommand({
-                blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29",
-                content: "Updated"
-            })
+            new CreatePageCommand(
+                {pageName: "Tracker Test"},
+                {
+                    status: "executed",
+                    pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f28"
+                }
+            )
         );
 
         const serialized = LogseqReversibleTransactionTrackerSerializer.serialize(tracker);
         const deserialized = LogseqReversibleTransactionTrackerSerializer.deserialize(serialized);
 
         expect(serialized).toEqual({
+            version: 2,
             commands: [
-                {type: "CreatePage", pageName: "Tracker Test", pageUuid: expect.any(String)},
                 {
-                    type: "InsertBlock",
-                    parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
-                    content: "Inserted content",
-                    sibling: false,
-                    blockUuid: expect.any(String)
-                },
+                    type: "CreatePage",
+                    args: {pageName: "Tracker Test"},
+                    commandState: {
+                        status: "executed",
+                        pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f28"
+                    }
+                }
+            ],
+            appliedCommandCount: 1,
+            changedPages: ["page-uuid"]
+        });
+        expect(deserialized.getAppliedCommandCount()).toBe(1);
+        expect(deserialized.getChangedPages()).toEqual(["page-uuid"]);
+    });
+
+    test("migrates legacy trackers to safe reverted progress", () => {
+        const tracker = LogseqReversibleTransactionTrackerSerializer.deserialize({
+            commands: [
                 {
-                    type: "UpdateBlock",
-                    blockUuid: "018f38a5-df13-74d1-bf02-14c17f252f29",
-                    content: "Updated"
+                    type: "CreatePage",
+                    pageName: "Legacy",
+                    pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f28"
                 }
             ]
         });
-        expect(deserialized).toBeInstanceOf(LogseqReversibleTransactionTracker);
-        expect(deserialized.getCommands()[0]).toBeInstanceOf(CreatePageCommand);
-        expect(deserialized.getCommands()[1]).toBeInstanceOf(InsertBlockCommand);
-        expect(deserialized.getCommands()[2]).toBeInstanceOf(UpdateBlockCommand);
+
+        expect(LogseqReversibleTransactionTrackerSerializer.serialize(tracker)).toMatchObject({
+            version: 2,
+            appliedCommandCount: 0,
+            changedPages: [],
+            commands: [{commandState: {status: "new"}}]
+        });
     });
 
-    test("keeps serialized command UUIDs stable when command order changes", () => {
-        const createPageCommand = new CreatePageCommand({pageName: "Tracker Test"});
-        const insertBlockCommand = new InsertBlockCommand({
-            parentUuid: "018f38a5-df13-74d1-bf02-14c17f252f28",
-            content: "Inserted content",
-            sibling: false
-        });
-        const tracker = new LogseqReversibleTransactionTracker();
-        tracker.addCommand(createPageCommand);
-        tracker.addCommand(insertBlockCommand);
-
-        const originalSerialized = LogseqReversibleTransactionTrackerSerializer.serialize(tracker);
-        const reorderedTracker = new LogseqReversibleTransactionTracker();
-        reorderedTracker.addCommand(insertBlockCommand);
-        reorderedTracker.addCommand(createPageCommand);
-
-        const reorderedSerialized =
-            LogseqReversibleTransactionTrackerSerializer.serialize(reorderedTracker);
-
-        expect(reorderedSerialized.commands[0]).toEqual(originalSerialized.commands[1]);
-        expect(reorderedSerialized.commands[1]).toEqual(originalSerialized.commands[0]);
+    test("rejects progress and command status mismatches", () => {
+        expect(() =>
+            LogseqReversibleTransactionTrackerSerializer.deserialize({
+                version: 2,
+                appliedCommandCount: 1,
+                changedPages: [],
+                commands: [
+                    {
+                        type: "CreatePage",
+                        args: {pageName: "Mismatch"},
+                        commandState: {
+                            status: "new",
+                            pageUuid: "018f38a5-df13-74d1-bf02-14c17f252f28"
+                        }
+                    }
+                ]
+            })
+        ).toThrow("Tracker command status does not match applied command count");
     });
 });

@@ -3,10 +3,7 @@ import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
-import {
-    type PagePropertiesSchemaSnapshot,
-    snapshotPagePropertiesSchema
-} from "./utils/snapshotPagePropertiesSchema";
+import {snapshotPagePropertiesSchema} from "./utils/snapshotPagePropertiesSchema";
 import {PropertyUuidOrIndentSchema} from "./utils/validations/propertyValidations";
 
 const PropertySchemaInputSchema = z
@@ -36,9 +33,19 @@ export type UpsertPropertyPageCommandArgsInput = z.input<
 >;
 export type UpsertPropertyPageCommandArgs = z.output<typeof UpsertPropertyPageCommandArgsSchema>;
 
-const UpsertPropertyPageCommandSerializedSchema = UpsertPropertyPageCommandArgsBaseSchema.extend({
-    type: z.literal("UpsertPropertyPage")
+const PagePropertiesSchemaSnapshotSchema = z.object({
+    propertyIndent: z.string(),
+    propertyIdent: z.string().optional(),
+    schema: PropertySchemaInputSchema.optional(),
+    opts: z.object({name: z.string().optional()}).optional()
 });
+
+export const UpsertPropertyPageCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"]),
+    propertyIndent: z.string().optional(),
+    originalProperty: PagePropertiesSchemaSnapshotSchema.nullable().optional()
+});
+export type UpsertPropertyPageCommandState = z.output<typeof UpsertPropertyPageCommandStateSchema>;
 
 /**
  * Creates or updates a Logseq property page/schema.
@@ -49,60 +56,65 @@ const UpsertPropertyPageCommandSerializedSchema = UpsertPropertyPageCommandArgsB
  * Runtime-only data:
  * - originalProperty
  */
-export class UpsertPropertyPageCommand extends BaseReversibleCommand {
-    private propertyIndent: string | undefined;
-    private originalProperty: PagePropertiesSchemaSnapshot | null | undefined;
+export class UpsertPropertyPageCommand extends BaseReversibleCommand<UpsertPropertyPageCommandState> {
     public readonly args: UpsertPropertyPageCommandArgs;
 
-    public constructor(args: UpsertPropertyPageCommandArgsInput) {
-        super();
+    public constructor(
+        args: UpsertPropertyPageCommandArgsInput,
+        commandState?: UpsertPropertyPageCommandState
+    ) {
+        super(UpsertPropertyPageCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = UpsertPropertyPageCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         const existingProperty = await LogseqEditor.getProperty(this.args.propertyUuidOrIndent);
-        this.originalProperty = existingProperty
+        this.commandState.originalProperty = existingProperty
             ? snapshotPagePropertiesSchema(existingProperty)
             : null;
-        this.propertyIndent =
-            this.originalProperty?.propertyIndent ?? this.args.propertyUuidOrIndent;
-        if (!this.propertyIndent) {
+        this.commandState.propertyIndent =
+            this.commandState.originalProperty?.propertyIndent ?? this.args.propertyUuidOrIndent;
+        if (!this.commandState.propertyIndent) {
             throw new Error("propertyIndent is required when creating a property page.");
         }
 
         await logseq.Editor.upsertProperty(
-            this.propertyIndent,
+            this.commandState.propertyIndent,
             this.args.schema as Partial<PropertySchema> | undefined,
             this.args.opts
         );
 
-        const property = await LogseqEditor.getProperty(this.propertyIndent);
+        const property = await LogseqEditor.getProperty(this.commandState.propertyIndent);
         if (property?.uuid) this.changedPages.push(property.uuid);
+        this.commandState.status = "executed";
         return property;
     }
 
     public async revert(): Promise<void> {
-        if (this.originalProperty === undefined)
-            throw new Error("Execute must be called before revert");
+        this.assertCanRevert();
+        const {originalProperty, propertyIndent} = this.commandState;
+        if (originalProperty === undefined) throw new Error("Missing original property state");
 
-        if (!this.originalProperty) {
-            if (!this.propertyIndent) throw new Error("Execute must be called before revert");
-            await logseq.Editor.removeProperty(this.propertyIndent);
+        if (!originalProperty) {
+            if (!propertyIndent) throw new Error("Missing property indent");
+            await logseq.Editor.removeProperty(propertyIndent);
+            this.commandState.status = "new";
             return;
         }
 
         await logseq.Editor.upsertProperty(
-            this.originalProperty.propertyIndent,
-            this.originalProperty.schema,
-            this.originalProperty.opts
+            originalProperty.propertyIndent,
+            originalProperty.schema as Partial<PropertySchema> | undefined,
+            originalProperty.opts
         );
+        this.commandState.status = "new";
     }
 }
 
 export const UpsertPropertyPageCommandCodec = createReversibleCommandCodec({
     type: "UpsertPropertyPage",
-    serializedSchema: UpsertPropertyPageCommandSerializedSchema,
-    commandSchema: z.instanceof(UpsertPropertyPageCommand),
-    decode: (args) => new UpsertPropertyPageCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: UpsertPropertyPageCommandArgsSchema,
+    commandStateSchema: UpsertPropertyPageCommandStateSchema,
+    commandClass: UpsertPropertyPageCommand
 });

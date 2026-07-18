@@ -49,15 +49,11 @@ export const InsertBlockCommandArgsSchema = z
 export type InsertBlockCommandArgsInput = z.input<typeof InsertBlockCommandArgsSchema>;
 export type InsertBlockCommandArgs = z.output<typeof InsertBlockCommandArgsSchema>;
 
-const InsertBlockCommandSerializedSchema = InsertBlockCommandArgsSchema.extend({
-    type: z.literal("InsertBlock"),
+export const InsertBlockCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"]),
     blockUuid: LogseqUUIDSchema
 });
-
-export type InsertBlockCommandSerializedState = Omit<
-    z.output<typeof InsertBlockCommandSerializedSchema>,
-    "type" | keyof InsertBlockCommandArgs
->;
+export type InsertBlockCommandState = z.output<typeof InsertBlockCommandStateSchema>;
 
 /**
  * Inserts a Logseq block with a stable UUID.
@@ -69,20 +65,24 @@ export type InsertBlockCommandSerializedState = Omit<
  * Runtime-only data:
  * - none
  */
-export class InsertBlockCommand extends BaseReversibleCommand {
+export class InsertBlockCommand extends BaseReversibleCommand<InsertBlockCommandState> {
     public readonly args: InsertBlockCommandArgs;
-    public readonly blockUuid: string;
 
-    public constructor(
-        args: InsertBlockCommandArgsInput,
-        serializedState?: Partial<InsertBlockCommandSerializedState>
-    ) {
-        super();
+    public constructor(args: InsertBlockCommandArgsInput, commandState?: InsertBlockCommandState) {
+        super(
+            InsertBlockCommandStateSchema.parse(
+                commandState ?? {status: "new", blockUuid: uuidv4()}
+            )
+        );
         this.args = InsertBlockCommandArgsSchema.parse(args);
-        this.blockUuid = LogseqUUIDSchema.parse(serializedState?.blockUuid ?? uuidv4());
+    }
+
+    public get blockUuid(): string {
+        return this.commandState.blockUuid;
     }
 
     public async execute() {
+        this.assertCanExecute();
         await requireActiveBlock(this.args.parentUuid as BlockIdentity, "Parent");
 
         const existingBlock = await logseq.Editor.getBlock(this.blockUuid as BlockIdentity);
@@ -98,6 +98,7 @@ export class InsertBlockCommand extends BaseReversibleCommand {
             }
 
             this.changedPages.push(await resolvePageUUID(block.page));
+            this.commandState.status = "executed";
             return block;
         }
 
@@ -119,21 +120,23 @@ export class InsertBlockCommand extends BaseReversibleCommand {
 
         const block = await normalizeBlock(rawBlock);
         this.changedPages.push(await resolvePageUUID(block.page));
+        this.commandState.status = "executed";
         return block;
     }
 
     public async revert(): Promise<void> {
+        this.assertCanRevert();
         const block = await logseq.Editor.getBlock(this.blockUuid as BlockIdentity);
         if (!block) throw new Error(`Inserted block is missing: ${this.blockUuid}`);
 
         await logseq.Editor.removeBlock(this.blockUuid);
+        this.commandState.status = "new";
     }
 }
 
 export const InsertBlockCommandCodec = createReversibleCommandCodec({
     type: "InsertBlock",
-    serializedSchema: InsertBlockCommandSerializedSchema,
-    commandSchema: z.instanceof(InsertBlockCommand),
-    decode: ({blockUuid, ...args}) => new InsertBlockCommand(args, {blockUuid}),
-    encodeData: (command) => ({...command.args, blockUuid: command.blockUuid})
+    argsSchema: InsertBlockCommandArgsSchema,
+    commandStateSchema: InsertBlockCommandStateSchema,
+    commandClass: InsertBlockCommand
 });

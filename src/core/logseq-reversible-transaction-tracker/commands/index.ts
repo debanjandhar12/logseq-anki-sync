@@ -31,7 +31,7 @@ export {
     type AddTagToBlockCommandArgsInput,
     AddTagToBlockCommandArgsSchema
 } from "./AddTagToBlockCommand";
-export {BaseReversibleCommand} from "./BaseReversibleCommand";
+export {BaseReversibleCommand, type ReversibleCommandStatus} from "./BaseReversibleCommand";
 export {
     CreatePageCommand,
     type CreatePageCommandArgs,

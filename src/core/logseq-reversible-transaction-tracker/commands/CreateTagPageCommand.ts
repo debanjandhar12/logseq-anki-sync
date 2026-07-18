@@ -13,32 +13,34 @@ export const CreateTagPageCommandArgsSchema = CreateTagPageCommandArgsBaseSchema
 export type CreateTagPageCommandArgsInput = z.input<typeof CreateTagPageCommandArgsSchema>;
 export type CreateTagPageCommandArgs = z.output<typeof CreateTagPageCommandArgsSchema>;
 
-const CreateTagPageCommandSerializedSchema = CreateTagPageCommandArgsBaseSchema.extend({
-    type: z.literal("CreateTagPage"),
+export const CreateTagPageCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"]),
     tagPageUuid: LogseqUUIDSchema
 });
-
-export type CreateTagPageCommandSerializedState = Omit<
-    z.output<typeof CreateTagPageCommandSerializedSchema>,
-    "type" | keyof CreateTagPageCommandArgs
->;
+export type CreateTagPageCommandState = z.output<typeof CreateTagPageCommandStateSchema>;
 
 /** Creates a Logseq tag page with a stable UUID. */
-export class CreateTagPageCommand extends BaseReversibleCommand {
-    private createdTagPageUuid: string | undefined;
+export class CreateTagPageCommand extends BaseReversibleCommand<CreateTagPageCommandState> {
     public readonly args: CreateTagPageCommandArgs;
-    public readonly tagPageUuid: string;
 
     public constructor(
         args: CreateTagPageCommandArgsInput,
-        serializedState?: Partial<CreateTagPageCommandSerializedState>
+        commandState?: CreateTagPageCommandState
     ) {
-        super();
+        super(
+            CreateTagPageCommandStateSchema.parse(
+                commandState ?? {status: "new", tagPageUuid: uuidv4()}
+            )
+        );
         this.args = CreateTagPageCommandArgsSchema.parse(args);
-        this.tagPageUuid = LogseqUUIDSchema.parse(serializedState?.tagPageUuid ?? uuidv4());
+    }
+
+    public get tagPageUuid(): string {
+        return this.commandState.tagPageUuid;
     }
 
     public async execute() {
+        this.assertCanExecute();
         const existingTag = await logseq.Editor.getTag(this.args.tagName);
         if (existingTag) {
             const tag = await normalizeTagPage(existingTag);
@@ -46,8 +48,8 @@ export class CreateTagPageCommand extends BaseReversibleCommand {
                 throw new Error(`Tag page already exists: ${this.args.tagName}`);
             }
 
-            this.createdTagPageUuid = tag.uuid;
             this.changedPages.push(tag.uuid);
+            this.commandState.status = "executed";
             return tag;
         }
 
@@ -57,23 +59,23 @@ export class CreateTagPageCommand extends BaseReversibleCommand {
         if (!createdTag) throw new Error(`Failed to create tag page: ${this.args.tagName}`);
 
         const normalizedTag = await normalizeTagPage(createdTag);
-        this.createdTagPageUuid = normalizedTag.uuid;
         this.changedPages.push(normalizedTag.uuid);
+        this.commandState.status = "executed";
         return normalizedTag;
     }
 
     public async revert(): Promise<void> {
-        if (!this.createdTagPageUuid) throw new Error("Execute must be called before revert");
-        const tag = await logseq.Editor.getTag(this.createdTagPageUuid);
-        if (!tag) throw new Error(`Created tag page is missing: ${this.createdTagPageUuid}`);
-        await logseq.Editor.deletePage(this.createdTagPageUuid);
+        this.assertCanRevert();
+        const tag = await logseq.Editor.getTag(this.tagPageUuid);
+        if (!tag) throw new Error(`Created tag page is missing: ${this.tagPageUuid}`);
+        await logseq.Editor.deletePage(this.tagPageUuid);
+        this.commandState.status = "new";
     }
 }
 
 export const CreateTagPageCommandCodec = createReversibleCommandCodec({
     type: "CreateTagPage",
-    serializedSchema: CreateTagPageCommandSerializedSchema,
-    commandSchema: z.instanceof(CreateTagPageCommand),
-    decode: ({tagPageUuid, ...args}) => new CreateTagPageCommand(args, {tagPageUuid}),
-    encodeData: (command) => ({...command.args, tagPageUuid: command.tagPageUuid})
+    argsSchema: CreateTagPageCommandArgsSchema,
+    commandStateSchema: CreateTagPageCommandStateSchema,
+    commandClass: CreateTagPageCommand
 });

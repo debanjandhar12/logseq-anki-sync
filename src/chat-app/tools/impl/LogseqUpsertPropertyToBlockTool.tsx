@@ -6,7 +6,7 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
+import {executeLogseqReversibleCommand} from "src/chat-app/tools/transaction/executeLogseqReversibleCommand";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     type LogseqReversibleTransactionResult,
@@ -35,15 +35,15 @@ export class LogseqUpsertPropertyToBlockTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqUpsertPropertyToBlockResult>> {
         try {
-            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new UpsertPropertyToBlockCommand(args));
-
-            const block = await transactionTracker.execute();
-            await transactionTracker.revert();
+            const {result: block, tracker} = await executeLogseqReversibleCommand({
+                command: new UpsertPropertyToBlockCommand(args),
+                messages: context?.messages,
+                signal: context?.abortSignal
+            });
 
             return ChatToolResponse.success(
                 {block},
-                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+                createLogseqReversibleTransactionTrackerArtifact(tracker)
             );
         } catch (err) {
             return ChatToolResponse.error(

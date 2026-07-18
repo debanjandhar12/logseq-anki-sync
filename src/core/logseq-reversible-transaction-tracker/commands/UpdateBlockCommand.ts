@@ -15,14 +15,11 @@ export const UpdateBlockCommandArgsSchema = z.object({
 export type UpdateBlockCommandArgsInput = z.input<typeof UpdateBlockCommandArgsSchema>;
 export type UpdateBlockCommandArgs = z.output<typeof UpdateBlockCommandArgsSchema>;
 
-const UpdateBlockCommandSerializedSchema = UpdateBlockCommandArgsSchema.extend({
-    type: z.literal("UpdateBlock")
+export const UpdateBlockCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"]),
+    originalContent: z.string().optional()
 });
-
-export type UpdateBlockCommandSerializedState = Omit<
-    z.output<typeof UpdateBlockCommandSerializedSchema>,
-    "type" | keyof UpdateBlockCommandArgs
->;
+export type UpdateBlockCommandState = z.output<typeof UpdateBlockCommandStateSchema>;
 
 /**
  * Updates a Logseq block's content.
@@ -33,35 +30,40 @@ export type UpdateBlockCommandSerializedState = Omit<
  * Runtime-only data:
  * - originalContent
  */
-export class UpdateBlockCommand extends BaseReversibleCommand {
-    private originalContent: string | undefined;
+export class UpdateBlockCommand extends BaseReversibleCommand<UpdateBlockCommandState> {
     public readonly args: UpdateBlockCommandArgs;
 
-    public constructor(args: UpdateBlockCommandArgsInput) {
-        super();
+    public constructor(args: UpdateBlockCommandArgsInput, commandState?: UpdateBlockCommandState) {
+        super(UpdateBlockCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = UpdateBlockCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         const originalBlock = await requireActiveBlock(this.args.blockUuid as BlockIdentity);
-        this.originalContent = originalBlock.content ?? "";
+        this.commandState.originalContent = originalBlock.content ?? "";
         if (originalBlock.page) this.changedPages.push(await resolvePageUUID(originalBlock.page));
         await LogseqEditor.updateBlock(this.args.blockUuid as BlockIdentity, this.args.content);
+        this.commandState.status = "executed";
         return true;
     }
 
     public async revert(): Promise<void> {
-        if (this.originalContent === undefined)
-            throw new Error("Execute must be called before revert");
+        this.assertCanRevert();
+        if (this.commandState.originalContent === undefined)
+            throw new Error("Missing original content");
 
-        await LogseqEditor.updateBlock(this.args.blockUuid as BlockIdentity, this.originalContent);
+        await LogseqEditor.updateBlock(
+            this.args.blockUuid as BlockIdentity,
+            this.commandState.originalContent
+        );
+        this.commandState.status = "new";
     }
 }
 
 export const UpdateBlockCommandCodec = createReversibleCommandCodec({
     type: "UpdateBlock",
-    serializedSchema: UpdateBlockCommandSerializedSchema,
-    commandSchema: z.instanceof(UpdateBlockCommand),
-    decode: (args) => new UpdateBlockCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: UpdateBlockCommandArgsSchema,
+    commandStateSchema: UpdateBlockCommandStateSchema,
+    commandClass: UpdateBlockCommand
 });

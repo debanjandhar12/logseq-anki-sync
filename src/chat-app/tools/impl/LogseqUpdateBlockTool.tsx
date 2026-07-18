@@ -6,7 +6,7 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
+import {executeLogseqReversibleCommand} from "src/chat-app/tools/transaction/executeLogseqReversibleCommand";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     UpdateBlockCommand,
@@ -31,15 +31,15 @@ export class LogseqUpdateBlockTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqUpdateBlockResult>> {
         try {
-            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new UpdateBlockCommand(args));
-
-            await transactionTracker.execute();
-            await transactionTracker.revert();
+            const {tracker} = await executeLogseqReversibleCommand({
+                command: new UpdateBlockCommand(args),
+                messages: context?.messages,
+                signal: context?.abortSignal
+            });
 
             return ChatToolResponse.success(
                 {},
-                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+                createLogseqReversibleTransactionTrackerArtifact(tracker)
             );
         } catch (err) {
             return ChatToolResponse.error(

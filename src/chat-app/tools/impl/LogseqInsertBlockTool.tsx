@@ -13,7 +13,7 @@ import {
     type LogseqReversibleTransactionResult
 } from "src/core/logseq-reversible-transaction-tracker";
 import {createLogseqReversibleTransactionTrackerArtifact} from "../transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {getLastLogseqReversibleTransactionTracker} from "../transaction/getLastLogseqReversibleTransactionTracker";
+import {executeLogseqReversibleCommand} from "../transaction/executeLogseqReversibleCommand";
 
 type LogseqInsertBlockResult =
     | ChatToolSuccessResult<{
@@ -36,15 +36,15 @@ export class LogseqInsertBlockTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqInsertBlockResult>> {
         try {
-            const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
-            transactionTracker.addCommand(new InsertBlockCommand(args));
-
-            const block = await transactionTracker.execute();
-            await transactionTracker.revert();
+            const {result: block, tracker} = await executeLogseqReversibleCommand({
+                command: new InsertBlockCommand(args),
+                messages: context?.messages,
+                signal: context?.abortSignal
+            });
 
             return ChatToolResponse.success(
                 {block},
-                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+                createLogseqReversibleTransactionTrackerArtifact(tracker)
             );
         } catch (err) {
             return ChatToolResponse.error(

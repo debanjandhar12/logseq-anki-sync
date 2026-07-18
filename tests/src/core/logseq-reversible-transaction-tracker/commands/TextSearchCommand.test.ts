@@ -30,9 +30,10 @@ describe("TextSearchCommand", () => {
         );
     });
 
-    it("Revert is a no-op.", async () => {
-        const command = new TextSearchCommand({searchString: "needle"});
+    it("Revert is a no-op with normal status transitions.", async () => {
+        const command = new TextSearchCommand({searchString: "needle"}, {status: "executed"});
 
         await expect(command.revert()).resolves.toBeUndefined();
+        expect(command.getCommandState()).toEqual({status: "new"});
     });
 });

@@ -1,4 +1,4 @@
-import type {BlockIdentity, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
+import type {BlockIdentity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
@@ -14,14 +14,11 @@ export const DeletePageCommandArgsSchema = z.object({
 export type DeletePageCommandArgsInput = z.input<typeof DeletePageCommandArgsSchema>;
 export type DeletePageCommandArgs = z.output<typeof DeletePageCommandArgsSchema>;
 
-const DeletePageCommandSerializedSchema = DeletePageCommandArgsSchema.extend({
-    type: z.literal("DeletePage")
+export const DeletePageCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"]),
+    pageName: z.string().optional()
 });
-
-export type DeletePageCommandSerializedState = Omit<
-    z.output<typeof DeletePageCommandSerializedSchema>,
-    "type" | keyof DeletePageCommandArgs
->;
+export type DeletePageCommandState = z.output<typeof DeletePageCommandStateSchema>;
 
 /**
  * Deletes a Logseq page.
@@ -32,16 +29,16 @@ export type DeletePageCommandSerializedState = Omit<
  * Runtime-only data:
  * - deletedPage
  */
-export class DeletePageCommand extends BaseReversibleCommand {
-    private deletedPage: PageEntity | undefined;
+export class DeletePageCommand extends BaseReversibleCommand<DeletePageCommandState> {
     public readonly args: DeletePageCommandArgs;
 
-    public constructor(args: DeletePageCommandArgsInput) {
-        super();
+    public constructor(args: DeletePageCommandArgsInput, commandState?: DeletePageCommandState) {
+        super(DeletePageCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = DeletePageCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         const block = await logseq.Editor.getBlock(this.args.pageUuid as BlockIdentity);
         const isPageBlock = block ? await LogseqEditor.isPageBlock(block) : false;
         if (block && isPageBlock !== true && !("name" in block && typeof block.name === "string")) {
@@ -58,31 +55,30 @@ export class DeletePageCommand extends BaseReversibleCommand {
             throw new Error("Cannot delete a property page using DeletePageCommand.");
         }
 
-        this.deletedPage = page;
+        this.commandState.pageName = page.originalName ?? page.name;
         this.changedPages.push(page.uuid);
         await logseq.Editor.deletePage(page.uuid);
+        this.commandState.status = "executed";
         return true;
     }
 
     public async revert(): Promise<void> {
-        if (!this.deletedPage) throw new Error("Execute must be called before revert");
-
-        const page = this.deletedPage;
-        const pageName = page.originalName ?? page.name;
-        const existingPage = await logseq.Editor.getPage(page.uuid);
+        this.assertCanRevert();
+        const pageName = this.commandState.pageName ?? this.args.pageUuid;
+        const existingPage = await logseq.Editor.getPage(this.args.pageUuid);
         if (existingPage && !isPageSoftDeleted(existingPage)) {
             throw new Error(`Page already exists: ${pageName}`);
         }
 
         // @ts-ignore restorePage exists in unreleased Logseq APIs but is not in current plugin types.
-        await logseq.Editor.restorePage(page.uuid);
+        await logseq.Editor.restorePage(this.args.pageUuid);
+        this.commandState.status = "new";
     }
 }
 
 export const DeletePageCommandCodec = createReversibleCommandCodec({
     type: "DeletePage",
-    serializedSchema: DeletePageCommandSerializedSchema,
-    commandSchema: z.instanceof(DeletePageCommand),
-    decode: (args) => new DeletePageCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: DeletePageCommandArgsSchema,
+    commandStateSchema: DeletePageCommandStateSchema,
+    commandClass: DeletePageCommand
 });

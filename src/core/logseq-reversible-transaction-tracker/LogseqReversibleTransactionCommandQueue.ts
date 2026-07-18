@@ -1,9 +1,9 @@
-import type {LogseqReversibleCommand} from "./commands";
+import type {BaseReversibleCommand, LogseqReversibleCommand} from "./commands";
 
 export class LogseqReversibleTransactionCommandQueue {
-    private readonly commands: LogseqReversibleCommand[] = [];
+    private readonly commands: BaseReversibleCommand<any>[] = [];
 
-    public add(command: LogseqReversibleCommand): void {
+    public add(command: BaseReversibleCommand<any>): void {
         this.commands.push(command);
     }
 
@@ -12,6 +12,6 @@ export class LogseqReversibleTransactionCommandQueue {
     }
 
     public getCommands(): LogseqReversibleCommand[] {
-        return [...this.commands];
+        return [...this.commands] as LogseqReversibleCommand[];
     }
 }

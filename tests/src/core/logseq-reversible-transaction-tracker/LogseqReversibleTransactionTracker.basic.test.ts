@@ -40,7 +40,7 @@ describe.skipIf(!shouldRunTests())("LogseqReversibleTransactionTracker basic", (
         expect(createdPage.uuid).toBeTruthy();
         expect(await logseq.Editor.getPage(pageName)).not.toBeNull();
 
-        await tracker.revert();
+        await tracker.revertImmediately();
         await waitForLogseqDb();
         const revertedPage = await logseq.Editor.getPage(pageName);
         expect(revertedPage).not.toBeNull();
@@ -63,7 +63,7 @@ describe.skipIf(!shouldRunTests())("LogseqReversibleTransactionTracker basic", (
         expect(await logseq.Editor.getPage(pageName)).not.toBeNull();
         expect(await logseq.Editor.getBlock(insertedBlock.uuid)).not.toBeNull();
 
-        await tracker.revert();
+        await tracker.revertImmediately();
         await waitForLogseqDb();
 
         expect(await logseq.Editor.getBlock(insertedBlock.uuid)).toBeNull();

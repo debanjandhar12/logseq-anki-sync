@@ -44,11 +44,10 @@ export type ReadBlockCommandResult =
           block: Omit<PageEntity, "children"> & {children?: BlockEntity[]};
       };
 
-const ReadBlockCommandSerializedSchema = ReadBlockCommandArgsBaseSchema.extend({
-    type: z.literal("ReadBlock")
-}).refine((args) => Boolean(args.uuid) !== Boolean(args.propertyIndent), {
-    message: "Pass exactly one of uuid or propertyIndent."
+export const ReadBlockCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"])
 });
+export type ReadBlockCommandState = z.output<typeof ReadBlockCommandStateSchema>;
 
 /**
  * Reads a Logseq block/page/tag by UUID, or a property by property ident/key.
@@ -59,15 +58,31 @@ const ReadBlockCommandSerializedSchema = ReadBlockCommandArgsBaseSchema.extend({
  * Runtime-only data:
  * - none
  */
-export class ReadBlockCommand extends BaseReversibleCommand {
+export class ReadBlockCommand extends BaseReversibleCommand<ReadBlockCommandState> {
     public readonly args: ReadBlockCommandArgs;
 
-    public constructor(args: ReadBlockCommandArgsInput) {
-        super();
+    public constructor(args: ReadBlockCommandArgsInput, commandState?: ReadBlockCommandState) {
+        super(ReadBlockCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = ReadBlockCommandArgsSchema.parse(args);
     }
 
     public async execute(): Promise<ReadBlockCommandResult> {
+        this.assertCanExecute();
+        const result = await this.read();
+        this.commandState.status = "executed";
+        return result;
+    }
+
+    public async revert(): Promise<void> {
+        this.assertCanRevert();
+        this.commandState.status = "new";
+    }
+
+    public override isGraphMutation(): boolean {
+        return false;
+    }
+
+    private async read(): Promise<ReadBlockCommandResult> {
         if (this.args.propertyIndent) {
             const property = await LogseqEditor.getProperty(this.args.propertyIndent);
             return {
@@ -124,14 +139,11 @@ export class ReadBlockCommand extends BaseReversibleCommand {
 
         return {type: "block", block: block ? await normalizeBlock(block) : null};
     }
-
-    public async revert(): Promise<void> {}
 }
 
 export const ReadBlockCommandCodec = createReversibleCommandCodec({
     type: "ReadBlock",
-    serializedSchema: ReadBlockCommandSerializedSchema,
-    commandSchema: z.instanceof(ReadBlockCommand),
-    decode: (args) => new ReadBlockCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: ReadBlockCommandArgsSchema,
+    commandStateSchema: ReadBlockCommandStateSchema,
+    commandClass: ReadBlockCommand
 });

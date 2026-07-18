@@ -173,6 +173,8 @@ describe.skipIf(!shouldRunTests())("ReadBlockCommand", () => {
     it("Revert is a no-op.", async () => {
         const command = new ReadBlockCommand({uuid: page.uuid});
 
+        await command.execute();
         await expect(command.revert()).resolves.toBeUndefined();
+        expect(command.getCommandState()).toEqual({status: "new"});
     }, 60_000);
 });

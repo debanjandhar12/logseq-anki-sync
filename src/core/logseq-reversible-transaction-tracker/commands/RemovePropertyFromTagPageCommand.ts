@@ -19,41 +19,46 @@ export type RemovePropertyFromTagPageCommandArgs = z.output<
     typeof RemovePropertyFromTagPageCommandArgsSchema
 >;
 
-const RemovePropertyFromTagPageCommandSerializedSchema =
-    RemovePropertyFromTagPageCommandArgsBaseSchema.extend({
-        type: z.literal("RemovePropertyFromTagPage")
-    });
+export const RemovePropertyFromTagPageCommandStateSchema = z.object({
+    status: z.enum(["new", "executed"])
+});
+export type RemovePropertyFromTagPageCommandState = z.output<
+    typeof RemovePropertyFromTagPageCommandStateSchema
+>;
 
-export class RemovePropertyFromTagPageCommand extends BaseReversibleCommand {
-    private executed = false;
+export class RemovePropertyFromTagPageCommand extends BaseReversibleCommand<RemovePropertyFromTagPageCommandState> {
     public readonly args: RemovePropertyFromTagPageCommandArgs;
 
-    public constructor(args: RemovePropertyFromTagPageCommandArgsInput) {
-        super();
+    public constructor(
+        args: RemovePropertyFromTagPageCommandArgsInput,
+        commandState?: RemovePropertyFromTagPageCommandState
+    ) {
+        super(RemovePropertyFromTagPageCommandStateSchema.parse(commandState ?? {status: "new"}));
         this.args = RemovePropertyFromTagPageCommandArgsSchema.parse(args);
     }
 
     public async execute() {
+        this.assertCanExecute();
         await requireTagWithProperty(this.args.tagPageUuid, this.args.propertyPageUuid);
         await logseq.Editor.removeTagProperty(this.args.tagPageUuid, this.args.propertyPageUuid);
-        this.executed = true;
         this.changedPages.push(this.args.tagPageUuid);
         const updatedTag = await logseq.Editor.getTag(this.args.tagPageUuid);
         if (!updatedTag) throw new Error(`Updated tag page not found: ${this.args.tagPageUuid}`);
-        return await normalizeTagPage(updatedTag);
+        const tag = await normalizeTagPage(updatedTag);
+        this.commandState.status = "executed";
+        return tag;
     }
 
     public async revert(): Promise<void> {
-        if (!this.executed) throw new Error("Execute must be called before revert");
+        this.assertCanRevert();
         await logseq.Editor.addTagProperty(this.args.tagPageUuid, this.args.propertyPageUuid);
-        this.executed = false;
+        this.commandState.status = "new";
     }
 }
 
 export const RemovePropertyFromTagPageCommandCodec = createReversibleCommandCodec({
     type: "RemovePropertyFromTagPage",
-    serializedSchema: RemovePropertyFromTagPageCommandSerializedSchema,
-    commandSchema: z.instanceof(RemovePropertyFromTagPageCommand),
-    decode: (args) => new RemovePropertyFromTagPageCommand(args),
-    encodeData: (command) => command.args
+    argsSchema: RemovePropertyFromTagPageCommandArgsSchema,
+    commandStateSchema: RemovePropertyFromTagPageCommandStateSchema,
+    commandClass: RemovePropertyFromTagPageCommand
 });

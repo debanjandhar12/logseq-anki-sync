@@ -72,6 +72,8 @@ describe.skipIf(!shouldRunTests())("DataScriptQueryCommand", () => {
             datalogString: "[:find ?b :where [?b :block/name]]"
         });
 
+        await command.execute();
         await expect(command.revert()).resolves.toBeUndefined();
+        expect(command.getCommandState()).toEqual({status: "new"});
     });
 });
