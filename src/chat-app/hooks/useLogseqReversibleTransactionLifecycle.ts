@@ -3,13 +3,13 @@ import debounce from "lodash/debounce";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {LogseqReversibleTransactionTrackerSerializer} from "src/core/logseq-reversible-transaction-tracker";
 import {createLogger, LoggerCategory} from "src/logger";
+import {CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY} from "../../constants";
 import {persistLogseqReversibleTransactionTrackerArtifact} from "../runtime/persistLogseqReversibleTransactionTrackerArtifact";
 import {
     findLastLogseqReversibleTransactionTracker,
     type LocatedLogseqReversibleTransactionTracker
 } from "../tools/transaction/getLastLogseqReversibleTransactionTracker";
 
-const REVERT_DELAY_MS = 10_000;
 const COUNTDOWN_INTERVAL_MS = 250;
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
@@ -66,7 +66,7 @@ export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
                 } catch (error) {
                     logger.error("Failed to revert temporary Logseq changes", error);
                 }
-            }, REVERT_DELAY_MS),
+            }, CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY),
         [revertLocatedTracker]
     );
 
@@ -138,9 +138,12 @@ export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
             return;
         }
 
-        const nextDeadline = Date.now() + REVERT_DELAY_MS;
+        const nextDeadline =
+            Date.now() + CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY;
         setDeadline(nextDeadline);
-        setRemainingSeconds(Math.ceil(REVERT_DELAY_MS / 1000));
+        setRemainingSeconds(
+            Math.ceil(CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY / 1000)
+        );
         scheduledRevert(locatedTracker);
     }, [
         messages,

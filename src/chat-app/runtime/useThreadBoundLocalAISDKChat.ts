@@ -6,6 +6,7 @@ import {
     useLocalRuntime
 } from "@assistant-ui/react";
 import {useMemo} from "react";
+import {CHAT_APP_AGENT_MAX_STEPS} from "../../constants";
 import {ChatToolRegistry} from "../tools";
 import {LocalAISDKChatModelAdapter} from "./LocalChatModelAdapter";
 import {LocalThreadHistoryAdapter} from "./LocalThreadHistoryAdapter.js";
@@ -43,7 +44,7 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
             history: historyAdapter,
             attachments: attachmentAdapter
         },
-        maxSteps: 5,
+        maxSteps: CHAT_APP_AGENT_MAX_STEPS,
         unstable_humanToolNames: humanToolNames
     });
 }
