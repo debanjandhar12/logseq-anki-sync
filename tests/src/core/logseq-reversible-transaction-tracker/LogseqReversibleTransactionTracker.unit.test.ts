@@ -74,19 +74,45 @@ describe("LogseqReversibleTransactionTracker", () => {
         const newlyApplied = new TestCommand();
         const failure = new Error("execute failed");
         const failing = new TestCommand({execute: async () => Promise.reject(failure)});
+        const pending = new TestCommand();
         const tracker = new LogseqReversibleTransactionTracker();
         tracker.addCommand(applied);
         await tracker.execute();
         tracker.addCommand(newlyApplied);
         tracker.addCommand(failing);
+        tracker.addCommand(pending);
 
         await expect(tracker.execute()).rejects.toBe(failure);
 
         expect(applied.revertMock).not.toHaveBeenCalled();
         expect(newlyApplied.revertMock).toHaveBeenCalledOnce();
+        expect(failing.revertMock).not.toHaveBeenCalled();
+        expect(pending.executeMock).not.toHaveBeenCalled();
         expect(tracker.getAppliedCommandCount()).toBe(1);
+        expect(tracker.getCommands()).toEqual([applied]);
         expect(applied.getCommandState().status).toBe("executed");
         expect(newlyApplied.getCommandState().status).toBe("new");
+        expect(failing.getCommandState().status).toBe("new");
+        expect(pending.getCommandState().status).toBe("new");
+    });
+
+    test("ignores rollback failures and rethrows the original execute error", async () => {
+        const rollbackFailure = new Error("rollback failed");
+        const newlyApplied = new TestCommand({
+            revert: async () => Promise.reject(rollbackFailure)
+        });
+        const executeFailure = new Error("execute failed");
+        const failing = new TestCommand({execute: async () => Promise.reject(executeFailure)});
+        const tracker = new LogseqReversibleTransactionTracker();
+        tracker.addCommand(newlyApplied);
+        tracker.addCommand(failing);
+
+        await expect(tracker.execute()).rejects.toBe(executeFailure);
+
+        expect(newlyApplied.revertMock).toHaveBeenCalledOnce();
+        expect(failing.revertMock).not.toHaveBeenCalled();
+        expect(tracker.getAppliedCommandCount()).toBe(0);
+        expect(tracker.getCommands()).toEqual([]);
     });
 
     test("serializes operations across tracker instances with the global lock", async () => {

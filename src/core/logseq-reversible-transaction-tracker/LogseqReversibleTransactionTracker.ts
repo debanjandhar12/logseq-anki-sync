@@ -1,6 +1,9 @@
+import {createLogger, LoggerCategory} from "src/logger";
 import type {BaseReversibleCommand, LogseqReversibleCommand} from "./commands";
 import {LogseqReversibleTransactionCommandQueue} from "./LogseqReversibleTransactionCommandQueue";
 import {LogseqReversibleTransactionOperationLockManager} from "./LogseqReversibleTransactionOperationLockManager";
+
+const logger = createLogger(LoggerCategory.MISC);
 
 export class LogseqReversibleTransactionTracker {
     private readonly commandQueue = new LogseqReversibleTransactionCommandQueue();
@@ -64,11 +67,20 @@ export class LogseqReversibleTransactionTracker {
                 while (this.appliedCommandCount > initialAppliedCommandCount) {
                     const command = commands[this.appliedCommandCount - 1];
                     if (!command) break;
-                    await command.revert();
+                    try {
+                        await command.revert();
+                    } catch (revertError) {
+                        logger.error("Failed to roll back command after execute failure", {
+                            command: command.constructor.name,
+                            error: revertError
+                        });
+                        await logseq.UI.showMsg("Failed to roll back command");
+                    }
                     this.appliedCommandCount -= 1;
                     await new Promise((resolve) => setTimeout(resolve, 320));
                 }
                 this.changedPages = initialChangedPages;
+                this.commandQueue.truncate(this.appliedCommandCount);
                 throw error;
             }
 

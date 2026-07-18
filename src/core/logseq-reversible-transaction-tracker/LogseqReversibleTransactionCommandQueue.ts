@@ -11,6 +11,10 @@ export class LogseqReversibleTransactionCommandQueue {
         this.commands.length = 0;
     }
 
+    public truncate(length: number): void {
+        this.commands.length = Math.max(0, length);
+    }
+
     public getCommands(): LogseqReversibleCommand[] {
         return [...this.commands] as LogseqReversibleCommand[];
     }
