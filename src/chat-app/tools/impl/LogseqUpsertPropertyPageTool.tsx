@@ -6,7 +6,7 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {executeLogseqReversibleCommand} from "src/chat-app/tools/transaction/executeLogseqReversibleCommand";
+import {addAndExecLogseqReversibleCommand} from "src/chat-app/tools/transaction/addAndExecLogseqReversibleCommand";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     type LogseqReversibleTransactionResult,
@@ -35,7 +35,7 @@ export class LogseqUpsertPropertyPageTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqUpsertPropertyPageResult>> {
         try {
-            const {result: property, tracker} = await executeLogseqReversibleCommand({
+            const {result: property, tracker} = await addAndExecLogseqReversibleCommand({
                 command: new UpsertPropertyPageCommand(args),
                 messages: context?.messages,
                 signal: context?.abortSignal

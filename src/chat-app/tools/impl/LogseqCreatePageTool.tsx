@@ -6,7 +6,7 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {executeLogseqReversibleCommand} from "src/chat-app/tools/transaction/executeLogseqReversibleCommand";
+import {addAndExecLogseqReversibleCommand} from "src/chat-app/tools/transaction/addAndExecLogseqReversibleCommand";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     CreatePageCommand,
@@ -34,7 +34,7 @@ export class LogseqCreatePageTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqCreatePageResult>> {
         try {
-            const {result: page, tracker} = await executeLogseqReversibleCommand({
+            const {result: page, tracker} = await addAndExecLogseqReversibleCommand({
                 command: new CreatePageCommand(args),
                 messages: context?.messages,
                 signal: context?.abortSignal

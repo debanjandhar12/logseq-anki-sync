@@ -5,7 +5,7 @@ import type {
 } from "src/core/logseq-reversible-transaction-tracker";
 import {getLastLogseqReversibleTransactionTracker} from "./getLastLogseqReversibleTransactionTracker";
 
-export async function executeLogseqReversibleCommand<
+export async function addAndExecLogseqReversibleCommand<
     Result extends LogseqReversibleTransactionResult
 >(options: {
     command: BaseReversibleCommand<any>;

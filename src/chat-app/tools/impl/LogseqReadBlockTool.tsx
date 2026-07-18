@@ -6,7 +6,7 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {executeLogseqReversibleCommand} from "src/chat-app/tools/transaction/executeLogseqReversibleCommand";
+import {addAndExecLogseqReversibleCommand} from "src/chat-app/tools/transaction/addAndExecLogseqReversibleCommand";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     ReadBlockCommand,
@@ -38,7 +38,7 @@ export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqReadBlockResult>> {
         try {
-            const {result, tracker} = await executeLogseqReversibleCommand<ReadBlockCommandResult>({
+            const {result, tracker} = await addAndExecLogseqReversibleCommand<ReadBlockCommandResult>({
                 command: new ReadBlockCommand(args),
                 messages: context?.messages,
                 signal: context?.abortSignal

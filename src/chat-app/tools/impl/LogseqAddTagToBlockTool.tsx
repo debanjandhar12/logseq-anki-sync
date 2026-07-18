@@ -6,7 +6,7 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {executeLogseqReversibleCommand} from "src/chat-app/tools/transaction/executeLogseqReversibleCommand";
+import {addAndExecLogseqReversibleCommand} from "src/chat-app/tools/transaction/addAndExecLogseqReversibleCommand";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     AddTagToBlockCommand,
@@ -34,7 +34,7 @@ export class LogseqAddTagToBlockTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqAddTagToBlockResult>> {
         try {
-            const {result: block, tracker} = await executeLogseqReversibleCommand({
+            const {result: block, tracker} = await addAndExecLogseqReversibleCommand({
                 command: new AddTagToBlockCommand(args),
                 messages: context?.messages,
                 signal: context?.abortSignal
