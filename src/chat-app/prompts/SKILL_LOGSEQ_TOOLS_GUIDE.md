@@ -29,43 +29,30 @@ default-installed-skill: true
 
 ## Creating Query Blocks in DB Graphs
 
-Logseq DB graph query blocks use two block entities:
-
-1. **Visible query block**
-    - Has the `#Query` class/tag (`:logseq.class/Query`).
-    - Uses its normal block content/title as the visible query title.
-    - Has a `logseq.property/query` property that points to a separate query-value block.
-2. **Query-value block**
-    - Stores the actual query text in its own block content/title.
-    - Is a property-value block created from `logseq.property/query`.
-    - Has `logseq.property/created-from-property = logseq.property/query` internally.
-    - Does **not** have its own `logseq.property/query` property.
+Query blocks are created from a single visible block plus an internal query-value block that Logseq manages automatically.
 
 To create a query block with tools:
 
 1. Create or update the visible block with the desired title.
 2. Add the `#Query` tag/class to the visible block.
-3. Set the visible block's `logseq.property/query` property to the query text. This creates or updates the query-value block.
-4. Read the visible block and locate the returned `logseq.property/query` value block when you need to edit query metadata directly.
-5. For an advanced query, add the `#Code` tag on the query-value block (not the visible block) before putting the query.
-6. For advanced query, do not forget to put the query inside {:query } map in query-value block.
+3. Set the visible block's `logseq.property/query` property to the query text. Advanced queries work directly when the query text is wrapped in a `{:query ...}` map.
 
 Use these query text shapes:
 
 ```clojure
-;; Simple query DSL stored in the query-value block title
+;; Simple query DSL
 (tags foo)
 ```
 
 ```clojure
-;; True Datalog advanced query map
+;; True Datalog advanced query map (works directly via logseq.property/query)
 {:query [:find (pull ?b [:block/uuid :block/title])
          :where
          [?b :block/tags ?task-tag]
          [?task-tag :block/title "Task"]]}
 ```
 
-Do not put the query EDN in the visible block content unless the user wants it shown as the title. Do not expect the query-value block to contain `logseq.property/query`; it is itself the value of that property.
+Do not put the query EDN in the visible block content unless the user wants it shown as the title.
 
 ### Gotchas
 - Avoid simple DSL queries since you cannot test them.

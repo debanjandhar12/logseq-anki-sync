@@ -38,7 +38,7 @@ Several special tags change the visual look or behavior of a normal block:
 - `#Code` converts the block to a code block.
 - `#Math` converts block content to a math block. For example, `x^2` renders as a math expression. Alternatively, use markdown math syntax. However, do not use markdown $$ syntax together with math tag.
 - `#Task` converts the block to a task. Change `logseq.property/status` to values such as `Todo`, `Backlog`, `Canceled`, `Doing`, `Done` or empty string (default: empty string).
-- `#Query` converts the block to a query block. The visible block content is the query title; the visible block's `logseq.property/query` points to a separate query-value block whose content/title stores the query text.
+- `#Query` converts the block to a query block. The visible block content is the query title; set the visible block's `logseq.property/query` to the query text (advanced queries wrapped in a `{:query ...}` map work directly).
 
 Several special properties change rendering or behavior:
 
