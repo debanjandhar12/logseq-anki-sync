@@ -1,9 +1,4 @@
-import type {
-    AssistantClient,
-    ExportedMessageRepository,
-    ThreadMessage,
-    ThreadRuntime
-} from "@assistant-ui/react";
+import type {ExportedMessageRepository, ThreadMessage, ThreadRuntime} from "@assistant-ui/react";
 import type {LogseqReversibleTransactionTracker} from "src/core/logseq-reversible-transaction-tracker";
 import {ThreadStore} from "src/core/stores/thread-store/ThreadStore";
 import {createLogseqReversibleTransactionTrackerArtifact} from "../tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
@@ -53,14 +48,17 @@ export function patchLogseqReversibleTransactionTrackerArtifact(
 }
 
 export async function persistLogseqReversibleTransactionTrackerArtifact(options: {
-    aui: AssistantClient;
     threadId: string;
+    runtime?: ThreadRuntime;
     location: LogseqReversibleTransactionTrackerArtifactLocation;
     tracker: LogseqReversibleTransactionTracker;
-    updateRuntime?: boolean;
 }): Promise<void> {
-    if (options.updateRuntime !== false) {
-        patchRuntimeThreadTrackerArtifact(options);
+    if (options.runtime) {
+        patchRuntimeThreadTrackerArtifact({
+            runtime: options.runtime,
+            location: options.location,
+            tracker: options.tracker
+        });
     }
 
     const threadData = await ThreadStore.loadThread(options.threadId);
@@ -76,26 +74,14 @@ export async function persistLogseqReversibleTransactionTrackerArtifact(options:
 }
 
 function patchRuntimeThreadTrackerArtifact(options: {
-    aui: AssistantClient;
-    threadId: string;
+    runtime: ThreadRuntime;
     location: LogseqReversibleTransactionTrackerArtifactLocation;
     tracker: LogseqReversibleTransactionTracker;
 }): void {
-    const runtime = getRuntimeThread(options.aui, options.threadId);
-    if (!runtime) return;
-
     const runtimeRepository = patchLogseqReversibleTransactionTrackerArtifact(
-        runtime.export(),
+        options.runtime.export(),
         options.location,
         options.tracker
     );
-    runtime.import(runtimeRepository);
-}
-
-function getRuntimeThread(aui: AssistantClient, threadId: string): ThreadRuntime | null {
-    try {
-        return aui.threads().__internal_getAssistantRuntime?.()?.threads.getById(threadId) ?? null;
-    } catch {
-        return null;
-    }
+    options.runtime.import(runtimeRepository);
 }

@@ -1,4 +1,4 @@
-import {type AssistantClient, useAuiState} from "@assistant-ui/react";
+import {type ThreadRuntime, useAssistantRuntime, useAuiState} from "@assistant-ui/react";
 import debounce from "lodash/debounce";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {LogseqReversibleTransactionTrackerSerializer} from "src/core/logseq-reversible-transaction-tracker";
@@ -46,7 +46,8 @@ export const didActiveConversationChange = (
     );
 };
 
-export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
+export function useLogseqReversibleTransactionLifecycle() {
+    const assistantRuntime = useAssistantRuntime();
     const messages = useAuiState((state) => state.thread.messages);
     const isThreadLoading = useAuiState((state) => state.thread.isLoading);
     const isThreadRunning = useAuiState((state) => state.thread.isRunning);
@@ -67,17 +68,28 @@ export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
     threadIdRef.current = threadId;
     isThreadRunningRef.current = isThreadRunning;
 
+    const getThreadRuntime = useCallback(
+        (targetThreadId: string): ThreadRuntime | undefined => {
+            try {
+                return assistantRuntime.threads.getById(targetThreadId);
+            } catch {
+                return undefined;
+            }
+        },
+        [assistantRuntime]
+    );
+
     const persistTrackerArtifact = useCallback(
         async (locatedTracker: LocatedLogseqReversibleTransactionTracker) => {
+            const targetThreadId = threadIdRef.current;
             await persistLogseqReversibleTransactionTrackerArtifact({
-                aui,
-                threadId: threadIdRef.current,
+                threadId: targetThreadId,
+                runtime: getThreadRuntime(targetThreadId),
                 location: locatedTracker,
-                tracker: locatedTracker.tracker,
-                updateRuntime: true
+                tracker: locatedTracker.tracker
             });
         },
-        [aui]
+        [getThreadRuntime]
     );
 
     const enqueueSnapshotRevert = useCallback(
@@ -109,11 +121,10 @@ export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
 
                 try {
                     await persistLogseqReversibleTransactionTrackerArtifact({
-                        aui,
                         threadId: snapshotThreadId,
+                        runtime: getThreadRuntime(snapshotThreadId),
                         location: locatedTracker,
-                        tracker: locatedTracker.tracker,
-                        updateRuntime: true
+                        tracker: locatedTracker.tracker
                     });
                 } catch (error) {
                     if (!revertFailed) {
@@ -129,7 +140,7 @@ export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
             cleanupQueueRef.current = cleanup;
             return cleanup;
         },
-        [aui]
+        [getThreadRuntime]
     );
 
     const scheduledRevert = useMemo(() => {

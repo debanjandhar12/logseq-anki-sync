@@ -17,7 +17,7 @@ export const AppContent = () => {
     });
 
     const modelContext = useAssistantModelContext(aui);
-    const transactionLifecycle = useLogseqReversibleTransactionLifecycle(aui);
+    const transactionLifecycle = useLogseqReversibleTransactionLifecycle();
     useChatCommandHandler(aui);
 
     useEffect(() => {
