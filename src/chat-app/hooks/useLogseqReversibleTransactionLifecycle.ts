@@ -179,6 +179,13 @@ export function useLogseqReversibleTransactionLifecycle() {
     }, [deadline]);
 
     useEffect(() => {
+        if (!isThreadRunning || deadline === null) return;
+
+        setDeadline(null);
+        setRemainingSeconds(null);
+    }, [deadline, isThreadRunning]);
+
+    useEffect(() => {
         if (isThreadLoading) {
             observedLoadingRef.current = true;
             return;
@@ -237,6 +244,11 @@ export function useLogseqReversibleTransactionLifecycle() {
 
         cancelScheduledRevert();
         if (!locatedTracker || !hasAppliedTemporaryChanges(locatedTracker)) return;
+
+        if (isThreadRunningRef.current) {
+            scheduledRevert(currentSnapshot);
+            return;
+        }
 
         const nextDeadline =
             Date.now() + CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY;
