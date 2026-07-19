@@ -50,8 +50,6 @@ To create a query block with tools:
 5. For an advanced query, add the `#Code` tag on the query-value block (not the visible block) before putting the query.
 6. For advanced query, do not forget to put the query inside {:query } map in query-value block.
 
-[Note: Try to avoid simple DSL queries since you cannot test them.]
-
 Use these query text shapes:
 
 ```clojure
@@ -68,6 +66,10 @@ Use these query text shapes:
 ```
 
 Do not put the query EDN in the visible block content unless the user wants it shown as the title. Do not expect the query-value block to contain `logseq.property/query`; it is itself the value of that property.
+
+### Gotchas
+- Avoid simple DSL queries since you cannot test them.
+- When creating advanced query, the namespace of query property should be logseq.property.
 
 ## Limitations
 

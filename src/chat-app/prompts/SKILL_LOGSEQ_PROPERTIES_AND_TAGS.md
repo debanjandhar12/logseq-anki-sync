@@ -57,3 +57,5 @@ For low-level query shapes, use the Logseq Datascript Query skill instead of rep
 
 - Do not write `(tags ...)` as if it were Datalog / Datascript. 
 - When storing a Datalog query in a query block, the stored query must be self-contained unless Logseq query-block inputs are also configured. Do not directly copy `LogseqDataScriptQueryTool` examples that use `:in $ ?value` plus a separate `inputs` array into a query block; rewrite constants into the stored query, preferably with the tested tag-entity/title patterns.
+- All special properties are under logseq.property namespace. Using a different namespace will not change rendering or behavior. Always use correct namespace with indent when calling upsert block property.
+- Always provide full indent with namespace when calling upsert block property.
