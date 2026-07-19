@@ -1,4 +1,9 @@
-import type {AssistantClient, ExportedMessageRepository, ThreadMessage} from "@assistant-ui/react";
+import type {
+    AssistantClient,
+    ExportedMessageRepository,
+    ThreadMessage,
+    ThreadRuntime
+} from "@assistant-ui/react";
 import type {LogseqReversibleTransactionTracker} from "src/core/logseq-reversible-transaction-tracker";
 import {ThreadStore} from "src/core/stores/thread-store/ThreadStore";
 import {createLogseqReversibleTransactionTrackerArtifact} from "../tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
@@ -55,12 +60,7 @@ export async function persistLogseqReversibleTransactionTrackerArtifact(options:
     updateRuntime?: boolean;
 }): Promise<void> {
     if (options.updateRuntime !== false) {
-        const runtimeRepository = patchLogseqReversibleTransactionTrackerArtifact(
-            options.aui.thread().export(),
-            options.location,
-            options.tracker
-        );
-        options.aui.thread().import(runtimeRepository);
+        patchRuntimeThreadTrackerArtifact(options);
     }
 
     const threadData = await ThreadStore.loadThread(options.threadId);
@@ -73,4 +73,29 @@ export async function persistLogseqReversibleTransactionTrackerArtifact(options:
     );
     threadData.custom.updatedAt = new Date();
     await ThreadStore.saveThread(options.threadId, threadData);
+}
+
+function patchRuntimeThreadTrackerArtifact(options: {
+    aui: AssistantClient;
+    threadId: string;
+    location: LogseqReversibleTransactionTrackerArtifactLocation;
+    tracker: LogseqReversibleTransactionTracker;
+}): void {
+    const runtime = getRuntimeThread(options.aui, options.threadId);
+    if (!runtime) return;
+
+    const runtimeRepository = patchLogseqReversibleTransactionTrackerArtifact(
+        runtime.export(),
+        options.location,
+        options.tracker
+    );
+    runtime.import(runtimeRepository);
+}
+
+function getRuntimeThread(aui: AssistantClient, threadId: string): ThreadRuntime | null {
+    try {
+        return aui.threads().__internal_getAssistantRuntime?.()?.threads.getById(threadId) ?? null;
+    } catch {
+        return null;
+    }
 }

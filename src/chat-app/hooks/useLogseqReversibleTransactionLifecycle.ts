@@ -113,7 +113,7 @@ export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
                         threadId: snapshotThreadId,
                         location: locatedTracker,
                         tracker: locatedTracker.tracker,
-                        updateRuntime: threadIdRef.current === snapshotThreadId
+                        updateRuntime: true
                     });
                 } catch (error) {
                     if (!revertFailed) {
