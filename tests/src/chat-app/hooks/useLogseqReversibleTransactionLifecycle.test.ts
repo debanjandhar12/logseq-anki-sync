@@ -1,6 +1,7 @@
 import {describe, expect, test} from "vitest";
 import {
     didActiveConversationChange,
+    didThreadSwitch,
     isThreadBusyForTransactionRevert
 } from "../../../../src/chat-app/hooks/useLogseqReversibleTransactionLifecycle";
 
@@ -71,5 +72,15 @@ describe("isThreadBusyForTransactionRevert", () => {
                 lastMessageStatusType: "complete"
             })
         ).toBe(false);
+    });
+});
+
+describe("didThreadSwitch", () => {
+    test("detects thread switches", () => {
+        expect(didThreadSwitch({threadId: "thread-1"}, {threadId: "thread-2"})).toBe(true);
+    });
+
+    test("ignores same-thread branch changes", () => {
+        expect(didThreadSwitch({threadId: "thread-1"}, {threadId: "thread-1"})).toBe(false);
     });
 });

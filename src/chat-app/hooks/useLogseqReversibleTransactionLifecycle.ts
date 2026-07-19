@@ -18,6 +18,7 @@ interface ActiveTransactionSnapshot {
     branchMessageIds: readonly string[];
     locatedTracker: LocatedLogseqReversibleTransactionTracker | null;
     artifactKey: string | null;
+    isBusy: boolean;
 }
 
 const hasAppliedTemporaryChanges = ({
@@ -52,6 +53,11 @@ export const isThreadBusyForTransactionRevert = ({
     isRunning: boolean;
     lastMessageStatusType: string | undefined;
 }): boolean => isRunning || lastMessageStatusType === "requires-action";
+
+export const didThreadSwitch = (
+    previous: Pick<ActiveTransactionSnapshot, "threadId">,
+    current: Pick<ActiveTransactionSnapshot, "threadId">
+): boolean => previous.threadId !== current.threadId;
 
 export function useLogseqReversibleTransactionLifecycle() {
     const assistantRuntime = useAssistantRuntime();
@@ -103,6 +109,19 @@ export function useLogseqReversibleTransactionLifecycle() {
                 location: locatedTracker,
                 tracker: locatedTracker.tracker
             });
+        },
+        [getThreadRuntime]
+    );
+
+    const cancelSnapshotThreadRun = useCallback(
+        (snapshot: ActiveTransactionSnapshot) => {
+            if (!snapshot.isBusy) return;
+
+            try {
+                getThreadRuntime(snapshot.threadId)?.cancelRun();
+            } catch (error) {
+                logger.warn("Failed to cancel previous thread run", error);
+            }
         },
         [getThreadRuntime]
     );
@@ -220,7 +239,8 @@ export function useLogseqReversibleTransactionLifecycle() {
             threadId,
             branchMessageIds: messages.map((message) => message.id),
             locatedTracker,
-            artifactKey: foundArtifactKey
+            artifactKey: foundArtifactKey,
+            isBusy: isThreadBusy
         };
         activeSnapshotRef.current = currentSnapshot;
 
@@ -237,14 +257,19 @@ export function useLogseqReversibleTransactionLifecycle() {
 
         if (didActiveConversationChange(previousSnapshot, currentSnapshot)) {
             cancelScheduledRevert();
+            if (didThreadSwitch(previousSnapshot, currentSnapshot)) {
+                cancelSnapshotThreadRun(previousSnapshot);
+            }
             void enqueueSnapshotRevert(
                 previousSnapshot,
                 "Failed to revert temporary Logseq changes after navigation"
             );
-            void enqueueSnapshotRevert(
-                currentSnapshot,
-                "Failed to recover applied temporary Logseq changes"
-            );
+            if (!isThreadBusy) {
+                void enqueueSnapshotRevert(
+                    currentSnapshot,
+                    "Failed to recover applied temporary Logseq changes"
+                );
+            }
             return;
         }
 
@@ -281,6 +306,7 @@ export function useLogseqReversibleTransactionLifecycle() {
         isThreadLoading,
         isThreadBusy,
         threadId,
+        cancelSnapshotThreadRun,
         cancelScheduledRevert,
         enqueueSnapshotRevert,
         scheduledRevert
