@@ -148,12 +148,8 @@ export function useLogseqReversibleTransactionLifecycle() {
                 // Do not reset staged graph changes while the current tool loop is still running:
                 // later tools may still rely on the in-memory assistant message artifact.
                 // Note: We allow revert during requires-action state.
-                const nextDeadline =
-                    Date.now() + CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY;
-                setDeadline(nextDeadline);
-                setRemainingSeconds(
-                    Math.ceil(CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY / 1000)
-                );
+                setDeadline(null);
+                setRemainingSeconds(null);
                 debouncedRevert(snapshot);
                 return;
             }
