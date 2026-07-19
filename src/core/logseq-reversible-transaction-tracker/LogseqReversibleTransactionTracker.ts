@@ -74,7 +74,6 @@ export class LogseqReversibleTransactionTracker {
                             command: command.constructor.name,
                             error: revertError
                         });
-                        await logseq.UI.showMsg("Failed to roll back command");
                     }
                     this.appliedCommandCount -= 1;
                     await new Promise((resolve) => setTimeout(resolve, 320));
@@ -92,12 +91,28 @@ export class LogseqReversibleTransactionTracker {
         return await LogseqReversibleTransactionOperationLockManager.runExclusive(async () => {
             options?.signal?.throwIfAborted();
             const commands = this.commandQueue.getCommands();
+            const revertErrors: unknown[] = [];
             while (this.appliedCommandCount > 0) {
                 options?.signal?.throwIfAborted();
                 const command = commands[this.appliedCommandCount - 1];
                 if (!command) break;
-                await command.revert();
+                try {
+                    await command.revert();
+                } catch (error) {
+                    revertErrors.push(error);
+                    logger.error("Failed to revert Logseq command", {
+                        command: command.constructor.name,
+                        error
+                    });
+                }
                 this.appliedCommandCount -= 1;
+            }
+
+            if (revertErrors.length > 0) {
+                throw new AggregateError(
+                    revertErrors,
+                    "Failed to revert one or more Logseq commands"
+                );
             }
 
             return true;

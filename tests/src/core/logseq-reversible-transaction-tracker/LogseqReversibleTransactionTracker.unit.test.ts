@@ -115,6 +115,51 @@ describe("LogseqReversibleTransactionTracker", () => {
         expect(tracker.getCommands()).toEqual([]);
     });
 
+    test("continues reverting older commands after a revert failure", async () => {
+        const order: string[] = [];
+        const first = new TestCommand({
+            execute: async () => order.push("execute-first"),
+            revert: async () => {
+                order.push("revert-first");
+            }
+        });
+        const second = new TestCommand({
+            execute: async () => order.push("execute-second"),
+            revert: async () => {
+                order.push("revert-second");
+                throw new Error("second revert failed");
+            }
+        });
+        const third = new TestCommand({
+            execute: async () => order.push("execute-third"),
+            revert: async () => {
+                order.push("revert-third");
+            }
+        });
+        const tracker = new LogseqReversibleTransactionTracker();
+        tracker.addCommand(first);
+        tracker.addCommand(second);
+        tracker.addCommand(third);
+
+        await tracker.execute();
+        await expect(tracker.revertImmediately()).rejects.toThrow(
+            "Failed to revert one or more Logseq commands"
+        );
+
+        expect(order).toEqual([
+            "execute-first",
+            "execute-second",
+            "execute-third",
+            "revert-third",
+            "revert-second",
+            "revert-first"
+        ]);
+        expect(first.revertMock).toHaveBeenCalledOnce();
+        expect(second.revertMock).toHaveBeenCalledOnce();
+        expect(third.revertMock).toHaveBeenCalledOnce();
+        expect(tracker.getAppliedCommandCount()).toBe(0);
+    });
+
     test("serializes operations across tracker instances with the global lock", async () => {
         let releaseFirst: (() => void) | undefined;
         const firstStarted = new Promise<void>((resolve) => {
