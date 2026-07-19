@@ -49,7 +49,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     addSettingsToLogseq();
 
     // Init various modules
-    LogseqPluginStorageManager.init();
+    await LogseqPluginStorageManager.init();
     LogseqSettingAccessor.init();
     LogseqAppListeners.init();
     UI.init();
