@@ -47,8 +47,7 @@ To create a query block with tools:
 2. Add the `#Query` tag/class to the visible block.
 3. Set the visible block's `logseq.property/query` property to the query text. This creates or updates the query-value block.
 4. Read the visible block and locate the returned `logseq.property/query` value block when you need to edit query metadata directly.
-5. For an advanced query, add the `#Code` tag on the query-value block (not the visible block) and set this property:
-    - `logseq.property.code/lang = clojure`
+5. For an advanced query, add the `#Code` tag on the query-value block (not the visible block) before putting the query.
 6. For advanced query, do not forget to put the query inside {:query } map in query-value block.
 
 [Note: Try to avoid simple DSL queries since you cannot test them.]
