@@ -49,12 +49,14 @@ export const didActiveConversationChange = (
 export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
     const messages = useAuiState((state) => state.thread.messages);
     const isThreadLoading = useAuiState((state) => state.thread.isLoading);
+    const isThreadRunning = useAuiState((state) => state.thread.isRunning);
     const localThreadId = useAuiState((state) => state.threadListItem.id);
     const remoteThreadId = useAuiState((state) => state.threadListItem.remoteId);
     const threadId = remoteThreadId ?? localThreadId;
     const [deadline, setDeadline] = useState<number | null>(null);
     const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
     const threadIdRef = useRef(threadId);
+    const isThreadRunningRef = useRef(isThreadRunning);
     const activeSnapshotRef = useRef<ActiveTransactionSnapshot | null>(null);
     const observedLoadingRef = useRef(isThreadLoading);
     const cleanupQueueRef = useRef(Promise.resolve());
@@ -63,6 +65,7 @@ export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
     );
 
     threadIdRef.current = threadId;
+    isThreadRunningRef.current = isThreadRunning;
 
     const persistTrackerArtifact = useCallback(
         async (locatedTracker: LocatedLogseqReversibleTransactionTracker) => {
@@ -111,15 +114,29 @@ export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
         [aui]
     );
 
-    const scheduledRevert = useMemo(
-        () =>
-            debounce((snapshot: ActiveTransactionSnapshot) => {
-                setDeadline(null);
-                setRemainingSeconds(null);
-                void enqueueSnapshotRevert(snapshot, "Failed to revert temporary Logseq changes");
-            }, CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY),
-        [enqueueSnapshotRevert]
-    );
+    const scheduledRevert = useMemo(() => {
+        const debouncedRevert = debounce((snapshot: ActiveTransactionSnapshot) => {
+            if (isThreadRunningRef.current) {
+                // Do not reset staged graph changes while the current tool loop is still running:
+                // later tools may still rely on the in-memory assistant message artifact.
+                // Note: We allow revert during requires-action state.
+                const nextDeadline =
+                    Date.now() + CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY;
+                setDeadline(nextDeadline);
+                setRemainingSeconds(
+                    Math.ceil(CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY / 1000)
+                );
+                debouncedRevert(snapshot);
+                return;
+            }
+
+            setDeadline(null);
+            setRemainingSeconds(null);
+            void enqueueSnapshotRevert(snapshot, "Failed to revert temporary Logseq changes");
+        }, CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY);
+
+        return debouncedRevert;
+    }, [enqueueSnapshotRevert]);
 
     const cancelScheduledRevert = useCallback(() => {
         scheduledRevert.cancel();

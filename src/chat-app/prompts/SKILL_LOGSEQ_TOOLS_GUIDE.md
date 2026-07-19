@@ -49,17 +49,15 @@ To create a query block with tools:
 4. Read the visible block and locate the returned `logseq.property/query` value block when you need to edit query metadata directly.
 5. For an advanced query, add the `#Code` tag on the query-value block (not the visible block) and set this property:
     - `logseq.property.code/lang = clojure`
+6. For advanced query, do not forget to put the query inside {:query } map in query-value block.
+
+[Note: Try to avoid simple DSL queries since you cannot test them.]
 
 Use these query text shapes:
 
 ```clojure
 ;; Simple query DSL stored in the query-value block title
 (tags foo)
-```
-
-```clojure
-;; Advanced query map that still routes through simple query DSL
-{:query (task todo doing)}
 ```
 
 ```clojure

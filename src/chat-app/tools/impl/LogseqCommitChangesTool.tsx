@@ -138,7 +138,12 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 }
                 const isApproved = await showAIChangesReviewModal(beforeChanges, afterChanges);
 
-                if (isApproved !== true) {
+                // Close button in showAIChangesReviewModal returns null
+                if (isApproved === null) {
+                    return;
+                }
+
+                if (!isApproved) {
                     addResult(await this.executeCancel(transactionTracker));
                 } else {
                     addResult(await this.executeApprove({}, {messages}, transactionTracker));
