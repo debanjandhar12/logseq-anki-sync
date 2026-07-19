@@ -14,6 +14,10 @@ export abstract class BaseReversibleCommand<
 
     public abstract revert(): Promise<void>;
 
+    public doesGraphMutations(): boolean {
+        return true;
+    }
+
     public getCommandState(): CommandState {
         return {...this.commandState};
     }

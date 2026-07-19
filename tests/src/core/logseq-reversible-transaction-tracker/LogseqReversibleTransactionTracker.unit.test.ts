@@ -1,8 +1,11 @@
 import {describe, expect, test, vi} from "vitest";
 import {
     BaseReversibleCommand,
+    DataScriptQueryCommand,
     LogseqReversibleTransactionTracker
 } from "../../../../src/core/logseq-reversible-transaction-tracker";
+import {ReadBlockCommand} from "../../../../src/core/logseq-reversible-transaction-tracker/commands/ReadBlockCommand";
+import {TextSearchCommand} from "../../../../src/core/logseq-reversible-transaction-tracker/commands/TextSearchCommand";
 
 class TestCommand extends BaseReversibleCommand<{status: "new" | "executed"}> {
     public readonly args = {};
@@ -13,12 +16,16 @@ class TestCommand extends BaseReversibleCommand<{status: "new" | "executed"}> {
         execute?: () => Promise<unknown>;
         revert?: () => Promise<void>;
         changedPage?: string;
+        doesGraphMutations?: boolean;
     }) {
         super({status: "new"});
         this.executeMock = vi.fn(options?.execute ?? (async () => null));
         this.revertMock = vi.fn(options?.revert ?? (async () => {}));
+        this.doesGraphMutationsMock = vi.fn(() => options?.doesGraphMutations ?? true);
         if (options?.changedPage) this.changedPages.push(options.changedPage);
     }
+
+    public readonly doesGraphMutationsMock: ReturnType<typeof vi.fn<() => boolean>>;
 
     public async execute() {
         this.assertCanExecute();
@@ -34,9 +41,46 @@ class TestCommand extends BaseReversibleCommand<{status: "new" | "executed"}> {
     }
 
     public resetChangedPages(): void {}
+
+    public doesGraphMutations(): boolean {
+        return this.doesGraphMutationsMock();
+    }
 }
 
 describe("LogseqReversibleTransactionTracker", () => {
+    test("defaults commands to graph mutations and marks read-only commands as non-mutating", () => {
+        expect(new TestCommand().doesGraphMutations()).toBe(true);
+        expect(new ReadBlockCommand({uuid: "block-uuid"}).doesGraphMutations()).toBe(false);
+        expect(
+            new DataScriptQueryCommand({
+                datalogString: "[:find ?b :where [?b :block/uuid]]"
+            }).doesGraphMutations()
+        ).toBe(false);
+        expect(new TextSearchCommand({searchString: "needle"}).doesGraphMutations()).toBe(false);
+    });
+
+    test("counts queued and applied graph mutation commands separately", async () => {
+        const first = new TestCommand({changedPage: "page-1"});
+        const readOnly = new TestCommand({doesGraphMutations: false});
+        const second = new TestCommand({changedPage: "page-2"});
+        const tracker = new LogseqReversibleTransactionTracker();
+        tracker.addCommand(first);
+        tracker.addCommand(readOnly);
+        tracker.addCommand(second);
+
+        expect(tracker.getGraphMutationCommandCount()).toBe(2);
+        expect(tracker.getAppliedGraphMutationCommandCount()).toBe(0);
+        expect(tracker.hasAppliedGraphMutations()).toBe(false);
+
+        await tracker.execute();
+
+        expect(tracker.getAppliedCommandCount()).toBe(3);
+        expect(tracker.getGraphMutationCommandCount()).toBe(2);
+        expect(tracker.getAppliedGraphMutationCommandCount()).toBe(2);
+        expect(tracker.hasAppliedGraphMutations()).toBe(true);
+        expect(tracker.getChangedPages()).toEqual(["page-1", "page-2"]);
+    });
+
     test("executes only newly appended commands and reverts the applied prefix in reverse", async () => {
         const order: string[] = [];
         const first = new TestCommand({

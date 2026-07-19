@@ -52,6 +52,10 @@ export class TextSearchCommand extends BaseReversibleCommand<TextSearchCommandSt
         this.assertCanRevert();
         this.commandState.status = "new";
     }
+
+    public doesGraphMutations(): boolean {
+        return false;
+    }
 }
 
 export const TextSearchCommandCodec = createReversibleCommandCodec({

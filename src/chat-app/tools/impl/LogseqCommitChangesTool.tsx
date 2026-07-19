@@ -1,6 +1,6 @@
 import {type ToolCallMessagePartComponent, useAuiState} from "@assistant-ui/react";
 import {GitCommitIcon} from "lucide-react";
-import {useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {ToolFallback} from "src/chat-app/components/ToolFallback";
 import {useLogseqReversibleTransactionLifecycleContext} from "src/chat-app/context/LogseqReversibleTransactionLifecycleContext";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
@@ -50,7 +50,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         try {
             const transactionTracker =
                 preparedTracker ?? getLastLogseqReversibleTransactionTracker(context?.messages);
-            if (transactionTracker.getCommands().length === 0) {
+            if (transactionTracker.getGraphMutationCommandCount() === 0) {
                 return ChatToolResponse.success(
                     {changes: "No pending changes to commit."},
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
@@ -115,10 +115,20 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         const {result, addResult, status} = props;
         const messages = useAuiState((state) => state.thread.messages);
         const [isReviewing, setIsReviewing] = useState(false);
+        const noChangesResultAddedRef = useRef(false);
         const {cancelScheduledRevert, persistTrackerArtifact} =
             useLogseqReversibleTransactionLifecycleContext();
 
         const isPending = result === undefined && status?.type !== "incomplete";
+        const locatedTracker = findLastLogseqReversibleTransactionTracker(messages);
+        const hasGraphMutations = (locatedTracker?.tracker.getGraphMutationCommandCount() ?? 0) > 0;
+
+        useEffect(() => {
+            if (!isPending || hasGraphMutations || noChangesResultAddedRef.current) return;
+
+            noChangesResultAddedRef.current = true;
+            void this.executeApprove({}, {messages}).then(addResult);
+        }, [addResult, hasGraphMutations, isPending, messages]);
 
         const reviewAndApply = async () => {
             setIsReviewing(true);
@@ -155,8 +165,8 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             }
         };
 
-        if (!isPending) {
-            // fallback to original ui when not pending
+        if (!isPending || !hasGraphMutations) {
+            // Use the generic tool UI unless there are pending graph changes to review.
             return <ToolFallback {...props} />;
         }
 

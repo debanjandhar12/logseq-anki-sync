@@ -1,6 +1,9 @@
 import type {ThreadMessage} from "@assistant-ui/react";
 import {describe, expect, test} from "vitest";
-import {getPendingLogseqChangesCommandCount} from "../../../../src/chat-app/components/PendingLogseqChangesDisplay";
+import {
+    getPendingLogseqChangesCommandCount,
+    getPendingLogseqChangesSummary
+} from "../../../../src/chat-app/components/PendingLogseqChangesDisplay";
 import {createLogseqReversibleTransactionTrackerArtifact} from "../../../../src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {
     CreatePageCommand,
@@ -31,23 +34,37 @@ const createTrackerMessage = (tracker: LogseqReversibleTransactionTracker): Thre
 describe("getPendingLogseqChangesCommandCount", () => {
     test("returns zero when there is no tracker artifact", () => {
         expect(getPendingLogseqChangesCommandCount([])).toBe(0);
+        expect(getPendingLogseqChangesSummary([])).toEqual({commandCount: 0, changedPageCount: 0});
     });
 
-    test("returns zero when the latest tracker has no changed pages", () => {
+    test("returns zero when the latest tracker has no graph-mutating commands", () => {
         const tracker = new LogseqReversibleTransactionTracker();
-        tracker.addCommand(new CreatePageCommand({pageName: "Pending"}));
+        tracker.addCommand(new ReadBlockCommand({uuid: "block-uuid"}));
+        tracker.addCommand(
+            new DataScriptQueryCommand({datalogString: "[:find ?b :where [?b :block/uuid]]"})
+        );
 
         expect(getPendingLogseqChangesCommandCount([createTrackerMessage(tracker)])).toBe(0);
+        expect(getPendingLogseqChangesSummary([createTrackerMessage(tracker)])).toEqual({
+            commandCount: 0,
+            changedPageCount: 0
+        });
     });
 
-    test("counts every command when the latest tracker has changed pages", () => {
-        const tracker = new LogseqReversibleTransactionTracker({changedPages: ["page-uuid"]});
+    test("counts only graph-mutating commands and reports changed pages", () => {
+        const tracker = new LogseqReversibleTransactionTracker({
+            changedPages: ["page-uuid", "other-page-uuid"]
+        });
         tracker.addCommand(new ReadBlockCommand({uuid: "block-uuid"}));
         tracker.addCommand(
             new DataScriptQueryCommand({datalogString: "[:find ?b :where [?b :block/uuid]]"})
         );
         tracker.addCommand(new CreatePageCommand({pageName: "Pending"}));
 
-        expect(getPendingLogseqChangesCommandCount([createTrackerMessage(tracker)])).toBe(3);
+        expect(getPendingLogseqChangesCommandCount([createTrackerMessage(tracker)])).toBe(1);
+        expect(getPendingLogseqChangesSummary([createTrackerMessage(tracker)])).toEqual({
+            commandCount: 1,
+            changedPageCount: 2
+        });
     });
 });

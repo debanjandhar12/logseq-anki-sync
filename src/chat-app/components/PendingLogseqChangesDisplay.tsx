@@ -1,6 +1,6 @@
 import {type ThreadMessage, useAuiState} from "@assistant-ui/react";
 import {GitCommitIcon} from "lucide-react";
-import type {FC} from "react";
+import {type FC, useMemo} from "react";
 import {findLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {cn} from "src/shadcn/lib/utils";
 import {
@@ -15,23 +15,45 @@ interface PendingLogseqChangesDisplayProps {
     side?: "top" | "bottom" | "left" | "right";
 }
 
-export const getPendingLogseqChangesCommandCount = (messages: readonly ThreadMessage[]): number => {
-    const locatedTracker = findLastLogseqReversibleTransactionTracker(messages);
-    if (!locatedTracker) return 0;
-    if (locatedTracker.tracker.getChangedPages().length === 0) return 0;
+interface PendingLogseqChangesSummary {
+    commandCount: number;
+    changedPageCount: number;
+}
 
-    return locatedTracker.tracker.getCommands().length;
+const EMPTY_PENDING_LOGSEQ_CHANGES_SUMMARY: PendingLogseqChangesSummary = {
+    commandCount: 0,
+    changedPageCount: 0
 };
+
+export const getPendingLogseqChangesSummary = (
+    messages: readonly ThreadMessage[]
+): PendingLogseqChangesSummary => {
+    const locatedTracker = findLastLogseqReversibleTransactionTracker(messages);
+    if (!locatedTracker) return EMPTY_PENDING_LOGSEQ_CHANGES_SUMMARY;
+
+    const commandCount = locatedTracker.tracker.getGraphMutationCommandCount();
+    if (commandCount === 0) return EMPTY_PENDING_LOGSEQ_CHANGES_SUMMARY;
+
+    return {
+        commandCount,
+        changedPageCount: locatedTracker.tracker.getChangedPages().length
+    };
+};
+
+export const getPendingLogseqChangesCommandCount = (messages: readonly ThreadMessage[]): number =>
+    getPendingLogseqChangesSummary(messages).commandCount;
 
 export const PendingLogseqChangesDisplay: FC<PendingLogseqChangesDisplayProps> = ({
     className,
     side = "bottom"
 }) => {
-    const pendingCommandCount = useAuiState((state) =>
-        getPendingLogseqChangesCommandCount(state.thread.messages)
+    const messages = useAuiState((state) => state.thread.messages);
+    const pendingChangesSummary = useMemo(
+        () => getPendingLogseqChangesSummary(messages),
+        [messages]
     );
 
-    if (pendingCommandCount === 0) return null;
+    if (pendingChangesSummary.commandCount === 0) return null;
 
     return (
         <TooltipProvider delayDuration={0}>
@@ -54,7 +76,15 @@ export const PendingLogseqChangesDisplay: FC<PendingLogseqChangesDisplayProps> =
                     <div className="grid min-w-40 gap-1.5 text-xs">
                         <div className="flex items-center justify-between gap-4">
                             <span className="text-muted-foreground">Pending commands</span>
-                            <span className="font-mono tabular-nums">{pendingCommandCount}</span>
+                            <span className="font-mono tabular-nums">
+                                {pendingChangesSummary.commandCount}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                            <span className="text-muted-foreground">Changed pages</span>
+                            <span className="font-mono tabular-nums">
+                                {pendingChangesSummary.changedPageCount}
+                            </span>
                         </div>
                     </div>
                 </TooltipContent>

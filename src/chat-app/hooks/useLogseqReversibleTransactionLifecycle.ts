@@ -22,8 +22,7 @@ interface ActiveTransactionSnapshot {
 
 const hasAppliedTemporaryChanges = ({
     tracker
-}: LocatedLogseqReversibleTransactionTracker): boolean =>
-    tracker.getAppliedCommandCount() > 0 && tracker.hasAppliedGraphMutations();
+}: LocatedLogseqReversibleTransactionTracker): boolean => tracker.hasAppliedGraphMutations();
 
 const getArtifactKey = (
     threadId: string,

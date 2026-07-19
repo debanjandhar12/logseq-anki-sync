@@ -55,6 +55,10 @@ export class DataScriptQueryCommand extends BaseReversibleCommand<DataScriptQuer
         this.assertCanRevert();
         this.commandState.status = "new";
     }
+
+    public doesGraphMutations(): boolean {
+        return false;
+    }
 }
 
 export const DataScriptQueryCommandCodec = createReversibleCommandCodec({
