@@ -45,18 +45,34 @@ export const didActiveConversationChange = (
     );
 };
 
+export const isThreadBusyForTransactionRevert = ({
+    isRunning,
+    lastMessageStatusType
+}: {
+    isRunning: boolean;
+    lastMessageStatusType: string | undefined;
+}): boolean => isRunning || lastMessageStatusType === "requires-action";
+
 export function useLogseqReversibleTransactionLifecycle() {
     const assistantRuntime = useAssistantRuntime();
     const messages = useAuiState((state) => state.thread.messages);
     const isThreadLoading = useAuiState((state) => state.thread.isLoading);
     const isThreadRunning = useAuiState((state) => state.thread.isRunning);
+    const lastMessageStatusType = useAuiState(
+        (state) => state.thread.messages.at(-1)?.status?.type
+    );
+    const isThreadBusy = isThreadBusyForTransactionRevert({
+        isRunning: isThreadRunning,
+        lastMessageStatusType
+    });
     const localThreadId = useAuiState((state) => state.threadListItem.id);
     const remoteThreadId = useAuiState((state) => state.threadListItem.remoteId);
     const threadId = remoteThreadId ?? localThreadId;
     const [deadline, setDeadline] = useState<number | null>(null);
     const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
     const threadIdRef = useRef(threadId);
-    const isThreadRunningRef = useRef(isThreadRunning);
+    const isThreadBusyRef = useRef(isThreadBusy);
+    const lastEffectThreadBusyRef = useRef(isThreadBusy);
     const activeSnapshotRef = useRef<ActiveTransactionSnapshot | null>(null);
     const observedLoadingRef = useRef(isThreadLoading);
     const cleanupQueueRef = useRef(Promise.resolve());
@@ -65,7 +81,7 @@ export function useLogseqReversibleTransactionLifecycle() {
     );
 
     threadIdRef.current = threadId;
-    isThreadRunningRef.current = isThreadRunning;
+    isThreadBusyRef.current = isThreadBusy;
 
     const getThreadRuntime = useCallback(
         (targetThreadId: string): ThreadRuntime | undefined => {
@@ -144,13 +160,10 @@ export function useLogseqReversibleTransactionLifecycle() {
 
     const scheduledRevert = useMemo(() => {
         const debouncedRevert = debounce((snapshot: ActiveTransactionSnapshot) => {
-            if (isThreadRunningRef.current) {
-                // Do not reset staged graph changes while the current tool loop is still running:
-                // later tools may still rely on the in-memory assistant message artifact.
-                // Note: We allow revert during requires-action state.
+            if (isThreadBusyRef.current) {
+                // Busy assistant states may still rely on the in-memory assistant message artifact.
                 setDeadline(null);
                 setRemainingSeconds(null);
-                debouncedRevert(snapshot);
                 return;
             }
 
@@ -179,13 +192,15 @@ export function useLogseqReversibleTransactionLifecycle() {
     }, [deadline]);
 
     useEffect(() => {
-        if (!isThreadRunning || deadline === null) return;
+        if (!isThreadBusy || deadline === null) return;
 
-        setDeadline(null);
-        setRemainingSeconds(null);
-    }, [deadline, isThreadRunning]);
+        cancelScheduledRevert();
+    }, [cancelScheduledRevert, deadline, isThreadBusy]);
 
     useEffect(() => {
+        const wasThreadBusy = lastEffectThreadBusyRef.current;
+        lastEffectThreadBusyRef.current = isThreadBusy;
+
         if (isThreadLoading) {
             observedLoadingRef.current = true;
             return;
@@ -211,10 +226,12 @@ export function useLogseqReversibleTransactionLifecycle() {
 
         if (!previousSnapshot) {
             cancelScheduledRevert();
-            void enqueueSnapshotRevert(
-                currentSnapshot,
-                "Failed to recover applied temporary Logseq changes"
-            );
+            if (!isThreadBusy) {
+                void enqueueSnapshotRevert(
+                    currentSnapshot,
+                    "Failed to recover applied temporary Logseq changes"
+                );
+            }
             return;
         }
 
@@ -233,22 +250,24 @@ export function useLogseqReversibleTransactionLifecycle() {
 
         if (didFinishLoading) {
             cancelScheduledRevert();
-            void enqueueSnapshotRevert(
-                currentSnapshot,
-                "Failed to recover applied temporary Logseq changes"
-            );
+            if (!isThreadBusy) {
+                void enqueueSnapshotRevert(
+                    currentSnapshot,
+                    "Failed to recover applied temporary Logseq changes"
+                );
+            }
             return;
         }
 
-        if (currentSnapshot.artifactKey === previousSnapshot.artifactKey) return;
+        const didThreadBecomeIdle = wasThreadBusy && !isThreadBusy;
+        if (currentSnapshot.artifactKey === previousSnapshot.artifactKey && !didThreadBecomeIdle) {
+            return;
+        }
 
         cancelScheduledRevert();
         if (!locatedTracker || !hasAppliedTemporaryChanges(locatedTracker)) return;
 
-        if (isThreadRunningRef.current) {
-            scheduledRevert(currentSnapshot);
-            return;
-        }
+        if (isThreadBusy) return;
 
         const nextDeadline =
             Date.now() + CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY;
@@ -260,6 +279,7 @@ export function useLogseqReversibleTransactionLifecycle() {
     }, [
         messages,
         isThreadLoading,
+        isThreadBusy,
         threadId,
         cancelScheduledRevert,
         enqueueSnapshotRevert,

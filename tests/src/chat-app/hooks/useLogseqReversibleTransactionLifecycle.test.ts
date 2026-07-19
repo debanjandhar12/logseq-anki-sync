@@ -1,5 +1,8 @@
 import {describe, expect, test} from "vitest";
-import {didActiveConversationChange} from "../../../../src/chat-app/hooks/useLogseqReversibleTransactionLifecycle";
+import {
+    didActiveConversationChange,
+    isThreadBusyForTransactionRevert
+} from "../../../../src/chat-app/hooks/useLogseqReversibleTransactionLifecycle";
 
 describe("didActiveConversationChange", () => {
     test("detects thread switches", () => {
@@ -39,5 +42,34 @@ describe("didActiveConversationChange", () => {
                 {threadId: "thread-1", branchMessageIds: ["root", "branch-a"]}
             )
         ).toBe(true);
+    });
+});
+
+describe("isThreadBusyForTransactionRevert", () => {
+    test("treats running threads as busy", () => {
+        expect(
+            isThreadBusyForTransactionRevert({
+                isRunning: true,
+                lastMessageStatusType: "complete"
+            })
+        ).toBe(true);
+    });
+
+    test("treats requires-action as busy", () => {
+        expect(
+            isThreadBusyForTransactionRevert({
+                isRunning: false,
+                lastMessageStatusType: "requires-action"
+            })
+        ).toBe(true);
+    });
+
+    test("treats idle non-action states as safe for scheduled revert", () => {
+        expect(
+            isThreadBusyForTransactionRevert({
+                isRunning: false,
+                lastMessageStatusType: "complete"
+            })
+        ).toBe(false);
     });
 });

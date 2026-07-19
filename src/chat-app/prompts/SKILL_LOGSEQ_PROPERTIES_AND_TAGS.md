@@ -35,10 +35,11 @@ Tags are DB entities that behave like **classes**. Think of them as a two-layer 
 
 Several special tags change the visual look or behavior of a normal block:
 
-- `#Code` converts the block to a code block.
-- `#Math` converts block content to a math block. For example, `x^2` renders as a math expression. Alternatively, use markdown math syntax. However, do not use markdown $$ syntax together with math tag.
+- `#Code` converts the block to a code block. Alternatively, you can use markdown ```language\n``` syntax. However, do not use markdown syntax together with the `#Code` tag.
+- `#Math` converts block content to a math block. For example, `x^2` renders as a math expression. Alternatively, use markdown math syntax. However, do not use markdown $$ syntax together with Math tag.
 - `#Task` converts the block to a task. Change `logseq.property/status` to values such as `Todo`, `Backlog`, `Canceled`, `Doing`, `Done` or empty string (default: empty string).
 - `#Query` converts the block to a query block. The visible block content is the query title; set the visible block's `logseq.property/query` to the query text (advanced queries wrapped in a `{:query ...}` map work directly).
+- `#Quote` converts the block to a quote block.
 
 Several special properties change rendering or behavior:
 
@@ -59,3 +60,4 @@ For low-level query shapes, use the Logseq Datascript Query skill instead of rep
 - When storing a Datalog query in a query block, the stored query must be self-contained unless Logseq query-block inputs are also configured. Do not directly copy `LogseqDataScriptQueryTool` examples that use `:in $ ?value` plus a separate `inputs` array into a query block; rewrite constants into the stored query, preferably with the tested tag-entity/title patterns.
 - All special properties are under logseq.property namespace. Using a different namespace will not change rendering or behavior. Always use correct namespace with indent when calling upsert block property.
 - Always provide full indent with namespace when calling upsert block property.
+- For code blocks, before changing logseq.property.code/lang, add the `#Code` tag.
