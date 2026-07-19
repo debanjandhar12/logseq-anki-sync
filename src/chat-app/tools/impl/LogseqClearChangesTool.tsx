@@ -8,7 +8,10 @@ import {
 import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
+import {createLogger, LoggerCategory} from "src/logger";
 import {z} from "zod";
+
+const logger = createLogger(LoggerCategory.CHAT_UI);
 
 const LogseqClearChangesArgsZodObj = z.object({});
 
@@ -33,7 +36,18 @@ export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             if (transactionTracker.hasAppliedGraphMutations()) {
-                await transactionTracker.revertImmediately();
+                try {
+                    await transactionTracker.revertImmediately();
+                } catch (revertError) {
+                    logger.error(
+                        "Failed to revert pending Logseq changes before clearing",
+                        revertError
+                    );
+                    await logseq.UI.showMsg(
+                        "Failed to revert pending Logseq changes. Clearing staged changes so you can continue.",
+                        "error"
+                    );
+                }
             }
             transactionTracker.clear();
 

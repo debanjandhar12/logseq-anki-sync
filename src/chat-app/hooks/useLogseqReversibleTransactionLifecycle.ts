@@ -94,8 +94,20 @@ export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
 
             queuedTrackersRef.current.add(locatedTracker.tracker);
             const cleanup = cleanupQueueRef.current.then(async () => {
+                let revertFailed = false;
                 try {
                     await locatedTracker.tracker.revertImmediately();
+                } catch (error) {
+                    revertFailed = true;
+                    logger.error(failureMessage, error);
+                    await logseq.UI.showMsg(
+                        `${failureMessage}. Clearing staged changes so you can continue.`,
+                        "error"
+                    );
+                    locatedTracker.tracker.clear();
+                }
+
+                try {
                     await persistLogseqReversibleTransactionTrackerArtifact({
                         aui,
                         threadId: snapshotThreadId,
@@ -104,8 +116,14 @@ export function useLogseqReversibleTransactionLifecycle(aui: AssistantClient) {
                         updateRuntime: threadIdRef.current === snapshotThreadId
                     });
                 } catch (error) {
-                    queuedTrackersRef.current.delete(locatedTracker.tracker);
-                    logger.error(failureMessage, error);
+                    if (!revertFailed) {
+                        queuedTrackersRef.current.delete(locatedTracker.tracker);
+                    }
+                    logger.error("Failed to persist Logseq transaction cleanup", error);
+                    await logseq.UI.showMsg(
+                        "Failed to persist Logseq transaction cleanup",
+                        "error"
+                    );
                 }
             });
             cleanupQueueRef.current = cleanup;
