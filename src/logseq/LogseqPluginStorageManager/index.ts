@@ -1,0 +1,1 @@
+export {LogseqPluginStorageManager} from "./LogseqPluginStorageManager";

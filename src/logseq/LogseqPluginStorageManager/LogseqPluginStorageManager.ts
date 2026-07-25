@@ -1,32 +1,19 @@
 import "@logseq/libs";
 import type {IAsyncStorage} from "@logseq/libs/dist/modules/LSPlugin.Storage";
-import {InMemoryStore} from "./InMemoryStore";
-import {LocalStorageStore} from "./LocalStorageStore";
-import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
-import {WindowParentBridge} from "./WindowParentBridge";
+import {WindowParentBridge} from "../WindowParentBridge";
+import {StorageBackendFactory} from "./StorageBackendFactory";
 
 /**
- * TBU: This should be synchronization safe..
+ * Static facade for plugin file storage operations.
+ *
+ * Backing store is selected at initialization time based on the runtime
+ * environment (test, standalone/localStorage, or Logseq sandbox storage).
  */
 export class LogseqPluginStorageManager {
     static store: IAsyncStorage = null;
 
     static async init() {
-        if (process.env.NODE_ENV === "test") {
-            LogseqPluginStorageManager.store = new InMemoryStore(
-                await LogseqPluginStorageManager.getStorageNamespace()
-            );
-            return;
-        }
-
-        if (!LogseqAppInfoFetcher.checkHostAccess()) {
-            LogseqPluginStorageManager.store = new LocalStorageStore(
-                await LogseqPluginStorageManager.getStorageNamespace()
-            );
-            return;
-        }
-
-        LogseqPluginStorageManager.store = logseq.Assets.makeSandboxStorage();
+        LogseqPluginStorageManager.store = await StorageBackendFactory.createBackend();
     }
 
     static async getFiles(group: string) {
@@ -77,10 +64,5 @@ export class LogseqPluginStorageManager {
             throw new Error("LogseqPluginStorageManager not initialized");
         if (group?.includes("/")) throw new Error("Group name cannot contain slash: " + group);
         if (fileName?.includes("/")) throw new Error("File name cannot contain slash: " + fileName);
-    }
-
-    private static async getStorageNamespace(): Promise<string> {
-        const currentGraph = await logseq.App.getCurrentGraph();
-        return `${logseq.baseInfo.id}:${currentGraph?.name ?? "unknown-graph"}`;
     }
 }
