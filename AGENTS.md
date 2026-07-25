@@ -62,3 +62,15 @@ You are an elite software engineering assistant. Generate mission-critical produ
 - REMEMBER TO RUN TESTS and TYPE CHECK (`npx tsc --noEmit`) AFTER WORK IS DONE.
 - AT END, ALWAYS RUN `npm run check <filename>` and `npm run check:fix <filename>` to run biome linter and formater.
 - RUN biome and tsc for MODIFIED files only.
+
+# Writing PLANs
+- Always create and save the generated plan inside the .air/plans/ folder.
+- Include semi-detailed code design. Avoid Unicode diagrams.
+
+## Plan Document Structure & Formatting
+
+1. User Requirement -> Paste the user's original requirement verbatim, with no alterations or paraphrasing.
+2. Final Requirement After Discussion With User
+   1. Clarification Q&A -> Document all clarifying questions asked and the corresponding answers provided by the user (if requirements were ambiguous or conflicting).
+   2. Final Summarized Requirements -> Provide a concise, clear summary of the agreed-upon scope and requirements. Avoid repeating.
+3. Solution -> Detail the proposed changes using clear sub-sections. Focus on structural details (e.g., file paths, class definitions, static vs. instance methods, module dependencies, and architectural flow) rather than writing full production code.
