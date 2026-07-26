@@ -1,0 +1,11 @@
+{
+    "environment": [
+        {
+            "type": "envFile",
+            "path": ".env"
+        }
+    ],
+    "volumes": [
+        "/home/debanjand/Documents/Projects:/home/debanjand/Documents/Projects"
+    ]
+}

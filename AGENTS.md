@@ -21,7 +21,7 @@ This is a Logseq plugin for ai chat using ai-sdk and assistant-ui.
 
 ## Architecture
 **Settings:** Defined in `settings.ts` using `SettingSchemaDesc`. Access via `LogseqSettingAccessor.getPluginSettings()`, never directly through `logseq.settings`.
-**UI Components:** React-based modals and pages live in `src/ui/`. Chat app lives in `src/chat`.
+**UI Components:** React-based modals and pages live in `src/ui/`. Chat app lives in `src/chat-app`.
 **Theme & CSS Isolation:** Theme management centralized in `src/ui/theme/`. Chat Sidebar uses `ShadowWrapper` for CSS isolation. Other UI are already isolated from logseq as they are in iframes.
 
 ## Testing
@@ -29,12 +29,11 @@ This is a Logseq plugin for ai chat using ai-sdk and assistant-ui.
 **Test Location:** `tests/` directory with subdirectories matching src structure
 
 **Running Tests:**
-- `pnpm test --run` - Run all tests
-- `pnpm test getModal.test.ts --run` - Run specific test file
-- `pnpm test -t "test case name" --run` - Run specific test case
+- `pnpm test --run --reporter=dot --silent` - Run all tests
+- `pnpm test getModal.test.ts --run --reporter=dot --silent` - Run specific test file
+- `pnpm test -t "test case name" --run --reporter=dot --silent` - Run specific test case
 
 **Testing Approach:**
-- Vitest with jsdom environment
 - Uses `logseq-proxy` package to proxy @logseq/libs calls to actual HTTP requests against running Logseq instance
 - `tests/setup.ts` configures proxy to http://127.0.0.1:12315 - tests fail with fetch error if Logseq API server isn't running
 
@@ -55,22 +54,9 @@ You are an elite software engineering assistant. Generate mission-critical produ
 - REFINE THE TASK UNTIL THE GOAL IS BULLET-PROOF
 - WHEN FIXING BUGS, try to fix things at the cause, not the symptom
 - ALWAYS HOLD THE STANDARD - Detect and follow existing patterns when working on new feature
-- DON'T BE HELPFUL, BE BETTER
 - WRITE SELF-DOCUMENTING CODE WITH DESCRIPTIVE NAMING
 - IF YOU KNOW A BETTER WAY — SPEAK UP
-- ALWAYS REMEMBER YOUR WORK ISN'T DONE UNTIL THE SYSTEM IS STABLE.
+- YOUR WORK ISN'T DONE UNTIL THE SYSTEM IS STABLE.
 - REMEMBER TO RUN TESTS and TYPE CHECK (`npx tsc --noEmit`) AFTER WORK IS DONE.
-- AT END, ALWAYS RUN `npm run check <filename>` and `npm run check:fix <filename>` to run biome linter and formater.
-- RUN biome and tsc for MODIFIED files only.
-
-# Writing PLANs
-- Always create and save the generated plan inside the .air/plans/ folder.
-- Include semi-detailed code design. Avoid Unicode diagrams.
-
-## Plan Document Structure & Formatting
-
-1. User Requirement -> Paste the user's original requirement verbatim, with no alterations or paraphrasing.
-2. Final Requirement After Discussion With User
-   1. Clarification Q&A -> Document all clarifying questions asked and the corresponding answers provided by the user (if requirements were ambiguous or conflicting).
-   2. Final Summarized Requirements -> Provide a concise, clear summary of the agreed-upon scope and requirements. Avoid repeating.
-3. Solution -> Detail the proposed changes using clear sub-sections. Focus on structural details (e.g., file paths, class definitions, static vs. instance methods, module dependencies, and architectural flow) rather than writing full production code.
+- AT END, ALWAYS RUN `pnpm run check:fix <filename> --reporter=summary` to run biome linter and formater (for MODIFIED files only).
+- AT START OF PLAN MODE (not BUILD mode), read .air/plan/plan-prompt.md.
