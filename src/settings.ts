@@ -50,10 +50,10 @@ export const addSettingsToLogseq = async () => {
         {
             key: "llmAPIUrl",
             type: "string",
-            default: "",
+            default: "https://opencode.ai/zen/v1",
             title: "LLM API Url",
             description:
-                "The base URL for the LLM API provider (e.g. https://api.openai.com/v1). Only required for OpenAI Compatible Provider."
+                "The base URL for the LLM API provider (e.g. https://opencode.ai/zen/v1)."
         },
         {
             key: "llmAPIKey",
@@ -65,9 +65,9 @@ export const addSettingsToLogseq = async () => {
         {
             key: "llmAPIModel",
             type: "string",
-            default: "gpt-4o",
+            default: "big-pickle",
             title: "LLM Model",
-            description: "The model identifier to use (e.g. gpt-4o)"
+            description: "The model identifier to use (e.g. big-pickle)"
         },
         {
             key: "globalAgentInstruction",

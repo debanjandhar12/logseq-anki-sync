@@ -1,7 +1,7 @@
 export enum ProviderEnum {
-    OPENAI = "OpenAI Provider",
-    OPENAI_COMPATIBLE = "OpenAI Compatible Provider",
-    GOOGLE = "Google Generative AI Provider"
+    OPENAI = "OpenAI",
+    OPENAI_COMPATIBLE = "OpenAI Compatible",
+    GOOGLE = "Google Generative AI"
 }
 
 export enum WebToolsProviderEnum {
