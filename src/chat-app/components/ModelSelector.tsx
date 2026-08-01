@@ -35,6 +35,9 @@ import {Popover, PopoverContent, PopoverTrigger} from "src/shadcn/radix-ui/popov
  * (a) Import paths changed to project conventions (src/shadcn/...)
  * (b) Removed icon support (ModelIcon component and icon prop rendering) to keep it slim
  * (c) Removed logo / icon rendering — text-only items
+ * (d) Added max-h-[200px] and a custom overlay scrollbar in ModelSelectorList
+ *     (native scrollbar hidden since Chromium 114 aliases overflow:overlay to auto,
+ *     which would reserve gutter space and squeeze the list).
  */
 
 export type ModelSelectorEffortOption = {
@@ -405,26 +408,63 @@ export type ModelSelectorListProps = ComponentPropsWithoutRef<typeof CommandList
 
 function ModelSelectorList({className, children, ...props}: ModelSelectorListProps) {
     const {models} = useModelSelectorContext();
+    const listRef = useRef<HTMLDivElement>(null);
+    const [scrollInfo, setScrollInfo] = useState({top: 0, height: 0, clientHeight: 0});
+
+    const updateScroll = useCallback(() => {
+        const el = listRef.current;
+        if (!el) return;
+        setScrollInfo({top: el.scrollTop, height: el.scrollHeight, clientHeight: el.clientHeight});
+    }, []);
+
+    useEffect(() => {
+        const el = listRef.current;
+        if (!el) return;
+        const observer = new ResizeObserver(updateScroll);
+        observer.observe(el);
+        el.addEventListener("scroll", updateScroll, {passive: true});
+        updateScroll();
+        return () => {
+            observer.disconnect();
+            el.removeEventListener("scroll", updateScroll);
+        };
+    }, [updateScroll]);
+
+    const {top, height, clientHeight} = scrollInfo;
+    const canScroll = height > clientHeight;
+    const thumbHeight = canScroll ? Math.max(20, (clientHeight / height) * clientHeight) : 0;
+    const thumbTop = canScroll ? (top / (height - clientHeight)) * (clientHeight - thumbHeight) : 0;
 
     return (
-        <CommandList
-            data-slot="model-selector-list"
-            className={cn(
-                "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-                className
+        <div className="relative">
+            <CommandList
+                ref={listRef}
+                data-slot="model-selector-list"
+                className={cn(
+                    "max-h-[200px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                    className
+                )}
+                {...props}>
+                {children ?? (
+                    <>
+                        <ModelSelectorEmpty />
+                        <CommandGroup>
+                            {models.map((model) => (
+                                <ModelSelectorItem key={model.id} model={model} />
+                            ))}
+                        </CommandGroup>
+                    </>
+                )}
+            </CommandList>
+            {canScroll && (
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-1.5">
+                    <div
+                        className="absolute right-0.5 w-1 rounded-full bg-foreground/25"
+                        style={{top: thumbTop, height: thumbHeight}}
+                    />
+                </div>
             )}
-            {...props}>
-            {children ?? (
-                <>
-                    <ModelSelectorEmpty />
-                    <CommandGroup>
-                        {models.map((model) => (
-                            <ModelSelectorItem key={model.id} model={model} />
-                        ))}
-                    </CommandGroup>
-                </>
-            )}
-        </CommandList>
+        </div>
     );
 }
 

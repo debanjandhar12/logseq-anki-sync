@@ -13,12 +13,20 @@ export class LogseqAppListeners {
     }
 
     static registeredGraphChangeListeners: Array<(e: any) => void> = [];
-    static registerGraphChangeListener(listener: (e: any) => void): void {
+    static registerGraphChangeListener(listener: (e: any) => void): () => void {
         LogseqAppListeners.registeredGraphChangeListeners.push(listener);
+        return () => {
+            const idx = LogseqAppListeners.registeredGraphChangeListeners.indexOf(listener);
+            if (idx >= 0) LogseqAppListeners.registeredGraphChangeListeners.splice(idx, 1);
+        };
     }
 
     static registeredPluginUnloadListeners: Array<() => void> = [];
-    static registerPluginUnloadListener(listener: () => void): void {
+    static registerPluginUnloadListener(listener: () => void): () => void {
         LogseqAppListeners.registeredPluginUnloadListeners.push(listener);
+        return () => {
+            const idx = LogseqAppListeners.registeredPluginUnloadListeners.indexOf(listener);
+            if (idx >= 0) LogseqAppListeners.registeredPluginUnloadListeners.splice(idx, 1);
+        };
     }
 }
