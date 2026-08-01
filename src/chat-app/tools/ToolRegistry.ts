@@ -64,7 +64,7 @@ export class ChatToolRegistry {
         return [...this.humanToolNames];
     }
 
-    static createDefault(): ChatToolRegistry {
+    static build(): ChatToolRegistry {
         const registry = new ChatToolRegistry();
         const settings = LogseqSettingAccessor.getPluginSettings();
 

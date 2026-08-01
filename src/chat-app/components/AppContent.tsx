@@ -13,7 +13,7 @@ import {getSuggestions} from "../utils/getSuggestions";
  * @constructor
  */
 export const AppContent = () => {
-    const toolkit = useMemo(() => ChatToolRegistry.createDefault().getAUIToolkit(), []);
+    const toolkit = useMemo(() => ChatToolRegistry.build().getAUIToolkit(), []);
 
     const aui = useAui({
         suggestions: getSuggestions(),
