@@ -11,7 +11,7 @@ export interface PluginSettings {
     llmProvider?: ProviderEnum;
     llmAPIUrl?: string;
     llmAPIKey?: string;
-    llmAPIModel?: string;
+    llmAPIModelList?: string;
     globalAgentInstruction?: string;
     openChatInSidebar?: boolean;
     webToolsProvider?: WebToolsProviderEnum;
@@ -52,8 +52,7 @@ export const addSettingsToLogseq = async () => {
             type: "string",
             default: "https://opencode.ai/zen/v1",
             title: "LLM API Url",
-            description:
-                "The base URL for the LLM API provider (e.g. https://opencode.ai/zen/v1)."
+            description: "The base URL for the LLM API provider (e.g. https://opencode.ai/zen/v1)."
         },
         {
             key: "llmAPIKey",
@@ -63,11 +62,12 @@ export const addSettingsToLogseq = async () => {
             description: "The API key for the LLM provider"
         },
         {
-            key: "llmAPIModel",
+            key: "llmAPIModelList",
             type: "string",
             default: "big-pickle",
-            title: "LLM Model",
-            description: "The model identifier to use (e.g. big-pickle)"
+            title: "LLM Model List",
+            description:
+                "Comma-separated model identifiers. For example: big-pickle,glm-5.2"
         },
         {
             key: "globalAgentInstruction",
@@ -206,9 +206,15 @@ export const addSettingsToLogseq = async () => {
                 [data-id="${id}"] .cp__plugins-settings-inner [data-key="llmAPIUrl"] {
                     display: block !important;
                 }
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llmAPIModelList"] {
+                    display: block !important;
+                }
             `
                 : `
                 [data-id="${id}"] .cp__plugins-settings-inner [data-key="llmAPIUrl"] {
+                    display: none;
+                }
+                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llmAPIModelList"] {
                     display: none;
                 }
             `

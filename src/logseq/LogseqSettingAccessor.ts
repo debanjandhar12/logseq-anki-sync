@@ -19,8 +19,12 @@ export class LogseqSettingAccessor {
     > = [];
     static registerSettingsChangeListener(
         listener: (newSettings: PluginSettings, oldSettings: PluginSettings) => void
-    ): void {
+    ): () => void {
         LogseqSettingAccessor.registeredSettingsChangeListeners.push(listener);
+        return () => {
+            const idx = LogseqSettingAccessor.registeredSettingsChangeListeners.indexOf(listener);
+            if (idx >= 0) LogseqSettingAccessor.registeredSettingsChangeListeners.splice(idx, 1);
+        };
     }
 
     static getPluginSettings(): PluginSettings {

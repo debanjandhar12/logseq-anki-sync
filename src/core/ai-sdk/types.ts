@@ -14,3 +14,8 @@ export enum ContentParsingProviderEnum {
     DISABLED = "Disable Content Parsing",
     LLAMA_CLOUD = "LlamaCloud"
 }
+
+export const PROVIDER_SNAPSHOT_KEY: Record<string, string> = {
+    [ProviderEnum.OPENAI]: "openai",
+    [ProviderEnum.GOOGLE]: "google"
+};

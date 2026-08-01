@@ -51,7 +51,9 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
         let content: NonNullable<ChatModelRunResult["content"]> = [];
 
         try {
-            const model = await getLLMModel();
+            const modelId = context.config?.modelName;
+            if (!modelId) throw new Error("No model selected");
+            const model = await getLLMModel(modelId);
             const tools = buildStreamTextTools(context.tools, getLLMProviderTools());
 
             const currentAssistantMessage = unstable_getMessage();
@@ -63,6 +65,12 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 {tools}
             );
 
+            const reasoningEffort = context.config?.reasoningEffort as
+                | "low"
+                | "medium"
+                | "high"
+                | undefined;
+
             const result = streamText({
                 model,
                 instructions: context.system,
@@ -70,6 +78,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 tools,
                 abortSignal,
                 ...context.callSettings,
+                ...(reasoningEffort ? {reasoning: reasoningEffort} : {}),
                 onError: ({error}) => {
                     streamError = error;
                 }
