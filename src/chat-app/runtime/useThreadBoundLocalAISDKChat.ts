@@ -20,7 +20,7 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
     const localThreadId = useAuiState((state) => state.threadListItem.id);
     const remoteThreadId = useAuiState((state) => state.threadListItem.remoteId);
     const threadId = remoteThreadId ?? localThreadId;
-    const toolRegistry = useMemo(() => ChatToolRegistry.getInstance(), []);
+    const toolRegistry = useMemo(() => ChatToolRegistry.createDefault(), []);
     const humanToolNames = useMemo(() => toolRegistry.getHumanToolNames(), [toolRegistry]);
 
     const historyAdapter = useMemo(() => {

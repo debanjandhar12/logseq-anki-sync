@@ -3,25 +3,11 @@ import {useEffect, useMemo, useRef} from "react";
 import {parseTemplateString} from "../../core/template-engine/parseTemplateString";
 import {createLogger, LoggerCategory} from "../../logger";
 import mainSystemMessageTemplate from "../prompts/MAIN_SYSTEM_MESSAGE.md?inlineSkill";
-import {ChatToolRegistry} from "../tools";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 export function useAssistantModelContext(aui: AssistantClient): ModelContextProvider {
     const systemPromptRef = useRef<string | undefined>(undefined);
-    const toolRegistry = useMemo(() => ChatToolRegistry.getInstance(), []);
-
-    useEffect(() => {
-        const unsubscribes = Array.from(toolRegistry.getToolUIs()).map(([toolName, render]) =>
-            aui.tools().setToolUI(toolName, render)
-        );
-
-        return () => {
-            for (const unsubscribe of unsubscribes) {
-                unsubscribe();
-            }
-        };
-    }, [aui, toolRegistry]);
 
     useEffect(() => {
         const renderSystemPrompt = async () => {
@@ -49,10 +35,9 @@ export function useAssistantModelContext(aui: AssistantClient): ModelContextProv
     return useMemo(
         () => ({
             getModelContext: () => ({
-                ...(systemPromptRef.current ? {system: systemPromptRef.current} : {}),
-                tools: toolRegistry.getTools()
+                ...(systemPromptRef.current ? {system: systemPromptRef.current} : {})
             })
         }),
-        [toolRegistry]
+        []
     );
 }

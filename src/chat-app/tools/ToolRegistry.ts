@@ -1,4 +1,4 @@
-import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
+import type {ToolCallMessagePartComponent, Toolkit} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
 import type {BaseChatTool} from "src/chat-app/tools/base/BaseChatTool";
 import type {ChatToolResult} from "src/chat-app/tools/base/ChatToolResponse";
@@ -39,8 +39,6 @@ export const ToolkitEnum = {
 export type ToolkitName = (typeof ToolkitEnum)[keyof typeof ToolkitEnum];
 
 export class ChatToolRegistry {
-    private static instance: ChatToolRegistry | undefined;
-
     private readonly toolkitMap: Record<ToolkitName, Record<string, Tool<any, any>>> = {
         [ToolkitEnum.LOGSEQ]: {},
         [ToolkitEnum.WEB]: {},
@@ -50,48 +48,23 @@ export class ChatToolRegistry {
     private readonly toolUIs = new Map<string, ToolCallMessagePartComponent>();
     private readonly humanToolNames = new Set<string>();
 
-    static getInstance(): ChatToolRegistry {
-        if (!ChatToolRegistry.instance) {
-            ChatToolRegistry.instance = ChatToolRegistry.createDefault();
-        }
-
-        return ChatToolRegistry.instance;
-    }
-
-    static reset(): void {
-        ChatToolRegistry.instance = undefined;
-    }
-
-    getTools(): Record<string, Tool<any, any>> {
-        const all: Record<string, Tool<any, any>> = {};
+    /** Returns toolkits in flat assistant-ui format. */
+    getAUIToolkit(): Toolkit {
+        const toolkit: Toolkit = {};
         for (const tools of Object.values(this.toolkitMap)) {
-            Object.assign(all, tools);
+            for (const [name, tool] of Object.entries(tools)) {
+                const render = this.toolUIs.get(name);
+                toolkit[name] = (render ? {...tool, render} : tool) as Toolkit[string];
+            }
         }
-        return all;
-    }
-
-    getToolkit(name: ToolkitName): Record<string, Tool<any, any>> {
-        return {...this.toolkitMap[name]};
-    }
-
-    getToolkits(): Record<ToolkitName, Record<string, Tool<any, any>>> {
-        return {
-            [ToolkitEnum.LOGSEQ]: {...this.toolkitMap[ToolkitEnum.LOGSEQ]},
-            [ToolkitEnum.WEB]: {...this.toolkitMap[ToolkitEnum.WEB]},
-            [ToolkitEnum.PDF]: {...this.toolkitMap[ToolkitEnum.PDF]},
-            [ToolkitEnum.MISC]: {...this.toolkitMap[ToolkitEnum.MISC]}
-        };
-    }
-
-    getToolUIs(): ReadonlyMap<string, ToolCallMessagePartComponent> {
-        return this.toolUIs;
+        return toolkit;
     }
 
     getHumanToolNames(): string[] {
         return [...this.humanToolNames];
     }
 
-    private static createDefault(): ChatToolRegistry {
+    static createDefault(): ChatToolRegistry {
         const registry = new ChatToolRegistry();
         const settings = LogseqSettingAccessor.getPluginSettings();
 

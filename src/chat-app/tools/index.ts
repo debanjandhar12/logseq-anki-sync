@@ -24,5 +24,4 @@ export {ReadPdfTool} from "src/chat-app/tools/impl/ReadPdfTool";
 export {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 export {WebPageGetTool} from "src/chat-app/tools/impl/WebPageGetTool";
 export {WebSearchTool} from "src/chat-app/tools/impl/WebSearchTool";
-export type {ToolkitName} from "./ToolRegistry";
-export {ChatToolRegistry, ToolkitEnum} from "./ToolRegistry";
+export {ChatToolRegistry} from "./ToolRegistry";

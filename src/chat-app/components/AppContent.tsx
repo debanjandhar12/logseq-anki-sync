@@ -1,10 +1,11 @@
-import {AuiProvider, useAui} from "@assistant-ui/react";
-import {useEffect} from "react";
+import {AuiProvider, Tools, useAui} from "@assistant-ui/react";
+import {useEffect, useMemo} from "react";
 import {ThreadWrapper} from "src/chat-app/components/ThreadWrapper";
 import {LogseqReversibleTransactionLifecycleContext} from "src/chat-app/context/LogseqReversibleTransactionLifecycleContext";
 import {useAssistantModelContext} from "src/chat-app/hooks/useAssistantModelContext";
 import {useChatCommandHandler} from "src/chat-app/hooks/useChatCommandHandler";
 import {useLogseqReversibleTransactionLifecycle} from "src/chat-app/hooks/useLogseqReversibleTransactionLifecycle";
+import {ChatToolRegistry} from "src/chat-app/tools";
 import {getSuggestions} from "../utils/getSuggestions";
 
 /**
@@ -12,8 +13,11 @@ import {getSuggestions} from "../utils/getSuggestions";
  * @constructor
  */
 export const AppContent = () => {
+    const toolkit = useMemo(() => ChatToolRegistry.createDefault().getAUIToolkit(), []);
+
     const aui = useAui({
-        suggestions: getSuggestions()
+        suggestions: getSuggestions(),
+        tools: Tools({toolkit})
     });
 
     const modelContext = useAssistantModelContext(aui);
