@@ -30,10 +30,23 @@ import {WebSearchTool} from "src/chat-app/tools/impl/WebSearchTool";
 import {ContentParsingProviderEnum, WebToolsProviderEnum} from "src/core/ai-sdk/types";
 import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
 
+export const ToolkitEnum = {
+    LOGSEQ: "logseq",
+    WEB: "web",
+    PDF: "pdf",
+    MISC: "misc"
+} as const;
+export type ToolkitName = (typeof ToolkitEnum)[keyof typeof ToolkitEnum];
+
 export class ChatToolRegistry {
     private static instance: ChatToolRegistry | undefined;
 
-    private readonly tools = new Map<string, Tool<any, any>>();
+    private readonly toolkitMap: Record<ToolkitName, Record<string, Tool<any, any>>> = {
+        [ToolkitEnum.LOGSEQ]: {},
+        [ToolkitEnum.WEB]: {},
+        [ToolkitEnum.PDF]: {},
+        [ToolkitEnum.MISC]: {}
+    };
     private readonly toolUIs = new Map<string, ToolCallMessagePartComponent>();
     private readonly humanToolNames = new Set<string>();
 
@@ -50,7 +63,24 @@ export class ChatToolRegistry {
     }
 
     getTools(): Record<string, Tool<any, any>> {
-        return Object.fromEntries(this.tools);
+        const all: Record<string, Tool<any, any>> = {};
+        for (const tools of Object.values(this.toolkitMap)) {
+            Object.assign(all, tools);
+        }
+        return all;
+    }
+
+    getToolkit(name: ToolkitName): Record<string, Tool<any, any>> {
+        return {...this.toolkitMap[name]};
+    }
+
+    getToolkits(): Record<ToolkitName, Record<string, Tool<any, any>>> {
+        return {
+            [ToolkitEnum.LOGSEQ]: {...this.toolkitMap[ToolkitEnum.LOGSEQ]},
+            [ToolkitEnum.WEB]: {...this.toolkitMap[ToolkitEnum.WEB]},
+            [ToolkitEnum.PDF]: {...this.toolkitMap[ToolkitEnum.PDF]},
+            [ToolkitEnum.MISC]: {...this.toolkitMap[ToolkitEnum.MISC]}
+        };
     }
 
     getToolUIs(): ReadonlyMap<string, ToolCallMessagePartComponent> {
@@ -63,49 +93,49 @@ export class ChatToolRegistry {
 
     private static createDefault(): ChatToolRegistry {
         const registry = new ChatToolRegistry();
+        const settings = LogseqSettingAccessor.getPluginSettings();
 
-        registry.registerTool(new LogseqReadBlockTool());
-        registry.registerTool(new LogseqDataScriptQueryTool());
-        registry.registerTool(new SkillTool());
-        registry.registerTool(new LogseqInsertBlockTool());
-        registry.registerTool(new LogseqCreatePageTool());
-        registry.registerTool(new LogseqCreateTagPageTool());
-        registry.registerTool(new LogseqDeletePageTool());
-        registry.registerTool(new LogseqRenamePageTool());
-        registry.registerTool(new LogseqRestorePageTool());
-        registry.registerTool(new LogseqTextSearchTool());
-        registry.registerTool(new LogseqUpdateBlockTool());
-        registry.registerTool(new LogseqMoveBlockTool());
-        registry.registerTool(new LogseqUpsertPropertyPageTool());
-        registry.registerTool(new LogseqUpsertPropertyToBlockTool());
-        registry.registerTool(new LogseqDeletePropertyFromBlockTool());
-        registry.registerTool(new LogseqAddPropertyToTagPageTool());
-        registry.registerTool(new LogseqRemovePropertyFromTagPageTool());
-        registry.registerTool(new LogseqAddTagToBlockTool());
-        registry.registerTool(new LogseqRemoveTagFromBlockTool());
-        registry.registerTool(new LogseqClearChangesTool());
-        registry.registerTool(new GetUserInfoTool());
-        registry.registerTool(new LogseqCommitChangesTool());
-        if (
-            LogseqSettingAccessor.getPluginSettings().webToolsProvider === WebToolsProviderEnum.JINA
-        ) {
-            registry.registerTool(new WebSearchTool());
-            registry.registerTool(new WebPageGetTool());
+        registry.registerTool(new LogseqReadBlockTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqDataScriptQueryTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqInsertBlockTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqCreatePageTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqCreateTagPageTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqDeletePageTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqRenamePageTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqRestorePageTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqTextSearchTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqUpdateBlockTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqMoveBlockTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqUpsertPropertyPageTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqUpsertPropertyToBlockTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqDeletePropertyFromBlockTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqAddPropertyToTagPageTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqRemovePropertyFromTagPageTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqAddTagToBlockTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqRemoveTagFromBlockTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqClearChangesTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqCommitChangesTool(), ToolkitEnum.LOGSEQ);
+
+        if (settings.webToolsProvider === WebToolsProviderEnum.JINA) {
+            registry.registerTool(new WebSearchTool(), ToolkitEnum.WEB);
+            registry.registerTool(new WebPageGetTool(), ToolkitEnum.WEB);
         }
-        if (
-            LogseqSettingAccessor.getPluginSettings().contentParsingProvider ===
-            ContentParsingProviderEnum.LLAMA_CLOUD
-        ) {
-            registry.registerTool(new ReadPdfTool());
+
+        if (settings.contentParsingProvider === ContentParsingProviderEnum.LLAMA_CLOUD) {
+            registry.registerTool(new ReadPdfTool(), ToolkitEnum.PDF);
         }
+
+        registry.registerTool(new SkillTool(), ToolkitEnum.MISC);
+        registry.registerTool(new GetUserInfoTool(), ToolkitEnum.MISC);
 
         return registry;
     }
 
     private registerTool<TArgs extends Record<string, unknown>, TResult extends ChatToolResult>(
-        tool: BaseChatTool<TArgs, TResult>
+        tool: BaseChatTool<TArgs, TResult>,
+        toolkit: ToolkitName
     ): void {
-        this.tools.set(tool.name, tool.getDefinition());
+        this.toolkitMap[toolkit][tool.name] = tool.getDefinition();
         if (tool.type === "human") {
             this.humanToolNames.add(tool.name);
         }
