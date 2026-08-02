@@ -242,8 +242,12 @@ export namespace LogseqProxy {
         > = [];
         static registerDBChangeListener(
             listener: (event: {blocks: any[]; txData: any; txMeta: any}) => void
-        ): void {
+        ): () => void {
             DB.registeredDBListeners.push(listener);
+            return () => {
+                const idx = DB.registeredDBListeners.indexOf(listener);
+                if (idx >= 0) DB.registeredDBListeners.splice(idx, 1);
+            };
         }
     }
     export class Settings {
@@ -256,8 +260,12 @@ export namespace LogseqProxy {
         > = [];
         static registerSettingsChangeListener(
             listener: (newSettings: PluginSettings, oldSettings: PluginSettings) => void
-        ): void {
+        ): () => void {
             Settings.registeredSettingsChangeListeners.push(listener);
+            return () => {
+                const idx = Settings.registeredSettingsChangeListeners.indexOf(listener);
+                if (idx >= 0) Settings.registeredSettingsChangeListeners.splice(idx, 1);
+            };
         }
 
         static getPluginSettings(): PluginSettings {
@@ -302,13 +310,21 @@ export namespace LogseqProxy {
         });
 
         static registeredGraphChangeListeners: Array<(e: any) => void> = [];
-        static registerGraphChangeListener(listener: (e: any) => void): void {
+        static registerGraphChangeListener(listener: (e: any) => void): () => void {
             App.registeredGraphChangeListeners.push(listener);
+            return () => {
+                const idx = App.registeredGraphChangeListeners.indexOf(listener);
+                if (idx >= 0) App.registeredGraphChangeListeners.splice(idx, 1);
+            };
         }
 
         static registeredPluginUnloadListeners: Array<() => void> = [];
-        static registerPluginUnloadListener(listener: () => void): void {
+        static registerPluginUnloadListener(listener: () => void): () => void {
             App.registeredPluginUnloadListeners.push(listener);
+            return () => {
+                const idx = App.registeredPluginUnloadListeners.indexOf(listener);
+                if (idx >= 0) App.registeredPluginUnloadListeners.splice(idx, 1);
+            };
         }
     }
     export function init() {
