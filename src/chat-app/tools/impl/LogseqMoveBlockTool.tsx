@@ -5,8 +5,9 @@ import {
     ChatToolResponse,
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
-import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {addAndExecLogseqReversibleCommand} from "src/chat-app/tools/transaction/addAndExecLogseqReversibleCommand";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getTrackerArtifactFromError} from "src/chat-app/tools/transaction/getTrackerArtifactFromError";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     MoveBlockCommand,
@@ -43,7 +44,8 @@ export class LogseqMoveBlockTool extends BaseChatToolWithDefaultUI<
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to move Logseq block ${JSON.stringify(args.srcBlockUuid)}: ${getErrorMessageFromErrObj(err)}`
+                `Failed to move Logseq block ${JSON.stringify(args.srcBlockUuid)}: ${getErrorMessageFromErrObj(err)}`,
+                getTrackerArtifactFromError(err)
             );
         }
     }

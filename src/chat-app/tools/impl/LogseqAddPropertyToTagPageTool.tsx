@@ -5,8 +5,9 @@ import {
     ChatToolResponse,
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
-import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {addAndExecLogseqReversibleCommand} from "src/chat-app/tools/transaction/addAndExecLogseqReversibleCommand";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getTrackerArtifactFromError} from "src/chat-app/tools/transaction/getTrackerArtifactFromError";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     AddPropertyToTagPageCommand,
@@ -47,7 +48,8 @@ export class LogseqAddPropertyToTagPageTool extends BaseChatToolWithDefaultUI<
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to add property ${args.propertyPageUuid} to tag ${args.tagPageUuid}: ${getErrorMessageFromErrObj(err)}`
+                `Failed to add property ${args.propertyPageUuid} to tag ${args.tagPageUuid}: ${getErrorMessageFromErrObj(err)}`,
+                getTrackerArtifactFromError(err)
             );
         }
     }

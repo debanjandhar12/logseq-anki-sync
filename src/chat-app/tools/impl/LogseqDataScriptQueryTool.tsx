@@ -5,8 +5,7 @@ import {
     ChatToolResponse,
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
-import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {addAndExecLogseqReversibleCommand} from "src/chat-app/tools/transaction/addAndExecLogseqReversibleCommand";
+import {execLogseqReadOnlyCommand} from "src/chat-app/tools/transaction/execLogseqReadOnlyCommand";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     DataScriptQueryCommand,
@@ -31,16 +30,11 @@ export class LogseqDataScriptQueryTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqDataScriptQueryResult>> {
         try {
-            const {result, tracker} = await addAndExecLogseqReversibleCommand({
-                command: new DataScriptQueryCommand(args),
-                messages: context?.messages,
+            const result = await execLogseqReadOnlyCommand(new DataScriptQueryCommand(args), {
                 signal: context?.abortSignal
             });
 
-            return ChatToolResponse.success(
-                {result},
-                createLogseqReversibleTransactionTrackerArtifact(tracker)
-            );
+            return ChatToolResponse.success({result});
         } catch (err) {
             return ChatToolResponse.error(
                 `Failed to run Logseq DataScript query: ${getErrorMessageFromErrObj(err)}`

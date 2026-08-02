@@ -16,6 +16,9 @@ export async function addAndExecLogseqReversibleCommand<
     tracker: ReturnType<typeof getLastLogseqReversibleTransactionTracker>;
 }> {
     options.signal?.throwIfAborted();
+    if (!options.command.doesGraphMutations()) {
+        throw new Error("Non-mutating commands must be executed outside the transaction tracker");
+    }
     const tracker = getLastLogseqReversibleTransactionTracker(options.messages);
     tracker.addCommand(options.command);
     const result = (await tracker.execute({signal: options.signal})) as Result;

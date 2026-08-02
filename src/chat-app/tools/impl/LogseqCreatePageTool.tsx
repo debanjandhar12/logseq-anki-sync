@@ -5,8 +5,9 @@ import {
     ChatToolResponse,
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
-import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {addAndExecLogseqReversibleCommand} from "src/chat-app/tools/transaction/addAndExecLogseqReversibleCommand";
+import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getTrackerArtifactFromError} from "src/chat-app/tools/transaction/getTrackerArtifactFromError";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     CreatePageCommand,
@@ -46,7 +47,8 @@ export class LogseqCreatePageTool extends BaseChatToolWithDefaultUI<
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to create Logseq page ${args.pageName}: ${getErrorMessageFromErrObj(err)}`
+                `Failed to create Logseq page ${args.pageName}: ${getErrorMessageFromErrObj(err)}`,
+                getTrackerArtifactFromError(err)
             );
         }
     }

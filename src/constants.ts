@@ -4,4 +4,3 @@ export const DONATE_ICON =
 export const ATTACHMENT_IMAGE_FORMAT = ["png", "jpeg", "webp"] as const;
 
 export const CHAT_APP_AGENT_MAX_STEPS = 24;
-export const CHAT_APP_LOGSEQ_REVERSIBLE_TRANSACTION_TRACKER_REVERT_DELAY = 12_000;

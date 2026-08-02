@@ -15,6 +15,11 @@ export class LogseqReversibleTransactionCommandQueue {
         this.commands.length = Math.max(0, length);
     }
 
+    public removeAt(index: number): void {
+        if (index < 0 || index >= this.commands.length) return;
+        this.commands.splice(index, 1);
+    }
+
     public getCommands(): LogseqReversibleCommand[] {
         return [...this.commands] as LogseqReversibleCommand[];
     }

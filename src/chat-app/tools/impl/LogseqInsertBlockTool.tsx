@@ -12,8 +12,9 @@ import {
     InsertBlockCommandArgsSchema,
     type LogseqReversibleTransactionResult
 } from "src/core/logseq-reversible-transaction-tracker";
-import {createLogseqReversibleTransactionTrackerArtifact} from "../transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {addAndExecLogseqReversibleCommand} from "../transaction/addAndExecLogseqReversibleCommand";
+import {createLogseqReversibleTransactionTrackerArtifact} from "../transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getTrackerArtifactFromError} from "../transaction/getTrackerArtifactFromError";
 
 type LogseqInsertBlockResult =
     | ChatToolSuccessResult<{
@@ -48,7 +49,8 @@ export class LogseqInsertBlockTool extends BaseChatToolWithDefaultUI<
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to insert Logseq block under ${JSON.stringify(args.parentUuid)}: ${getErrorMessageFromErrObj(err)}`
+                `Failed to insert Logseq block under ${JSON.stringify(args.parentUuid)}: ${getErrorMessageFromErrObj(err)}`,
+                getTrackerArtifactFromError(err)
             );
         }
     }

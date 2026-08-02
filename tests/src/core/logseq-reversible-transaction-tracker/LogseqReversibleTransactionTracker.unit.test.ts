@@ -2,6 +2,7 @@ import {describe, expect, test, vi} from "vitest";
 import {
     BaseReversibleCommand,
     DataScriptQueryCommand,
+    LogseqReversibleTransactionExecutionError,
     LogseqReversibleTransactionTracker
 } from "../../../../src/core/logseq-reversible-transaction-tracker";
 import {ReadBlockCommand} from "../../../../src/core/logseq-reversible-transaction-tracker/commands/ReadBlockCommand";
@@ -104,7 +105,7 @@ describe("LogseqReversibleTransactionTracker", () => {
         await tracker.execute();
         tracker.addCommand(second);
         await tracker.execute();
-        await tracker.revertImmediately();
+        await tracker.revertAppliedCommands();
 
         expect(order).toEqual(["execute-first", "execute-second", "revert-second", "revert-first"]);
         expect(first.executeMock).toHaveBeenCalledOnce();
@@ -113,7 +114,7 @@ describe("LogseqReversibleTransactionTracker", () => {
         expect(tracker.getChangedPages()).toEqual(["page-1", "page-2"]);
     });
 
-    test("rolls back only commands applied by a failed incremental execute", async () => {
+    test("keeps successful commands and removes only the command whose execute fails", async () => {
         const applied = new TestCommand();
         const newlyApplied = new TestCommand();
         const failure = new Error("execute failed");
@@ -126,40 +127,43 @@ describe("LogseqReversibleTransactionTracker", () => {
         tracker.addCommand(failing);
         tracker.addCommand(pending);
 
-        await expect(tracker.execute()).rejects.toBe(failure);
+        await expect(tracker.execute()).rejects.toMatchObject({
+            name: "LogseqReversibleTransactionExecutionError",
+            cause: failure,
+            tracker
+        });
 
         expect(applied.revertMock).not.toHaveBeenCalled();
-        expect(newlyApplied.revertMock).toHaveBeenCalledOnce();
+        expect(newlyApplied.revertMock).not.toHaveBeenCalled();
         expect(failing.revertMock).not.toHaveBeenCalled();
         expect(pending.executeMock).not.toHaveBeenCalled();
-        expect(tracker.getAppliedCommandCount()).toBe(1);
-        expect(tracker.getCommands()).toEqual([applied]);
+        expect(tracker.getAppliedCommandCount()).toBe(2);
+        expect(tracker.getCommands()).toEqual([applied, newlyApplied, pending]);
         expect(applied.getCommandState().status).toBe("executed");
-        expect(newlyApplied.getCommandState().status).toBe("new");
+        expect(newlyApplied.getCommandState().status).toBe("executed");
         expect(failing.getCommandState().status).toBe("new");
         expect(pending.getCommandState().status).toBe("new");
     });
 
-    test("ignores rollback failures and rethrows the original execute error", async () => {
-        const rollbackFailure = new Error("rollback failed");
-        const newlyApplied = new TestCommand({
-            revert: async () => Promise.reject(rollbackFailure)
-        });
+    test("exposes the original execute error and updated tracker", async () => {
         const executeFailure = new Error("execute failed");
+        const successful = new TestCommand();
         const failing = new TestCommand({execute: async () => Promise.reject(executeFailure)});
         const tracker = new LogseqReversibleTransactionTracker();
-        tracker.addCommand(newlyApplied);
+        tracker.addCommand(successful);
         tracker.addCommand(failing);
 
-        await expect(tracker.execute()).rejects.toBe(executeFailure);
+        const error = await tracker.execute().catch((caught: unknown) => caught);
 
-        expect(newlyApplied.revertMock).toHaveBeenCalledOnce();
+        expect(error).toBeInstanceOf(LogseqReversibleTransactionExecutionError);
+        expect(error).toMatchObject({cause: executeFailure, tracker});
+        expect(successful.revertMock).not.toHaveBeenCalled();
         expect(failing.revertMock).not.toHaveBeenCalled();
-        expect(tracker.getAppliedCommandCount()).toBe(0);
-        expect(tracker.getCommands()).toEqual([]);
+        expect(tracker.getAppliedCommandCount()).toBe(1);
+        expect(tracker.getCommands()).toEqual([successful]);
     });
 
-    test("continues reverting older commands after a revert failure", async () => {
+    test("stops reverting at the first failure and preserves the applied prefix", async () => {
         const order: string[] = [];
         const first = new TestCommand({
             execute: async () => order.push("execute-first"),
@@ -186,22 +190,19 @@ describe("LogseqReversibleTransactionTracker", () => {
         tracker.addCommand(third);
 
         await tracker.execute();
-        await expect(tracker.revertImmediately()).rejects.toThrow(
-            "Failed to revert one or more Logseq commands"
-        );
+        await expect(tracker.revertAppliedCommands()).rejects.toThrow("second revert failed");
 
         expect(order).toEqual([
             "execute-first",
             "execute-second",
             "execute-third",
             "revert-third",
-            "revert-second",
-            "revert-first"
+            "revert-second"
         ]);
-        expect(first.revertMock).toHaveBeenCalledOnce();
+        expect(first.revertMock).not.toHaveBeenCalled();
         expect(second.revertMock).toHaveBeenCalledOnce();
         expect(third.revertMock).toHaveBeenCalledOnce();
-        expect(tracker.getAppliedCommandCount()).toBe(0);
+        expect(tracker.getAppliedCommandCount()).toBe(2);
     });
 
     test("serializes operations across tracker instances with the global lock", async () => {

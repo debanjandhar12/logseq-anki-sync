@@ -5,8 +5,7 @@ import {
     ChatToolResponse,
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
-import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {addAndExecLogseqReversibleCommand} from "src/chat-app/tools/transaction/addAndExecLogseqReversibleCommand";
+import {execLogseqReadOnlyCommand} from "src/chat-app/tools/transaction/execLogseqReadOnlyCommand";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     ReadBlockCommand,
@@ -38,16 +37,12 @@ export class LogseqReadBlockTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqReadBlockResult>> {
         try {
-            const {result, tracker} = await addAndExecLogseqReversibleCommand<ReadBlockCommandResult>({
-                command: new ReadBlockCommand(args),
-                messages: context?.messages,
-                signal: context?.abortSignal
-            });
-
-            return ChatToolResponse.success(
-                {...result},
-                createLogseqReversibleTransactionTrackerArtifact(tracker)
+            const result = await execLogseqReadOnlyCommand<ReadBlockCommandResult>(
+                new ReadBlockCommand(args),
+                {signal: context?.abortSignal}
             );
+
+            return ChatToolResponse.success({...result});
         } catch (err) {
             return ChatToolResponse.error(
                 `Failed to read Logseq entity ${args.uuid ?? args.propertyIndent}: ${getErrorMessageFromErrObj(err)}`

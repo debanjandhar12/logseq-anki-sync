@@ -1,10 +1,8 @@
 import {AuiProvider, Tools, useAui} from "@assistant-ui/react";
 import {useEffect, useMemo} from "react";
 import {ThreadWrapper} from "src/chat-app/components/ThreadWrapper";
-import {LogseqReversibleTransactionLifecycleContext} from "src/chat-app/context/LogseqReversibleTransactionLifecycleContext";
 import {useAssistantModelContext} from "src/chat-app/hooks/useAssistantModelContext";
 import {useChatCommandHandler} from "src/chat-app/hooks/useChatCommandHandler";
-import {useLogseqReversibleTransactionLifecycle} from "src/chat-app/hooks/useLogseqReversibleTransactionLifecycle";
 import {ChatToolRegistry} from "src/chat-app/tools";
 import {getSuggestions} from "../utils/getSuggestions";
 
@@ -21,7 +19,6 @@ export const AppContent = () => {
     });
 
     const modelContext = useAssistantModelContext(aui);
-    const transactionLifecycle = useLogseqReversibleTransactionLifecycle();
     useChatCommandHandler(aui);
 
     useEffect(() => {
@@ -30,9 +27,7 @@ export const AppContent = () => {
 
     return (
         <AuiProvider value={aui}>
-            <LogseqReversibleTransactionLifecycleContext.Provider value={transactionLifecycle}>
-                <ThreadWrapper />
-            </LogseqReversibleTransactionLifecycleContext.Provider>
+            <ThreadWrapper />
         </AuiProvider>
     );
 };

@@ -2,7 +2,6 @@ import {ComposerPrimitive, useAui, useAuiState} from "@assistant-ui/react";
 import {type FC, type KeyboardEvent, useLayoutEffect, useRef} from "react";
 import {AttachmentUI} from "src/chat-app/components/AttachmentUI";
 import {ComposerAction} from "src/chat-app/components/ComposerAction";
-import {useLogseqReversibleTransactionLifecycleContext} from "src/chat-app/context/LogseqReversibleTransactionLifecycleContext";
 
 /**
  * Changes:
@@ -15,7 +14,6 @@ import {useLogseqReversibleTransactionLifecycleContext} from "src/chat-app/conte
  * (f) Uses Logseq semantic background and border colors for visible contrast.
  * (g) Updates the controlled composer state for Shift+Enter so textarea autosizing stays in sync.
  * (h) Measures the real Shadow DOM textarea and remeasures when its layout width stabilizes.
- * (i) Displays the countdown until temporary Logseq changes are reverted.
  */
 export const Composer: FC = () => {
     const api = useAui();
@@ -25,8 +23,6 @@ export const Composer: FC = () => {
         (state) => state.thread.messages.at(-1)?.status?.type === "requires-action"
     );
     const inputRef = useRef<HTMLTextAreaElement>(null);
-    const {hasTemporaryChanges, remainingSeconds} =
-        useLogseqReversibleTransactionLifecycleContext();
 
     useLayoutEffect(() => {
         const textarea = inputRef.current;
@@ -84,13 +80,6 @@ export const Composer: FC = () => {
             <div
                 data-slot="aui_composer-shell"
                 className="border-secondary-border bg-secondary-background focus-within:border-ring/75 focus-within:ring-ring/20 flex w-full flex-col gap-2 rounded-(--composer-radius) border p-(--composer-padding) shadow-[0_4px_16px_-8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] transition-[border-color,box-shadow] focus-within:ring-2 focus-within:shadow-[0_6px_24px_-8px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none">
-                {hasTemporaryChanges && remainingSeconds !== null && (
-                    <div
-                        className="border-secondary-border bg-muted text-muted-foreground -mx-[var(--composer-padding)] -mt-[var(--composer-padding)] rounded-t-[calc(var(--composer-radius)-1px)] border-b px-4 py-2 text-xs"
-                        role="status">
-                        Reverting temporary changes in {remainingSeconds}s
-                    </div>
-                )}
                 <ComposerAttachments />
                 <ComposerPrimitive.Input
                     ref={inputRef}

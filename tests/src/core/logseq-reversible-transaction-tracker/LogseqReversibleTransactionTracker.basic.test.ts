@@ -49,7 +49,7 @@ describe.skipIf(!shouldRunTests())("LogseqReversibleTransactionTracker basic", (
         expect(createdPage.uuid).toBeTruthy();
         expect(await logseq.Editor.getPage(pageName)).not.toBeNull();
 
-        await tracker.revertImmediately();
+        await tracker.revertAppliedCommands();
         await waitForLogseqDb();
         const revertedPage = await logseq.Editor.getPage(pageName);
         expect(revertedPage).not.toBeNull();
@@ -72,7 +72,7 @@ describe.skipIf(!shouldRunTests())("LogseqReversibleTransactionTracker basic", (
         expect(await logseq.Editor.getPage(pageName)).not.toBeNull();
         expect(await logseq.Editor.getBlock(insertedBlock.uuid)).not.toBeNull();
 
-        await tracker.revertImmediately();
+        await tracker.revertAppliedCommands();
         await waitForLogseqDb();
 
         expect(await logseq.Editor.getBlock(insertedBlock.uuid)).toBeNull();
@@ -107,7 +107,7 @@ describe.skipIf(!shouldRunTests())("LogseqReversibleTransactionTracker basic", (
         expect(await logseq.Editor.getBlock(insertedBlock.uuid)).not.toBeNull();
         expect(await logseq.Editor.getPage(pendingPageName)).toBeNull();
 
-        await tracker.revertImmediately();
+        await tracker.revertAppliedCommands();
         await waitForLogseqDb();
 
         expect(await logseq.Editor.getBlock(insertedBlock.uuid)).toBeNull();
@@ -141,7 +141,9 @@ describe.skipIf(!shouldRunTests())("LogseqReversibleTransactionTracker basic", (
 
         const controller = new AbortController();
         controller.abort();
-        await expect(tracker.revertImmediately({signal: controller.signal})).rejects.toMatchObject({
+        await expect(
+            tracker.revertAppliedCommands({signal: controller.signal})
+        ).rejects.toMatchObject({
             name: "AbortError"
         });
         await waitForLogseqDb();
@@ -149,6 +151,6 @@ describe.skipIf(!shouldRunTests())("LogseqReversibleTransactionTracker basic", (
         expect(await logseq.Editor.getPage(createdPage.uuid)).not.toBeNull();
         expect(tracker.getAppliedCommandCount()).toBe(1);
 
-        await tracker.revertImmediately();
+        await tracker.revertAppliedCommands();
     }, 60_000);
 });

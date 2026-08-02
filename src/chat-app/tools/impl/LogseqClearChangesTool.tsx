@@ -17,7 +17,7 @@ const LogseqClearChangesArgsZodObj = z.object({});
 
 type LogseqClearChangesArgs = z.infer<typeof LogseqClearChangesArgsZodObj>;
 
-type LogseqClearChangesResult = ChatToolSuccessResult | ChatToolErrorResult;
+type LogseqClearChangesResult = ChatToolSuccessResult<{warning?: string}> | ChatToolErrorResult;
 
 export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
     LogseqClearChangesArgs,
@@ -37,15 +37,27 @@ export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             if (transactionTracker.hasAppliedGraphMutations()) {
                 try {
-                    await transactionTracker.revertImmediately();
+                    await transactionTracker.revertAppliedCommands();
                 } catch (revertError) {
+                    const revertErrorMessage = getErrorMessageFromErrObj(revertError);
                     logger.error(
                         "Failed to revert pending Logseq changes before clearing",
                         revertError
                     );
-                    await logseq.UI.showMsg(
-                        "Failed to revert pending Logseq changes. Clearing staged changes so you can continue.",
-                        "error"
+                    transactionTracker.clear();
+                    try {
+                        await logseq.UI.showMsg(
+                            `Failed to revert pending Logseq changes: ${revertErrorMessage}. Staged changes were cleared.`,
+                            "error"
+                        );
+                    } catch (notificationError) {
+                        logger.error("Failed to show Logseq revert warning", notificationError);
+                    }
+                    return ChatToolResponse.success(
+                        {
+                            warning: `Failed to revert pending Logseq changes: ${revertErrorMessage}. Staged changes were cleared.`
+                        },
+                        createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                     );
                 }
             }

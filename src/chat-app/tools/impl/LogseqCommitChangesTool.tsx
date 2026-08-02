@@ -2,7 +2,7 @@ import {type ToolCallMessagePartComponent, useAuiState} from "@assistant-ui/reac
 import {GitCommitIcon} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 import {ToolFallback} from "src/chat-app/components/ToolFallback";
-import {useLogseqReversibleTransactionLifecycleContext} from "src/chat-app/context/LogseqReversibleTransactionLifecycleContext";
+import {usePersistLogseqTrackerArtifact} from "src/chat-app/hooks/usePersistLogseqTrackerArtifact";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithCustomUI} from "src/chat-app/tools/base/BaseChatToolWithCustomUI";
 import {
@@ -15,14 +15,25 @@ import {
     findLastLogseqReversibleTransactionTracker,
     getLastLogseqReversibleTransactionTracker
 } from "src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
+import {getTrackerArtifactFromError} from "src/chat-app/tools/transaction/getTrackerArtifactFromError";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     LogseqPageDataPrinter,
     type LogseqReversibleTransactionTracker
 } from "src/core/logseq-reversible-transaction-tracker";
+import {createLogger, LoggerCategory} from "src/logger";
 import {Button} from "src/shadcn/radix-ui/button";
 import {showAIChangesReviewModal} from "src/ui/launchers/showAIChangesReviewModal";
 import {z} from "zod";
+
+const logger = createLogger(LoggerCategory.CHAT_UI);
+
+class DiffRevertFailedError extends Error {
+    public constructor(public readonly cause: unknown) {
+        super("Failed to revert while generating diff");
+        this.name = "DiffRevertFailedError";
+    }
+}
 
 const LogseqCommitChangesArgsZodObj = z.object({});
 
@@ -73,7 +84,8 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}`
+                `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}`,
+                getTrackerArtifactFromError(err)
             );
         }
     }
@@ -89,8 +101,20 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         let afterChanges = "";
         try {
             afterChanges = await LogseqPageDataPrinter.print(changedPages);
-        } finally {
-            await transactionTracker.revertImmediately();
+        } catch (error) {
+            // Revert failure while generating diffs is handled by the caller; rethrow so the review
+            // flow can clear the tracker and report a meaningful error to addResult.
+            try {
+                await transactionTracker.revertAppliedCommands();
+            } catch (revertError) {
+                throw new DiffRevertFailedError(revertError);
+            }
+            throw error;
+        }
+        try {
+            await transactionTracker.revertAppliedCommands();
+        } catch (revertError) {
+            throw new DiffRevertFailedError(revertError);
         }
         const beforeChanges = await LogseqPageDataPrinter.print(changedPages);
 
@@ -116,8 +140,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         const messages = useAuiState((state) => state.thread.messages);
         const [isReviewing, setIsReviewing] = useState(false);
         const noChangesResultAddedRef = useRef(false);
-        const {cancelScheduledRevert, persistTrackerArtifact} =
-            useLogseqReversibleTransactionLifecycleContext();
+        const persistTrackerArtifact = usePersistLogseqTrackerArtifact();
 
         const isPending = result === undefined && status?.type !== "incomplete";
         const locatedTracker = findLastLogseqReversibleTransactionTracker(messages);
@@ -133,15 +156,56 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         const reviewAndApply = async () => {
             setIsReviewing(true);
             try {
-                cancelScheduledRevert();
-                const locatedTracker = findLastLogseqReversibleTransactionTracker(messages);
+                const located = findLastLogseqReversibleTransactionTracker(messages);
                 const transactionTracker =
-                    locatedTracker?.tracker ?? getLastLogseqReversibleTransactionTracker(messages);
-                const {beforeChanges, afterChanges, hasGraphMutations} =
-                    await this.prepareReview(transactionTracker);
-                if (locatedTracker) {
-                    await persistTrackerArtifact({...locatedTracker, tracker: transactionTracker});
+                    located?.tracker ?? getLastLogseqReversibleTransactionTracker(messages);
+                let prepared: {
+                    beforeChanges: string;
+                    afterChanges: string;
+                    hasGraphMutations: boolean;
+                };
+                try {
+                    prepared = await this.prepareReview(transactionTracker);
+                } catch (error) {
+                    const isDiffRevertFailure = error instanceof DiffRevertFailedError;
+                    const cause = isDiffRevertFailure ? error.cause : error;
+                    const causeMessage = getErrorMessageFromErrObj(cause);
+                    if (isDiffRevertFailure) {
+                        transactionTracker.clear();
+                        addResult(
+                            ChatToolResponse.error(
+                                `Failed to generate diff as revert failed due to: ${causeMessage}`,
+                                createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+                            )
+                        );
+                        logger.error("Failed to generate diff as revert failed", cause);
+                        if (located) {
+                            await persistTrackerArtifact({...located, tracker: transactionTracker});
+                        }
+                        await logseq.UI.showMsg(
+                            `Failed to generate diff as revert failed due to: ${causeMessage}`,
+                            "error"
+                        );
+                        return;
+                    }
+
+                    if (located) {
+                        await persistTrackerArtifact({...located, tracker: transactionTracker});
+                    }
+                    addResult(
+                        ChatToolResponse.error(
+                            getErrorMessageFromErrObj(error),
+                            createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
+                        )
+                    );
+                    return;
                 }
+
+                if (located) {
+                    await persistTrackerArtifact({...located, tracker: transactionTracker});
+                }
+
+                const {beforeChanges, afterChanges, hasGraphMutations} = prepared;
                 if (!hasGraphMutations) {
                     addResult(await this.executeApprove({}, {messages}, transactionTracker));
                     return;

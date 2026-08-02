@@ -5,8 +5,7 @@ import {
     ChatToolResponse,
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
-import {createLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
-import {addAndExecLogseqReversibleCommand} from "src/chat-app/tools/transaction/addAndExecLogseqReversibleCommand";
+import {execLogseqReadOnlyCommand} from "src/chat-app/tools/transaction/execLogseqReadOnlyCommand";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     TextSearchCommand,
@@ -34,16 +33,11 @@ export class LogseqTextSearchTool extends BaseChatToolWithDefaultUI<
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<LogseqTextSearchResult>> {
         try {
-            const {result, tracker} = await addAndExecLogseqReversibleCommand({
-                command: new TextSearchCommand(args),
-                messages: context?.messages,
+            const result = await execLogseqReadOnlyCommand(new TextSearchCommand(args), {
                 signal: context?.abortSignal
             });
 
-            return ChatToolResponse.success(
-                {result},
-                createLogseqReversibleTransactionTrackerArtifact(tracker)
-            );
+            return ChatToolResponse.success({result});
         } catch (err) {
             return ChatToolResponse.error(
                 `Failed to search Logseq text: ${getErrorMessageFromErrObj(err)}`

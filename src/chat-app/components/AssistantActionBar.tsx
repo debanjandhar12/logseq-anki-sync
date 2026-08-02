@@ -1,6 +1,7 @@
-import {ActionBarPrimitive, AuiIf} from "@assistant-ui/react";
+import {ActionBarPrimitive, AuiIf, useAui, useAuiState} from "@assistant-ui/react";
 import {CheckIcon, CopyIcon, RefreshCwIcon} from "lucide-react";
-import type {FC} from "react";
+import {type FC, useState} from "react";
+import {useLogseqUncommittedChangesBranchGuard} from "src/chat-app/hooks/useLogseqUncommittedChangesBranchGuard";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
 
 /**
@@ -9,8 +10,31 @@ import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
  * Changes:
  * (a) Disabled the ActionBarMore menu.
  * (b) Removed autohide="not-last" from ActionBarPrimitive.Root.
+ * (c) Replaced ActionBarPrimitive.Reload with a guarded TooltipIconButton so uncommitted Logseq
+ *     graph changes are reverted (after confirmation) before the assistant message is reloaded
+ *     (which creates a new branch). Disabled parity mirrors useActionBarReload.
  */
 export const AssistantActionBar: FC = () => {
+    const aui = useAui();
+    const [isReloading, setIsReloading] = useState(false);
+    const guardBranchNavigation = useLogseqUncommittedChangesBranchGuard();
+    const isRunning = useAuiState((state) => state.thread.isRunning);
+    const isDisabled = useAuiState((state) => state.thread.isDisabled);
+    const role = useAuiState((state) => state.message.role);
+    const reloadDisabled = isReloading || isRunning || isDisabled || role !== "assistant";
+
+    const handleReload = async () => {
+        if (reloadDisabled) return;
+        setIsReloading(true);
+        try {
+            const proceed = await guardBranchNavigation();
+            if (!proceed) return;
+            aui.message().reload();
+        } finally {
+            setIsReloading(false);
+        }
+    };
+
     return (
         <ActionBarPrimitive.Root
             hideWhenRunning
@@ -25,33 +49,9 @@ export const AssistantActionBar: FC = () => {
                     </AuiIf>
                 </TooltipIconButton>
             </ActionBarPrimitive.Copy>
-            <ActionBarPrimitive.Reload asChild>
-                <TooltipIconButton tooltip="Refresh">
-                    <RefreshCwIcon />
-                </TooltipIconButton>
-            </ActionBarPrimitive.Reload>
-            {/*<ActionBarMorePrimitive.Root>*/}
-            {/*    <ActionBarMorePrimitive.Trigger asChild>*/}
-            {/*        <TooltipIconButton*/}
-            {/*            tooltip="More"*/}
-            {/*            className="data-[state=open]:bg-accent"*/}
-            {/*        >*/}
-            {/*            <MoreHorizontalIcon />*/}
-            {/*        </TooltipIconButton>*/}
-            {/*    </ActionBarMorePrimitive.Trigger>*/}
-            {/*    <ActionBarMorePrimitive.Content*/}
-            {/*        side="bottom"*/}
-            {/*        align="start"*/}
-            {/*        className="aui-action-bar-more-content z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"*/}
-            {/*    >*/}
-            {/*        <ActionBarPrimitive.ExportMarkdown asChild>*/}
-            {/*            <ActionBarMorePrimitive.Item className="aui-action-bar-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">*/}
-            {/*                <DownloadIcon className="size-4" />*/}
-            {/*                Export as Markdown*/}
-            {/*            </ActionBarMorePrimitive.Item>*/}
-            {/*        </ActionBarPrimitive.ExportMarkdown>*/}
-            {/*    </ActionBarMorePrimitive.Content>*/}
-            {/*</ActionBarMorePrimitive.Root>*/}
+            <TooltipIconButton tooltip="Refresh" disabled={reloadDisabled} onClick={handleReload}>
+                <RefreshCwIcon />
+            </TooltipIconButton>
         </ActionBarPrimitive.Root>
     );
 };
