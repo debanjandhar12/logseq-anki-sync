@@ -9,7 +9,9 @@ import {usePersistLogseqTrackerArtifact} from "./usePersistLogseqTrackerArtifact
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 const BRANCH_SWITCH_CONFIRMATION_MESSAGE =
-    "The current branch has uncommited changes. Do you want to revert and switch branch?";
+    "The current branch has uncommitted changes. Do you want to revert and switch branch?";
+const BRANCH_SWITCH_ERROR_NOTIFICATION_KEY = "logseq-ai-chat-branch-switch-revert-error";
+const BRANCH_SWITCH_ERROR_NOTIFICATION_TIMEOUT_MS = 10_000;
 
 export const hasUncommittedGraphMutations = (
     tracker: {hasAppliedGraphMutations: () => boolean} | null | undefined
@@ -30,20 +32,15 @@ export function useLogseqUncommittedChangesBranchGuard() {
         if (!confirmed) return false;
 
         const tracker = locatedTracker!.tracker;
+        let revertErrorMessage: string | null = null;
         try {
             await tracker.revertAppliedCommands();
         } catch (error) {
-            logger.error("Failed to revert uncommitted changes before branch switch", error);
-            try {
-                await logseq.UI.showMsg(
-                    `Failed to revert uncommitted Logseq changes: ${getErrorMessageFromErrObj(
-                        error
-                    )}. Switching branch anyway; staged commands were kept.`,
-                    "error"
-                );
-            } catch (notificationError) {
-                logger.error("Failed to show branch-switch revert error", notificationError);
-            }
+            revertErrorMessage = getErrorMessageFromErrObj(error);
+            logger.error(
+                `Failed to revert uncommitted changes before branch switch: ${revertErrorMessage}`,
+                error
+            );
         }
         // Persist whatever revert achieved (commands kept, appliedCommandCount updated). Do not
         // navigate if persistence fails because that would leave a stale branch artifact.
@@ -51,16 +48,34 @@ export function useLogseqUncommittedChangesBranchGuard() {
             await persistTrackerArtifact(locatedTracker!);
         } catch (error) {
             logger.error("Failed to persist tracker after branch-switch revert", error);
-            try {
-                await logseq.UI.showMsg(
-                    "Failed to save the reverted Logseq change state. Branch switch was cancelled.",
-                    "error"
-                );
-            } catch (notificationError) {
-                logger.error("Failed to show tracker persistence error", notificationError);
-            }
+            await showBranchSwitchError(
+                "Failed to save the reverted Logseq change state. Branch switch was cancelled."
+            );
             return false;
+        }
+
+        if (revertErrorMessage !== null) {
+            await showBranchSwitchError(
+                `Failed to revert uncommitted Logseq changes: ${revertErrorMessage}. Switching branch anyway; staged commands were kept.`
+            );
         }
         return true;
     }, [aui, persistTrackerArtifact]);
+}
+
+async function showBranchSwitchError(message: string): Promise<void> {
+    // The confirmation modal resolves before React finishes unmounting it. Waiting one frame keeps
+    // the Logseq toast from being created behind the modal and immediately obscured by navigation.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    try {
+        await logseq.UI.showMsg(message, "error", {
+            key: BRANCH_SWITCH_ERROR_NOTIFICATION_KEY,
+            timeout: BRANCH_SWITCH_ERROR_NOTIFICATION_TIMEOUT_MS
+        });
+    } catch (notificationError) {
+        logger.error(
+            `Failed to show branch-switch error notification: ${message}`,
+            notificationError
+        );
+    }
 }
