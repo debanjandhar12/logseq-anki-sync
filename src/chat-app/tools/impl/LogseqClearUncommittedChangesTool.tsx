@@ -13,29 +13,29 @@ import {z} from "zod";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
-const LogseqClearTemporaryChangesArgsZodObj = z.object({});
+const LogseqClearUncommittedChangesArgsZodObj = z.object({});
 
-type LogseqClearTemporaryChangesArgs = z.infer<typeof LogseqClearTemporaryChangesArgsZodObj>;
+type LogseqClearUncommittedChangesArgs = z.infer<typeof LogseqClearUncommittedChangesArgsZodObj>;
 
-type LogseqClearTemporaryChangesResult =
+type LogseqClearUncommittedChangesResult =
     | ChatToolSuccessResult<{warning?: string}>
     | ChatToolErrorResult;
 
-export class LogseqClearTemporaryChangesTool extends BaseChatToolWithDefaultUI<
-    LogseqClearTemporaryChangesArgs,
-    LogseqClearTemporaryChangesResult
+export class LogseqClearUncommittedChangesTool extends BaseChatToolWithDefaultUI<
+    LogseqClearUncommittedChangesArgs,
+    LogseqClearUncommittedChangesResult
 > {
-    static readonly NAME = "logseq_clear_temporary_changes";
+    static readonly NAME = "logseq_clear_uncommitted_changes";
 
-    readonly name = LogseqClearTemporaryChangesTool.NAME;
+    readonly name = LogseqClearUncommittedChangesTool.NAME;
     readonly description =
-        "Discard temporary Logseq graph changes made by block/page editing tools.";
-    readonly parameters = LogseqClearTemporaryChangesArgsZodObj;
+        "Revert applied Logseq graph changes made by block/page editing tools and discard them from review.";
+    readonly parameters = LogseqClearUncommittedChangesArgsZodObj;
 
     async execute(
-        _args: LogseqClearTemporaryChangesArgs = {},
+        _args: LogseqClearUncommittedChangesArgs = {},
         context?: ChatToolExecutionContext
-    ): Promise<ChatToolResponse<LogseqClearTemporaryChangesResult>> {
+    ): Promise<ChatToolResponse<LogseqClearUncommittedChangesResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             if (transactionTracker.hasAppliedGraphMutations()) {
@@ -43,23 +43,19 @@ export class LogseqClearTemporaryChangesTool extends BaseChatToolWithDefaultUI<
                     await transactionTracker.revertAppliedCommands();
                 } catch (revertError) {
                     const revertErrorMessage = getErrorMessageFromErrObj(revertError);
-                    logger.error(
-                        "Failed to revert temporary Logseq changes before discarding",
-                        revertError
-                    );
+                    const warning = `Failed to revert review changes: ${revertErrorMessage}. Review changes were discarded.`;
+                    logger.error("Failed to revert review changes before discarding", revertError);
                     transactionTracker.clear();
                     try {
-                        await logseq.UI.showMsg(
-                            `Failed to revert temporary Logseq changes: ${revertErrorMessage}. Temporary change tracking was cleared.`,
-                            "error"
-                        );
+                        await logseq.UI.showMsg(warning, "error");
                     } catch (notificationError) {
-                        logger.error("Failed to show Logseq revert warning", notificationError);
+                        logger.error(
+                            "Failed to show Logseq review-change revert warning",
+                            notificationError
+                        );
                     }
                     return ChatToolResponse.success(
-                        {
-                            warning: `Failed to revert temporary Logseq changes: ${revertErrorMessage}. Temporary change tracking was cleared.`
-                        },
+                        {warning},
                         createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                     );
                 }
@@ -72,7 +68,7 @@ export class LogseqClearTemporaryChangesTool extends BaseChatToolWithDefaultUI<
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to discard temporary Logseq changes: ${getErrorMessageFromErrObj(err)}`
+                `Failed to revert and discard review changes: ${getErrorMessageFromErrObj(err)}`
             );
         }
     }

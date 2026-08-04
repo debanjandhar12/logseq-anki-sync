@@ -46,16 +46,16 @@ const getArtifactTracker = (response: {artifact?: unknown}) => {
 };
 
 describe("LogseqCommitChangesTool", () => {
-    test("reports that absent temporary changes were not discarded", async () => {
+    test("reports when no changes are ready to review or commit", async () => {
         const response = await new LogseqCommitChangesTool().executeApprove({}, undefined);
 
         expect(response.result).toEqual({
             success: true,
-            changes: "No temporary changes to commit. Temporary changes were not discarded."
+            changes: "No changes are ready to review or commit."
         });
     });
 
-    test("commits queued changes without reporting them as discarded", async () => {
+    test("commits queued review changes as permanent changes", async () => {
         const tracker = new LogseqReversibleTransactionTracker();
         const command = new TestMutationCommand();
         tracker.addCommand(command);
@@ -65,14 +65,13 @@ describe("LogseqCommitChangesTool", () => {
         expect(command.executeMock).toHaveBeenCalledOnce();
         expect(response.result).toEqual({
             success: true,
-            changes:
-                "All temporary Logseq changes committed successfully. Temporary changes were not discarded."
+            changes: "Changes committed successfully. They are now permanent."
         });
         expect(tracker.getCommands()).toEqual([]);
         expect(getArtifactTracker(response).getCommands()).toEqual([]);
     });
 
-    test("retains temporary changes when commit execution fails", async () => {
+    test("retains review changes when commit execution fails", async () => {
         const tracker = new LogseqReversibleTransactionTracker();
         tracker.addCommand(
             new TestMutationCommand({execute: async () => Promise.reject(new Error("failed"))})
@@ -82,12 +81,12 @@ describe("LogseqCommitChangesTool", () => {
 
         expect(response.result).toEqual({
             success: false,
-            error: "Failed to commit Logseq changes: Failed to execute TestMutationCommand: failed. Temporary changes were not discarded."
+            error: "Failed to commit Logseq changes: Failed to execute TestMutationCommand: failed. Review changes remain available."
         });
         expect(tracker.getCommands()).toEqual([]);
     });
 
-    test("discards queued temporary changes when the user rejects the commit", async () => {
+    test("discards queued review changes when the user declines the commit", async () => {
         const tracker = new LogseqReversibleTransactionTracker();
         tracker.addCommand(new TestMutationCommand());
 
@@ -95,7 +94,7 @@ describe("LogseqCommitChangesTool", () => {
 
         expect(response.result).toEqual({
             success: false,
-            error: "User rejected the commit operation. Temporary changes were discarded."
+            error: "The commit was declined. Review changes were discarded."
         });
         expect(tracker.getCommands()).toEqual([]);
         expect(getArtifactTracker(response).getCommands()).toEqual([]);

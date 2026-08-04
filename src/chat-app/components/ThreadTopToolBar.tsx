@@ -13,7 +13,7 @@ import {TooltipIconButton} from "../../shadcn/assistant-ui/tooltip-icon-button";
 import {Button} from "../../shadcn/radix-ui/button";
 import {TooltipProvider} from "../../shadcn/radix-ui/tooltip";
 import {ChatUIContext} from "../context/ChatUIContext";
-import {TemporaryLogseqChangesDisplay} from "./TemporaryLogseqChangesDisplay";
+import {ReviewChangesDisplay} from "./ReviewChangesDisplay";
 
 const DEFAULT_MODEL_CONTEXT_WINDOW = 128_000;
 
@@ -46,7 +46,7 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
     return (
         <div className="flex h-10 shrink-0 items-center justify-end border-b bg-background px-3">
             <div className="flex items-center gap-1">
-                <TemporaryLogseqChangesDisplay side="bottom" />
+                <ReviewChangesDisplay side="bottom" />
                 {contextUsage && (
                     <TooltipProvider delayDuration={0}>
                         <ContextDisplay.Ring

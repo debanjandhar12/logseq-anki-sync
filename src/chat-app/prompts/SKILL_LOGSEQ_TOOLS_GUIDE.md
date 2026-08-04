@@ -14,11 +14,11 @@ default-installed-skill: true
 - For example, when creating a new page: create the page first, insert top-level blocks in parallel, then insert child blocks for each returned parent block in parallel. Repeat by depth.
 - Prefer fewer batches with many independent calls over one serial call at a time.
 
-## Commit and Rollback
+## Review and Commit
 
-- Logseq write tools prepare temporary changes. Call the commit tool only after the whole task is complete.
+- Logseq write tools prepare changes for review. Call the commit tool only after the whole task is complete so the user can review and commit or discard them.
 - The commit tool shows the diff and asks the user to approve or reject permanent changes.
-- If the temporary state becomes extremely messy, rollback and rebuild from a clean state.
+- If the review state becomes extremely messy, discard it and rebuild from a clean state.
 
 ## Creating Pages / Inserting Blocks
 

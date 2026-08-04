@@ -8,7 +8,7 @@ import {UserActionBar} from "src/shadcn/assistant-ui/thread";
  * Changes:
  * (a) Decomposed to modify UserMessageAttachments and use custom AttachmentUI
  * (b) Preserves the Logseq attachment pill layout.
- * (c) Uses guarded branch navigation so applied temporary Logseq graph changes are reverted first.
+ * (c) Uses guarded branch navigation so applied review changes are reverted first.
  */
 export const UserMessage: FC = () => {
     return (

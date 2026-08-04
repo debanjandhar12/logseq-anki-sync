@@ -9,22 +9,22 @@ import {usePersistLogseqTrackerArtifact} from "./usePersistLogseqTrackerArtifact
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 const BRANCH_SWITCH_CONFIRMATION_MESSAGE =
-    "The current branch has temporary changes. Do you want to revert them and switch branch?";
+    "The current branch has applied changes. Do you want to revert them and switch branches?";
 const BRANCH_SWITCH_ERROR_NOTIFICATION_KEY = "logseq-ai-chat-branch-switch-revert-error";
 const BRANCH_SWITCH_ERROR_NOTIFICATION_TIMEOUT_MS = 10_000;
 
-export const hasAppliedTemporaryGraphMutations = (
+export const hasAppliedChanges = (
     tracker: {hasAppliedGraphMutations: () => boolean} | null | undefined
 ): boolean => !!tracker && tracker.hasAppliedGraphMutations();
 
-export function useLogseqTemporaryChangesBranchGuard() {
+export function useLogseqAppliedChangesBranchGuard() {
     const aui = useAui();
     const persistTrackerArtifact = usePersistLogseqTrackerArtifact();
 
     return useCallback(async (): Promise<boolean> => {
         const messages = aui.thread().getState().messages;
         const locatedTracker = findLastLogseqReversibleTransactionTracker(messages);
-        if (!hasAppliedTemporaryGraphMutations(locatedTracker?.tracker)) return true;
+        if (!hasAppliedChanges(locatedTracker?.tracker)) return true;
 
         const confirmed = await showConfirmModal(BRANCH_SWITCH_CONFIRMATION_MESSAGE, {
             confirmText: "Revert & Switch"
@@ -38,14 +38,14 @@ export function useLogseqTemporaryChangesBranchGuard() {
         } catch (error) {
             revertErrorMessage = getErrorMessageFromErrObj(error);
             logger.error(
-                `Failed to revert temporary changes before branch switch: ${revertErrorMessage}`,
+                `Failed to revert applied changes before branch switch: ${revertErrorMessage}`,
                 error
             );
         }
         // Persist whatever revert achieved (commands kept, appliedCommandCount updated). Do not
         // navigate if persistence fails because that would leave a stale branch artifact.
         try {
-            await persistTrackerArtifact(locatedTracker!);
+            await persistTrackerArtifact({...locatedTracker, tracker});
         } catch (error) {
             logger.error("Failed to persist tracker after branch-switch revert", error);
             await showBranchSwitchError(
@@ -56,7 +56,7 @@ export function useLogseqTemporaryChangesBranchGuard() {
 
         if (revertErrorMessage !== null) {
             await showBranchSwitchError(
-                `Failed to revert temporary Logseq changes: ${revertErrorMessage}. Switching branch anyway; queued commands were kept.`
+                `Failed to revert applied changes: ${revertErrorMessage}. Switching branch anyway; queued review changes were kept.`
             );
         }
         return true;

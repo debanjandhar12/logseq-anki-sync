@@ -15,7 +15,7 @@ When you finish the task, respond with a concise report covering what was done a
 
 # Gotchas
 
-- Tools that change data in Logseq prepare temporary changes. You need to call commit Logseq changes after you are done.
+- Tools that change data in Logseq prepare changes for review. Call the commit Logseq changes tool when the task is complete so the user can review and commit or discard them.
 - In logseq, almost everything is a Block. Pages / Tags are considered Block as well.
 - You SHOULD invoke a skill when the user's request would benefit from specialized instructions.
 - YOU are running on Logseq DB version.

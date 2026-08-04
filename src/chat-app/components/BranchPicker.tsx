@@ -1,19 +1,19 @@
 import {BranchPickerPrimitive, useAui, useAuiState} from "@assistant-ui/react";
 import {ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
 import {type FC, useState} from "react";
-import {useLogseqTemporaryChangesBranchGuard} from "src/chat-app/hooks/useLogseqTemporaryChangesBranchGuard";
+import {useLogseqAppliedChangesBranchGuard} from "src/chat-app/hooks/useLogseqAppliedChangesBranchGuard";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
 import {cn} from "src/shadcn/lib/utils";
 
 /**
  * Changes vs src/shadcn/assistant-ui/thread.tsx BranchPicker:
- * (a) Guards branch navigation so applied temporary Logseq graph changes are reverted (after confirm)
+ * (a) Guards branch navigation so applied Logseq changes are reverted (after confirm)
  *     before switching branches.
  */
 export const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({className, ...rest}) => {
     const aui = useAui();
     const [isSwitching, setIsSwitching] = useState(false);
-    const guardBranchNavigation = useLogseqTemporaryChangesBranchGuard();
+    const guardBranchNavigation = useLogseqAppliedChangesBranchGuard();
     const branchNumber = useAuiState((state) => state.message.branchNumber);
     const branchCount = useAuiState((state) => state.message.branchCount);
     const isRunning = useAuiState((state) => state.thread.isRunning);

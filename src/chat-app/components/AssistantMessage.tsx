@@ -20,7 +20,7 @@ import {cn} from "src/shadcn/lib/utils";
  * (a) Removed tool grouping for CommitLogseqChanges tool.
  * (b) Groups reasoning and tool calls in one collapsed chain-of-thought block.
  * (d) Preserves standalone tool UIs and renders data and indicator parts.
- * (e) Uses guarded branch navigation so applied temporary Logseq graph changes are reverted first.
+ * (e) Uses guarded branch navigation so applied review changes are reverted first.
  */
 export const AssistantMessage: FC = () => {
     const ACTION_BAR_PT = "pt-1.5";

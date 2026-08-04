@@ -50,7 +50,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     readonly name = LogseqCommitChangesTool.NAME;
     readonly type = "human";
     readonly description =
-        "Ask the user to approve committing temporary Logseq graph changes made by block/page editing tools.";
+        "Ask the user to review and approve committing Logseq graph changes made by block/page editing tools.";
     readonly parameters = LogseqCommitChangesArgsZodObj;
 
     async executeApprove(
@@ -64,8 +64,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             if (transactionTracker.getGraphMutationCommandCount() === 0) {
                 return ChatToolResponse.success(
                     {
-                        changes:
-                            "No temporary changes to commit."
+                        changes: "No changes are ready to review or commit."
                     },
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 );
@@ -76,7 +75,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 transactionTracker.clear();
                 return ChatToolResponse.success(
                     {
-                        changes: "No temporary changes to commit."
+                        changes: "No changes are ready to review or commit."
                     },
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 );
@@ -85,14 +84,13 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
 
             return ChatToolResponse.success(
                 {
-                    changes:
-                        "All temporary Logseq changes committed successfully."
+                    changes: "Changes committed successfully. They are now permanent."
                 },
                 createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}. Temporary changes were not discarded.`,
+                `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}. Review changes remain available.`,
                 getTrackerArtifactFromError(err)
             );
         }
@@ -134,7 +132,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     ): Promise<ChatToolResponse<LogseqCommitChangesResult>> {
         transactionTracker?.clear();
         return ChatToolResponse.error(
-            "User rejected the commit operation. Temporary changes were discarded.",
+            "The commit was declined. Review changes were discarded.",
             transactionTracker
                 ? createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 : undefined
@@ -183,7 +181,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                         transactionTracker.clear();
                         addResult(
                             ChatToolResponse.error(
-                                `Failed to generate diff as revert failed due to: ${causeMessage}. Temporary changes were discarded.`,
+                                `Failed to generate diff as revert failed due to: ${causeMessage}. Review changes were discarded.`,
                                 createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                             )
                         );
@@ -203,7 +201,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                     }
                     addResult(
                         ChatToolResponse.error(
-                            `${getErrorMessageFromErrObj(error)}. Temporary changes were not discarded.`,
+                            `${getErrorMessageFromErrObj(error)}. Review changes remain available.`,
                             createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                         )
                     );
@@ -234,7 +232,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             } catch (error) {
                 addResult(
                     ChatToolResponse.error(
-                        `${getErrorMessageFromErrObj(error)}. Temporary changes were not discarded.`
+                        `${getErrorMessageFromErrObj(error)}. Review changes remain available.`
                     )
                 );
             } finally {
@@ -243,7 +241,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         };
 
         if (!isAwaitingResult || !hasGraphMutations) {
-            // Use the generic tool UI unless there are temporary graph changes to review.
+            // Use the generic tool UI unless there are review changes to review.
             return <ToolFallback {...props} />;
         }
 
@@ -251,7 +249,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             <div className="w-full rounded-lg border bg-background p-3 text-sm">
                 <div className="mb-2 flex items-center gap-2 font-medium">
                     <GitCommitIcon className="size-4" />
-                    Commit temporary Logseq changes
+                    Review and commit Logseq changes
                 </div>
                 <div className="mb-3 text-muted-foreground">
                     AI Chat wants to make changes to your Logseq graph.
