@@ -50,7 +50,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     readonly name = LogseqCommitChangesTool.NAME;
     readonly type = "human";
     readonly description =
-        "Ask the user to approve committing pending Logseq graph changes made by block/page editing tools.";
+        "Ask the user to approve committing temporary Logseq graph changes made by block/page editing tools.";
     readonly parameters = LogseqCommitChangesArgsZodObj;
 
     async executeApprove(
@@ -63,7 +63,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 preparedTracker ?? getLastLogseqReversibleTransactionTracker(context?.messages);
             if (transactionTracker.getGraphMutationCommandCount() === 0) {
                 return ChatToolResponse.success(
-                    {changes: "No pending changes to commit."},
+                    {changes: "No temporary changes to commit."},
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 );
             }
@@ -72,14 +72,14 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             if (!transactionTracker.hasAppliedGraphMutations()) {
                 transactionTracker.clear();
                 return ChatToolResponse.success(
-                    {changes: "No pending changes to commit."},
+                    {changes: "No temporary changes to commit."},
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 );
             }
             transactionTracker.clear();
 
             return ChatToolResponse.success(
-                {changes: "All pending Logseq changes commited successfully."},
+                {changes: "All temporary Logseq changes committed successfully."},
                 createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             );
         } catch (err) {
@@ -125,7 +125,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         transactionTracker?: LogseqReversibleTransactionTracker
     ): Promise<ChatToolResponse<LogseqCommitChangesResult>> {
         return ChatToolResponse.error(
-            "User cancelled the commit operation. Pending changes remain available.",
+            "User cancelled the commit operation. Temporary changes remain available.",
             transactionTracker
                 ? createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 : undefined
@@ -142,18 +142,18 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         const noChangesResultAddedRef = useRef(false);
         const persistTrackerArtifact = usePersistLogseqTrackerArtifact();
 
-        const isPending = result === undefined && status?.type !== "incomplete";
+        const isAwaitingResult = result === undefined && status?.type !== "incomplete";
         const locatedTracker = findLastLogseqReversibleTransactionTracker(messages);
         const hasGraphMutations = (locatedTracker?.tracker.getGraphMutationCommandCount() ?? 0) > 0;
 
         useEffect(() => {
-            if (!isPending || hasGraphMutations || noChangesResultAddedRef.current) return;
+            if (!isAwaitingResult || hasGraphMutations || noChangesResultAddedRef.current) return;
 
             noChangesResultAddedRef.current = true;
             void this.executeApprove({}, {messages}).then(addResult);
-        }, [addResult, hasGraphMutations, isPending, messages]);
+        }, [addResult, hasGraphMutations, isAwaitingResult, messages]);
 
-        const reviewAndApply = async () => {
+        const reviewAndCommit = async () => {
             setIsReviewing(true);
             try {
                 const located = findLastLogseqReversibleTransactionTracker(messages);
@@ -229,8 +229,8 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             }
         };
 
-        if (!isPending || !hasGraphMutations) {
-            // Use the generic tool UI unless there are pending graph changes to review.
+        if (!isAwaitingResult || !hasGraphMutations) {
+            // Use the generic tool UI unless there are temporary graph changes to review.
             return <ToolFallback {...props} />;
         }
 
@@ -238,14 +238,14 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             <div className="w-full rounded-lg border bg-background p-3 text-sm">
                 <div className="mb-2 flex items-center gap-2 font-medium">
                     <GitCommitIcon className="size-4" />
-                    Commit Logseq changes
+                    Commit temporary Logseq changes
                 </div>
                 <div className="mb-3 text-muted-foreground">
                     AI Chat wants to make changes to your Logseq graph.
                 </div>
                 <div className="flex gap-2">
-                    <Button size="sm" onClick={reviewAndApply} disabled={isReviewing}>
-                        Review & Apply
+                    <Button size="sm" onClick={reviewAndCommit} disabled={isReviewing}>
+                        Review & Commit
                     </Button>
                 </div>
             </div>

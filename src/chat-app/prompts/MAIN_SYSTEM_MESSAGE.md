@@ -15,7 +15,7 @@ When you finish the task, respond with a concise report covering what was done a
 
 # Gotchas
 
-- Tools that change data in logseq do not directly write to Logseeq. You need to call commit logseq changes after you are done.
+- Tools that change data in Logseq prepare temporary changes. You need to call commit Logseq changes after you are done.
 - In logseq, almost everything is a Block. Pages / Tags are considered Block as well.
 - You SHOULD invoke a skill when the user's request would benefit from specialized instructions.
 - YOU are running on Logseq DB version.

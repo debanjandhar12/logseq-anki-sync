@@ -9,22 +9,22 @@ import {usePersistLogseqTrackerArtifact} from "./usePersistLogseqTrackerArtifact
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 const BRANCH_SWITCH_CONFIRMATION_MESSAGE =
-    "The current branch has uncommitted changes. Do you want to revert and switch branch?";
+    "The current branch has temporary changes. Do you want to revert them and switch branch?";
 const BRANCH_SWITCH_ERROR_NOTIFICATION_KEY = "logseq-ai-chat-branch-switch-revert-error";
 const BRANCH_SWITCH_ERROR_NOTIFICATION_TIMEOUT_MS = 10_000;
 
-export const hasUncommittedGraphMutations = (
+export const hasAppliedTemporaryGraphMutations = (
     tracker: {hasAppliedGraphMutations: () => boolean} | null | undefined
 ): boolean => !!tracker && tracker.hasAppliedGraphMutations();
 
-export function useLogseqUncommittedChangesBranchGuard() {
+export function useLogseqTemporaryChangesBranchGuard() {
     const aui = useAui();
     const persistTrackerArtifact = usePersistLogseqTrackerArtifact();
 
     return useCallback(async (): Promise<boolean> => {
         const messages = aui.thread().getState().messages;
         const locatedTracker = findLastLogseqReversibleTransactionTracker(messages);
-        if (!hasUncommittedGraphMutations(locatedTracker?.tracker)) return true;
+        if (!hasAppliedTemporaryGraphMutations(locatedTracker?.tracker)) return true;
 
         const confirmed = await showConfirmModal(BRANCH_SWITCH_CONFIRMATION_MESSAGE, {
             confirmText: "Revert & Switch"
@@ -38,7 +38,7 @@ export function useLogseqUncommittedChangesBranchGuard() {
         } catch (error) {
             revertErrorMessage = getErrorMessageFromErrObj(error);
             logger.error(
-                `Failed to revert uncommitted changes before branch switch: ${revertErrorMessage}`,
+                `Failed to revert temporary changes before branch switch: ${revertErrorMessage}`,
                 error
             );
         }
@@ -56,7 +56,7 @@ export function useLogseqUncommittedChangesBranchGuard() {
 
         if (revertErrorMessage !== null) {
             await showBranchSwitchError(
-                `Failed to revert uncommitted Logseq changes: ${revertErrorMessage}. Switching branch anyway; staged commands were kept.`
+                `Failed to revert temporary Logseq changes: ${revertErrorMessage}. Switching branch anyway; queued commands were kept.`
             );
         }
         return true;

@@ -2,7 +2,7 @@ export {BaseChatTool} from "src/chat-app/tools/base/BaseChatTool";
 export {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 export {LogseqAddPropertyToTagPageTool} from "src/chat-app/tools/impl/LogseqAddPropertyToTagPageTool";
 export {LogseqAddTagToBlockTool} from "src/chat-app/tools/impl/LogseqAddTagToBlockTool";
-export {LogseqClearChangesTool} from "src/chat-app/tools/impl/LogseqClearChangesTool";
+export {LogseqClearTemporaryChangesTool} from "src/chat-app/tools/impl/LogseqClearTemporaryChangesTool";
 export {LogseqCommitChangesTool} from "src/chat-app/tools/impl/LogseqCommitChangesTool";
 export {LogseqCreatePageTool} from "src/chat-app/tools/impl/LogseqCreatePageTool";
 export {LogseqCreateTagPageTool} from "src/chat-app/tools/impl/LogseqCreateTagPageTool";

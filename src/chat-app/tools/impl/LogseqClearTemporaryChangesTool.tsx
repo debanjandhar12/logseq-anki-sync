@@ -13,26 +13,29 @@ import {z} from "zod";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
-const LogseqClearChangesArgsZodObj = z.object({});
+const LogseqClearTemporaryChangesArgsZodObj = z.object({});
 
-type LogseqClearChangesArgs = z.infer<typeof LogseqClearChangesArgsZodObj>;
+type LogseqClearTemporaryChangesArgs = z.infer<typeof LogseqClearTemporaryChangesArgsZodObj>;
 
-type LogseqClearChangesResult = ChatToolSuccessResult<{warning?: string}> | ChatToolErrorResult;
+type LogseqClearTemporaryChangesResult =
+    | ChatToolSuccessResult<{warning?: string}>
+    | ChatToolErrorResult;
 
-export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
-    LogseqClearChangesArgs,
-    LogseqClearChangesResult
+export class LogseqClearTemporaryChangesTool extends BaseChatToolWithDefaultUI<
+    LogseqClearTemporaryChangesArgs,
+    LogseqClearTemporaryChangesResult
 > {
-    static readonly NAME = "logseq_clear_changes";
+    static readonly NAME = "logseq_clear_temporary_changes";
 
-    readonly name = LogseqClearChangesTool.NAME;
-    readonly description = "Clear pending Logseq graph changes made by block/page editing tools.";
-    readonly parameters = LogseqClearChangesArgsZodObj;
+    readonly name = LogseqClearTemporaryChangesTool.NAME;
+    readonly description =
+        "Discard temporary Logseq graph changes made by block/page editing tools.";
+    readonly parameters = LogseqClearTemporaryChangesArgsZodObj;
 
     async execute(
-        _args: LogseqClearChangesArgs = {},
+        _args: LogseqClearTemporaryChangesArgs = {},
         context?: ChatToolExecutionContext
-    ): Promise<ChatToolResponse<LogseqClearChangesResult>> {
+    ): Promise<ChatToolResponse<LogseqClearTemporaryChangesResult>> {
         try {
             const transactionTracker = getLastLogseqReversibleTransactionTracker(context?.messages);
             if (transactionTracker.hasAppliedGraphMutations()) {
@@ -41,13 +44,13 @@ export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
                 } catch (revertError) {
                     const revertErrorMessage = getErrorMessageFromErrObj(revertError);
                     logger.error(
-                        "Failed to revert pending Logseq changes before clearing",
+                        "Failed to revert temporary Logseq changes before discarding",
                         revertError
                     );
                     transactionTracker.clear();
                     try {
                         await logseq.UI.showMsg(
-                            `Failed to revert pending Logseq changes: ${revertErrorMessage}. Staged changes were cleared.`,
+                            `Failed to revert temporary Logseq changes: ${revertErrorMessage}. Temporary change tracking was cleared.`,
                             "error"
                         );
                     } catch (notificationError) {
@@ -55,7 +58,7 @@ export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
                     }
                     return ChatToolResponse.success(
                         {
-                            warning: `Failed to revert pending Logseq changes: ${revertErrorMessage}. Staged changes were cleared.`
+                            warning: `Failed to revert temporary Logseq changes: ${revertErrorMessage}. Temporary change tracking was cleared.`
                         },
                         createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                     );
@@ -69,7 +72,7 @@ export class LogseqClearChangesTool extends BaseChatToolWithDefaultUI<
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to clear Logseq changes: ${getErrorMessageFromErrObj(err)}`
+                `Failed to discard temporary Logseq changes: ${getErrorMessageFromErrObj(err)}`
             );
         }
     }

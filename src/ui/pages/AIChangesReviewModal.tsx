@@ -48,13 +48,13 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
                     showCloseButton={true}
                 />
                 <p className="mx-4 my-3 text-sm opacity-80">
-                    Review the pending Logseq graph changes before applying them.
+                    Review the temporary Logseq graph changes before committing them.
                 </p>
 
                 <div className="mx-4 min-h-0 flex-1 overflow-y-auto pr-1">
                     {beforeChanges === afterChanges ? (
                         <div className="rounded border border-border bg-primary-background p-4 text-sm opacity-80">
-                            No pending page changes were found.
+                            No temporary page changes were found.
                         </div>
                     ) : (
                         <DiffViewer
@@ -74,8 +74,8 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
                 <ModalFooter
                     onConfirm={() => handleConfirm(true)}
                     onCancel={() => handleConfirm(false)}
-                    confirmText="Apply changes"
-                    cancelText="Reject changes"
+                    confirmText="Commit changes"
+                    cancelText="Discard changes"
                     cancelColor="failed"
                     confirmShortcut=""
                     className="border-border border-t px-4 pb-4 pt-3"

@@ -1,7 +1,7 @@
 import {ActionBarPrimitive, AuiIf, useAui, useAuiState} from "@assistant-ui/react";
 import {CheckIcon, CopyIcon, RefreshCwIcon} from "lucide-react";
 import {type FC, useState} from "react";
-import {useLogseqUncommittedChangesBranchGuard} from "src/chat-app/hooks/useLogseqUncommittedChangesBranchGuard";
+import {useLogseqTemporaryChangesBranchGuard} from "src/chat-app/hooks/useLogseqTemporaryChangesBranchGuard";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
 
 /**
@@ -10,14 +10,14 @@ import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
  * Changes:
  * (a) Disabled the ActionBarMore menu.
  * (b) Removed autohide="not-last" from ActionBarPrimitive.Root.
- * (c) Replaced ActionBarPrimitive.Reload with a guarded TooltipIconButton so uncommitted Logseq
+ * (c) Replaced ActionBarPrimitive.Reload with a guarded TooltipIconButton so temporary Logseq
  *     graph changes are reverted (after confirmation) before the assistant message is reloaded
  *     (which creates a new branch). Disabled parity mirrors useActionBarReload.
  */
 export const AssistantActionBar: FC = () => {
     const aui = useAui();
     const [isReloading, setIsReloading] = useState(false);
-    const guardBranchNavigation = useLogseqUncommittedChangesBranchGuard();
+    const guardBranchNavigation = useLogseqTemporaryChangesBranchGuard();
     const isRunning = useAuiState((state) => state.thread.isRunning);
     const isDisabled = useAuiState((state) => state.thread.isDisabled);
     const role = useAuiState((state) => state.message.role);

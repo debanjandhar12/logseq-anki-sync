@@ -1,19 +1,19 @@
 import {ComposerPrimitive, MessagePrimitive, useAui, useAuiState} from "@assistant-ui/react";
 import {type FC, useState} from "react";
-import {useLogseqUncommittedChangesBranchGuard} from "src/chat-app/hooks/useLogseqUncommittedChangesBranchGuard";
+import {useLogseqTemporaryChangesBranchGuard} from "src/chat-app/hooks/useLogseqTemporaryChangesBranchGuard";
 import {Button} from "src/shadcn/radix-ui/button";
 
 /**
  * Changes:
  * (a) Decompose ThreadMessage.
  * (b) Uses the same visible semantic background and border as the main composer.
- * (c) Guards Update because editing a message creates a new branch; uncommitted Logseq graph
+ * (c) Guards Update because editing a message creates a new branch; applied temporary Logseq graph
  *     changes are reverted (after confirmation) before submitting the edit.
  */
 export const EditComposer: FC = () => {
     const aui = useAui();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const guardBranchNavigation = useLogseqUncommittedChangesBranchGuard();
+    const guardBranchNavigation = useLogseqTemporaryChangesBranchGuard();
     const canSend = useAuiState((state) => state.composer.canSend);
 
     const handleUpdate = async () => {

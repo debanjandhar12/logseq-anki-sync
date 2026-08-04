@@ -5,7 +5,7 @@ import type {ChatToolResult} from "src/chat-app/tools/base/ChatToolResponse";
 import {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 import {LogseqAddPropertyToTagPageTool} from "src/chat-app/tools/impl/LogseqAddPropertyToTagPageTool";
 import {LogseqAddTagToBlockTool} from "src/chat-app/tools/impl/LogseqAddTagToBlockTool";
-import {LogseqClearChangesTool} from "src/chat-app/tools/impl/LogseqClearChangesTool";
+import {LogseqClearTemporaryChangesTool} from "src/chat-app/tools/impl/LogseqClearTemporaryChangesTool";
 import {LogseqCommitChangesTool} from "src/chat-app/tools/impl/LogseqCommitChangesTool";
 import {LogseqCreatePageTool} from "src/chat-app/tools/impl/LogseqCreatePageTool";
 import {LogseqCreateTagPageTool} from "src/chat-app/tools/impl/LogseqCreateTagPageTool";
@@ -86,7 +86,7 @@ export class ChatToolRegistry {
         registry.registerTool(new LogseqRemovePropertyFromTagPageTool(), ToolkitEnum.LOGSEQ);
         registry.registerTool(new LogseqAddTagToBlockTool(), ToolkitEnum.LOGSEQ);
         registry.registerTool(new LogseqRemoveTagFromBlockTool(), ToolkitEnum.LOGSEQ);
-        registry.registerTool(new LogseqClearChangesTool(), ToolkitEnum.LOGSEQ);
+        registry.registerTool(new LogseqClearTemporaryChangesTool(), ToolkitEnum.LOGSEQ);
         registry.registerTool(new LogseqCommitChangesTool(), ToolkitEnum.LOGSEQ);
 
         if (settings.webToolsProvider === WebToolsProviderEnum.JINA) {

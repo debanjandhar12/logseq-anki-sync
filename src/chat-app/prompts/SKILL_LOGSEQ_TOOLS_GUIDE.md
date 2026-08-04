@@ -16,9 +16,9 @@ default-installed-skill: true
 
 ## Commit and Rollback
 
-- Logseq write tools stage temporary changes. Call the commit tool only after the whole task is complete.
+- Logseq write tools prepare temporary changes. Call the commit tool only after the whole task is complete.
 - The commit tool shows the diff and asks the user to approve or reject permanent changes.
-- If the staged state becomes extremely messy, rollback and rebuild from a clean state.
+- If the temporary state becomes extremely messy, rollback and rebuild from a clean state.
 
 ## Creating Pages / Inserting Blocks
 
