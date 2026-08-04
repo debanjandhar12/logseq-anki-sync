@@ -43,7 +43,8 @@ Several special tags change the visual look or behavior of a normal block:
 
 Several special properties change rendering or behavior:
 
-- `logseq.property/background-color` changes block background color.
+- `logseq.property/background-color` changes block background color. 
+  [For changing text color, you must use HTML. Logseq DB does not have `logseq.property/color`]
 - `logseq.property/order-list-type` set to `number` makes bullets appear as numbers.
 
 # Other Special Tags

@@ -50,7 +50,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     readonly name = LogseqCommitChangesTool.NAME;
     readonly type = "human";
     readonly description =
-        "Ask the user to review and approve committing Logseq graph changes made by block/page editing tools.";
+        "Ask the user to review and approve committing applied uncommitted Logseq graph changes made by block/page editing tools.";
     readonly parameters = LogseqCommitChangesArgsZodObj;
 
     async executeApprove(
@@ -64,7 +64,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             if (transactionTracker.getGraphMutationCommandCount() === 0) {
                 return ChatToolResponse.success(
                     {
-                        changes: "No changes are ready to review or commit."
+                        changes: "No uncommitted changes are available to review or commit."
                     },
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 );
@@ -75,7 +75,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 transactionTracker.clear();
                 return ChatToolResponse.success(
                     {
-                        changes: "No changes are ready to review or commit."
+                        changes: "No uncommitted changes are available to review or commit."
                     },
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 );
@@ -84,13 +84,13 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
 
             return ChatToolResponse.success(
                 {
-                    changes: "Changes committed successfully. They are now permanent."
+                    changes: "Committed changes successfully. They are now committed changes."
                 },
                 createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}. Review changes remain available.`,
+                `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}. Uncommitted changes remain available.`,
                 getTrackerArtifactFromError(err)
             );
         }
@@ -132,7 +132,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     ): Promise<ChatToolResponse<LogseqCommitChangesResult>> {
         transactionTracker?.clear();
         return ChatToolResponse.error(
-            "The commit was declined. Review changes were discarded.",
+            "The commit was declined. Uncommitted changes were discarded.",
             transactionTracker
                 ? createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 : undefined
@@ -181,7 +181,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                         transactionTracker.clear();
                         addResult(
                             ChatToolResponse.error(
-                                `Failed to generate diff as revert failed due to: ${causeMessage}. Review changes were discarded.`,
+                                `Failed to generate diff as revert failed due to: ${causeMessage}. Uncommitted changes were discarded.`,
                                 createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                             )
                         );
@@ -190,7 +190,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                             await persistTrackerArtifact({...located, tracker: transactionTracker});
                         }
                         await logseq.UI.showMsg(
-                            `Failed to generate diff as revert failed due to: ${causeMessage}`,
+                            `Failed to generate diff as revert failed due to: ${causeMessage}. Uncommitted changes were discarded.`,
                             "error"
                         );
                         return;
@@ -201,7 +201,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                     }
                     addResult(
                         ChatToolResponse.error(
-                            `${getErrorMessageFromErrObj(error)}. Review changes remain available.`,
+                            `${getErrorMessageFromErrObj(error)}. Uncommitted changes remain available.`,
                             createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                         )
                     );
@@ -232,7 +232,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             } catch (error) {
                 addResult(
                     ChatToolResponse.error(
-                        `${getErrorMessageFromErrObj(error)}. Review changes remain available.`
+                        `${getErrorMessageFromErrObj(error)}. Uncommitted changes remain available.`
                     )
                 );
             } finally {
@@ -241,7 +241,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         };
 
         if (!isAwaitingResult || !hasGraphMutations) {
-            // Use the generic tool UI unless there are review changes to review.
+            // Use the generic tool UI unless there are uncommitted changes to review.
             return <ToolFallback {...props} />;
         }
 
@@ -249,10 +249,10 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             <div className="w-full rounded-lg border bg-background p-3 text-sm">
                 <div className="mb-2 flex items-center gap-2 font-medium">
                     <GitCommitIcon className="size-4" />
-                    Review and commit Logseq changes
+                    Review and commit uncommitted Logseq changes
                 </div>
                 <div className="mb-3 text-muted-foreground">
-                    AI Chat wants to make changes to your Logseq graph.
+                    AI Chat has uncommitted Logseq changes ready for your review.
                 </div>
                 <div className="flex gap-2">
                     <Button size="sm" onClick={reviewAndCommit} disabled={isReviewing}>

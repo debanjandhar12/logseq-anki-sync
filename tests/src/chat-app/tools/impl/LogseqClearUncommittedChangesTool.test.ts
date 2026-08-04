@@ -42,7 +42,7 @@ describe("LogseqClearUncommittedChangesTool", () => {
         vi.unstubAllGlobals();
     });
 
-    test("uses the renamed discard tool ID and clears review state", async () => {
+    test("keeps the discard tool ID stable and clears uncommitted state", async () => {
         const tracker = new LogseqReversibleTransactionTracker();
         tracker.addCommand(new CreatePageCommand({pageName: "Review"}));
 
@@ -79,10 +79,10 @@ describe("LogseqClearUncommittedChangesTool", () => {
         expect(response.result).toEqual({
             success: true,
             warning:
-                "Failed to revert review changes: revert failed. Review changes were discarded."
+                "Failed to revert applied uncommitted changes: revert failed. Uncommitted changes were discarded."
         });
         expect(showMsg).toHaveBeenCalledWith(
-            "Failed to revert review changes: revert failed. Review changes were discarded.",
+            "Failed to revert applied uncommitted changes: revert failed. Uncommitted changes were discarded.",
             "error"
         );
         expect(getTrackerFromResponse(response).getCommands()).toEqual([]);

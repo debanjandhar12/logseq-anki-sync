@@ -7,8 +7,8 @@ import {Button} from "src/shadcn/radix-ui/button";
  * Changes:
  * (a) Decompose ThreadMessage.
  * (b) Uses the same visible semantic background and border as the main composer.
- * (c) Guards Update because editing a message creates a new branch; applied Logseq graph
- *     changes are reverted (after confirmation) before submitting the edit.
+ * (c) Guards Update because editing a message creates a new branch; applied uncommitted Logseq
+ *     graph changes are reverted (after confirmation) before submitting the edit.
  */
 export const EditComposer: FC = () => {
     const aui = useAui();

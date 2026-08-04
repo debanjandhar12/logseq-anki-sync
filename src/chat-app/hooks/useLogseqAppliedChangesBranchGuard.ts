@@ -9,7 +9,7 @@ import {usePersistLogseqTrackerArtifact} from "./usePersistLogseqTrackerArtifact
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 const BRANCH_SWITCH_CONFIRMATION_MESSAGE =
-    "The current branch has applied changes. Do you want to revert them and switch branches?";
+    "The current branch has applied uncommitted changes. Do you want to revert them and switch branches?";
 const BRANCH_SWITCH_ERROR_NOTIFICATION_KEY = "logseq-ai-chat-branch-switch-revert-error";
 const BRANCH_SWITCH_ERROR_NOTIFICATION_TIMEOUT_MS = 10_000;
 
@@ -38,7 +38,7 @@ export function useLogseqAppliedChangesBranchGuard() {
         } catch (error) {
             revertErrorMessage = getErrorMessageFromErrObj(error);
             logger.error(
-                `Failed to revert applied changes before branch switch: ${revertErrorMessage}`,
+                `Failed to revert applied uncommitted changes before branch switch: ${revertErrorMessage}`,
                 error
             );
         }
@@ -56,7 +56,7 @@ export function useLogseqAppliedChangesBranchGuard() {
 
         if (revertErrorMessage !== null) {
             await showBranchSwitchError(
-                `Failed to revert applied changes: ${revertErrorMessage}. Switching branch anyway; queued review changes were kept.`
+                `Failed to revert applied uncommitted changes: ${revertErrorMessage}. Switching branch anyway; not applied uncommitted changes were retained.`
             );
         }
         return true;

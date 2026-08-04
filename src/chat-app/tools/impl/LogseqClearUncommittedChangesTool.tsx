@@ -29,7 +29,7 @@ export class LogseqClearUncommittedChangesTool extends BaseChatToolWithDefaultUI
 
     readonly name = LogseqClearUncommittedChangesTool.NAME;
     readonly description =
-        "Revert applied Logseq graph changes made by block/page editing tools and discard them from review.";
+        "Revert applied uncommitted Logseq graph changes made by block/page editing tools and discard all uncommitted changes.";
     readonly parameters = LogseqClearUncommittedChangesArgsZodObj;
 
     async execute(
@@ -43,14 +43,17 @@ export class LogseqClearUncommittedChangesTool extends BaseChatToolWithDefaultUI
                     await transactionTracker.revertAppliedCommands();
                 } catch (revertError) {
                     const revertErrorMessage = getErrorMessageFromErrObj(revertError);
-                    const warning = `Failed to revert review changes: ${revertErrorMessage}. Review changes were discarded.`;
-                    logger.error("Failed to revert review changes before discarding", revertError);
+                    const warning = `Failed to revert applied uncommitted changes: ${revertErrorMessage}. Uncommitted changes were discarded.`;
+                    logger.error(
+                        "Failed to revert applied uncommitted changes before discarding",
+                        revertError
+                    );
                     transactionTracker.clear();
                     try {
                         await logseq.UI.showMsg(warning, "error");
                     } catch (notificationError) {
                         logger.error(
-                            "Failed to show Logseq review-change revert warning",
+                            "Failed to show Logseq uncommitted-change revert warning",
                             notificationError
                         );
                     }
@@ -68,7 +71,7 @@ export class LogseqClearUncommittedChangesTool extends BaseChatToolWithDefaultUI
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to revert and discard review changes: ${getErrorMessageFromErrObj(err)}`
+                `Failed to revert and discard uncommitted changes: ${getErrorMessageFromErrObj(err)}`
             );
         }
     }

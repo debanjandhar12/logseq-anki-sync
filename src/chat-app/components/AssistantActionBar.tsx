@@ -10,8 +10,8 @@ import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
  * Changes:
  * (a) Disabled the ActionBarMore menu.
  * (b) Removed autohide="not-last" from ActionBarPrimitive.Root.
- * (c) Replaced ActionBarPrimitive.Reload with a guarded TooltipIconButton so applied Logseq
- *     changes are reverted (after confirmation) before the assistant message is reloaded
+ * (c) Replaced ActionBarPrimitive.Reload with a guarded TooltipIconButton so applied uncommitted
+ *     Logseq changes are reverted (after confirmation) before the assistant message is reloaded
  *     (which creates a new branch). Disabled parity mirrors useActionBarReload.
  */
 export const AssistantActionBar: FC = () => {

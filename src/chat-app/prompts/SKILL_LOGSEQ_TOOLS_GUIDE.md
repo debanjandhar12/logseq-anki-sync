@@ -14,11 +14,11 @@ default-installed-skill: true
 - For example, when creating a new page: create the page first, insert top-level blocks in parallel, then insert child blocks for each returned parent block in parallel. Repeat by depth.
 - Prefer fewer batches with many independent calls over one serial call at a time.
 
-## Review and Commit
+## Uncommitted Changes and Commit
 
-- Logseq write tools prepare changes for review. Call the commit tool only after the whole task is complete so the user can review and commit or discard them.
-- The commit tool shows the diff and asks the user to approve or reject permanent changes.
-- If the review state becomes extremely messy, discard it and rebuild from a clean state.
+- Logseq write tools create applied uncommitted changes. Call the commit tool only after the whole task is complete so the user can review and commit or discard the uncommitted changes.
+- The commit tool shows the diff and lets the user create committed changes or discard uncommitted changes.
+- Reversion can retain commands as not applied uncommitted changes. If the state becomes unsafe, discard it and rebuild from a clean state.
 
 ## Creating Pages / Inserting Blocks
 

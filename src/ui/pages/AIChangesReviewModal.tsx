@@ -43,18 +43,18 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
             className="overflow-hidden">
             <div className="flex max-h-[90vh] flex-col text-text">
                 <ModalHeader
-                    title="Review changes"
+                    title="Review uncommitted changes"
                     onClose={() => handleCancel()}
                     showCloseButton={true}
                 />
                 <p className="mx-4 my-3 text-sm opacity-80">
-                    Review these changes before committing them.
+                    Review the uncommitted changes before committing them.
                 </p>
 
                 <div className="mx-4 min-h-0 flex-1 overflow-y-auto pr-1">
                     {beforeChanges === afterChanges ? (
                         <div className="rounded border border-border bg-primary-background p-4 text-sm opacity-80">
-                            No changes ready to review were found.
+                            No uncommitted changes are ready for review.
                         </div>
                     ) : (
                         <DiffViewer
@@ -75,7 +75,7 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
                     onConfirm={() => handleConfirm(true)}
                     onCancel={() => handleConfirm(false)}
                     confirmText="Commit changes"
-                    cancelText="Discard review changes"
+                    cancelText="Discard uncommitted changes"
                     cancelColor="failed"
                     confirmShortcut=""
                     className="border-border border-t px-4 pb-4 pt-3"

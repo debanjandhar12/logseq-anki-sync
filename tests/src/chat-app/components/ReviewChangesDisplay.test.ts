@@ -110,17 +110,17 @@ describe("ReviewChangesDisplay", () => {
         const messages = [createTrackerMessage(createAppliedTracker())];
 
         expect(getReviewChangesSummary(messages)).toEqual({commandCount: 1, changedPageCount: 2});
-        expect(getReviewChangesLifecycleLabel(messages)).toBe("Applied changes");
+        expect(getReviewChangesLifecycleLabel(messages)).toBe("Applied uncommitted changes");
     });
 
-    test("reports retained but unapplied review changes", () => {
+    test("reports retained but not applied uncommitted changes", () => {
         const messages = [createTrackerMessage(createUnappliedTracker())];
 
         expect(getReviewChangesSummary(messages)).toEqual({commandCount: 1, changedPageCount: 1});
-        expect(getReviewChangesLifecycleLabel(messages)).toBe("Review changes ready to apply");
+        expect(getReviewChangesLifecycleLabel(messages)).toBe("Not applied uncommitted changes");
     });
 
-    test("reverts applied changes while retaining their commands for review", async () => {
+    test("reverts applied uncommitted changes while retaining their commands", async () => {
         vi.stubGlobal("logseq", {
             Editor: {
                 getPage: vi.fn(async () => ({uuid: PAGE_UUID})),
@@ -149,7 +149,7 @@ describe("ReviewChangesDisplay", () => {
         expect(persistedTracker?.getAppliedCommandCount()).toBe(0);
     });
 
-    test("leaves already-unapplied review changes untouched", async () => {
+    test("leaves already-not-applied uncommitted changes untouched", async () => {
         const getPage = vi.fn();
         vi.stubGlobal("logseq", {Editor: {getPage}});
         const tracker = createUnappliedTracker();
@@ -174,7 +174,7 @@ describe("ReviewChangesDisplay", () => {
         expect(persistedTracker?.getAppliedCommandCount()).toBe(0);
     });
 
-    test("clears unsafe state and reports a partial keep-for-review failure", async () => {
+    test("clears unsafe state and reports a partial revert failure", async () => {
         vi.stubGlobal("logseq", {
             Editor: {getPage: vi.fn(async () => Promise.reject(new Error("revert failed")))},
             UI: {showMsg: vi.fn(async () => undefined)}
@@ -193,7 +193,7 @@ describe("ReviewChangesDisplay", () => {
         ).resolves.toBe("discarded");
 
         expect(notify).toHaveBeenCalledWith(
-            "Failed to revert review changes: revert failed. Review changes were discarded."
+            "Failed to revert applied uncommitted changes: revert failed. Uncommitted changes were discarded."
         );
         expect(runtime.append).not.toHaveBeenCalled();
         expect(persistedTracker?.getCommands()).toEqual([]);
@@ -225,6 +225,10 @@ describe("ReviewChangesDisplay", () => {
         ).resolves.toBe(false);
 
         expect(order).toEqual(["cancel-run", "wait", "confirm"]);
+        expect(showConfirm).toHaveBeenCalledWith(
+            "Revert applied uncommitted changes and discard all uncommitted changes?",
+            {confirmText: "Revert and discard", cancelText: "Keep uncommitted changes"}
+        );
         expect(cancelPendingToolCalls).not.toHaveBeenCalled();
         expect(createDiscardTool).not.toHaveBeenCalled();
         expect(runtime.append).not.toHaveBeenCalled();

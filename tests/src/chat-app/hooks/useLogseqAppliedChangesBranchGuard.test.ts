@@ -12,7 +12,7 @@ describe("hasAppliedChanges", () => {
         expect(hasAppliedChanges({hasAppliedGraphMutations: () => false})).toBe(false);
     });
 
-    test("does not treat retained but unapplied review changes as applied", () => {
+    test("does not treat retained but not applied uncommitted changes as applied", () => {
         const tracker = {hasAppliedGraphMutations: () => false};
 
         expect(hasAppliedChanges(tracker)).toBe(false);

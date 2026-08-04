@@ -7,7 +7,7 @@ import {cn} from "src/shadcn/lib/utils";
 
 /**
  * Changes vs src/shadcn/assistant-ui/thread.tsx BranchPicker:
- * (a) Guards branch navigation so applied Logseq changes are reverted (after confirm)
+ * (a) Guards branch navigation so applied uncommitted Logseq changes are reverted (after confirm)
  *     before switching branches.
  */
 export const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({className, ...rest}) => {

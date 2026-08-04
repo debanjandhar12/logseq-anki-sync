@@ -46,16 +46,16 @@ const getArtifactTracker = (response: {artifact?: unknown}) => {
 };
 
 describe("LogseqCommitChangesTool", () => {
-    test("reports when no changes are ready to review or commit", async () => {
+    test("reports when no uncommitted changes are available to review or commit", async () => {
         const response = await new LogseqCommitChangesTool().executeApprove({}, undefined);
 
         expect(response.result).toEqual({
             success: true,
-            changes: "No changes are ready to review or commit."
+            changes: "No uncommitted changes are available to review or commit."
         });
     });
 
-    test("commits queued review changes as permanent changes", async () => {
+    test("commits uncommitted changes as committed changes", async () => {
         const tracker = new LogseqReversibleTransactionTracker();
         const command = new TestMutationCommand();
         tracker.addCommand(command);
@@ -65,13 +65,13 @@ describe("LogseqCommitChangesTool", () => {
         expect(command.executeMock).toHaveBeenCalledOnce();
         expect(response.result).toEqual({
             success: true,
-            changes: "Changes committed successfully. They are now permanent."
+            changes: "Committed changes successfully. They are now committed changes."
         });
         expect(tracker.getCommands()).toEqual([]);
         expect(getArtifactTracker(response).getCommands()).toEqual([]);
     });
 
-    test("retains review changes when commit execution fails", async () => {
+    test("retains uncommitted changes when commit execution fails", async () => {
         const tracker = new LogseqReversibleTransactionTracker();
         tracker.addCommand(
             new TestMutationCommand({execute: async () => Promise.reject(new Error("failed"))})
@@ -81,12 +81,12 @@ describe("LogseqCommitChangesTool", () => {
 
         expect(response.result).toEqual({
             success: false,
-            error: "Failed to commit Logseq changes: Failed to execute TestMutationCommand: failed. Review changes remain available."
+            error: "Failed to commit Logseq changes: Failed to execute TestMutationCommand: failed. Uncommitted changes remain available."
         });
         expect(tracker.getCommands()).toEqual([]);
     });
 
-    test("discards queued review changes when the user declines the commit", async () => {
+    test("discards uncommitted changes when the user declines the commit", async () => {
         const tracker = new LogseqReversibleTransactionTracker();
         tracker.addCommand(new TestMutationCommand());
 
@@ -94,7 +94,7 @@ describe("LogseqCommitChangesTool", () => {
 
         expect(response.result).toEqual({
             success: false,
-            error: "The commit was declined. Review changes were discarded."
+            error: "The commit was declined. Uncommitted changes were discarded."
         });
         expect(tracker.getCommands()).toEqual([]);
         expect(getArtifactTracker(response).getCommands()).toEqual([]);

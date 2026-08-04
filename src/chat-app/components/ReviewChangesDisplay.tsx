@@ -35,7 +35,9 @@ export interface ReviewChangesSummary {
     changedPageCount: number;
 }
 
-export type ReviewChangesLifecycleLabel = "Applied changes" | "Review changes ready to apply";
+export type ReviewChangesLifecycleLabel =
+    | "Applied uncommitted changes"
+    | "Not applied uncommitted changes";
 
 const EMPTY_REVIEW_CHANGES_SUMMARY: ReviewChangesSummary = {
     commandCount: 0,
@@ -69,8 +71,8 @@ export const getReviewChangesLifecycleLabel = (
     }
 
     return locatedTracker.tracker.hasAppliedGraphMutations()
-        ? "Applied changes"
-        : "Review changes ready to apply";
+        ? "Applied uncommitted changes"
+        : "Not applied uncommitted changes";
 };
 
 type ReviewChangesNotification = (message: string) => Promise<unknown>;
@@ -113,8 +115,8 @@ export async function revertAndKeepReviewChanges(
         }
     } catch (error) {
         const errorMessage = getErrorMessageFromErrObj(error);
-        const warning = `Failed to revert review changes: ${errorMessage}. Review changes were discarded.`;
-        logger.error("Failed to revert review changes while retaining them", error);
+        const warning = `Failed to revert applied uncommitted changes: ${errorMessage}. Uncommitted changes were discarded.`;
+        logger.error("Failed to revert applied uncommitted changes while retaining them", error);
         tracker.clear();
         await showReviewChangesRevertFailure(dependencies.notify, warning);
         await persistReviewChangesTrackerArtifact(
@@ -147,10 +149,10 @@ export async function revertAndDiscardReviewChanges(
     }
 
     const confirmed = await actions.showConfirm(
-        "Revert applied changes and permanently discard the retained review changes?",
+        "Revert applied uncommitted changes and discard all uncommitted changes?",
         {
             confirmText: "Revert and discard",
-            cancelText: "Keep review changes"
+            cancelText: "Keep uncommitted changes"
         }
     );
     if (!confirmed) return false;
@@ -178,6 +180,8 @@ export const ReviewChangesDisplay: FC<ReviewChangesDisplayProps> = ({
         () => getReviewChangesLifecycleLabel(messages),
         [messages]
     );
+    const hasAppliedUncommittedChanges =
+        reviewChangesLifecycleLabel === "Applied uncommitted changes";
 
     if (reviewChangesSummary.commandCount === 0 || !reviewChangesLifecycleLabel) return null;
 
@@ -190,7 +194,7 @@ export const ReviewChangesDisplay: FC<ReviewChangesDisplayProps> = ({
             setIsOpen(false);
         } catch (error) {
             await showReviewChangesOperationError(
-                "Failed to revert and keep review changes",
+                "Failed to revert applied uncommitted changes",
                 error
             );
         } finally {
@@ -207,7 +211,7 @@ export const ReviewChangesDisplay: FC<ReviewChangesDisplayProps> = ({
             if (didDiscard) setIsOpen(false);
         } catch (error) {
             await showReviewChangesOperationError(
-                "Failed to revert and discard review changes",
+                "Failed to revert and discard uncommitted changes",
                 error
             );
         } finally {
@@ -224,7 +228,7 @@ export const ReviewChangesDisplay: FC<ReviewChangesDisplayProps> = ({
                         "inline-flex size-6 items-center justify-center rounded-md p-1 text-amber-500 transition-colors hover:bg-accent hover:text-amber-500",
                         className
                     )}
-                    aria-label="Review changes">
+                    aria-label="Uncommitted changes">
                     <GitCommitIcon className="size-4" />
                 </button>
             </PopoverTrigger>
@@ -236,7 +240,7 @@ export const ReviewChangesDisplay: FC<ReviewChangesDisplayProps> = ({
                 <div className="grid gap-2 text-xs">
                     <div className="font-medium">{reviewChangesLifecycleLabel}</div>
                     <div className="flex items-center justify-between gap-4">
-                        <span className="text-muted-foreground">Review commands</span>
+                        <span className="text-muted-foreground">Uncommitted commands</span>
                         <span className="font-mono tabular-nums">
                             {reviewChangesSummary.commandCount}
                         </span>
@@ -251,10 +255,10 @@ export const ReviewChangesDisplay: FC<ReviewChangesDisplayProps> = ({
                         variant="secondary"
                         size="sm"
                         className="mt-1 w-full gap-2"
-                        disabled={isClearing}
+                        disabled={isClearing || !hasAppliedUncommittedChanges}
                         onClick={() => void keepReviewChanges()}>
                         <Undo2Icon className="size-3.5" />
-                        Revert and keep for review
+                        Revert
                     </Button>
                     <Button
                         variant="destructive"
@@ -317,7 +321,7 @@ async function showReviewChangesRevertFailure(
     try {
         await notify(warning);
     } catch (notificationError) {
-        logger.error("Failed to show Logseq review-change revert warning", notificationError);
+        logger.error("Failed to show Logseq uncommitted-change revert warning", notificationError);
     }
 }
 
@@ -327,7 +331,7 @@ async function showReviewChangesOperationError(operation: string, error: unknown
         await logseq.UI.showMsg(operation, "error");
     } catch (notificationError) {
         logger.error(
-            `Failed to show review-change operation error: ${operation}`,
+            `Failed to show uncommitted-change operation error: ${operation}`,
             notificationError
         );
     }
