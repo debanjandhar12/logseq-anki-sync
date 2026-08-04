@@ -63,7 +63,10 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 preparedTracker ?? getLastLogseqReversibleTransactionTracker(context?.messages);
             if (transactionTracker.getGraphMutationCommandCount() === 0) {
                 return ChatToolResponse.success(
-                    {changes: "No temporary changes to commit."},
+                    {
+                        changes:
+                            "No temporary changes to commit."
+                    },
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 );
             }
@@ -72,19 +75,24 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             if (!transactionTracker.hasAppliedGraphMutations()) {
                 transactionTracker.clear();
                 return ChatToolResponse.success(
-                    {changes: "No temporary changes to commit."},
+                    {
+                        changes: "No temporary changes to commit."
+                    },
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 );
             }
             transactionTracker.clear();
 
             return ChatToolResponse.success(
-                {changes: "All temporary Logseq changes committed successfully."},
+                {
+                    changes:
+                        "All temporary Logseq changes committed successfully."
+                },
                 createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             );
         } catch (err) {
             return ChatToolResponse.error(
-                `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}`,
+                `Failed to commit Logseq changes: ${getErrorMessageFromErrObj(err)}. Temporary changes were not discarded.`,
                 getTrackerArtifactFromError(err)
             );
         }
@@ -124,8 +132,9 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     async executeCancel(
         transactionTracker?: LogseqReversibleTransactionTracker
     ): Promise<ChatToolResponse<LogseqCommitChangesResult>> {
+        transactionTracker?.clear();
         return ChatToolResponse.error(
-            "User cancelled the commit operation. Temporary changes remain available.",
+            "User rejected the commit operation. Temporary changes were discarded.",
             transactionTracker
                 ? createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 : undefined
@@ -174,7 +183,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                         transactionTracker.clear();
                         addResult(
                             ChatToolResponse.error(
-                                `Failed to generate diff as revert failed due to: ${causeMessage}`,
+                                `Failed to generate diff as revert failed due to: ${causeMessage}. Temporary changes were discarded.`,
                                 createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                             )
                         );
@@ -194,7 +203,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                     }
                     addResult(
                         ChatToolResponse.error(
-                            getErrorMessageFromErrObj(error),
+                            `${getErrorMessageFromErrObj(error)}. Temporary changes were not discarded.`,
                             createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                         )
                     );
@@ -223,7 +232,11 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                     addResult(await this.executeApprove({}, {messages}, transactionTracker));
                 }
             } catch (error) {
-                addResult(ChatToolResponse.error(getErrorMessageFromErrObj(error)));
+                addResult(
+                    ChatToolResponse.error(
+                        `${getErrorMessageFromErrObj(error)}. Temporary changes were not discarded.`
+                    )
+                );
             } finally {
                 setIsReviewing(false);
             }
