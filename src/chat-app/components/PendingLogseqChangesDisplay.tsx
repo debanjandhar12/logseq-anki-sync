@@ -5,7 +5,7 @@ import {
     useAuiState
 } from "@assistant-ui/react";
 import {ToolResponse} from "assistant-stream";
-import {GitCommitIcon, Trash2Icon} from "lucide-react";
+import {GitCommitIcon, Undo2Icon} from "lucide-react";
 import {type FC, useMemo, useState} from "react";
 import {cancelPendingToolCallsInThread} from "src/chat-app/runtime/cancelPendingToolCallsInThread";
 import {LogseqClearChangesTool} from "src/chat-app/tools/impl/LogseqClearChangesTool";
@@ -68,7 +68,7 @@ export const PendingLogseqChangesDisplay: FC<PendingLogseqChangesDisplayProps> =
 
     if (pendingChangesSummary.commandCount === 0) return null;
 
-    const clearPendingChanges = async () => {
+    const clearUncommittedChanges = async () => {
         if (isClearing) return;
         setIsClearing(true);
         try {
@@ -146,9 +146,9 @@ export const PendingLogseqChangesDisplay: FC<PendingLogseqChangesDisplayProps> =
                         size="sm"
                         className="mt-1 w-full gap-2"
                         disabled={isClearing}
-                        onClick={() => void clearPendingChanges()}>
-                        <Trash2Icon className="size-3.5" />
-                        Clear pending changes
+                        onClick={() => void clearUncommittedChanges()}>
+                        <Undo2Icon className="size-3.5" />
+                        Clear Uncommited changes
                     </Button>
                 </div>
             </PopoverContent>
