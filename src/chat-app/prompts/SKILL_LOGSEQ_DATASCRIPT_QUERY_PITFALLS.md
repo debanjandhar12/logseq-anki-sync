@@ -71,17 +71,25 @@ Built-in classes may have stable idents such as `:logseq.class/Property`. User-c
 
 Workaround: use tag/class title matching unless the graph has already returned the exact `:db/ident` for the custom class. For LogseqDataScriptQueryTool inputs, do not resolve tag inputs with an extra `:db/ident` clause; use the tested ident query from the main skill.
 
-## Failure: Regex Matching a `:db/ident`
+## Failure: Nested Function Calls When Matching an Ident
 
-`:db/ident` values are keywords, not strings. `re-find` only accepts true strings, so regex matching against an ident fails — even when the ident is wrapped in `str`. The query engine rejects it with `re-find must match against a string`.
+`:db/ident` values are keywords. Nesting `(str ?ident)` inside another predicate call in one clause is unreliable: `[(re-find ?pattern (str ?ident))]` errors with `re-find must match against a string`, while `[(clojure.string/includes? (str ?ident) "logseq")]` fails **silently** — returning `[]` with no error.
 
 ```clojure
 <% #includeFile %>queries/IDENT_REGEX_MATCH_FAILS.ds<% /includeFile %>
 ```
 
-This affects any attempt to regex-filter tags, classes, or properties by their ident (for example, trying to find every `:logseq.property/*` or `:logseq.class/*` ident). Binding the ident with or without `str`, and binding the `re-find` result into an output variable, all produce the same error.
+Workaround: bind `(str ?ident)` to its own variable in a separate clause, then match it.
 
-Workaround: never regex-match an ident. Match idents by exact `:db/ident` equality with the tested `TAG_IDENT_MATCH` query in the main skill, or match display text with the tested case-insensitive `:block/title` search (`CASE_INSENSITIVE_TITLE_SEARCH`). `re-find` is only safe against genuine string attributes such as `:block/title` or `:block/name`.
+```clojure
+<% #includeFile %>queries/IDENT_SUBSTRING_MATCH.ds<% /includeFile %>
+```
+
+Inputs:
+
+```text
+"\"(?i)logseq\""
+```
 
 ## Failure: File Graph Properties Map
 

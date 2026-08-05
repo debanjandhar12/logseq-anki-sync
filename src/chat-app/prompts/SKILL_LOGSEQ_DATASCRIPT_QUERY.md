@@ -210,7 +210,21 @@ Use before property queries to discover exact idents and value types.
 
 Inputs: none.
 
-### 6. Journal Pages in Range
+### 6. Class/Tag Ident Search
+
+Use to discover the exact `:db/ident` of a class/tag. Returns every class/tag whose ident matches the search text, with its display title.
+
+```clojure
+<% #includeFile %>queries/CLASS_TAG_IDENT_SEARCH.ds<% /includeFile %>
+```
+
+Inputs:
+
+```text
+"\"(?i)task\""
+```
+
+### 7. Journal Pages in Range
 
 Use for journal page date windows. `:block/journal-day` uses `YYYYMMDD`, not milliseconds.
 
@@ -225,7 +239,7 @@ Inputs:
 "20260731"
 ```
 
-### 7. Property Node List Any
+### 8. Property Node List Any
 
 Use for cardinality-many node/ref properties where any selected node title should match.
 
@@ -240,7 +254,7 @@ Inputs:
 "[\"Alice\" \"Bob\"]"
 ```
 
-### 8. Mixed Property Types and Title Search
+### 9. Mixed Property Types and Title Search
 
 Use when the block must match title text, checkbox, number, and node/ref property conditions together.
 
@@ -259,7 +273,7 @@ Inputs:
 "\"Alice\""
 ```
 
-### 9. Tasks by Status or Implicit Todo
+### 10. Tasks by Status or Implicit Todo
 
 Use when Logseq UI task semantics matter: a block tagged `Task` with no explicit status counts as `Todo`.
 
@@ -273,7 +287,7 @@ Inputs:
 "#{\"Todo\" \"Doing\"}"
 ```
 
-### 10. Tasks Scheduled in Range
+### 11. Tasks Scheduled in Range
 
 Use for active tasks scheduled within a journal-day range. Pass the exact scheduled property ident; do not assume it without checking the graph.
 
@@ -290,7 +304,7 @@ Inputs:
 "20260731"
 ```
 
-### 11. Tasks With Priority and Not Archived
+### 12. Tasks With Priority and Not Archived
 
 Use for this filter tree: Task tag AND priority is Urgent or High AND tag is not archived.
 
@@ -306,7 +320,7 @@ Inputs:
 "\"archived\""
 ```
 
-### 12. Complex Actionable Task Search
+### 13. Complex Actionable Task Search
 
 Use as the final pattern when the user asks for a rich task search with title text, status, priority, schedule, node-list membership, and exclusion.
 

@@ -13,8 +13,8 @@ const ALL_SUGGESTIONS = [
     },
     {
         title: "List pages tagged with",
-        label: "#Project",
-        prompt: "List all pages tagged with #Project"
+        label: "#Journal",
+        prompt: "List all pages tagged with #Journal"
     }
 ];
 

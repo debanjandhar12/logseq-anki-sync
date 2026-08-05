@@ -3,9 +3,11 @@ import {afterAll, beforeAll, describe, expect, it} from "vitest";
 import BLOCK_PROPERTIES_MAP_FAILS from "../../../../src/chat-app/prompts/queries/BLOCK_PROPERTIES_MAP_FAILS.ds?raw";
 import BLOCK_SCHEDULED_FAILS from "../../../../src/chat-app/prompts/queries/BLOCK_SCHEDULED_FAILS.ds?raw";
 import CASE_INSENSITIVE_TITLE_SEARCH from "../../../../src/chat-app/prompts/queries/CASE_INSENSITIVE_TITLE_SEARCH.ds?raw";
+import CLASS_TAG_IDENT_SEARCH from "../../../../src/chat-app/prompts/queries/CLASS_TAG_IDENT_SEARCH.ds?raw";
 import COMPLEX_ACTIONABLE_TASK_SEARCH from "../../../../src/chat-app/prompts/queries/COMPLEX_ACTIONABLE_TASK_SEARCH.ds?raw";
 import FILE_GRAPH_BLOCK_CONTENT_FAILS from "../../../../src/chat-app/prompts/queries/FILE_GRAPH_BLOCK_CONTENT_FAILS.ds?raw";
 import IDENT_REGEX_MATCH_FAILS from "../../../../src/chat-app/prompts/queries/IDENT_REGEX_MATCH_FAILS.ds?raw";
+import IDENT_SUBSTRING_MATCH from "../../../../src/chat-app/prompts/queries/IDENT_SUBSTRING_MATCH.ds?raw";
 import JOURNAL_PAGES_IN_RANGE from "../../../../src/chat-app/prompts/queries/JOURNAL_PAGES_IN_RANGE.ds?raw";
 import MIXED_PROPERTY_TYPES_AND_TITLE_SEARCH from "../../../../src/chat-app/prompts/queries/MIXED_PROPERTY_TYPES_AND_TITLE_SEARCH.ds?raw";
 import OR_VARIABLE_MISMATCH_FAILS from "../../../../src/chat-app/prompts/queries/OR_VARIABLE_MISMATCH_FAILS.ds?raw";
@@ -311,6 +313,37 @@ describe.skipIf(!shouldRunTests())("Datascript queries documented in skill files
         expect(result).toMatchObject({
             error: expect.stringContaining("re-find must match against a string")
         });
+    }, 30_000);
+
+    it("IDENT_SUBSTRING_MATCH.ds finds built-in idents via bound (str ?ident)", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            IDENT_SUBSTRING_MATCH,
+            ednString("(?i)logseq")
+        );
+
+        const rows = result as unknown[];
+        expect(Array.isArray(rows)).toBe(true);
+        expect(rows.length, "expected built-in logseq.* idents").toBeGreaterThan(0);
+        const someMatchedLogseq = rows.some((row) => {
+            const ident = Array.isArray(row) ? row[0] : row;
+            return String(ident).toLowerCase().includes("logseq");
+        });
+        expect(someMatchedLogseq).toBe(true);
+    }, 30_000);
+
+    it("CLASS_TAG_IDENT_SEARCH.ds discovers a built-in class ident by text", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            CLASS_TAG_IDENT_SEARCH,
+            ednString("(?i)task")
+        );
+
+        const entities = flatEntities(result);
+        expect(entities.length).toBeGreaterThan(0);
+        const foundTaskClass = entities.some((entity) => {
+            const ident = String(entity[":db/ident"] ?? entity["db/ident"] ?? entity.ident ?? "");
+            return ident.toLowerCase().includes("task");
+        });
+        expect(foundTaskClass).toBe(true);
     }, 30_000);
 
     it("tag text-search failure query does not find DB graph tag refs", async () => {

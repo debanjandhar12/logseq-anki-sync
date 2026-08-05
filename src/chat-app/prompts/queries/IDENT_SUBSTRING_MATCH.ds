@@ -1,0 +1,7 @@
+[:find ?ident
+ :in $ ?ident-pattern
+ :where
+ [?e :db/ident ?ident]
+ [(str ?ident) ?ident-str]
+ [(re-pattern ?ident-pattern) ?pattern]
+ [(re-find ?pattern ?ident-str)]]

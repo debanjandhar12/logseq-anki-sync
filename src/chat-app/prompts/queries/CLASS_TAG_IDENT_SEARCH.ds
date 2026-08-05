@@ -1,0 +1,9 @@
+[:find (pull ?c [:db/ident :block/title])
+ :in $ ?search
+ :where
+ [?c :db/ident ?ident]
+ [?c :block/tags ?t]
+ [?t :db/ident :logseq.class/Tag]
+ [(str ?ident) ?ident-str]
+ [(re-pattern ?search) ?pattern]
+ [(re-find ?pattern ?ident-str)]]
