@@ -1,0 +1,6 @@
+[:find (pull ?e [:db/ident :block/title])
+ :in $ ?ident-pattern
+ :where
+ [?e :db/ident ?ident]
+ [(re-pattern ?ident-pattern) ?pattern]
+ [(re-find ?pattern (str ?ident))]]

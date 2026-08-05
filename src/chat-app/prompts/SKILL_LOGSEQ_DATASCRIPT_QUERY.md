@@ -29,6 +29,21 @@ This skill is only for DB graphs. File graph syntax is included only as migratio
 - Prefer narrow pull patterns such as `[:block/uuid :block/title]`; avoid `(pull ?b [*])` unless the user explicitly needs full entity data.
 - If a query fails or returns no rows, debug by reducing it to a smaller tested fixture before adding complexity.
 
+## What is an `:db/ident`?
+
+An ident is a `:db/ident` keyword — the unique, stable name for an entity in a DB graph. Every property, tag/class, and built-in schema attribute has one. It behaves like a primary key: renaming a page's `:block/title` does not change its ident, so idents are the reliable way to reference built-in entities across queries and graphs.
+
+Most idents are namespaced keywords:
+
+- Built-in classes: `:logseq.class/Task`, `:logseq.class/Property`, `:logseq.class/Query`.
+- Built-in properties: `:logseq.property/priority`, `:logseq.property/scheduled`.
+- User-created properties: `:user.property/<key>-<id>`, e.g. `:user.property/rating-abc123`.
+- Core attributes: `:db/ident`, `:block/title`, `:block/uuid`, `:block/name`, `:block/tags`.
+
+A few built-in properties use un-namespaced idents — the graph returns them without a `:logseq.property/*` namespace (observed in this graph: the `tags` and `alias` properties). When a query must reference one of these by ident, use the bare keyword the graph returns instead of inventing a namespace for it.
+
+Use idents — not display titles — for stable references to built-in classes and properties. For user-created tags/classes whose exact ident you have not confirmed, prefer matching by `:block/title` (see the tag/class queries below).
+
 ## Input Requirements
 
 Before writing a query, gather the minimum inputs needed for the selected pattern:

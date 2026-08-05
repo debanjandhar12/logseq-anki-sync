@@ -5,6 +5,7 @@ import BLOCK_SCHEDULED_FAILS from "../../../../src/chat-app/prompts/queries/BLOC
 import CASE_INSENSITIVE_TITLE_SEARCH from "../../../../src/chat-app/prompts/queries/CASE_INSENSITIVE_TITLE_SEARCH.ds?raw";
 import COMPLEX_ACTIONABLE_TASK_SEARCH from "../../../../src/chat-app/prompts/queries/COMPLEX_ACTIONABLE_TASK_SEARCH.ds?raw";
 import FILE_GRAPH_BLOCK_CONTENT_FAILS from "../../../../src/chat-app/prompts/queries/FILE_GRAPH_BLOCK_CONTENT_FAILS.ds?raw";
+import IDENT_REGEX_MATCH_FAILS from "../../../../src/chat-app/prompts/queries/IDENT_REGEX_MATCH_FAILS.ds?raw";
 import JOURNAL_PAGES_IN_RANGE from "../../../../src/chat-app/prompts/queries/JOURNAL_PAGES_IN_RANGE.ds?raw";
 import MIXED_PROPERTY_TYPES_AND_TITLE_SEARCH from "../../../../src/chat-app/prompts/queries/MIXED_PROPERTY_TYPES_AND_TITLE_SEARCH.ds?raw";
 import OR_VARIABLE_MISMATCH_FAILS from "../../../../src/chat-app/prompts/queries/OR_VARIABLE_MISMATCH_FAILS.ds?raw";
@@ -299,6 +300,17 @@ describe.skipIf(!shouldRunTests())("Datascript queries documented in skill files
 
         expectEntityWithUuid(result, actionableTaskBlock.uuid);
         expectEntityWithUuid(result, archivedTaskBlock.uuid);
+    }, 30_000);
+
+    it("ident regex match failure query returns an error", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            IDENT_REGEX_MATCH_FAILS,
+            ednString("(?i)logseq")
+        );
+
+        expect(result).toMatchObject({
+            error: expect.stringContaining("re-find must match against a string")
+        });
     }, 30_000);
 
     it("tag text-search failure query does not find DB graph tag refs", async () => {
