@@ -1,4 +1,5 @@
 export function getErrorMessageFromErrObj(error: unknown): string {
+    console.error("Logging tool Error:", error);
     if (error instanceof Error) return error.message;
     if (typeof error === "string") return error;
     if (error === null || error === undefined) return "Unknown error";
