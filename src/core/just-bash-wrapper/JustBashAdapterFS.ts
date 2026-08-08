@@ -7,6 +7,7 @@ import type {
     MkdirOptions,
     RmOptions
 } from "just-bash";
+import {AnyDocParseResultStore} from "src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {ToolResultStore} from "src/core/stores/tool-results/ToolResultStore";
 import {LogseqPluginStorageManager} from "src/logseq/LogseqPluginStorageManager";
 import {JUST_BASH_USER_HOME, type JustBashMountPermission} from "./types";
@@ -248,3 +249,4 @@ export class JustBashAdapterFS implements IFileSystem {
 }
 
 JustBashAdapterFS.addLogseqPluginFolder(ToolResultStore.groupName, "read");
+JustBashAdapterFS.addLogseqPluginFolder(AnyDocParseResultStore.groupName, "read");

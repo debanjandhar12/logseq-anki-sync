@@ -2,17 +2,14 @@ import {PDFDocument} from "pdf-lib";
 
 export interface PreparedPdfPage {
     pageNo: number;
-    fileName: string;
     bytes: Uint8Array;
-    hash: string;
 }
 
 export class PdfPageSplitter {
     static async split(
         pdfBytes: Uint8Array,
         startPage: number,
-        endPage: number,
-        sourceFileName: string
+        endPage: number
     ): Promise<PreparedPdfPage[]> {
         const sourcePdf = await PDFDocument.load(pdfBytes);
         const pageCount = sourcePdf.getPageCount();
@@ -22,7 +19,6 @@ export class PdfPageSplitter {
             );
         }
 
-        const fileStem = sourceFileName.replace(/\.pdf$/i, "") || "document";
         const pages: PreparedPdfPage[] = [];
         for (let pageNo = startPage; pageNo <= endPage; pageNo++) {
             // Disabling generated metadata prevents timestamps from changing the page hash.
@@ -32,18 +28,9 @@ export class PdfPageSplitter {
             const bytes = await pagePdf.save();
             pages.push({
                 pageNo,
-                fileName: `${fileStem}-page-${pageNo}.pdf`,
-                bytes,
-                hash: await PdfPageSplitter.hash(bytes)
+                bytes
             });
         }
         return pages;
-    }
-
-    private static async hash(bytes: Uint8Array): Promise<string> {
-        const digest = await crypto.subtle.digest("SHA-256", new Uint8Array(bytes));
-        return Array.from(new Uint8Array(digest), (byte) =>
-            byte.toString(16).padStart(2, "0")
-        ).join("");
     }
 }

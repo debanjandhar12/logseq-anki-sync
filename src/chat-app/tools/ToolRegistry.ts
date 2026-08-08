@@ -24,11 +24,11 @@ import {LogseqTextSearchTool} from "src/chat-app/tools/impl/LogseqTextSearchTool
 import {LogseqUpdateBlockTool} from "src/chat-app/tools/impl/LogseqUpdateBlockTool";
 import {LogseqUpsertPropertyPageTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyPageTool";
 import {LogseqUpsertPropertyToBlockTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyToBlockTool";
-import {ReadPdfTool} from "src/chat-app/tools/impl/ReadPdfTool";
+import {ParsePdfTool} from "src/chat-app/tools/impl/ParsePdfTool";
 import {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 import {WebPageGetTool} from "src/chat-app/tools/impl/WebPageGetTool";
 import {WebSearchTool} from "src/chat-app/tools/impl/WebSearchTool";
-import {ContentParsingProviderEnum, WebToolsProviderEnum} from "src/core/ai-sdk/types";
+import {WebToolsProviderEnum} from "src/core/ai-sdk/types";
 import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
 
 export const ToolkitEnum = {
@@ -95,9 +95,7 @@ export class ChatToolRegistry {
             registry.registerTool(new WebPageGetTool(), ToolkitEnum.WEB);
         }
 
-        if (settings.contentParsingProvider === ContentParsingProviderEnum.LLAMA_CLOUD) {
-            registry.registerTool(new ReadPdfTool(), ToolkitEnum.PDF);
-        }
+        registry.registerTool(new ParsePdfTool(), ToolkitEnum.PDF);
 
         registry.registerTool(new SkillTool(), ToolkitEnum.MISC);
         registry.registerTool(new GetUserInfoTool(), ToolkitEnum.MISC);

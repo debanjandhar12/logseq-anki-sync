@@ -51,6 +51,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.43.0
         version: 6.43.0
+      '@firecrawl/anydoc-wasm':
+        specifier: 0.1.7
+        version: 0.1.7
       '@floating-ui/react':
         specifier: ^0.27.18
         version: 0.27.18(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -60,9 +63,6 @@ importers:
       '@lezer/highlight':
         specifier: ^1.2.3
         version: 1.2.3
-      '@llamaindex/llama-cloud':
-        specifier: ^2.11.0
-        version: 2.11.0
       '@logseq/libs':
         specifier: ^0.3.3
         version: 0.3.3
@@ -1592,6 +1592,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@firecrawl/anydoc-wasm@0.1.7':
+    resolution: {integrity: sha512-FkuHl7K8Cl/kyt1ZS9DbX/0GubvW7dHPgiDWrmMoFDFI3GGAtyWsyvAnoqncbFA6yW/ZCjSiZ8jjhH0zeeBxfQ==}
+
   '@floating-ui/core@1.7.4':
     resolution: {integrity: sha512-C3HlIdsBxszvm5McXlB8PeOEWfBhcGBTZGkGlWc2U0KFY5IwG5OQEuQ8rq52DZmcHDlPLd+YFBK+cZcytwIFWg==}
 
@@ -1699,9 +1702,6 @@ packages:
 
   '@lezer/markdown@1.6.4':
     resolution: {integrity: sha512-N0SxazMj4k65DBfaf1azqtMZd6u7MqluP84/NZnB/io8Td9aleFmAhz9hcbvSfsxT5tdYlJ5qgv5aMJGY4zEtA==}
-
-  '@llamaindex/llama-cloud@2.11.0':
-    resolution: {integrity: sha512-NcztAf1YnKyuN7N5E9cqzk0RVtLKwH3N4nf0h85tT9Sq2uE+1j1nSn2ozVntSflkKllmlb767izIvi8+L1XsPA==}
 
   '@logseq/libs@0.0.15':
     resolution: {integrity: sha512-Z4YrYGfu8Y3s9LTqVnPGkxlO+KZtP1YalH/A63zYgxP61cV5QtKlnHWNcjsKxsD5CkaSL4MlSN4mf7wNx/Fm0A==}
@@ -8617,6 +8617,8 @@ snapshots:
   '@esbuild/win32-x64@0.27.3':
     optional: true
 
+  '@firecrawl/anydoc-wasm@0.1.7': {}
+
   '@floating-ui/core@1.7.4':
     dependencies:
       '@floating-ui/utils': 0.2.10
@@ -8747,8 +8749,6 @@ snapshots:
     dependencies:
       '@lezer/common': 1.5.2
       '@lezer/highlight': 1.2.3
-
-  '@llamaindex/llama-cloud@2.11.0': {}
 
   '@logseq/libs@0.0.15':
     dependencies:

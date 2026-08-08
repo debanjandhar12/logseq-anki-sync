@@ -7,14 +7,18 @@ import {
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {JustBashWrapper} from "src/core/just-bash-wrapper";
+import {JUST_BASH_USER_HOME} from "src/core/just-bash-wrapper/types";
+import {AnyDocParseResultStore} from "src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
+import {ToolResultStore} from "src/core/stores/tool-results/ToolResultStore";
 import {z} from "zod";
 
 const bashToolParameters = z.object({
-    command: z.string().describe("The bash command to execute in the sandbox. Logseq files are not available here."),
-    cwd: z
+    command: z
         .string()
-        .optional()
-        .describe("Absolute working directory. Defaults to /home/user.")
+        .describe(
+            "The bash command to execute in the sandbox. Logseq files are not available here."
+        ),
+    cwd: z.string().optional().describe("Absolute working directory. Defaults to /home/user.")
 });
 
 type BashToolArgs = z.infer<typeof bashToolParameters>;
@@ -30,7 +34,8 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
     readonly description =
         "Run a bash command in an isolated virtual filesystem with no host access. " +
         "Python and JavaScript execution are disabled. Files under /home/user persist between " +
-        "commands, and prior tool results are read-only at /home/user/tool-results.";
+        `commands. Prior tool results are read-only at ${JUST_BASH_USER_HOME}/${ToolResultStore.groupName}, ` +
+        `and parsed PDF pages are read-only at ${JUST_BASH_USER_HOME}/${AnyDocParseResultStore.groupName}.`;
     readonly parameters = bashToolParameters;
 
     async execute(

@@ -20,7 +20,7 @@ export {LogseqTextSearchTool} from "src/chat-app/tools/impl/LogseqTextSearchTool
 export {LogseqUpdateBlockTool} from "src/chat-app/tools/impl/LogseqUpdateBlockTool";
 export {LogseqUpsertPropertyPageTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyPageTool";
 export {LogseqUpsertPropertyToBlockTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyToBlockTool";
-export {ReadPdfTool} from "src/chat-app/tools/impl/ReadPdfTool";
+export {ParsePdfTool} from "src/chat-app/tools/impl/ParsePdfTool";
 export {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 export {WebPageGetTool} from "src/chat-app/tools/impl/WebPageGetTool";
 export {WebSearchTool} from "src/chat-app/tools/impl/WebSearchTool";

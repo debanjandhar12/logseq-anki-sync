@@ -10,11 +10,6 @@ export enum WebToolsProviderEnum {
     MODEL_NATIVE = "Model Native (OpenAI / Google)"
 }
 
-export enum ContentParsingProviderEnum {
-    DISABLED = "Disable Content Parsing",
-    LLAMA_CLOUD = "LlamaCloud"
-}
-
 export const PROVIDER_SNAPSHOT_KEY: Record<string, string> = {
     [ProviderEnum.OPENAI]: "openai",
     [ProviderEnum.GOOGLE]: "google"

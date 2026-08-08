@@ -1,4 +1,5 @@
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+type ProxyReturnType = "text" | "arraybuffer";
 
 type LogseqProxyResponse = {
     status: number;
@@ -32,6 +33,7 @@ export class LogseqHttpProxy {
     private static async fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
         const request = new Request(input, init);
         const urlStr = request.url;
+        const returnType = LogseqHttpProxy.getReturnType(request);
 
         if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://")) {
             return LogseqHttpProxy.getOriginalFetch()(input, init);
@@ -45,10 +47,11 @@ export class LogseqHttpProxy {
             url: urlStr,
             method: LogseqHttpProxy.getMethod(request.method),
             headers: LogseqHttpProxy.getHeaders(request.headers),
-            body: await LogseqHttpProxy.getRequestBody(request)
+            body: await LogseqHttpProxy.getRequestBody(request),
+            returnType
         });
 
-        return LogseqHttpProxy.toResponse(result);
+        return LogseqHttpProxy.toResponse(result, returnType);
     }
 
     private static getOriginalFetch(): typeof fetch {
@@ -71,6 +74,7 @@ export class LogseqHttpProxy {
         method: HttpMethod;
         headers: Record<string, string>;
         body?: unknown;
+        returnType: ProxyReturnType;
     }): Promise<unknown> {
         const host = logseq as typeof logseq & {
             _execCallableAPIAsync: (
@@ -84,7 +88,7 @@ export class LogseqHttpProxy {
             method: options.method,
             headers: options.headers,
             data: options.body,
-            returnType: "text",
+            returnType: options.returnType,
             includeResponse: true
         });
 
@@ -97,16 +101,16 @@ export class LogseqHttpProxy {
         });
     }
 
-    private static toResponse(result: unknown): Response {
+    private static toResponse(result: unknown, returnType: ProxyReturnType): Response {
         if (LogseqHttpProxy.isProxyResponse(result)) {
-            return new Response(LogseqHttpProxy.getBodyString(result.body), {
+            return new Response(LogseqHttpProxy.getResponseBody(result.body, returnType), {
                 status: result.status,
                 statusText: result.statusText,
                 headers: result.headers
             });
         }
 
-        return new Response(LogseqHttpProxy.getBodyString(result), {
+        return new Response(LogseqHttpProxy.getResponseBody(result, returnType), {
             status: 200,
             statusText: "OK"
         });
@@ -124,6 +128,12 @@ export class LogseqHttpProxy {
             return method as HttpMethod;
         }
         throw new Error(`Unsupported HTTP method for Logseq exper_request: ${method}`);
+    }
+
+    private static getReturnType(request: Request): ProxyReturnType {
+        return request.method === "GET" && new URL(request.url).pathname.endsWith(".wasm")
+            ? "arraybuffer"
+            : "text";
     }
 
     private static getHeaders(headersInit?: HeadersInit): Record<string, string> {
@@ -165,5 +175,27 @@ export class LogseqHttpProxy {
         }
 
         return JSON.stringify(body);
+    }
+
+    private static getResponseBody(
+        body: unknown,
+        returnType: ProxyReturnType
+    ): BodyInit | null | undefined {
+        if (returnType === "text") return LogseqHttpProxy.getBodyString(body);
+        if (body instanceof ArrayBuffer) return body;
+        if (ArrayBuffer.isView(body)) {
+            return new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
+        }
+        if (Array.isArray(body) && body.every((value) => Number.isInteger(value))) {
+            return new Uint8Array(body);
+        }
+        if (
+            typeof body === "object" &&
+            body !== null &&
+            Array.isArray((body as {data?: unknown}).data)
+        ) {
+            return new Uint8Array((body as {data: number[]}).data);
+        }
+        throw new Error("Logseq exper_request returned an invalid binary response");
     }
 }

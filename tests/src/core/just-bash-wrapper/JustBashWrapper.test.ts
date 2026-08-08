@@ -1,5 +1,6 @@
 import {beforeAll, beforeEach, describe, expect, test} from "vitest";
 import {JustBashAdapterFS, JustBashWrapper} from "../../../../src/core/just-bash-wrapper";
+import {AnyDocParseResultStore} from "../../../../src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {ToolResultStore} from "../../../../src/core/stores/tool-results/ToolResultStore";
 import {LogseqPluginStorageManager} from "../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
@@ -26,6 +27,11 @@ describe("JustBashWrapper", () => {
             ToolResultStore.groupName,
             "call-1_web_search.json",
             '{"ok":true}'
+        );
+        await LogseqPluginStorageManager.saveFile(
+            AnyDocParseResultStore.groupName,
+            `${"a".repeat(64)}-page-1.md`,
+            "parsed page"
         );
     });
 
@@ -74,6 +80,17 @@ describe("JustBashWrapper", () => {
         );
         expect((await bash.exec("touch /home/user/tool-results/nope.txt")).exitCode).not.toBe(0);
         await expectCommandToFail("touch /home/user/tool-results/call-1_web_search.json");
+    });
+
+    test("mounts AnyDoc results read-only", async () => {
+        const bash = JustBashWrapper.getInstance();
+        const fileName = `${"a".repeat(64)}-page-1.md`;
+
+        expect((await bash.exec(`cat /home/user/anydoc-parse-results/${fileName}`)).stdout).toBe(
+            "parsed page"
+        );
+        await expectCommandToFail(`touch /home/user/anydoc-parse-results/${fileName}`);
+        await expectCommandToFail(`rm /home/user/anydoc-parse-results/${fileName}`);
     });
 
     test("uses /home/user and disables Python and JavaScript execution", async () => {

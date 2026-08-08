@@ -1,5 +1,6 @@
 import {beforeAll, beforeEach, describe, expect, test} from "vitest";
 import {JustBashAdapterFS} from "../../../../src/core/just-bash-wrapper";
+import {AnyDocParseResultStore} from "../../../../src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {ToolResultStore} from "../../../../src/core/stores/tool-results/ToolResultStore";
 import {LogseqPluginStorageManager} from "../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
@@ -17,6 +18,11 @@ describe("JustBashAdapterFS", () => {
             "call-1_web_search.json",
             '{"ok":true}'
         );
+        await LogseqPluginStorageManager.saveFile(
+            AnyDocParseResultStore.groupName,
+            `${"a".repeat(64)}-page-1.md`,
+            "parsed"
+        );
     });
 
     test("registers tool-results read-only under the sandbox home", () => {
@@ -24,6 +30,11 @@ describe("JustBashAdapterFS", () => {
             ({mountPoint}) => mountPoint === "/home/user/tool-results"
         );
         expect(mount).toBeDefined();
+        expect(
+            JustBashAdapterFS.getMountConfigs().find(
+                ({mountPoint}) => mountPoint === "/home/user/anydoc-parse-results"
+            )
+        ).toBeDefined();
     });
 
     test("rejects invalid mount folder names", () => {

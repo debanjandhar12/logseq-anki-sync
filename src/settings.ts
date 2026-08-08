@@ -1,7 +1,7 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {DONATE_ICON} from "./constants";
-import {ContentParsingProviderEnum, ProviderEnum, WebToolsProviderEnum} from "./core/ai-sdk/types";
+import {ProviderEnum, WebToolsProviderEnum} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 
@@ -16,8 +16,6 @@ export interface PluginSettings {
     openChatInSidebar?: boolean;
     webToolsProvider?: WebToolsProviderEnum;
     jinaApiKey?: string;
-    contentParsingProvider?: ContentParsingProviderEnum;
-    llamaCloudApiKey?: string;
     debug?: LoggerCategory[];
     lastWelcomeVersion?: string;
 }
@@ -66,8 +64,7 @@ export const addSettingsToLogseq = async () => {
             type: "string",
             default: "big-pickle",
             title: "LLM Model List",
-            description:
-                "Comma-separated model identifiers. For example: big-pickle,glm-5.2"
+            description: "Comma-separated model identifiers. For example: big-pickle,glm-5.2"
         },
         {
             key: "globalAgentInstruction",
@@ -100,30 +97,6 @@ export const addSettingsToLogseq = async () => {
             title: "Jina AI API Key (Mandatory)",
             description:
                 "API key for Jina AI (https://jina.ai). Required when Web Search Provider is set to Jina.ai."
-        },
-        {
-            key: "contentParsingHeading",
-            title: "Content Parsing (Pdf)",
-            description: "",
-            type: "heading",
-            default: null
-        },
-        {
-            key: "contentParsingProvider",
-            type: "enum",
-            default: ContentParsingProviderEnum.DISABLED,
-            title: "Content Parsing Provider",
-            description: "Choose how the AI extracts content from PDF files.",
-            enumChoices: Object.values(ContentParsingProviderEnum),
-            enumPicker: "select"
-        },
-        {
-            key: "llamaCloudApiKey",
-            type: "string",
-            default: "",
-            title: "LlamaCloud API Key (Mandatory)",
-            description:
-                "API key for LlamaCloud. Required when Content Parsing Provider is set to LlamaCloud."
         },
         {
             key: "displaySettingsHeading",
@@ -196,8 +169,6 @@ export const addSettingsToLogseq = async () => {
         const {id} = logseq.baseInfo;
         const showLlmApiUrl = settings.llmProvider === ProviderEnum.OPENAI_COMPATIBLE;
         const showJinaApiKey = settings.webToolsProvider === WebToolsProviderEnum.JINA;
-        const showLlamaCloudApiKey =
-            settings.contentParsingProvider === ContentParsingProviderEnum.LLAMA_CLOUD;
 
         logseq.provideStyle({
             key: "hide-llm-api-url",
@@ -230,21 +201,6 @@ export const addSettingsToLogseq = async () => {
             `
                 : `
                 [data-id="${id}"] .cp__plugins-settings-inner [data-key="jinaApiKey"] {
-                    display: none;
-                }
-            `
-        });
-
-        logseq.provideStyle({
-            key: "hide-llama-cloud-api-key",
-            style: showLlamaCloudApiKey
-                ? `
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llamaCloudApiKey"] {
-                    display: block !important;
-                }
-            `
-                : `
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llamaCloudApiKey"] {
                     display: none;
                 }
             `
