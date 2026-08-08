@@ -49,6 +49,10 @@ describe("JustBashAdapterFS", () => {
         await expect(fs.writeFile("/x.json", "1")).rejects.toThrow(/EROFS/);
         await expect(fs.appendFile("/x.json", "1")).rejects.toThrow(/EROFS/);
         await expect(fs.rm("/call-1_web_search.json")).rejects.toThrow(/EROFS/);
+        await expect(fs.chmod("/call-1_web_search.json", 0o600)).rejects.toThrow(/EROFS/);
+        await expect(fs.utimes("/call-1_web_search.json", new Date(), new Date())).rejects.toThrow(
+            /EROFS/
+        );
     });
 
     test("persists read-write operations through plugin storage", async () => {

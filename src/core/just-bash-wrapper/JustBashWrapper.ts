@@ -1,5 +1,6 @@
 import {Bash, InMemoryFs, MountableFs} from "just-bash";
 import {JustBashAdapterFS} from "./JustBashAdapterFS";
+import {ReadOnlyFileSystem} from "./ReadOnlyFileSystem";
 import {JUST_BASH_USER_HOME} from "./types";
 
 /** Singleton accessor for the shared, fully virtual just-bash sandbox. */
@@ -8,9 +9,13 @@ export class JustBashWrapper {
 
     static getInstance(): Bash {
         if (JustBashWrapper.instance == null) {
+            const baseFileSystem = new InMemoryFs();
+            baseFileSystem.mkdirSync(JUST_BASH_USER_HOME, {recursive: true});
+            baseFileSystem.mkdirSync("/tmp", {recursive: true});
+
             JustBashWrapper.instance = new Bash({
                 fs: new MountableFs({
-                    base: new InMemoryFs(),
+                    base: new ReadOnlyFileSystem(baseFileSystem),
                     mounts: JustBashAdapterFS.getMountConfigs()
                 }),
                 cwd: JUST_BASH_USER_HOME,

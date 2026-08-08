@@ -225,10 +225,12 @@ export class JustBashAdapterFS implements IFileSystem {
     }
 
     async chmod(path: string, _mode: number): Promise<void> {
+        this.assertWritable("chmod", path);
         if (!(await this.exists(path))) throw enoentError("chmod", path);
     }
 
     async utimes(path: string, _atime: Date, _mtime: Date): Promise<void> {
+        this.assertWritable("utimes", path);
         if (!(await this.exists(path))) throw enoentError("utimes", path);
     }
 
