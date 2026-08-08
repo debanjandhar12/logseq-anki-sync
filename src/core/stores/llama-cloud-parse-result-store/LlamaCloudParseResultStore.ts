@@ -1,21 +1,21 @@
 import {createLogger, LoggerCategory} from "../../../logger";
 import {LogseqPluginStorageManager} from "../../../logseq/LogseqPluginStorageManager";
-import type {LlamaCloudPdfPageData} from "./types";
+import type {LlamaCloudParseResultData} from "./types";
 
 const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);
 
-export class LlamaCloudPdfPageStore {
-    static readonly groupName = "llama-cloud-pdf-pages";
+export class LlamaCloudParseResultStore {
+    static readonly groupName = "llama-cloud-parse-results";
 
-    static async get(pageHash: string): Promise<LlamaCloudPdfPageData | null> {
+    static async get(pageHash: string): Promise<LlamaCloudParseResultData | null> {
         try {
             const content = await LogseqPluginStorageManager.getFileContent(
-                LlamaCloudPdfPageStore.groupName,
-                LlamaCloudPdfPageStore.getFileName(pageHash)
+                LlamaCloudParseResultStore.groupName,
+                LlamaCloudParseResultStore.getFileName(pageHash)
             );
-            const parsed = JSON.parse(content) as LlamaCloudPdfPageData;
-            if (!LlamaCloudPdfPageStore.isValid(parsed)) {
-                logger.warn(`Ignoring invalid cached LlamaCloud PDF page for ${pageHash}.`);
+            const parsed = JSON.parse(content) as LlamaCloudParseResultData;
+            if (!LlamaCloudParseResultStore.isValid(parsed)) {
+                logger.warn(`Ignoring invalid cached LlamaCloud parse result for ${pageHash}.`);
                 return null;
             }
             return parsed;
@@ -24,10 +24,10 @@ export class LlamaCloudPdfPageStore {
         }
     }
 
-    static async save(pageHash: string, data: LlamaCloudPdfPageData): Promise<void> {
+    static async save(pageHash: string, data: LlamaCloudParseResultData): Promise<void> {
         await LogseqPluginStorageManager.saveFile(
-            LlamaCloudPdfPageStore.groupName,
-            LlamaCloudPdfPageStore.getFileName(pageHash),
+            LlamaCloudParseResultStore.groupName,
+            LlamaCloudParseResultStore.getFileName(pageHash),
             JSON.stringify(data)
         );
     }
@@ -35,8 +35,8 @@ export class LlamaCloudPdfPageStore {
     static async delete(pageHash: string): Promise<void> {
         try {
             await LogseqPluginStorageManager.deleteFile(
-                LlamaCloudPdfPageStore.groupName,
-                LlamaCloudPdfPageStore.getFileName(pageHash)
+                LlamaCloudParseResultStore.groupName,
+                LlamaCloudParseResultStore.getFileName(pageHash)
             );
         } catch {}
     }
@@ -45,7 +45,7 @@ export class LlamaCloudPdfPageStore {
         return `${pageHash}.json`;
     }
 
-    private static isValid(data: unknown): data is LlamaCloudPdfPageData {
+    private static isValid(data: unknown): data is LlamaCloudParseResultData {
         if (!data || typeof data !== "object") return false;
         const record = data as Record<string, unknown>;
         return (

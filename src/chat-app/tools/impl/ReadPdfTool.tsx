@@ -8,8 +8,8 @@ import {
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {PdfPageSplitter, type PreparedPdfPage} from "src/core/pdf/PdfPageSplitter";
-import {LlamaCloudPdfPageStore} from "src/core/stores/llama-cloud-pdf-page-store/LlamaCloudPdfPageStore";
-import type {LlamaCloudPdfPageData} from "src/core/stores/llama-cloud-pdf-page-store/types";
+import {LlamaCloudParseResultStore} from "src/core/stores/llama-cloud-parse-result-store/LlamaCloudParseResultStore";
+import type {LlamaCloudParseResultData} from "src/core/stores/llama-cloud-parse-result-store/types";
 import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
 import {WindowParentBridge} from "src/logseq/WindowParentBridge";
 import {z} from "zod";
@@ -78,11 +78,11 @@ export class ReadPdfTool extends BaseChatToolWithDefaultUI<ReadPdfArgs, ReadPdfR
                 endPage,
                 this.getPdfFileName(pdfPath)
             );
-            const parsedPagesByPageNo = new Map<number, LlamaCloudPdfPageData>();
+            const parsedPagesByPageNo = new Map<number, LlamaCloudParseResultData>();
             const cacheMisses: PreparedPdfPage[] = [];
 
             for (const preparedPage of preparedPages) {
-                const cachedPage = await LlamaCloudPdfPageStore.get(preparedPage.hash);
+                const cachedPage = await LlamaCloudParseResultStore.get(preparedPage.hash);
                 if (cachedPage) {
                     parsedPagesByPageNo.set(preparedPage.pageNo, cachedPage);
                 } else {
@@ -132,12 +132,12 @@ export class ReadPdfTool extends BaseChatToolWithDefaultUI<ReadPdfArgs, ReadPdfR
                         );
                     }
 
-                    const storedPage: LlamaCloudPdfPageData = {
+                    const storedPage: LlamaCloudParseResultData = {
                         version: 1,
                         items: itemsPage.items as unknown as Array<Record<string, unknown>>,
                         content: markdownPage.markdown
                     };
-                    await LlamaCloudPdfPageStore.save(preparedPage.hash, storedPage);
+                    await LlamaCloudParseResultStore.save(preparedPage.hash, storedPage);
                     parsedPagesByPageNo.set(preparedPage.pageNo, storedPage);
                 }
             }
