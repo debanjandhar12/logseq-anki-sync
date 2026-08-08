@@ -2,6 +2,7 @@ import type {ToolCallMessagePartComponent, Toolkit} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
 import type {BaseChatTool} from "src/chat-app/tools/base/BaseChatTool";
 import type {ChatToolResult} from "src/chat-app/tools/base/ChatToolResponse";
+import {BashTool} from "src/chat-app/tools/impl/BashTool";
 import {GetUserInfoTool} from "src/chat-app/tools/impl/GetUserInfoTool";
 import {LogseqAddPropertyToTagPageTool} from "src/chat-app/tools/impl/LogseqAddPropertyToTagPageTool";
 import {LogseqAddTagToBlockTool} from "src/chat-app/tools/impl/LogseqAddTagToBlockTool";
@@ -100,6 +101,7 @@ export class ChatToolRegistry {
 
         registry.registerTool(new SkillTool(), ToolkitEnum.MISC);
         registry.registerTool(new GetUserInfoTool(), ToolkitEnum.MISC);
+        registry.registerTool(new BashTool(), ToolkitEnum.MISC);
 
         return registry;
     }

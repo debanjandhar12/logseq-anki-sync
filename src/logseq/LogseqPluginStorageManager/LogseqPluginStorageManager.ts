@@ -37,7 +37,13 @@ export class LogseqPluginStorageManager {
         return await LogseqPluginStorageManager.store.setItem(`${group}/${fileName}`, fileContent);
     }
 
+    static async fileExists(group: string, fileName: string): Promise<boolean> {
+        LogseqPluginStorageManager.validateOperation(group, fileName);
+        return await LogseqPluginStorageManager.store.hasItem(`${group}/${fileName}`);
+    }
+
     static async deleteFile(group: string, fileName: string) {
+        LogseqPluginStorageManager.validateOperation(group, fileName);
         return await LogseqPluginStorageManager.store.removeItem(`${group}/${fileName}`);
     }
 

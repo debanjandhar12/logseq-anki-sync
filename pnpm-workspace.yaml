@@ -4,10 +4,12 @@ overrides:
   '@ai-sdk/react': 4.0.34
   ai: 7.0.31
 allowBuilds:
+  '@mongodb-js/zstd': false
   '@parcel/watcher': true
   canvas: true
   core-js-pure: true
   esbuild: true
   msw: true
+  node-liblzma: false
   tesseract.js: true
   unrs-resolver: true
