@@ -2,6 +2,7 @@ import type {ChatModelRunResult, ThreadMessage} from "@assistant-ui/react";
 import {type Tool, ToolResponse} from "assistant-stream";
 import {ChatToolResponse} from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessage, isRecord} from "./error-utils";
+import {storeAndTruncateOversizedToolResult} from "./tool-result-limiter";
 
 type ToolCallStreamPart = {
     type: "tool-call";
@@ -57,6 +58,19 @@ export async function executeFrontendTool(
             }
         } as any);
         const response = ToolResponse.toResponse(output);
+        const truncatedResult = await storeAndTruncateOversizedToolResult({
+            toolCallId: toolCall.toolCallId,
+            toolName: toolCall.toolName,
+            result: response.result,
+            isError: response.isError
+        });
+        if (truncatedResult !== undefined) {
+            return {
+                result: truncatedResult,
+                artifact: response.artifact as ToolCallMessagePart["artifact"],
+                isError: false
+            };
+        }
         const modelContent =
             response.modelContent ??
             (!response.isError && tool.toModelOutput

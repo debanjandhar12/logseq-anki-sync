@@ -8,12 +8,14 @@ export class ToolResultStore {
         toolCallId: string,
         toolName: string,
         result: ToolResultValue
-    ): Promise<void> {
+    ): Promise<string> {
+        const fileName = ToolResultStore.getFileName(toolCallId, toolName);
         await LogseqPluginStorageManager.saveFile(
             ToolResultStore.groupName,
-            ToolResultStore.getFileName(toolCallId, toolName),
+            fileName,
             JSON.stringify(result)
         );
+        return fileName;
     }
 
     private static getFileName(toolCallId: string, toolName: string): string {
