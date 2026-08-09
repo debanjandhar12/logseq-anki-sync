@@ -24,6 +24,7 @@ When you finish the task, respond with a concise report covering what was done a
 - UUIDs, pages names, tag names and property indents, property page names, etc are all case-sensitive.
 - There cannot be two pages with same name. Similarly, there cannot be two property indents under same namespace with same name.
 - The create property page tool creates properties under the plugin's namespace. You cannot create properties under different namespace. However, you can upsert property of a different namespace to a block.
+- Tool Result size is capped at <% chatAppAgentToolResultMaxChar %> characters
 
 - Available skills:
 <% modelInvokableSkillList %>

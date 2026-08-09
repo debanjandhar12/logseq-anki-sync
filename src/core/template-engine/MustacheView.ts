@@ -1,8 +1,10 @@
 import dayjs from "dayjs";
+import {CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR} from "../../constants";
 import {LogseqEditor} from "../../logseq/LogseqEditor";
 import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
 import {getModelInvokableSkillListString} from "./getModelInvokableSkillListString";
 import {getUserPreferredDayjsFormat} from "./getUserPreferredDayjsFormat";
+import {getUserTimeZone} from "./getUserTimeZone";
 
 const WEEKDAY_INDEX_BY_NAME: Record<string, number> = {
     sunday: 0,
@@ -58,12 +60,14 @@ export async function createMustacheView(date: Date = new Date()): Promise<Musta
         "model invokable skill list": modelInvokableSkillList,
         additionalsystemmessage: additionalSystemMessage,
         additionalSystemMessage,
+        chatAppAgentToolResultMaxChar: String(CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR),
         currentpage: currentPage ? currentPage.uuid : "No current page",
         currenteditingblock: currentEditingBlock?.uuid ?? "No current editing block",
         modelinvokableskilllist: modelInvokableSkillList,
         time: now.format("HH:mm"),
         today: now.format(dayjsFormat),
         tomorrow: now.add(1, "day").format(dayjsFormat),
+        userTimeZone: getUserTimeZone(),
         yesterday: now.subtract(1, "day").format(dayjsFormat)
     };
 
