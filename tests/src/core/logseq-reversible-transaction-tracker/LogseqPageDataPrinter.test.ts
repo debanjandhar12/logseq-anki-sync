@@ -1,6 +1,10 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {beforeEach, describe, expect, test, vi} from "vitest";
-import {LogseqPageDataPrinter} from "../../../../src/core/logseq-reversible-transaction-tracker";
+import {
+    LogseqPageDataPrinter,
+    type LogseqPrintedPageSnapshot,
+    NON_EXISTENT_PAGE_NAME
+} from "../../../../src/core/logseq-reversible-transaction-tracker";
 import {LogseqPropertiesHelper} from "../../../../src/logseq/LogseqPropertiesHelper";
 
 vi.mock("../../../../src/logseq/LogseqPropertiesHelper", () => ({
@@ -33,84 +37,83 @@ function block(overrides: Partial<BlockEntity> = {}): BlockEntity {
     } as BlockEntity;
 }
 
+function snapshot(overrides: Partial<LogseqPrintedPageSnapshot> = {}): LogseqPrintedPageSnapshot {
+    return {
+        identityKey: "page-uuid",
+        resolvedPageUuid: "page-uuid",
+        exists: true,
+        pageName: "Test Page",
+        content: "* Block content",
+        ...overrides
+    };
+}
+
 describe("LogseqPageDataPrinter", () => {
     beforeEach(() => {
         vi.resetAllMocks();
     });
 
-    test("prints a resolved page only once when multiple identities point to it", async () => {
+    test("returns ordered snapshots and caches pages resolved by multiple identities", async () => {
         getPage.mockResolvedValue(
-            page({uuid: "page-uuid", name: "hello worldxs29", originalName: "hello worldxs29"})
+            page({uuid: "page-uuid", name: "hello world", originalName: "Hello World"})
         );
-        getPageBlocksTree.mockResolvedValue([
-            block({uuid: "parent-uuid", content: "Parent Block"})
-        ]);
+        getPageBlocksTree.mockResolvedValue([block({content: "Parent Block"})]);
 
         const printedPages = await LogseqPageDataPrinter.print([
-            "hello worldxs29",
+            "hello world",
             {uuid: "page-uuid"} as PageEntity
         ]);
 
-        expect(printedPages).toBe(`# hello worldxs29
-* Parent Block`);
+        expect(printedPages).toEqual([
+            {
+                identityKey: "hello world",
+                resolvedPageUuid: "page-uuid",
+                exists: true,
+                pageName: "Hello World",
+                content: "* Parent Block"
+            },
+            {
+                identityKey: "page-uuid",
+                resolvedPageUuid: "page-uuid",
+                exists: true,
+                pageName: "Hello World",
+                content: "* Parent Block"
+            }
+        ]);
         expect(getPage).toHaveBeenCalledTimes(2);
-        expect(getPageBlocksTree).toHaveBeenCalledTimes(1);
+        expect(getPageBlocksTree).toHaveBeenCalledOnce();
     });
 
-    test("prints soft deleted pages as blank pages", () => {
-        const printedPage = LogseqPageDataPrinter.printPageTree(
+    test("represents unresolved and soft-deleted pages as nonexistent", async () => {
+        getPage.mockResolvedValueOnce(null).mockResolvedValueOnce(
             page({
-                name: "hello worldxs29",
-                originalName: "hello worldxs29",
-                properties: {
-                    uuid: "page-uuid",
-                    ":block/tags": ["Page"],
-                    ":logseq.property/deleted-at": 1783059479739,
-                    ":logseq.property.recycle/original-page": "Hello WorldXS29"
-                },
+                uuid: "deleted-uuid",
                 [":logseq.property/deleted-at" as keyof PageEntity]: 1783059479739
-            }),
-            [block({content: "Deleted page block"})]
+            })
         );
 
-        expect(printedPage).toBe("# hello worldxs29");
-    });
+        const printedPages = await LogseqPageDataPrinter.print(["missing", "deleted-uuid"]);
 
-    test("prints a nested page block tree once", () => {
-        const printedPage = LogseqPageDataPrinter.printPageTree(page(), [
-            block({
-                uuid: "parent-uuid",
-                content: "Parent",
-                children: [
-                    block({
-                        uuid: "child-uuid",
-                        content: "Child",
-                        children: [block({uuid: "grandchild-uuid", content: "Grandchild"})]
-                    })
-                ]
-            })
+        expect(printedPages).toEqual([
+            {
+                identityKey: "missing",
+                resolvedPageUuid: null,
+                exists: false,
+                pageName: NON_EXISTENT_PAGE_NAME,
+                content: ""
+            },
+            {
+                identityKey: "deleted-uuid",
+                resolvedPageUuid: "deleted-uuid",
+                exists: false,
+                pageName: NON_EXISTENT_PAGE_NAME,
+                content: ""
+            }
         ]);
-
-        expect(printedPage).toBe(`# Test Page
-* Parent
-    * Child
-        * Grandchild`);
+        expect(getPageBlocksTree).not.toHaveBeenCalled();
     });
 
-    test("does not treat nested children as duplicate root blocks", () => {
-        const child = block({uuid: "child-uuid", content: "Child"});
-        const printedPage = LogseqPageDataPrinter.printPageTree(page(), [
-            block({uuid: "parent-uuid", content: "Parent", children: [child]}),
-            block({uuid: "sibling-uuid", content: "Sibling"})
-        ]);
-
-        expect(printedPage).toBe(`# Test Page
-* Parent
-    * Child
-* Sibling`);
-    });
-
-    test("prints page and block properties before content", () => {
+    test("prints page and block properties before heading-free content", () => {
         const printedPage = LogseqPageDataPrinter.printPageTree(
             page({properties: {uuid: "page-uuid", alias: ["Alias"]}}),
             [
@@ -121,18 +124,186 @@ describe("LogseqPageDataPrinter", () => {
             ]
         );
 
-        expect(printedPage).toBe(`# Test Page
-* alias:: ["Alias"]
+        expect(printedPage).toBe(`* alias:: ["Alias"]
 * priority:: high
   Block content`);
     });
 
-    test("uses title when content is absent", () => {
+    test("indents multiline page and nested block properties", () => {
+        const printedPage = LogseqPageDataPrinter.printPageTree(
+            page({properties: {apple: "line 1\r\nline 2"}}),
+            [
+                block({
+                    content: "Parent line 1\nParent line 2",
+                    properties: {description: "property line 1\nproperty line 2"},
+                    children: [
+                        block({
+                            content: "Child",
+                            properties: {description: "child line 1\nchild line 2"}
+                        })
+                    ]
+                })
+            ]
+        );
+
+        expect(printedPage).toBe(`* apple:: line 1
+  line 2
+* description:: property line 1
+  property line 2
+  Parent line 1
+  Parent line 2
+    * description:: child line 1
+      child line 2
+      Child`);
+    });
+
+    test("prints nested blocks once and uses title when content is absent", () => {
         const printedPage = LogseqPageDataPrinter.printPageTree(page(), [
-            block({content: undefined, title: "Title content"})
+            block({
+                content: undefined,
+                title: "Parent",
+                children: [block({content: "Child"})]
+            })
         ]);
 
-        expect(printedPage).toBe(`# Test Page
-* Title content`);
+        expect(printedPage).toBe(`* Parent
+    * Child`);
+    });
+});
+
+describe("LogseqPageDataPrinter.createChanges", () => {
+    test("keeps ordinary edits and removes unchanged pages", () => {
+        const changes = LogseqPageDataPrinter.createChanges(
+            [snapshot({content: "* Before"}), snapshot({resolvedPageUuid: "same"})],
+            [snapshot({content: "* After"}), snapshot({resolvedPageUuid: "same"})]
+        );
+
+        expect(changes).toEqual([
+            {
+                key: "changed-page-0",
+                before: {pageName: "Test Page", content: "* Before"},
+                after: {pageName: "Test Page", content: "* After"}
+            }
+        ]);
+    });
+
+    test("collapses rename aliases into one ordered page change", () => {
+        const changes = LogseqPageDataPrinter.createChanges(
+            [
+                snapshot({identityKey: "page-uuid", pageName: "Old Name"}),
+                snapshot({
+                    identityKey: "new name",
+                    resolvedPageUuid: null,
+                    exists: false,
+                    pageName: NON_EXISTENT_PAGE_NAME,
+                    content: ""
+                })
+            ],
+            [
+                snapshot({identityKey: "page-uuid", pageName: "New Name"}),
+                snapshot({identityKey: "new name", pageName: "New Name"})
+            ]
+        );
+
+        expect(changes).toEqual([
+            {
+                key: "changed-page-0",
+                before: {pageName: "Old Name", content: "* Block content"},
+                after: {pageName: "New Name", content: "* Block content"}
+            }
+        ]);
+    });
+
+    test("collapses transitive aliases and preserves first-seen page order", () => {
+        const changes = LogseqPageDataPrinter.createChanges(
+            [
+                snapshot({resolvedPageUuid: "first", pageName: "First Before"}),
+                snapshot({resolvedPageUuid: "second", pageName: "Second", content: "* Old"}),
+                snapshot({resolvedPageUuid: null, exists: false}),
+                snapshot({resolvedPageUuid: "first", pageName: "First Before"})
+            ],
+            [
+                snapshot({resolvedPageUuid: "first", pageName: "First After"}),
+                snapshot({resolvedPageUuid: "second", pageName: "Second", content: "* New"}),
+                snapshot({resolvedPageUuid: "first", pageName: "First After"}),
+                snapshot({resolvedPageUuid: "third", pageName: "First After"})
+            ]
+        );
+
+        expect(changes.map(({key, before, after}) => ({key, before, after}))).toEqual([
+            {
+                key: "changed-page-0",
+                before: {pageName: "First Before", content: "* Block content"},
+                after: {pageName: "First After", content: "* Block content"}
+            },
+            {
+                key: "changed-page-1",
+                before: {pageName: "Second", content: "* Old"},
+                after: {pageName: "Second", content: "* New"}
+            }
+        ]);
+    });
+
+    test.each([
+        {
+            label: "created",
+            before: snapshot({exists: false, pageName: NON_EXISTENT_PAGE_NAME, content: ""}),
+            after: snapshot({pageName: "Created Page"}),
+            expectedBefore: {pageName: NON_EXISTENT_PAGE_NAME, content: ""},
+            expectedAfter: {pageName: "Created Page", content: "* Block content"}
+        },
+        {
+            label: "deleted",
+            before: snapshot({pageName: "Deleted Page"}),
+            after: snapshot({exists: false, pageName: NON_EXISTENT_PAGE_NAME, content: ""}),
+            expectedBefore: {pageName: "Deleted Page", content: "* Block content"},
+            expectedAfter: {pageName: NON_EXISTENT_PAGE_NAME, content: ""}
+        }
+    ])("represents a $label page with an empty nonexistent side", (testCase) => {
+        const [change] = LogseqPageDataPrinter.createChanges([testCase.before], [testCase.after]);
+
+        expect(change.before).toEqual(testCase.expectedBefore);
+        expect(change.after).toEqual(testCase.expectedAfter);
+    });
+
+    test("filters identities missing on both sides", () => {
+        const missing = snapshot({
+            resolvedPageUuid: null,
+            exists: false,
+            pageName: NON_EXISTENT_PAGE_NAME,
+            content: ""
+        });
+
+        expect(LogseqPageDataPrinter.createChanges([missing], [missing])).toEqual([]);
+    });
+
+    test("pairs soft-deleted and active empty page snapshots by UUID", () => {
+        const missing = snapshot({
+            exists: false,
+            pageName: NON_EXISTENT_PAGE_NAME,
+            content: ""
+        });
+        const activeEmpty = snapshot({pageName: "Empty Page", content: ""});
+
+        expect(LogseqPageDataPrinter.createChanges([missing], [activeEmpty])).toEqual([
+            {
+                key: "changed-page-0",
+                before: {pageName: NON_EXISTENT_PAGE_NAME, content: ""},
+                after: {pageName: "Empty Page", content: ""}
+            }
+        ]);
+        expect(LogseqPageDataPrinter.createChanges([activeEmpty], [missing])).toEqual([
+            {
+                key: "changed-page-0",
+                before: {pageName: "Empty Page", content: ""},
+                after: {pageName: NON_EXISTENT_PAGE_NAME, content: ""}
+            }
+        ]);
+    });
+
+    test("rejects snapshots captured from different identity lists", () => {
+        expect(() => LogseqPageDataPrinter.createChanges([snapshot()], [])).toThrow(
+            "Cannot pair page snapshots with different lengths"
+        );
     });
 });

@@ -1,5 +1,6 @@
 import type React from "react";
 import {DiffViewer} from "src/chat-app/components/DiffViewer";
+import type {LogseqPrintedPageChange} from "src/core/logseq-reversible-transaction-tracker";
 import {Modal} from "../modals/core/Modal";
 import {ModalFooter} from "../modals/core/ModalFooter";
 import {ModalHeader} from "../modals/core/ModalHeader";
@@ -7,16 +8,41 @@ import {useModal} from "../modals/hooks/useModal";
 import {UI} from "../UI";
 
 export interface AIChangesReviewModalProps {
-    beforeChanges: string;
-    afterChanges: string;
+    changes: LogseqPrintedPageChange[];
     resolve: (value: boolean | null) => void;
     reject: (error: any) => void;
     modalContext?: {modalId: string | null};
 }
 
+export function createAIChangesReviewDiffViewers(
+    changes: LogseqPrintedPageChange[]
+): React.ReactElement[] {
+    return changes.map((change) => (
+        <DiffViewer
+            key={change.key}
+            oldFile={{
+                name: change.before.pageName,
+                content: change.before.content
+            }}
+            newFile={{
+                name: change.after.pageName,
+                content: change.after.content
+            }}
+            language="markdown"
+            viewMode="split"
+            size="sm"
+            showLineNumbers={false}
+            showIcon={false}
+            showStats={true}
+            variant="ghost"
+            className="rounded border border-border bg-secondary-background"
+            contentClassName="max-h-[60vh] overflow-auto"
+        />
+    ));
+}
+
 export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> = ({
-    beforeChanges,
-    afterChanges,
+    changes,
     resolve,
     modalContext
 }) => {
@@ -51,24 +77,8 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
                     Review the uncommitted changes before committing them.
                 </p>
 
-                <div className="mx-4 min-h-0 flex-1 overflow-y-auto pr-1">
-                    {beforeChanges === afterChanges ? (
-                        <div className="rounded border border-border bg-primary-background p-4 text-sm opacity-80">
-                            No uncommitted changes are ready for review.
-                        </div>
-                    ) : (
-                        <DiffViewer
-                            oldFile={{content: beforeChanges, name: "Before"}}
-                            newFile={{content: afterChanges, name: "After"}}
-                            viewMode="split"
-                            size="sm"
-                            showLineNumbers={false}
-                            showIcon={false}
-                            variant="ghost"
-                            className="rounded border border-border bg-secondary-background"
-                            contentClassName="max-h-[60vh] overflow-auto"
-                        />
-                    )}
+                <div className="mx-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+                    {createAIChangesReviewDiffViewers(changes)}
                 </div>
 
                 <ModalFooter

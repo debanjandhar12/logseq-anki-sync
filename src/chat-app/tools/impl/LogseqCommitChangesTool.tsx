@@ -19,6 +19,8 @@ import {getTrackerArtifactFromError} from "src/chat-app/tools/transaction/getTra
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
     LogseqPageDataPrinter,
+    type LogseqPrintedPageChange,
+    type LogseqPrintedPageSnapshot,
     type LogseqReversibleTransactionTracker
 } from "src/core/logseq-reversible-transaction-tracker";
 import {createLogger, LoggerCategory} from "src/logger";
@@ -40,6 +42,11 @@ const LogseqCommitChangesArgsZodObj = z.object({});
 type LogseqCommitChangesArgs = z.infer<typeof LogseqCommitChangesArgsZodObj>;
 
 type LogseqCommitChangesResult = ChatToolSuccessResult<{changes: string}> | ChatToolErrorResult;
+
+type PreparedReview =
+    | {kind: "no-graph-mutations"}
+    | {kind: "no-reviewable-page-changes"}
+    | {kind: "reviewable-page-changes"; changes: LogseqPrintedPageChange[]};
 
 export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     LogseqCommitChangesArgs,
@@ -96,15 +103,15 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         }
     }
 
-    private async prepareReview(
+    async prepareReview(
         transactionTracker: LogseqReversibleTransactionTracker
-    ): Promise<{beforeChanges: string; afterChanges: string; hasGraphMutations: boolean}> {
+    ): Promise<PreparedReview> {
         await transactionTracker.execute();
         if (!transactionTracker.hasAppliedGraphMutations()) {
-            return {beforeChanges: "", afterChanges: "", hasGraphMutations: false};
+            return {kind: "no-graph-mutations"};
         }
         const changedPages = transactionTracker.getChangedPages();
-        let afterChanges = "";
+        let afterChanges: LogseqPrintedPageSnapshot[];
         try {
             afterChanges = await LogseqPageDataPrinter.print(changedPages);
         } catch (error) {
@@ -123,8 +130,11 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             throw new DiffRevertFailedError(revertError);
         }
         const beforeChanges = await LogseqPageDataPrinter.print(changedPages);
+        const changes = LogseqPageDataPrinter.createChanges(beforeChanges, afterChanges);
 
-        return {beforeChanges, afterChanges, hasGraphMutations: true};
+        return changes.length === 0
+            ? {kind: "no-reviewable-page-changes"}
+            : {kind: "reviewable-page-changes", changes};
     }
 
     async executeCancel(
@@ -166,11 +176,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 const located = findLastLogseqReversibleTransactionTracker(messages);
                 const transactionTracker =
                     located?.tracker ?? getLastLogseqReversibleTransactionTracker(messages);
-                let prepared: {
-                    beforeChanges: string;
-                    afterChanges: string;
-                    hasGraphMutations: boolean;
-                };
+                let prepared: PreparedReview;
                 try {
                     prepared = await this.prepareReview(transactionTracker);
                 } catch (error) {
@@ -208,16 +214,41 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                     return;
                 }
 
-                if (located) {
-                    await persistTrackerArtifact({...located, tracker: transactionTracker});
-                }
-
-                const {beforeChanges, afterChanges, hasGraphMutations} = prepared;
-                if (!hasGraphMutations) {
+                if (prepared.kind === "no-graph-mutations") {
                     addResult(await this.executeApprove({}, {messages}, transactionTracker));
                     return;
                 }
-                const isApproved = await showAIChangesReviewModal(beforeChanges, afterChanges);
+                if (prepared.kind === "no-reviewable-page-changes") {
+                    transactionTracker.clear();
+                    const artifact = createLogseqReversibleTransactionTrackerArtifact(
+                        transactionTracker
+                    );
+                    if (located) {
+                        try {
+                            await persistTrackerArtifact({...located, tracker: transactionTracker});
+                        } catch (error) {
+                            addResult(
+                                ChatToolResponse.error(
+                                    `No reviewable page changes were found, but the cleared tracker could not be persisted: ${getErrorMessageFromErrObj(error)}. Uncommitted changes were discarded.`,
+                                    artifact
+                                )
+                            );
+                            return;
+                        }
+                    }
+                    addResult(
+                        ChatToolResponse.success(
+                            {changes: "No reviewable page changes are available to commit."},
+                            artifact
+                        )
+                    );
+                    return;
+                }
+
+                if (located) {
+                    await persistTrackerArtifact({...located, tracker: transactionTracker});
+                }
+                const isApproved = await showAIChangesReviewModal(prepared.changes);
 
                 // Close button in showAIChangesReviewModal returns null
                 if (isApproved === null) {

@@ -6,6 +6,7 @@ import {
 } from "../../../../../src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {
     BaseReversibleCommand,
+    LogseqPageDataPrinter,
     type LogseqReversibleTransactionResult,
     LogseqReversibleTransactionTracker,
     LogseqReversibleTransactionTrackerSerializer
@@ -16,10 +17,15 @@ class TestMutationCommand extends BaseReversibleCommand<{status: "new" | "execut
     public readonly executeMock: ReturnType<
         typeof vi.fn<() => Promise<LogseqReversibleTransactionResult>>
     >;
+    public readonly revertMock = vi.fn<() => Promise<void>>();
 
-    public constructor(options?: {execute?: () => Promise<LogseqReversibleTransactionResult>}) {
+    public constructor(options?: {
+        execute?: () => Promise<LogseqReversibleTransactionResult>;
+        changedPages?: string[];
+    }) {
         super({status: "new"});
         this.executeMock = vi.fn(options?.execute ?? (async () => undefined));
+        this.changedPages = options?.changedPages ?? [];
     }
 
     public async execute(): Promise<LogseqReversibleTransactionResult> {
@@ -31,6 +37,7 @@ class TestMutationCommand extends BaseReversibleCommand<{status: "new" | "execut
 
     public async revert(): Promise<void> {
         this.assertCanRevert();
+        await this.revertMock();
         this.commandState.status = "new";
     }
 
@@ -98,5 +105,66 @@ describe("LogseqCommitChangesTool", () => {
         });
         expect(tracker.getCommands()).toEqual([]);
         expect(getArtifactTracker(response).getCommands()).toEqual([]);
+    });
+
+    test("prepares ordered page changes after execution and reversion", async () => {
+        const tracker = new LogseqReversibleTransactionTracker();
+        const command = new TestMutationCommand({changedPages: ["page-uuid"]});
+        tracker.addCommand(command);
+        const printSpy = vi
+            .spyOn(LogseqPageDataPrinter, "print")
+            .mockResolvedValueOnce([
+                {
+                    identityKey: "page-uuid",
+                    resolvedPageUuid: "page-uuid",
+                    exists: true,
+                    pageName: "Page",
+                    content: "* After"
+                }
+            ])
+            .mockResolvedValueOnce([
+                {
+                    identityKey: "page-uuid",
+                    resolvedPageUuid: "page-uuid",
+                    exists: true,
+                    pageName: "Page",
+                    content: "* Before"
+                }
+            ]);
+
+        const prepared = await new LogseqCommitChangesTool().prepareReview(tracker);
+
+        expect(command.executeMock).toHaveBeenCalledOnce();
+        expect(command.revertMock).toHaveBeenCalledOnce();
+        expect(printSpy).toHaveBeenNthCalledWith(1, ["page-uuid"]);
+        expect(printSpy).toHaveBeenNthCalledWith(2, ["page-uuid"]);
+        expect(prepared).toEqual({
+            kind: "reviewable-page-changes",
+            changes: [
+                {
+                    key: "changed-page-0",
+                    before: {pageName: "Page", content: "* Before"},
+                    after: {pageName: "Page", content: "* After"}
+                }
+            ]
+        });
+    });
+
+    test("does not prepare a modal review for equal page snapshots", async () => {
+        const tracker = new LogseqReversibleTransactionTracker();
+        tracker.addCommand(new TestMutationCommand({changedPages: ["page-uuid"]}));
+        vi.spyOn(LogseqPageDataPrinter, "print").mockResolvedValue([
+            {
+                identityKey: "page-uuid",
+                resolvedPageUuid: "page-uuid",
+                exists: true,
+                pageName: "Page",
+                content: "* Same"
+            }
+        ]);
+
+        await expect(new LogseqCommitChangesTool().prepareReview(tracker)).resolves.toEqual({
+            kind: "no-reviewable-page-changes"
+        });
     });
 });
