@@ -5,6 +5,6 @@ export const ATTACHMENT_IMAGE_FORMAT = ["png", "jpeg", "webp"] as const;
 
 export const CHAT_APP_AGENT_MAX_STEPS = 24;
 
-export const CHAT_APP_AGENT_ANYDOC_MAX_PAGE_PARSE = 20;
+export const CHAT_APP_AGENT_ANYDOC_PAGE_ERROR_THRESHOLD = 0.5;
 
 export const CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR = 120000;

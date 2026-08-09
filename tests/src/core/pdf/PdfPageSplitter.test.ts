@@ -9,19 +9,13 @@ async function createPdf(pageCount: number): Promise<Uint8Array> {
 }
 
 describe("PdfPageSplitter", () => {
-    test("extracts an inclusive range as one-page PDFs", async () => {
-        const pages = await PdfPageSplitter.split(await createPdf(3), 2, 3);
+    test("extracts all pages as one-page PDFs", async () => {
+        const pages = await PdfPageSplitter.split(await createPdf(3));
 
-        expect(pages.map((page) => page.pageNo)).toEqual([2, 3]);
+        expect(pages.map((page) => page.pageNo)).toEqual([1, 2, 3]);
         for (const page of pages) {
             await expect(PDFDocument.load(page.bytes)).resolves.toMatchObject({});
             expect((await PDFDocument.load(page.bytes)).getPageCount()).toBe(1);
         }
-    });
-
-    test("rejects ranges outside the document", async () => {
-        await expect(PdfPageSplitter.split(await createPdf(2), 2, 3)).rejects.toThrow(
-            "invalid for a document with 2 pages"
-        );
     });
 });
