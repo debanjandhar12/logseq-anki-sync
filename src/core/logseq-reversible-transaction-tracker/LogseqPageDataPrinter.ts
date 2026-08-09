@@ -70,8 +70,8 @@ export class LogseqPageDataPrinter {
         const [firstLine = "", ...remainingLines] = lines;
 
         return [
-            `${bulletIndent}* ${firstLine}`,
-            ...remainingLines.map((line) => `${contentIndent}${line}`)
+            `${bulletIndent}* ${firstLine.trim()}`,
+            ...remainingLines.map((line) => `${contentIndent}${line.trim()}`)
         ];
     }
 
