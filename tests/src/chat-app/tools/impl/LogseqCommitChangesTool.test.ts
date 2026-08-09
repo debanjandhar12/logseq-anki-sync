@@ -119,7 +119,8 @@ describe("LogseqCommitChangesTool", () => {
                     resolvedPageUuid: "page-uuid",
                     exists: true,
                     pageName: "Page",
-                    content: "* After"
+                    content: "* After",
+                    pageType: "logseq-tag-page"
                 }
             ])
             .mockResolvedValueOnce([
@@ -128,7 +129,8 @@ describe("LogseqCommitChangesTool", () => {
                     resolvedPageUuid: "page-uuid",
                     exists: true,
                     pageName: "Page",
-                    content: "* Before"
+                    content: "* Before",
+                    pageType: "logseq-tag-page"
                 }
             ]);
 
@@ -143,8 +145,16 @@ describe("LogseqCommitChangesTool", () => {
             changes: [
                 {
                     key: "changed-page-0",
-                    before: {pageName: "Page", content: "* Before"},
-                    after: {pageName: "Page", content: "* After"}
+                    before: {
+                        pageName: "Page",
+                        content: "* Before",
+                        pageType: "logseq-tag-page"
+                    },
+                    after: {
+                        pageName: "Page",
+                        content: "* After",
+                        pageType: "logseq-tag-page"
+                    }
                 }
             ]
         });
@@ -159,7 +169,8 @@ describe("LogseqCommitChangesTool", () => {
                 resolvedPageUuid: "page-uuid",
                 exists: true,
                 pageName: "Page",
-                content: "* Same"
+                content: "* Same",
+                pageType: "logseq-page"
             }
         ]);
 

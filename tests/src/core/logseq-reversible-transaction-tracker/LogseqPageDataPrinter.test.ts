@@ -5,6 +5,7 @@ import {
     type LogseqPrintedPageSnapshot,
     NON_EXISTENT_PAGE_NAME
 } from "../../../../src/core/logseq-reversible-transaction-tracker";
+import {LogseqEditor} from "../../../../src/logseq/LogseqEditor";
 import {LogseqPropertiesHelper} from "../../../../src/logseq/LogseqPropertiesHelper";
 
 vi.mock("../../../../src/logseq/LogseqPropertiesHelper", () => ({
@@ -13,9 +14,17 @@ vi.mock("../../../../src/logseq/LogseqPropertiesHelper", () => ({
         getPageBlocksTree: vi.fn()
     }
 }));
+vi.mock("../../../../src/logseq/LogseqEditor", () => ({
+    LogseqEditor: {
+        isTagBlock: vi.fn(),
+        isPropertyBlock: vi.fn()
+    }
+}));
 
 const getPage = vi.mocked(LogseqPropertiesHelper.getPage);
 const getPageBlocksTree = vi.mocked(LogseqPropertiesHelper.getPageBlocksTree);
+const isTagBlock = vi.mocked(LogseqEditor.isTagBlock);
+const isPropertyBlock = vi.mocked(LogseqEditor.isPropertyBlock);
 
 function page(overrides: Partial<PageEntity> = {}): PageEntity {
     return {
@@ -44,6 +53,7 @@ function snapshot(overrides: Partial<LogseqPrintedPageSnapshot> = {}): LogseqPri
         exists: true,
         pageName: "Test Page",
         content: "* Block content",
+        pageType: "logseq-page",
         ...overrides
     };
 }
@@ -51,6 +61,8 @@ function snapshot(overrides: Partial<LogseqPrintedPageSnapshot> = {}): LogseqPri
 describe("LogseqPageDataPrinter", () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        isTagBlock.mockResolvedValue(false);
+        isPropertyBlock.mockResolvedValue(false);
     });
 
     test("returns ordered snapshots and caches pages resolved by multiple identities", async () => {
@@ -70,18 +82,22 @@ describe("LogseqPageDataPrinter", () => {
                 resolvedPageUuid: "page-uuid",
                 exists: true,
                 pageName: "Hello World",
-                content: "* Parent Block"
+                content: "* Parent Block",
+                pageType: "logseq-page"
             },
             {
                 identityKey: "page-uuid",
                 resolvedPageUuid: "page-uuid",
                 exists: true,
                 pageName: "Hello World",
-                content: "* Parent Block"
+                content: "* Parent Block",
+                pageType: "logseq-page"
             }
         ]);
         expect(getPage).toHaveBeenCalledTimes(2);
         expect(getPageBlocksTree).toHaveBeenCalledOnce();
+        expect(isTagBlock).toHaveBeenCalledOnce();
+        expect(isPropertyBlock).toHaveBeenCalledOnce();
     });
 
     test("represents unresolved and soft-deleted pages as nonexistent", async () => {
@@ -100,17 +116,54 @@ describe("LogseqPageDataPrinter", () => {
                 resolvedPageUuid: null,
                 exists: false,
                 pageName: NON_EXISTENT_PAGE_NAME,
-                content: ""
+                content: "",
+                pageType: null
             },
             {
                 identityKey: "deleted-uuid",
                 resolvedPageUuid: "deleted-uuid",
                 exists: false,
                 pageName: NON_EXISTENT_PAGE_NAME,
-                content: ""
+                content: "",
+                pageType: null
             }
         ]);
         expect(getPageBlocksTree).not.toHaveBeenCalled();
+        expect(isTagBlock).not.toHaveBeenCalled();
+        expect(isPropertyBlock).not.toHaveBeenCalled();
+    });
+
+    test("classifies tags before property pages", async () => {
+        getPage.mockResolvedValue(page());
+        getPageBlocksTree.mockResolvedValue([]);
+        isTagBlock.mockResolvedValue(true);
+
+        const [printedPage] = await LogseqPageDataPrinter.print(["page-uuid"]);
+
+        expect(printedPage.pageType).toBe("logseq-tag-page");
+        expect(isPropertyBlock).not.toHaveBeenCalled();
+    });
+
+    test("classifies property pages after ruling out tags", async () => {
+        const propertyPage = page({uuid: "property-uuid"});
+        getPage.mockResolvedValue(propertyPage);
+        getPageBlocksTree.mockResolvedValue([]);
+        isPropertyBlock.mockResolvedValue(true);
+
+        const [printedPage] = await LogseqPageDataPrinter.print(["property-uuid"]);
+
+        expect(printedPage.pageType).toBe("logseq-property-page");
+        expect(isTagBlock).toHaveBeenCalledWith("property-uuid");
+        expect(isPropertyBlock).toHaveBeenCalledWith("property-uuid");
+    });
+
+    test("classifies ordinary pages after ruling out tags and properties", async () => {
+        getPage.mockResolvedValue(page());
+        getPageBlocksTree.mockResolvedValue([]);
+
+        const [printedPage] = await LogseqPageDataPrinter.print(["page-uuid"]);
+
+        expect(printedPage.pageType).toBe("logseq-page");
     });
 
     test("prints page and block properties before heading-free content", () => {
@@ -181,8 +234,8 @@ describe("LogseqPageDataPrinter.createChanges", () => {
         expect(changes).toEqual([
             {
                 key: "changed-page-0",
-                before: {pageName: "Test Page", content: "* Before"},
-                after: {pageName: "Test Page", content: "* After"}
+                before: {pageName: "Test Page", content: "* Before", pageType: "logseq-page"},
+                after: {pageName: "Test Page", content: "* After", pageType: "logseq-page"}
             }
         ]);
     });
@@ -208,8 +261,8 @@ describe("LogseqPageDataPrinter.createChanges", () => {
         expect(changes).toEqual([
             {
                 key: "changed-page-0",
-                before: {pageName: "Old Name", content: "* Block content"},
-                after: {pageName: "New Name", content: "* Block content"}
+                before: {pageName: "Old Name", content: "* Block content", pageType: "logseq-page"},
+                after: {pageName: "New Name", content: "* Block content", pageType: "logseq-page"}
             }
         ]);
     });
@@ -233,13 +286,21 @@ describe("LogseqPageDataPrinter.createChanges", () => {
         expect(changes.map(({key, before, after}) => ({key, before, after}))).toEqual([
             {
                 key: "changed-page-0",
-                before: {pageName: "First Before", content: "* Block content"},
-                after: {pageName: "First After", content: "* Block content"}
+                before: {
+                    pageName: "First Before",
+                    content: "* Block content",
+                    pageType: "logseq-page"
+                },
+                after: {
+                    pageName: "First After",
+                    content: "* Block content",
+                    pageType: "logseq-page"
+                }
             },
             {
                 key: "changed-page-1",
-                before: {pageName: "Second", content: "* Old"},
-                after: {pageName: "Second", content: "* New"}
+                before: {pageName: "Second", content: "* Old", pageType: "logseq-page"},
+                after: {pageName: "Second", content: "* New", pageType: "logseq-page"}
             }
         ]);
     });
@@ -249,15 +310,23 @@ describe("LogseqPageDataPrinter.createChanges", () => {
             label: "created",
             before: snapshot({exists: false, pageName: NON_EXISTENT_PAGE_NAME, content: ""}),
             after: snapshot({pageName: "Created Page"}),
-            expectedBefore: {pageName: NON_EXISTENT_PAGE_NAME, content: ""},
-            expectedAfter: {pageName: "Created Page", content: "* Block content"}
+            expectedBefore: {pageName: NON_EXISTENT_PAGE_NAME, content: "", pageType: null},
+            expectedAfter: {
+                pageName: "Created Page",
+                content: "* Block content",
+                pageType: "logseq-page"
+            }
         },
         {
             label: "deleted",
             before: snapshot({pageName: "Deleted Page"}),
             after: snapshot({exists: false, pageName: NON_EXISTENT_PAGE_NAME, content: ""}),
-            expectedBefore: {pageName: "Deleted Page", content: "* Block content"},
-            expectedAfter: {pageName: NON_EXISTENT_PAGE_NAME, content: ""}
+            expectedBefore: {
+                pageName: "Deleted Page",
+                content: "* Block content",
+                pageType: "logseq-page"
+            },
+            expectedAfter: {pageName: NON_EXISTENT_PAGE_NAME, content: "", pageType: null}
         }
     ])("represents a $label page with an empty nonexistent side", (testCase) => {
         const [change] = LogseqPageDataPrinter.createChanges([testCase.before], [testCase.after]);
@@ -288,17 +357,26 @@ describe("LogseqPageDataPrinter.createChanges", () => {
         expect(LogseqPageDataPrinter.createChanges([missing], [activeEmpty])).toEqual([
             {
                 key: "changed-page-0",
-                before: {pageName: NON_EXISTENT_PAGE_NAME, content: ""},
-                after: {pageName: "Empty Page", content: ""}
+                before: {pageName: NON_EXISTENT_PAGE_NAME, content: "", pageType: null},
+                after: {pageName: "Empty Page", content: "", pageType: "logseq-page"}
             }
         ]);
         expect(LogseqPageDataPrinter.createChanges([activeEmpty], [missing])).toEqual([
             {
                 key: "changed-page-0",
-                before: {pageName: "Empty Page", content: ""},
-                after: {pageName: NON_EXISTENT_PAGE_NAME, content: ""}
+                before: {pageName: "Empty Page", content: "", pageType: "logseq-page"},
+                after: {pageName: NON_EXISTENT_PAGE_NAME, content: "", pageType: null}
             }
         ]);
+    });
+
+    test("keeps changes that differ only by page type", () => {
+        expect(
+            LogseqPageDataPrinter.createChanges(
+                [snapshot({pageType: "logseq-page"})],
+                [snapshot({pageType: "logseq-tag-page"})]
+            )
+        ).toHaveLength(1);
     });
 
     test("rejects snapshots captured from different identity lists", () => {

@@ -1,6 +1,7 @@
 export * from "./commands";
 export {
     LogseqPageDataPrinter,
+    type LogseqPageType,
     type LogseqPrintedPageChange,
     type LogseqPrintedPageChangeSide,
     type LogseqPrintedPageSnapshot,

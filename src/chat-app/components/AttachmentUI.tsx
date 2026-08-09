@@ -1,14 +1,5 @@
 import {AttachmentPrimitive, useAui, useAuiState} from "@assistant-ui/react";
-import {
-    AlertCircleIcon,
-    CircleParkingIcon,
-    FileIcon,
-    FileTextIcon,
-    HashIcon,
-    ImageIcon,
-    Loader2Icon,
-    TextSelectIcon
-} from "lucide-react";
+import {AlertCircleIcon, Loader2Icon} from "lucide-react";
 import type {FC} from "react";
 import {createLogger, LoggerCategory} from "src/logger";
 import {LogseqNavigator} from "src/logseq/LogseqNavigator";
@@ -25,6 +16,7 @@ import {
     TooltipTrigger
 } from "src/shadcn/radix-ui/tooltip";
 import {LOGSEQ_ATTACHMENT_TYPES} from "../runtime/LogseqAttachmentAdapter";
+import {getLogseqAttachmentIcon} from "../utils/getLogseqAttachmentIcon";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 const NAVIGABLE_ATTACHMENT_TYPES = new Set<string>([
@@ -150,22 +142,6 @@ export const AttachmentUI: FC = () => {
 
 const LogseqAttachmentThumb: FC = () => {
     const type = useAuiState((s) => s.attachment.type);
-    const iconClassName = "size-4 text-muted-foreground";
-
-    switch (type) {
-        case "image":
-            return <ImageIcon className={iconClassName} />;
-        case LOGSEQ_ATTACHMENT_TYPES.block:
-            return <TextSelectIcon className={iconClassName} />;
-        case LOGSEQ_ATTACHMENT_TYPES.page:
-            return <FileIcon className={iconClassName} />;
-        case LOGSEQ_ATTACHMENT_TYPES.propertyPage:
-            return <CircleParkingIcon className={iconClassName} />;
-        case LOGSEQ_ATTACHMENT_TYPES.tagPage:
-            return <HashIcon className={iconClassName} />;
-        case LOGSEQ_ATTACHMENT_TYPES.pdf:
-            return <FileTextIcon className={iconClassName} />;
-        default:
-            return <AttachmentThumb />;
-    }
+    const Icon = getLogseqAttachmentIcon(type);
+    return Icon ? <Icon className="size-4 text-muted-foreground" /> : <AttachmentThumb />;
 };

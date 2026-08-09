@@ -1,5 +1,6 @@
 import type React from "react";
 import {DiffViewer} from "src/chat-app/components/DiffViewer";
+import {getLogseqAttachmentIcon} from "src/chat-app/utils/getLogseqAttachmentIcon";
 import type {LogseqPrintedPageChange} from "src/core/logseq-reversible-transaction-tracker";
 import {Modal} from "../modals/core/Modal";
 import {ModalFooter} from "../modals/core/ModalFooter";
@@ -17,28 +18,32 @@ export interface AIChangesReviewModalProps {
 export function createAIChangesReviewDiffViewers(
     changes: LogseqPrintedPageChange[]
 ): React.ReactElement[] {
-    return changes.map((change) => (
-        <DiffViewer
-            key={change.key}
-            oldFile={{
-                name: change.before.pageName,
-                content: change.before.content
-            }}
-            newFile={{
-                name: change.after.pageName,
-                content: change.after.content
-            }}
-            language="markdown"
-            viewMode="split"
-            size="sm"
-            showLineNumbers={false}
-            showIcon={false}
-            showStats={true}
-            variant="ghost"
-            className="rounded border border-border bg-secondary-background"
-            contentClassName="max-h-[60vh] overflow-auto"
-        />
-    ));
+    return changes.map((change) => {
+        const pageType = change.before.pageType ?? change.after.pageType;
+        return (
+            <DiffViewer
+                key={change.key}
+                oldFile={{
+                    name: change.before.pageName,
+                    content: change.before.content
+                }}
+                newFile={{
+                    name: change.after.pageName,
+                    content: change.after.content
+                }}
+                language="markdown"
+                viewMode="split"
+                size="sm"
+                showLineNumbers={false}
+                showIcon={true}
+                fileIcon={getLogseqAttachmentIcon(pageType)}
+                showStats={true}
+                variant="ghost"
+                className="rounded border border-border bg-secondary-background"
+                contentClassName="max-h-[60vh] overflow-auto"
+            />
+        );
+    });
 }
 
 export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> = ({

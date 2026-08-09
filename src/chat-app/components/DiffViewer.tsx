@@ -1,3 +1,4 @@
+import type {LucideIcon} from "lucide-react";
 import {useMemo, useState} from "react";
 import {
     computeDiff,
@@ -15,6 +16,7 @@ import {cn} from "src/shadcn/lib/utils";
 /**
  * Changes:
  * (a) Replaced DiffViewerHeader with an animated collapsible file header.
+ * (b) Added support for a custom file icon in place of the extension badge.
  */
 export function DiffViewer({
     code,
@@ -28,8 +30,9 @@ export function DiffViewer({
     variant,
     size,
     className,
-    contentClassName
-}: DiffViewerProps & {contentClassName?: string}) {
+    contentClassName,
+    fileIcon
+}: DiffViewerProps & {contentClassName?: string; fileIcon?: LucideIcon | null}) {
     const diffPatch = patch ?? code;
 
     const parsedFiles = useMemo(() => {
@@ -75,6 +78,7 @@ export function DiffViewer({
                     showLineNumbers={showLineNumbers}
                     viewMode={viewMode}
                     contentClassName={contentClassName}
+                    fileIcon={fileIcon}
                 />
             ))}
         </div>
@@ -87,7 +91,8 @@ function DiffViewerFile({
     showStats,
     showLineNumbers,
     viewMode,
-    contentClassName
+    contentClassName,
+    fileIcon
 }: {
     file: ReturnType<typeof parsePatch>[number];
     showIcon: boolean;
@@ -95,6 +100,7 @@ function DiffViewerFile({
     showLineNumbers: boolean;
     viewMode: "split" | "unified";
     contentClassName?: string;
+    fileIcon?: LucideIcon | null;
 }) {
     const [isOpen, setIsOpen] = useState(true);
 
@@ -108,6 +114,7 @@ function DiffViewerFile({
                 isOpen={isOpen}
                 showIcon={showIcon}
                 showStats={showStats}
+                fileIcon={fileIcon}
                 onToggle={() => setIsOpen((current) => !current)}
             />
             <div
@@ -162,6 +169,7 @@ function DiffViewerCollapsibleHeader({
     isOpen,
     showIcon,
     showStats,
+    fileIcon,
     onToggle
 }: {
     oldName?: string;
@@ -171,11 +179,13 @@ function DiffViewerCollapsibleHeader({
     isOpen: boolean;
     showIcon: boolean;
     showStats: boolean;
+    fileIcon?: LucideIcon | null;
     onToggle: () => void;
 }) {
     if (!oldName && !newName) return null;
 
     const displayName = newName || oldName;
+    const FileIcon = fileIcon;
 
     return (
         <button
@@ -195,7 +205,15 @@ function DiffViewerCollapsibleHeader({
                 )}>
                 &gt;
             </span>
-            {showIcon && <DiffViewerFileBadge filename={displayName} />}
+            {showIcon &&
+                (FileIcon ? (
+                    <FileIcon
+                        data-slot="diff-viewer-file-icon"
+                        className="size-4 shrink-0 text-muted-foreground"
+                    />
+                ) : (
+                    <DiffViewerFileBadge filename={displayName} />
+                ))}
             <span className="min-w-0 flex-1 truncate">
                 {oldName && newName && oldName !== newName ? (
                     <>

@@ -1,8 +1,10 @@
 import type {BlockEntity, PageEntity, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {isPageSoftDeleted} from "src/core/logseq-reversible-transaction-tracker/commands/utils/isPageSoftDeleted";
+import {LogseqEditor} from "src/logseq/LogseqEditor";
 import {LogseqPropertiesHelper} from "src/logseq/LogseqPropertiesHelper";
 
 export const NON_EXISTENT_PAGE_NAME = "[DOES NOT EXIST]";
+export type LogseqPageType = "logseq-tag-page" | "logseq-property-page" | "logseq-page";
 
 export interface LogseqPrintedPageSnapshot {
     identityKey: string;
@@ -10,11 +12,13 @@ export interface LogseqPrintedPageSnapshot {
     exists: boolean;
     pageName: string;
     content: string;
+    pageType: LogseqPageType | null;
 }
 
 export interface LogseqPrintedPageChangeSide {
     pageName: string;
     content: string;
+    pageType: LogseqPageType | null;
 }
 
 export interface LogseqPrintedPageChange {
@@ -48,7 +52,8 @@ export class LogseqPageDataPrinter {
                 const blocks = await LogseqPropertiesHelper.getPageBlocksTree(page.uuid);
                 printedPage = {
                     pageName: page.originalName ?? page.name,
-                    content: LogseqPageDataPrinter.printPageTree(page, blocks)
+                    content: LogseqPageDataPrinter.printPageTree(page, blocks),
+                    pageType: await LogseqPageDataPrinter.getPageType(page.uuid)
                 };
                 printedPageCache.set(page.uuid, printedPage);
             }
@@ -118,7 +123,8 @@ export class LogseqPageDataPrinter {
             const afterSide = LogseqPageDataPrinter.selectExistingSide(after, indexes);
             if (
                 beforeSide.pageName === afterSide.pageName &&
-                beforeSide.content === afterSide.content
+                beforeSide.content === afterSide.content &&
+                beforeSide.pageType === afterSide.pageType
             ) {
                 return [];
             }
@@ -198,7 +204,8 @@ export class LogseqPageDataPrinter {
             resolvedPageUuid,
             exists: false,
             pageName: NON_EXISTENT_PAGE_NAME,
-            content: ""
+            content: "",
+            pageType: null
         };
     }
 
@@ -207,7 +214,23 @@ export class LogseqPageDataPrinter {
         indexes: number[]
     ): LogseqPrintedPageChangeSide {
         const snapshot = indexes.map((index) => snapshots[index]).find(({exists}) => exists);
-        if (!snapshot) return {pageName: NON_EXISTENT_PAGE_NAME, content: ""};
-        return {pageName: snapshot.pageName, content: snapshot.content};
+        if (!snapshot) {
+            return {pageName: NON_EXISTENT_PAGE_NAME, content: "", pageType: null};
+        }
+        return {
+            pageName: snapshot.pageName,
+            content: snapshot.content,
+            pageType: snapshot.pageType
+        };
+    }
+
+    private static async getPageType(pageUuid: string): Promise<LogseqPageType> {
+        if (await LogseqEditor.isTagBlock(pageUuid)) return "logseq-tag-page";
+
+        if (await LogseqEditor.isPropertyBlock(pageUuid)) {
+            return "logseq-property-page";
+        }
+
+        return "logseq-page";
     }
 }
