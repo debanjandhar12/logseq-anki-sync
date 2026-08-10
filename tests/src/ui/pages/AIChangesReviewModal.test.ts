@@ -1,8 +1,12 @@
 import {FileIcon, HashIcon} from "lucide-react";
-import {describe, expect, test} from "vitest";
+import type {ReactElement, ReactNode} from "react";
+import {describe, expect, test, vi} from "vitest";
 import {DiffViewer} from "../../../../src/chat-app/components/DiffViewer";
 import type {LogseqPrintedPageChange} from "../../../../src/core/logseq-reversible-transaction-tracker";
-import {createAIChangesReviewDiffViewers} from "../../../../src/ui/pages/AIChangesReviewModal";
+import {
+    AIChangesReviewModalFooter,
+    createAIChangesReviewDiffViewers
+} from "../../../../src/ui/pages/AIChangesReviewModal";
 
 function change(overrides: Partial<LogseqPrintedPageChange> = {}): LogseqPrintedPageChange {
     return {
@@ -37,5 +41,40 @@ describe("createAIChangesReviewDiffViewers", () => {
         ]);
 
         expect((viewer.props as {fileIcon: unknown}).fileIcon).toBe(FileIcon);
+    });
+});
+
+describe("AIChangesReviewModalFooter", () => {
+    test("renders the ghost Continue action separately from Commit and Discard", () => {
+        const footer = AIChangesReviewModalFooter({
+            onContinue: vi.fn(),
+            onDiscard: vi.fn(),
+            onCommit: vi.fn()
+        });
+
+        expect(footer).not.toBeNull();
+        if (!footer) return;
+        const footerElement = footer as ReactElement<{children: ReactElement[]}>;
+        const [continueContainer, actionContainer] = footerElement.props.children;
+        const continueButton = continueContainer as ReactElement<{children: ReactElement}>;
+        const actions = actionContainer as ReactElement<{children: ReactElement[]}>;
+        const [commitButton, discardButton] = actions.props.children;
+        const continueAction = continueButton.props.children as ReactElement<{
+            color: string;
+            children: ReactNode;
+        }>;
+
+        expect(continueAction.props).toMatchObject({
+            color: "ghost",
+            children: "Continue (Commit Later)"
+        });
+        expect(commitButton.props).toMatchObject({
+            color: "primary",
+            children: "Commit changes"
+        });
+        expect(discardButton.props).toMatchObject({
+            color: "failed",
+            children: "Discard uncommitted changes"
+        });
     });
 });

@@ -1,24 +1,27 @@
-import {AuiIf, ComposerPrimitive, useAuiState} from "@assistant-ui/react";
+import {ComposerPrimitive, useAuiState} from "@assistant-ui/react";
 import {ArrowUpIcon, SquareIcon} from "lucide-react";
 import type {FC} from "react";
 import {ModelSelector} from "src/chat-app/components/ModelSelector";
 import {useModelList} from "src/chat-app/hooks/useModelList";
+import {useStopThread} from "src/chat-app/hooks/useStopThread";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
 import {Button} from "src/shadcn/radix-ui/button";
+
 // import {ComposerAddAttachment} from "src/shadcn/assistant-ui/attachment";
 
 /**
  * Changes:
  * (a) Removed ComposerAddAttachment button and added ModelSelector instead for flex positioning
- * (b) Shows a disabled cancel button while the assistant is waiting for a required user action
+ * (b) Delegates running and required-action termination to the project stop hook.
  * (c) Retains project-owned controls while matching current upstream sizing.
  * (d) Changed tooltop side to top.
  * (e) Added ModelSelector for model and reasoning effort selection.
  */
 export const ComposerAction: FC = () => {
-    const requiresActionState = useAuiState(
-        (state) => state.thread.messages.at(-1)?.status?.type === "requires-action"
-    );
+    const isRunning = useAuiState((state) => state.thread.isRunning);
+    const lastMessage = useAuiState((state) => state.thread.messages.at(-1));
+    const requiresActionState = lastMessage?.status?.type === "requires-action";
+    const {stop, isStopping} = useStopThread();
     const models = useModelList();
 
     return (
@@ -33,7 +36,7 @@ export const ComposerAction: FC = () => {
                 align="start"
                 className="max-w-[180px]"
             />
-            <AuiIf condition={(state) => !state.thread.isRunning && !requiresActionState}>
+            {!isRunning && !requiresActionState && (
                 <ComposerPrimitive.Send asChild>
                     <TooltipIconButton
                         tooltip="Send message"
@@ -46,20 +49,19 @@ export const ComposerAction: FC = () => {
                         <ArrowUpIcon className="aui-composer-send-icon size-4.5" />
                     </TooltipIconButton>
                 </ComposerPrimitive.Send>
-            </AuiIf>
-            <AuiIf condition={(state) => state.thread.isRunning || requiresActionState}>
-                <ComposerPrimitive.Cancel asChild>
-                    <Button
-                        type="button"
-                        variant="default"
-                        size="icon"
-                        className="aui-composer-cancel size-7 rounded-full"
-                        aria-label="Stop generating"
-                        disabled={requiresActionState}>
-                        <SquareIcon className="aui-composer-cancel-icon size-3.5 fill-current" />
-                    </Button>
-                </ComposerPrimitive.Cancel>
-            </AuiIf>
+            )}
+            {(isRunning || requiresActionState) && (
+                <Button
+                    type="button"
+                    variant="default"
+                    size="icon"
+                    className="aui-composer-cancel size-7 rounded-full"
+                    aria-label="Stop generating"
+                    disabled={isStopping}
+                    onClick={() => void stop()}>
+                    <SquareIcon className="aui-composer-cancel-icon size-3.5 fill-current" />
+                </Button>
+            )}
         </div>
     );
 };

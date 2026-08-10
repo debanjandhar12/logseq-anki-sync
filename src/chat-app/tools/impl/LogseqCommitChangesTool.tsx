@@ -3,6 +3,7 @@ import {GitCommitIcon} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 import {ToolFallback} from "src/chat-app/components/ToolFallback";
 import {usePersistLogseqTrackerArtifact} from "src/chat-app/hooks/usePersistLogseqTrackerArtifact";
+import {useStopThread} from "src/chat-app/hooks/useStopThread";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithCustomUI} from "src/chat-app/tools/base/BaseChatToolWithCustomUI";
 import {
@@ -29,6 +30,8 @@ import {showAIChangesReviewModal} from "src/ui/launchers/showAIChangesReviewModa
 import {z} from "zod";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
+const COMMIT_LATER_MESSAGE =
+    "Changes not committed. User will commit later. Do not call this tool immediately again without feedback from user";
 
 class DiffRevertFailedError extends Error {
     public constructor(public readonly cause: unknown) {
@@ -155,6 +158,8 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     > = (props) => {
         const {result, addResult, status} = props;
         const messages = useAuiState((state) => state.thread.messages);
+        const messageId = useAuiState((state) => state.message.id);
+        const {stop} = useStopThread();
         const [isReviewing, setIsReviewing] = useState(false);
         const noChangesResultAddedRef = useRef(false);
         const persistTrackerArtifact = usePersistLogseqTrackerArtifact();
@@ -220,9 +225,8 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 }
                 if (prepared.kind === "no-reviewable-page-changes") {
                     transactionTracker.clear();
-                    const artifact = createLogseqReversibleTransactionTrackerArtifact(
-                        transactionTracker
-                    );
+                    const artifact =
+                        createLogseqReversibleTransactionTrackerArtifact(transactionTracker);
                     if (located) {
                         try {
                             await persistTrackerArtifact({...located, tracker: transactionTracker});
@@ -248,17 +252,45 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 if (located) {
                     await persistTrackerArtifact({...located, tracker: transactionTracker});
                 }
-                const isApproved = await showAIChangesReviewModal(prepared.changes);
+                const reviewResult = await showAIChangesReviewModal(prepared.changes);
 
-                // Close button in showAIChangesReviewModal returns null
-                if (isApproved === null) {
-                    return;
-                }
-
-                if (!isApproved) {
-                    addResult(await this.executeCancel(transactionTracker));
-                } else {
-                    addResult(await this.executeApprove({}, {messages}, transactionTracker));
+                switch (reviewResult) {
+                    case null:
+                        // Header close and Escape defer review and leave the tool pending.
+                        return;
+                    case "discard":
+                        addResult(await this.executeCancel(transactionTracker));
+                        return;
+                    case "commit":
+                        addResult(await this.executeApprove({}, {messages}, transactionTracker));
+                        return;
+                    case "continue-later": {
+                        const stopResult = await stop({
+                            errorMessage: COMMIT_LATER_MESSAGE,
+                            target: {
+                                messageId,
+                                toolCallId: props.toolCallId,
+                                toolName: LogseqCommitChangesTool.NAME
+                            }
+                        });
+                        if (!stopResult?.didStop) {
+                            logger.error(
+                                "Unable to defer CommitTool because its pending call changed"
+                            );
+                            try {
+                                await logseq.UI.showMsg(
+                                    "The commit review could not be deferred and remains pending",
+                                    "error"
+                                );
+                            } catch (notificationError) {
+                                logger.error(
+                                    "Failed to show CommitTool defer error",
+                                    notificationError
+                                );
+                            }
+                        }
+                        return;
+                    }
                 }
             } catch (error) {
                 addResult(

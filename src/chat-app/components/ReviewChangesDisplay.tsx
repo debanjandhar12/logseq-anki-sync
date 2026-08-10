@@ -9,8 +9,8 @@ import {ToolResponse} from "assistant-stream";
 import type {ReadonlyJSONObject} from "assistant-stream/utils";
 import {GitCommitIcon, Trash2Icon, Undo2Icon} from "lucide-react";
 import {type FC, useMemo, useState} from "react";
-import {cancelPendingToolCallsInThread} from "src/chat-app/runtime/cancelPendingToolCallsInThread";
 import {persistLogseqReversibleTransactionTrackerArtifact} from "src/chat-app/runtime/persistLogseqReversibleTransactionTrackerArtifact";
+import {stopThread} from "src/chat-app/runtime/stopThread";
 import {LogseqClearUncommittedChangesTool} from "src/chat-app/tools/impl/LogseqClearUncommittedChangesTool";
 import {
     findLastLogseqReversibleTransactionTracker,
@@ -78,21 +78,19 @@ export const getReviewChangesLifecycleLabel = (
 type ReviewChangesNotification = (message: string) => Promise<unknown>;
 
 export interface ReviewChangesActionDependencies {
-    cancelPendingToolCalls: typeof cancelPendingToolCallsInThread;
     createDiscardTool: () => LogseqClearUncommittedChangesTool;
     notify: ReviewChangesNotification;
     persistTrackerArtifact: typeof persistLogseqReversibleTransactionTrackerArtifact;
     showConfirm: typeof showConfirmModal;
-    waitForThreadRunToStop: typeof waitForThreadRunToStop;
+    stopThread: typeof stopThread;
 }
 
 const defaultReviewChangesActionDependencies: ReviewChangesActionDependencies = {
-    cancelPendingToolCalls: cancelPendingToolCallsInThread,
     createDiscardTool: () => new LogseqClearUncommittedChangesTool(),
     notify: (message) => logseq.UI.showMsg(message, "error"),
     persistTrackerArtifact: persistLogseqReversibleTransactionTrackerArtifact,
     showConfirm: showConfirmModal,
-    waitForThreadRunToStop
+    stopThread
 };
 
 export async function revertAndKeepReviewChanges(
@@ -144,8 +142,7 @@ export async function revertAndDiscardReviewChanges(
 ): Promise<boolean> {
     const actions = {...defaultReviewChangesActionDependencies, ...dependencies};
     if (runtime.getState().isRunning) {
-        runtime.cancelRun();
-        await actions.waitForThreadRunToStop(runtime);
+        await actions.stopThread({threadId, runtime});
     }
 
     const confirmed = await actions.showConfirm(
@@ -157,7 +154,7 @@ export async function revertAndDiscardReviewChanges(
     );
     if (!confirmed) return false;
 
-    await actions.cancelPendingToolCalls({threadId, runtime});
+    await actions.stopThread({threadId, runtime});
     const currentMessages = runtime.getState().messages;
     const output = await actions.createDiscardTool().execute({}, {messages: currentMessages});
     appendSyntheticToolResponse(runtime, LogseqClearUncommittedChangesTool.NAME, {}, output);
@@ -334,17 +331,5 @@ async function showReviewChangesOperationError(operation: string, error: unknown
             `Failed to show uncommitted-change operation error: ${operation}`,
             notificationError
         );
-    }
-}
-
-export async function waitForThreadRunToStop(runtime: {
-    getState: () => {isRunning: boolean};
-}): Promise<void> {
-    const deadline = Date.now() + 3_000;
-    while (runtime.getState().isRunning && Date.now() < deadline) {
-        await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    if (runtime.getState().isRunning) {
-        throw new Error("Timed out while stopping the current chat run");
     }
 }

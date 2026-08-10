@@ -208,19 +208,17 @@ describe("ReviewChangesDisplay", () => {
             order.push("confirm");
             return false;
         });
-        const waitForThreadRunToStop = vi.fn(async () => {
+        const stopThread = vi.fn(async () => {
+            runtime.cancelRun();
             order.push("wait");
-        });
-        const cancelPendingToolCalls = vi.fn(async () => {
-            order.push("cancel-pending");
+            return {didStop: true, kind: "active-run" as const};
         });
         const createDiscardTool = vi.fn();
         await expect(
             revertAndDiscardReviewChanges("thread-1", runtime, {
-                cancelPendingToolCalls,
                 createDiscardTool,
                 showConfirm,
-                waitForThreadRunToStop
+                stopThread
             })
         ).resolves.toBe(false);
 
@@ -229,7 +227,7 @@ describe("ReviewChangesDisplay", () => {
             "Revert applied uncommitted changes and discard all uncommitted changes?",
             {confirmText: "Revert and discard", cancelText: "Keep uncommitted changes"}
         );
-        expect(cancelPendingToolCalls).not.toHaveBeenCalled();
+        expect(stopThread).toHaveBeenCalledOnce();
         expect(createDiscardTool).not.toHaveBeenCalled();
         expect(runtime.append).not.toHaveBeenCalled();
         expect(runtime.cancelRun).toHaveBeenCalledOnce();
@@ -256,8 +254,9 @@ describe("ReviewChangesDisplay", () => {
 
         await expect(
             revertAndDiscardReviewChanges("thread-1", runtime, {
-                cancelPendingToolCalls: vi.fn(async () => {
+                stopThread: vi.fn(async () => {
                     order.push("cancel-pending");
+                    return {didStop: true, kind: "required-action" as const};
                 }),
                 createDiscardTool: () => discardTool,
                 showConfirm: vi.fn(async () => true)

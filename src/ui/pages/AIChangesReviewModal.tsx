@@ -2,15 +2,17 @@ import type React from "react";
 import {DiffViewer} from "src/chat-app/components/DiffViewer";
 import {getLogseqAttachmentIcon} from "src/chat-app/utils/getLogseqAttachmentIcon";
 import type {LogseqPrintedPageChange} from "src/core/logseq-reversible-transaction-tracker";
+import {LogseqButton} from "../components/LogseqButton";
 import {Modal} from "../modals/core/Modal";
-import {ModalFooter} from "../modals/core/ModalFooter";
 import {ModalHeader} from "../modals/core/ModalHeader";
 import {useModal} from "../modals/hooks/useModal";
 import {UI} from "../UI";
 
+export type AIChangesReviewResult = "commit" | "discard" | "continue-later" | null;
+
 export interface AIChangesReviewModalProps {
     changes: LogseqPrintedPageChange[];
-    resolve: (value: boolean | null) => void;
+    resolve: (value: AIChangesReviewResult) => void;
     reject: (error: any) => void;
     modalContext?: {modalId: string | null};
 }
@@ -51,12 +53,12 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
     resolve,
     modalContext
 }) => {
-    const {open, setOpen, handleConfirm, handleCancel} = useModal<boolean | null>(resolve, {
+    const {open, setOpen, handleConfirm, handleCancel} = useModal<AIChangesReviewResult>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: true,
         enableEnterKey: true,
         enableOutsideClickClose: false,
-        defaultResult: false,
+        defaultResult: "discard",
         modalId: modalContext?.modalId
     });
 
@@ -86,16 +88,34 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
                     {createAIChangesReviewDiffViewers(changes)}
                 </div>
 
-                <ModalFooter
-                    onConfirm={() => handleConfirm(true)}
-                    onCancel={() => handleConfirm(false)}
-                    confirmText="Commit changes"
-                    cancelText="Discard uncommitted changes"
-                    cancelColor="failed"
-                    confirmShortcut=""
-                    className="border-border border-t px-4 pb-4 pt-3"
+                <AIChangesReviewModalFooter
+                    onContinue={() => handleConfirm("continue-later")}
+                    onDiscard={() => handleConfirm("discard")}
+                    onCommit={() => handleConfirm("commit")}
                 />
             </div>
         </Modal>
     );
 };
+
+export const AIChangesReviewModalFooter: React.FC<{
+    onContinue: () => void;
+    onDiscard: () => void;
+    onCommit: () => void;
+}> = ({onContinue, onDiscard, onCommit}) => (
+    <div className="mt-5 flex flex-col border-border border-t px-4 pb-4 pt-3 sm:mt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="sm:-ml-3">
+            <LogseqButton color="ghost" isFullWidth={true} onClick={onContinue}>
+                Continue (Commit Later)
+            </LogseqButton>
+        </div>
+        <div className="flex flex-col sm:flex-row-reverse">
+            <LogseqButton color="primary" isFullWidth={true} onClick={onCommit}>
+                Commit changes
+            </LogseqButton>
+            <LogseqButton color="failed" isFullWidth={true} onClick={onDiscard}>
+                Discard uncommitted changes
+            </LogseqButton>
+        </div>
+    </div>
+);
