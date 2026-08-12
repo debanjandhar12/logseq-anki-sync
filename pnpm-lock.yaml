@@ -60,6 +60,9 @@ importers:
       '@floating-ui/react-dom-original':
         specifier: npm:@floating-ui/react-dom@2.1.7
         version: '@floating-ui/react-dom@2.1.7(react-dom@19.2.6(react@19.2.6))(react@19.2.6)'
+      '@fugood/node-llama-wasm':
+        specifier: ^1.7.15
+        version: 1.7.15
       '@lezer/highlight':
         specifier: ^1.2.3
         version: 1.2.3
@@ -126,9 +129,6 @@ importers:
       composed-offset-position:
         specifier: ^0.0.6
         version: 0.0.6(@floating-ui/utils@0.2.12)
-      compromise:
-        specifier: ^14.15.0
-        version: 14.15.0
       consola:
         specifier: ^3.4.2
         version: 3.4.2
@@ -1630,6 +1630,9 @@ packages:
 
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
+
+  '@fugood/node-llama-wasm@1.7.15':
+    resolution: {integrity: sha512-pxLGLCC6W1qb74KoNFWPOdi8Vcr0a30oPKdtK5xUuTKW8D0+AHMYuTSF1fkXj/rwSj4owfY0cc+pT0loFNGq9g==}
 
   '@hono/node-server@1.19.14':
     resolution: {integrity: sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw==}
@@ -4327,10 +4330,6 @@ packages:
     peerDependencies:
       '@floating-ui/utils': ^0.2.5
 
-  compromise@14.15.0:
-    resolution: {integrity: sha512-YEMv5JGWyqRJw5hdZqDVQF3MMlHA6TRiXreR8IYffk6xB7GA5p/8DeDzvg0Jy2tHNGpD+qJGl0+oJwA+5R/sVA==}
-    engines: {node: '>=12.0.0'}
-
   consola@3.4.2:
     resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
     engines: {node: ^14.18.0 || >=16.10.0}
@@ -4566,10 +4565,6 @@ packages:
 
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
-
-  efrt@2.7.0:
-    resolution: {integrity: sha512-/RInbCy1d4P6Zdfa+TMVsf/ufZVotat5hCw3QXmWtjU+3pFEOvOQ7ibo3aIxyCJw2leIeAMjmPj+1SLJiCpdrQ==}
-    engines: {node: '>=12.0.0'}
 
   electron-to-chromium@1.4.750:
     resolution: {integrity: sha512-9ItEpeu15hW5m8jKdriL+BQrgwDTXEL9pn4SkillWFu73ZNNNQ2BKKLS+ZHv2vC9UkNhosAeyfxOf/5OSeTCPA==}
@@ -4892,10 +4887,6 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
-
-  grad-school@0.0.5:
-    resolution: {integrity: sha512-rXunEHF9M9EkMydTBux7+IryYXEZinRk6g8OBOGDBzo/qWJjhTxy86i5q7lQYpCLHN8Sqv1XX3OIOc7ka2gtvQ==}
-    engines: {node: '>=8.0.0'}
 
   gray-matter@4.0.3:
     resolution: {integrity: sha512-5v6yZd4JK3eMI3FqqCouswVqwugaA9r4dNZB1wwcmrD02QkV5H0y7XBQW8QwQqEaZY1pM9aqORSORhJRdNK44Q==}
@@ -6487,9 +6478,6 @@ packages:
 
   style-to-object@1.0.14:
     resolution: {integrity: sha512-LIN7rULI0jBscWQYaSswptyderlarFkjQ+t79nzty8tcIAceVomEVlLzH5VP4Cmsv6MtKhs7qaAiwlcp+Mgaxw==}
-
-  suffix-thumb@5.0.2:
-    resolution: {integrity: sha512-I5PWXAFKx3FYnI9a+dQMWNqTxoRt6vdBdb0O+BJ1sxXCWtSoQCusc13E58f+9p4MYx/qCnEMkD5jac6K2j3dgA==}
 
   supports-color@5.5.0:
     resolution: {integrity: sha512-QjVjwdXIt408MIiAqCX4oUKsgU2EqAGzs2Ppkm4aQYbjm+ZEWEcW4SfFNTr4uMNZma0ey4f5lgLrkB0aX0QMow==}
@@ -8660,6 +8648,8 @@ snapshots:
   '@floating-ui/utils@0.2.10': {}
 
   '@floating-ui/utils@0.2.12': {}
+
+  '@fugood/node-llama-wasm@1.7.15': {}
 
   '@hono/node-server@1.19.14(hono@4.12.22)':
     dependencies:
@@ -11433,12 +11423,6 @@ snapshots:
     dependencies:
       '@floating-ui/utils': 0.2.12
 
-  compromise@14.15.0:
-    dependencies:
-      efrt: 2.7.0
-      grad-school: 0.0.5
-      suffix-thumb: 5.0.2
-
   consola@3.4.2: {}
 
   console-browserify@1.2.0: {}
@@ -11659,8 +11643,6 @@ snapshots:
       '@noble/hashes': 1.8.0
 
   ee-first@1.1.1: {}
-
-  efrt@2.7.0: {}
 
   electron-to-chromium@1.4.750: {}
 
@@ -12048,8 +12030,6 @@ snapshots:
   gopd@1.2.0: {}
 
   graceful-fs@4.2.11: {}
-
-  grad-school@0.0.5: {}
 
   gray-matter@4.0.3:
     dependencies:
@@ -14035,8 +14015,6 @@ snapshots:
   style-to-object@1.0.14:
     dependencies:
       inline-style-parser: 0.2.7
-
-  suffix-thumb@5.0.2: {}
 
   supports-color@5.5.0:
     dependencies:

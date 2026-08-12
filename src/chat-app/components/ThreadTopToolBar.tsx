@@ -66,7 +66,7 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
         try {
             const rawThreadJson = await ThreadStore.loadRawThread(capturedThreadId);
             const storedThread = JSON.parse(rawThreadJson) as ThreadFileData;
-            const resolvedTitle = ChatPageExporter.resolveTitle(
+            const resolvedTitle = await ChatPageExporter.resolveTitle(
                 capturedThreadId,
                 capturedMessages,
                 capturedTitle,
