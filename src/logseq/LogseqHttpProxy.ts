@@ -131,8 +131,7 @@ export class LogseqHttpProxy {
     }
 
     private static getReturnType(request: Request): ProxyReturnType {
-        const pathname = new URL(request.url).pathname;
-        return request.method === "GET" && [".wasm", ".gguf"].some((ext) => pathname.endsWith(ext))
+        return request.method === "GET" && new URL(request.url).pathname.endsWith(".wasm")
             ? "arraybuffer"
             : "text";
     }

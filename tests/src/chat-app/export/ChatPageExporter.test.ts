@@ -156,17 +156,15 @@ describe("ChatPageExporter", () => {
         ).toThrow("Unable to serialize tool result");
     });
 
-    test("builds the exact page name and resolves title fallbacks", async () => {
+    test("builds the exact page name and resolves title fallbacks", () => {
         const messages = [createUserMessage("user-1", "Explain photosynthesis")];
         expect(ChatPageExporter.createPageName("thread-1", "  My Chat  ")).toBe(
             "_chat_export_thread-1_My Chat"
         );
-        await expect(
-            ChatPageExporter.resolveTitle("thread-1", messages, " Active ", "Stored")
-        ).resolves.toBe("Active");
-        await expect(
-            ChatPageExporter.resolveTitle("thread-1", messages, "", " Stored ")
-        ).resolves.toBe("Stored");
+        expect(ChatPageExporter.resolveTitle("thread-1", messages, " Active ", "Stored")).toBe(
+            "Active"
+        );
+        expect(ChatPageExporter.resolveTitle("thread-1", messages, "", " Stored ")).toBe("Stored");
     });
 
     test("recursively updates, removes, and inserts blocks by position", async () => {

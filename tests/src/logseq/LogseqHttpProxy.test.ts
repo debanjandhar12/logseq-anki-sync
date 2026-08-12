@@ -9,21 +9,13 @@ type ProxyInternals = {
 const proxy = LogseqHttpProxy as unknown as ProxyInternals;
 
 describe("LogseqHttpProxy binary responses", () => {
-    test("selects binary mode for GET WASM and GGUF requests", () => {
+    test("selects binary mode only for GET WASM requests", () => {
         expect(proxy.getReturnType(new Request("https://plugins.test/anydoc.wasm"))).toBe(
-            "arraybuffer"
-        );
-        expect(proxy.getReturnType(new Request("https://plugins.test/title-model.gguf"))).toBe(
             "arraybuffer"
         );
         expect(proxy.getReturnType(new Request("https://plugins.test/api"))).toBe("text");
         expect(
             proxy.getReturnType(new Request("https://plugins.test/anydoc.wasm", {method: "POST"}))
-        ).toBe("text");
-        expect(
-            proxy.getReturnType(
-                new Request("https://plugins.test/title-model.gguf", {method: "POST"})
-            )
         ).toBe("text");
     });
 

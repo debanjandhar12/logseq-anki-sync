@@ -76,7 +76,7 @@ export class LocalThreadListAdapter implements RemoteThreadListAdapter {
         remoteId: string,
         messages: readonly ThreadMessage[]
     ): Promise<ReadableStream> {
-        const chatTitle = await generateTitle(remoteId, messages);
+        const chatTitle = generateTitle(remoteId, messages);
 
         await ThreadStore.updateThread(remoteId, (threadData) => {
             if (!threadData) return {type: "skip", result: undefined};

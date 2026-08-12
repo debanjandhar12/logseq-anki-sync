@@ -37,15 +37,13 @@ export class ChatPageExporter {
         setBlockCollapsed: LogseqEditor.setBlockCollapsed.bind(LogseqEditor)
     };
 
-    static async resolveTitle(
+    static resolveTitle(
         threadId: string,
         messages: readonly ThreadMessage[],
         activeTitle?: string,
         storedTitle?: string
-    ): Promise<string> {
-        return (
-            activeTitle?.trim() || storedTitle?.trim() || (await generateTitle(threadId, messages))
-        );
+    ): string {
+        return activeTitle?.trim() || storedTitle?.trim() || generateTitle(threadId, messages);
     }
 
     static createPageName(threadId: string, threadTitle: string): string {
