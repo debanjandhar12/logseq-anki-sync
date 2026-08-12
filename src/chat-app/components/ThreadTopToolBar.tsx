@@ -12,13 +12,11 @@ import {ThreadStore} from "../../core/stores/thread-store/ThreadStore";
 import type {ThreadFileData} from "../../core/stores/thread-store/types";
 import {createLogger, LoggerCategory} from "../../logger";
 import {LogseqNavigator} from "../../logseq/LogseqNavigator";
-import {WindowBridge} from "../../logseq/WindowBridge";
 import {ContextDisplay} from "../../shadcn/assistant-ui/context-display";
 import {TooltipIconButton} from "../../shadcn/assistant-ui/tooltip-icon-button";
 import {Button} from "../../shadcn/radix-ui/button";
 import {TooltipProvider} from "../../shadcn/radix-ui/tooltip";
 import {ChatUIContext} from "../context/ChatUIContext";
-import {ChatDebugReportFormatter} from "../export/ChatDebugReportFormatter";
 import {ChatPageExporter} from "../export/ChatPageExporter";
 import {ReviewChangesDisplay} from "./ReviewChangesDisplay";
 
@@ -38,19 +36,19 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
 }) => {
     const {onClose} = useContext(ChatUIContext);
     const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
-    const [activeOperation, setActiveOperation] = useState<"export" | "copy" | null>(null);
-    const isOperationInProgressRef = useRef(false);
+    const [isExportInProgress, setIsExportInProgress] = useState(false);
+    const isExportInProgressRef = useRef(false);
     const messages = useAuiState((state) => state.thread.messages);
     const threadId = useAuiState((state) => state.threadListItem.remoteId);
     const threadTitle = useAuiState((state) => state.threadListItem.title);
     const threadStatus = useAuiState((state) => state.threadListItem.status);
     const latestMessageWithUsage = findLatestMessageWithUsage(messages);
     const contextUsage = getThreadMessageTokenUsage(latestMessageWithUsage);
-    const areChatActionsDisabled = !isThreadChatActionEnabled(
+    const isPageExportDisabled = !isThreadPageExportEnabled(
         threadStatus,
         threadId,
         messages.length,
-        activeOperation !== null
+        isExportInProgress
     );
 
     const handleOpenDevTools = () => {
@@ -58,13 +56,13 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
     };
 
     const handleExportAsPage = async () => {
-        if (areChatActionsDisabled || !threadId || isOperationInProgressRef.current) return;
+        if (isPageExportDisabled || !threadId || isExportInProgressRef.current) return;
 
         const capturedThreadId = threadId;
         const capturedMessages = messages;
         const capturedTitle = threadTitle;
-        isOperationInProgressRef.current = true;
-        setActiveOperation("export");
+        isExportInProgressRef.current = true;
+        setIsExportInProgress(true);
         try {
             const rawThreadJson = await ThreadStore.loadRawThread(capturedThreadId);
             const storedThread = JSON.parse(rawThreadJson) as ThreadFileData;
@@ -89,30 +87,8 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
             });
             await notify("Failed to export chat as page", "error");
         } finally {
-            isOperationInProgressRef.current = false;
-            setActiveOperation(null);
-        }
-    };
-
-    const handleCopyDebugJson = async () => {
-        if (areChatActionsDisabled || !threadId || isOperationInProgressRef.current) return;
-
-        const capturedThreadId = threadId;
-        isOperationInProgressRef.current = true;
-        setActiveOperation("copy");
-        try {
-            const rawThreadJson = await ThreadStore.loadRawThread(capturedThreadId);
-            const clipboardText = ChatDebugReportFormatter.format(rawThreadJson);
-            const clipboard = WindowBridge.getWindow().navigator.clipboard;
-            if (!clipboard?.writeText) throw new Error("Clipboard API is not available");
-            await clipboard.writeText(clipboardText);
-            await notify("Chat debug JSON copied to clipboard", "success");
-        } catch (error) {
-            logger.error("Failed to copy chat debug JSON", {threadId: capturedThreadId, error});
-            await notify("Failed to copy chat debug JSON", "error");
-        } finally {
-            isOperationInProgressRef.current = false;
-            setActiveOperation(null);
+            isExportInProgressRef.current = false;
+            setIsExportInProgress(false);
         }
     };
 
@@ -133,8 +109,7 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
                 <ThreadTopToolBarMore
                     onOpenDevTools={handleOpenDevTools}
                     onExportAsPage={() => void handleExportAsPage()}
-                    onCopyDebugJson={() => void handleCopyDebugJson()}
-                    areChatActionsDisabled={areChatActionsDisabled}
+                    isPageExportDisabled={isPageExportDisabled}
                 />
                 {isHistoryVisible ? (
                     <TooltipIconButton tooltip="Back to thread" onClick={onBackToThread}>
@@ -173,26 +148,30 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
 interface ThreadTopToolBarMoreProps {
     onOpenDevTools: () => void;
     onExportAsPage: () => void;
-    onCopyDebugJson: () => void;
-    areChatActionsDisabled: boolean;
+    isPageExportDisabled: boolean;
 }
 
 /**
  * Changes:
  * (a) Changed the more menu button's hover background to bg-background for better visibility over bg-muted rows
- * (b) Added page export and debug JSON actions with active-thread disabled states
+ * (b) Added page export with an active-thread disabled state
+ * (c) Made the menu controlled and non-modal so outside interactions close it through the Shadow DOM portal bridge
  */
-const ThreadTopToolBarMore: FC<ThreadTopToolBarMoreProps> = ({
+export const ThreadTopToolBarMore: FC<ThreadTopToolBarMoreProps> = ({
     onOpenDevTools,
     onExportAsPage,
-    onCopyDebugJson,
-    areChatActionsDisabled
+    isPageExportDisabled
 }) => {
-    const chatActionClassName =
+    const [isOpen, setIsOpen] = useState(false);
+    const exportActionClassName =
         "aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-background hover:text-accent-foreground focus:bg-background focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50";
+    const selectAction = (action: () => void) => {
+        setIsOpen(false);
+        action();
+    };
 
     return (
-        <ThreadListItemMorePrimitive.Root>
+        <ThreadListItemMorePrimitive.Root modal={false} open={isOpen} onOpenChange={setIsOpen}>
             <ThreadListItemMorePrimitive.Trigger asChild>
                 <Button
                     variant="ghost"
@@ -209,28 +188,22 @@ const ThreadTopToolBarMore: FC<ThreadTopToolBarMoreProps> = ({
                 {import.meta.env.DEV && (
                     <ThreadListItemMorePrimitive.Item
                         className="aui-thread-list-item-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-background hover:text-accent-foreground focus:bg-background focus:text-accent-foreground"
-                        onClick={onOpenDevTools}>
+                        onSelect={() => selectAction(onOpenDevTools)}>
                         Devtools
                     </ThreadListItemMorePrimitive.Item>
                 )}
                 <ThreadListItemMorePrimitive.Item
-                    className={chatActionClassName}
-                    disabled={areChatActionsDisabled}
-                    onClick={onExportAsPage}>
+                    className={exportActionClassName}
+                    disabled={isPageExportDisabled}
+                    onSelect={() => selectAction(onExportAsPage)}>
                     Export as Page
-                </ThreadListItemMorePrimitive.Item>
-                <ThreadListItemMorePrimitive.Item
-                    className={chatActionClassName}
-                    disabled={areChatActionsDisabled}
-                    onClick={onCopyDebugJson}>
-                    Copy Debug JSON
                 </ThreadListItemMorePrimitive.Item>
             </ThreadListItemMorePrimitive.Content>
         </ThreadListItemMorePrimitive.Root>
     );
 };
 
-export function isThreadChatActionEnabled(
+export function isThreadPageExportEnabled(
     status: string | undefined,
     threadId: string | undefined,
     messageCount: number,

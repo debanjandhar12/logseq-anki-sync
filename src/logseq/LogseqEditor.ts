@@ -69,6 +69,21 @@ export class LogseqEditor {
         await logseq.Editor.removeBlock(blockIdentity);
     }
 
+    static async setBlockIcon(blockIdentity: BlockIdentity, iconName: string): Promise<void> {
+        await logseq.Editor.setBlockIcon(blockIdentity, "tabler-icon", iconName);
+    }
+
+    static async removeBlockIcon(blockIdentity: BlockIdentity): Promise<void> {
+        await logseq.Editor.removeBlockIcon(blockIdentity);
+    }
+
+    static async setBlockCollapsed(
+        blockIdentity: BlockIdentity | EntityID,
+        collapsed: boolean
+    ): Promise<void> {
+        await logseq.Editor.setBlockCollapsed(blockIdentity, collapsed);
+    }
+
     static async getProperty(
         propertyUuidOrIndent: string
     ): Promise<Awaited<ReturnType<typeof logseq.Editor.getProperty>>> {

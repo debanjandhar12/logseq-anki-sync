@@ -52,6 +52,43 @@ describe("LogseqEditor", () => {
             "Unable to resolve block tree child: missing-child"
         );
     });
+
+    test("forwards block icon and collapsed presentation operations", async () => {
+        const setBlockIcon = vi.fn(async () => undefined);
+        const removeBlockIcon = vi.fn(async () => undefined);
+        const setBlockCollapsed = vi.fn(async () => undefined);
+        vi.stubGlobal("logseq", {
+            Editor: {setBlockIcon, removeBlockIcon, setBlockCollapsed}
+        });
+
+        await LogseqEditor.setBlockIcon("block-1", "message-user");
+        await LogseqEditor.setBlockIcon("block-2", "message-chatbot");
+        await LogseqEditor.removeBlockIcon("block-3");
+        await LogseqEditor.setBlockCollapsed("block-4", true);
+
+        expect(setBlockIcon).toHaveBeenNthCalledWith(1, "block-1", "tabler-icon", "message-user");
+        expect(setBlockIcon).toHaveBeenNthCalledWith(
+            2,
+            "block-2",
+            "tabler-icon",
+            "message-chatbot"
+        );
+        expect(removeBlockIcon).toHaveBeenCalledWith("block-3");
+        expect(setBlockCollapsed).toHaveBeenCalledWith("block-4", true);
+    });
+
+    test("propagates block presentation failures", async () => {
+        const failure = new Error("icon failed");
+        vi.stubGlobal("logseq", {
+            Editor: {
+                setBlockIcon: vi.fn(async () => {
+                    throw failure;
+                })
+            }
+        });
+
+        await expect(LogseqEditor.setBlockIcon("block-1", "message-user")).rejects.toBe(failure);
+    });
 });
 
 function createBlock(uuid: string, children: BlockEntity["children"]): BlockEntity {

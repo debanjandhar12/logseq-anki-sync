@@ -3,9 +3,13 @@ import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {generateTitle} from "../../core/title-generator/generateTitle";
 import {LogseqEditor} from "../../logseq/LogseqEditor";
 
+export type DesiredLogseqBlockIcon = "message-user" | "message-chatbot" | null;
+
 export interface DesiredLogseqBlock {
     content: string;
     children: DesiredLogseqBlock[];
+    icon: DesiredLogseqBlockIcon;
+    collapseToolCall: boolean;
 }
 
 export interface ChatPageExporterDependencies {
@@ -15,6 +19,9 @@ export interface ChatPageExporterDependencies {
     insertBlock: typeof LogseqEditor.insertBlock;
     updateBlock: typeof LogseqEditor.updateBlock;
     removeBlock: typeof LogseqEditor.removeBlock;
+    setBlockIcon: typeof LogseqEditor.setBlockIcon;
+    removeBlockIcon: typeof LogseqEditor.removeBlockIcon;
+    setBlockCollapsed: typeof LogseqEditor.setBlockCollapsed;
 }
 
 export class ChatPageExporter {
@@ -24,7 +31,10 @@ export class ChatPageExporter {
         getPageBlocksTree: LogseqEditor.getPageBlocksTree.bind(LogseqEditor),
         insertBlock: LogseqEditor.insertBlock.bind(LogseqEditor),
         updateBlock: LogseqEditor.updateBlock.bind(LogseqEditor),
-        removeBlock: LogseqEditor.removeBlock.bind(LogseqEditor)
+        removeBlock: LogseqEditor.removeBlock.bind(LogseqEditor),
+        setBlockIcon: LogseqEditor.setBlockIcon.bind(LogseqEditor),
+        removeBlockIcon: LogseqEditor.removeBlockIcon.bind(LogseqEditor),
+        setBlockCollapsed: LogseqEditor.setBlockCollapsed.bind(LogseqEditor)
     };
 
     static resolveTitle(
@@ -51,7 +61,9 @@ export class ChatPageExporter {
                     content: message.content
                         .flatMap((part) => (part.type === "text" ? [part.text] : []))
                         .join("\n\n"),
-                    children: []
+                    children: [],
+                    icon: "message-user",
+                    collapseToolCall: false
                 };
                 rootBlocks.push(currentUserBlock);
                 continue;
@@ -64,7 +76,12 @@ export class ChatPageExporter {
             }
             for (const part of message.content) {
                 if (part.type === "text") {
-                    currentUserBlock.children.push({content: part.text, children: []});
+                    currentUserBlock.children.push({
+                        content: part.text,
+                        children: [],
+                        icon: "message-chatbot",
+                        collapseToolCall: false
+                    });
                 } else if (part.type === "tool-call") {
                     currentUserBlock.children.push(ChatPageExporter.createToolCallBlock(part));
                 }
@@ -130,6 +147,14 @@ export class ChatPageExporter {
                     () => dependencies.updateBlock(current.uuid, desired.content)
                 );
             }
+            await ChatPageExporter.reconcileBlockIcon(
+                pageName,
+                parentUuid,
+                current.uuid,
+                path,
+                desired.icon,
+                dependencies
+            );
             await ChatPageExporter.reconcileChildren(
                 pageName,
                 current.uuid,
@@ -137,6 +162,14 @@ export class ChatPageExporter {
                 desired.children,
                 dependencies,
                 path
+            );
+            await ChatPageExporter.collapseToolCallBlock(
+                pageName,
+                parentUuid,
+                current.uuid,
+                path,
+                desired.collapseToolCall,
+                dependencies
             );
         }
 
@@ -160,6 +193,16 @@ export class ChatPageExporter {
                 path,
                 () => dependencies.insertBlock(parentUuid, desired.content)
             );
+            if (desired.icon) {
+                await ChatPageExporter.setBlockIcon(
+                    pageName,
+                    parentUuid,
+                    inserted.uuid,
+                    path,
+                    desired.icon,
+                    dependencies
+                );
+            }
             await ChatPageExporter.reconcileChildren(
                 pageName,
                 inserted.uuid,
@@ -168,21 +211,99 @@ export class ChatPageExporter {
                 dependencies,
                 path
             );
+            await ChatPageExporter.collapseToolCallBlock(
+                pageName,
+                parentUuid,
+                inserted.uuid,
+                path,
+                desired.collapseToolCall,
+                dependencies
+            );
         }
     }
 
+    private static async reconcileBlockIcon(
+        pageName: string,
+        parentUuid: string,
+        blockUuid: string,
+        path: readonly number[],
+        icon: DesiredLogseqBlockIcon,
+        dependencies: ChatPageExporterDependencies
+    ): Promise<void> {
+        if (icon) {
+            await ChatPageExporter.setBlockIcon(
+                pageName,
+                parentUuid,
+                blockUuid,
+                path,
+                icon,
+                dependencies
+            );
+            return;
+        }
+
+        await ChatPageExporter.runReconciliationOperation(
+            "remove icon",
+            pageName,
+            parentUuid,
+            path,
+            () => dependencies.removeBlockIcon(blockUuid),
+            blockUuid
+        );
+    }
+
+    private static async setBlockIcon(
+        pageName: string,
+        parentUuid: string,
+        blockUuid: string,
+        path: readonly number[],
+        icon: Exclude<DesiredLogseqBlockIcon, null>,
+        dependencies: ChatPageExporterDependencies
+    ): Promise<void> {
+        await ChatPageExporter.runReconciliationOperation(
+            "set icon",
+            pageName,
+            parentUuid,
+            path,
+            () => dependencies.setBlockIcon(blockUuid, icon),
+            blockUuid
+        );
+    }
+
+    private static async collapseToolCallBlock(
+        pageName: string,
+        parentUuid: string,
+        blockUuid: string,
+        path: readonly number[],
+        collapseToolCall: boolean,
+        dependencies: ChatPageExporterDependencies
+    ): Promise<void> {
+        if (!collapseToolCall) return;
+
+        await ChatPageExporter.runReconciliationOperation(
+            "collapse",
+            pageName,
+            parentUuid,
+            path,
+            () => dependencies.setBlockCollapsed(blockUuid, true),
+            blockUuid
+        );
+    }
+
     private static async runReconciliationOperation<T>(
-        operation: "update" | "remove" | "insert",
+        operation: "update" | "remove" | "insert" | "set icon" | "remove icon" | "collapse",
         pageName: string,
         parentUuid: string,
         path: readonly number[],
-        action: () => Promise<T>
+        action: () => Promise<T>,
+        blockUuid?: string
     ): Promise<T> {
         try {
             return await action();
         } catch (error) {
+            const blockContext = blockUuid ? `, block: ${blockUuid}` : "";
             throw new Error(
-                `Failed to ${operation} export page block (page: ${pageName}, parent: ${parentUuid}, path: ${path.join(".")})`,
+                `Failed to ${operation} export page block (page: ${pageName}, parent: ${parentUuid}${blockContext}, path: ${path.join(".")})`,
                 {cause: error}
             );
         }
@@ -200,17 +321,33 @@ export class ChatPageExporter {
         const result = Object.hasOwn(part, "result") ? part.result : null;
         return {
             content: `Tool Call: ${part.toolName}`,
+            icon: "message-chatbot",
+            collapseToolCall: true,
             children: [
                 {
-                    content: `Tool Args: ${ChatPageExporter.serializeToolValue(part.args, "arguments")}`,
-                    children: []
+                    content: ChatPageExporter.formatToolValueBlock(
+                        "Tool Args",
+                        ChatPageExporter.serializeToolValue(part.args, "arguments")
+                    ),
+                    children: [],
+                    icon: null,
+                    collapseToolCall: false
                 },
                 {
-                    content: `Tool Result: ${ChatPageExporter.serializeToolValue(result, "result")}`,
-                    children: []
+                    content: ChatPageExporter.formatToolValueBlock(
+                        "Tool Result",
+                        ChatPageExporter.serializeToolValue(result, "result")
+                    ),
+                    children: [],
+                    icon: null,
+                    collapseToolCall: false
                 }
             ]
         };
+    }
+
+    private static formatToolValueBlock(label: string, serializedValue: string): string {
+        return `${label}:\n\`\`\`json\n${serializedValue}\n\`\`\``;
     }
 
     private static serializeToolValue(value: unknown, label: string): string {

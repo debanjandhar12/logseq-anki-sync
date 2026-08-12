@@ -3,7 +3,9 @@ import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {describe, expect, test, vi} from "vitest";
 import {
     ChatPageExporter,
-    type ChatPageExporterDependencies
+    type ChatPageExporterDependencies,
+    type DesiredLogseqBlock,
+    type DesiredLogseqBlockIcon
 } from "../../../../src/chat-app/export/ChatPageExporter";
 
 const createUserMessage = (id: string, text: string): ThreadMessage =>
@@ -31,6 +33,13 @@ const createBlock = (uuid: string, content: string, children: BlockEntity[] = []
 
 const createPage = (uuid = "page-1"): PageEntity => ({uuid, name: "export"}) as PageEntity;
 
+const createDesiredBlock = (
+    content: string,
+    children: DesiredLogseqBlock[] = [],
+    icon: DesiredLogseqBlockIcon = null,
+    collapseToolCall = false
+): DesiredLogseqBlock => ({content, children, icon, collapseToolCall});
+
 describe("ChatPageExporter", () => {
     test("groups assistant text and tools under the preceding user message", () => {
         const messages = [
@@ -55,19 +64,48 @@ describe("ChatPageExporter", () => {
         expect(ChatPageExporter.createBlockTree(messages)).toEqual([
             {
                 content: "First question",
+                icon: "message-user",
+                collapseToolCall: false,
                 children: [
-                    {content: "First answer", children: []},
+                    {
+                        content: "First answer",
+                        children: [],
+                        icon: "message-chatbot",
+                        collapseToolCall: false
+                    },
                     {
                         content: "Tool Call: logseq_read_block",
+                        icon: "message-chatbot",
+                        collapseToolCall: true,
                         children: [
-                            {content: 'Tool Args: {"uuid":"block-1"}', children: []},
-                            {content: "Tool Result: false", children: []}
+                            {
+                                content: 'Tool Args:\n```json\n{"uuid":"block-1"}\n```',
+                                children: [],
+                                icon: null,
+                                collapseToolCall: false
+                            },
+                            {
+                                content: "Tool Result:\n```json\nfalse\n```",
+                                children: [],
+                                icon: null,
+                                collapseToolCall: false
+                            }
                         ]
                     },
-                    {content: "Second answer", children: []}
+                    {
+                        content: "Second answer",
+                        children: [],
+                        icon: "message-chatbot",
+                        collapseToolCall: false
+                    }
                 ]
             },
-            {content: "Next question", children: []}
+            {
+                content: "Next question",
+                children: [],
+                icon: "message-user",
+                collapseToolCall: false
+            }
         ]);
     });
 
@@ -88,7 +126,10 @@ describe("ChatPageExporter", () => {
             {
                 children: [
                     {
-                        children: [{content: "Tool Args: {}"}, {content: "Tool Result: null"}]
+                        children: [
+                            {content: "Tool Args:\n```json\n{}\n```"},
+                            {content: "Tool Result:\n```json\nnull\n```"}
+                        ]
                     }
                 ]
             }
@@ -145,16 +186,12 @@ describe("ChatPageExporter", () => {
         await ChatPageExporter.exportPage(
             "export",
             [
-                {
-                    content: "New user",
-                    children: [
-                        {
-                            content: "Unchanged",
-                            children: [{content: "New grandchild", children: []}]
-                        }
-                    ]
-                },
-                {content: "New root", children: []}
+                createDesiredBlock(
+                    "New user",
+                    [createDesiredBlock("Unchanged", [createDesiredBlock("New grandchild")])],
+                    "message-user"
+                ),
+                createDesiredBlock("New root", [], "message-user")
             ],
             dependencies
         );
@@ -173,7 +210,7 @@ describe("ChatPageExporter", () => {
         });
         await ChatPageExporter.exportPage(
             "export",
-            [{content: "User message", children: []}],
+            [createDesiredBlock("User message", [], "message-user")],
             existingPageDependencies
         );
         expect(existingPageDependencies.createPage).not.toHaveBeenCalled();
@@ -189,7 +226,7 @@ describe("ChatPageExporter", () => {
         await expect(
             ChatPageExporter.exportPage(
                 "export",
-                [{content: "User message", children: []}],
+                [createDesiredBlock("User message", [], "message-user")],
                 creationDependencies
             )
         ).resolves.toEqual({pageName: "export", pageUuid: "created-page"});
@@ -219,7 +256,7 @@ describe("ChatPageExporter", () => {
 
         await ChatPageExporter.exportPage(
             "export",
-            [{content: "Keep", children: []}],
+            [createDesiredBlock("Keep", [], "message-user")],
             dependencies
         );
 
@@ -241,9 +278,143 @@ describe("ChatPageExporter", () => {
         });
 
         await expect(
-            ChatPageExporter.exportPage("export", [{content: "New", children: []}], dependencies)
+            ChatPageExporter.exportPage(
+                "export",
+                [createDesiredBlock("New", [], "message-user")],
+                dependencies
+            )
         ).rejects.toThrow("page: export, parent: page-1, path: 0");
         expect(dependencies.removeBlock).not.toHaveBeenCalled();
+    });
+
+    test("applies exact icons to reused blocks and collapses tool calls after children", async () => {
+        const operationLog: string[] = [];
+        const currentTree = [
+            createBlock("user", "Question", [
+                createBlock("tool", "Tool Call: search", [
+                    createBlock("args", "Tool Args:\n```json\n{}\n```"),
+                    createBlock("result", 'Tool Result:\n```json\n{"ok":true}\n```')
+                ])
+            ])
+        ];
+        const dependencies = createDependencies({
+            getPage: vi.fn(async () => createPage()),
+            getPageBlocksTree: vi.fn(async () => currentTree),
+            setBlockIcon: vi.fn(async (uuid, icon) => {
+                operationLog.push(`icon:${String(uuid)}:${icon}`);
+            }),
+            removeBlockIcon: vi.fn(async (uuid) => {
+                operationLog.push(`remove-icon:${String(uuid)}`);
+            }),
+            setBlockCollapsed: vi.fn(async (uuid) => {
+                operationLog.push(`collapse:${String(uuid)}`);
+            })
+        });
+
+        await ChatPageExporter.exportPage(
+            "export",
+            [
+                createDesiredBlock(
+                    "Question",
+                    [
+                        createDesiredBlock(
+                            "Tool Call: search",
+                            [
+                                createDesiredBlock("Tool Args:\n```json\n{}\n```"),
+                                createDesiredBlock('Tool Result:\n```json\n{"ok":true}\n```')
+                            ],
+                            "message-chatbot",
+                            true
+                        )
+                    ],
+                    "message-user"
+                )
+            ],
+            dependencies
+        );
+
+        expect(operationLog).toEqual([
+            "icon:user:message-user",
+            "icon:tool:message-chatbot",
+            "remove-icon:args",
+            "remove-icon:result",
+            "collapse:tool"
+        ]);
+        expect(dependencies.updateBlock).not.toHaveBeenCalled();
+        expect(dependencies.insertBlock).not.toHaveBeenCalled();
+        expect(dependencies.removeBlock).not.toHaveBeenCalled();
+    });
+
+    test("sets icons and collapses a newly inserted tool block after inserting its children", async () => {
+        const operationLog: string[] = [];
+        let insertedBlockIndex = 0;
+        const dependencies = createDependencies({
+            insertBlock: vi.fn(async (_parent, content) => {
+                const block = createBlock(`inserted-${++insertedBlockIndex}`, content);
+                operationLog.push(`insert:${block.uuid}`);
+                return block;
+            }),
+            setBlockIcon: vi.fn(async (uuid, icon) => {
+                operationLog.push(`icon:${String(uuid)}:${icon}`);
+            }),
+            setBlockCollapsed: vi.fn(async (uuid) => {
+                operationLog.push(`collapse:${String(uuid)}`);
+            })
+        });
+
+        await ChatPageExporter.exportPage(
+            "export",
+            [
+                createDesiredBlock(
+                    "Question",
+                    [
+                        createDesiredBlock(
+                            "Tool Call: search",
+                            [
+                                createDesiredBlock("Tool Args:\n```json\n{}\n```"),
+                                createDesiredBlock("Tool Result:\n```json\nnull\n```")
+                            ],
+                            "message-chatbot",
+                            true
+                        )
+                    ],
+                    "message-user"
+                )
+            ],
+            dependencies
+        );
+
+        expect(operationLog).toEqual([
+            "insert:inserted-1",
+            "icon:inserted-1:message-user",
+            "insert:inserted-2",
+            "icon:inserted-2:message-chatbot",
+            "insert:inserted-3",
+            "insert:inserted-4",
+            "collapse:inserted-2"
+        ]);
+        expect(dependencies.removeBlockIcon).not.toHaveBeenCalled();
+    });
+
+    test.each([
+        ["set icon", "setBlockIcon", createDesiredBlock("Question", [], "message-user")],
+        ["remove icon", "removeBlockIcon", createDesiredBlock("Tool Args:\n```json\n{}\n```")],
+        ["collapse", "setBlockCollapsed", createDesiredBlock("Tool Call: x", [], null, true)]
+    ] as const)("adds block context when %s fails", async (operation, dependencyName, desired) => {
+        const failure = new Error("presentation failed");
+        const dependencies = createDependencies({
+            getPage: vi.fn(async () => createPage()),
+            getPageBlocksTree: vi.fn(async () => [createBlock("root-1", desired.content)]),
+            [dependencyName]: vi.fn(async () => {
+                throw failure;
+            })
+        });
+
+        const promise = ChatPageExporter.exportPage("export", [desired], dependencies);
+        await expect(promise).rejects.toThrow(
+            `Failed to ${operation} export page block (page: export, parent: page-1, block: root-1, path: 0)`
+        );
+        await expect(promise).rejects.toMatchObject({cause: failure});
     });
 });
 
@@ -257,6 +428,9 @@ function createDependencies(
         insertBlock: vi.fn(async (_parent, content) => createBlock("inserted", content)),
         updateBlock: vi.fn(async () => undefined),
         removeBlock: vi.fn(async () => undefined),
+        setBlockIcon: vi.fn(async () => undefined),
+        removeBlockIcon: vi.fn(async () => undefined),
+        setBlockCollapsed: vi.fn(async () => undefined),
         ...overrides
     };
 }
