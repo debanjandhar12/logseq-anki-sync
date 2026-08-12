@@ -8,7 +8,36 @@ export interface LogseqReversibleTransactionTrackerArtifactLocation {
     toolCallId: string;
 }
 
-export function patchLogseqReversibleTransactionTrackerArtifact(
+export async function persistLogseqReversibleTransactionTrackerArtifact(options: {
+    threadId: string;
+    runtime?: ThreadRuntime;
+    location: LogseqReversibleTransactionTrackerArtifactLocation;
+    tracker: LogseqReversibleTransactionTracker;
+}): Promise<void> {
+    if (options.runtime) {
+        patchRuntimeThreadTrackerArtifact({
+            runtime: options.runtime,
+            location: options.location,
+            tracker: options.tracker
+        });
+    }
+
+    await ThreadStore.updateThread(options.threadId, (threadData) => {
+        if (!threadData?.exportedMessageRepository) {
+            return {type: "skip", result: undefined};
+        }
+
+        threadData.exportedMessageRepository = patchThreadStoreTrackerArtifact(
+            threadData.exportedMessageRepository,
+            options.location,
+            options.tracker
+        );
+        threadData.custom.updatedAt = new Date();
+        return {type: "save", threadData, result: undefined};
+    });
+}
+
+function patchThreadStoreTrackerArtifact(
     repository: ExportedMessageRepository,
     location: LogseqReversibleTransactionTrackerArtifactLocation,
     tracker: LogseqReversibleTransactionTracker
@@ -47,41 +76,12 @@ export function patchLogseqReversibleTransactionTrackerArtifact(
     return {...repository, messages};
 }
 
-export async function persistLogseqReversibleTransactionTrackerArtifact(options: {
-    threadId: string;
-    runtime?: ThreadRuntime;
-    location: LogseqReversibleTransactionTrackerArtifactLocation;
-    tracker: LogseqReversibleTransactionTracker;
-}): Promise<void> {
-    if (options.runtime) {
-        patchRuntimeThreadTrackerArtifact({
-            runtime: options.runtime,
-            location: options.location,
-            tracker: options.tracker
-        });
-    }
-
-    await ThreadStore.updateThread(options.threadId, (threadData) => {
-        if (!threadData?.exportedMessageRepository) {
-            return {type: "skip", result: undefined};
-        }
-
-        threadData.exportedMessageRepository = patchLogseqReversibleTransactionTrackerArtifact(
-            threadData.exportedMessageRepository,
-            options.location,
-            options.tracker
-        );
-        threadData.custom.updatedAt = new Date();
-        return {type: "save", threadData, result: undefined};
-    });
-}
-
 function patchRuntimeThreadTrackerArtifact(options: {
     runtime: ThreadRuntime;
     location: LogseqReversibleTransactionTrackerArtifactLocation;
     tracker: LogseqReversibleTransactionTracker;
 }): void {
-    const runtimeRepository = patchLogseqReversibleTransactionTrackerArtifact(
+    const runtimeRepository = patchThreadStoreTrackerArtifact(
         options.runtime.export(),
         options.location,
         options.tracker
