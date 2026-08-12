@@ -30,24 +30,27 @@ export class LocalThreadHistoryAdapter implements ThreadHistoryAdapter {
     }
 
     async append(item: ExportedMessageRepositoryItem): Promise<void> {
-        const threadData = await ThreadStore.loadThread(this.threadId);
+        await ThreadStore.updateThread(this.threadId, (threadData) => {
+            if (!threadData) throw new Error(`Thread data not found: ${this.threadId}`);
 
-        const repository = threadData.exportedMessageRepository ?? {headId: null, messages: []};
+            const repository = threadData.exportedMessageRepository ?? {
+                headId: null,
+                messages: []
+            };
+            const existingMessageIndex = repository.messages.findIndex(
+                ({message}) => message.id === item.message.id
+            );
+            if (existingMessageIndex >= 0) {
+                repository.messages[existingMessageIndex] = item;
+            } else {
+                repository.messages.push(item);
+            }
 
-        const existingMessageIndex = repository.messages.findIndex(
-            ({message}) => message.id === item.message.id
-        );
-        if (existingMessageIndex >= 0) {
-            repository.messages[existingMessageIndex] = item;
-        } else {
-            repository.messages.push(item);
-        }
-
-        repository.headId = item.message.id;
-        threadData.exportedMessageRepository = repository;
-        threadData.custom.updatedAt = new Date();
-
-        await ThreadStore.saveThread(this.threadId, threadData);
+            repository.headId = item.message.id;
+            threadData.exportedMessageRepository = repository;
+            threadData.custom.updatedAt = new Date();
+            return {type: "save", threadData, result: undefined};
+        });
     }
 
     withFormat<TMessage, TStorageFormat extends Record<string, unknown>>(

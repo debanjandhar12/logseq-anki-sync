@@ -5,8 +5,7 @@ import {ThreadStore} from "../../../../src/core/stores/thread-store/ThreadStore"
 
 vi.mock("../../../../src/core/stores/thread-store/ThreadStore", () => ({
     ThreadStore: {
-        loadThread: vi.fn(),
-        saveThread: vi.fn()
+        updateThread: vi.fn()
     }
 }));
 
@@ -75,20 +74,46 @@ function createRuntime(initialStatus: "running" | "requires-action") {
 describe("stopThread", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(ThreadStore.loadThread).mockResolvedValue({
-            remoteId: "thread-1",
-            status: "regular",
-            custom: {
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                createdByPluginVersion: "test"
-            }
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
+            const update = await updater({
+                remoteId: "thread-1",
+                status: "regular",
+                exportedMessageRepository: {
+                    headId: "assistant-message",
+                    messages: [{message: assistantMessage("requires-action"), parentId: null}]
+                },
+                custom: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    createdByPluginVersion: "test"
+                }
+            });
+            return update.result;
         });
-        vi.mocked(ThreadStore.saveThread).mockResolvedValue(undefined);
     });
 
     test("waits for active cancellation, then adds the generic tool failure", async () => {
         const {runtime, getRepository} = createRuntime("running");
+        let persistedRepository: ExportedMessageRepository | undefined;
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
+            const update = await updater({
+                remoteId: "thread-1",
+                status: "regular",
+                exportedMessageRepository: {
+                    headId: "assistant-message",
+                    messages: [{message: assistantMessage("incomplete"), parentId: null}]
+                },
+                custom: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    createdByPluginVersion: "test"
+                }
+            });
+            if (update.type === "save") {
+                persistedRepository = update.threadData.exportedMessageRepository;
+            }
+            return update.result;
+        });
 
         await expect(stopThread({threadId: "thread-1", runtime})).resolves.toEqual({
             didStop: true,
@@ -106,7 +131,54 @@ describe("stopThread", () => {
                 })
             ]
         });
-        expect(ThreadStore.saveThread).toHaveBeenCalledOnce();
+        expect(ThreadStore.updateThread).toHaveBeenCalledOnce();
+        expect(persistedRepository?.messages[0]?.message.content[0]).toMatchObject({
+            result: {success: false, error: "User terminated the operation"},
+            isError: true
+        });
+    });
+
+    test("preserves a continuation that persisted before the termination update", async () => {
+        const {runtime} = createRuntime("requires-action");
+        const continuation = {
+            id: "continuation",
+            role: "user",
+            createdAt: new Date(),
+            content: [{type: "text", text: "Continue"}],
+            attachments: [],
+            metadata: {custom: {}}
+        } as unknown as ThreadMessage;
+        let persistedRepository: ExportedMessageRepository | undefined;
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
+            const update = await updater({
+                remoteId: "thread-1",
+                status: "regular",
+                exportedMessageRepository: {
+                    headId: continuation.id,
+                    messages: [
+                        {message: assistantMessage("requires-action"), parentId: null},
+                        {message: continuation, parentId: "assistant-message"}
+                    ]
+                },
+                custom: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    createdByPluginVersion: "test"
+                }
+            });
+            if (update.type === "save") {
+                persistedRepository = update.threadData.exportedMessageRepository;
+            }
+            return update.result;
+        });
+
+        await stopThread({threadId: "thread-1", runtime});
+
+        expect(persistedRepository?.headId).toBe(continuation.id);
+        expect(persistedRepository?.messages).toHaveLength(2);
+        expect(persistedRepository?.messages[0]?.message.content[0]).toMatchObject({
+            result: {success: false, error: "User terminated the operation"}
+        });
     });
 
     test("terminates settled required actions without cancelling a nonexistent run", async () => {
@@ -154,12 +226,15 @@ describe("stopThread", () => {
         ).resolves.toEqual({didStop: false, kind: "nothing-to-stop"});
 
         expect(runtime.import).not.toHaveBeenCalled();
-        expect(ThreadStore.saveThread).not.toHaveBeenCalled();
+        expect(ThreadStore.updateThread).not.toHaveBeenCalled();
     });
 
     test("keeps the live runtime terminal and reports persistence failure", async () => {
         const {runtime, getRepository} = createRuntime("requires-action");
-        vi.mocked(ThreadStore.loadThread).mockResolvedValue(null);
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
+            const update = await updater(null);
+            return update.result;
+        });
 
         await expect(stopThread({threadId: "thread-1", runtime})).resolves.toEqual({
             didStop: true,
@@ -176,7 +251,7 @@ describe("stopThread", () => {
     test("shares identical stops but reports conflicting semantics as not applied", async () => {
         const {runtime} = createRuntime("requires-action");
         let releaseSave: (() => void) | undefined;
-        vi.mocked(ThreadStore.saveThread).mockImplementation(
+        vi.mocked(ThreadStore.updateThread).mockImplementation(
             () => new Promise<void>((resolve) => (releaseSave = resolve))
         );
 
@@ -198,6 +273,6 @@ describe("stopThread", () => {
         await expect(first).resolves.toEqual({didStop: true, kind: "required-action"});
         await expect(duplicate).resolves.toEqual({didStop: true, kind: "required-action"});
         await expect(conflicting).resolves.toEqual({didStop: false, kind: "nothing-to-stop"});
-        expect(ThreadStore.saveThread).toHaveBeenCalledOnce();
+        expect(ThreadStore.updateThread).toHaveBeenCalledOnce();
     });
 });

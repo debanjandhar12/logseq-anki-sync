@@ -77,7 +77,11 @@ async function stopThreadOnce(options: {
         if (result.didChange) {
             options.runtime.import(result.repository);
             try {
-                await persistRepository(options.threadId, result.repository);
+                await persistTerminatedToolTurn({
+                    threadId: options.threadId,
+                    target: options.target,
+                    errorMessage: options.errorMessage ?? USER_TERMINATED_OPERATION
+                });
             } catch (error) {
                 logger.error("Failed to persist terminated chat state", error);
                 persistenceFailed = true;
@@ -111,15 +115,41 @@ async function cancelActiveRun(runtime: ThreadRuntime): Promise<void> {
     });
 }
 
-async function persistRepository(
-    threadId: string,
-    repository: ReturnType<ThreadRuntime["export"]>
-): Promise<void> {
-    const threadData = await ThreadStore.loadThread(threadId);
-    if (!threadData) {
-        throw new Error(`Unable to load thread ${threadId} while saving its terminated state`);
-    }
-    threadData.exportedMessageRepository = repository;
-    threadData.custom.updatedAt = new Date();
-    await ThreadStore.saveThread(threadId, threadData);
+async function persistTerminatedToolTurn(options: {
+    threadId: string;
+    target: ToolTurnTarget;
+    errorMessage: string;
+}): Promise<void> {
+    await ThreadStore.updateThread(options.threadId, (threadData) => {
+        if (!threadData) {
+            throw new Error(
+                `Unable to load thread ${options.threadId} while saving its terminated state`
+            );
+        }
+        if (!threadData.exportedMessageRepository) {
+            throw new Error(
+                `Thread ${options.threadId} has no messages while saving its terminated state`
+            );
+        }
+
+        const result = terminateToolTurn(threadData.exportedMessageRepository, {
+            target: options.target,
+            errorMessage: options.errorMessage
+        });
+        if (!result.didChange) {
+            const targetExists = threadData.exportedMessageRepository.messages.some(
+                ({message}) => message.id === options.target.messageId
+            );
+            if (!targetExists) {
+                throw new Error(
+                    `Unable to find message ${options.target.messageId} while saving its terminated state`
+                );
+            }
+            return {type: "skip", result: undefined};
+        }
+
+        threadData.exportedMessageRepository = result.repository;
+        threadData.custom.updatedAt = new Date();
+        return {type: "save", threadData, result: undefined};
+    });
 }

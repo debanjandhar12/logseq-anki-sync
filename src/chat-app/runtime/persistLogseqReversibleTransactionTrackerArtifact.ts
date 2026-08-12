@@ -61,16 +61,19 @@ export async function persistLogseqReversibleTransactionTrackerArtifact(options:
         });
     }
 
-    const threadData = await ThreadStore.loadThread(options.threadId);
-    if (!threadData?.exportedMessageRepository) return;
+    await ThreadStore.updateThread(options.threadId, (threadData) => {
+        if (!threadData?.exportedMessageRepository) {
+            return {type: "skip", result: undefined};
+        }
 
-    threadData.exportedMessageRepository = patchLogseqReversibleTransactionTrackerArtifact(
-        threadData.exportedMessageRepository,
-        options.location,
-        options.tracker
-    );
-    threadData.custom.updatedAt = new Date();
-    await ThreadStore.saveThread(options.threadId, threadData);
+        threadData.exportedMessageRepository = patchLogseqReversibleTransactionTrackerArtifact(
+            threadData.exportedMessageRepository,
+            options.location,
+            options.tracker
+        );
+        threadData.custom.updatedAt = new Date();
+        return {type: "save", threadData, result: undefined};
+    });
 }
 
 function patchRuntimeThreadTrackerArtifact(options: {
