@@ -2,6 +2,7 @@ import type {ThreadRuntime} from "@assistant-ui/react";
 import {ThreadStore} from "src/core/stores/thread-store/ThreadStore";
 import {createLogger, LoggerCategory} from "src/logger";
 import pkg from "../../../package.json";
+import {isThreadRunActive} from "./ThreadRunLifecycle";
 import {
     getActiveAssistantMessageTarget,
     type ToolTurnTarget,
@@ -50,7 +51,8 @@ async function stopThreadOnce(options: {
     target: ToolTurnTarget | null;
     errorMessage?: string;
 }): Promise<StopThreadResult> {
-    const wasRunning = options.runtime.getState().isRunning;
+    const hadTrackedRun = isThreadRunActive(options.threadId);
+    const wasRunning = hadTrackedRun || options.runtime.getState().isRunning;
     const wasRequiredAction = options.runtime
         .getState()
         .messages.some(
@@ -64,7 +66,7 @@ async function stopThreadOnce(options: {
     }
 
     if (wasRunning) {
-        await cancelActiveRun(options.runtime);
+        await cancelActiveRun(options.runtime, hadTrackedRun ? options.threadId : undefined);
     }
 
     let didTerminateTools = false;
@@ -102,18 +104,33 @@ async function stopThreadOnce(options: {
     };
 }
 
-async function cancelActiveRun(runtime: ThreadRuntime): Promise<void> {
+async function cancelActiveRun(runtime: ThreadRuntime, trackedThreadId?: string): Promise<void> {
     await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-            unsubscribe();
-            reject(new Error("Timed out while stopping the current chat run"));
-        }, RUN_END_TIMEOUT_MS);
-        const unsubscribe = runtime.unstable_on("runEnd", () => {
+        let didSettle = false;
+        const settle = (error?: Error) => {
+            if (didSettle) return;
+            didSettle = true;
             clearTimeout(timeout);
             unsubscribe();
-            resolve();
+            error ? reject(error) : resolve();
+        };
+        const timeout = setTimeout(() => {
+            settle(new Error("Timed out while stopping the current chat run"));
+        }, RUN_END_TIMEOUT_MS);
+        const unsubscribe = runtime.unstable_on("runEnd", () => {
+            settle();
         });
-        runtime.cancelRun();
+
+        if (trackedThreadId && !isThreadRunActive(trackedThreadId)) {
+            settle();
+            return;
+        }
+
+        try {
+            runtime.cancelRun();
+        } catch (error) {
+            settle(error instanceof Error ? error : new Error(String(error)));
+        }
     });
 }
 

@@ -49,14 +49,17 @@ export async function executeFrontendTool(
             };
         }
 
-        const output = await tool.execute(toolCall.args, {
-            toolCallId: toolCall.toolCallId,
-            abortSignal,
-            messages,
-            human: async () => {
-                throw new Error("Human input is not supported by this chat adapter.");
-            }
-        } as any);
+        const output = await raceWithAbort(
+            tool.execute(toolCall.args, {
+                toolCallId: toolCall.toolCallId,
+                abortSignal,
+                messages,
+                human: async () => {
+                    throw new Error("Human input is not supported by this chat adapter.");
+                }
+            } as any),
+            abortSignal
+        );
         const response = ToolResponse.toResponse(output);
         const truncatedResult = await storeAndTruncateOversizedToolResult({
             toolCallId: toolCall.toolCallId,
@@ -93,4 +96,27 @@ export async function executeFrontendTool(
             isError: errorResponse.isError
         };
     }
+}
+
+async function raceWithAbort<T>(
+    operation: PromiseLike<T> | T,
+    abortSignal: AbortSignal
+): Promise<T> {
+    if (abortSignal.aborted) throw createAbortError();
+
+    return await new Promise<T>((resolve, reject) => {
+        const handleAbort = () => reject(createAbortError());
+        abortSignal.addEventListener("abort", handleAbort, {once: true});
+        Promise.resolve(operation)
+            .then(resolve, reject)
+            .finally(() => {
+                abortSignal.removeEventListener("abort", handleAbort);
+            });
+    });
+}
+
+function createAbortError(): Error {
+    const error = new Error("The operation was aborted");
+    error.name = "AbortError";
+    return error;
 }

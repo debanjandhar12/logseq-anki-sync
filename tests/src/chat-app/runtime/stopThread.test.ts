@@ -1,6 +1,7 @@
 import type {ExportedMessageRepository, ThreadMessage, ThreadRuntime} from "@assistant-ui/react";
 import {beforeEach, describe, expect, test, vi} from "vitest";
 import {stopThread} from "../../../../src/chat-app/runtime/stopThread";
+import {trackThreadRun} from "../../../../src/chat-app/runtime/ThreadRunLifecycle";
 import {ThreadStore} from "../../../../src/core/stores/thread-store/ThreadStore";
 
 vi.mock("../../../../src/core/stores/thread-store/ThreadStore", () => ({
@@ -68,7 +69,13 @@ function createRuntime(initialStatus: "running" | "requires-action") {
             for (const listener of [...runEndListeners]) listener();
         })
     } as unknown as ThreadRuntime;
-    return {runtime, getRepository: () => repository};
+    return {
+        runtime,
+        getRepository: () => repository,
+        emitRunEnd: () => {
+            for (const listener of [...runEndListeners]) listener();
+        }
+    };
 }
 
 describe("stopThread", () => {
@@ -437,6 +444,25 @@ describe("stopThread", () => {
         expect(getRepository().messages[0]?.message.content[0]).toMatchObject({
             result: {success: false, error: "User terminated the operation"}
         });
+    });
+
+    test("cancels a tracked run even when public state says requires-action", async () => {
+        const {runtime, emitRunEnd} = createRuntime("requires-action");
+        const endRun = trackThreadRun("thread-1");
+        vi.mocked(runtime.cancelRun).mockImplementation(() => {
+            endRun();
+            emitRunEnd();
+        });
+
+        try {
+            const stop = stopThread({threadId: "thread-1", runtime});
+            await vi.waitFor(() => expect(runtime.cancelRun).toHaveBeenCalledOnce());
+            await stop;
+        } finally {
+            endRun();
+        }
+
+        expect(runtime.cancelRun).toHaveBeenCalledOnce();
     });
 
     test("uses an exact target and custom Continue Later message", async () => {

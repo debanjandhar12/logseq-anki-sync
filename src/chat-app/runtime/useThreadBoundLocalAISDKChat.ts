@@ -35,8 +35,8 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
     }, []);
 
     const chatModelAdapter = useMemo(
-        () => withRoundtripPersistence(LocalAISDKChatModelAdapter, historyAdapter),
-        [historyAdapter]
+        () => withRoundtripPersistence(LocalAISDKChatModelAdapter, historyAdapter, threadId),
+        [historyAdapter, threadId]
     );
 
     return useLocalRuntime(chatModelAdapter, {

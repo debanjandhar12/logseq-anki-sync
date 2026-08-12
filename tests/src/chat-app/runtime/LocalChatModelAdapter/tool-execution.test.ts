@@ -136,4 +136,27 @@ describe("executeFrontendTool tool result size limit", () => {
             isError: true
         });
     });
+
+    test("settles promptly when a frontend tool ignores cancellation", async () => {
+        const abortController = new AbortController();
+        const neverSettles = new Promise<unknown>(() => {});
+        const execution = executeFrontendTool(
+            createTool(() => neverSettles),
+            createToolCallMessagePart({
+                type: "tool-call",
+                toolCallId: TOOL_CALL_ID,
+                toolName: TOOL_NAME,
+                input: {}
+            }),
+            abortController.signal,
+            []
+        );
+
+        abortController.abort();
+
+        await expect(execution).resolves.toEqual({
+            result: {success: false, error: "The operation was aborted"},
+            isError: true
+        });
+    });
 });
