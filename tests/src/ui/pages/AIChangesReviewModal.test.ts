@@ -45,7 +45,7 @@ describe("createAIChangesReviewDiffViewers", () => {
 });
 
 describe("AIChangesReviewModalFooter", () => {
-    test("renders the ghost Continue action separately from Commit and Discard", () => {
+    test("renders the secondary Continue action separately from Commit and Discard", () => {
         const footer = AIChangesReviewModalFooter({
             onContinue: vi.fn(),
             onDiscard: vi.fn(),
@@ -65,7 +65,7 @@ describe("AIChangesReviewModalFooter", () => {
         }>;
 
         expect(continueAction.props).toMatchObject({
-            color: "ghost",
+            color: "outline-link",
             children: "Continue (Commit Later)"
         });
         expect(commitButton.props).toMatchObject({

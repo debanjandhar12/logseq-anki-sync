@@ -105,7 +105,7 @@ export const AIChangesReviewModalFooter: React.FC<{
 }> = ({onContinue, onDiscard, onCommit}) => (
     <div className="mt-5 flex flex-col border-border border-t px-4 pb-4 pt-3 sm:mt-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="sm:-ml-3">
-            <LogseqButton color="ghost" isFullWidth={true} onClick={onContinue}>
+            <LogseqButton color="outline-link" isFullWidth={true} onClick={onContinue}>
                 Continue (Commit Later)
             </LogseqButton>
         </div>
