@@ -10,6 +10,17 @@ const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);
 export class ThreadStore {
     static groupName: string = "thread";
 
+    static async loadRawThread(threadId: string): Promise<string> {
+        const content = await LogseqPluginStorageManager.getFileContent(
+            ThreadStore.groupName,
+            threadId
+        );
+        if (typeof content !== "string") {
+            throw new Error(`Thread data not found: ${threadId}`);
+        }
+        return content;
+    }
+
     static async loadThread(threadId: string): Promise<ThreadFileData> {
         try {
             const content = await LogseqPluginStorageManager.getFileContent(

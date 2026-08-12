@@ -1,4 +1,11 @@
-import type {BlockEntity, BlockIdentity, EntityID, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import type {
+    BlockEntity,
+    BlockIdentity,
+    BlockUUIDTuple,
+    EntityID,
+    PageEntity,
+    PageIdentity
+} from "@logseq/libs/dist/LSPlugin";
 import {ATTACHMENT_IMAGE_FORMAT} from "src/constants";
 import {validatePropertyUuidOrIndent} from "src/core/logseq-reversible-transaction-tracker/commands/utils/validations/propertyValidations";
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
@@ -22,6 +29,44 @@ export class LogseqEditor {
     static async getCurrentPage(): Promise<PageEntity | null> {
         const currentPage = await logseq.Editor.getCurrentPage();
         return currentPage as PageEntity;
+    }
+
+    static async getPage(pageIdentity: PageIdentity | EntityID): Promise<PageEntity | null> {
+        return await logseq.Editor.getPage(pageIdentity);
+    }
+
+    static async createPage(pageName: string): Promise<PageEntity | null> {
+        return await logseq.Editor.createPage(
+            pageName,
+            {},
+            {
+                redirect: false,
+                createFirstBlock: false
+            }
+        );
+    }
+
+    static async getPageBlocksTree(pageIdentity: PageIdentity): Promise<BlockEntity[]> {
+        const blocks = await logseq.Editor.getPageBlocksTree(pageIdentity);
+        if (!blocks) return [];
+        return await Promise.all(blocks.map((block) => LogseqEditor.normalizeBlockTree(block)));
+    }
+
+    static async insertBlock(parentIdentity: BlockIdentity, content: string): Promise<BlockEntity> {
+        const block = await logseq.Editor.insertBlock(parentIdentity, content, {
+            sibling: false,
+            end: true
+        });
+        if (!block) {
+            throw new Error(
+                `Logseq failed to insert block under: ${JSON.stringify(parentIdentity)}`
+            );
+        }
+        return block;
+    }
+
+    static async removeBlock(blockIdentity: BlockIdentity | EntityID): Promise<void> {
+        await logseq.Editor.removeBlock(blockIdentity);
     }
 
     static async getProperty(
@@ -152,5 +197,22 @@ export class LogseqEditor {
         if (opts.children) return null;
 
         return await logseq.Editor.getNextSiblingBlock(blockIdentity);
+    }
+
+    private static async normalizeBlockTree(block: BlockEntity): Promise<BlockEntity> {
+        const children = await Promise.all(
+            (block.children ?? []).map((child) => LogseqEditor.resolveBlockTreeChild(child))
+        );
+        return {...block, children};
+    }
+
+    private static async resolveBlockTreeChild(
+        child: BlockEntity | BlockUUIDTuple
+    ): Promise<BlockEntity> {
+        if (!Array.isArray(child)) return await LogseqEditor.normalizeBlockTree(child);
+
+        const block = await logseq.Editor.getBlock(child[1], {includeChildren: true});
+        if (!block) throw new Error(`Unable to resolve block tree child: ${child[1]}`);
+        return await LogseqEditor.normalizeBlockTree(block);
     }
 }
