@@ -97,11 +97,20 @@ export class ThreadStore {
     }
 
     private static async loadThreadForMutation(threadId: string): Promise<ThreadFileData | null> {
-        const content = await LogseqPluginStorageManager.getFileContent(
-            ThreadStore.groupName,
-            threadId
-        );
+        let content: unknown;
+        try {
+            content = await LogseqPluginStorageManager.getFileContent(
+                ThreadStore.groupName,
+                threadId
+            );
+        } catch (error) {
+            if (isMissingFileError(error)) return null;
+            throw error;
+        }
         if (content == null) return null;
+        if (typeof content !== "string") {
+            throw new Error(`Invalid thread data: ${threadId}`);
+        }
 
         try {
             return JSON.parse(content) as ThreadFileData;
@@ -134,6 +143,10 @@ export class ThreadStore {
             }
         }
     }
+}
+
+function isMissingFileError(error: unknown): boolean {
+    return error instanceof Error && error.message.toLowerCase().includes("file not existed");
 }
 
 // Utilities

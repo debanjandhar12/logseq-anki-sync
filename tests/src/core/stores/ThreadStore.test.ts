@@ -142,6 +142,40 @@ describe("ThreadStore", () => {
         expect(setItem).not.toHaveBeenCalled();
     });
 
+    test("initializes when the backend throws while reading a missing file", async () => {
+        const store = LogseqPluginStorageManager.store;
+        vi.spyOn(store, "getItem").mockRejectedValue(new Error("file not existed"));
+
+        await expect(
+            ThreadStore.updateThread("thread-1", (threadData) => {
+                expect(threadData).toBeNull();
+                return {
+                    type: "save",
+                    threadData: createThread("thread-1"),
+                    result: "initialized"
+                };
+            })
+        ).resolves.toBe("initialized");
+        expect(store.getItem).toHaveBeenCalledOnce();
+    });
+
+    test("reads existing data without relying on the backend existence check", async () => {
+        const store = LogseqPluginStorageManager.store;
+        await store.setItem("thread/thread-1", JSON.stringify(createThread("thread-1")));
+        vi.spyOn(store, "hasItem").mockResolvedValue(false);
+
+        await ThreadStore.updateThread("thread-1", (threadData) => ({
+            type: "save",
+            threadData: {...threadData!, title: "updated"},
+            result: undefined
+        }));
+
+        await expect(ThreadStore.loadThread("thread-1")).resolves.toMatchObject({
+            title: "updated"
+        });
+        expect(store.hasItem).not.toHaveBeenCalled();
+    });
+
     test("serializes deletion with updates to the same thread", async () => {
         const updateEntered = deferred();
         const releaseUpdate = deferred();

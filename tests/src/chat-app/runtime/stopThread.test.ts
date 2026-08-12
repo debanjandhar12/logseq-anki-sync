@@ -181,6 +181,250 @@ describe("stopThread", () => {
         });
     });
 
+    test("restores a missing persisted parent chain without removing newer messages", async () => {
+        const {runtime} = createRuntime("requires-action");
+        const continuation = {
+            id: "continuation",
+            role: "user",
+            createdAt: new Date(),
+            content: [{type: "text", text: "Continue"}],
+            attachments: [],
+            metadata: {custom: {}}
+        } as unknown as ThreadMessage;
+        let persistedRepository: ExportedMessageRepository | undefined;
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
+            const update = await updater({
+                remoteId: "thread-1",
+                status: "regular",
+                exportedMessageRepository: {
+                    headId: continuation.id,
+                    messages: [{message: continuation, parentId: "assistant-message"}]
+                },
+                custom: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    createdByPluginVersion: "test"
+                }
+            });
+            if (update.type === "save") {
+                persistedRepository = update.threadData.exportedMessageRepository;
+            }
+            return update.result;
+        });
+
+        await expect(stopThread({threadId: "thread-1", runtime})).resolves.toEqual({
+            didStop: true,
+            kind: "required-action"
+        });
+
+        expect(persistedRepository?.headId).toBe(continuation.id);
+        expect(persistedRepository?.messages.map(({message}) => message.id)).toEqual([
+            "assistant-message",
+            "continuation"
+        ]);
+        expect(persistedRepository?.messages[0]?.message.content[0]).toMatchObject({
+            result: {success: false, error: "User terminated the operation"}
+        });
+    });
+
+    test("restores a missing ancestor when the persisted target already exists", async () => {
+        const userMessage = {
+            id: "user-message",
+            role: "user",
+            createdAt: new Date(),
+            content: [{type: "text", text: "Run a tool"}],
+            attachments: [],
+            metadata: {custom: {}}
+        } as unknown as ThreadMessage;
+        const assistant = assistantMessage("requires-action");
+        let repository: ExportedMessageRepository = {
+            headId: assistant.id,
+            messages: [
+                {message: userMessage, parentId: null},
+                {message: assistant, parentId: userMessage.id}
+            ]
+        };
+        const runtime = {
+            export: vi.fn(() => repository),
+            import: vi.fn((next: ExportedMessageRepository) => {
+                repository = next;
+            }),
+            getState: vi.fn(() => ({
+                isRunning: false,
+                messages: repository.messages.map(({message}) => message)
+            }))
+        } as unknown as ThreadRuntime;
+        let persistedRepository: ExportedMessageRepository | undefined;
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
+            const update = await updater({
+                remoteId: "thread-1",
+                status: "regular",
+                exportedMessageRepository: {
+                    headId: assistant.id,
+                    messages: [{message: assistant, parentId: userMessage.id}]
+                },
+                custom: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    createdByPluginVersion: "test"
+                }
+            });
+            if (update.type === "save") {
+                persistedRepository = update.threadData.exportedMessageRepository;
+            }
+            return update.result;
+        });
+
+        await stopThread({threadId: "thread-1", runtime});
+
+        expect(persistedRepository?.messages.map(({message}) => message.id)).toEqual([
+            userMessage.id,
+            assistant.id
+        ]);
+        expect(persistedRepository?.messages[1]?.message.content[0]).toMatchObject({
+            result: {success: false, error: "User terminated the operation"}
+        });
+    });
+
+    test("does not restore unrelated runtime branches", async () => {
+        const {runtime} = createRuntime("requires-action");
+        const exported = runtime.export();
+        const unrelated = {
+            ...assistantMessage("incomplete"),
+            id: "unrelated-branch"
+        } as ThreadMessage;
+        runtime.import({
+            ...exported,
+            messages: [...exported.messages, {message: unrelated, parentId: null}]
+        });
+        let persistedRepository: ExportedMessageRepository | undefined;
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
+            const update = await updater({
+                remoteId: "thread-1",
+                status: "regular",
+                exportedMessageRepository: {
+                    headId: "assistant-message",
+                    messages: [{message: assistantMessage("requires-action"), parentId: null}]
+                },
+                custom: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    createdByPluginVersion: "test"
+                }
+            });
+            if (update.type === "save") {
+                persistedRepository = update.threadData.exportedMessageRepository;
+            }
+            return update.result;
+        });
+
+        await stopThread({threadId: "thread-1", runtime});
+
+        expect(persistedRepository?.messages.map(({message}) => message.id)).toEqual([
+            "assistant-message"
+        ]);
+    });
+
+    test("terminates an unresolved stored target after the stored head switches branches", async () => {
+        const {runtime} = createRuntime("requires-action");
+        const otherBranch = {
+            ...assistantMessage("incomplete"),
+            id: "other-branch"
+        } as ThreadMessage;
+        let persistedRepository: ExportedMessageRepository | undefined;
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
+            const update = await updater({
+                remoteId: "thread-1",
+                status: "regular",
+                exportedMessageRepository: {
+                    headId: otherBranch.id,
+                    messages: [
+                        {message: assistantMessage("requires-action"), parentId: null},
+                        {message: otherBranch, parentId: null}
+                    ]
+                },
+                custom: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    createdByPluginVersion: "test"
+                }
+            });
+            if (update.type === "save") {
+                persistedRepository = update.threadData.exportedMessageRepository;
+            }
+            return update.result;
+        });
+
+        await stopThread({threadId: "thread-1", runtime});
+
+        expect(persistedRepository?.headId).toBe(otherBranch.id);
+        expect(persistedRepository?.messages[0]?.message.content[0]).toMatchObject({
+            result: {success: false, error: "User terminated the operation"},
+            isError: true
+        });
+        expect(persistedRepository?.messages[1]?.message.id).toBe(otherBranch.id);
+    });
+
+    test("writes only target ancestry when creating a missing thread", async () => {
+        const {runtime} = createRuntime("requires-action");
+        const exported = runtime.export();
+        runtime.import({
+            ...exported,
+            messages: [
+                ...exported.messages,
+                {
+                    message: {
+                        ...assistantMessage("incomplete"),
+                        id: "unrelated-branch"
+                    } as ThreadMessage,
+                    parentId: null
+                }
+            ]
+        });
+        let persistedRepository: ExportedMessageRepository | undefined;
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
+            const update = await updater(null);
+            if (update.type === "save") {
+                persistedRepository = update.threadData.exportedMessageRepository;
+            }
+            return update.result;
+        });
+
+        await stopThread({threadId: "thread-1", runtime});
+
+        expect(persistedRepository?.messages.map(({message}) => message.id)).toEqual([
+            "assistant-message"
+        ]);
+    });
+
+    test("persists the terminated runtime repository when stored history is empty", async () => {
+        const {runtime} = createRuntime("requires-action");
+        let persistedRepository: ExportedMessageRepository | undefined;
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
+            const update = await updater({
+                remoteId: "thread-1",
+                status: "regular",
+                custom: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    createdByPluginVersion: "test"
+                }
+            });
+            if (update.type === "save") {
+                persistedRepository = update.threadData.exportedMessageRepository;
+            }
+            return update.result;
+        });
+
+        await expect(stopThread({threadId: "thread-1", runtime})).resolves.toEqual({
+            didStop: true,
+            kind: "required-action"
+        });
+        expect(persistedRepository?.messages[0]?.message.content[0]).toMatchObject({
+            result: {success: false, error: "User terminated the operation"}
+        });
+    });
+
     test("terminates settled required actions without cancelling a nonexistent run", async () => {
         const {runtime, getRepository} = createRuntime("requires-action");
 
@@ -229,22 +473,44 @@ describe("stopThread", () => {
         expect(ThreadStore.updateThread).not.toHaveBeenCalled();
     });
 
-    test("keeps the live runtime terminal and reports persistence failure", async () => {
+    test("creates a missing thread record from the terminated runtime state", async () => {
         const {runtime, getRepository} = createRuntime("requires-action");
+        let savedThread: unknown;
         vi.mocked(ThreadStore.updateThread).mockImplementation(async (_threadId, updater) => {
             const update = await updater(null);
+            if (update.type === "save") savedThread = update.threadData;
             return update.result;
         });
 
         await expect(stopThread({threadId: "thread-1", runtime})).resolves.toEqual({
             didStop: true,
-            kind: "required-action",
-            persistenceFailed: true
+            kind: "required-action"
         });
 
         expect(getRepository().messages[0]?.message.status).toEqual({
             type: "incomplete",
             reason: "cancelled"
+        });
+        expect(savedThread).toMatchObject({
+            remoteId: "thread-1",
+            status: "regular",
+            exportedMessageRepository: {
+                headId: "assistant-message",
+                messages: [
+                    {
+                        message: {
+                            content: [
+                                expect.objectContaining({
+                                    result: {
+                                        success: false,
+                                        error: "User terminated the operation"
+                                    }
+                                })
+                            ]
+                        }
+                    }
+                ]
+            }
         });
     });
 

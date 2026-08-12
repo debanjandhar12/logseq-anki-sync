@@ -1,6 +1,7 @@
 import type {ThreadRuntime} from "@assistant-ui/react";
 import {ThreadStore} from "src/core/stores/thread-store/ThreadStore";
 import {createLogger, LoggerCategory} from "src/logger";
+import pkg from "../../../package.json";
 import {
     getActiveAssistantMessageTarget,
     type ToolTurnTarget,
@@ -80,7 +81,8 @@ async function stopThreadOnce(options: {
                 await persistTerminatedToolTurn({
                     threadId: options.threadId,
                     target: options.target,
-                    errorMessage: options.errorMessage ?? USER_TERMINATED_OPERATION
+                    errorMessage: options.errorMessage ?? USER_TERMINATED_OPERATION,
+                    terminatedRepository: result.repository
                 });
             } catch (error) {
                 logger.error("Failed to persist terminated chat state", error);
@@ -119,37 +121,115 @@ async function persistTerminatedToolTurn(options: {
     threadId: string;
     target: ToolTurnTarget;
     errorMessage: string;
+    terminatedRepository: ReturnType<ThreadRuntime["export"]>;
 }): Promise<void> {
     await ThreadStore.updateThread(options.threadId, (threadData) => {
-        if (!threadData) {
-            throw new Error(
-                `Unable to load thread ${options.threadId} while saving its terminated state`
-            );
-        }
-        if (!threadData.exportedMessageRepository) {
-            throw new Error(
-                `Thread ${options.threadId} has no messages while saving its terminated state`
-            );
-        }
-
-        const result = terminateToolTurn(threadData.exportedMessageRepository, {
+        const latestRepository = threadData?.exportedMessageRepository ?? {
+            headId: null,
+            messages: []
+        };
+        const terminatedLatestRepository = terminateToolTurn(latestRepository, {
             target: options.target,
             errorMessage: options.errorMessage
-        });
-        if (!result.didChange) {
-            const targetExists = threadData.exportedMessageRepository.messages.some(
-                ({message}) => message.id === options.target.messageId
-            );
-            if (!targetExists) {
-                throw new Error(
-                    `Unable to find message ${options.target.messageId} while saving its terminated state`
-                );
-            }
-            return {type: "skip", result: undefined};
-        }
+        }).repository;
+        const repository = mergeTargetAncestry(
+            options.terminatedRepository,
+            terminatedLatestRepository,
+            options.target.messageId
+        );
 
-        threadData.exportedMessageRepository = result.repository;
+        if (!threadData) {
+            const now = new Date();
+            return {
+                type: "save",
+                threadData: {
+                    remoteId: options.threadId,
+                    status: "regular",
+                    exportedMessageRepository: repository,
+                    custom: {
+                        createdAt: now,
+                        updatedAt: now,
+                        createdByPluginVersion: pkg.version
+                    }
+                },
+                result: undefined
+            };
+        }
+        threadData.exportedMessageRepository = repository;
         threadData.custom.updatedAt = new Date();
         return {type: "save", threadData, result: undefined};
     });
+}
+
+function mergeTargetAncestry(
+    terminatedRepository: ReturnType<ThreadRuntime["export"]>,
+    latestRepository: ReturnType<ThreadRuntime["export"]>,
+    terminatedMessageId: string
+): ReturnType<ThreadRuntime["export"]> {
+    const terminatedItemsById = new Map(
+        terminatedRepository.messages.map((item) => [item.message.id, item] as const)
+    );
+    const latestItemsById = new Map(
+        latestRepository.messages.map((item) => [item.message.id, item] as const)
+    );
+    const ancestryIds: string[] = [];
+    const visitedIds = new Set<string>();
+    let messageId: string | null = terminatedMessageId;
+    while (messageId && !visitedIds.has(messageId)) {
+        visitedIds.add(messageId);
+        ancestryIds.push(messageId);
+        messageId = terminatedItemsById.get(messageId)?.parentId ?? null;
+    }
+    ancestryIds.reverse();
+
+    const ancestryIdSet = new Set(ancestryIds);
+    const ancestry = ancestryIds.map((id) => {
+        const terminatedItem = terminatedItemsById.get(id);
+        if (!terminatedItem) {
+            throw new Error(`Unable to restore message ${id} while saving terminated state`);
+        }
+        const latestItem = latestItemsById.get(id);
+        if (id !== terminatedMessageId || !latestItem) {
+            return latestItem ? {...latestItem, parentId: terminatedItem.parentId} : terminatedItem;
+        }
+        return mergeTerminatedMessageItem(terminatedItem, latestItem);
+    });
+    return {
+        headId: latestRepository.headId ?? terminatedRepository.headId,
+        messages: [
+            ...ancestry,
+            ...latestRepository.messages.filter(({message}) => !ancestryIdSet.has(message.id))
+        ]
+    };
+}
+
+function mergeTerminatedMessageItem(
+    terminatedItem: ReturnType<ThreadRuntime["export"]>["messages"][number],
+    latestItem: ReturnType<ThreadRuntime["export"]>["messages"][number]
+): ReturnType<ThreadRuntime["export"]>["messages"][number] {
+    if (terminatedItem.message.role !== "assistant" || latestItem.message.role !== "assistant") {
+        return terminatedItem;
+    }
+
+    const latestToolCalls = new Map<string, (typeof terminatedItem.message.content)[number]>();
+    for (const part of latestItem.message.content) {
+        if (part.type === "tool-call") latestToolCalls.set(part.toolCallId, part);
+    }
+    const content = terminatedItem.message.content.map((part) => {
+        if (part.type !== "tool-call") return part;
+        const latestPart = latestToolCalls.get(part.toolCallId);
+        if (!latestPart || latestPart.type !== "tool-call") return part;
+        if (latestPart.result !== undefined) return latestPart;
+        return {...latestPart, ...part};
+    });
+
+    return {
+        ...latestItem,
+        parentId: terminatedItem.parentId,
+        message: {
+            ...latestItem.message,
+            content,
+            status: terminatedItem.message.status
+        }
+    };
 }
