@@ -210,4 +210,36 @@ describe("LocalAISDKChatModelAdapter frontend tool lifecycle", () => {
             reason: "tool-calls"
         });
     });
+
+    test("does not execute automatic calls after a human-action boundary", async () => {
+        const automaticExecute = vi.fn();
+        streamTextMock.mockReturnValue({
+            stream: (async function* () {
+                yield toolCall("human-1", "confirm");
+                yield toolCall("automatic-1", "mutate");
+                yield {type: "finish", finishReason: "tool-calls", totalUsage: {}};
+            })()
+        });
+
+        const stream = runAdapter({
+            confirm: {type: "human"} as Tool,
+            mutate: {type: "frontend", execute: automaticExecute} as Tool
+        });
+        await nextValue(stream);
+        await nextValue(stream);
+        const blockedYield = await nextValue(stream);
+
+        expect(getToolPart(blockedYield, "automatic-1")).toMatchObject({
+            result: {
+                success: false,
+                error: "Tool was not executed because an earlier tool requires user action."
+            },
+            isError: true
+        });
+        expect(automaticExecute).not.toHaveBeenCalled();
+
+        const finalYield = await nextValue(stream);
+        expect(finalYield.status).toEqual({type: "requires-action", reason: "tool-calls"});
+        expect(getToolPart(finalYield, "human-1").result).toBeUndefined();
+    });
 });

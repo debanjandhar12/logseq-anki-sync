@@ -10,6 +10,7 @@ import {
 import {type Tool, toToolsJSONSchema} from "assistant-stream";
 import {getLLMModel} from "../../../core/ai-sdk/getLLMModel";
 import {getLLMProviderTools} from "../../../core/ai-sdk/getLLMProviderTools";
+import {ChatToolResponse} from "../../tools/base/ChatToolResponse";
 import {getErrorMessage} from "./error-utils";
 import {threadMessageToUIMessage} from "./message-conversion";
 import {
@@ -87,7 +88,11 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
             let usage: LanguageModelUsage | undefined;
             let finishReason: FinishReason | undefined;
             let hasClientToolCalls = false;
-            const toolCallsToExecute: Array<{tool: Tool; toolCall: ToolCallMessagePart}> = [];
+            const toolCallActions: Array<
+                | {type: "execute"; tool: Tool; toolCall: ToolCallMessagePart}
+                | {type: "blocked"; toolCall: ToolCallMessagePart}
+            > = [];
+            let requiresHumanAction = false;
 
             for await (const part of result.stream) {
                 switch (part.type) {
@@ -113,8 +118,12 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                         yield {content, status: {type: "running"}};
 
                         const tool = context.tools?.[toolCall.toolName];
-                        if (tool && tool.type !== "human") {
-                            toolCallsToExecute.push({tool, toolCall});
+                        if (tool?.type === "human") {
+                            requiresHumanAction = true;
+                        } else if (tool && requiresHumanAction) {
+                            toolCallActions.push({type: "blocked", toolCall});
+                        } else if (tool) {
+                            toolCallActions.push({type: "execute", tool, toolCall});
                         }
                         break;
                     }
@@ -169,7 +178,20 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 }
             }
 
-            for (const {tool, toolCall} of toolCallsToExecute) {
+            for (const action of toolCallActions) {
+                const {toolCall} = action;
+                if (action.type === "blocked") {
+                    const blockedResponse = ChatToolResponse.error(
+                        "Tool was not executed because an earlier tool requires user action."
+                    );
+                    content = updateToolCall(content, toolCall.toolCallId, {
+                        result: blockedResponse.result,
+                        isError: blockedResponse.isError
+                    });
+                    yield {content, status: {type: "running"}};
+                    continue;
+                }
+
                 const startedAt = Date.now();
                 content = updateToolCall(content, toolCall.toolCallId, {
                     timing: {startedAt}
@@ -177,7 +199,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 yield {content, status: {type: "running"}};
 
                 const toolResult = await executeFrontendTool(
-                    tool,
+                    action.tool,
                     toolCall,
                     abortSignal,
                     getCurrentBranchMessages(messages, unstable_getMessage())
