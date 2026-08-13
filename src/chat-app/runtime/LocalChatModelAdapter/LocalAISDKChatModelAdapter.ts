@@ -7,7 +7,7 @@ import {
     streamText,
     type ToolSet
 } from "ai";
-import {toToolsJSONSchema} from "assistant-stream";
+import {type Tool, toToolsJSONSchema} from "assistant-stream";
 import {getLLMModel} from "../../../core/ai-sdk/getLLMModel";
 import {getLLMProviderTools} from "../../../core/ai-sdk/getLLMProviderTools";
 import {getErrorMessage} from "./error-utils";
@@ -41,9 +41,9 @@ import {
  * message's previous roundtrip content as initialContent and appends the yielded content via
  * updateMessage. Yielding the full assistant message here would duplicate prior tool calls/results.
  *
- * Tool calls must yield status {type: "requires-action", reason: "tool-calls"}, including after
- * inline tool execution has produced results. LocalRuntime's shouldContinue loop only starts the
- * next LLM roundtrip from that status, and it waits until every non-human tool call has a result.
+ * Automatic tool calls remain running while their inline executors are active. The final yield
+ * uses {type: "requires-action", reason: "tool-calls"} so LocalRuntime's shouldContinue loop can
+ * start the next LLM roundtrip after every non-human tool call has a result.
  */
 export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
     async *run({messages, abortSignal, context, unstable_getMessage}) {
@@ -87,7 +87,7 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
             let usage: LanguageModelUsage | undefined;
             let finishReason: FinishReason | undefined;
             let hasClientToolCalls = false;
-            const toolCallsToExecute: ToolCallMessagePart[] = [];
+            const toolCallsToExecute: Array<{tool: Tool; toolCall: ToolCallMessagePart}> = [];
 
             for await (const part of result.stream) {
                 switch (part.type) {
@@ -110,14 +110,11 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
 
                         hasClientToolCalls = true;
                         content = [...content, toolCall];
-                        yield {
-                            content,
-                            status: {type: "requires-action", reason: "tool-calls"}
-                        };
+                        yield {content, status: {type: "running"}};
 
                         const tool = context.tools?.[toolCall.toolName];
-                        if (tool?.type !== "human" && tool?.execute) {
-                            toolCallsToExecute.push(toolCall);
+                        if (tool && tool.type !== "human") {
+                            toolCallsToExecute.push({tool, toolCall});
                         }
                         break;
                     }
@@ -172,8 +169,13 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                 }
             }
 
-            for (const toolCall of toolCallsToExecute) {
-                const tool = context.tools![toolCall.toolName]!;
+            for (const {tool, toolCall} of toolCallsToExecute) {
+                const startedAt = Date.now();
+                content = updateToolCall(content, toolCall.toolCallId, {
+                    timing: {startedAt}
+                });
+                yield {content, status: {type: "running"}};
+
                 const toolResult = await executeFrontendTool(
                     tool,
                     toolCall,
@@ -181,17 +183,12 @@ export const LocalAISDKChatModelAdapter: ChatModelAdapter = {
                     getCurrentBranchMessages(messages, unstable_getMessage())
                 );
 
-                content = content.map((contentPart) =>
-                    contentPart.type === "tool-call" &&
-                    contentPart.toolCallId === toolCall.toolCallId
-                        ? {...contentPart, ...toolResult}
-                        : contentPart
-                );
+                content = updateToolCall(content, toolCall.toolCallId, {
+                    ...toolResult,
+                    timing: {startedAt, completedAt: Date.now()}
+                });
 
-                yield {
-                    content,
-                    status: {type: "requires-action", reason: "tool-calls"}
-                };
+                yield {content, status: {type: "running"}};
             }
 
             const tokenUsage = usage ? normalizeTokenUsage(usage) : undefined;
@@ -278,5 +275,15 @@ function updateProviderToolCall(
         part.type === "tool-call" && part.toolCallId === toolCallId
             ? {...part, ...update, providerExecuted: true}
             : part
+    );
+}
+
+function updateToolCall(
+    content: NonNullable<ChatModelRunResult["content"]>,
+    toolCallId: string,
+    update: Partial<ToolCallMessagePart>
+): NonNullable<ChatModelRunResult["content"]> {
+    return content.map((part) =>
+        part.type === "tool-call" && part.toolCallId === toolCallId ? {...part, ...update} : part
     );
 }

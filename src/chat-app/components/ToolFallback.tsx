@@ -25,6 +25,7 @@ import {CollapsibleTrigger} from "src/shadcn/radix-ui/collapsible";
  * Changes:
  * (a) Decomposed to customize Lucide icons
  * (b) Keeps required-action tools expanded without exposing unsupported generic approval controls
+ * (c) Uses explicit accessible labels for execution and action-required states
  */
 const ToolFallbackImpl: ToolCallMessagePartComponent = ({
     toolName,
@@ -100,7 +101,17 @@ function ToolFallbackTrigger({
     const isCancelled = status?.type === "incomplete" && status.reason === "cancelled";
 
     const Icon = isError ? CircleXIcon : statusIconMap[statusType];
-    const statusLabel = isError ? "Tool failed" : isCancelled ? "Tool cancelled" : statusType;
+    const statusLabel = isError
+        ? "Tool failed"
+        : isCancelled
+          ? "Tool cancelled"
+          : statusType === "running"
+            ? "Tool is running"
+            : statusType === "requires-action"
+              ? "Tool requires user action"
+              : statusType === "incomplete"
+                ? "Tool incomplete"
+                : "Tool complete";
     const label = isCancelled ? "Cancelled tool" : "Used tool";
 
     return (

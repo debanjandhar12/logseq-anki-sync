@@ -21,6 +21,7 @@ import {cn} from "src/shadcn/lib/utils";
  * (b) Groups reasoning and tool calls in one collapsed chain-of-thought block.
  * (d) Preserves standalone tool UIs and renders data and indicator parts.
  * (e) Uses guarded branch navigation so applied uncommitted changes are reverted first.
+ * (f) Keeps action-required tools standalone and reserves active group styling for running work.
  */
 export const AssistantMessage: FC = () => {
     const ACTION_BAR_PT = "pt-1.5";
@@ -38,9 +39,7 @@ export const AssistantMessage: FC = () => {
                     {({part, children}) => {
                         switch (part.type) {
                             case "group-chainOfThought": {
-                                const active =
-                                    part.status.type === "running" ||
-                                    part.status.type === "requires-action";
+                                const active = part.status.type === "running";
                                 return (
                                     <ReasoningRoot
                                         defaultOpen={false}
@@ -100,6 +99,11 @@ export const groupMessagePart = (
     part: Parameters<typeof groupByType>[0],
     context?: GroupByContext
 ) => {
-    if (part.type === "tool-call" && part.toolName === LogseqCommitChangesTool.NAME) return [];
+    if (
+        part.type === "tool-call" &&
+        (part.toolName === LogseqCommitChangesTool.NAME || part.status.type === "requires-action")
+    ) {
+        return [];
+    }
     return groupByType(part, context);
 };
