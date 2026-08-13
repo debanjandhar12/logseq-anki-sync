@@ -63,7 +63,12 @@ export async function* executeFrontendToolPlan(
                 getMessages()
             );
             if (abortSignal.aborted) throw new FrontendToolCancelledError();
-            const patch = await normalizeFrontendToolOutput(item.tool, item.toolCall, output);
+            const patch = await normalizeFrontendToolOutput(
+                item.tool,
+                item.toolCall,
+                output,
+                abortSignal
+            );
             if (abortSignal.aborted) throw new FrontendToolCancelledError();
             yield {
                 type: "finished",

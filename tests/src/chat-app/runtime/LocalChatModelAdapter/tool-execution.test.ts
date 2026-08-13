@@ -33,7 +33,12 @@ async function executeTool(tool: Tool) {
     });
     try {
         const output = await invokeFrontendTool(tool, toolCall, new AbortController().signal, []);
-        return await normalizeFrontendToolOutput(tool, toolCall, output);
+        return await normalizeFrontendToolOutput(
+            tool,
+            toolCall,
+            output,
+            new AbortController().signal
+        );
     } catch (error) {
         return createFrontendToolErrorPatch(error);
     }

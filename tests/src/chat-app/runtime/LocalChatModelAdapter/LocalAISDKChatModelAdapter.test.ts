@@ -45,6 +45,10 @@ function toolCall(toolCallId: string, toolName: string) {
     };
 }
 
+function providerToolCall(toolCallId: string, toolName: string) {
+    return {...toolCall(toolCallId, toolName), providerExecuted: true};
+}
+
 function currentAssistantMessage(): ThreadMessage {
     return {
         id: "assistant-1",
@@ -287,5 +291,34 @@ describe("LocalAISDKChatModelAdapter frontend tool lifecycle", () => {
             reason: "cancelled"
         });
         expect((await stream.next()).done).toBe(true);
+    });
+
+    test("keeps provider-executed calls outside frontend execution and continuation", async () => {
+        const frontendExecute = vi.fn();
+        streamTextMock.mockReturnValue({
+            stream: (async function* () {
+                yield providerToolCall("provider-1", "web_search");
+                yield {
+                    type: "tool-result",
+                    toolCallId: "provider-1",
+                    output: undefined,
+                    providerExecuted: true
+                };
+                yield {type: "finish", finishReason: "stop", totalUsage: {}};
+            })()
+        });
+
+        const stream = runAdapter({
+            web_search: {type: "frontend", execute: frontendExecute} as Tool
+        });
+        await nextValue(stream);
+        const resultYield = await nextValue(stream);
+        expect(getToolPart(resultYield, "provider-1")).toMatchObject({
+            providerExecuted: true,
+            result: null,
+            isError: false
+        });
+        expect((await nextValue(stream)).status).toEqual({type: "complete", reason: "stop"});
+        expect(frontendExecute).not.toHaveBeenCalled();
     });
 });

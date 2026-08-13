@@ -46,6 +46,18 @@ export async function invokeFrontendTool(
 export async function normalizeFrontendToolOutput(
     tool: Tool,
     toolCall: ToolCallMessagePart,
+    output: unknown,
+    abortSignal: AbortSignal
+): Promise<ToolCallResultPatch> {
+    return raceWithAbort(
+        normalizeFrontendToolOutputUncancelled(tool, toolCall, output),
+        abortSignal
+    );
+}
+
+async function normalizeFrontendToolOutputUncancelled(
+    tool: Tool,
+    toolCall: ToolCallMessagePart,
     output: unknown
 ): Promise<ToolCallResultPatch> {
     const response = ToolResponse.toResponse(output);

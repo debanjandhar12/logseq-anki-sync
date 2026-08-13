@@ -3,13 +3,16 @@ import type {Tool} from "assistant-stream";
 import {beforeEach, describe, expect, test, vi} from "vitest";
 import {LocalAISDKChatModelAdapter} from "../../../../../src/chat-app/runtime/LocalChatModelAdapter/LocalAISDKChatModelAdapter";
 
-const {streamTextMock} = vi.hoisted(() => ({streamTextMock: vi.fn()}));
+const {convertToModelMessagesMock, streamTextMock} = vi.hoisted(() => ({
+    convertToModelMessagesMock: vi.fn(async (..._args: unknown[]) => []),
+    streamTextMock: vi.fn()
+}));
 
 vi.mock("ai", async (importOriginal) => {
     const original = await importOriginal<typeof import("ai")>();
     return {
         ...original,
-        convertToModelMessages: vi.fn(async () => []),
+        convertToModelMessages: convertToModelMessagesMock,
         streamText: streamTextMock
     };
 });
@@ -74,6 +77,23 @@ describe("LocalAISDKChatModelAdapter with LocalRuntime", () => {
         await flush();
 
         expect(streamTextMock).toHaveBeenCalledTimes(2);
+        expect(convertToModelMessagesMock).toHaveBeenCalledTimes(2);
+        const secondRoundtripMessages = convertToModelMessagesMock.mock.calls[1]?.[0] as
+            | Array<{role: string; parts: unknown[]}>
+            | undefined;
+        if (!secondRoundtripMessages) throw new Error("Missing second model roundtrip");
+        expect(secondRoundtripMessages).toHaveLength(2);
+        expect(secondRoundtripMessages?.[1]).toMatchObject({
+            role: "assistant",
+            parts: [
+                expect.objectContaining({
+                    type: "tool-automatic",
+                    toolCallId: "call-1",
+                    state: "output-available",
+                    output: {success: true, value: "result"}
+                })
+            ]
+        });
         expect(execute).toHaveBeenCalledOnce();
         const assistant = thread.messages.at(-1);
         expect(assistant?.status.type).toBe("complete");

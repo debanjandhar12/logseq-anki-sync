@@ -116,4 +116,32 @@ describe("executeFrontendToolPlan", () => {
         expect(secondExecute).not.toHaveBeenCalled();
         expect((await events.next()).done).toBe(true);
     });
+
+    test("cancels promptly while model output normalization is pending", async () => {
+        const controller = new AbortController();
+        const toModelOutput = vi.fn(() => new Promise(() => {}));
+        const plan: FrontendToolPlanItem[] = [
+            {
+                kind: "execute",
+                toolCall: call("first"),
+                tool: {
+                    type: "frontend",
+                    execute: vi.fn(async () => ({success: true})),
+                    toModelOutput
+                } as Tool
+            }
+        ];
+        const events = executeFrontendToolPlan(plan, {
+            abortSignal: controller.signal,
+            getMessages: () => []
+        });
+
+        await events.next();
+        const cancelled = events.next();
+        await vi.waitFor(() => expect(toModelOutput).toHaveBeenCalledOnce());
+        controller.abort();
+
+        expect((await cancelled).value).toMatchObject({type: "cancelled", toolCallId: "first"});
+        expect((await events.next()).done).toBe(true);
+    });
 });
