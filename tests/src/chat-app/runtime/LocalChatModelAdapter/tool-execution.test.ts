@@ -1,9 +1,11 @@
 import type {Tool} from "assistant-stream";
 import {ToolResponse} from "assistant-stream";
 import {beforeEach, describe, expect, test, vi} from "vitest";
+import {createToolCallMessagePart} from "../../../../../src/chat-app/runtime/LocalChatModelAdapter/tool-call-message-part";
 import {
-    createToolCallMessagePart,
-    executeFrontendTool
+    createFrontendToolErrorPatch,
+    invokeFrontendTool,
+    normalizeFrontendToolOutput
 } from "../../../../../src/chat-app/runtime/LocalChatModelAdapter/tool-execution";
 import {CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR} from "../../../../../src/constants";
 import {ToolResultStore} from "../../../../../src/core/stores/tool-results/ToolResultStore";
@@ -23,17 +25,18 @@ function createTool(execute: Tool["execute"], toModelOutput?: Tool["toModelOutpu
 }
 
 async function executeTool(tool: Tool) {
-    return executeFrontendTool(
-        tool,
-        createToolCallMessagePart({
-            type: "tool-call",
-            toolCallId: TOOL_CALL_ID,
-            toolName: TOOL_NAME,
-            input: {}
-        }),
-        new AbortController().signal,
-        []
-    );
+    const toolCall = createToolCallMessagePart({
+        type: "tool-call",
+        toolCallId: TOOL_CALL_ID,
+        toolName: TOOL_NAME,
+        input: {}
+    });
+    try {
+        const output = await invokeFrontendTool(tool, toolCall, new AbortController().signal, []);
+        return await normalizeFrontendToolOutput(tool, toolCall, output);
+    } catch (error) {
+        return createFrontendToolErrorPatch(error);
+    }
 }
 
 describe("executeFrontendTool tool result size limit", () => {
@@ -57,6 +60,25 @@ describe("executeFrontendTool tool result size limit", () => {
         await expect(
             LogseqPluginStorageManager.getFiles(ToolResultStore.groupName)
         ).resolves.toEqual([]);
+    });
+
+    test("passes branch messages and execution identifiers to the project tool", async () => {
+        const messages = [{id: "branch-message"}] as never;
+        const execute = vi.fn(async () => ({success: true}));
+        const toolCall = createToolCallMessagePart({
+            type: "tool-call",
+            toolCallId: TOOL_CALL_ID,
+            toolName: TOOL_NAME,
+            input: {value: 1}
+        });
+        const abortSignal = new AbortController().signal;
+
+        await invokeFrontendTool(createTool(execute), toolCall, abortSignal, messages);
+
+        expect(execute).toHaveBeenCalledWith(
+            {value: 1},
+            expect.objectContaining({toolCallId: TOOL_CALL_ID, abortSignal, messages})
+        );
     });
 
     test("does not store or truncate a result exactly at the limit", async () => {
@@ -140,7 +162,7 @@ describe("executeFrontendTool tool result size limit", () => {
     test("settles promptly when a frontend tool ignores cancellation", async () => {
         const abortController = new AbortController();
         const neverSettles = new Promise<unknown>(() => {});
-        const execution = executeFrontendTool(
+        const execution = invokeFrontendTool(
             createTool(() => neverSettles),
             createToolCallMessagePart({
                 type: "tool-call",
@@ -154,9 +176,6 @@ describe("executeFrontendTool tool result size limit", () => {
 
         abortController.abort();
 
-        await expect(execution).resolves.toEqual({
-            result: {success: false, error: "The operation was aborted"},
-            isError: true
-        });
+        await expect(execution).rejects.toMatchObject({name: "AbortError"});
     });
 });

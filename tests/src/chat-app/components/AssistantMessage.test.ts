@@ -22,7 +22,11 @@ describe("groupMessagePart", () => {
         expect(groupMessagePart(toolPart("running"))).toEqual(["group-chainOfThought"]);
     });
 
-    test("keeps action-required tools standalone", () => {
-        expect(groupMessagePart(toolPart("requires-action"))).toEqual([]);
+    test("keeps tools with standalone toolkit metadata outside the group", () => {
+        expect(
+            groupMessagePart(toolPart("requires-action"), {
+                toolUIs: {test_tool: [{standalone: true}]}
+            } as never)
+        ).toEqual([]);
     });
 });

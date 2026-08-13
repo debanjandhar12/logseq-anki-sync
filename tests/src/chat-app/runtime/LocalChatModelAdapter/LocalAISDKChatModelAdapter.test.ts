@@ -56,10 +56,10 @@ function currentAssistantMessage(): ThreadMessage {
     } as unknown as ThreadMessage;
 }
 
-function runAdapter(tools: Record<string, Tool>) {
+function runAdapter(tools: Record<string, Tool>, abortSignal = new AbortController().signal) {
     const result = LocalAISDKChatModelAdapter.run({
         messages: [],
-        abortSignal: new AbortController().signal,
+        abortSignal,
         context: {config: {modelName: "test-model"}, tools},
         unstable_getMessage: currentAssistantMessage
     } as never);
@@ -196,7 +196,6 @@ describe("LocalAISDKChatModelAdapter frontend tool lifecycle", () => {
 
         const stream = runAdapter({missing: {type: "frontend"} as Tool});
         await nextValue(stream);
-        await nextValue(stream);
         const completedYield = await nextValue(stream);
         const completedPart = getToolPart(completedYield, "missing-1");
 
@@ -204,7 +203,7 @@ describe("LocalAISDKChatModelAdapter frontend tool lifecycle", () => {
             result: {success: false, error: "Tool cannot be executed: missing"},
             isError: true
         });
-        expect(completedPart.timing?.completedAt).toBeDefined();
+        expect(completedPart.timing).toBeUndefined();
         expect((await nextValue(stream)).status).toEqual({
             type: "requires-action",
             reason: "tool-calls"
@@ -241,5 +240,52 @@ describe("LocalAISDKChatModelAdapter frontend tool lifecycle", () => {
         const finalYield = await nextValue(stream);
         expect(finalYield.status).toEqual({type: "requires-action", reason: "tool-calls"});
         expect(getToolPart(finalYield, "human-1").result).toBeUndefined();
+    });
+
+    test("settles unknown tools as errors instead of leaving unresolved calls", async () => {
+        streamTextMock.mockReturnValue({
+            stream: (async function* () {
+                yield toolCall("unknown-1", "unknown");
+                yield {type: "finish", finishReason: "tool-calls", totalUsage: {}};
+            })()
+        });
+
+        const stream = runAdapter({});
+        await nextValue(stream);
+        const errorYield = await nextValue(stream);
+        expect(getToolPart(errorYield, "unknown-1")).toMatchObject({
+            result: {success: false, error: "Unknown tool: unknown"},
+            isError: true
+        });
+        expect((await nextValue(stream)).status).toEqual({
+            type: "requires-action",
+            reason: "tool-calls"
+        });
+    });
+
+    test("ends as cancelled without continuation when execution is aborted", async () => {
+        const controller = new AbortController();
+        const execute = vi.fn(() => new Promise(() => {}));
+        streamTextMock.mockReturnValue({
+            stream: (async function* () {
+                yield toolCall("slow-1", "slow");
+                yield {type: "finish", finishReason: "tool-calls", totalUsage: {}};
+            })()
+        });
+
+        const stream = runAdapter({slow: {type: "frontend", execute} as Tool}, controller.signal);
+        await nextValue(stream);
+        await nextValue(stream);
+        const cancelledYield = stream.next();
+        await vi.waitFor(() => expect(execute).toHaveBeenCalledOnce());
+        controller.abort();
+
+        const cancelledResult = await cancelledYield;
+        if (cancelledResult.done) throw new Error("Missing cancellation result");
+        expect((cancelledResult.value as ChatModelRunResult).status).toEqual({
+            type: "incomplete",
+            reason: "cancelled"
+        });
+        expect((await stream.next()).done).toBe(true);
     });
 });

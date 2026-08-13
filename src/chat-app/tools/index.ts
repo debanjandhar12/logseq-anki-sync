@@ -24,4 +24,5 @@ export {ParsePdfTool} from "src/chat-app/tools/impl/ParsePdfTool";
 export {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 export {WebPageGetTool} from "src/chat-app/tools/impl/WebPageGetTool";
 export {WebSearchTool} from "src/chat-app/tools/impl/WebSearchTool";
+export {ChatToolRegistryProvider, useChatToolRegistry} from "./ChatToolRegistryProvider";
 export {ChatToolRegistry} from "./ToolRegistry";

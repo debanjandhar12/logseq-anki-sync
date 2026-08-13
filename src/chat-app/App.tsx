@@ -3,6 +3,7 @@ import {AppContent} from "./components/AppContent";
 import {ChatUIContext} from "./context/ChatUIContext";
 import {ThreadBoundLocalAISDKRuntimeProvider} from "./runtime/ThreadBoundLocalAISDKRuntimeProvider";
 import chatAppCss from "./style/main.css?inline";
+import {ChatToolRegistryProvider} from "./tools";
 
 export const App = ({onClose}: {onClose?: () => void}) => {
     return (
@@ -12,9 +13,11 @@ export const App = ({onClose}: {onClose?: () => void}) => {
                 <div
                     className="h-full"
                     style={{height: "calc(100vh - 128px)", margin: "0px", padding: "0px"}}>
-                    <ThreadBoundLocalAISDKRuntimeProvider>
-                        <AppContent />
-                    </ThreadBoundLocalAISDKRuntimeProvider>
+                    <ChatToolRegistryProvider>
+                        <ThreadBoundLocalAISDKRuntimeProvider>
+                            <AppContent />
+                        </ThreadBoundLocalAISDKRuntimeProvider>
+                    </ChatToolRegistryProvider>
                 </div>
             </ShadowWrapper>
         </ChatUIContext.Provider>

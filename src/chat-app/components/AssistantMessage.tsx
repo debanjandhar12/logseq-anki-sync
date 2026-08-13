@@ -1,9 +1,8 @@
-import {type GroupByContext, groupPartByType, MessagePrimitive} from "@assistant-ui/react";
+import {groupPartByType, MessagePrimitive} from "@assistant-ui/react";
 import type {FC} from "react";
 import {AssistantActionBar} from "src/chat-app/components/AssistantActionBar";
 import {BranchPicker} from "src/chat-app/components/BranchPicker";
 import {ToolFallback} from "src/chat-app/components/ToolFallback";
-import {LogseqCommitChangesTool} from "src/chat-app/tools/impl/LogseqCommitChangesTool";
 import {MarkdownText} from "src/shadcn/assistant-ui/markdown-text";
 import {
     Reasoning,
@@ -17,11 +16,11 @@ import {cn} from "src/shadcn/lib/utils";
 
 /**
  * Changes:
- * (a) Removed tool grouping for CommitLogseqChanges tool.
+ * (a) Uses assistant-ui toolkit metadata to preserve standalone tool UIs.
  * (b) Groups reasoning and tool calls in one collapsed chain-of-thought block.
  * (d) Preserves standalone tool UIs and renders data and indicator parts.
  * (e) Uses guarded branch navigation so applied uncommitted changes are reverted first.
- * (f) Keeps action-required tools standalone and reserves active group styling for running work.
+ * (f) Reserves active group styling for running work.
  */
 export const AssistantMessage: FC = () => {
     const ACTION_BAR_PT = "pt-1.5";
@@ -89,21 +88,8 @@ export const AssistantMessage: FC = () => {
     );
 };
 
-const groupByType = groupPartByType<"group-chainOfThought">({
+export const groupMessagePart = groupPartByType<"group-chainOfThought">({
     reasoning: ["group-chainOfThought"],
     "tool-call": ["group-chainOfThought"],
     "standalone-tool-call": []
 });
-
-export const groupMessagePart = (
-    part: Parameters<typeof groupByType>[0],
-    context?: GroupByContext
-) => {
-    if (
-        part.type === "tool-call" &&
-        (part.toolName === LogseqCommitChangesTool.NAME || part.status.type === "requires-action")
-    ) {
-        return [];
-    }
-    return groupByType(part, context);
-};

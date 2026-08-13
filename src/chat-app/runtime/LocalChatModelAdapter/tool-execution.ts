@@ -1,122 +1,101 @@
-import type {ChatModelRunResult, ThreadMessage} from "@assistant-ui/react";
+import type {ThreadMessage} from "@assistant-ui/react";
 import {type Tool, ToolResponse} from "assistant-stream";
 import {ChatToolResponse} from "src/chat-app/tools/base/ChatToolResponse";
-import {getErrorMessage, isRecord} from "./error-utils";
+import {getErrorMessage} from "./error-utils";
+import type {ToolCallMessagePart, ToolCallResultPatch} from "./tool-call-message-part";
 import {storeAndTruncateOversizedToolResult} from "./tool-result-limiter";
 
-type ToolCallStreamPart = {
-    type: "tool-call";
-    toolCallId: string;
-    toolName: string;
-    input: unknown;
-    providerExecuted?: boolean;
-};
+type AssistantStreamToolContext = Parameters<NonNullable<Tool["execute"]>>[1];
+type ProjectToolContext = AssistantStreamToolContext & {messages: readonly ThreadMessage[]};
 
-export type ToolCallMessagePart = Extract<
-    NonNullable<ChatModelRunResult["content"]>[number],
-    {type: "tool-call"}
-> & {
-    /** AI SDK provider-native calls must remain in assistant content. */
-    providerExecuted?: boolean;
-};
-
-export function createToolCallMessagePart(part: ToolCallStreamPart): ToolCallMessagePart {
-    const args = isRecord(part.input) ? (part.input as ToolCallMessagePart["args"]) : {};
-    return {
-        type: "tool-call",
-        toolCallId: part.toolCallId,
-        toolName: part.toolName,
-        args,
-        argsText: JSON.stringify(args),
-        ...(part.providerExecuted !== undefined ? {providerExecuted: part.providerExecuted} : {})
-    };
+export class FrontendToolCancelledError extends Error {
+    constructor() {
+        super("The operation was aborted");
+        this.name = "AbortError";
+    }
 }
 
-export async function executeFrontendTool(
+export function isFrontendToolCancellation(error: unknown): boolean {
+    return (
+        error instanceof FrontendToolCancelledError ||
+        (error instanceof Error && error.name === "AbortError")
+    );
+}
+
+export async function invokeFrontendTool(
     tool: Tool,
     toolCall: ToolCallMessagePart,
     abortSignal: AbortSignal,
     messages: readonly ThreadMessage[]
-): Promise<Pick<ToolCallMessagePart, "result" | "isError" | "artifact" | "modelContent">> {
-    try {
-        if (!tool.execute) {
-            const errorResponse = ChatToolResponse.error(
-                `Tool cannot be executed: ${toolCall.toolName}`
-            );
-            return {
-                result: errorResponse.result,
-                isError: errorResponse.isError
-            };
-        }
+): Promise<unknown> {
+    if (!tool.execute) throw new Error(`Tool cannot be executed: ${toolCall.toolName}`);
+    if (abortSignal.aborted) throw new FrontendToolCancelledError();
 
-        const output = await raceWithAbort(
-            tool.execute(toolCall.args, {
-                toolCallId: toolCall.toolCallId,
-                abortSignal,
-                messages,
-                human: async () => {
-                    throw new Error("Human input is not supported by this chat adapter.");
-                }
-            } as any),
-            abortSignal
-        );
-        const response = ToolResponse.toResponse(output);
-        const truncatedResult = await storeAndTruncateOversizedToolResult({
-            toolCallId: toolCall.toolCallId,
-            toolName: toolCall.toolName,
-            result: response.result,
-            isError: response.isError
-        });
-        if (truncatedResult !== undefined) {
-            return {
-                result: truncatedResult,
-                artifact: response.artifact as ToolCallMessagePart["artifact"],
-                isError: false
-            };
+    const context: ProjectToolContext = {
+        toolCallId: toolCall.toolCallId,
+        abortSignal,
+        messages,
+        human: async () => {
+            throw new Error("Human input is not supported by this chat adapter.");
         }
-        const modelContent =
-            response.modelContent ??
-            (!response.isError && tool.toModelOutput
-                ? await tool.toModelOutput({
-                      toolCallId: toolCall.toolCallId,
-                      input: toolCall.args,
-                      output: response.result
-                  })
-                : undefined);
+    };
+
+    return raceWithAbort(tool.execute(toolCall.args, context), abortSignal);
+}
+
+export async function normalizeFrontendToolOutput(
+    tool: Tool,
+    toolCall: ToolCallMessagePart,
+    output: unknown
+): Promise<ToolCallResultPatch> {
+    const response = ToolResponse.toResponse(output);
+    const truncatedResult = await storeAndTruncateOversizedToolResult({
+        toolCallId: toolCall.toolCallId,
+        toolName: toolCall.toolName,
+        result: response.result,
+        isError: response.isError
+    });
+    if (truncatedResult !== undefined) {
         return {
-            result: response.result,
+            result: truncatedResult,
             artifact: response.artifact as ToolCallMessagePart["artifact"],
-            isError: response.isError,
-            modelContent
-        };
-    } catch (error) {
-        const errorResponse = ChatToolResponse.error(getErrorMessage(error));
-        return {
-            result: errorResponse.result,
-            isError: errorResponse.isError
+            isError: false
         };
     }
+
+    const modelContent =
+        response.modelContent ??
+        (!response.isError && tool.toModelOutput
+            ? await tool.toModelOutput({
+                  toolCallId: toolCall.toolCallId,
+                  input: toolCall.args,
+                  output: response.result
+              })
+            : undefined);
+    return {
+        result: response.result,
+        artifact: response.artifact as ToolCallMessagePart["artifact"],
+        isError: response.isError,
+        modelContent
+    };
+}
+
+export function createFrontendToolErrorPatch(error: unknown): ToolCallResultPatch {
+    const response = ChatToolResponse.error(getErrorMessage(error));
+    return {result: response.result, isError: response.isError};
 }
 
 async function raceWithAbort<T>(
     operation: PromiseLike<T> | T,
     abortSignal: AbortSignal
 ): Promise<T> {
-    if (abortSignal.aborted) throw createAbortError();
+    if (abortSignal.aborted) throw new FrontendToolCancelledError();
 
-    return await new Promise<T>((resolve, reject) => {
-        const handleAbort = () => reject(createAbortError());
+    return new Promise<T>((resolve, reject) => {
+        const handleAbort = () => reject(new FrontendToolCancelledError());
         abortSignal.addEventListener("abort", handleAbort, {once: true});
         Promise.resolve(operation)
             .then(resolve, reject)
-            .finally(() => {
-                abortSignal.removeEventListener("abort", handleAbort);
-            });
+            .finally(() => abortSignal.removeEventListener("abort", handleAbort));
     });
-}
-
-function createAbortError(): Error {
-    const error = new Error("The operation was aborted");
-    error.name = "AbortError";
-    return error;
 }

@@ -7,7 +7,7 @@ import {
 } from "@assistant-ui/react";
 import {useMemo} from "react";
 import {CHAT_APP_AGENT_MAX_STEPS} from "../../constants";
-import {ChatToolRegistry} from "../tools";
+import {useChatToolRegistry} from "../tools";
 import {LocalAISDKChatModelAdapter} from "./LocalChatModelAdapter";
 import {LocalThreadHistoryAdapter} from "./LocalThreadHistoryAdapter.js";
 import {LogseqAttachmentAdapter} from "./LogseqAttachmentAdapter";
@@ -20,8 +20,7 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
     const localThreadId = useAuiState((state) => state.threadListItem.id);
     const remoteThreadId = useAuiState((state) => state.threadListItem.remoteId);
     const threadId = remoteThreadId ?? localThreadId;
-    const toolRegistry = useMemo(() => ChatToolRegistry.build(), []);
-    const humanToolNames = useMemo(() => toolRegistry.getHumanToolNames(), [toolRegistry]);
+    const {humanToolNames} = useChatToolRegistry();
 
     const historyAdapter = useMemo(() => {
         return new LocalThreadHistoryAdapter(threadId, humanToolNames);
@@ -45,6 +44,6 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
             attachments: attachmentAdapter
         },
         maxSteps: CHAT_APP_AGENT_MAX_STEPS,
-        unstable_humanToolNames: humanToolNames
+        unstable_humanToolNames: [...humanToolNames]
     });
 }

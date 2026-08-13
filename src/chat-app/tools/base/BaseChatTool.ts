@@ -26,6 +26,9 @@ export abstract class BaseChatTool<
     /** Tool type: 'frontend' for standard execution, 'human' for user interaction */
     readonly type: "frontend" | "human" = "frontend";
 
+    /** Controls whether assistant-ui groups the tool with reasoning or renders it standalone. */
+    readonly display?: "inline" | "standalone";
+
     /**
      * Optional UI component to render the tool call in the chat.
      */
@@ -44,7 +47,8 @@ export abstract class BaseChatTool<
         const definition = {
             type: this.type,
             description: this.description,
-            parameters: this.parameters
+            parameters: this.parameters,
+            ...(this.display ? {display: this.display} : {})
         };
 
         if (!this.execute) return definition as Tool<TArgs, TResult>;

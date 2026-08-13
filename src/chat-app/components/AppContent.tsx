@@ -1,9 +1,9 @@
 import {AuiProvider, Tools, useAui} from "@assistant-ui/react";
-import {useEffect, useMemo} from "react";
+import {useEffect} from "react";
 import {ThreadWrapper} from "src/chat-app/components/ThreadWrapper";
 import {useAssistantModelContext} from "src/chat-app/hooks/useAssistantModelContext";
 import {useChatCommandHandler} from "src/chat-app/hooks/useChatCommandHandler";
-import {ChatToolRegistry} from "src/chat-app/tools";
+import {useChatToolRegistry} from "src/chat-app/tools";
 import {getSuggestions} from "../utils/getSuggestions";
 
 /**
@@ -11,7 +11,7 @@ import {getSuggestions} from "../utils/getSuggestions";
  * @constructor
  */
 export const AppContent = () => {
-    const toolkit = useMemo(() => ChatToolRegistry.build().getAUIToolkit(), []);
+    const {toolkit} = useChatToolRegistry();
 
     const aui = useAui({
         suggestions: getSuggestions(),

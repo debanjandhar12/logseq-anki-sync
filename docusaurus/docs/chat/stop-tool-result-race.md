@@ -137,9 +137,9 @@ If assistant-ui produces a new message update after Stop, `ThreadStore` correctl
 
 ## Actual Live-Runtime Root Cause
 
-### Intermediate `requires-action` status
+### Previous intermediate `requires-action` status
 
-`LocalAISDKChatModelAdapter` yields a tool call as soon as it arrives:
+The earlier `LocalAISDKChatModelAdapter` yielded a tool call as soon as it arrived:
 
 ```ts
 yield {
@@ -148,7 +148,7 @@ yield {
 };
 ```
 
-This status is needed so assistant-ui can render tool calls and decide whether another model roundtrip should run.
+The final form of this status is needed so assistant-ui can decide whether another model roundtrip should run. It is no longer emitted while automatic tool execution is active.
 
 However, the adapter generator may still be active after this yield. It can still be:
 
@@ -218,6 +218,27 @@ synthetic results disappear
 `withRoundtripPersistence` could then persist that stale message. The per-thread lock serialized this operation correctly, but the stale message was still the later update.
 
 ## Final Lifecycle Fix
+
+### Current frontend-tool lifecycle
+
+The custom LocalRuntime adapter now follows assistant-ui's execution status semantics while
+retaining the final LocalRuntime continuation handshake:
+
+1. Project-managed frontend tool calls remain `running` while they are queued or executing.
+2. Calls execute strictly in model-emitted order. A later executor cannot start until the previous
+   result has been yielded into the assistant message.
+3. Tool timing is recorded on the part only while its executor is active.
+4. After automatic calls settle, the adapter yields `requires-action/tool-calls` once. LocalRuntime
+   immediately starts the next model roundtrip when all automatic results exist, or pauses when a
+   declared human tool is unresolved.
+5. A human tool establishes an action boundary. Later project-managed automatic calls are not
+   executed and receive a defined blocked result.
+6. Cancellation ends the adapter step as `incomplete/cancelled`; it does not produce a continuation
+   status or start later tools.
+
+Provider-executed tools remain owned by the provider stream and do not enter this project-managed
+sequential pipeline. LocalRuntime remains intentional because the chat requires branch-aware thread
+state that the AI SDK ExternalStoreRuntime path does not provide.
 
 ### Explicit adapter-run tracking
 

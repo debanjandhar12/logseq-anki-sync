@@ -59,6 +59,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
 
     readonly name = LogseqCommitChangesTool.NAME;
     readonly type = "human";
+    readonly display = "standalone";
     readonly description =
         "Ask the user to review and approve committing applied uncommitted Logseq graph changes made by block/page editing tools.";
     readonly parameters = LogseqCommitChangesArgsZodObj;

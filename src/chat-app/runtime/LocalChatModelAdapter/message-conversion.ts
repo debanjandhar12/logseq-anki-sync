@@ -1,6 +1,6 @@
 import type {ThreadMessage} from "@assistant-ui/react";
 import type {UIMessage} from "ai";
-import type {ToolCallMessagePart} from "./tool-execution";
+import type {ToolCallMessagePart} from "./tool-call-message-part";
 
 export function threadMessageToUIMessage(message: ThreadMessage): UIMessage {
     const parts: UIMessage["parts"] = [];

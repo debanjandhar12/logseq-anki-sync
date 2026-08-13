@@ -61,7 +61,7 @@ export class ChatToolRegistry {
         return toolkit;
     }
 
-    getHumanToolNames(): string[] {
+    getHumanToolNames(): readonly string[] {
         return [...this.humanToolNames];
     }
 
