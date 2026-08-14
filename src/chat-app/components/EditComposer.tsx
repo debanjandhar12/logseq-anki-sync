@@ -1,4 +1,10 @@
-import {ComposerPrimitive, MessagePrimitive, useAui, useAuiState} from "@assistant-ui/react";
+import {
+    ComposerPrimitive,
+    MessagePrimitive,
+    type MessageState,
+    useAui,
+    useAuiState
+} from "@assistant-ui/react";
 import {type FC, useState} from "react";
 import {useLogseqAppliedChangesBranchGuard} from "src/chat-app/hooks/useLogseqAppliedChangesBranchGuard";
 import {Button} from "src/shadcn/radix-ui/button";
@@ -7,21 +13,26 @@ import {Button} from "src/shadcn/radix-ui/button";
  * Changes:
  * (a) Decompose ThreadMessage.
  * (b) Uses the same visible semantic background and border as the main composer.
- * (c) Guards Update because editing a message creates a new branch; applied uncommitted Logseq
- *     graph changes are reverted (after confirmation) before submitting the edit.
+ * (c) Guards changed updates because editing a message creates a new branch; applied uncommitted
+ *     Logseq graph changes are reverted (after confirmation) before submitting the edit.
+ * (d) Skips the branch guard for unchanged text, matching assistant-ui's no-op edit behavior.
  */
 export const EditComposer: FC = () => {
     const aui = useAui();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [originalMessageText] = useState(() => getMessageText(aui.message().getState().content));
     const guardBranchNavigation = useLogseqAppliedChangesBranchGuard();
-    const canSend = useAuiState((state) => state.composer.canSend);
+    const canSend = useAuiState((state) => state.message.composer.canSend);
 
     const handleUpdate = async () => {
         if (isSubmitting || !canSend) return;
         setIsSubmitting(true);
         try {
-            const proceed = await guardBranchNavigation();
-            if (!proceed) return;
+            const composerText = aui.message().composer().getState().text;
+            if (hasEditTextChanged(composerText, originalMessageText)) {
+                const proceed = await guardBranchNavigation();
+                if (!proceed) return;
+            }
             aui.message().composer().send();
         } finally {
             setIsSubmitting(false);
@@ -60,3 +71,14 @@ export const EditComposer: FC = () => {
         </MessagePrimitive.Root>
     );
 };
+
+export function hasEditTextChanged(composerText: string, originalMessageText: string): boolean {
+    return composerText !== originalMessageText;
+}
+
+export function getMessageText(messageContent: MessageState["content"]): string {
+    return messageContent
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("\n\n");
+}
