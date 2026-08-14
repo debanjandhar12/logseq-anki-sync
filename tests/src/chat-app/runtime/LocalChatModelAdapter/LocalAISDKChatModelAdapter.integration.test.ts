@@ -105,4 +105,121 @@ describe("LocalAISDKChatModelAdapter with LocalRuntime", () => {
         });
     });
 
+    test("preserves distinct parallel tool calls through execution and continuation", async () => {
+        const firstExecute = vi.fn(async () => ({success: true, value: "first-result"}));
+        const secondExecute = vi.fn(async () => ({success: true, value: "second-result"}));
+        let modelStep = 0;
+        streamTextMock.mockImplementation(() => ({
+            stream: (async function* () {
+                modelStep += 1;
+                if (modelStep === 1) {
+                    yield {
+                        type: "tool-call",
+                        toolCallId: "call-1",
+                        toolName: "first",
+                        input: {value: 1},
+                        providerExecuted: false
+                    };
+                    yield {
+                        type: "tool-call",
+                        toolCallId: "call-2",
+                        toolName: "second",
+                        input: {value: 2},
+                        providerExecuted: false
+                    };
+                    yield {type: "finish", finishReason: "tool-calls", totalUsage: {}};
+                    return;
+                }
+                yield {type: "text-delta", text: "done"};
+                yield {type: "finish", finishReason: "stop", totalUsage: {}};
+            })()
+        }));
+
+        const core = new LocalRuntimeCore(
+            {adapters: {chatModel: LocalAISDKChatModelAdapter}, maxSteps: 3},
+            undefined
+        );
+        core.registerModelContextProvider({
+            getModelContext: () => ({
+                config: {modelName: "test-model"},
+                tools: {
+                    first: {type: "frontend", execute: firstExecute} as Tool,
+                    second: {type: "frontend", execute: secondExecute} as Tool
+                }
+            })
+        });
+        const thread = core.threads.getMainThreadRuntimeCore();
+
+        await thread.append({
+            parentId: null,
+            sourceId: null,
+            runConfig: {},
+            role: "user",
+            content: [{type: "text", text: "run both tools"}],
+            attachments: [],
+            metadata: {custom: {}},
+            createdAt: new Date()
+        });
+        await vi.waitFor(() => {
+            expect(streamTextMock).toHaveBeenCalledTimes(2);
+            expect(firstExecute).toHaveBeenCalledOnce();
+            expect(secondExecute).toHaveBeenCalledOnce();
+            expect(thread.messages.at(-1)?.status.type).toBe("complete");
+        });
+
+        expect(firstExecute).toHaveBeenCalledWith(
+            {value: 1},
+            expect.objectContaining({toolCallId: "call-1"})
+        );
+        expect(secondExecute).toHaveBeenCalledWith(
+            {value: 2},
+            expect.objectContaining({toolCallId: "call-2"})
+        );
+        expect(convertToModelMessagesMock).toHaveBeenCalledTimes(2);
+
+        const secondRoundtripMessages = convertToModelMessagesMock.mock.calls[1]?.[0] as
+            | Array<{role: string; parts: unknown[]}>
+            | undefined;
+        expect(secondRoundtripMessages?.[1]).toMatchObject({
+            role: "assistant",
+            parts: [
+                expect.objectContaining({
+                    type: "tool-first",
+                    toolCallId: "call-1",
+                    input: {value: 1},
+                    state: "output-available",
+                    output: {success: true, value: "first-result"}
+                }),
+                expect.objectContaining({
+                    type: "tool-second",
+                    toolCallId: "call-2",
+                    input: {value: 2},
+                    state: "output-available",
+                    output: {success: true, value: "second-result"}
+                })
+            ]
+        });
+
+        const assistant = thread.messages.at(-1);
+        expect(thread.messages).toHaveLength(2);
+        expect(thread.messages.map((message) => message.role)).toEqual(["user", "assistant"]);
+        expect(assistant?.status.type).toBe("complete");
+        expect(assistant?.content).toEqual([
+            expect.objectContaining({
+                type: "tool-call",
+                toolCallId: "call-1",
+                toolName: "first",
+                args: {value: 1},
+                result: {success: true, value: "first-result"}
+            }),
+            expect.objectContaining({
+                type: "tool-call",
+                toolCallId: "call-2",
+                toolName: "second",
+                args: {value: 2},
+                result: {success: true, value: "second-result"}
+            }),
+            expect.objectContaining({type: "text", text: "done"})
+        ]);
+    });
 });
