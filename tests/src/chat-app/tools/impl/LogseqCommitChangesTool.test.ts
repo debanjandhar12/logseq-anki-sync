@@ -58,7 +58,8 @@ describe("LogseqCommitChangesTool", () => {
 
         expect(response.result).toEqual({
             success: true,
-            changes: "No uncommitted changes are available to review or commit."
+            changes: "No uncommitted changes are available to review or commit.",
+            outcome: "no-changes"
         });
     });
 
@@ -72,7 +73,8 @@ describe("LogseqCommitChangesTool", () => {
         expect(command.executeMock).toHaveBeenCalledOnce();
         expect(response.result).toEqual({
             success: true,
-            changes: "Committed changes successfully. They are now committed changes."
+            changes: "Committed changes successfully. They are now committed changes.",
+            outcome: "committed"
         });
         expect(tracker.getCommands()).toEqual([]);
         expect(getArtifactTracker(response).getCommands()).toEqual([]);

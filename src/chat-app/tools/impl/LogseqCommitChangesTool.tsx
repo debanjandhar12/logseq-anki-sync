@@ -44,7 +44,14 @@ const LogseqCommitChangesArgsZodObj = z.object({});
 
 type LogseqCommitChangesArgs = z.infer<typeof LogseqCommitChangesArgsZodObj>;
 
-type LogseqCommitChangesResult = ChatToolSuccessResult<{changes: string}> | ChatToolErrorResult;
+type LogseqCommitChangesOutcome = "committed" | "no-changes";
+
+export type LogseqCommitChangesResult =
+    | ChatToolSuccessResult<{
+          changes: string;
+          outcome: LogseqCommitChangesOutcome;
+      }>
+    | ChatToolErrorResult;
 
 type PreparedReview =
     | {kind: "no-graph-mutations"}
@@ -75,7 +82,8 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             if (transactionTracker.getGraphMutationCommandCount() === 0) {
                 return ChatToolResponse.success(
                     {
-                        changes: "No uncommitted changes are available to review or commit."
+                        changes: "No uncommitted changes are available to review or commit.",
+                        outcome: "no-changes"
                     },
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 );
@@ -86,7 +94,8 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 transactionTracker.clear();
                 return ChatToolResponse.success(
                     {
-                        changes: "No uncommitted changes are available to review or commit."
+                        changes: "No uncommitted changes are available to review or commit.",
+                        outcome: "no-changes"
                     },
                     createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                 );
@@ -95,7 +104,8 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
 
             return ChatToolResponse.success(
                 {
-                    changes: "Committed changes successfully. They are now committed changes."
+                    changes: "Committed changes successfully. They are now committed changes.",
+                    outcome: "committed"
                 },
                 createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
             );
@@ -243,7 +253,10 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                     }
                     addResult(
                         ChatToolResponse.success(
-                            {changes: "No reviewable page changes are available to commit."},
+                            {
+                                changes: "No reviewable page changes are available to commit.",
+                                outcome: "no-changes"
+                            },
                             artifact
                         )
                     );
