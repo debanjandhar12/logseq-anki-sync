@@ -31,7 +31,7 @@ import {z} from "zod";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 const DEFER_COMMIT_MESSAGE =
-    "Changes not committed. User will commit later. Do not call this tool immediately again without feedback from user";
+    "Changes not committed. User has decided he will commit later after further changes.";
 
 class DiffRevertFailedError extends Error {
     public constructor(public readonly cause: unknown) {
