@@ -30,7 +30,7 @@ import {showAIChangesReviewModal} from "src/ui/launchers/showAIChangesReviewModa
 import {z} from "zod";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
-const COMMIT_LATER_MESSAGE =
+const DEFER_COMMIT_MESSAGE =
     "Changes not committed. User will commit later. Do not call this tool immediately again without feedback from user";
 
 class DiffRevertFailedError extends Error {
@@ -278,9 +278,9 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                     case "commit":
                         addResult(await this.executeApprove({}, {messages}, transactionTracker));
                         return;
-                    case "continue-later": {
+                    case "defer-commit": {
                         const stopResult = await stop({
-                            errorMessage: COMMIT_LATER_MESSAGE,
+                            errorMessage: DEFER_COMMIT_MESSAGE,
                             target: {
                                 messageId,
                                 toolCallId: props.toolCallId,
