@@ -2,14 +2,13 @@ import {MessagePrimitive} from "@assistant-ui/react";
 import type {FC} from "react";
 import {AttachmentUI} from "src/chat-app/components/AttachmentUI";
 import {BranchPicker} from "src/chat-app/components/BranchPicker";
-import {UserActionBar} from "src/chat-app/components/UserActionBar";
+import {UserActionBar} from "src/shadcn/assistant-ui/thread";
 
 /**
  * Changes:
  * (a) Decomposed to modify UserMessageAttachments and use custom AttachmentUI
  * (b) Preserves the Logseq attachment pill layout.
  * (c) Uses guarded branch navigation so applied uncommitted changes are reverted first.
- * (d) Uses the committed-history-aware user action bar.
  */
 export const UserMessage: FC = () => {
     return (
