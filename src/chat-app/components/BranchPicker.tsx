@@ -1,7 +1,8 @@
 import {BranchPickerPrimitive, useAui, useAuiState} from "@assistant-ui/react";
 import {ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
-import {type FC, useState} from "react";
+import {type FC, useRef, useState} from "react";
 import {useLogseqAppliedChangesBranchGuard} from "src/chat-app/hooks/useLogseqAppliedChangesBranchGuard";
+import {isMessageInCommittedHistory} from "src/chat-app/utils/committedTurnBoundary";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
 import {cn} from "src/shadcn/lib/utils";
 
@@ -9,30 +10,47 @@ import {cn} from "src/shadcn/lib/utils";
  * Changes vs src/shadcn/assistant-ui/thread.tsx BranchPicker:
  * (a) Guards branch navigation so applied uncommitted Logseq changes are reverted (after confirm)
  *     before switching branches.
+ * (b) Disables branch switching for messages in committed history and rechecks after the guard.
  */
 export const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({className, ...rest}) => {
     const aui = useAui();
     const [isSwitching, setIsSwitching] = useState(false);
+    const isSwitchingRef = useRef(false);
     const guardBranchNavigation = useLogseqAppliedChangesBranchGuard();
+    const messages = useAuiState((state) => state.thread.messages);
+    const messageId = useAuiState((state) => state.message.id);
     const branchNumber = useAuiState((state) => state.message.branchNumber);
     const branchCount = useAuiState((state) => state.message.branchCount);
     const isRunning = useAuiState((state) => state.thread.isRunning);
     const canSwitchDuringRun = useAuiState(
         (state) => state.thread.capabilities.switchBranchDuringRun
     );
-    const switchDisabled = isSwitching || (isRunning && !canSwitchDuringRun);
+    const switchDisabled = isBranchSwitchDisabled({
+        messages,
+        messageId,
+        isSwitching,
+        isRunning,
+        canSwitchDuringRun
+    });
 
     const switchBranch = async (position: "previous" | "next") => {
-        if (switchDisabled) return;
-        if (branchNumber <= 1 && position === "previous") return;
-        if (branchNumber >= branchCount && position === "next") return;
+        const targetMessageId = aui.message().getState().id;
+        if (
+            isSwitchingRef.current ||
+            isCurrentBranchSwitchDisabled(aui, targetMessageId, position)
+        ) {
+            return;
+        }
 
+        isSwitchingRef.current = true;
         setIsSwitching(true);
         try {
             const proceed = await guardBranchNavigation();
             if (!proceed) return;
+            if (isCurrentBranchSwitchDisabled(aui, targetMessageId, position)) return;
             aui.message().switchToBranch({position});
         } finally {
+            isSwitchingRef.current = false;
             setIsSwitching(false);
         }
     };
@@ -63,3 +81,41 @@ export const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({className, .
         </BranchPickerPrimitive.Root>
     );
 };
+
+interface BranchSwitchState {
+    messages: Parameters<typeof isMessageInCommittedHistory>[0];
+    messageId: string;
+    isSwitching: boolean;
+    isRunning: boolean;
+    canSwitchDuringRun: boolean;
+}
+
+export function isBranchSwitchDisabled(state: BranchSwitchState): boolean {
+    return (
+        state.isSwitching ||
+        (state.isRunning && !state.canSwitchDuringRun) ||
+        isMessageInCommittedHistory(state.messages, state.messageId)
+    );
+}
+
+function isCurrentBranchSwitchDisabled(
+    aui: ReturnType<typeof useAui>,
+    targetMessageId: string,
+    position: "previous" | "next"
+): boolean {
+    const thread = aui.thread().getState();
+    const message = aui.message().getState();
+    return (
+        message.id !== targetMessageId ||
+        isBranchSwitchDisabled({
+            messages: thread.messages,
+            messageId: message.id,
+            isSwitching: false,
+            isRunning: thread.isRunning,
+            canSwitchDuringRun: thread.capabilities.switchBranchDuringRun
+        }) ||
+        (position === "previous"
+            ? message.branchNumber <= 1
+            : message.branchNumber >= message.branchCount)
+    );
+}
