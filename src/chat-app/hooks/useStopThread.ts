@@ -5,6 +5,7 @@ import {createLogger, LoggerCategory} from "src/logger";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
+/** Binds thread-run termination to the active thread and reports persistence failures to the user. */
 export function useStopThread(): {
     stop: (options?: {
         errorMessage?: string;

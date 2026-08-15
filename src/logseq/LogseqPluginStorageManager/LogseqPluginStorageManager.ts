@@ -27,9 +27,6 @@ export class LogseqPluginStorageManager {
         );
     }
 
-    /**
-     * Returns undefined when a file does not exist, regardless of the active storage backend.
-     */
     static async getFileContent(group: string, fileName: string): Promise<string | undefined> {
         LogseqPluginStorageManager.validateOperation(group, fileName);
         try {
