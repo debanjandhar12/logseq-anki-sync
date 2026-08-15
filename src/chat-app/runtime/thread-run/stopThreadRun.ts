@@ -59,7 +59,7 @@ async function stopThreadRunOnce(options: {
     const wasRunning = targetsActiveTurn && (hadTrackedRun || options.runtime.getState().isRunning);
 
     if (wasRunning) {
-        await cancelActiveRun(options.runtime, hadTrackedRun ? options.threadId : undefined);
+        await cancelActiveRun(options.runtime);
     }
     if (!target) return {didStop: wasRunning};
 
@@ -81,7 +81,7 @@ async function stopThreadRunOnce(options: {
     }
 }
 
-async function cancelActiveRun(runtime: ThreadRuntime, trackedThreadId?: string): Promise<void> {
+async function cancelActiveRun(runtime: ThreadRuntime): Promise<void> {
     await new Promise<void>((resolve, reject) => {
         let didSettle = false;
         const settle = (error?: Error) => {
@@ -97,12 +97,6 @@ async function cancelActiveRun(runtime: ThreadRuntime, trackedThreadId?: string)
         );
         // Subscribe before cancellation so a synchronous runEnd cannot be missed.
         const unsubscribe = runtime.unstable_on("runEnd", () => settle());
-
-        // The tracked generator may have ended between the initial check and subscription.
-        if (trackedThreadId && !isThreadRunActive(trackedThreadId)) {
-            settle();
-            return;
-        }
 
         try {
             runtime.cancelRun();

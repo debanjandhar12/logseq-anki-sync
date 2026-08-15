@@ -101,4 +101,78 @@ describe("recoverInterruptedMessagesDuringThreadLoad", () => {
             repository
         );
     });
+
+    test("recovers automatic siblings while preserving a pending human tool", () => {
+        const humanMessage = assistantMessage({
+            id: "mixed",
+            status: "requires-action",
+            toolName: "human_tool"
+        });
+        if (humanMessage.role !== "assistant") throw new Error("Expected assistant message");
+        const mixedMessage = {
+            ...humanMessage,
+            content: [
+                ...humanMessage.content,
+                {
+                    type: "tool-call",
+                    toolCallId: "automatic-tool",
+                    toolName: "automatic_tool",
+                    args: {},
+                    argsText: "{}"
+                }
+            ]
+        } as ThreadMessage;
+        const repository: ExportedMessageRepository = {
+            headId: "mixed",
+            messages: [{message: mixedMessage, parentId: null}]
+        };
+
+        const recovered = recoverInterruptedMessagesDuringThreadLoad(repository, ["human_tool"]);
+        const message = recovered.messages[0]?.message;
+        expect(message?.status).toEqual({type: "requires-action", reason: "tool-calls"});
+        expect(message?.content[0]).not.toHaveProperty("result");
+        expect(message?.content[1]).toMatchObject({
+            result: {
+                success: false,
+                error: expect.stringContaining("closed or reloaded")
+            },
+            isError: true
+        });
+    });
+
+    test("recovers automatic siblings while preserving a pending approval", () => {
+        const approvalMessage = assistantMessage({
+            id: "approval-mixed",
+            status: "requires-action",
+            toolName: "approval_tool"
+        });
+        if (approvalMessage.role !== "assistant") throw new Error("Expected assistant message");
+        const approvalPart = approvalMessage.content[0];
+        if (!approvalPart || approvalPart.type !== "tool-call") {
+            throw new Error("Expected tool call");
+        }
+        const mixedMessage = {
+            ...approvalMessage,
+            content: [
+                {...approvalPart, approval: {id: "approval-1"}},
+                {
+                    type: "tool-call",
+                    toolCallId: "automatic-tool",
+                    toolName: "automatic_tool",
+                    args: {},
+                    argsText: "{}"
+                }
+            ]
+        } as ThreadMessage;
+        const repository: ExportedMessageRepository = {
+            headId: "approval-mixed",
+            messages: [{message: mixedMessage, parentId: null}]
+        };
+
+        const recovered = recoverInterruptedMessagesDuringThreadLoad(repository, []);
+        const message = recovered.messages[0]?.message;
+        expect(message?.status).toEqual({type: "requires-action", reason: "tool-calls"});
+        expect(message?.content[0]).not.toHaveProperty("result");
+        expect(message?.content[1]).toMatchObject({result: {success: false}, isError: true});
+    });
 });

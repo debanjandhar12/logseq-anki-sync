@@ -463,6 +463,21 @@ describe("stopThread", () => {
         expect(runtime.cancelRun).toHaveBeenCalledOnce();
     });
 
+    test("waits for runEnd after tracked generator cleanup", async () => {
+        const {runtime, emitRunEnd} = createRuntime("requires-action");
+        const endRun = trackThreadRun("thread-1");
+        vi.mocked(runtime.cancelRun).mockImplementation(() => endRun());
+
+        const stop = stopThread({threadId: "thread-1", runtime});
+        await vi.waitFor(() => expect(runtime.cancelRun).toHaveBeenCalledOnce());
+        expect(ThreadStore.updateThread).not.toHaveBeenCalled();
+
+        emitRunEnd();
+        await stop;
+
+        expect(ThreadStore.updateThread).toHaveBeenCalledOnce();
+    });
+
     test("uses a custom termination message", async () => {
         const {runtime, getRepository} = createRuntime("requires-action");
 
