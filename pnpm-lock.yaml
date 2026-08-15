@@ -69,6 +69,9 @@ importers:
       '@opencode-ai/models':
         specifier: ^0.0.29
         version: 0.0.29
+      '@opencode-ai/sdk':
+        specifier: ^1.18.18
+        version: 1.18.18
       '@radix-ui/react-avatar':
         specifier: ^1.1.11
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.6))(@types/react@19.2.6)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1764,6 +1767,9 @@ packages:
     peerDependenciesMeta:
       effect:
         optional: true
+
+  '@opencode-ai/sdk@1.18.18':
+    resolution: {integrity: sha512-zJlwXskIR47V1dkPJqeKBgq7nejG1uU8lJaGIGqbX3MWRCT8vKn0fEotbxuPCKnTdmWsDyNGNg9q1qIliDSMDA==}
 
   '@parcel/watcher-android-arm64@2.5.6':
     resolution: {integrity: sha512-YQxSS34tPF/6ZG7r/Ih9xy+kP/WwediEUsqmtf0cuCV5TPPKw/PQHRhueUo6JdeFJaqV3pyjm0GdYjZotbRt/A==}
@@ -8832,6 +8838,10 @@ snapshots:
       fastq: 1.17.1
 
   '@opencode-ai/models@0.0.29': {}
+
+  '@opencode-ai/sdk@1.18.18':
+    dependencies:
+      cross-spawn: 7.0.6
 
   '@parcel/watcher-android-arm64@2.5.6':
     optional: true
