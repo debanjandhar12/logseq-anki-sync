@@ -71,7 +71,10 @@ export async function revertAndDiscardReviewChanges(
     dependencies: Partial<ReviewChangesActionDependencies> = {}
 ): Promise<boolean> {
     const actions = {...defaultDependencies, ...dependencies};
-    if (runtime.getState().isRunning) await actions.stopThread({threadId, runtime});
+    if (runtime.getState().isRunning) {
+        const result = await actions.stopThread({threadId, runtime});
+        if (result.persistenceFailed) throw new Error("Failed to persist the stopped chat state");
+    }
 
     const confirmed = await actions.showConfirm(
         "Revert applied uncommitted changes and discard all uncommitted changes?",
@@ -80,7 +83,10 @@ export async function revertAndDiscardReviewChanges(
     if (!confirmed) return false;
 
     // This later call is idempotent and also catches a run started while confirmation was open.
-    await actions.stopThread({threadId, runtime});
+    const stopResult = await actions.stopThread({threadId, runtime});
+    if (stopResult.persistenceFailed) {
+        throw new Error("Failed to persist the stopped chat state");
+    }
     const output = await actions
         .createDiscardTool()
         .execute({}, {messages: runtime.getState().messages});

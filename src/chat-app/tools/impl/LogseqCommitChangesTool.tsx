@@ -169,6 +169,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     > = (props) => {
         const {result, addResult, status} = props;
         const messages = useAuiState((state) => state.thread.messages);
+        const messageId = useAuiState((state) => state.message.id);
         const {stop} = useStopThread();
         const [isReviewing, setIsReviewing] = useState(false);
         const noChangesResultAddedRef = useRef(false);
@@ -278,7 +279,10 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                         addResult(await this.executeApprove({}, {messages}, transactionTracker));
                         return;
                     case "defer-commit": {
-                        await stop({errorMessage: DEFER_COMMIT_MESSAGE});
+                        await stop({
+                            errorMessage: DEFER_COMMIT_MESSAGE,
+                            targetMessageId: messageId
+                        });
                         return;
                     }
                 }

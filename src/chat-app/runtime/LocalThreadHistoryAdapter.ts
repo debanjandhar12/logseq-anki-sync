@@ -19,14 +19,22 @@ export class LocalThreadHistoryAdapter implements ThreadHistoryAdapter {
     ) {}
 
     async load(): Promise<ExportedMessageRepository> {
-        const threadData = await ThreadStore.loadThread(this.threadId);
-        if (threadData?.exportedMessageRepository) {
-            return recoverInterruptedMessagesDuringThreadLoad(
-                threadData.exportedMessageRepository,
+        return await ThreadStore.updateThread(this.threadId, (threadData) => {
+            const repository = threadData?.exportedMessageRepository;
+            if (!threadData || !repository) {
+                return {type: "skip", result: {headId: null, messages: []}};
+            }
+
+            const recovered = recoverInterruptedMessagesDuringThreadLoad(
+                repository,
                 this.humanToolNames
             );
-        }
-        return {headId: null, messages: []};
+            if (recovered === repository) return {type: "skip", result: repository};
+
+            threadData.exportedMessageRepository = recovered;
+            threadData.custom.updatedAt = new Date();
+            return {type: "save", threadData, result: recovered};
+        });
     }
 
     async append(item: ExportedMessageRepositoryItem): Promise<void> {

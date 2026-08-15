@@ -15,28 +15,32 @@ export interface StopThreadRunResult {
     persistenceFailed?: boolean;
 }
 
-const pendingStops = new Map<string, Promise<StopThreadRunResult>>();
+const pendingStops = new Map<string, Promise<void>>();
 const RUN_END_TIMEOUT_MS = 10_000;
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 /**
- * Stops the current turn. Same-thread callers share the complete cancellation-through-persistence
- * operation so none can bypass the runEnd boundary while assistant-ui is still settling history.
+ * Stops the current turn. Same-thread callers run sequentially through cancellation and persistence
+ * so none can bypass the runEnd boundary while assistant-ui is still settling history.
  */
 export function stopThreadRun(options: {
     threadId: string;
     runtime: ThreadRuntime;
     errorMessage?: string;
+    targetMessageId?: string;
 }): Promise<StopThreadRunResult> {
-    const pending = pendingStops.get(options.threadId);
-    if (pending) return pending;
-
-    const operation = stopThreadRunOnce(options).finally(() => {
-        if (pendingStops.get(options.threadId) === operation) {
+    const previous = pendingStops.get(options.threadId) ?? Promise.resolve();
+    const operation = previous.then(() => stopThreadRunOnce(options));
+    const barrier = operation.then(
+        () => undefined,
+        () => undefined
+    );
+    pendingStops.set(options.threadId, barrier);
+    void barrier.finally(() => {
+        if (pendingStops.get(options.threadId) === barrier) {
             pendingStops.delete(options.threadId);
         }
     });
-    pendingStops.set(options.threadId, operation);
     return operation;
 }
 
@@ -44,11 +48,15 @@ async function stopThreadRunOnce(options: {
     threadId: string;
     runtime: ThreadRuntime;
     errorMessage?: string;
+    targetMessageId?: string;
 }): Promise<StopThreadRunResult> {
     const errorMessage = options.errorMessage ?? USER_TERMINATED_OPERATION;
-    const target = getActiveAssistantMessageTarget(options.runtime.export());
+    const activeTarget = getActiveAssistantMessageTarget(options.runtime.export());
+    const target = options.targetMessageId ? {messageId: options.targetMessageId} : activeTarget;
     const hadTrackedRun = isThreadRunActive(options.threadId);
-    const wasRunning = hadTrackedRun || options.runtime.getState().isRunning;
+    const targetsActiveTurn =
+        !options.targetMessageId || activeTarget?.messageId === options.targetMessageId;
+    const wasRunning = targetsActiveTurn && (hadTrackedRun || options.runtime.getState().isRunning);
 
     if (wasRunning) {
         await cancelActiveRun(options.runtime, hadTrackedRun ? options.threadId : undefined);

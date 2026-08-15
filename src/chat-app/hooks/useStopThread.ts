@@ -6,7 +6,10 @@ import {createLogger, LoggerCategory} from "src/logger";
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 export function useStopThread(): {
-    stop: (options?: {errorMessage?: string}) => Promise<StopThreadRunResult | undefined>;
+    stop: (options?: {
+        errorMessage?: string;
+        targetMessageId?: string;
+    }) => Promise<StopThreadRunResult | undefined>;
     isStopping: boolean;
 } {
     const assistantRuntime = useAssistantRuntime();

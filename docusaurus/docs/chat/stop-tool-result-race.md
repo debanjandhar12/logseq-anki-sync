@@ -318,9 +318,17 @@ races without replacing the complete latest repository with a stale runtime expo
 ## Thread Switching
 
 assistant-ui keeps the previous thread runtime alive when the user switches threads. This is safe:
-run tracking, history persistence, stop single-flight coordination, and storage locks are all keyed
+run tracking, history persistence, stop serialization, and storage locks are all keyed
 by thread ID. Background runs therefore settle independently without writing into the newly active
 thread.
+
+## Interrupted-Load Recovery
+
+History loading repairs messages left in transient `running` or non-human `requires-action` states.
+It applies the same terminal transformation as Stop, including synthetic results for unresolved tool
+calls on inactive branches. The recovered repository is persisted inside the same per-thread update
+boundary before it is returned to assistant-ui, so a later history append cannot reload and restore
+the interrupted state.
 
 ## Why the Error Appeared Later
 

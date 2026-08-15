@@ -186,4 +186,44 @@ describe("LocalThreadHistoryAdapter", () => {
             new LocalThreadHistoryAdapter("missing").append({message: updated, parentId: null})
         ).rejects.toThrow("Thread data not found: missing");
     });
+
+    test("persists load-time recovery before a continuation is appended", async () => {
+        const interrupted = terminatedAssistantMessage();
+        if (interrupted.role !== "assistant") throw new Error("Expected assistant message");
+        const toolCall = interrupted.content[0];
+        if (!toolCall || toolCall.type !== "tool-call") throw new Error("Expected tool call");
+        const interruptedMessage = {
+            ...interrupted,
+            status: {type: "running"},
+            content: [{...toolCall, result: undefined, isError: undefined}]
+        } as ThreadMessage;
+        await ThreadStore.updateThread("thread-1", () => ({
+            type: "save",
+            threadData: createThread({
+                headId: interruptedMessage.id,
+                messages: [{message: interruptedMessage, parentId: null}]
+            }),
+            result: undefined
+        }));
+
+        const adapter = new LocalThreadHistoryAdapter("thread-1");
+        await adapter.load();
+        const continuation = continuationMessage();
+        await adapter.append({message: continuation, parentId: interruptedMessage.id});
+
+        const stored = await ThreadStore.loadThread("thread-1");
+        expect(stored?.exportedMessageRepository?.messages[0]?.message).toMatchObject({
+            status: {type: "incomplete", reason: "cancelled"},
+            content: [
+                {
+                    result: {
+                        success: false,
+                        error: expect.stringContaining("closed or reloaded")
+                    },
+                    isError: true
+                }
+            ]
+        });
+        expect(stored?.exportedMessageRepository?.headId).toBe(continuation.id);
+    });
 });

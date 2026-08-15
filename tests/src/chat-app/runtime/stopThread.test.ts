@@ -531,8 +531,8 @@ describe("stopThread", () => {
         releaseSave?.();
 
         await expect(first).resolves.toEqual({didStop: true});
-        await expect(duplicate).resolves.toEqual({didStop: true});
-        await expect(concurrent).resolves.toEqual({didStop: true});
+        await expect(duplicate).resolves.toEqual({didStop: false});
+        await expect(concurrent).resolves.toEqual({didStop: false});
         expect(ThreadStore.updateThread).toHaveBeenCalledOnce();
     });
 });
