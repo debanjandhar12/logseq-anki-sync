@@ -169,7 +169,6 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     > = (props) => {
         const {result, addResult, status} = props;
         const messages = useAuiState((state) => state.thread.messages);
-        const messageId = useAuiState((state) => state.message.id);
         const {stop} = useStopThread();
         const [isReviewing, setIsReviewing] = useState(false);
         const noChangesResultAddedRef = useRef(false);
@@ -279,30 +278,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                         addResult(await this.executeApprove({}, {messages}, transactionTracker));
                         return;
                     case "defer-commit": {
-                        const stopResult = await stop({
-                            errorMessage: DEFER_COMMIT_MESSAGE,
-                            target: {
-                                messageId,
-                                toolCallId: props.toolCallId,
-                                toolName: LogseqCommitChangesTool.NAME
-                            }
-                        });
-                        if (!stopResult?.didStop) {
-                            logger.error(
-                                "Unable to defer CommitTool because its pending call changed"
-                            );
-                            try {
-                                await logseq.UI.showMsg(
-                                    "The commit review could not be deferred and remains pending",
-                                    "error"
-                                );
-                            } catch (notificationError) {
-                                logger.error(
-                                    "Failed to show CommitTool defer error",
-                                    notificationError
-                                );
-                            }
-                        }
+                        await stop({errorMessage: DEFER_COMMIT_MESSAGE});
                         return;
                     }
                 }

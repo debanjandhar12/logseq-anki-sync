@@ -1,12 +1,13 @@
 import type {ThreadMessage, ThreadRuntime} from "@assistant-ui/react";
 import {afterEach, describe, expect, test, vi} from "vitest";
 import {
-    getReviewChangesCommandCount,
-    getReviewChangesLifecycleLabel,
-    getReviewChangesSummary,
     revertAndDiscardReviewChanges,
     revertAndKeepReviewChanges
-} from "../../../../src/chat-app/components/ReviewChangesDisplay";
+} from "../../../../src/chat-app/components/review-changes/reviewChangesActions";
+import {
+    getReviewChangesLifecycleLabel,
+    getReviewChangesSummary
+} from "../../../../src/chat-app/components/review-changes/reviewChangesSelectors";
 import {ChatToolResponse} from "../../../../src/chat-app/tools/base/ChatToolResponse";
 import {LogseqClearUncommittedChangesTool} from "../../../../src/chat-app/tools/impl/LogseqClearUncommittedChangesTool";
 import {createLogseqReversibleTransactionTrackerArtifact} from "../../../../src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
@@ -89,7 +90,7 @@ const getAppendedToolCall = (runtime: ThreadRuntime) => {
 
 describe("ReviewChangesDisplay", () => {
     test("returns an empty summary without a tracker artifact", () => {
-        expect(getReviewChangesCommandCount([])).toBe(0);
+        expect(getReviewChangesSummary([]).commandCount).toBe(0);
         expect(getReviewChangesSummary([])).toEqual({commandCount: 0, changedPageCount: 0});
         expect(getReviewChangesLifecycleLabel([])).toBeNull();
     });

@@ -1,7 +1,9 @@
 import type {ExportedMessageRepository, ThreadMessage, ThreadRuntime} from "@assistant-ui/react";
 import {beforeEach, describe, expect, test, vi} from "vitest";
-import {stopThread} from "../../../../src/chat-app/runtime/stopThread";
-import {trackThreadRun} from "../../../../src/chat-app/runtime/ThreadRunLifecycle";
+import {stopThreadRun, trackThreadRun} from "../../../../src/chat-app/runtime/thread-run";
+
+const stopThread = stopThreadRun;
+
 import {ThreadStore} from "../../../../src/core/stores/thread-store/ThreadStore";
 
 vi.mock("../../../../src/core/stores/thread-store/ThreadStore", () => ({
@@ -123,8 +125,7 @@ describe("stopThread", () => {
         });
 
         await expect(stopThread({threadId: "thread-1", runtime})).resolves.toEqual({
-            didStop: true,
-            kind: "active-run"
+            didStop: true
         });
 
         expect(runtime.unstable_on).toHaveBeenCalledBefore(runtime.cancelRun as never);
@@ -220,8 +221,7 @@ describe("stopThread", () => {
         });
 
         await expect(stopThread({threadId: "thread-1", runtime})).resolves.toEqual({
-            didStop: true,
-            kind: "required-action"
+            didStop: true
         });
 
         expect(persistedRepository?.headId).toBe(continuation.id);
@@ -424,8 +424,7 @@ describe("stopThread", () => {
         });
 
         await expect(stopThread({threadId: "thread-1", runtime})).resolves.toEqual({
-            didStop: true,
-            kind: "required-action"
+            didStop: true
         });
         expect(persistedRepository?.messages[0]?.message.content[0]).toMatchObject({
             result: {success: false, error: "User terminated the operation"}
@@ -436,8 +435,7 @@ describe("stopThread", () => {
         const {runtime, getRepository} = createRuntime("requires-action");
 
         await expect(stopThread({threadId: "thread-1", runtime})).resolves.toEqual({
-            didStop: true,
-            kind: "required-action"
+            didStop: true
         });
 
         expect(runtime.cancelRun).not.toHaveBeenCalled();
@@ -465,38 +463,18 @@ describe("stopThread", () => {
         expect(runtime.cancelRun).toHaveBeenCalledOnce();
     });
 
-    test("uses an exact target and custom Continue Later message", async () => {
+    test("uses a custom termination message", async () => {
         const {runtime, getRepository} = createRuntime("requires-action");
 
         await stopThread({
             threadId: "thread-1",
             runtime,
-            target: {
-                messageId: "assistant-message",
-                toolCallId: "tool-call",
-                toolName: "test_tool"
-            },
             errorMessage: "Commit later"
         });
 
         expect(getRepository().messages[0]?.message.content[0]).toMatchObject({
             result: {success: false, error: "Commit later"}
         });
-    });
-
-    test("reports a stale exact target as not stopped", async () => {
-        const {runtime} = createRuntime("requires-action");
-
-        await expect(
-            stopThread({
-                threadId: "thread-1",
-                runtime,
-                target: {messageId: "assistant-message", toolCallId: "stale"}
-            })
-        ).resolves.toEqual({didStop: false, kind: "nothing-to-stop"});
-
-        expect(runtime.import).not.toHaveBeenCalled();
-        expect(ThreadStore.updateThread).not.toHaveBeenCalled();
     });
 
     test("creates a missing thread record from the terminated runtime state", async () => {
@@ -509,8 +487,7 @@ describe("stopThread", () => {
         });
 
         await expect(stopThread({threadId: "thread-1", runtime})).resolves.toEqual({
-            didStop: true,
-            kind: "required-action"
+            didStop: true
         });
 
         expect(getRepository().messages[0]?.message.status).toEqual({
@@ -540,7 +517,7 @@ describe("stopThread", () => {
         });
     });
 
-    test("shares identical stops but reports conflicting semantics as not applied", async () => {
+    test("shares concurrent stops for the same thread", async () => {
         const {runtime} = createRuntime("requires-action");
         let releaseSave: (() => void) | undefined;
         vi.mocked(ThreadStore.updateThread).mockImplementation(
@@ -549,22 +526,13 @@ describe("stopThread", () => {
 
         const first = stopThread({threadId: "thread-1", runtime});
         const duplicate = stopThread({threadId: "thread-1", runtime});
-        const conflicting = stopThread({
-            threadId: "thread-1",
-            runtime,
-            target: {
-                messageId: "assistant-message",
-                toolCallId: "tool-call",
-                toolName: "test_tool"
-            },
-            errorMessage: "Commit later"
-        });
+        const concurrent = stopThread({threadId: "thread-1", runtime});
         await vi.waitFor(() => expect(releaseSave).toBeTypeOf("function"));
         releaseSave?.();
 
-        await expect(first).resolves.toEqual({didStop: true, kind: "required-action"});
-        await expect(duplicate).resolves.toEqual({didStop: true, kind: "required-action"});
-        await expect(conflicting).resolves.toEqual({didStop: false, kind: "nothing-to-stop"});
+        await expect(first).resolves.toEqual({didStop: true});
+        await expect(duplicate).resolves.toEqual({didStop: true});
+        await expect(concurrent).resolves.toEqual({didStop: true});
         expect(ThreadStore.updateThread).toHaveBeenCalledOnce();
     });
 });

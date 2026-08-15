@@ -35,7 +35,7 @@ vi.mock("../../../../src/chat-app/export/ChatPageExporter", () => ({
     ChatPageExporter: {exportThread: fixture.exportThread}
 }));
 
-vi.mock("../../../../src/chat-app/components/ReviewChangesDisplay", () => ({
+vi.mock("../../../../src/chat-app/components/review-changes/ReviewChangesDisplay", () => ({
     ReviewChangesDisplay: () => null
 }));
 

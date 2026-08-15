@@ -10,7 +10,7 @@ import type {
     ThreadHistoryAdapter
 } from "@assistant-ui/react";
 import {ThreadStore} from "../../core/stores/thread-store/ThreadStore";
-import {recoverInterruptedMessages} from "./recoverInterruptedMessages";
+import {recoverInterruptedMessagesDuringThreadLoad} from "./thread-run";
 
 export class LocalThreadHistoryAdapter implements ThreadHistoryAdapter {
     constructor(
@@ -21,7 +21,7 @@ export class LocalThreadHistoryAdapter implements ThreadHistoryAdapter {
     async load(): Promise<ExportedMessageRepository> {
         const threadData = await ThreadStore.loadThread(this.threadId);
         if (threadData?.exportedMessageRepository) {
-            return recoverInterruptedMessages(
+            return recoverInterruptedMessagesDuringThreadLoad(
                 threadData.exportedMessageRepository,
                 this.humanToolNames
             );

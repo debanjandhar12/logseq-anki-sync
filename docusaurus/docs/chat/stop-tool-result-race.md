@@ -38,12 +38,12 @@ Storage synchronization was necessary to prevent lost durable updates, but it wa
 
 The behavior crosses several modules:
 
-- `src/chat-app/runtime/stopThread.ts`
+- `src/chat-app/runtime/thread-run/stopThreadRun.ts`
   - Cancels active runs.
   - Adds terminal results to unresolved tool calls.
   - Imports the terminal repository into assistant-ui.
   - Persists the terminal state.
-- `src/chat-app/runtime/terminateToolTurn.ts`
+- `src/chat-app/runtime/thread-run/terminateToolTurn.ts`
   - Performs the pure repository transformation.
 - `src/chat-app/runtime/LocalChatModelAdapter/LocalAISDKChatModelAdapter.ts`
   - Streams model content and executes frontend tools.
@@ -53,7 +53,7 @@ The behavior crosses several modules:
   - Loads and appends persisted messages.
 - `src/core/stores/thread-store/ThreadStore.ts`
   - Reads and writes complete thread files.
-- `src/chat-app/runtime/ThreadRunLifecycle.ts`
+- `src/chat-app/runtime/thread-run/ThreadRunTracker.ts`
   - Tracks whether the project's chat adapter is actually still running.
 
 ## What the AI SDK Requires
@@ -109,7 +109,8 @@ The continuation save was based on a stale snapshot, so it removed the result wr
 
 ### Synchronization fix
 
-`ThreadStore` now provides a serialized per-thread update operation. The lock covers the complete transaction:
+`ThreadStore` now provides a serialized per-thread update operation using `async-lock` keyed by
+thread ID. The lock covers the complete transaction:
 
 ```text
 acquire per-thread lock
@@ -123,7 +124,10 @@ Locking only the final write would not be enough. Both callers could still read 
 
 Different thread IDs can still update concurrently. Only mutations of the same thread are serialized.
 
-All current thread mutation paths use this update boundary so that metadata and artifact writes cannot accidentally restore an older message repository.
+All current thread mutation paths use this update boundary so that metadata and artifact writes
+cannot accidentally restore an older message repository. Missing-file behavior is normalized by
+`LogseqPluginStorageManager`: every backend returns `undefined` for a missing file, including the
+Logseq sandbox backend that otherwise throws `"file not existed"`.
 
 ### Why synchronization was necessary
 
@@ -244,7 +248,7 @@ state that the AI SDK ExternalStoreRuntime path does not provide.
 
 The project now tracks actual adapter execution independently from assistant message status.
 
-`ThreadRunLifecycle` maintains an active-run count by thread ID. `withRoundtripPersistence` registers the run when its generator begins and unregisters it in `finally`:
+`ThreadRunTracker` maintains an active-run count by thread ID. `withRoundtripPersistence` registers the run when its generator begins and unregisters it in `finally`:
 
 ```ts
 const endRun = trackThreadRun(threadId);
@@ -301,16 +305,22 @@ Once the active run has ended, Stop still needs to reconcile live and durable hi
 
 The persistence transformation follows these rules:
 
-- Apply termination to the latest stored target when possible.
-- Preserve newer successful tool results instead of replacing them with cancellation.
-- For unresolved stored tool parts, use the terminal runtime result and status.
-- Preserve continuations and the latest stored `headId`.
-- Restore a missing parent chain in parent-before-child order.
+- Restore a missing target parent chain from the runtime repository in parent-before-child order.
+- Apply termination to the latest stored target, so stored successful results remain authoritative.
+- Preserve a valid stored `headId`, including when storage has switched to an unrelated branch.
+- Use the stopped target as `headId` only for an empty or invalid stored repository.
 - Restore only the stopped target's ancestry, not unrelated inactive runtime branches.
 - Create a missing thread record from the stopped target ancestry if initialization has not completed.
-- Treat Logseq sandbox storage's `"file not existed"` read error as an absent thread, while propagating other storage failures.
 
-These merge rules address storage lag and branch-switch races without replacing the complete latest repository with a stale runtime export.
+This intentionally avoids a field-level three-way merge. It addresses storage lag and branch-switch
+races without replacing the complete latest repository with a stale runtime export.
+
+## Thread Switching
+
+assistant-ui keeps the previous thread runtime alive when the user switches threads. This is safe:
+run tracking, history persistence, stop single-flight coordination, and storage locks are all keyed
+by thread ID. Background runs therefore settle independently without writing into the newly active
+thread.
 
 ## Why the Error Appeared Later
 

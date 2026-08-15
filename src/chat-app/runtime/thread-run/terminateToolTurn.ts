@@ -1,11 +1,11 @@
 import type {ExportedMessageRepository, ThreadMessage} from "@assistant-ui/react";
 
 export const USER_TERMINATED_OPERATION = "User terminated the operation";
+export const OPERATION_INTERRUPTED_DURING_THREAD_LOAD =
+    "Operation was interrupted before completion because the chat was closed or reloaded";
 
 export interface ToolTurnTarget {
     messageId: string;
-    toolCallId?: string;
-    toolName?: string;
 }
 
 export interface TerminateToolTurnResult {
@@ -13,48 +13,20 @@ export interface TerminateToolTurnResult {
     didChange: boolean;
 }
 
+/**
+ * Makes one assistant turn terminal and gives every unresolved tool call an error result.
+ * Target selection is the caller's responsibility so the same transformation can repair any branch.
+ */
 export function terminateToolTurn(
     repository: ExportedMessageRepository,
     options: {target: ToolTurnTarget; errorMessage: string}
 ): TerminateToolTurnResult {
-    if (!getActiveBranchMessageIds(repository).has(options.target.messageId)) {
-        return {repository, didChange: false};
-    }
-
-    const targetItem = repository.messages.find(
-        ({message}) => message.id === options.target.messageId
-    );
-    if (!targetItem || targetItem.message.role !== "assistant") {
-        return {repository, didChange: false};
-    }
-    if (
-        targetItem.message.status.type !== "running" &&
-        targetItem.message.status.type !== "requires-action" &&
-        !(
-            targetItem.message.status.type === "incomplete" &&
-            targetItem.message.status.reason === "cancelled"
-        )
-    ) {
-        return {repository, didChange: false};
-    }
-    if (
-        options.target.toolCallId &&
-        !targetItem.message.content.some(
-            (part) =>
-                part.type === "tool-call" &&
-                part.toolCallId === options.target.toolCallId &&
-                (!options.target.toolName || part.toolName === options.target.toolName) &&
-                part.result === undefined
-        )
-    ) {
-        return {repository, didChange: false};
-    }
-
     let didChange = false;
     const messages = repository.messages.map((item) => {
         if (item.message.id !== options.target.messageId || item.message.role !== "assistant") {
             return item;
         }
+        if (!canTerminate(item.message.status)) return item;
 
         const content = item.message.content.map((part) => {
             if (part.type !== "tool-call" || part.result !== undefined) return part;
@@ -76,7 +48,12 @@ export function terminateToolTurn(
                     : {})
             };
         });
-        if (!didChange) return item;
+        if (
+            item.message.status.type !== "incomplete" ||
+            item.message.status.reason !== "cancelled"
+        ) {
+            didChange = true;
+        }
 
         return {
             ...item,
@@ -101,6 +78,14 @@ export function getActiveAssistantMessageTarget(
         ({message}) => activeMessageIds.has(message.id) && message.role === "assistant"
     );
     return item ? {messageId: item.message.id} : null;
+}
+
+function canTerminate(status: ThreadMessage["status"]): boolean {
+    return (
+        status.type === "running" ||
+        status.type === "requires-action" ||
+        (status.type === "incomplete" && status.reason === "cancelled")
+    );
 }
 
 function getActiveBranchMessageIds(repository: ExportedMessageRepository): Set<string> {

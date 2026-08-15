@@ -27,9 +27,17 @@ export class LogseqPluginStorageManager {
         );
     }
 
-    static async getFileContent(group: string, fileName: string) {
+    /**
+     * Returns undefined when a file does not exist, regardless of the active storage backend.
+     */
+    static async getFileContent(group: string, fileName: string): Promise<string | undefined> {
         LogseqPluginStorageManager.validateOperation(group, fileName);
-        return await LogseqPluginStorageManager.store.getItem(`${group}/${fileName}`);
+        try {
+            return await LogseqPluginStorageManager.store.getItem(`${group}/${fileName}`);
+        } catch (error) {
+            if (isSandboxMissingFileError(error)) return undefined;
+            throw error;
+        }
     }
 
     static async saveFile(group: string, fileName: string, fileContent: string) {
@@ -71,4 +79,8 @@ export class LogseqPluginStorageManager {
         if (group?.includes("/")) throw new Error("Group name cannot contain slash: " + group);
         if (fileName?.includes("/")) throw new Error("File name cannot contain slash: " + fileName);
     }
+}
+
+function isSandboxMissingFileError(error: unknown): boolean {
+    return error instanceof Error && error.message.toLowerCase().includes("file not existed");
 }

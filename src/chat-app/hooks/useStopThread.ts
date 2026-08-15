@@ -1,16 +1,12 @@
 import {useAssistantRuntime, useAuiState} from "@assistant-ui/react";
 import {useState} from "react";
-import {type StopThreadResult, stopThread} from "src/chat-app/runtime/stopThread";
-import type {ToolTurnTarget} from "src/chat-app/runtime/terminateToolTurn";
+import {type StopThreadRunResult, stopThreadRun} from "src/chat-app/runtime/thread-run";
 import {createLogger, LoggerCategory} from "src/logger";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
 
 export function useStopThread(): {
-    stop: (options?: {
-        target?: ToolTurnTarget;
-        errorMessage?: string;
-    }) => Promise<StopThreadResult | undefined>;
+    stop: (options?: {errorMessage?: string}) => Promise<StopThreadRunResult | undefined>;
     isStopping: boolean;
 } {
     const assistantRuntime = useAssistantRuntime();
@@ -24,7 +20,7 @@ export function useStopThread(): {
         stop: async (options = {}) => {
             setIsStopping(true);
             try {
-                const result = await stopThread({
+                const result = await stopThreadRun({
                     threadId,
                     runtime: assistantRuntime.threads.getById(threadId),
                     ...options

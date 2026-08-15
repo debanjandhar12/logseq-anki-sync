@@ -1,6 +1,6 @@
 import type {ExportedMessageRepository, ThreadMessage} from "@assistant-ui/react";
 import {describe, expect, test} from "vitest";
-import {terminateToolTurn} from "../../../../src/chat-app/runtime/terminateToolTurn";
+import {terminateToolTurn} from "../../../../src/chat-app/runtime/thread-run";
 
 function assistantMessage(options: {
     id: string;
@@ -68,7 +68,7 @@ describe("terminateToolTurn", () => {
         };
 
         const result = terminateToolTurn(repository, {
-            target: {messageId: "pending", toolCallId: "tool-pending", toolName: "test_tool"},
+            target: {messageId: "pending"},
             errorMessage: "User terminated the operation"
         });
 
@@ -151,32 +151,25 @@ describe("terminateToolTurn", () => {
         );
     });
 
-    test("does not fall back for stale exact targets or inactive branches", () => {
-        const active = assistantMessage({id: "active", status: "requires-action"});
+    test("terminates an explicitly selected inactive branch", () => {
         const inactive = assistantMessage({id: "inactive", status: "requires-action"});
         const repository: ExportedMessageRepository = {
-            headId: "active",
-            messages: [
-                {message: active, parentId: null},
-                {message: inactive, parentId: null}
-            ]
+            headId: null,
+            messages: [{message: inactive, parentId: null}]
         };
 
-        expect(
-            terminateToolTurn(repository, {
-                target: {messageId: "active", toolCallId: "stale"},
-                errorMessage: "cancelled"
-            })
-        ).toEqual({repository, didChange: false});
-        expect(
-            terminateToolTurn(repository, {
-                target: {messageId: "inactive"},
-                errorMessage: "cancelled"
-            })
-        ).toEqual({repository, didChange: false});
+        const result = terminateToolTurn(repository, {
+            target: {messageId: "inactive"},
+            errorMessage: "cancelled"
+        });
+        expect(result.didChange).toBe(true);
+        expect(result.repository.messages[0]?.message.status).toEqual({
+            type: "incomplete",
+            reason: "cancelled"
+        });
     });
 
-    test("does nothing when every tool call already has a result", () => {
+    test("terminalizes status when every tool call already has a result", () => {
         const message = assistantMessage({
             id: "resolved",
             status: "requires-action",
@@ -187,11 +180,14 @@ describe("terminateToolTurn", () => {
             messages: [{message, parentId: null}]
         };
 
-        expect(
-            terminateToolTurn(repository, {
-                target: {messageId: "resolved"},
-                errorMessage: "cancelled"
-            })
-        ).toEqual({repository, didChange: false});
+        const result = terminateToolTurn(repository, {
+            target: {messageId: "resolved"},
+            errorMessage: "cancelled"
+        });
+        expect(result.didChange).toBe(true);
+        expect(result.repository.messages[0]?.message.status).toEqual({
+            type: "incomplete",
+            reason: "cancelled"
+        });
     });
 });

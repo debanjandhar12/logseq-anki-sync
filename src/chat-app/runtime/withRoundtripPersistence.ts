@@ -1,5 +1,5 @@
 import type {ChatModelAdapter, ThreadHistoryAdapter} from "@assistant-ui/react";
-import {trackThreadRun} from "./ThreadRunLifecycle";
+import {trackThreadRun} from "./thread-run";
 
 export function withRoundtripPersistence(
     chatModel: ChatModelAdapter,
@@ -8,6 +8,7 @@ export function withRoundtripPersistence(
 ): ChatModelAdapter {
     return {
         async *run(options) {
+            // Public isRunning can be false while a frontend tool still owns this adapter run.
             const endRun = trackThreadRun(threadId);
             try {
                 const result = chatModel.run(options);

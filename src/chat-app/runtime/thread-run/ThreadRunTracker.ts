@@ -1,5 +1,9 @@
 const activeRunCounts = new Map<string, number>();
 
+/**
+ * Tracks the physical adapter run independently from assistant-ui's public message-derived state.
+ * During frontend tool execution a message can require action while its adapter is still active.
+ */
 export function trackThreadRun(threadId: string): () => void {
     activeRunCounts.set(threadId, (activeRunCounts.get(threadId) ?? 0) + 1);
     let didEnd = false;

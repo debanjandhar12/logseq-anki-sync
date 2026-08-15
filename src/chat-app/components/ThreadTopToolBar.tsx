@@ -15,7 +15,7 @@ import {Button} from "../../shadcn/radix-ui/button";
 import {TooltipProvider} from "../../shadcn/radix-ui/tooltip";
 import {ChatUIContext} from "../context/ChatUIContext";
 import {ChatPageExporter} from "../export/ChatPageExporter";
-import {ReviewChangesDisplay} from "./ReviewChangesDisplay";
+import {ReviewChangesDisplay} from "./review-changes/ReviewChangesDisplay";
 
 const DEFAULT_MODEL_CONTEXT_WINDOW = 128_000;
 const logger = createLogger(LoggerCategory.CHAT_UI);
