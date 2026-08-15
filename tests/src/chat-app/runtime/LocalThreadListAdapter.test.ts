@@ -5,8 +5,27 @@ import {ThreadStore} from "../../../../src/core/stores/thread-store/ThreadStore"
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
 import {LogseqPluginStorageManager} from "../../../../src/logseq/LogseqPluginStorageManager/LogseqPluginStorageManager";
 
+const mocks = vi.hoisted(() => ({generateTitle: vi.fn()}));
+
+vi.mock("../../../../src/core/title-generator/generateTitle", () => ({
+    generateTitle: mocks.generateTitle
+}));
+
+async function readStreamText(stream: ReadableStream): Promise<string> {
+    let text = "";
+    const reader = stream.getReader();
+    while (true) {
+        const {done, value: chunk} = await reader.read();
+        if (done) break;
+        if (chunk.type === "text-delta") text += chunk.textDelta ?? "";
+    }
+    return text;
+}
+
 describe("LocalThreadListAdapter", () => {
     beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.generateTitle.mockResolvedValue("Generated title");
         InMemoryStore.clearAll();
         LogseqPluginStorageManager.store = new InMemoryStore("thread-list-adapter-test");
     });
@@ -81,5 +100,44 @@ describe("LocalThreadListAdapter", () => {
             toolCallId: "stopped-tool",
             result: {success: false, error: "User terminated the operation"}
         });
+    });
+
+    test("persists and streams the generated title without replacing thread data", async () => {
+        await ThreadStore.updateThread("thread-1", () => ({
+            type: "save",
+            threadData: {
+                remoteId: "thread-1",
+                status: "archived",
+                custom: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    createdByPluginVersion: "test"
+                }
+            },
+            result: undefined
+        }));
+        const messages: ThreadMessage[] = [];
+        const adapter = new LocalThreadListAdapter();
+
+        const stream = await adapter.generateTitle("thread-1", messages);
+
+        expect(mocks.generateTitle).toHaveBeenCalledWith("thread-1", messages);
+        expect(await readStreamText(stream)).toBe("Generated title");
+        expect(await ThreadStore.loadThread("thread-1")).toMatchObject({
+            remoteId: "thread-1",
+            status: "archived",
+            title: "Generated title",
+            custom: {createdByPluginVersion: "test"}
+        });
+    });
+
+    test("streams fallback even when the thread no longer exists", async () => {
+        mocks.generateTitle.mockResolvedValue("New Chat (missing-thread)");
+        const adapter = new LocalThreadListAdapter();
+
+        const stream = await adapter.generateTitle("missing-thread", []);
+
+        expect(await readStreamText(stream)).toBe("New Chat (missing-thread)");
+        expect(await ThreadStore.loadThread("missing-thread")).toBeNull();
     });
 });

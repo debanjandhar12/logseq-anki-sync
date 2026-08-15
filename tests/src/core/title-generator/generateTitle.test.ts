@@ -1,122 +1,169 @@
 import type {ThreadMessage} from "@assistant-ui/react";
-import {describe, expect, test} from "vitest";
+import {beforeEach, describe, expect, test, vi} from "vitest";
 import {generateTitle} from "../../../../src/core/title-generator/generateTitle";
+import {normalizeGeneratedTitle} from "../../../../src/core/title-generator/normalizeGeneratedTitle";
 
-/**
- * Helper to create a minimal ThreadMessage[] with a single user text message.
- */
-const makeMessages = (text: string): ThreadMessage[] => [
-    {
-        id: "msg-1",
-        role: "user",
+const mocks = vi.hoisted(() => ({
+    generateText: vi.fn(),
+    getLLMModel: vi.fn(),
+    getPluginSettings: vi.fn(),
+    warn: vi.fn()
+}));
+
+vi.mock("ai", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("ai")>()),
+    generateText: mocks.generateText
+}));
+
+vi.mock("../../../../src/core/ai-sdk/getLLMModel", () => ({getLLMModel: mocks.getLLMModel}));
+vi.mock("../../../../src/logseq/LogseqSettingAccessor", () => ({
+    LogseqSettingAccessor: {getPluginSettings: mocks.getPluginSettings}
+}));
+vi.mock("../../../../src/logger", () => ({
+    LoggerCategory: {CHAT_UI: "Chat UI"},
+    createLogger: () => ({warn: mocks.warn})
+}));
+
+const FALLBACK = "New Chat (thread-abc-123)";
+const TITLE_INSTRUCTION =
+    "Generate a concise title for the preceding user message. Return only the title, with no label, quotes, markdown, explanation, or trailing punctuation. Keep it at most 50 characters.";
+const message = (role: "user" | "assistant", content: ThreadMessage["content"]): ThreadMessage =>
+    ({
+        id: `${role}-message`,
+        role,
         createdAt: new Date(),
-        content: [{type: "text", text}],
+        content,
         attachments: [],
         metadata: undefined as never
-    }
-];
+    }) as ThreadMessage;
 
 describe("generateTitle", () => {
-    const FALLBACK_ID = "thread-abc-123";
-
-    // --- Fallback ---
-
-    test("returns remoteId when messages are empty", () => {
-        expect(generateTitle(FALLBACK_ID, [])).toBe(FALLBACK_ID);
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.getPluginSettings.mockReturnValue({selectedModelId: " current-model "});
+        mocks.getLLMModel.mockResolvedValue({modelId: "current-model"});
+        mocks.generateText.mockResolvedValue({text: "Generated title"});
     });
 
-    test("returns remoteId when message has no text part", () => {
-        const msgs: ThreadMessage[] = [
-            {
-                id: "msg-1",
-                role: "user",
-                createdAt: new Date(),
-                content: [],
-                attachments: [],
-                metadata: undefined as never
-            }
+    test.each([
+        ["no messages", []],
+        ["no user message", [message("assistant", [{type: "text", text: "Response"}])]],
+        ["first user message without text", [message("user", [])]],
+        ["blank user text", [message("user", [{type: "text", text: "  "}])]]
+    ])("returns the exact fallback for %s", async (_case, messages) => {
+        await expect(generateTitle("thread-abc-123", messages)).resolves.toBe(FALLBACK);
+        expect(mocks.generateText).not.toHaveBeenCalled();
+        expect(mocks.warn).not.toHaveBeenCalled();
+    });
+
+    test("uses only all text parts from the first user message", async () => {
+        const messages = [
+            message("assistant", [{type: "text", text: "Leading response"}]),
+            message("user", [
+                {type: "text", text: " First part "},
+                {type: "text", text: "Second part"}
+            ]),
+            message("user", [{type: "text", text: "Ignored later message"}])
         ];
-        expect(generateTitle(FALLBACK_ID, msgs)).toBe(FALLBACK_ID);
+
+        await expect(generateTitle("thread-abc-123", messages)).resolves.toBe("Generated title");
+
+        expect(mocks.getLLMModel).toHaveBeenCalledWith("current-model");
+        expect(mocks.generateText).toHaveBeenCalledWith({
+            model: {modelId: "current-model"},
+            messages: [
+                {role: "user", content: "First part\nSecond part"},
+                {role: "user", content: TITLE_INSTRUCTION}
+            ]
+        });
     });
 
-    // --- Strategy 1: Custom vocab domain terms ---
+    test("does not use a later user message when the first has no text", async () => {
+        const messages = [
+            message("user", []),
+            message("user", [{type: "text", text: "Do not use this"}])
+        ];
 
-    test("extracts vocab terms: 'logseq query is good'", () => {
-        const title = generateTitle(FALLBACK_ID, makeMessages("logseq query is good"));
-        expect(title).not.toBe(FALLBACK_ID);
-        expect(title.toLowerCase()).toContain("logseq");
-        expect(title.toLowerCase()).toContain("query");
+        await expect(generateTitle("thread-abc-123", messages)).resolves.toBe(FALLBACK);
+        expect(mocks.generateText).not.toHaveBeenCalled();
     });
 
-    test("extracts vocab terms: 'how do I sync my graph with git?'", () => {
-        const title = generateTitle(FALLBACK_ID, makeMessages("how do I sync my graph with git?"));
-        expect(title).not.toBe(FALLBACK_ID);
-        expect(title.toLowerCase()).toContain("sync");
-        expect(title.toLowerCase()).toContain("graph");
-        expect(title.toLowerCase()).toContain("git");
+    test.each([undefined, "  "])("falls back when selectedModelId is %s", async (modelId) => {
+        mocks.getPluginSettings.mockReturnValue({selectedModelId: modelId});
+
+        await expect(
+            generateTitle("thread-abc-123", [message("user", [{type: "text", text: "Question"}])])
+        ).resolves.toBe(FALLBACK);
+        expect(mocks.getLLMModel).not.toHaveBeenCalled();
     });
 
-    test("extracts vocab terms: 'can you explain flashcards in logseq?'", () => {
-        const title = generateTitle(
-            FALLBACK_ID,
-            makeMessages("can you explain flashcards in logseq?")
+    test("rereads the persisted model on each call", async () => {
+        const messages = [message("user", [{type: "text", text: "Question"}])];
+        await generateTitle("thread-abc-123", messages);
+        mocks.getPluginSettings.mockReturnValue({selectedModelId: "new-model"});
+        await generateTitle("thread-abc-123", messages);
+
+        expect(mocks.getLLMModel).toHaveBeenNthCalledWith(1, "current-model");
+        expect(mocks.getLLMModel).toHaveBeenNthCalledWith(2, "new-model");
+    });
+
+    test.each([
+        "model resolution",
+        "text generation"
+    ])("falls back and logs safely on %s failure", async (failurePoint) => {
+        const error = new Error("provider failed");
+        if (failurePoint === "model resolution") mocks.getLLMModel.mockRejectedValue(error);
+        else mocks.generateText.mockRejectedValue(error);
+
+        await expect(
+            generateTitle("thread-abc-123", [
+                message("user", [{type: "text", text: "Private user text"}])
+            ])
+        ).resolves.toBe(FALLBACK);
+        expect(mocks.warn).toHaveBeenCalledWith(
+            "Failed to generate AI thread title; using fallback",
+            {remoteId: "thread-abc-123", error}
         );
-        expect(title).not.toBe(FALLBACK_ID);
-        expect(title.toLowerCase()).toContain("flashcards");
-        expect(title.toLowerCase()).toContain("logseq");
+        expect(JSON.stringify(mocks.warn.mock.calls)).not.toContain("Private user text");
     });
 
-    test("extracts single vocab term: 'fix the sidebar'", () => {
-        const title = generateTitle(FALLBACK_ID, makeMessages("fix the sidebar"));
-        expect(title).not.toBe(FALLBACK_ID);
-        expect(title.toLowerCase()).toContain("sidebar");
-    });
+    test("falls back when normalized output is unusable", async () => {
+        mocks.generateText.mockResolvedValue({text: "..."});
 
-    test("extracts vocab term case-insensitively: 'Tell me about Anki'", () => {
-        const title = generateTitle(FALLBACK_ID, makeMessages("Tell me about Anki"));
-        expect(title).not.toBe(FALLBACK_ID);
-        expect(title.toLowerCase()).toContain("anki");
-    });
-
-    // --- Strategy 2/3: Noun / content-word fallback for non-domain text ---
-
-    test("falls back to nouns or content words for generic text", () => {
-        const title = generateTitle(
-            FALLBACK_ID,
-            makeMessages("what is the best way to take notes?")
+        await expect(
+            generateTitle("thread-abc-123", [message("user", [{type: "text", text: "Question"}])])
+        ).resolves.toBe(FALLBACK);
+        expect(mocks.warn).toHaveBeenCalledWith(
+            "AI thread title output was unusable; using fallback",
+            {remoteId: "thread-abc-123"}
         );
-        expect(title).not.toBe(FALLBACK_ID);
+    });
+});
+
+describe("normalizeGeneratedTitle", () => {
+    test.each([
+        ["Title: Example title.", "Example title"],
+        ["Chat Title — **Example title!**", "Example title"],
+        ['"Thread title: Example title?"', "Example title"],
+        ["```text\nExample title.\n```", "Example title"],
+        ["# Example\n title", "Example title"],
+        ["- Example title;", "Example title"]
+    ])("normalizes %j", (output, expected) => {
+        expect(normalizeGeneratedTitle(output)).toBe(expected);
     });
 
-    test("falls back to nouns for non-vocab proper nouns", () => {
-        const title = generateTitle(FALLBACK_ID, makeMessages("Tell me about Paris"));
-        expect(title).not.toBe(FALLBACK_ID);
+    test("truncates at a word boundary to at most 50 code points", () => {
+        const title = normalizeGeneratedTitle(
+            "A deliberately verbose generated title that should be shortened before persistence"
+        );
+
+        expect(Array.from(title ?? "").length).toBeLessThanOrEqual(50);
+        expect(title).toBe("A deliberately verbose generated title that");
     });
 
-    // --- Quality constraints ---
-
-    test("title is shorter than the original message", () => {
-        const longMessage =
-            "I have been trying to set up advanced queries in Logseq but the datalog syntax is really confusing and I keep getting errors when I try to filter by page properties";
-        const title = generateTitle(FALLBACK_ID, makeMessages(longMessage));
-        expect(title).not.toBe(FALLBACK_ID);
-        expect(title.length).toBeLessThan(longMessage.length);
-    });
-
-    test("title does not exceed MAX_TITLE_LENGTH (50 chars)", () => {
-        const longMessage =
-            "I have been trying to set up advanced queries in Logseq but the datalog syntax is really confusing and I keep getting errors when I try to filter by page properties";
-        const title = generateTitle(FALLBACK_ID, makeMessages(longMessage));
-        expect(title.length).toBeLessThanOrEqual(50);
-    });
-
-    test("title has no trailing punctuation", () => {
-        const title = generateTitle(FALLBACK_ID, makeMessages("what about the encryption?"));
-        expect(title).not.toMatch(/[?!.,;:]$/);
-    });
-
-    test("title starts with an uppercase letter", () => {
-        const title = generateTitle(FALLBACK_ID, makeMessages("logseq query is good"));
-        expect(title[0]).toBe(title[0].toUpperCase());
+    test("does not split a Unicode surrogate pair", () => {
+        const title = normalizeGeneratedTitle("x".repeat(49) + "😀more");
+        expect(Array.from(title ?? "")).toHaveLength(50);
+        expect(title?.endsWith("😀")).toBe(true);
     });
 });

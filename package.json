@@ -62,7 +62,6 @@
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "composed-offset-position": "^0.0.6",
-        "compromise": "^14.15.0",
         "consola": "^3.4.2",
         "dayjs": "^1.11.20",
         "dependency-graph": "^1.0.0",

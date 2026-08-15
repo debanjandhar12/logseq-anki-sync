@@ -11,8 +11,3 @@ export enum WebToolsProviderEnum {
 }
 
 export type ReasoningEffort = "low" | "medium" | "high";
-
-export const PROVIDER_SNAPSHOT_KEY: Record<string, string> = {
-    [ProviderEnum.OPENAI]: "openai",
-    [ProviderEnum.GOOGLE]: "google"
-};

@@ -1,6 +1,7 @@
 import {providers} from "@opencode-ai/models/snapshot";
 import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
-import {PROVIDER_SNAPSHOT_KEY, ProviderEnum} from "./types";
+import {PROVIDER_SNAPSHOT_KEY} from "./constants";
+import {ProviderEnum} from "./types";
 
 export interface LLMModelOption {
     id: string;
