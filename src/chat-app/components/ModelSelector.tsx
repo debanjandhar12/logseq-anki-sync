@@ -38,6 +38,8 @@ import {Popover, PopoverContent, PopoverTrigger} from "src/shadcn/radix-ui/popov
  * (d) Added max-h-[200px] and a custom overlay scrollbar in ModelSelectorList
  *     (native scrollbar hidden since Chromium 114 aliases overflow:overlay to auto,
  *     which would reserve gutter space and squeeze the list).
+ * (e) Controlled state uses prop presence so an empty model list can explicitly select nothing.
+ * (f) Model context only registers IDs present in the current model list.
  */
 
 export type ModelSelectorEffortOption = {
@@ -86,25 +88,26 @@ export function resolveModelEffort(
 function useControllableState<T>({
     prop,
     defaultProp,
-    onChange
+    onChange,
+    controlled
 }: {
     prop: T | undefined;
     defaultProp: T | undefined;
     onChange: ((next: T) => void) | undefined;
+    controlled: boolean;
 }) {
     const [internal, setInternal] = useState(defaultProp);
-    const isControlled = prop !== undefined;
-    const value = isControlled ? prop : internal;
+    const value = controlled ? prop : internal;
     const onChangeRef = useRef(onChange);
     useEffect(() => {
         onChangeRef.current = onChange;
     });
     const setValue = useCallback(
         (next: T) => {
-            if (!isControlled) setInternal(next);
+            if (!controlled) setInternal(next);
             onChangeRef.current?.(next);
         },
-        [isControlled]
+        [controlled]
     );
     return [value, setValue] as const;
 }
@@ -153,33 +156,37 @@ export type ModelSelectorRootProps = {
     children: ReactNode;
 };
 
-function ModelSelectorRoot({
-    models,
-    value: valueProp,
-    defaultValue,
-    onValueChange,
-    effort: effortProp,
-    defaultEffort,
-    onEffortChange,
-    open: openProp,
-    defaultOpen,
-    onOpenChange,
-    children
-}: ModelSelectorRootProps) {
+function ModelSelectorRoot(props: ModelSelectorRootProps) {
+    const {
+        models,
+        value: valueProp,
+        defaultValue,
+        onValueChange,
+        effort: effortProp,
+        defaultEffort,
+        onEffortChange,
+        open: openProp,
+        defaultOpen,
+        onOpenChange,
+        children
+    } = props;
     const [value, setValue] = useControllableState({
         prop: valueProp,
         defaultProp: defaultValue ?? models[0]?.id,
-        onChange: onValueChange
+        onChange: onValueChange,
+        controlled: Object.hasOwn(props, "value")
     });
     const [effort, setEffort] = useControllableState({
         prop: effortProp,
         defaultProp: defaultEffort,
-        onChange: onEffortChange
+        onChange: onEffortChange,
+        controlled: Object.hasOwn(props, "effort")
     });
     const [open, setOpen] = useControllableState({
         prop: openProp,
         defaultProp: defaultOpen ?? false,
-        onChange: onOpenChange
+        onChange: onOpenChange,
+        controlled: Object.hasOwn(props, "open")
     });
 
     const selectedModel = models.find((m) => m.id === value);
@@ -624,21 +631,21 @@ export type ModelSelectorProps = Omit<ModelSelectorRootProps, "children"> &
     };
 
 function ModelSelectorModelContext() {
-    const {value, effort} = useModelSelectorContext();
+    const {selectedModel, effort} = useModelSelectorContext();
     const api = useAui();
 
     useEffect(() => {
-        if (value === undefined) return;
+        if (selectedModel === undefined) return;
         const config = {
             config: {
-                modelName: value,
+                modelName: selectedModel.id,
                 ...(effort !== undefined ? {reasoningEffort: effort} : undefined)
             }
         };
         return api.modelContext().register({
             getModelContext: () => config
         });
-    }, [api, value, effort]);
+    }, [api, selectedModel, effort]);
 
     return null;
 }

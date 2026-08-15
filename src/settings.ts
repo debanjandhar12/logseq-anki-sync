@@ -1,7 +1,7 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {DONATE_ICON} from "./constants";
-import {ProviderEnum, WebToolsProviderEnum} from "./core/ai-sdk/types";
+import {ProviderEnum, type ReasoningEffort, WebToolsProviderEnum} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 
@@ -17,7 +17,10 @@ export interface PluginSettings {
     webToolsProvider?: WebToolsProviderEnum;
     jinaApiKey?: string;
     debug?: LoggerCategory[];
+    // used as storage during runtime
     lastWelcomeVersion?: string;
+    selectedModelId?: string;
+    selectedModelReasoningEffort?: ReasoningEffort;
 }
 
 export const addSettingsToLogseq = async () => {

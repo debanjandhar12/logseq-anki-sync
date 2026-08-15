@@ -3,6 +3,7 @@ import {ArrowUpIcon, SquareIcon} from "lucide-react";
 import type {FC} from "react";
 import {ModelSelector} from "src/chat-app/components/ModelSelector";
 import {useModelList} from "src/chat-app/hooks/useModelList";
+import {usePersistedModelSelection} from "src/chat-app/hooks/usePersistedModelSelection";
 import {useStopThread} from "src/chat-app/hooks/useStopThread";
 import {TooltipIconButton} from "src/shadcn/assistant-ui/tooltip-icon-button";
 import {Button} from "src/shadcn/radix-ui/button";
@@ -15,7 +16,7 @@ import {Button} from "src/shadcn/radix-ui/button";
  * (b) Delegates running and required-action termination to the project stop hook.
  * (c) Retains project-owned controls while matching current upstream sizing.
  * (d) Changed tooltop side to top.
- * (e) Added ModelSelector for model and reasoning effort selection.
+ * (e) Added ModelSelector with Logseq-backed model and reasoning effort selection.
  */
 export const ComposerAction: FC = () => {
     const isRunning = useAuiState((state) => state.thread.isRunning);
@@ -23,14 +24,18 @@ export const ComposerAction: FC = () => {
     const requiresActionState = lastMessage?.status?.type === "requires-action";
     const {stop, isStopping} = useStopThread();
     const models = useModelList();
+    const {modelId, reasoningEffort, setModelId, setReasoningEffort} =
+        usePersistedModelSelection(models);
 
     return (
         <div className="aui-composer-action-wrapper relative flex items-center justify-between">
             {/*<ComposerAddAttachment />*/}
             <ModelSelector
                 models={models}
-                defaultValue={models[0]?.id}
-                defaultEffort="medium"
+                value={modelId}
+                onValueChange={setModelId}
+                effort={reasoningEffort}
+                onEffortChange={setReasoningEffort}
                 size="sm"
                 variant="ghost"
                 align="start"
