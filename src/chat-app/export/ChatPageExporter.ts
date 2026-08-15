@@ -1,7 +1,8 @@
 import type {ThreadMessage, ToolCallMessagePart} from "@assistant-ui/react";
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
-import {generateTitle} from "../../core/title-generator/generateTitle";
+import {createLogger, LoggerCategory} from "../../logger";
 import {LogseqEditor} from "../../logseq/LogseqEditor";
+import {LogseqNavigator} from "../../logseq/LogseqNavigator";
 
 export type DesiredLogseqBlockIcon = "message-user" | "message-chatbot" | null;
 
@@ -22,7 +23,20 @@ export interface ChatPageExporterDependencies {
     setBlockIcon: typeof LogseqEditor.setBlockIcon;
     removeBlockIcon: typeof LogseqEditor.removeBlockIcon;
     setBlockCollapsed: typeof LogseqEditor.setBlockCollapsed;
+    navigateToBlock: typeof LogseqNavigator.goToBlock;
+    logError: (
+        message: string,
+        context: {threadId: string; pageName: string; error: unknown}
+    ) => void;
 }
+
+export interface ChatPageExportRequest {
+    threadId: string;
+    threadTitle?: string;
+    messages: readonly ThreadMessage[];
+}
+
+const logger = createLogger(LoggerCategory.CHAT_UI);
 
 export class ChatPageExporter {
     private static readonly defaultDependencies: ChatPageExporterDependencies = {
@@ -34,20 +48,34 @@ export class ChatPageExporter {
         removeBlock: LogseqEditor.removeBlock.bind(LogseqEditor),
         setBlockIcon: LogseqEditor.setBlockIcon.bind(LogseqEditor),
         removeBlockIcon: LogseqEditor.removeBlockIcon.bind(LogseqEditor),
-        setBlockCollapsed: LogseqEditor.setBlockCollapsed.bind(LogseqEditor)
+        setBlockCollapsed: LogseqEditor.setBlockCollapsed.bind(LogseqEditor),
+        navigateToBlock: LogseqNavigator.goToBlock.bind(LogseqNavigator),
+        logError: (message, context) => logger.error(message, context)
     };
 
-    static resolveTitle(
-        threadId: string,
-        messages: readonly ThreadMessage[],
-        activeTitle?: string,
-        storedTitle?: string
-    ): string {
-        return activeTitle?.trim() || storedTitle?.trim() || generateTitle(threadId, messages);
-    }
-
-    static createPageName(threadId: string, threadTitle: string): string {
-        return `_chat_export_${threadId}_${threadTitle.trim()}`;
+    static async exportThread(
+        {threadId, threadTitle, messages}: ChatPageExportRequest,
+        dependencies: ChatPageExporterDependencies = ChatPageExporter.defaultDependencies
+    ): Promise<{pageName: string}> {
+        const trimmedTitle = threadTitle?.trim();
+        const pageName = `_chat_export_${threadId}${trimmedTitle ? `_${trimmedTitle}` : ""}`;
+        try {
+            const desiredBlocks = ChatPageExporter.createBlockTree(messages);
+            const {pageUuid} = await ChatPageExporter.exportPage(
+                pageName,
+                desiredBlocks,
+                dependencies
+            );
+            dependencies.navigateToBlock(pageUuid);
+            return {pageName};
+        } catch (error) {
+            dependencies.logError("Failed to export chat as Logseq page", {
+                threadId,
+                pageName,
+                error
+            });
+            throw error;
+        }
     }
 
     static createBlockTree(messages: readonly ThreadMessage[]): DesiredLogseqBlock[] {

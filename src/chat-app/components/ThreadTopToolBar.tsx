@@ -8,10 +8,7 @@ import {getThreadMessageTokenUsage} from "@assistant-ui/react-ai-sdk";
 import {DevToolsPanel} from "@assistant-ui/react-devtools";
 import {ArrowLeftIcon, HistoryIcon, MoreHorizontalIcon, PlusIcon, XIcon} from "lucide-react";
 import {type FC, useContext, useRef, useState} from "react";
-import {ThreadStore} from "../../core/stores/thread-store/ThreadStore";
-import type {ThreadFileData} from "../../core/stores/thread-store/types";
 import {createLogger, LoggerCategory} from "../../logger";
-import {LogseqNavigator} from "../../logseq/LogseqNavigator";
 import {ContextDisplay} from "../../shadcn/assistant-ui/context-display";
 import {TooltipIconButton} from "../../shadcn/assistant-ui/tooltip-icon-button";
 import {Button} from "../../shadcn/radix-ui/button";
@@ -59,32 +56,18 @@ export const ThreadTopToolBar: FC<ThreadTopToolBarProps> = ({
         if (isPageExportDisabled || !threadId || isExportInProgressRef.current) return;
 
         const capturedThreadId = threadId;
-        const capturedMessages = messages;
-        const capturedTitle = threadTitle;
+        const capturedThreadTitle = threadTitle;
+        const capturedMessages = [...messages];
         isExportInProgressRef.current = true;
         setIsExportInProgress(true);
         try {
-            const rawThreadJson = await ThreadStore.loadRawThread(capturedThreadId);
-            const storedThread = JSON.parse(rawThreadJson) as ThreadFileData;
-            const resolvedTitle = ChatPageExporter.resolveTitle(
-                capturedThreadId,
-                capturedMessages,
-                capturedTitle,
-                storedThread.title
-            );
-            const pageName = ChatPageExporter.createPageName(capturedThreadId, resolvedTitle);
-            const desiredBlocks = ChatPageExporter.createBlockTree(capturedMessages);
-            if (desiredBlocks.length === 0) {
-                throw new Error("Chat has no user messages to export");
-            }
-            const {pageUuid} = await ChatPageExporter.exportPage(pageName, desiredBlocks);
-            LogseqNavigator.goToBlock(pageUuid);
-            await notify(`Chat exported to page: ${pageName}`, "success");
-        } catch (error) {
-            logger.error("Failed to export chat as Logseq page", {
+            const {pageName} = await ChatPageExporter.exportThread({
                 threadId: capturedThreadId,
-                error
+                threadTitle: capturedThreadTitle,
+                messages: capturedMessages
             });
+            await notify(`Chat exported to page: ${pageName}`, "success");
+        } catch {
             await notify("Failed to export chat as page", "error");
         } finally {
             isExportInProgressRef.current = false;
@@ -154,7 +137,7 @@ interface ThreadTopToolBarMoreProps {
 /**
  * Changes:
  * (a) Changed the more menu button's hover background to bg-background for better visibility over bg-muted rows
- * (b) Added page export with an active-thread disabled state
+ * (b) Added page export with an active-thread disabled state; the exporter owns export and navigation while this toolbar owns busy state and notifications
  * (c) Made the menu controlled and non-modal so outside interactions close it through the Shadow DOM portal bridge
  */
 export const ThreadTopToolBarMore: FC<ThreadTopToolBarMoreProps> = ({

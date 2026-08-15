@@ -156,15 +156,110 @@ describe("ChatPageExporter", () => {
         ).toThrow("Unable to serialize tool result");
     });
 
-    test("builds the exact page name and resolves title fallbacks", () => {
+    test("exports to the exact thread page name and navigates after reconciliation", async () => {
         const messages = [createUserMessage("user-1", "Explain photosynthesis")];
-        expect(ChatPageExporter.createPageName("thread-1", "  My Chat  ")).toBe(
-            "_chat_export_thread-1_My Chat"
+        const operationLog: string[] = [];
+        const dependencies = createDependencies({
+            insertBlock: vi.fn(async (_parent, content) => {
+                operationLog.push(`insert:${content}`);
+                return createBlock("inserted", content);
+            }),
+            navigateToBlock: vi.fn((pageUuid) => {
+                operationLog.push(`navigate:${pageUuid}`);
+            })
+        });
+
+        await expect(
+            ChatPageExporter.exportThread(
+                {threadId: "thread-1", threadTitle: " Photosynthesis ", messages},
+                dependencies
+            )
+        ).resolves.toEqual({pageName: "_chat_export_thread-1_Photosynthesis"});
+        expect(dependencies.getPage).toHaveBeenCalledWith("_chat_export_thread-1_Photosynthesis");
+        expect(dependencies.createPage).toHaveBeenCalledWith(
+            "_chat_export_thread-1_Photosynthesis"
         );
-        expect(ChatPageExporter.resolveTitle("thread-1", messages, " Active ", "Stored")).toBe(
-            "Active"
+        expect(operationLog).toEqual(["insert:Explain photosynthesis", "navigate:page-1"]);
+        expect(dependencies.logError).not.toHaveBeenCalled();
+    });
+
+    test("does not generate a title when the persisted title is unavailable", async () => {
+        const dependencies = createDependencies();
+
+        await expect(
+            ChatPageExporter.exportThread(
+                {
+                    threadId: "thread-1",
+                    threadTitle: "   ",
+                    messages: [createUserMessage("user-1", "Question")]
+                },
+                dependencies
+            )
+        ).resolves.toEqual({pageName: "_chat_export_thread-1"});
+        expect(dependencies.getPage).toHaveBeenCalledWith("_chat_export_thread-1");
+    });
+
+    test("logs and rethrows workflow failures without navigating", async () => {
+        const failure = new Error("write failed");
+        const dependencies = createDependencies({
+            getPage: vi.fn(async () => {
+                throw failure;
+            })
+        });
+
+        const promise = ChatPageExporter.exportThread(
+            {threadId: "thread-1", messages: [createUserMessage("user-1", "Question")]},
+            dependencies
         );
-        expect(ChatPageExporter.resolveTitle("thread-1", messages, "", " Stored ")).toBe("Stored");
+        await expect(promise).rejects.toBe(failure);
+        expect(dependencies.logError).toHaveBeenCalledOnce();
+        expect(dependencies.logError).toHaveBeenCalledWith("Failed to export chat as Logseq page", {
+            threadId: "thread-1",
+            pageName: "_chat_export_thread-1",
+            error: failure
+        });
+        expect(dependencies.navigateToBlock).not.toHaveBeenCalled();
+    });
+
+    test("logs and rethrows navigation failures", async () => {
+        const failure = new Error("navigation failed");
+        const dependencies = createDependencies({
+            navigateToBlock: vi.fn(() => {
+                throw failure;
+            })
+        });
+
+        const promise = ChatPageExporter.exportThread(
+            {threadId: "thread-1", messages: [createUserMessage("user-1", "Question")]},
+            dependencies
+        );
+        await expect(promise).rejects.toBe(failure);
+        expect(dependencies.logError).toHaveBeenCalledOnce();
+        expect(dependencies.logError).toHaveBeenCalledWith("Failed to export chat as Logseq page", {
+            threadId: "thread-1",
+            pageName: "_chat_export_thread-1",
+            error: failure
+        });
+    });
+
+    test("logs conversion failures once before accessing the page", async () => {
+        const dependencies = createDependencies();
+
+        await expect(
+            ChatPageExporter.exportThread({threadId: "thread-1", messages: []}, dependencies)
+        ).rejects.toThrow("no user messages");
+
+        expect(dependencies.getPage).not.toHaveBeenCalled();
+        expect(dependencies.navigateToBlock).not.toHaveBeenCalled();
+        expect(dependencies.logError).toHaveBeenCalledOnce();
+        expect(dependencies.logError).toHaveBeenCalledWith(
+            "Failed to export chat as Logseq page",
+            expect.objectContaining({
+                threadId: "thread-1",
+                pageName: "_chat_export_thread-1",
+                error: expect.objectContaining({message: "Chat has no user messages to export"})
+            })
+        );
     });
 
     test("recursively updates, removes, and inserts blocks by position", async () => {
@@ -431,6 +526,8 @@ function createDependencies(
         setBlockIcon: vi.fn(async () => undefined),
         removeBlockIcon: vi.fn(async () => undefined),
         setBlockCollapsed: vi.fn(async () => undefined),
+        navigateToBlock: vi.fn(),
+        logError: vi.fn(),
         ...overrides
     };
 }
