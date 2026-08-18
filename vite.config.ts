@@ -52,8 +52,9 @@ export default defineConfig(({mode}) => {
         build: {
             sourcemap: true,
             target: "esnext",
-            minify: "esbuild",
-            emptyOutDir: true
+            minify: "oxc",
+            emptyOutDir: true,
+            reportCompressedSize: true
         },
         test: {
             include: ["**/*.test.ts"],

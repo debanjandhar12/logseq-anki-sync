@@ -7,6 +7,9 @@
     "license": "AGPL-3.0",
     "repository": "debanjandhar12/logseq-ai-chat",
     "author": "@debanjandhar12",
+    "engines": {
+        "node": ">=22.12 <23"
+    },
     "scripts": {
         "dev": "vite",
         "build": "export NODE_OPTIONS=--max_old_space_size=4096 && vite build",
@@ -107,9 +110,9 @@
         "@types/platform": "^1.3.6",
         "@types/react": "19.2.6",
         "@types/react-dom": "19.2.3",
-        "@vitejs/plugin-react": "^4.5.1",
-        "@vitest/browser": "^3.2.2",
-        "@vitest/ui": "^3.2.2",
+        "@vitejs/plugin-react": "^6.0.5",
+        "@vitest/browser": "4.1.11",
+        "@vitest/ui": "4.1.11",
         "assert": "^2.0.0",
         "autoprefixer": "^10.4.23",
         "constants-browserify": "^1.0.0",
@@ -125,9 +128,9 @@
         "stream-browserify": "^3.0.0",
         "tailwindcss": "^4.3.2",
         "typescript": "^5.1.6",
-        "vite": "^7.3.3",
-        "vite-plugin-node-polyfills": "0.8.2",
-        "vitest": "^4.0.18",
+        "vite": "^8.2.1",
+        "vite-plugin-node-polyfills": "^0.28.0",
+        "vitest": "4.1.11",
         "vm-browserify": "^1.1.2"
     }
 }

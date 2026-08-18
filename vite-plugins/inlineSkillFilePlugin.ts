@@ -35,7 +35,8 @@ export function inlineSkillFilePlugin(): Plugin {
                 if (!code.includes("<%")) {
                     return {
                         code: `export default ${JSON.stringify(code)};`,
-                        map: null
+                        map: null,
+                        moduleType: "js"
                     };
                 }
 
@@ -44,7 +45,8 @@ export function inlineSkillFilePlugin(): Plugin {
 
                 return {
                     code: `export default ${JSON.stringify(rendered)};`,
-                    map: null
+                    map: null,
+                    moduleType: "js"
                 };
             }
             return null;
