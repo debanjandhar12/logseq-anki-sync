@@ -8,6 +8,7 @@ import {
 } from "@assistant-ui/react";
 import {EditIcon, MoreHorizontalIcon, TrashIcon} from "lucide-react";
 import type {FC} from "react";
+import {useThreadListItemIsRunning} from "src/chat-app/hooks/useThreadListItemIsRunning";
 import {ThreadListSkeleton} from "src/shadcn/assistant-ui/thread-list";
 import {Button} from "src/shadcn/radix-ui/button";
 import {showInputModal} from "src/ui/launchers/showInputModal";
@@ -41,6 +42,7 @@ export const ThreadList: FC<ThreadListProps> = ({onThreadSelected}) => {
  * Changes:
  * (a) Added onThreadSelected callback by decomposing ThreadListItem
  * (b) Added h-9 and shrink-0 to prevent resize from flex container.
+ * (c) Shimmers the title while this thread's assistant stream is running.
  */
 const ThreadListItem: FC<ThreadListProps> = ({onThreadSelected}) => {
     return (
@@ -51,12 +53,32 @@ const ThreadListItem: FC<ThreadListProps> = ({onThreadSelected}) => {
                 data-slot="aui_thread-list-item-trigger"
                 className="focus-visible:ring-ring/50 flex h-9 shrink-0 min-w-0 flex-1 items-center rounded-md px-3 text-start text-sm outline-none group-hover:pe-10 group-has-focus-visible:pe-10 group-has-data-[state=open]:pe-10 group-data-active:pe-10 focus-visible:ring-[3px]"
                 onClick={onThreadSelected}>
-                <span data-slot="aui_thread-list-item-title" className="min-w-0 flex-1 truncate">
-                    <ThreadListItemPrimitive.Title fallback="New Chat" />
-                </span>
+                <ThreadListItemTitle />
             </ThreadListItemPrimitive.Trigger>
             <ThreadListItemMore />
         </ThreadListItemPrimitive.Root>
+    );
+};
+
+const ThreadListItemTitle: FC = () => {
+    const isRunning = useThreadListItemIsRunning();
+
+    return (
+        <span
+            data-slot="aui_thread-list-item-title"
+            className="relative min-w-0 flex-1 overflow-hidden">
+            <span data-slot="aui_thread-list-item-title-text" className="block truncate">
+                <ThreadListItemPrimitive.Title fallback="New Chat" />
+            </span>
+            {isRunning && (
+                <span
+                    aria-hidden
+                    data-slot="aui_thread-list-item-title-shimmer"
+                    className="shimmer pointer-events-none absolute inset-0 block truncate motion-reduce:animate-none">
+                    <ThreadListItemPrimitive.Title fallback="New Chat" />
+                </span>
+            )}
+        </span>
     );
 };
 
