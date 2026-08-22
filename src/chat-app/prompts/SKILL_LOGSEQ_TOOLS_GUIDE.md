@@ -27,6 +27,7 @@ built-in-skill-user-controllable: false
 - Show page/block embeds using `[[<page or block uuid>]]` syntax in Markdown.
 - Logseq is an outliner. When creating pages, break larger concepts into sub-points unless the user specifies a different format.
 - For special blocks, properties, tags, tasks, code, math, queries, and cards, use the Logseq Properties and Tags skill.
+- Invoking create page tool with name in `Aug 22nd, 2026` format creates the corresponding journal page.
 
 ## Creating Query Blocks in DB Graphs
 
@@ -62,7 +63,6 @@ Do not put the query EDN in the visible block content unless the user wants it s
 ## Limitations
 
 - You cannot create or upload PDF/image files, but you may edit PDF highlight pages.
-- You cannot create, delete, or rename journal pages, but you may edit their content.
 - Deleted pages go to the recycle bin, not permanent deletion.
 - You cannot extend a tag from another tag.
 - You cannot insert node embed, also known as block embed.

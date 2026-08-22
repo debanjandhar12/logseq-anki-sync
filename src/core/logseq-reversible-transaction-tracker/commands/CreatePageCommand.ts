@@ -4,6 +4,7 @@ import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
+import {getJournalDateFromPageName} from "./utils/isJournalPageName";
 import {normalizePage} from "./utils/normalizePage";
 
 export const CreatePageCommandArgsSchema = z.object({
@@ -72,14 +73,18 @@ export class CreatePageCommand extends BaseReversibleCommand<CreatePageCommandSt
             return restoredPage;
         }
 
-        const rawPage = await logseq.Editor.createPage(this.args.pageName, undefined, {
-            redirect: false,
-            customUUID: this.pageUuid,
-            createFirstBlock: false
-        });
+        const journalDate = getJournalDateFromPageName(this.args.pageName);
+        const rawPage = journalDate
+            ? await logseq.Editor.createJournalPage(journalDate)
+            : await logseq.Editor.createPage(this.args.pageName, undefined, {
+                  redirect: false,
+                  customUUID: this.pageUuid,
+                  createFirstBlock: false
+              });
         if (!rawPage) throw new Error(`Logseq failed to create page: ${this.args.pageName}`);
 
         const page = await normalizePage(rawPage);
+        if (journalDate) this.commandState.pageUuid = page.uuid;
         this.changedPages.push(page.uuid);
         this.commandState.status = "executed";
         return page;

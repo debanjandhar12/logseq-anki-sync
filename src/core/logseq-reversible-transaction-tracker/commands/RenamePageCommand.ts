@@ -3,6 +3,8 @@ import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
+import {getJournalDayByPageUuid} from "./utils/getJournalDayByPageUuid";
+import {isJournalPageName} from "./utils/isJournalPageName";
 import {requireActivePage} from "./utils/validations";
 
 export const RenamePageCommandArgsSchema = z.object({
@@ -40,6 +42,12 @@ export class RenamePageCommand extends BaseReversibleCommand<RenamePageCommandSt
     public async execute() {
         this.assertCanExecute();
         const page = await requireActivePage(this.args.pageUuid as PageIdentity);
+        if ((await getJournalDayByPageUuid(page.uuid)) !== null) {
+            throw new Error("Cannot rename a journal page using RenamePageCommand.");
+        }
+        if (isJournalPageName(this.args.newName)) {
+            throw new Error("Cannot rename a page to a journal page name using RenamePageCommand.");
+        }
 
         this.commandState.originalName = page.name;
         this.changedPages.push(page.uuid);
