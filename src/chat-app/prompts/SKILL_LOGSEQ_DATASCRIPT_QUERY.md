@@ -2,7 +2,8 @@
 name: Logseq Datascript Query
 description: Use this skill whenever the user asks for Logseq DB graph Datascript, Datalog, advanced DB queries, task queries, date queries, property queries, tag/class queries, or LogseqDataScriptQueryTool usage.
 disable-model-invocation: false
-default-installed-skill: true
+built-in-skill: true
+built-in-skill-user-controllable: false
 ---
 
 # Logseq Datascript Query Skill

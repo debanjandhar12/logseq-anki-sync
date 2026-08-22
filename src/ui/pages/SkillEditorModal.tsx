@@ -100,7 +100,9 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
 
     const activeFile = files.find((file) => file.id === activeFileId) ?? files[0] ?? null;
     const activeFileMetadata = activeFile ? getSkillFileMetadata(activeFile.content) : null;
-    const isActiveFileDefault = activeFileMetadata?.defaultInstalledSkill === true;
+    const isActiveFileBuiltIn = activeFileMetadata?.builtInSkill === true;
+    const isActiveFileBuiltInUserControllable =
+        isActiveFileBuiltIn && activeFileMetadata?.builtInSkillUserControllable === true;
     const isModelInvocationEnabled = activeFileMetadata?.disableModelInvocation !== true;
     const hasUnsavedChanges = getFilesSnapshot(files) !== initialFilesSnapshot;
 
@@ -114,7 +116,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
     }, []);
 
     const handleDeleteFile = React.useCallback(() => {
-        if (!activeFile || isActiveFileDefault) return;
+        if (!activeFile || isActiveFileBuiltIn) return;
 
         setFiles((currentFiles) => {
             const activeIndex = currentFiles.findIndex((file) => file.id === activeFile.id);
@@ -130,7 +132,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
             }
             return nextFiles;
         });
-    }, [activeFile, activeFileId, isActiveFileDefault]);
+    }, [activeFile, activeFileId, isActiveFileBuiltIn]);
 
     const handleContentChange = React.useCallback(
         (content: string) => {
@@ -151,11 +153,17 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
     );
 
     const handleToggleModelInvocation = React.useCallback(() => {
-        if (!activeFile || isActiveFileDefault) return;
+        if (!activeFile || (isActiveFileBuiltIn && !isActiveFileBuiltInUserControllable)) return;
 
         const nextEnabled = !isModelInvocationEnabled;
         handleContentChange(updateDisableModelInvocation(activeFile.content, !nextEnabled));
-    }, [activeFile, handleContentChange, isActiveFileDefault, isModelInvocationEnabled]);
+    }, [
+        activeFile,
+        handleContentChange,
+        isActiveFileBuiltIn,
+        isActiveFileBuiltInUserControllable,
+        isModelInvocationEnabled
+    ]);
 
     const handleSave = React.useCallback(async () => {
         setIsSaving(true);
@@ -303,14 +311,17 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                             <div className="flex items-center gap-4">
                                                 <LogseqCheckbox
                                                     checked={isModelInvocationEnabled}
-                                                    disabled={isActiveFileDefault}
+                                                    disabled={
+                                                        isActiveFileBuiltIn &&
+                                                        !isActiveFileBuiltInUserControllable
+                                                    }
                                                     onChange={handleToggleModelInvocation}>
                                                     Enabled
                                                 </LogseqCheckbox>
                                                 <LogseqButton
                                                     onClick={handleDeleteFile}
                                                     color="failed"
-                                                    disabled={isActiveFileDefault}
+                                                    disabled={isActiveFileBuiltIn}
                                                     size="xs"
                                                     title="Delete skill file">
                                                     <Trash size={16} />
@@ -323,7 +334,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                                 value={activeFile.content}
                                                 height="100%"
                                                 extensions={[markdown()]}
-                                                editable={!isActiveFileDefault}
+                                                editable={!isActiveFileBuiltIn}
                                                 onChange={handleContentChange}
                                             />
                                         </div>
@@ -353,7 +364,10 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
 
 function getSkillFileMetadata(
     content: string
-): Pick<SkillFileData, "name" | "defaultInstalledSkill" | "disableModelInvocation"> | null {
+): Pick<
+    SkillFileData,
+    "name" | "builtInSkill" | "builtInSkillUserControllable" | "disableModelInvocation"
+> | null {
     try {
         if (!matter.test(content)) {
             return null;
@@ -361,13 +375,17 @@ function getSkillFileMetadata(
 
         const parsed = matter(content);
         const name = parsed.data.name;
-        const defaultInstalledSkill = parsed.data["default-installed-skill"];
+        const builtInSkill = parsed.data["built-in-skill"];
+        const builtInSkillUserControllable = parsed.data["built-in-skill-user-controllable"];
         const disableModelInvocation = parsed.data["disable-model-invocation"];
 
         return {
             name: typeof name === "string" ? name.trim() : "",
-            defaultInstalledSkill:
-                typeof defaultInstalledSkill === "boolean" ? defaultInstalledSkill : undefined,
+            builtInSkill: typeof builtInSkill === "boolean" ? builtInSkill : undefined,
+            builtInSkillUserControllable:
+                typeof builtInSkillUserControllable === "boolean"
+                    ? builtInSkillUserControllable
+                    : undefined,
             disableModelInvocation:
                 typeof disableModelInvocation === "boolean" ? disableModelInvocation : undefined
         };

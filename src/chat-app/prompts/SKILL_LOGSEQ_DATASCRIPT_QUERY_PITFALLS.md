@@ -2,7 +2,8 @@
 name: Logseq Datascript Query Pitfalls
 description: Use when a Logseq DB Datascript query fails, returns no rows, uses file-graph syntax, mishandles inputs, or combines tags, properties, tasks, dates, or boolean logic incorrectly.
 disable-model-invocation: false
-default-installed-skill: true
+built-in-skill: true
+built-in-skill-user-controllable: false
 ---
 
 # Logseq Datascript Query Pitfalls

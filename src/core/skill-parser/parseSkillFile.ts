@@ -9,7 +9,8 @@ export function parseSkillFile(content: string): SkillFileData {
     const parsed = matter(content);
     const name = parsed.data.name;
     const description = parsed.data.description;
-    const defaultInstalledSkill = parsed.data["default-installed-skill"];
+    const builtInSkill = parsed.data["built-in-skill"];
+    const builtInSkillUserControllable = parsed.data["built-in-skill-user-controllable"];
     const disableModelInvocation = parsed.data["disable-model-invocation"];
 
     if (typeof name !== "string" || name.trim().length === 0) {
@@ -20,8 +21,17 @@ export function parseSkillFile(content: string): SkillFileData {
         throw new Error("Invalid skill file metadata: description is required");
     }
 
-    if (defaultInstalledSkill !== undefined && typeof defaultInstalledSkill !== "boolean") {
-        throw new Error("Invalid skill file metadata: default-installed-skill must be a boolean");
+    if (builtInSkill !== undefined && typeof builtInSkill !== "boolean") {
+        throw new Error("Invalid skill file metadata: built-in-skill must be a boolean");
+    }
+
+    if (
+        builtInSkillUserControllable !== undefined &&
+        typeof builtInSkillUserControllable !== "boolean"
+    ) {
+        throw new Error(
+            "Invalid skill file metadata: built-in-skill-user-controllable must be a boolean"
+        );
     }
 
     if (disableModelInvocation !== undefined && typeof disableModelInvocation !== "boolean") {
@@ -32,7 +42,8 @@ export function parseSkillFile(content: string): SkillFileData {
         name: name.trim(),
         description: description.trim(),
         content,
-        defaultInstalledSkill,
+        builtInSkill,
+        builtInSkillUserControllable,
         disableModelInvocation
     };
 }

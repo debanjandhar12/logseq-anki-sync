@@ -8,8 +8,8 @@ import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?
 import pkg from "./../package.json";
 import {
     initAIChat,
+    initBuiltInSkillFiles,
     initContextMenu,
-    initDefaultInstalledSkillFiles,
     OpenAIChatCommand
 } from "./core/chat-interop";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
@@ -53,7 +53,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     LogseqSettingAccessor.init();
     LogseqAppListeners.init();
     UI.init();
-    await initDefaultInstalledSkillFiles();
+    await initBuiltInSkillFiles();
 
     // The lines below are needed for vite build and dev to work properly.
     // @ts-ignore

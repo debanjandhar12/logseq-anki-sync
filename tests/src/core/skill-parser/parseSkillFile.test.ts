@@ -7,7 +7,8 @@ describe("parseSkillFile", () => {
             parseSkillFile(`---
 name: Test skill
 description: Test description
-default-installed-skill: true
+built-in-skill: true
+built-in-skill-user-controllable: true
 disable-model-invocation: false
 ---
 
@@ -19,13 +20,15 @@ disable-model-invocation: false
             content: `---
 name: Test skill
 description: Test description
-default-installed-skill: true
+built-in-skill: true
+built-in-skill-user-controllable: true
 disable-model-invocation: false
 ---
 
 # Body
 `,
-            defaultInstalledSkill: true,
+            builtInSkill: true,
+            builtInSkillUserControllable: true,
             disableModelInvocation: false
         });
     });
@@ -56,17 +59,30 @@ name: Test skill
         ).toThrow("description is required");
     });
 
-    test("rejects invalid boolean metadata", () => {
+    test("rejects invalid built-in-skill metadata", () => {
         expect(() =>
             parseSkillFile(`---
 name: Test skill
 description: Test description
-default-installed-skill: yes
+built-in-skill: yes
 ---
 
 # Body
 `)
-        ).toThrow("default-installed-skill must be a boolean");
+        ).toThrow("built-in-skill must be a boolean");
+    });
+
+    test("rejects invalid built-in-skill-user-controllable metadata", () => {
+        expect(() =>
+            parseSkillFile(`---
+name: Test skill
+description: Test description
+built-in-skill-user-controllable: enabled
+---
+
+# Body
+`)
+        ).toThrow("built-in-skill-user-controllable must be a boolean");
     });
 
     test("rejects invalid disable-model-invocation metadata", () => {

@@ -2,7 +2,8 @@
 name: Logseq Video and Web Embeds
 description: Use when writing Logseq video / website embeds.
 disable-model-invocation: false
-default-installed-skill: true
+built-in-skill: true
+built-in-skill-user-controllable: false
 ---
 
 # Logseq Video and Web Embeds

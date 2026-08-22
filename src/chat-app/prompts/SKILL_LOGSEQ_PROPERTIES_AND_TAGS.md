@@ -2,7 +2,8 @@
 name: Logseq Properties and Tags
 description: Use when creating, reading, updating, or reasoning about Logseq DB graph properties, property schemas, tags/classes, inherited tag properties, special tags, or special properties.
 disable-model-invocation: false
-default-installed-skill: true
+built-in-skill: true
+built-in-skill-user-controllable: false
 ---
 
 # Logseq Properties
