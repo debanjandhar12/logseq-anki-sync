@@ -6,6 +6,7 @@ import {
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
+import {parseTemplateString} from "src/core/template-engine/parseTemplateString";
 import {z} from "zod";
 
 const readSkillFileParameters = z.object({
@@ -30,7 +31,8 @@ export class SkillTool extends BaseChatToolWithDefaultUI<SkillArgs, SkillResult>
                 return ChatToolResponse.error(`Skill file not found: ${fileName}`);
             }
 
-            return ChatToolResponse.success({skillFileContent: skillFile.content});
+            const skillFileContent = await parseTemplateString(skillFile.content);
+            return ChatToolResponse.success({skillFileContent});
         } catch (err) {
             return ChatToolResponse.error(
                 `Failed to read skill file ${fileName}: ${getErrorMessageFromErrObj(err)}`

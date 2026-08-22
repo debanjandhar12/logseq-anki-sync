@@ -1,10 +1,10 @@
-import {markdown} from "@codemirror/lang-markdown";
 import matter from "gray-matter";
 import {Plus, Trash} from "lucide-react";
 import React from "react";
 import {parseSkillFile} from "src/core/skill-parser/parseSkillFile";
 import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
 import type {SkillFileData} from "src/core/stores/skill-file-store/types";
+import {validateMustacheTemplate} from "src/core/template-engine/validateMustacheTemplate";
 import {LogseqButton} from "../components/LogseqButton";
 import {LogseqCheckbox} from "../components/LogseqCheckbox";
 import {LogseqCodeEditor} from "../components/LogseqCodeEditor";
@@ -14,6 +14,7 @@ import {ModalFooter} from "../modals/core/ModalFooter";
 import {ModalHeader} from "../modals/core/ModalHeader";
 import {useModal} from "../modals/hooks/useModal";
 import {UI} from "../UI";
+import {createSkillEditorExtensions} from "./skill-editor/skillEditorExtensions";
 
 const UNTITLED_FILE_NAME = "Untitled.md";
 const INVALID_FILE_NAME_CHARACTERS = new Set(["<", ">", ":", '"', "/", "\\", "|", "?"]);
@@ -25,6 +26,7 @@ disable-model-invocation: false
 
 # New skill
 `;
+const SKILL_EDITOR_EXTENSIONS = createSkillEditorExtensions();
 
 interface EditableSkillFile {
     id: string;
@@ -177,6 +179,18 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
 
                 try {
                     const parsedFile = parseSkillFile(file.content);
+                    const templateIssue =
+                        parsedFile.builtInSkill === true
+                            ? undefined
+                            : validateMustacheTemplate(file.content)[0];
+                    if (templateIssue) {
+                        setActiveFileId(file.id);
+                        await logseq.UI.showMsg(
+                            `Validation failed in ${fileName}: ${templateIssue.message}`,
+                            "error"
+                        );
+                        return;
+                    }
                     const parsedFileName = getSkillFileName(parsedFile);
                     const normalizedName = parsedFile.name.toLocaleLowerCase();
 
@@ -333,7 +347,8 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                             <LogseqCodeEditor
                                                 value={activeFile.content}
                                                 height="100%"
-                                                extensions={[markdown()]}
+                                                extensions={SKILL_EDITOR_EXTENSIONS}
+                                                basicSetup={{autocompletion: false}}
                                                 editable={!isActiveFileBuiltIn}
                                                 onChange={handleContentChange}
                                             />

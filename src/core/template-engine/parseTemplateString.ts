@@ -4,8 +4,8 @@ import {
     createMustacheView,
     type MustacheTemplateView
 } from "./MustacheView";
+import {MUSTACHE_TEMPLATE_TAGS} from "./mustacheTemplateConstants";
 
-const TEMPLATE_TAGS: [string, string] = ["<%", "%>"];
 const mustache = Mustache as unknown as {
     render: (
         template: string,
@@ -23,5 +23,5 @@ export async function parseTemplateString(
         ? createCaseInsensitiveMustacheView(view)
         : await createMustacheView();
 
-    return mustache.render(template, resolvedView, {}, TEMPLATE_TAGS);
+    return mustache.render(template, resolvedView, {}, MUSTACHE_TEMPLATE_TAGS);
 }
