@@ -2,19 +2,6 @@
     border-radius: calc(var(--radius, 2rem) - 2px);
 }
 
-/* Make user and assistant messages size slightly smaller */
-.aui-user-message-content,
-.aui-md {
-    font-size: 15px;
-    line-height: 24px;
-}
-
-/* Make user and assistant messages size slightly smaller */
-.aui-md .aui-md-p,
-.aui-md .aui-md-li {
-    line-height: 24px;
-}
-
 div[data-radix-popper-content-wrapper=""] {
     /* biome-ignore lint/complexity/noImportantStyles: Radix sets this stacking value inline. */
     z-index: 10000 !important;
