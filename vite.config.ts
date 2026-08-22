@@ -35,7 +35,11 @@ export default defineConfig(({mode}) => {
             mode === "development" && logseqDevPlugin(), // for dev only
             mode === "development" && reactPlugin(), // for dev only
             mode === "development" && rewriteDistReqToRootPlugin(), // for dev only
-            nodePolyfills(),
+            nodePolyfills({
+                globals: {
+                    process: mode !== "test"
+                }
+            }),
             staticFileSyncTransformPlugin(),
             bundleJSStringPlugin(mode)
         ],
