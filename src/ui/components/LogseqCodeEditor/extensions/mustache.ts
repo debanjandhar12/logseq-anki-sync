@@ -1,5 +1,5 @@
 import type {CompletionContext, CompletionResult, CompletionSource} from "@codemirror/autocomplete";
-import {type Diagnostic, linter, lintGutter} from "@codemirror/lint";
+import {type Diagnostic, linter} from "@codemirror/lint";
 import type {Extension} from "@codemirror/state";
 
 export interface MustacheIssue {
@@ -68,22 +68,19 @@ export function createMustacheCompletionSource({
     };
 }
 
-export function createMustacheLintExtensions(
+export function createMustacheLinter(
     validate: (source: string) => readonly MustacheIssue[],
     delay = 300
-): Extension[] {
-    return [
-        linter(
-            (view): Diagnostic[] =>
-                validate(view.state.doc.toString()).map((issue) => ({
-                    ...issue,
-                    severity: "error",
-                    source: "Mustache"
-                })),
-            {delay}
-        ),
-        lintGutter()
-    ];
+): Extension {
+    return linter(
+        (view): Diagnostic[] =>
+            validate(view.state.doc.toString()).map((issue) => ({
+                ...issue,
+                severity: "error",
+                source: "Mustache"
+            })),
+        {delay}
+    );
 }
 
 function escapeRegex(value: string): string {

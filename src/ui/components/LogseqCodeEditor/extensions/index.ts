@@ -6,15 +6,17 @@ export {
 export type {MustacheCompletionOptions, MustacheIssue} from "./mustache";
 export {
     createMustacheCompletionSource,
-    createMustacheLintExtensions,
+    createMustacheLinter,
     isInsideOpenTag
 } from "./mustache";
 export type {
     FrontmatterCompletionOptions,
-    FrontmatterFieldDefinition
+    FrontmatterFieldDefinition,
+    FrontmatterIssue
 } from "./yamlFrontmatter";
 export {
     createFrontmatterCompletionSource,
+    createFrontmatterLinter,
     createYamlFrontmatterLanguageSupport,
     getFrontmatterRange
 } from "./yamlFrontmatter";

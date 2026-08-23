@@ -97,4 +97,13 @@ disable-model-invocation: disabled
 `)
         ).toThrow("disable-model-invocation must be a boolean");
     });
+
+    test("throws the first metadata issue", () => {
+        expect(() =>
+            parseSkillFile(`---
+name: 42
+built-in-skill: enabled
+---`)
+        ).toThrow("name is required");
+    });
 });

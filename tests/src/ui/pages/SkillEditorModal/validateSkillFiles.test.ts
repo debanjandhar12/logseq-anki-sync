@@ -62,6 +62,33 @@ describe("validateSkillFilesForSave", () => {
         expect(issue?.fileId).toBe("no-frontmatter");
     });
 
+    test("reports malformed YAML as a parse error", () => {
+        const {issue} = validateSkillFilesForSave([
+            {id: "bad-yaml", content: "---\nname: [\ndescription: Test\n---"}
+        ]);
+
+        expect(issue?.kind).toBe("parse-error");
+        expect(issue?.message).toContain("Invalid skill file frontmatter");
+    });
+
+    test("reports Mustache errors before frontmatter errors", () => {
+        const {issue} = validateSkillFilesForSave([
+            {id: "broken", content: "---\nname: 42\n---\n<% unknown %>"}
+        ]);
+
+        expect(issue?.kind).toBe("invalid-template");
+    });
+
+    test("accepts unknown frontmatter fields", () => {
+        const content = createSkillContent().replace(
+            "---\n\n# My skill",
+            "custom: value\n---\n\n# My skill"
+        );
+        const {issue} = validateSkillFilesForSave([{id: "custom", content}]);
+
+        expect(issue).toBeNull();
+    });
+
     test("reports invalid file names", () => {
         const {issue} = validateSkillFilesForSave([
             {id: "bad-name", content: createSkillContent({name: 'my/bad"name'})}

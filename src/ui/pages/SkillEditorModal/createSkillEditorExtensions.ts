@@ -1,5 +1,7 @@
 import {autocompletion} from "@codemirror/autocomplete";
+import {lintGutter} from "@codemirror/lint";
 import type {Extension} from "@codemirror/state";
+import {validateSkillFileContent} from "src/core/skill-parser/validateSkillFileContent";
 import {
     getMustacheTemplateVariableNames,
     MUSTACHE_TEMPLATE_TAGS,
@@ -7,10 +9,11 @@ import {
 } from "src/core/template-engine";
 import {
     createFrontmatterCompletionSource,
+    createFrontmatterLinter,
     createMarkdownCompletionSource,
     createMarkdownLanguageSupport,
     createMustacheCompletionSource,
-    createMustacheLintExtensions,
+    createMustacheLinter,
     createYamlFrontmatterLanguageSupport,
     type FrontmatterFieldDefinition
 } from "src/ui/components/LogseqCodeEditor";
@@ -42,6 +45,9 @@ export function createSkillEditorExtensions(): Extension[] {
         autocompletion({
             override: [mustacheCompletion, frontmatterCompletion, markdownCompletion]
         }),
-        ...createMustacheLintExtensions(validateMustacheTemplate)
+        createMustacheLinter(validateMustacheTemplate),
+        createFrontmatterLinter((source) => validateSkillFileContent(source).issues),
+        // The gutter is editor-wide and shared by both diagnostic sources.
+        lintGutter()
     ];
 }

@@ -1,7 +1,12 @@
 import {CompletionContext, type CompletionResult} from "@codemirror/autocomplete";
+import {forceLinting, forEachDiagnostic} from "@codemirror/lint";
 import {EditorState} from "@codemirror/state";
+import {EditorView} from "@codemirror/view";
 import {describe, expect, test} from "vitest";
-import {createMustacheCompletionSource} from "../../../../../../src/ui/components/LogseqCodeEditor";
+import {
+    createMustacheCompletionSource,
+    createMustacheLinter
+} from "../../../../../../src/ui/components/LogseqCodeEditor";
 
 const source = createMustacheCompletionSource({
     tags: ["<%", "%>"],
@@ -36,5 +41,35 @@ describe("Mustache CodeMirror extension", () => {
     test("rejects completed and control tags", async () => {
         await expect(complete("<% cur %>|")).resolves.toBeNull();
         await expect(complete("<% #cur")).resolves.toBeNull();
+    });
+
+    test("maps validation issues to Mustache error diagnostics", async () => {
+        const view = new EditorView({
+            state: EditorState.create({
+                doc: "<% unknown %>",
+                extensions: [
+                    createMustacheLinter(
+                        () => [{from: 3, to: 10, message: "Unknown Mustache variable: unknown"}],
+                        0
+                    )
+                ]
+            })
+        });
+
+        forceLinting(view);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const diagnostics: Array<{source?: string; severity: string; message: string}> = [];
+        forEachDiagnostic(view.state, (diagnostic) => diagnostics.push(diagnostic));
+
+        expect(diagnostics).toEqual([
+            {
+                from: 3,
+                to: 10,
+                source: "Mustache",
+                severity: "error",
+                message: "Unknown Mustache variable: unknown"
+            }
+        ]);
+        view.destroy();
     });
 });

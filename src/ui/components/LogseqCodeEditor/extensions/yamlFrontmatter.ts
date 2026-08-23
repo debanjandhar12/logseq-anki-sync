@@ -1,6 +1,8 @@
 import type {CompletionResult, CompletionSource} from "@codemirror/autocomplete";
 import {yamlFrontmatter} from "@codemirror/lang-yaml";
 import type {Language, LanguageSupport} from "@codemirror/language";
+import {type Diagnostic, linter} from "@codemirror/lint";
+import type {Extension} from "@codemirror/state";
 import {isInsideOpenTag} from "./mustache";
 
 export interface FrontmatterFieldDefinition {
@@ -12,6 +14,12 @@ export interface FrontmatterFieldDefinition {
 export interface FrontmatterCompletionOptions {
     fields: readonly FrontmatterFieldDefinition[];
     mustacheTags?: readonly [string, string];
+}
+
+export interface FrontmatterIssue {
+    from: number;
+    to: number;
+    message: string;
 }
 
 export function createYamlFrontmatterLanguageSupport(
@@ -28,6 +36,21 @@ export function getFrontmatterRange(source: string): {from: number; to: number} 
     const closingMatch = /^---[ \t]*\r?$/m.exec(source.slice(bodyFrom));
     const to = closingMatch ? bodyFrom + closingMatch.index : source.length;
     return {from: bodyFrom, to};
+}
+
+export function createFrontmatterLinter(
+    validate: (source: string) => readonly FrontmatterIssue[],
+    delay = 300
+): Extension {
+    return linter(
+        (view): Diagnostic[] =>
+            validate(view.state.doc.toString()).map((issue) => ({
+                ...issue,
+                severity: "error",
+                source: "Frontmatter"
+            })),
+        {delay}
+    );
 }
 
 export function createFrontmatterCompletionSource({

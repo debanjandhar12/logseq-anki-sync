@@ -1,8 +1,12 @@
 import {CompletionContext, type CompletionResult} from "@codemirror/autocomplete";
+import {forceLinting, forEachDiagnostic, lintGutter} from "@codemirror/lint";
 import {EditorState} from "@codemirror/state";
+import {EditorView} from "@codemirror/view";
 import {describe, expect, test} from "vitest";
 import {
     createFrontmatterCompletionSource,
+    createFrontmatterLinter,
+    createMustacheLinter,
     type FrontmatterFieldDefinition
 } from "../../../../../../src/ui/components/LogseqCodeEditor";
 
@@ -55,5 +59,34 @@ describe("YAML frontmatter CodeMirror extension", () => {
     test("does not complete outside frontmatter or inside Mustache", async () => {
         await expect(complete("---\nname: Test\n---\nname|")).resolves.toBeNull();
         await expect(complete("---\nname: <% to|")).resolves.toBeNull();
+    });
+
+    test("combines frontmatter and Mustache diagnostics in one lint gutter", async () => {
+        const parent = document.createElement("div");
+        document.body.append(parent);
+        const view = new EditorView({
+            parent,
+            state: EditorState.create({
+                doc: "---\nname: 42\n---\n<% unknown %>",
+                extensions: [
+                    createFrontmatterLinter(() => [{from: 4, to: 12, message: "Invalid name"}], 0),
+                    createMustacheLinter(
+                        () => [{from: 17, to: 30, message: "Unknown variable"}],
+                        0
+                    ),
+                    lintGutter()
+                ]
+            })
+        });
+
+        forceLinting(view);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const sources: Array<string | undefined> = [];
+        forEachDiagnostic(view.state, (diagnostic) => sources.push(diagnostic.source));
+
+        expect(sources).toEqual(["Frontmatter", "Mustache"]);
+        expect(parent.querySelectorAll(".cm-gutter-lint")).toHaveLength(1);
+        view.destroy();
+        parent.remove();
     });
 });
