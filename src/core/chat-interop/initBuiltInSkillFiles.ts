@@ -4,6 +4,7 @@ import SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW from "../../chat-app/prompts/S
 import SKILL_LOGSEQ_PROPERTIES_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_PROPERTIES_AND_TAGS.md?inlineSkill";
 import SKILL_LOGSEQ_TOOLS_GUIDE_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_TOOLS_GUIDE.md?inlineSkill";
 import SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_WORKING_WITH_VIDEO_AND_WEB_EMBEDS.md?inlineSkill";
+import SKILL_CREATOR_RAW from "../../chat-app/prompts/SKILL_SKILL_CREATOR.md?inlineSkill";
 import {SkillFileStore} from "../stores/skill-file-store/SkillFileStore";
 
 const BUILT_IN_SKILL_FILES = [
@@ -11,7 +12,8 @@ const BUILT_IN_SKILL_FILES = [
     SKILL_LOGSEQ_TOOLS_GUIDE_RAW,
     SKILL_LOGSEQ_PROPERTIES_RAW,
     SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW,
-    SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW
+    SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW,
+    SKILL_CREATOR_RAW
 ];
 
 export const initBuiltInSkillFiles = async () => {
