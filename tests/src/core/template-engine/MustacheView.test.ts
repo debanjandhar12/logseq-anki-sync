@@ -13,7 +13,7 @@ import {LogseqSettingAccessor} from "../../../../src/logseq/LogseqSettingAccesso
 describe("MustacheView", () => {
     afterEach(() => vi.restoreAllMocks());
 
-    test("exposes canonical variables and compatibility aliases", async () => {
+    test("exposes canonical variables and spaced aliases", async () => {
         vi.spyOn(LogseqSettingAccessor, "getPluginSettings").mockReturnValue({
             disabled: false,
             globalAgentInstruction: "  Be precise  "
@@ -29,13 +29,9 @@ describe("MustacheView", () => {
         const view = await createMustacheView(new Date("2026-08-22T12:30:00"));
 
         expect(view.globalAgentInstruction).toBe("Be precise");
-        expect(view.additionalSystemMessage).toBe("Be precise");
-        expect(view["additional system message"]).toBe("Be precise");
-        expect(view.ADDITIONALSYSTEMMESSAGE).toBe("Be precise");
+        expect(view.GLOBALAGENTINSTRUCTION).toBe("Be precise");
         expect(view.currentPage).toBe("page-uuid");
-        expect(view["current page"]).toBe("page-uuid");
-        expect(view.lastSaturday).toBeDefined();
-        expect(view["last saturday"]).toBe(view.lastSaturday);
+        expect(view["last saturday"]).toBe("2026-08-15");
     });
 
     test("derives supported variable names from the synchronous view shape", () => {
@@ -63,8 +59,9 @@ describe("MustacheView", () => {
 
         expect(getMustacheTemplateVariableNames()).toEqual(Object.keys(view));
         expect(getMustacheTemplateVariableNames()).toContain("globalAgentInstruction");
-        expect(getMustacheTemplateVariableNames()).toContain("additional system message");
-        expect(view.lastSunday).toBe("Sunday");
+        expect(getMustacheTemplateVariableNames()).toContain("currentEditingBlock");
+        expect(getMustacheTemplateVariableNames()).not.toContain("additionalSystemMessage");
+        expect(getMustacheTemplateVariableNames()).not.toContain("lastMonday");
         expect(view["last sunday"]).toBe("Sunday");
     });
 });

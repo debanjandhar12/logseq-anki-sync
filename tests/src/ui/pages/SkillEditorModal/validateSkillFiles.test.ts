@@ -35,7 +35,7 @@ describe("SkillEditorModal template validation", () => {
         expect(
             getFirstInvalidSkillTemplate([
                 {id: "one", content: "<% today %>"},
-                {id: "two", content: "<% current page %>"}
+                {id: "two", content: "<% currentPage %>"}
             ])
         ).toBeNull();
     });

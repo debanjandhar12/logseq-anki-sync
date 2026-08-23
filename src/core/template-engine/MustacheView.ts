@@ -61,14 +61,9 @@ export function createCaseInsensitiveMustacheView(
 export function createMustacheViewFromValues(values: MustacheViewValues): MustacheTemplateView {
     const view: MustacheTemplateView = {
         globalAgentInstruction: values.globalAgentInstruction,
-        additionalSystemMessage: values.globalAgentInstruction,
-        "additional system message": values.globalAgentInstruction,
         currentPage: values.currentPage,
-        "current page": values.currentPage,
         currentEditingBlock: values.currentEditingBlock,
-        "current editing block": values.currentEditingBlock,
         modelInvokableSkillList: values.modelInvokableSkillList,
-        "model invokable skill list": values.modelInvokableSkillList,
         chatAppAgentToolResultMaxChar: values.chatAppAgentToolResultMaxChar,
         time: values.time,
         today: values.today,
@@ -78,7 +73,6 @@ export function createMustacheViewFromValues(values: MustacheViewValues): Mustac
     };
 
     for (const [weekday] of WEEKDAYS) {
-        view[`last${weekday}`] = values.lastWeekdays[weekday];
         view[`last ${weekday.toLowerCase()}`] = values.lastWeekdays[weekday];
     }
 

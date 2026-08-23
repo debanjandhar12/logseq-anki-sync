@@ -4,9 +4,7 @@ import {validateMustacheTemplate} from "../../../../src/core/template-engine";
 describe("validateMustacheTemplate", () => {
     test("accepts canonical variables, aliases, and case-only variants", () => {
         expect(
-            validateMustacheTemplate(
-                "<% globalAgentInstruction %> <% additional system message %> <% TODAY %>"
-            )
+            validateMustacheTemplate("<% globalAgentInstruction %> <% last sunday %> <% TODAY %>")
         ).toEqual([]);
     });
 
