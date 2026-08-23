@@ -1,6 +1,6 @@
 import Mustache from "mustache";
-import {MUSTACHE_TEMPLATE_TAGS} from "./mustacheTemplateConstants";
-import {SUPPORTED_MUSTACHE_TEMPLATE_VARIABLE_NAMES} from "./mustacheTemplateVariables";
+import {MUSTACHE_TEMPLATE_TAGS} from "./constants";
+import {getMustacheTemplateVariableNames} from "./MustacheView";
 
 type MustacheToken = [string, string, number, number, MustacheToken[]?];
 
@@ -11,9 +11,9 @@ export interface MustacheTemplateIssue {
     variableName?: string;
 }
 
-const mustache = Mustache as unknown as {
-    parse: (template: string, tags: [string, string]) => MustacheToken[];
-};
+const SUPPORTED_VARIABLE_NAMES = new Set(
+    getMustacheTemplateVariableNames().map((name) => name.toLowerCase())
+);
 
 function clampOffset(offset: number, source: string): number {
     return Math.max(0, Math.min(offset, source.length));
@@ -50,7 +50,7 @@ function collectIssues(tokens: MustacheToken[], issues: MustacheTemplateIssue[])
             });
         } else if (type === "name" || type === "&") {
             const variableName = rawName.trim();
-            if (!SUPPORTED_MUSTACHE_TEMPLATE_VARIABLE_NAMES.has(variableName.toLowerCase())) {
+            if (!SUPPORTED_VARIABLE_NAMES.has(variableName.toLowerCase())) {
                 issues.push({
                     from,
                     to,
@@ -67,7 +67,10 @@ function collectIssues(tokens: MustacheToken[], issues: MustacheTemplateIssue[])
 export function validateMustacheTemplate(source: string): MustacheTemplateIssue[] {
     try {
         const issues: MustacheTemplateIssue[] = [];
-        collectIssues(mustache.parse(source, MUSTACHE_TEMPLATE_TAGS), issues);
+        collectIssues(
+            Mustache.parse(source, [...MUSTACHE_TEMPLATE_TAGS]) as unknown as MustacheToken[],
+            issues
+        );
         return issues;
     } catch (error) {
         return [getSyntaxIssue(error, source)];

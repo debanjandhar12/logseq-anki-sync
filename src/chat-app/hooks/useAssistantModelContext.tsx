@@ -1,6 +1,6 @@
 import type {AssistantClient, ModelContextProvider} from "@assistant-ui/react";
 import {useEffect, useMemo, useRef} from "react";
-import {parseTemplateString} from "../../core/template-engine/parseTemplateString";
+import {parseTemplateString} from "../../core/template-engine";
 import {createLogger, LoggerCategory} from "../../logger";
 import mainSystemMessageTemplate from "../prompts/MAIN_SYSTEM_MESSAGE.md?inlineSkill";
 

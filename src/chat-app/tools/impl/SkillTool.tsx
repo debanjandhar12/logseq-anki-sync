@@ -6,7 +6,7 @@ import {
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
-import {parseTemplateString} from "src/core/template-engine/parseTemplateString";
+import {parseTemplateString} from "src/core/template-engine";
 import {z} from "zod";
 
 const readSkillFileParameters = z.object({

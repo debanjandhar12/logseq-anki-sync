@@ -7,8 +7,7 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {getUserPreferredDayjsFormat} from "src/core/template-engine/getUserPreferredDayjsFormat";
-import {getUserTimeZone} from "src/core/template-engine/getUserTimeZone";
+import {getUserPreferredDayjsFormat, getUserTimeZone} from "src/core/template-engine";
 import {z} from "zod";
 
 const getUserInfoParameters = z.object({});

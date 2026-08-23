@@ -1,5 +1,5 @@
 import {describe, expect, test} from "vitest";
-import {validateMustacheTemplate} from "../../../../src/core/template-engine/validateMustacheTemplate";
+import {validateMustacheTemplate} from "../../../../src/core/template-engine";
 
 describe("validateMustacheTemplate", () => {
     test("accepts canonical variables, aliases, and case-only variants", () => {

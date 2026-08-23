@@ -4,7 +4,7 @@ import React from "react";
 import {parseSkillFile} from "src/core/skill-parser/parseSkillFile";
 import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
 import type {SkillFileData} from "src/core/stores/skill-file-store/types";
-import {validateMustacheTemplate} from "src/core/template-engine/validateMustacheTemplate";
+import {validateMustacheTemplate} from "src/core/template-engine";
 import {LogseqButton} from "../components/LogseqButton";
 import {LogseqCheckbox} from "../components/LogseqCheckbox";
 import {LogseqCodeEditor} from "../components/LogseqCodeEditor";
@@ -32,6 +32,17 @@ interface EditableSkillFile {
     id: string;
     content: string;
     originalFileName?: string;
+}
+
+export function getFirstInvalidSkillTemplate(
+    files: readonly Pick<EditableSkillFile, "id" | "content">[]
+): {fileId: string; issue: ReturnType<typeof validateMustacheTemplate>[number]} | null {
+    for (const file of files) {
+        const issue = validateMustacheTemplate(file.content)[0];
+        if (issue) return {fileId: file.id, issue};
+    }
+
+    return null;
 }
 
 export interface SkillEditorModalProps {
@@ -173,24 +184,25 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
         try {
             const parsedFiles: SkillFileData[] = [];
             const usedNames = new Set<string>();
+            const invalidTemplate = getFirstInvalidSkillTemplate(files);
+
+            if (invalidTemplate) {
+                const invalidFile = files.find((file) => file.id === invalidTemplate.fileId);
+                if (invalidFile) {
+                    setActiveFileId(invalidFile.id);
+                    await logseq.UI.showMsg(
+                        `Validation failed in ${getDisplayFileName(invalidFile.content)}: ${invalidTemplate.issue.message}`,
+                        "error"
+                    );
+                }
+                return;
+            }
 
             for (const file of files) {
                 const fileName = getDisplayFileName(file.content);
 
                 try {
                     const parsedFile = parseSkillFile(file.content);
-                    const templateIssue =
-                        parsedFile.builtInSkill === true
-                            ? undefined
-                            : validateMustacheTemplate(file.content)[0];
-                    if (templateIssue) {
-                        setActiveFileId(file.id);
-                        await logseq.UI.showMsg(
-                            `Validation failed in ${fileName}: ${templateIssue.message}`,
-                            "error"
-                        );
-                        return;
-                    }
                     const parsedFileName = getSkillFileName(parsedFile);
                     const normalizedName = parsedFile.name.toLocaleLowerCase();
 

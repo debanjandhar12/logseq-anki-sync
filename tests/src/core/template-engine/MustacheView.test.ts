@@ -1,9 +1,12 @@
 import {afterEach, describe, expect, test, vi} from "vitest";
+import {
+    createMustacheView,
+    createMustacheViewFromValues,
+    getMustacheTemplateVariableNames
+} from "../../../../src/core/template-engine";
 import * as skillListModule from "../../../../src/core/template-engine/getModelInvokableSkillListString";
 import * as dateFormatModule from "../../../../src/core/template-engine/getUserPreferredDayjsFormat";
 import * as timeZoneModule from "../../../../src/core/template-engine/getUserTimeZone";
-import {createMustacheView} from "../../../../src/core/template-engine/MustacheView";
-import {MUSTACHE_TEMPLATE_VARIABLES} from "../../../../src/core/template-engine/mustacheTemplateVariables";
 import {LogseqEditor} from "../../../../src/logseq/LogseqEditor";
 import {LogseqSettingAccessor} from "../../../../src/logseq/LogseqSettingAccessor";
 
@@ -35,16 +38,33 @@ describe("MustacheView", () => {
         expect(view["last saturday"]).toBe(view.lastSaturday);
     });
 
-    test("has no case-insensitive name collisions across variable definitions", () => {
-        const ownerByName = new Map<string, string>();
-
-        for (const definition of MUSTACHE_TEMPLATE_VARIABLES) {
-            for (const name of [definition.canonicalName, ...definition.aliases]) {
-                const normalizedName = name.toLowerCase();
-                const existingOwner = ownerByName.get(normalizedName);
-                expect(existingOwner).toBeUndefined();
-                ownerByName.set(normalizedName, definition.canonicalName);
+    test("derives supported variable names from the synchronous view shape", () => {
+        const view = createMustacheViewFromValues({
+            globalAgentInstruction: "instruction",
+            currentPage: "page",
+            currentEditingBlock: "block",
+            modelInvokableSkillList: "skills",
+            chatAppAgentToolResultMaxChar: "100",
+            time: "12:00",
+            today: "today",
+            tomorrow: "tomorrow",
+            yesterday: "yesterday",
+            userTimeZone: "UTC",
+            lastWeekdays: {
+                Sunday: "Sunday",
+                Monday: "Monday",
+                Tuesday: "Tuesday",
+                Wednesday: "Wednesday",
+                Thursday: "Thursday",
+                Friday: "Friday",
+                Saturday: "Saturday"
             }
-        }
+        });
+
+        expect(getMustacheTemplateVariableNames()).toEqual(Object.keys(view));
+        expect(getMustacheTemplateVariableNames()).toContain("globalAgentInstruction");
+        expect(getMustacheTemplateVariableNames()).toContain("additional system message");
+        expect(view.lastSunday).toBe("Sunday");
+        expect(view["last sunday"]).toBe("Sunday");
     });
 });

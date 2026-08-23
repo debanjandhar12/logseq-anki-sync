@@ -1,7 +1,7 @@
 import {afterEach, describe, expect, test, vi} from "vitest";
 import {SkillTool} from "../../../../../src/chat-app/tools/impl/SkillTool";
 import {SkillFileStore} from "../../../../../src/core/stores/skill-file-store/SkillFileStore";
-import * as templateEngine from "../../../../../src/core/template-engine/parseTemplateString";
+import * as templateEngine from "../../../../../src/core/template-engine";
 
 describe("SkillTool", () => {
     afterEach(() => vi.restoreAllMocks());

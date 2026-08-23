@@ -1,0 +1,40 @@
+import {CompletionContext, type CompletionResult} from "@codemirror/autocomplete";
+import {EditorState} from "@codemirror/state";
+import {describe, expect, test} from "vitest";
+import {createMustacheCompletionSource} from "../../../../../../src/ui/components/LogseqCodeEditor";
+
+const source = createMustacheCompletionSource({
+    tags: ["<%", "%>"],
+    variableNames: ["currentPage", "current page", "today"]
+});
+
+async function complete(document: string): Promise<CompletionResult | null> {
+    const marker = document.indexOf("|");
+    const doc = document.replace("|", "");
+    const position = marker >= 0 ? marker : doc.length;
+    return source(new CompletionContext(EditorState.create({doc}), position, false));
+}
+
+describe("Mustache CodeMirror extension", () => {
+    test("completes variables as full tags and tolerates trailing query whitespace", async () => {
+        const result = await complete("<% cur ");
+
+        expect(result?.options.map((option) => option.label)).toEqual([
+            "<% currentPage %>",
+            "<% current page %>"
+        ]);
+        expect(result?.options[0].apply).toBe("<% currentPage %>");
+    });
+
+    test("consumes a closing delimiter after the cursor", async () => {
+        const result = await complete("<% cur| %>");
+
+        expect(result?.from).toBe(0);
+        expect(result?.to).toBe("<% cur %>".length);
+    });
+
+    test("rejects completed and control tags", async () => {
+        await expect(complete("<% cur %>|")).resolves.toBeNull();
+        await expect(complete("<% #cur")).resolves.toBeNull();
+    });
+});
