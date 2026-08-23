@@ -1,23 +1,27 @@
-import matter from "gray-matter";
 import {Plus, Trash} from "lucide-react";
 import React from "react";
-import {parseSkillFile} from "src/core/skill-parser/parseSkillFile";
 import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
-import type {SkillFileData} from "src/core/stores/skill-file-store/types";
-import {validateMustacheTemplate} from "src/core/template-engine";
-import {LogseqButton} from "../components/LogseqButton";
-import {LogseqCheckbox} from "../components/LogseqCheckbox";
-import {LogseqCodeEditor} from "../components/LogseqCodeEditor";
-import {showConfirmModal} from "../launchers/showConfirmModal";
-import {Modal} from "../modals/core/Modal";
-import {ModalFooter} from "../modals/core/ModalFooter";
-import {ModalHeader} from "../modals/core/ModalHeader";
-import {useModal} from "../modals/hooks/useModal";
-import {UI} from "../UI";
-import {createSkillEditorExtensions} from "./skill-editor/skillEditorExtensions";
+import {LogseqButton} from "../../components/LogseqButton";
+import {LogseqCheckbox} from "../../components/LogseqCheckbox";
+import {LogseqCodeEditor} from "../../components/LogseqCodeEditor";
+import {showConfirmModal} from "../../launchers/showConfirmModal";
+import {Modal} from "../../modals/core/Modal";
+import {ModalFooter} from "../../modals/core/ModalFooter";
+import {ModalHeader} from "../../modals/core/ModalHeader";
+import {useModal} from "../../modals/hooks/useModal";
+import {UI} from "../../UI";
+import {createSkillEditorExtensions} from "./createSkillEditorExtensions";
+import type {EditableSkillFile} from "./types";
+import {getErrorMessage} from "./utils/getErrorMessage";
+import {
+    getDisplayFileName,
+    getSkillFileMetadata,
+    getSkillFileName,
+    updateDisableModelInvocation
+} from "./utils/skillFileFrontmatter";
+import {getFilesSnapshot} from "./utils/skillFilesSnapshot";
+import {validateSkillFilesForSave} from "./utils/validateSkillFiles";
 
-const UNTITLED_FILE_NAME = "Untitled.md";
-const INVALID_FILE_NAME_CHARACTERS = new Set(["<", ">", ":", '"', "/", "\\", "|", "?"]);
 const NEW_SKILL_CONTENT = `---
 name: New skill
 description: Describe what this skill does
@@ -27,23 +31,6 @@ disable-model-invocation: false
 # New skill
 `;
 const SKILL_EDITOR_EXTENSIONS = createSkillEditorExtensions();
-
-interface EditableSkillFile {
-    id: string;
-    content: string;
-    originalFileName?: string;
-}
-
-export function getFirstInvalidSkillTemplate(
-    files: readonly Pick<EditableSkillFile, "id" | "content">[]
-): {fileId: string; issue: ReturnType<typeof validateMustacheTemplate>[number]} | null {
-    for (const file of files) {
-        const issue = validateMustacheTemplate(file.content)[0];
-        if (issue) return {fileId: file.id, issue};
-    }
-
-    return null;
-}
 
 export interface SkillEditorModalProps {
     resolve: (value: boolean | null) => void;
@@ -182,55 +169,15 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
         setIsSaving(true);
 
         try {
-            const parsedFiles: SkillFileData[] = [];
-            const usedNames = new Set<string>();
-            const invalidTemplate = getFirstInvalidSkillTemplate(files);
+            const {issue, parsedFiles} = validateSkillFilesForSave(files);
 
-            if (invalidTemplate) {
-                const invalidFile = files.find((file) => file.id === invalidTemplate.fileId);
-                if (invalidFile) {
-                    setActiveFileId(invalidFile.id);
-                    await logseq.UI.showMsg(
-                        `Validation failed in ${getDisplayFileName(invalidFile.content)}: ${invalidTemplate.issue.message}`,
-                        "error"
-                    );
-                }
+            if (issue) {
+                setActiveFileId(issue.fileId);
+                await logseq.UI.showMsg(
+                    `Validation failed in ${issue.fileName}: ${issue.message}`,
+                    "error"
+                );
                 return;
-            }
-
-            for (const file of files) {
-                const fileName = getDisplayFileName(file.content);
-
-                try {
-                    const parsedFile = parseSkillFile(file.content);
-                    const parsedFileName = getSkillFileName(parsedFile);
-                    const normalizedName = parsedFile.name.toLocaleLowerCase();
-
-                    if (!isValidFileName(parsedFileName)) {
-                        await logseq.UI.showMsg(
-                            `Validation failed in ${fileName}: "${parsedFileName}" is not a valid file name.`,
-                            "error"
-                        );
-                        return;
-                    }
-
-                    if (usedNames.has(normalizedName)) {
-                        await logseq.UI.showMsg(
-                            `Validation failed in ${fileName}: another skill file already uses name "${parsedFile.name}".`,
-                            "error"
-                        );
-                        return;
-                    }
-
-                    usedNames.add(normalizedName);
-                    parsedFiles.push(parsedFile);
-                } catch (error) {
-                    await logseq.UI.showMsg(
-                        `Validation failed in ${fileName}: ${getErrorMessage(error)}`,
-                        "error"
-                    );
-                    return;
-                }
             }
 
             const nextFileNames = new Set(parsedFiles.map(getSkillFileName));
@@ -388,84 +335,3 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
         </Modal>
     );
 };
-
-function getSkillFileMetadata(
-    content: string
-): Pick<
-    SkillFileData,
-    "name" | "builtInSkill" | "builtInSkillUserControllable" | "disableModelInvocation"
-> | null {
-    try {
-        if (!matter.test(content)) {
-            return null;
-        }
-
-        const parsed = matter(content);
-        const name = parsed.data.name;
-        const builtInSkill = parsed.data["built-in-skill"];
-        const builtInSkillUserControllable = parsed.data["built-in-skill-user-controllable"];
-        const disableModelInvocation = parsed.data["disable-model-invocation"];
-
-        return {
-            name: typeof name === "string" ? name.trim() : "",
-            builtInSkill: typeof builtInSkill === "boolean" ? builtInSkill : undefined,
-            builtInSkillUserControllable:
-                typeof builtInSkillUserControllable === "boolean"
-                    ? builtInSkillUserControllable
-                    : undefined,
-            disableModelInvocation:
-                typeof disableModelInvocation === "boolean" ? disableModelInvocation : undefined
-        };
-    } catch {
-        return null;
-    }
-}
-
-function getDisplayFileName(content: string): string {
-    const metadata = getSkillFileMetadata(content);
-    return metadata?.name ? `${metadata.name}.md` : UNTITLED_FILE_NAME;
-}
-
-function getSkillFileName(skillFileData: Pick<SkillFileData, "name">): string {
-    return `${skillFileData.name}.md`;
-}
-
-function getFilesSnapshot(files: EditableSkillFile[]): string {
-    return JSON.stringify(
-        files.map((file) => ({
-            content: file.content,
-            originalFileName: file.originalFileName ?? null
-        }))
-    );
-}
-
-function isValidFileName(fileName: string): boolean {
-    return (
-        fileName.trim() === fileName &&
-        fileName.length > 0 &&
-        fileName !== "." &&
-        fileName !== ".." &&
-        Array.from(fileName).every(
-            (character) =>
-                character.charCodeAt(0) >= 32 && !INVALID_FILE_NAME_CHARACTERS.has(character)
-        )
-    );
-}
-
-function updateDisableModelInvocation(content: string, disableModelInvocation: boolean): string {
-    if (!matter.test(content)) {
-        return matter.stringify(content, {
-            "disable-model-invocation": disableModelInvocation
-        });
-    }
-
-    const parsed = matter(content);
-    return matter.stringify(parsed.content, {
-        ...parsed.data,
-        "disable-model-invocation": disableModelInvocation
-    });
-}
-
-function getErrorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
-}
