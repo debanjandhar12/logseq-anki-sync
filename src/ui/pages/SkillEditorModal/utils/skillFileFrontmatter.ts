@@ -1,4 +1,8 @@
 import matter from "gray-matter";
+import {
+    readSkillFrontmatterValues,
+    SKILL_FRONTMATTER_KEYS
+} from "src/core/skill-parser/skillFrontmatterFields";
 import type {SkillFileData} from "src/core/stores/skill-file-store/types";
 
 const UNTITLED_FILE_NAME = "Untitled.md";
@@ -15,20 +19,13 @@ export function getSkillFileMetadata(
         }
 
         const parsed = matter(content);
-        const name = parsed.data.name;
-        const builtInSkill = parsed.data["built-in-skill"];
-        const builtInSkillUserControllable = parsed.data["built-in-skill-user-controllable"];
-        const disableModelInvocation = parsed.data["disable-model-invocation"];
+        const values = readSkillFrontmatterValues(parsed.data);
 
         return {
-            name: typeof name === "string" ? name.trim() : "",
-            builtInSkill: typeof builtInSkill === "boolean" ? builtInSkill : undefined,
-            builtInSkillUserControllable:
-                typeof builtInSkillUserControllable === "boolean"
-                    ? builtInSkillUserControllable
-                    : undefined,
-            disableModelInvocation:
-                typeof disableModelInvocation === "boolean" ? disableModelInvocation : undefined
+            name: values.name ?? "",
+            builtInSkill: values.builtInSkill,
+            builtInSkillUserControllable: values.builtInSkillUserControllable,
+            disableModelInvocation: values.disableModelInvocation
         };
     } catch {
         return null;
@@ -50,13 +47,13 @@ export function updateDisableModelInvocation(
 ): string {
     if (!matter.test(content)) {
         return matter.stringify(content, {
-            "disable-model-invocation": disableModelInvocation
+            [SKILL_FRONTMATTER_KEYS.disableModelInvocation]: disableModelInvocation
         });
     }
 
     const parsed = matter(content);
     return matter.stringify(parsed.content, {
         ...parsed.data,
-        "disable-model-invocation": disableModelInvocation
+        [SKILL_FRONTMATTER_KEYS.disableModelInvocation]: disableModelInvocation
     });
 }

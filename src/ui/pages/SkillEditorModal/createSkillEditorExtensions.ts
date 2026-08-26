@@ -1,12 +1,12 @@
+import type {CompletionContext} from "@codemirror/autocomplete";
 import {autocompletion} from "@codemirror/autocomplete";
 import {lintGutter} from "@codemirror/lint";
 import type {Extension} from "@codemirror/state";
+import {splitSkillFileFrontmatter} from "src/core/skill-parser/skillFileFrontmatter";
+import {SKILL_FRONTMATTER_FIELDS} from "src/core/skill-parser/skillFrontmatterFields";
 import {validateSkillFileContent} from "src/core/skill-parser/validateSkillFileContent";
-import {
-    getMustacheTemplateVariableNames,
-    MUSTACHE_TEMPLATE_TAGS,
-    validateMustacheTemplate
-} from "src/core/template-engine";
+import {validateSkillFileTemplate} from "src/core/skill-parser/validateSkillFileTemplate";
+import {MUSTACHE_TEMPLATE_TAGS, MustacheView} from "src/core/template-engine";
 import {
     createFrontmatterCompletionSource,
     createFrontmatterLinter,
@@ -14,23 +14,20 @@ import {
     createMarkdownLanguageSupport,
     createMustacheCompletionSource,
     createMustacheLinter,
-    createYamlFrontmatterLanguageSupport,
-    type FrontmatterFieldDefinition
+    createYamlFrontmatterLanguageSupport
 } from "src/ui/components/LogseqCodeEditor";
 
-const SKILL_FRONTMATTER_FIELDS: readonly FrontmatterFieldDefinition[] = [
-    {key: "name", valueType: "string", required: true},
-    {key: "description", valueType: "string", required: true},
-    {key: "disable-model-invocation", valueType: "boolean"},
-    {key: "built-in-skill", valueType: "boolean"},
-    {key: "built-in-skill-user-controllable", valueType: "boolean"}
-];
+function isInSkillFrontmatter(context: CompletionContext): boolean {
+    const {prefix} = splitSkillFileFrontmatter(context.state.doc.toString());
+    return context.pos < prefix.length;
+}
 
 export function createSkillEditorExtensions(): Extension[] {
     const markdownSupport = createMarkdownLanguageSupport();
     const mustacheCompletion = createMustacheCompletionSource({
         tags: MUSTACHE_TEMPLATE_TAGS,
-        variableNames: getMustacheTemplateVariableNames()
+        getVariableNames: () => MustacheView.getVariableNames(),
+        isDisabledAt: isInSkillFrontmatter
     });
     const frontmatterCompletion = createFrontmatterCompletionSource({
         fields: SKILL_FRONTMATTER_FIELDS,
@@ -45,7 +42,7 @@ export function createSkillEditorExtensions(): Extension[] {
         autocompletion({
             override: [mustacheCompletion, frontmatterCompletion, markdownCompletion]
         }),
-        createMustacheLinter(validateMustacheTemplate),
+        createMustacheLinter(validateSkillFileTemplate),
         createFrontmatterLinter((source) => validateSkillFileContent(source).issues),
         // The gutter is editor-wide and shared by both diagnostic sources.
         lintGutter()

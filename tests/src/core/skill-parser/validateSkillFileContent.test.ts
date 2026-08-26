@@ -75,12 +75,14 @@ disable-model-invocation: disabled
         expect(issues.map(({message}) => message)).toEqual([
             "Invalid skill file metadata: name is required",
             "Invalid skill file metadata: description is required",
-            "Invalid skill file metadata: built-in-skill must be a boolean",
-            "Invalid skill file metadata: disable-model-invocation must be a boolean"
+            "Invalid skill file metadata: disable-model-invocation must be a boolean",
+            "Invalid skill file metadata: built-in-skill must be a boolean"
         ]);
         expect(content.slice(issues[0].from, issues[0].to)).toBe("name: 42");
         expect(content.slice(issues[1].from, issues[1].to)).toBe("---");
-        expect(content.slice(issues[2].from, issues[2].to)).toBe("built-in-skill: enabled");
+        expect(content.slice(issues[2].from, issues[2].to)).toBe(
+            "disable-model-invocation: disabled"
+        );
     });
 
     test("supports quoted known keys and CRLF offsets", () => {

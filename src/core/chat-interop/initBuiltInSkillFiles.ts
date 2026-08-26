@@ -5,6 +5,7 @@ import SKILL_LOGSEQ_PROPERTIES_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_PRO
 import SKILL_LOGSEQ_TOOLS_GUIDE_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_TOOLS_GUIDE.md?inlineSkill";
 import SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_WORKING_WITH_VIDEO_AND_WEB_EMBEDS.md?inlineSkill";
 import SKILL_CREATOR_RAW from "../../chat-app/prompts/SKILL_SKILL_CREATOR.md?inlineSkill";
+import {SKILL_FRONTMATTER_KEYS} from "../skill-parser/skillFrontmatterFields";
 import {SkillFileStore} from "../stores/skill-file-store/SkillFileStore";
 
 const BUILT_IN_SKILL_FILES = [
@@ -55,6 +56,6 @@ export const initBuiltInSkillFiles = async () => {
 function getComparableSkillContent(content: string): string {
     const parsed = matter(content);
     const metadata = {...parsed.data};
-    delete metadata["disable-model-invocation"];
+    delete metadata[SKILL_FRONTMATTER_KEYS.disableModelInvocation];
     return matter.stringify(parsed.content, metadata);
 }

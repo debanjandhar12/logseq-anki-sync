@@ -1,5 +1,10 @@
 import matter from "gray-matter";
 import type {SkillFileData} from "../stores/skill-file-store/types";
+import {
+    readSkillFrontmatterValues,
+    SKILL_FRONTMATTER_FIELDS,
+    type SkillFrontmatterFieldDefinition
+} from "./skillFrontmatterFields";
 
 export interface SkillFileValidationIssue {
     from: number;
@@ -56,93 +61,59 @@ export function validateSkillFileContent(content: string): SkillFileValidationRe
         ]);
     }
 
-    const name = parsed.data.name;
-    const description = parsed.data.description;
-    const builtInSkill = parsed.data["built-in-skill"];
-    const builtInSkillUserControllable = parsed.data["built-in-skill-user-controllable"];
-    const disableModelInvocation = parsed.data["disable-model-invocation"];
     const matterFrom = getMatterFrom(content, parsed.matter);
     const issues: SkillFileValidationIssue[] = [];
 
-    if (typeof name !== "string" || name.trim().length === 0) {
-        issues.push(
-            createMetadataIssue(
-                content,
-                parsed.matter,
-                matterFrom,
-                "name",
-                "Invalid skill file metadata: name is required",
-                Object.hasOwn(parsed.data, "name")
-            )
-        );
-    }
+    for (const field of SKILL_FRONTMATTER_FIELDS) {
+        const message = getInvalidFieldMessage(field, parsed.data[field.key]);
+        if (!message) continue;
 
-    if (typeof description !== "string" || description.trim().length === 0) {
         issues.push(
             createMetadataIssue(
                 content,
                 parsed.matter,
                 matterFrom,
-                "description",
-                "Invalid skill file metadata: description is required",
-                Object.hasOwn(parsed.data, "description")
-            )
-        );
-    }
-
-    if (builtInSkill !== undefined && typeof builtInSkill !== "boolean") {
-        issues.push(
-            createMetadataIssue(
-                content,
-                parsed.matter,
-                matterFrom,
-                "built-in-skill",
-                "Invalid skill file metadata: built-in-skill must be a boolean"
-            )
-        );
-    }
-
-    if (
-        builtInSkillUserControllable !== undefined &&
-        typeof builtInSkillUserControllable !== "boolean"
-    ) {
-        issues.push(
-            createMetadataIssue(
-                content,
-                parsed.matter,
-                matterFrom,
-                "built-in-skill-user-controllable",
-                "Invalid skill file metadata: built-in-skill-user-controllable must be a boolean"
-            )
-        );
-    }
-
-    if (disableModelInvocation !== undefined && typeof disableModelInvocation !== "boolean") {
-        issues.push(
-            createMetadataIssue(
-                content,
-                parsed.matter,
-                matterFrom,
-                "disable-model-invocation",
-                "Invalid skill file metadata: disable-model-invocation must be a boolean"
+                field.key,
+                message,
+                Object.hasOwn(parsed.data, field.key)
             )
         );
     }
 
     if (issues.length > 0) return invalidResult(issues);
 
+    const values = readSkillFrontmatterValues(parsed.data);
+
     return {
         valid: true,
         skillFile: {
-            name: name.trim(),
-            description: description.trim(),
+            name: values.name as string,
+            description: values.description as string,
             content,
-            builtInSkill,
-            builtInSkillUserControllable,
-            disableModelInvocation
+            builtInSkill: values.builtInSkill,
+            builtInSkillUserControllable: values.builtInSkillUserControllable,
+            disableModelInvocation: values.disableModelInvocation
         },
         issues: []
     };
+}
+
+function getInvalidFieldMessage(
+    field: SkillFrontmatterFieldDefinition,
+    value: unknown
+): string | null {
+    if (field.valueType === "boolean") {
+        return value === undefined || typeof value === "boolean"
+            ? null
+            : `Invalid skill file metadata: ${field.key} must be a boolean`;
+    }
+
+    if (typeof value === "string" && value.trim().length > 0) return null;
+    if (!field.required && value === undefined) return null;
+
+    return field.required
+        ? `Invalid skill file metadata: ${field.key} is required`
+        : `Invalid skill file metadata: ${field.key} must be a non-empty string`;
 }
 
 // -- Utility methods --

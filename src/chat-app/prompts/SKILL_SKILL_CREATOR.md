@@ -35,6 +35,6 @@ disable-model-invocation: false
 <concise instructions>
 ```
 
-The `name`, `description`, and `disable-model-invocation` fields are required. The description should mention both the capability and realistic user requests that should trigger it. 
+The `name` and `description` fields are required. The description should mention both the capability and realistic user requests that should trigger it. 
 
 Do not include evaluation workflows, benchmark instructions, Python commands, nested resource folders, or references to files that are not included in the pasted skill.

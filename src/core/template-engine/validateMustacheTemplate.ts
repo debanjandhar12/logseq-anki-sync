@@ -1,6 +1,6 @@
 import Mustache from "mustache";
 import {MUSTACHE_TEMPLATE_TAGS} from "./constants";
-import {getMustacheTemplateVariableNames} from "./MustacheView";
+import {MustacheView} from "./MustacheView";
 
 type MustacheToken = [string, string, number, number, MustacheToken[]?];
 
@@ -10,10 +10,6 @@ export interface MustacheTemplateIssue {
     message: string;
     variableName?: string;
 }
-
-const SUPPORTED_VARIABLE_NAMES = new Set(
-    getMustacheTemplateVariableNames().map((name) => name.toLowerCase())
-);
 
 function clampOffset(offset: number, source: string): number {
     return Math.max(0, Math.min(offset, source.length));
@@ -38,7 +34,11 @@ function getSyntaxIssue(error: unknown, source: string): MustacheTemplateIssue {
     };
 }
 
-function collectIssues(tokens: MustacheToken[], issues: MustacheTemplateIssue[]): void {
+function collectIssues(
+    tokens: MustacheToken[],
+    issues: MustacheTemplateIssue[],
+    supportedVariableNames: ReadonlySet<string>
+): void {
     for (const token of tokens) {
         const [type, rawName, from, to, children] = token;
 
@@ -50,7 +50,7 @@ function collectIssues(tokens: MustacheToken[], issues: MustacheTemplateIssue[])
             });
         } else if (type === "name" || type === "&") {
             const variableName = rawName.trim();
-            if (!SUPPORTED_VARIABLE_NAMES.has(variableName.toLowerCase())) {
+            if (!supportedVariableNames.has(variableName.toLowerCase())) {
                 issues.push({
                     from,
                     to,
@@ -60,16 +60,21 @@ function collectIssues(tokens: MustacheToken[], issues: MustacheTemplateIssue[])
             }
         }
 
-        if (children) collectIssues(children, issues);
+        if (children) collectIssues(children, issues, supportedVariableNames);
     }
 }
 
-export function validateMustacheTemplate(source: string): MustacheTemplateIssue[] {
+export async function validateMustacheTemplate(source: string): Promise<MustacheTemplateIssue[]> {
+    const supportedVariableNames = new Set(
+        (await MustacheView.getVariableNames()).map((name) => name.toLowerCase())
+    );
+
     try {
         const issues: MustacheTemplateIssue[] = [];
         collectIssues(
             Mustache.parse(source, [...MUSTACHE_TEMPLATE_TAGS]) as unknown as MustacheToken[],
-            issues
+            issues,
+            supportedVariableNames
         );
         return issues;
     } catch (error) {

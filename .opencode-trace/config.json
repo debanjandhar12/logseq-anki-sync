@@ -1,0 +1,7 @@
+{
+  "global_trace_enabled": true,
+  "storage_preference": "global",
+  "plugin_enabled": true,
+  "current_session": null,
+  "schema_version": 2
+}

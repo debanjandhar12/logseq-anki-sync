@@ -1,17 +1,18 @@
 import {parseSkillFile} from "src/core/skill-parser/parseSkillFile";
+import {validateSkillFileTemplate} from "src/core/skill-parser/validateSkillFileTemplate";
 import type {SkillFileData} from "src/core/stores/skill-file-store/types";
-import {validateMustacheTemplate} from "src/core/template-engine";
+import type {MustacheTemplateIssue} from "src/core/template-engine";
 import type {EditableSkillFile} from "../types";
 import {getErrorMessage} from "./getErrorMessage";
 import {getDisplayFileName, getSkillFileName} from "./skillFileFrontmatter";
 
 const INVALID_FILE_NAME_CHARACTERS = new Set(["<", ">", ":", '"', "/", "\\", "|", "?"]);
 
-export function getFirstInvalidSkillTemplate(
+export async function getFirstInvalidSkillTemplate(
     files: readonly Pick<EditableSkillFile, "id" | "content">[]
-): {fileId: string; issue: ReturnType<typeof validateMustacheTemplate>[number]} | null {
+): Promise<{fileId: string; issue: MustacheTemplateIssue} | null> {
     for (const file of files) {
-        const issue = validateMustacheTemplate(file.content)[0];
+        const issue = (await validateSkillFileTemplate(file.content))[0];
         if (issue) return {fileId: file.id, issue};
     }
 
@@ -36,10 +37,10 @@ export interface ValidatedSkillFilesForSave {
     parsedFiles: SkillFileData[];
 }
 
-export function validateSkillFilesForSave(
+export async function validateSkillFilesForSave(
     files: readonly Pick<EditableSkillFile, "id" | "content">[]
-): ValidatedSkillFilesForSave {
-    const invalidTemplate = getFirstInvalidSkillTemplate(files);
+): Promise<ValidatedSkillFilesForSave> {
+    const invalidTemplate = await getFirstInvalidSkillTemplate(files);
 
     if (invalidTemplate) {
         const invalidFile = files.find((file) => file.id === invalidTemplate.fileId);

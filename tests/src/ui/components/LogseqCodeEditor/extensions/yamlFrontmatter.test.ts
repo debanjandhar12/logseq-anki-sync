@@ -2,22 +2,18 @@ import {CompletionContext, type CompletionResult} from "@codemirror/autocomplete
 import {forceLinting, forEachDiagnostic, lintGutter} from "@codemirror/lint";
 import {EditorState} from "@codemirror/state";
 import {EditorView} from "@codemirror/view";
+import {SKILL_FRONTMATTER_FIELDS} from "src/core/skill-parser/skillFrontmatterFields";
 import {describe, expect, test} from "vitest";
 import {
     createFrontmatterCompletionSource,
     createFrontmatterLinter,
-    createMustacheLinter,
-    type FrontmatterFieldDefinition
+    createMustacheLinter
 } from "../../../../../../src/ui/components/LogseqCodeEditor";
 
-const fields: readonly FrontmatterFieldDefinition[] = [
-    {key: "name", valueType: "string", required: true},
-    {key: "description", valueType: "string", required: true},
-    {key: "disable-model-invocation", valueType: "boolean"},
-    {key: "built-in-skill", valueType: "boolean"},
-    {key: "built-in-skill-user-controllable", valueType: "boolean"}
-];
-const source = createFrontmatterCompletionSource({fields, mustacheTags: ["<%", "%>"]});
+const source = createFrontmatterCompletionSource({
+    fields: SKILL_FRONTMATTER_FIELDS,
+    mustacheTags: ["<%", "%>"]
+});
 
 async function complete(document: string): Promise<CompletionResult | null> {
     const marker = document.indexOf("|");
@@ -58,6 +54,8 @@ describe("YAML frontmatter CodeMirror extension", () => {
 
     test("does not complete outside frontmatter or inside Mustache", async () => {
         await expect(complete("---\nname: Test\n---\nname|")).resolves.toBeNull();
+        await expect(complete("---\nname: Test\n---Body|")).resolves.toBeNull();
+        await expect(complete("---\nname: Test\n--- trailing|")).resolves.toBeNull();
         await expect(complete("---\nname: <% to|")).resolves.toBeNull();
     });
 

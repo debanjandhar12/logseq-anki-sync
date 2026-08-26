@@ -10,7 +10,8 @@ export interface MustacheIssue {
 
 export interface MustacheCompletionOptions {
     tags: readonly [string, string];
-    variableNames: readonly string[];
+    getVariableNames: () => readonly string[] | Promise<readonly string[]>;
+    isDisabledAt?: (context: CompletionContext) => boolean;
 }
 
 export function isInsideOpenTag(
@@ -27,15 +28,12 @@ export function isInsideOpenTag(
 
 export function createMustacheCompletionSource({
     tags,
-    variableNames
+    getVariableNames,
+    isDisabledAt
 }: MustacheCompletionOptions): CompletionSource {
-    const options = variableNames.map((name) => ({
-        label: `${tags[0]} ${name} ${tags[1]}`,
-        apply: `${tags[0]} ${name} ${tags[1]}`,
-        type: "variable"
-    }));
+    return async (context): Promise<CompletionResult | null> => {
+        if (isDisabledAt?.(context)) return null;
 
-    return (context): CompletionResult | null => {
         const line = context.state.doc.lineAt(context.pos);
         const beforeCursor = context.state.doc.sliceString(line.from, context.pos);
         const openingIndex = beforeCursor.lastIndexOf(tags[0]);
@@ -48,6 +46,12 @@ export function createMustacheCompletionSource({
         const query = prefix.trim();
         if (query && !/^[A-Za-z][\w -]*$/.test(query)) return null;
 
+        const variableNames = await getVariableNames();
+        const options = variableNames.map((name) => ({
+            label: `${tags[0]} ${name} ${tags[1]}`,
+            apply: `${tags[0]} ${name} ${tags[1]}`,
+            type: "variable"
+        }));
         const matchingOptions = options.filter((option) => {
             const name = option.label.slice(tags[0].length + 1, -(tags[1].length + 1));
             return name.toLowerCase().startsWith(query.toLowerCase());
@@ -69,12 +73,12 @@ export function createMustacheCompletionSource({
 }
 
 export function createMustacheLinter(
-    validate: (source: string) => readonly MustacheIssue[],
+    validate: (source: string) => readonly MustacheIssue[] | Promise<readonly MustacheIssue[]>,
     delay = 300
 ): Extension {
     return linter(
-        (view): Diagnostic[] =>
-            validate(view.state.doc.toString()).map((issue) => ({
+        async (view): Promise<Diagnostic[]> =>
+            (await validate(view.state.doc.toString())).map((issue) => ({
                 ...issue,
                 severity: "error",
                 source: "Mustache"

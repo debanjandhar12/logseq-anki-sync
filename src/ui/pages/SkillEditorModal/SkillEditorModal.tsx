@@ -169,7 +169,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
         setIsSaving(true);
 
         try {
-            const {issue, parsedFiles} = validateSkillFilesForSave(files);
+            const {issue, parsedFiles} = await validateSkillFilesForSave(files);
 
             if (issue) {
                 setActiveFileId(issue.fileId);
@@ -193,6 +193,11 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
             }
 
             returnResult(true);
+        } catch (error) {
+            await logseq.UI.showMsg(
+                `Failed to save skill files: ${getErrorMessage(error)}`,
+                "error"
+            );
         } finally {
             setIsSaving(false);
         }

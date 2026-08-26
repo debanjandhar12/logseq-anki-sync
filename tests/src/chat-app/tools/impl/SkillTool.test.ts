@@ -1,12 +1,12 @@
 import {afterEach, describe, expect, test, vi} from "vitest";
 import {SkillTool} from "../../../../../src/chat-app/tools/impl/SkillTool";
+import * as skillTemplate from "../../../../../src/core/skill-parser/renderSkillFileTemplate";
 import {SkillFileStore} from "../../../../../src/core/stores/skill-file-store/SkillFileStore";
-import * as templateEngine from "../../../../../src/core/template-engine";
 
 describe("SkillTool", () => {
     afterEach(() => vi.restoreAllMocks());
 
-    test("renders the complete stored skill source before returning it", async () => {
+    test("renders the stored skill before returning it", async () => {
         const source = `---
 name: <% today %>
 description: Test skill
@@ -19,8 +19,8 @@ description: Test skill
             content: source
         });
         const render = vi
-            .spyOn(templateEngine, "parseTemplateString")
-            .mockResolvedValue("rendered complete source");
+            .spyOn(skillTemplate, "renderSkillFileTemplate")
+            .mockResolvedValue("rendered skill source");
 
         const response = await new SkillTool().execute({fileName: "Test skill.md"});
 
@@ -28,13 +28,13 @@ description: Test skill
         expect(render).toHaveBeenCalledWith(source);
         expect(response.result).toEqual({
             success: true,
-            skillFileContent: "rendered complete source"
+            skillFileContent: "rendered skill source"
         });
     });
 
     test("returns the existing not-found result", async () => {
         vi.spyOn(SkillFileStore, "getSkillFile").mockResolvedValue(null);
-        const render = vi.spyOn(templateEngine, "parseTemplateString");
+        const render = vi.spyOn(skillTemplate, "renderSkillFileTemplate");
 
         const response = await new SkillTool().execute({fileName: "Missing.md"});
 
@@ -51,7 +51,7 @@ description: Test skill
             description: "Test skill",
             content: "<% invalid"
         });
-        vi.spyOn(templateEngine, "parseTemplateString").mockRejectedValue(
+        vi.spyOn(skillTemplate, "renderSkillFileTemplate").mockRejectedValue(
             new Error("Unclosed tag")
         );
 

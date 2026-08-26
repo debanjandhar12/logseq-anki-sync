@@ -10,7 +10,7 @@ import {
 
 const source = createMustacheCompletionSource({
     tags: ["<%", "%>"],
-    variableNames: ["currentPage", "current page", "today"]
+    getVariableNames: () => ["currentPage", "current page", "today"]
 });
 
 async function complete(document: string): Promise<CompletionResult | null> {
@@ -41,6 +41,19 @@ describe("Mustache CodeMirror extension", () => {
     test("rejects completed and control tags", async () => {
         await expect(complete("<% cur %>|")).resolves.toBeNull();
         await expect(complete("<% #cur")).resolves.toBeNull();
+    });
+
+    test("suppresses completion in disabled regions", async () => {
+        const disabledSource = createMustacheCompletionSource({
+            tags: ["<%", "%>"],
+            getVariableNames: () => ["today"],
+            isDisabledAt: () => true
+        });
+        const state = EditorState.create({doc: "<% to"});
+
+        await expect(
+            disabledSource(new CompletionContext(state, state.doc.length, false))
+        ).resolves.toBeNull();
     });
 
     test("maps validation issues to Mustache error diagnostics", async () => {

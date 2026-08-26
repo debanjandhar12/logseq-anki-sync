@@ -1,10 +1,6 @@
 import Mustache from "mustache";
 import {MUSTACHE_TEMPLATE_TAGS} from "./constants";
-import {
-    createCaseInsensitiveMustacheView,
-    createMustacheView,
-    type MustacheTemplateView
-} from "./MustacheView";
+import {type MustacheTemplateView, MustacheView} from "./MustacheView";
 
 const mustache = Mustache as unknown as {
     render: (
@@ -20,8 +16,8 @@ export async function parseTemplateString(
     view?: MustacheTemplateView
 ): Promise<string> {
     const resolvedView = view
-        ? createCaseInsensitiveMustacheView(view)
-        : await createMustacheView();
+        ? MustacheView.createCaseInsensitive(view)
+        : await MustacheView.create();
 
     return mustache.render(template, resolvedView, {}, [...MUSTACHE_TEMPLATE_TAGS]);
 }

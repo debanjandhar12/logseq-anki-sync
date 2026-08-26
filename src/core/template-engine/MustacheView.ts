@@ -16,119 +16,78 @@ const WEEKDAYS = [
     ["Saturday", 6]
 ] as const;
 
-function getLastWeekday(date: dayjs.Dayjs, weekdayIndex: number): dayjs.Dayjs {
-    const daysSinceWeekday = (date.day() - weekdayIndex + 7) % 7 || 7;
-    return date.subtract(daysSinceWeekday, "day");
-}
-
 export type MustacheTemplateView = Record<string, string>;
 
-export interface MustacheViewValues {
-    globalAgentInstruction: string;
-    currentPage: string;
-    currentEditingBlock: string;
-    modelInvokableSkillList: string;
-    chatAppAgentToolResultMaxChar: string;
-    time: string;
-    today: string;
-    tomorrow: string;
-    yesterday: string;
-    userTimeZone: string;
-    lastWeekdays: Record<(typeof WEEKDAYS)[number][0], string>;
-}
+export class MustacheView {
+    private static variableNamesPromise: Promise<readonly string[]> | null = null;
 
-export function createCaseInsensitiveMustacheView(
-    view: MustacheTemplateView
-): MustacheTemplateView {
-    const normalizedView = Object.fromEntries(
-        Object.entries(view).map(([key, value]) => [key.toLowerCase(), value])
-    );
+    static async create(date: Date = new Date()): Promise<MustacheTemplateView> {
+        const now = dayjs(date);
+        const currentPage = await LogseqEditor.getCurrentPage();
+        const currentEditingBlock = await LogseqEditor.getCurrentEditingBlock();
+        const dayjsFormat = await getUserPreferredDayjsFormat();
+        const modelInvokableSkillList = await getModelInvokableSkillListString();
+        const view: MustacheTemplateView = {
+            globalAgentInstruction:
+                LogseqSettingAccessor.getPluginSettings().globalAgentInstruction?.trim() ?? "",
+            currentPage: currentPage?.uuid ?? "No current page",
+            currentEditingBlock: currentEditingBlock?.uuid ?? "No current editing block",
+            modelInvokableSkillList,
+            chatAppAgentToolResultMaxChar: String(CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR),
+            time: now.format("HH:mm"),
+            today: now.format(dayjsFormat),
+            tomorrow: now.add(1, "day").format(dayjsFormat),
+            yesterday: now.subtract(1, "day").format(dayjsFormat),
+            userTimeZone: getUserTimeZone()
+        };
 
-    return new Proxy(view, {
-        get: (target, property) => {
-            if (typeof property !== "string") return Reflect.get(target, property);
-
-            return target[property] ?? normalizedView[property.toLowerCase()];
-        },
-        has: (target, property) => {
-            if (typeof property !== "string") return property in target;
-
-            return property in target || property.toLowerCase() in normalizedView;
+        for (const [weekday, weekdayIndex] of WEEKDAYS) {
+            view[`last ${weekday.toLowerCase()}`] = MustacheView.getLastWeekday(
+                now,
+                weekdayIndex
+            ).format(dayjsFormat);
         }
-    });
-}
 
-export function createMustacheViewFromValues(values: MustacheViewValues): MustacheTemplateView {
-    const view: MustacheTemplateView = {
-        globalAgentInstruction: values.globalAgentInstruction,
-        currentPage: values.currentPage,
-        currentEditingBlock: values.currentEditingBlock,
-        modelInvokableSkillList: values.modelInvokableSkillList,
-        chatAppAgentToolResultMaxChar: values.chatAppAgentToolResultMaxChar,
-        time: values.time,
-        today: values.today,
-        tomorrow: values.tomorrow,
-        yesterday: values.yesterday,
-        userTimeZone: values.userTimeZone
-    };
-
-    for (const [weekday] of WEEKDAYS) {
-        view[`last ${weekday.toLowerCase()}`] = values.lastWeekdays[weekday];
+        return MustacheView.createCaseInsensitive(view);
     }
 
-    return createCaseInsensitiveMustacheView(view);
-}
+    static async getVariableNames(): Promise<readonly string[]> {
+        if (!MustacheView.variableNamesPromise) {
+            const variableNamesPromise = MustacheView.create().then((view) =>
+                Object.freeze(Object.keys(view))
+            );
+            MustacheView.variableNamesPromise = variableNamesPromise;
+            variableNamesPromise.catch(() => {
+                if (MustacheView.variableNamesPromise === variableNamesPromise) {
+                    MustacheView.variableNamesPromise = null;
+                }
+            });
+        }
 
-const EMPTY_MUSTACHE_VIEW_VALUES: MustacheViewValues = {
-    globalAgentInstruction: "",
-    currentPage: "",
-    currentEditingBlock: "",
-    modelInvokableSkillList: "",
-    chatAppAgentToolResultMaxChar: "",
-    time: "",
-    today: "",
-    tomorrow: "",
-    yesterday: "",
-    userTimeZone: "",
-    lastWeekdays: Object.fromEntries(WEEKDAYS.map(([weekday]) => [weekday, ""])) as Record<
-        (typeof WEEKDAYS)[number][0],
-        string
-    >
-};
+        return MustacheView.variableNamesPromise;
+    }
 
-const MUSTACHE_TEMPLATE_VARIABLE_NAMES = Object.freeze(
-    Object.keys(createMustacheViewFromValues(EMPTY_MUSTACHE_VIEW_VALUES))
-);
+    static createCaseInsensitive(view: MustacheTemplateView): MustacheTemplateView {
+        const normalizedView = Object.fromEntries(
+            Object.entries(view).map(([key, value]) => [key.toLowerCase(), value])
+        );
 
-export function getMustacheTemplateVariableNames(): readonly string[] {
-    return MUSTACHE_TEMPLATE_VARIABLE_NAMES;
-}
+        return new Proxy(view, {
+            get: (target, property) => {
+                if (typeof property !== "string") return Reflect.get(target, property);
 
-export async function createMustacheView(date: Date = new Date()): Promise<MustacheTemplateView> {
-    const now = dayjs(date);
-    const additionalSystemMessage =
-        LogseqSettingAccessor.getPluginSettings().globalAgentInstruction?.trim() ?? "";
-    const currentPage = await LogseqEditor.getCurrentPage();
-    const currentEditingBlock = await LogseqEditor.getCurrentEditingBlock();
-    const dayjsFormat = await getUserPreferredDayjsFormat();
-    const modelInvokableSkillList = await getModelInvokableSkillListString();
+                return target[property] ?? normalizedView[property.toLowerCase()];
+            },
+            has: (target, property) => {
+                if (typeof property !== "string") return property in target;
 
-    return createMustacheViewFromValues({
-        globalAgentInstruction: additionalSystemMessage,
-        currentPage: currentPage?.uuid ?? "No current page",
-        currentEditingBlock: currentEditingBlock?.uuid ?? "No current editing block",
-        modelInvokableSkillList,
-        chatAppAgentToolResultMaxChar: String(CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR),
-        time: now.format("HH:mm"),
-        today: now.format(dayjsFormat),
-        tomorrow: now.add(1, "day").format(dayjsFormat),
-        yesterday: now.subtract(1, "day").format(dayjsFormat),
-        userTimeZone: getUserTimeZone(),
-        lastWeekdays: Object.fromEntries(
-            WEEKDAYS.map(([weekday, weekdayIndex]) => [
-                weekday,
-                getLastWeekday(now, weekdayIndex).format(dayjsFormat)
-            ])
-        ) as MustacheViewValues["lastWeekdays"]
-    });
+                return property in target || property.toLowerCase() in normalizedView;
+            }
+        });
+    }
+
+    private static getLastWeekday(date: dayjs.Dayjs, weekdayIndex: number): dayjs.Dayjs {
+        const daysSinceWeekday = (date.day() - weekdayIndex + 7) % 7 || 7;
+        return date.subtract(daysSinceWeekday, "day");
+    }
 }
