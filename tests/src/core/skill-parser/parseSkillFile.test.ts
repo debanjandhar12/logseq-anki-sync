@@ -1,5 +1,5 @@
 import {describe, expect, test} from "vitest";
-import {parseSkillFile} from "../../../../src/core/skill-parser/parseSkillFile";
+import {parseSkillFile} from "../../../../src/core/skill-parser";
 
 describe("parseSkillFile", () => {
     test("parses valid skill frontmatter", () => {

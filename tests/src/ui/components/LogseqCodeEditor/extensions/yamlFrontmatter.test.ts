@@ -2,7 +2,7 @@ import {CompletionContext, type CompletionResult} from "@codemirror/autocomplete
 import {forceLinting, forEachDiagnostic, lintGutter} from "@codemirror/lint";
 import {EditorState} from "@codemirror/state";
 import {EditorView} from "@codemirror/view";
-import {SKILL_FRONTMATTER_FIELDS} from "src/core/skill-parser/skillFrontmatterFields";
+import {SKILL_FRONTMATTER_FIELDS} from "src/core/skill-parser";
 import {describe, expect, test} from "vitest";
 import {
     createFrontmatterCompletionSource,

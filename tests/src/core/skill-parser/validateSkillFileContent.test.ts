@@ -1,5 +1,5 @@
 import {describe, expect, test} from "vitest";
-import {validateSkillFileContent} from "../../../../src/core/skill-parser/validateSkillFileContent";
+import {validateSkillFileContent} from "../../../../src/core/skill-parser";
 
 function expectBoundedIssues(content: string) {
     const result = validateSkillFileContent(content);

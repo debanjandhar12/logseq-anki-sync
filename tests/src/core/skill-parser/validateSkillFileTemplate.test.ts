@@ -2,7 +2,7 @@ import {beforeEach, describe, expect, test, vi} from "vitest";
 import {
     FRONTMATTER_MUSTACHE_MESSAGE,
     validateSkillFileTemplate
-} from "../../../../src/core/skill-parser/validateSkillFileTemplate";
+} from "../../../../src/core/skill-parser";
 import {MustacheView} from "../../../../src/core/template-engine";
 
 beforeEach(() => {

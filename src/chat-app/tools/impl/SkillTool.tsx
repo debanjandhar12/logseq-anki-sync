@@ -5,7 +5,7 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {renderSkillFileTemplate} from "src/core/skill-parser/renderSkillFileTemplate";
+import {renderSkillFileTemplate} from "src/core/skill-parser";
 import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
 import {z} from "zod";
 

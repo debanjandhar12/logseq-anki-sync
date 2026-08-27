@@ -13,13 +13,11 @@ import {UI} from "../../UI";
 import {createSkillEditorExtensions} from "./createSkillEditorExtensions";
 import type {EditableSkillFile} from "./types";
 import {getErrorMessage} from "./utils/getErrorMessage";
-import {
-    getDisplayFileName,
-    getSkillFileMetadata,
-    getSkillFileName,
-    updateDisableModelInvocation
-} from "./utils/skillFileFrontmatter";
+import {getSkillFileDisplayName} from "./utils/getSkillFileDisplayName";
+import {getSkillFileMetadata} from "./utils/getSkillFileMetadata";
+import {getSkillFileName} from "./utils/getSkillFileName";
 import {getFilesSnapshot} from "./utils/skillFilesSnapshot";
+import {updateDisableModelInvocation} from "./utils/updateDisableModelInvocation";
 import {validateSkillFilesForSave} from "./utils/validateSkillFiles";
 
 const NEW_SKILL_CONTENT = `---
@@ -267,7 +265,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                                         }`}
                                                         onClick={() => setActiveFileId(file.id)}>
                                                         <span className="block truncate">
-                                                            {getDisplayFileName(file.content)}
+                                                            {getSkillFileDisplayName(file.content)}
                                                         </span>
                                                     </button>
                                                 );
@@ -283,7 +281,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                         <div className="flex items-center justify-between gap-3 border-border border-b px-4 py-2 bg-secondary-background">
                                             <div className="min-w-0">
                                                 <div className="truncate text-sm font-medium">
-                                                    {getDisplayFileName(activeFile.content)}
+                                                    {getSkillFileDisplayName(activeFile.content)}
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4">

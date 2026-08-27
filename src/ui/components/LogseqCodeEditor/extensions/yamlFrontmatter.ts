@@ -3,7 +3,7 @@ import {yamlFrontmatter} from "@codemirror/lang-yaml";
 import type {Language, LanguageSupport} from "@codemirror/language";
 import {type Diagnostic, linter} from "@codemirror/lint";
 import type {Extension} from "@codemirror/state";
-import {splitSkillFileFrontmatter} from "src/core/skill-parser/skillFileFrontmatter";
+import {splitFrontmatter} from "src/core/frontmatter-parser";
 import {isInsideOpenTag} from "./mustache";
 
 export interface FrontmatterFieldDefinition {
@@ -30,7 +30,7 @@ export function createYamlFrontmatterLanguageSupport(
 }
 
 export function getFrontmatterRange(source: string): {from: number; to: number} | null {
-    return splitSkillFileFrontmatter(source).matterRange;
+    return splitFrontmatter(source).matterRange;
 }
 
 export function createFrontmatterLinter(

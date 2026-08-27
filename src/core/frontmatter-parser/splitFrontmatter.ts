@@ -1,10 +1,6 @@
-export interface SkillFileFrontmatterSplit {
-    prefix: string;
-    body: string;
-    matterRange: {from: number; to: number} | null;
-}
+import type {FrontmatterSplit} from "./types";
 
-export function splitSkillFileFrontmatter(source: string): SkillFileFrontmatterSplit {
+export function splitFrontmatter(source: string): FrontmatterSplit {
     const delimiter = "---";
     if (!source.startsWith(delimiter) || source[delimiter.length] === "-") {
         return {prefix: "", body: source, matterRange: null};

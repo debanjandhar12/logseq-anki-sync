@@ -1,6 +1,6 @@
 import {afterEach, describe, expect, test, vi} from "vitest";
 import {SkillTool} from "../../../../../src/chat-app/tools/impl/SkillTool";
-import * as skillTemplate from "../../../../../src/core/skill-parser/renderSkillFileTemplate";
+import * as skillTemplate from "../../../../../src/core/skill-parser";
 import {SkillFileStore} from "../../../../../src/core/stores/skill-file-store/SkillFileStore";
 
 describe("SkillTool", () => {

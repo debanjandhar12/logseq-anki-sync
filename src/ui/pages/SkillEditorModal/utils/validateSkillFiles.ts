@@ -1,10 +1,10 @@
-import {parseSkillFile} from "src/core/skill-parser/parseSkillFile";
-import {validateSkillFileTemplate} from "src/core/skill-parser/validateSkillFileTemplate";
+import {parseSkillFile, validateSkillFileTemplate} from "src/core/skill-parser";
 import type {SkillFileData} from "src/core/stores/skill-file-store/types";
 import type {MustacheTemplateIssue} from "src/core/template-engine";
 import type {EditableSkillFile} from "../types";
 import {getErrorMessage} from "./getErrorMessage";
-import {getDisplayFileName, getSkillFileName} from "./skillFileFrontmatter";
+import {getSkillFileDisplayName} from "./getSkillFileDisplayName";
+import {getSkillFileName} from "./getSkillFileName";
 
 const INVALID_FILE_NAME_CHARACTERS = new Set(["<", ">", ":", '"', "/", "\\", "|", "?"]);
 
@@ -49,7 +49,7 @@ export async function validateSkillFilesForSave(
                 issue: {
                     kind: "invalid-template",
                     fileId: invalidFile.id,
-                    fileName: getDisplayFileName(invalidFile.content),
+                    fileName: getSkillFileDisplayName(invalidFile.content),
                     message: invalidTemplate.issue.message
                 },
                 parsedFiles: []
@@ -61,7 +61,7 @@ export async function validateSkillFilesForSave(
     const usedNames = new Set<string>();
 
     for (const file of files) {
-        const displayFileName = getDisplayFileName(file.content);
+        const displayFileName = getSkillFileDisplayName(file.content);
 
         try {
             const parsedFile = parseSkillFile(file.content);

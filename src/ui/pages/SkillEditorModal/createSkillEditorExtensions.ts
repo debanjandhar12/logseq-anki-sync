@@ -2,10 +2,12 @@ import type {CompletionContext} from "@codemirror/autocomplete";
 import {autocompletion} from "@codemirror/autocomplete";
 import {lintGutter} from "@codemirror/lint";
 import type {Extension} from "@codemirror/state";
-import {splitSkillFileFrontmatter} from "src/core/skill-parser/skillFileFrontmatter";
-import {SKILL_FRONTMATTER_FIELDS} from "src/core/skill-parser/skillFrontmatterFields";
-import {validateSkillFileContent} from "src/core/skill-parser/validateSkillFileContent";
-import {validateSkillFileTemplate} from "src/core/skill-parser/validateSkillFileTemplate";
+import {splitFrontmatter} from "src/core/frontmatter-parser";
+import {
+    SKILL_FRONTMATTER_FIELDS,
+    validateSkillFileContent,
+    validateSkillFileTemplate
+} from "src/core/skill-parser";
 import {MUSTACHE_TEMPLATE_TAGS, MustacheView} from "src/core/template-engine";
 import {
     createFrontmatterCompletionSource,
@@ -18,7 +20,7 @@ import {
 } from "src/ui/components/LogseqCodeEditor";
 
 function isInSkillFrontmatter(context: CompletionContext): boolean {
-    const {prefix} = splitSkillFileFrontmatter(context.state.doc.toString());
+    const {prefix} = splitFrontmatter(context.state.doc.toString());
     return context.pos < prefix.length;
 }
 

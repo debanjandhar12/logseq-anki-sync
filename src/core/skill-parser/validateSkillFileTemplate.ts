@@ -1,13 +1,11 @@
+import {splitFrontmatter} from "../frontmatter-parser";
 import {MUSTACHE_TEMPLATE_TAGS} from "../template-engine/constants";
 import type {MustacheTemplateIssue} from "../template-engine/validateMustacheTemplate";
 import {validateMustacheTemplate} from "../template-engine/validateMustacheTemplate";
-import {splitSkillFileFrontmatter} from "./skillFileFrontmatter";
-
-export const FRONTMATTER_MUSTACHE_MESSAGE =
-    "Mustache templates are not supported in skill file frontmatter.";
+import {FRONTMATTER_MUSTACHE_MESSAGE} from "./constants";
 
 export async function validateSkillFileTemplate(content: string): Promise<MustacheTemplateIssue[]> {
-    const {prefix} = splitSkillFileFrontmatter(content);
+    const {prefix} = splitFrontmatter(content);
     if (!prefix) return validateMustacheTemplate(content);
 
     return [

@@ -1,5 +1,5 @@
 import {describe, expect, test} from "vitest";
-import {renderSkillFileTemplate} from "../../../../src/core/skill-parser/renderSkillFileTemplate";
+import {renderSkillFileTemplate} from "../../../../src/core/skill-parser";
 
 describe("renderSkillFileTemplate", () => {
     test.each([

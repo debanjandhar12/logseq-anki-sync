@@ -3,7 +3,7 @@ import {
     readSkillFrontmatterValues,
     SKILL_FRONTMATTER_FIELDS,
     SKILL_FRONTMATTER_KEYS
-} from "../../../../src/core/skill-parser/skillFrontmatterFields";
+} from "../../../../src/core/skill-parser";
 
 describe("skill frontmatter fields", () => {
     test("defines every metadata field once in canonical order", () => {

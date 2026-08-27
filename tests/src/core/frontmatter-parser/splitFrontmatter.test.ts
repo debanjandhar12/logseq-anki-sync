@@ -1,8 +1,8 @@
 import matter from "gray-matter";
 import {describe, expect, test} from "vitest";
-import {splitSkillFileFrontmatter} from "../../../../src/core/skill-parser/skillFileFrontmatter";
+import {splitFrontmatter} from "../../../../src/core/frontmatter-parser";
 
-describe("splitSkillFileFrontmatter", () => {
+describe("splitFrontmatter", () => {
     test.each([
         "---\nname: Test\n---\nBody",
         "---\r\nname: Test\r\n---\r\nBody",
@@ -10,7 +10,7 @@ describe("splitSkillFileFrontmatter", () => {
         "---\nname: Test\n---Body",
         "---\nname: Test\ndescription: Test"
     ])("matches gray-matter content for %j", (source) => {
-        const split = splitSkillFileFrontmatter(source);
+        const split = splitFrontmatter(source);
 
         expect(split.prefix + split.body).toBe(source);
         expect(split.body).toBe(matter(source, {}).content);
@@ -20,7 +20,7 @@ describe("splitSkillFileFrontmatter", () => {
         "Body",
         "----\nBody"
     ])("leaves non-frontmatter source untouched for %j", (source) => {
-        expect(splitSkillFileFrontmatter(source)).toEqual({
+        expect(splitFrontmatter(source)).toEqual({
             prefix: "",
             body: source,
             matterRange: null
@@ -29,7 +29,7 @@ describe("splitSkillFileFrontmatter", () => {
 
     test("returns a half-open raw matter range", () => {
         const source = "---\nname: Test\n---\nBody";
-        const {matterRange} = splitSkillFileFrontmatter(source);
+        const {matterRange} = splitFrontmatter(source);
 
         expect(matterRange && source.slice(matterRange.from, matterRange.to)).toBe("\nname: Test");
     });
