@@ -1,3 +1,4 @@
+import {LOGSEQ_DB_TRANSACTION_COMMAND_DELAY_MS} from "src/constants";
 import {createLogger, LoggerCategory} from "src/logger";
 import type {BaseReversibleCommand, LogseqReversibleCommand} from "./commands";
 import {LogseqReversibleTransactionCommandQueue} from "./LogseqReversibleTransactionCommandQueue";
@@ -91,7 +92,9 @@ export class LogseqReversibleTransactionTracker {
                 this.changedPages = [
                     ...new Set([...this.changedPages, ...command.getChangedPages()])
                 ];
-                await new Promise((resolve) => setTimeout(resolve, 320));
+                await new Promise((resolve) =>
+                    setTimeout(resolve, LOGSEQ_DB_TRANSACTION_COMMAND_DELAY_MS)
+                );
             }
 
             return lastCommandResult;
@@ -116,6 +119,9 @@ export class LogseqReversibleTransactionTracker {
                     throw error;
                 }
                 this.appliedCommandCount -= 1;
+                await new Promise((resolve) =>
+                    setTimeout(resolve, LOGSEQ_DB_TRANSACTION_COMMAND_DELAY_MS)
+                );
             }
 
             return true;
