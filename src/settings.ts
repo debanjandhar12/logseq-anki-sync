@@ -1,9 +1,17 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-import {DONATE_ICON} from "./constants";
+import {DONATE_ICON, LogseqModelAction} from "./constants";
 import {ProviderEnum, type ReasoningEffort, WebToolsProviderEnum} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
+import {showSkillEditorModal} from "./ui/launchers/showSkillEditorModal";
+
+// Remove when @logseq/libs includes the settings button schema.
+type SettingsButtonSchemaDesc = Omit<SettingSchemaDesc, "type"> & {
+    type: "button";
+    buttonText: string;
+    buttonAction: string;
+};
 
 // Type definitions for plugin settings
 export interface PluginSettings {
@@ -24,7 +32,13 @@ export interface PluginSettings {
 }
 
 export const addSettingsToLogseq = async () => {
-    const settingsTemplate: SettingSchemaDesc[] = [
+    logseq.provideModel({
+        [LogseqModelAction.OPEN_SKILL_EDITOR_SETTINGS]: () => {
+            void showSkillEditorModal().catch(() => undefined);
+        }
+    });
+
+    const settingsTemplate: Array<SettingSchemaDesc | SettingsButtonSchemaDesc> = [
         {
             key: "donationHeading",
             title: "",
@@ -68,6 +82,22 @@ export const addSettingsToLogseq = async () => {
             default: "big-pickle",
             title: "LLM Model List",
             description: "Comma-separated model identifiers. For example: big-pickle,glm-5.2"
+        },
+        {
+            key: "mainSettingsHeading",
+            title: "💬 Main",
+            description: "",
+            type: "heading",
+            default: null
+        },
+        {
+            key: "openSkillEditorButton",
+            type: "button",
+            default: null,
+            title: "Skill Editor",
+            description: "Create and manage skills available to the AI assistant.",
+            buttonText: "Open Skill Editor",
+            buttonAction: LogseqModelAction.OPEN_SKILL_EDITOR_SETTINGS
         },
         {
             key: "globalAgentInstruction",
@@ -134,7 +164,7 @@ export const addSettingsToLogseq = async () => {
                 "Select the categories to enable info-level logging for. Warnings and errors are always shown."
         }
     ];
-    LogseqSettingAccessor.useSettingsSchema(settingsTemplate);
+    LogseqSettingAccessor.useSettingsSchema(settingsTemplate as SettingSchemaDesc[]);
     LogseqSettingAccessor.registerSettingsChangeListener(
         (newSettings: PluginSettings, oldSettings: PluginSettings) => {
             // Handle debug category changes - update logger levels

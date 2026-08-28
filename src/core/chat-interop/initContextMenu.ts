@@ -1,3 +1,4 @@
+import {LogseqModelAction} from "src/constants";
 import {AddAttachmentCommand} from "src/core/chat-interop/commands/AddAttachmentCommand";
 import {OpenAIChatCommand} from "src/core/chat-interop/commands/OpenAIChatCommand";
 
@@ -6,7 +7,7 @@ import {OpenAIChatCommand} from "src/core/chat-interop/commands/OpenAIChatComman
  */
 export const initContextMenu = async () => {
     logseq.provideModel({
-        showAIChat: () => new OpenAIChatCommand().execute()
+        [LogseqModelAction.SHOW_AI_CHAT]: () => new OpenAIChatCommand().execute()
     });
     logseq.App.registerCommandPalette(
         {

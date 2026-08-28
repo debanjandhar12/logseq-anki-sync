@@ -72,6 +72,7 @@ export class UI {
     }
 
     public static init() {
+        logseq.setMainUIInlineStyle({zIndex: 10000});
         logseq.hideMainUI({restoreEditingCursor: true}); // Hide main ui on plugin load
         ThemeManager.applyThemeToBody(WindowBridge.getBody()); // Initialize theme variables
 

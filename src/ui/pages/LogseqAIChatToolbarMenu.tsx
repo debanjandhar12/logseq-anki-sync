@@ -9,7 +9,6 @@ import {useCallback, useEffect, useMemo, useState} from "react";
 import {OpenAIChatCommand} from "../../core/chat-interop";
 import {LogseqPluginStorageManager} from "../../logseq/LogseqPluginStorageManager";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
-import {showSkillEditorModal} from "../launchers/showSkillEditorModal";
 import {UI} from "../UI";
 
 const focusTrapOptions = {
@@ -72,14 +71,6 @@ const LogseqAIChatToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
                 onClick: () => new OpenAIChatCommand().execute()
             },
             {key: "chat-separator", separator: true},
-            {
-                key: "skills-editor",
-                icon: SETTINGS_ICON,
-                text: "Skills Editor",
-                disabled: false,
-                separator: false,
-                onClick: () => showSkillEditorModal()
-            },
             {
                 key: "storage-info",
                 icon: DATABASE_ICON,
