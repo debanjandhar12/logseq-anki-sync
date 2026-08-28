@@ -2,7 +2,7 @@ import {CompletionContext, type CompletionResult} from "@codemirror/autocomplete
 import {forceLinting, forEachDiagnostic, lintGutter} from "@codemirror/lint";
 import {EditorState} from "@codemirror/state";
 import {EditorView} from "@codemirror/view";
-import {SKILL_FRONTMATTER_FIELDS} from "src/core/skill-parser";
+import {SKILL_EDITOR_FRONTMATTER_FIELDS} from "src/ui/pages/SkillEditorModal/createSkillEditorExtensions";
 import {describe, expect, test} from "vitest";
 import {
     createFrontmatterCompletionSource,
@@ -11,7 +11,7 @@ import {
 } from "../../../../../../src/ui/components/LogseqCodeEditor";
 
 const source = createFrontmatterCompletionSource({
-    fields: SKILL_FRONTMATTER_FIELDS,
+    fields: SKILL_EDITOR_FRONTMATTER_FIELDS,
     mustacheTags: ["<%", "%>"]
 });
 
@@ -24,25 +24,19 @@ async function complete(document: string): Promise<CompletionResult | null> {
 }
 
 describe("YAML frontmatter CodeMirror extension", () => {
-    test("completes all missing skill fields and suppresses duplicates", async () => {
+    test("does not complete built-in skill fields", async () => {
         const result = await complete("---\nname: Existing\nb|");
 
-        expect(result?.options.map((option) => option.label)).toEqual([
-            "built-in-skill",
-            "built-in-skill-user-controllable"
-        ]);
-        expect(result?.options.map((option) => option.label)).not.toContain("name");
+        expect(result).toBeNull();
     });
 
-    test("offers all five skill fields in empty frontmatter", async () => {
+    test("offers all user-editable skill fields in empty frontmatter", async () => {
         const result = await complete("---\n|");
 
         expect(result?.options.map((option) => option.label)).toEqual([
             "name",
             "description",
-            "disable-model-invocation",
-            "built-in-skill",
-            "built-in-skill-user-controllable"
+            "disable-model-invocation"
         ]);
     });
 

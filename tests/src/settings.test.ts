@@ -74,7 +74,8 @@ describe("addSettingsToLogseq", () => {
             buttonText: "Open Skill Editor",
             buttonAction: "openSkillEditorFromSettings"
         });
-        expect(settingsSchema[mainHeadingIndex + 2].key).toBe("webToolsHeading");
+        expect(settingsSchema[mainHeadingIndex + 2].key).toBe("globalAgentInstruction");
+        expect(settingsSchema[mainHeadingIndex + 3].key).toBe("webToolsHeading");
 
         expect(model).toHaveProperty("openSkillEditorFromSettings");
         expect(model.openSkillEditorFromSettings()).toBeUndefined();

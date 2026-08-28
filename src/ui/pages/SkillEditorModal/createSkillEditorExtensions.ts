@@ -24,6 +24,10 @@ function isInSkillFrontmatter(context: CompletionContext): boolean {
     return context.pos < prefix.length;
 }
 
+export const SKILL_EDITOR_FRONTMATTER_FIELDS = SKILL_FRONTMATTER_FIELDS.filter(
+    ({key}) => key !== "built-in-skill" && key !== "built-in-skill-user-controllable"
+);
+
 export function createSkillEditorExtensions(): Extension[] {
     const markdownSupport = createMarkdownLanguageSupport();
     const mustacheCompletion = createMustacheCompletionSource({
@@ -32,7 +36,7 @@ export function createSkillEditorExtensions(): Extension[] {
         isDisabledAt: isInSkillFrontmatter
     });
     const frontmatterCompletion = createFrontmatterCompletionSource({
-        fields: SKILL_FRONTMATTER_FIELDS,
+        fields: SKILL_EDITOR_FRONTMATTER_FIELDS,
         mustacheTags: MUSTACHE_TEMPLATE_TAGS
     });
     const markdownCompletion = createMarkdownCompletionSource({
