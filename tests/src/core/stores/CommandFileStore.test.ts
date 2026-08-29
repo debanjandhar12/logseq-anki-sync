@@ -19,9 +19,6 @@ describe("CommandFileStore", () => {
 
     test("derives filenames from parsed command names", () => {
         expect(CommandFileStore.getCommandFileName({name: "Test"})).toBe("Test.md");
-        expect(CommandFileStore.getCommandFileNameFromContent(createCommandSource("Parsed"))).toBe(
-            "Parsed.md"
-        );
     });
 
     test("saves and loads raw command Markdown", async () => {
@@ -35,6 +32,8 @@ describe("CommandFileStore", () => {
         await expect(CommandFileStore.getCommandFileByName("Saved command")).resolves.toMatchObject(
             {name: "Saved command"}
         );
+        await expect(CommandFileStore.commandFileExists("Saved command.md")).resolves.toBe(true);
+        await expect(CommandFileStore.commandFileExists("Missing.md")).resolves.toBe(false);
     });
 
     test("sorts valid commands and skips malformed files", async () => {

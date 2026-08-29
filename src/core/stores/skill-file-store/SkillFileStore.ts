@@ -12,20 +12,21 @@ export class SkillFileStore {
         return `${skillFileData.name}.md`;
     }
 
-    static getSkillFileNameFromContent(content: string): string {
-        return SkillFileStore.getSkillFileName(parseSkillFile(content));
-    }
-
     static async getSkillFile(fileName: string): Promise<SkillFileData | null> {
         try {
             const content = await LogseqPluginStorageManager.getFileContent(
                 SkillFileStore.groupName,
                 fileName
             );
+            if (content === undefined) return null;
             return parseSkillFile(content);
         } catch {
             return null;
         }
+    }
+
+    static skillFileExists(fileName: string): Promise<boolean> {
+        return LogseqPluginStorageManager.fileExists(SkillFileStore.groupName, fileName);
     }
 
     static async getAllSkillFile(): Promise<SkillFileData[]> {
@@ -57,5 +58,8 @@ export class SkillFileStore {
         try {
             await LogseqPluginStorageManager.deleteFile(SkillFileStore.groupName, fileName);
         } catch {}
+    }
+    private static getSkillFileNameFromContent(content: string): string {
+        return SkillFileStore.getSkillFileName(parseSkillFile(content));
     }
 }

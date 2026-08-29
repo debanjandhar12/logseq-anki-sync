@@ -8,7 +8,9 @@ const BUILT_IN_COMMAND_FILES = [COMMAND_ADD_AS_ATTACHMENT_RAW];
 
 export const initBuiltInCommandFiles = async () => {
     const builtInCommandFileNames = new Set(
-        BUILT_IN_COMMAND_FILES.map((raw) => CommandFileStore.getCommandFileNameFromContent(raw))
+        BUILT_IN_COMMAND_FILES.map((raw) =>
+            CommandFileStore.getCommandFileName(parseCommandFile(raw))
+        )
     );
     const existingCommandFiles = await CommandFileStore.getAllCommandFiles();
 
@@ -20,8 +22,10 @@ export const initBuiltInCommandFiles = async () => {
     }
 
     for (const raw of BUILT_IN_COMMAND_FILES) {
-        const fileName = CommandFileStore.getCommandFileNameFromContent(raw);
+        const fileName = CommandFileStore.getCommandFileName(parseCommandFile(raw));
+        const fileExists = await CommandFileStore.commandFileExists(fileName);
         const existing = await CommandFileStore.getCommandFile(fileName);
+        if (fileExists && !existing) continue;
         if (existing && !existing.builtInCommand) continue;
 
         const desiredContent = mergeBuiltInCommandContent(raw, existing);

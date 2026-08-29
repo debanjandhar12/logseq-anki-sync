@@ -5,7 +5,7 @@ import SKILL_LOGSEQ_PROPERTIES_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_PRO
 import SKILL_LOGSEQ_TOOLS_GUIDE_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_TOOLS_GUIDE.md?inlineSkill";
 import SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_WORKING_WITH_VIDEO_AND_WEB_EMBEDS.md?inlineSkill";
 import SKILL_CREATOR_RAW from "../../chat-app/prompts/SKILL_SKILL_CREATOR.md?inlineSkill";
-import {SKILL_FRONTMATTER_KEYS} from "../skill-parser";
+import {parseSkillFile, SKILL_FRONTMATTER_KEYS} from "../skill-parser";
 import {SkillFileStore} from "../stores/skill-file-store/SkillFileStore";
 
 const BUILT_IN_SKILL_FILES = [
@@ -19,7 +19,7 @@ const BUILT_IN_SKILL_FILES = [
 
 export const initBuiltInSkillFiles = async () => {
     const builtInSkillFileNames = new Set(
-        BUILT_IN_SKILL_FILES.map((raw) => SkillFileStore.getSkillFileNameFromContent(raw))
+        BUILT_IN_SKILL_FILES.map((raw) => SkillFileStore.getSkillFileName(parseSkillFile(raw)))
     );
 
     // Remove built-in skills that are no longer bundled with the plugin.
@@ -34,8 +34,13 @@ export const initBuiltInSkillFiles = async () => {
     }
 
     for (const raw of BUILT_IN_SKILL_FILES) {
-        const fileName = SkillFileStore.getSkillFileNameFromContent(raw);
+        const fileName = SkillFileStore.getSkillFileName(parseSkillFile(raw));
+        const fileExists = await SkillFileStore.skillFileExists(fileName);
         const existing = await SkillFileStore.getSkillFile(fileName);
+
+        if (fileExists && !existing) {
+            continue;
+        }
 
         if (existing && !existing.builtInSkill) {
             continue;

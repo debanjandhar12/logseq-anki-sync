@@ -60,6 +60,23 @@ describe("initBuiltInCommandFiles", () => {
         ).resolves.toBe(userCommand);
     });
 
+    test("does not overwrite a malformed same-name file", async () => {
+        await LogseqPluginStorageManager.saveFile(
+            CommandFileStore.groupName,
+            ADD_AS_ATTACHMENT_FILE_NAME,
+            "malformed user content"
+        );
+
+        await initBuiltInCommandFiles();
+
+        await expect(
+            LogseqPluginStorageManager.getFileContent(
+                CommandFileStore.groupName,
+                ADD_AS_ATTACHMENT_FILE_NAME
+            )
+        ).resolves.toBe("malformed user content");
+    });
+
     test("removes built-in commands that are no longer bundled", async () => {
         await CommandFileStore.saveCommandFile(
             createCommandSource("Obsolete", "built-in-command: true\n")

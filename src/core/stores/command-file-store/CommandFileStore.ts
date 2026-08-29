@@ -6,14 +6,10 @@ import type {CommandFileData} from "./types";
 const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);
 
 export class CommandFileStore {
-    static readonly groupName = "commands";
+    public static readonly groupName = "commands";
 
-    static getCommandFileName(commandFileData: Pick<CommandFileData, "name">): string {
+    public static getCommandFileName(commandFileData: Pick<CommandFileData, "name">): string {
         return `${commandFileData.name}.md`;
-    }
-
-    static getCommandFileNameFromContent(content: string): string {
-        return CommandFileStore.getCommandFileName(parseCommandFile(content));
     }
 
     static async getCommandFile(fileName: string): Promise<CommandFileData | null> {
@@ -22,6 +18,7 @@ export class CommandFileStore {
                 CommandFileStore.groupName,
                 fileName
             );
+            if (content === undefined) return null;
             return parseCommandFile(content);
         } catch (error) {
             logger.warn(`Failed to load command file ${fileName}:`, error);
@@ -31,6 +28,10 @@ export class CommandFileStore {
 
     static getCommandFileByName(name: string): Promise<CommandFileData | null> {
         return CommandFileStore.getCommandFile(CommandFileStore.getCommandFileName({name}));
+    }
+
+    static commandFileExists(fileName: string): Promise<boolean> {
+        return LogseqPluginStorageManager.fileExists(CommandFileStore.groupName, fileName);
     }
 
     static async getAllCommandFiles(): Promise<CommandFileData[]> {
@@ -59,5 +60,9 @@ export class CommandFileStore {
 
     static async deleteCommandFile(fileName: string): Promise<void> {
         await LogseqPluginStorageManager.deleteFile(CommandFileStore.groupName, fileName);
+    }
+
+    private static getCommandFileNameFromContent(content: string): string {
+        return CommandFileStore.getCommandFileName(parseCommandFile(content));
     }
 }
