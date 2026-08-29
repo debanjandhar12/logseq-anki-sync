@@ -224,11 +224,6 @@ export const InvokeConditionTreePopover: React.FC<InvokeConditionTreePopoverProp
                             );
                         })}
                     </fieldset>
-                    {readOnly && (
-                        <p className="mt-2 border-border border-t px-1 pt-2 text-xs opacity-70">
-                            Invocation locations are fixed for built-in commands.
-                        </p>
-                    )}
                 </div>
             )}
         </div>

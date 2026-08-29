@@ -17,7 +17,7 @@ import {getSkillFileDisplayName} from "./utils/getSkillFileDisplayName";
 import {getSkillFileMetadata} from "./utils/getSkillFileMetadata";
 import {getSkillFileName} from "./utils/getSkillFileName";
 import {getFilesSnapshot} from "./utils/skillFilesSnapshot";
-import {updateDisableModelInvocation} from "./utils/updateDisableModelInvocation";
+import {updateDisableModelInvocation} from "./utils/updateSkillMetadata";
 import {validateSkillFilesForSave} from "./utils/validateSkillFiles";
 
 const NEW_SKILL_CONTENT = `---
@@ -307,6 +307,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
 
                                         <div className="min-h-0 flex-1 overflow-hidden">
                                             <LogseqCodeEditor
+                                                key={activeFile.id}
                                                 value={activeFile.content}
                                                 height="100%"
                                                 extensions={SKILL_EDITOR_EXTENSIONS}

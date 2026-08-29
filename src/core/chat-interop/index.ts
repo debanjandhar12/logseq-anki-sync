@@ -2,6 +2,15 @@
  * This module manages interop of chat app with logseq.
  */
 
+export {
+    type BlockCommandInvocationContext,
+    type BlockContextMenuInvokeCondition,
+    type ContextMenuCommandInvocationContext,
+    classifyBlockCommandInvocationContext,
+    classifyPageCommandInvocationContext,
+    type PageCommandInvocationContext,
+    type PageContextMenuInvokeCondition
+} from "./classifyCommandInvocationContext";
 export {AddAttachmentCommand} from "./commands/AddAttachmentCommand";
 export {NewThreadCommand} from "./commands/NewThreadCommand";
 export {OpenAIChatCommand} from "./commands/OpenAIChatCommand";

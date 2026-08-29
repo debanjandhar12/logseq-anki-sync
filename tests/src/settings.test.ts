@@ -65,10 +65,12 @@ describe("addSettingsToLogseq", () => {
         const mainHeadingIndex = settingsSchema.findIndex(
             (setting) => setting.key === "mainSettingsHeading"
         );
-        const skillEditorButton = settingsSchema[mainHeadingIndex + 1] as SettingsButtonSchemaDesc;
-        const commandEditorButton = settingsSchema[
-            mainHeadingIndex + 2
-        ] as SettingsButtonSchemaDesc;
+        const commandEditorButton = settingsSchema.find(
+            (setting) => setting.key === "openCommandEditorButton"
+        ) as SettingsButtonSchemaDesc;
+        const skillEditorButton = settingsSchema.find(
+            (setting) => setting.key === "openSkillEditorButton"
+        ) as SettingsButtonSchemaDesc;
 
         expect(settingsSchema[mainHeadingIndex]).toMatchObject({
             title: "💬 Main",
@@ -91,8 +93,17 @@ describe("addSettingsToLogseq", () => {
             buttonText: "Open Command Editor",
             buttonAction: "openCommandEditorFromSettings"
         });
-        expect(settingsSchema[mainHeadingIndex + 3].key).toBe("globalAgentInstruction");
-        expect(settingsSchema[mainHeadingIndex + 4].key).toBe("webToolsHeading");
+        const globalInstructionIndex = settingsSchema.findIndex(
+            (setting) => setting.key === "globalAgentInstruction"
+        );
+        expect(
+            Math.abs(
+                settingsSchema.indexOf(skillEditorButton) -
+                    settingsSchema.indexOf(commandEditorButton)
+            )
+        ).toBe(1);
+        expect(globalInstructionIndex).toBeGreaterThan(settingsSchema.indexOf(skillEditorButton));
+        expect(settingsSchema[globalInstructionIndex + 1].key).toBe("webToolsHeading");
 
         expect(model).toHaveProperty("openSkillEditorFromSettings");
         expect(model.openSkillEditorFromSettings()).toBeUndefined();

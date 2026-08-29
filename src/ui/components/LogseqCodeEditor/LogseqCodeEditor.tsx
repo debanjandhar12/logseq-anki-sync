@@ -9,6 +9,8 @@ export type LogseqCodeEditorProps = Omit<ReactCodeMirrorProps, "theme">;
 export const LogseqCodeEditor: React.FC<LogseqCodeEditorProps> = ({
     className,
     basicSetup,
+    editable,
+    readOnly,
     ...props
 }) => {
     const resolvedBasicSetup =
@@ -23,6 +25,8 @@ export const LogseqCodeEditor: React.FC<LogseqCodeEditorProps> = ({
     return (
         <CodeMirror
             {...props}
+            editable={editable}
+            readOnly={readOnly === true || editable === false}
             theme={logseqCodeEditorTheme}
             className={`h-full [&>.cm-editor]:h-full ${className ?? ""}`}
             basicSetup={resolvedBasicSetup}

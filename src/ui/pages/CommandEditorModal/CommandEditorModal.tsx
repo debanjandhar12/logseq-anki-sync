@@ -289,6 +289,7 @@ export const CommandEditorModalComponent: React.FC<CommandEditorModalProps> = ({
                                         </div>
                                         <div className="min-h-0 flex-1 overflow-hidden">
                                             <LogseqCodeEditor
+                                                key={activeFile.id}
                                                 value={activeFile.content}
                                                 height="100%"
                                                 extensions={COMMAND_EDITOR_EXTENSIONS}

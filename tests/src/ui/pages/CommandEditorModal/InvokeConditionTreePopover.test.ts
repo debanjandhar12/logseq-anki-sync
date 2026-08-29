@@ -91,7 +91,6 @@ describe("InvokeConditionTreePopover", () => {
         expect(
             Array.from(container.querySelectorAll("input")).every((input) => input.disabled)
         ).toBe(true);
-        expect(container.textContent).toContain("fixed for built-in commands");
         expect(onValueChange).not.toHaveBeenCalled();
     });
 });
