@@ -61,21 +61,6 @@ describe("CommandFileStore", () => {
         await expect(CommandFileStore.getCommandFile("broken.md")).resolves.toBeNull();
     });
 
-    test("retains physical filenames when listing stored commands", async () => {
-        await LogseqPluginStorageManager.saveFile(
-            CommandFileStore.groupName,
-            "Old name.md",
-            createCommandSource("New name")
-        );
-
-        await expect(CommandFileStore.getAllStoredCommandFiles()).resolves.toEqual([
-            {
-                fileName: "Old name.md",
-                commandFile: expect.objectContaining({name: "New name"})
-            }
-        ]);
-    });
-
     test("skips a file that cannot be read without hiding valid commands", async () => {
         await CommandFileStore.saveCommandFile(createCommandSource("Readable"));
         await LogseqPluginStorageManager.saveFile(

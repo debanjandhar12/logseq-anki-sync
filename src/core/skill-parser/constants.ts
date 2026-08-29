@@ -21,6 +21,3 @@ export const SKILL_FRONTMATTER_KEYS = Object.freeze(
 ) as {
     readonly [K in (typeof SKILL_FRONTMATTER_FIELDS)[number] as K["dataKey"]]: K["key"];
 };
-
-export const FRONTMATTER_MUSTACHE_MESSAGE =
-    "Mustache templates are not supported in skill file frontmatter.";

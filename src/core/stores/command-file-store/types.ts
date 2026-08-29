@@ -31,8 +31,3 @@ export interface CommandFileData {
     builtInCommand?: boolean;
     builtInCommandUserControllable?: boolean;
 }
-
-export interface StoredCommandFile {
-    fileName: string;
-    commandFile: CommandFileData;
-}

@@ -1,4 +1,5 @@
-import {parseSkillFile, validateSkillFileTemplate} from "src/core/skill-parser";
+import {validateFrontmatterTemplate} from "src/core/frontmatter-parser";
+import {parseSkillFile} from "src/core/skill-parser";
 import type {SkillFileData} from "src/core/stores/skill-file-store/types";
 import type {MustacheTemplateIssue} from "src/core/template-engine";
 import type {EditableSkillFile} from "../types";
@@ -12,7 +13,7 @@ export async function getFirstInvalidSkillTemplate(
     files: readonly Pick<EditableSkillFile, "id" | "content">[]
 ): Promise<{fileId: string; issue: MustacheTemplateIssue} | null> {
     for (const file of files) {
-        const issue = (await validateSkillFileTemplate(file.content))[0];
+        const issue = (await validateFrontmatterTemplate(file.content))[0];
         if (issue) return {fileId: file.id, issue};
     }
 

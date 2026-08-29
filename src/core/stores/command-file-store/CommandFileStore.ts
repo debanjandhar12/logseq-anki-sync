@@ -1,7 +1,7 @@
 import {createLogger, LoggerCategory} from "../../../logger";
 import {LogseqPluginStorageManager} from "../../../logseq/LogseqPluginStorageManager";
 import {parseCommandFile} from "../../command-parser";
-import type {CommandFileData, StoredCommandFile} from "./types";
+import type {CommandFileData} from "./types";
 
 const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);
 
@@ -34,13 +34,8 @@ export class CommandFileStore {
     }
 
     static async getAllCommandFiles(): Promise<CommandFileData[]> {
-        const storedFiles = await CommandFileStore.getAllStoredCommandFiles();
-        return storedFiles.map(({commandFile}) => commandFile);
-    }
-
-    static async getAllStoredCommandFiles(): Promise<StoredCommandFile[]> {
         const fileNames = await LogseqPluginStorageManager.getFiles(CommandFileStore.groupName);
-        const storedFiles: StoredCommandFile[] = [];
+        const commandFiles: CommandFileData[] = [];
 
         for (const fileName of fileNames) {
             try {
@@ -48,15 +43,13 @@ export class CommandFileStore {
                     CommandFileStore.groupName,
                     fileName
                 );
-                storedFiles.push({fileName, commandFile: parseCommandFile(content)});
+                commandFiles.push(parseCommandFile(content));
             } catch (error) {
                 logger.warn(`Failed to load command file ${fileName}:`, error);
             }
         }
 
-        return storedFiles.sort((left, right) =>
-            left.commandFile.name.localeCompare(right.commandFile.name)
-        );
+        return commandFiles.sort((left, right) => left.name.localeCompare(right.name));
     }
 
     static async saveCommandFile(content: string): Promise<void> {

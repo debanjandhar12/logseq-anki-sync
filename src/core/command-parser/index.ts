@@ -1,7 +1,6 @@
 export {
     COMMAND_FRONTMATTER_FIELDS,
     COMMAND_FRONTMATTER_KEYS,
-    COMMAND_FRONTMATTER_MUSTACHE_MESSAGE,
     COMMAND_INVOKE_CONDITION_TREE,
     COMMAND_INVOKE_CONDITIONS
 } from "./constants";
@@ -19,4 +18,3 @@ export type {
     CommandFileValidationResult
 } from "./validateCommandFileContent";
 export {validateCommandFileContent} from "./validateCommandFileContent";
-export {validateCommandFileTemplate} from "./validateCommandFileTemplate";

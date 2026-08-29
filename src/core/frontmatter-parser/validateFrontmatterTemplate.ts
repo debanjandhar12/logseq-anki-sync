@@ -1,10 +1,13 @@
-import {splitFrontmatter} from "../frontmatter-parser";
 import {MUSTACHE_TEMPLATE_TAGS} from "../template-engine/constants";
 import type {MustacheTemplateIssue} from "../template-engine/validateMustacheTemplate";
 import {validateMustacheTemplate} from "../template-engine/validateMustacheTemplate";
-import {FRONTMATTER_MUSTACHE_MESSAGE} from "./constants";
+import {splitFrontmatter} from "./splitFrontmatter";
 
-export async function validateSkillFileTemplate(content: string): Promise<MustacheTemplateIssue[]> {
+const FRONTMATTER_TEMPLATE_MESSAGE = "Mustache templates are not supported in frontmatter.";
+
+export async function validateFrontmatterTemplate(
+    content: string
+): Promise<MustacheTemplateIssue[]> {
     const {prefix} = splitFrontmatter(content);
     if (!prefix) return validateMustacheTemplate(content);
 
@@ -34,7 +37,7 @@ function collectFrontmatterTagIssues(prefix: string): MustacheTemplateIssue[] {
         if (to > from && prefix[to - 1] === "\r") to -= 1;
         if (to <= from) to = Math.min(prefix.length, from + openingTag.length);
 
-        issues.push({from, to, message: FRONTMATTER_MUSTACHE_MESSAGE});
+        issues.push({from, to, message: FRONTMATTER_TEMPLATE_MESSAGE});
         searchFrom = Math.max(to, from + openingTag.length);
     }
 

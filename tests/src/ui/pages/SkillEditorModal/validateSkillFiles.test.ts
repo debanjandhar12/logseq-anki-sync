@@ -66,7 +66,7 @@ describe("validateSkillFilesForSave", () => {
         expect(issue).toMatchObject({
             kind: "invalid-template",
             fileId: "broken",
-            message: "Mustache templates are not supported in skill file frontmatter."
+            message: "Mustache templates are not supported in frontmatter."
         });
     });
 

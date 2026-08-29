@@ -47,6 +47,3 @@ export const COMMAND_FRONTMATTER_KEYS = Object.freeze(
 ) as {
     readonly [K in (typeof COMMAND_FRONTMATTER_FIELDS)[number] as K["dataKey"]]: K["key"];
 };
-
-export const COMMAND_FRONTMATTER_MUSTACHE_MESSAGE =
-    "Mustache templates are not supported in command file frontmatter.";
