@@ -4,29 +4,11 @@ import {getJournalDayByPageUuid} from "../logseq-reversible-transaction-tracker/
 import {isFlashcardBlock} from "../logseq-reversible-transaction-tracker/commands/utils/isFlashcardBlock";
 import {isVideoBlock} from "../logseq-reversible-transaction-tracker/commands/utils/isVideoBlock";
 import type {
-    BLOCK_CONTEXT_MENU_INVOKE_CONDITIONS,
-    PAGE_CONTEXT_MENU_INVOKE_CONDITIONS
-} from "../stores/command-file-store/types";
-
-export type BlockContextMenuInvokeCondition = (typeof BLOCK_CONTEXT_MENU_INVOKE_CONDITIONS)[number];
-
-export type PageContextMenuInvokeCondition = (typeof PAGE_CONTEXT_MENU_INVOKE_CONDITIONS)[number];
-
-export interface BlockCommandInvocationContext {
-    source: "block-context-menu";
-    condition: BlockContextMenuInvokeCondition;
-    uuid: string;
-}
-
-export interface PageCommandInvocationContext {
-    source: "page-context-menu";
-    condition: PageContextMenuInvokeCondition;
-    uuid: string;
-}
-
-export type ContextMenuCommandInvocationContext =
-    | BlockCommandInvocationContext
-    | PageCommandInvocationContext;
+    BlockCommandInvocationContext,
+    BlockContextMenuInvokeCondition,
+    PageCommandInvocationContext,
+    PageContextMenuInvokeCondition
+} from "./types";
 
 export async function classifyBlockCommandInvocationContext(
     uuid: string

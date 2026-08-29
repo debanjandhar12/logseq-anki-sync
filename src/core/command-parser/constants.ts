@@ -18,7 +18,11 @@ export const COMMAND_INVOKE_CONDITION_TREE = [
     {label: "Block Slash Command", value: "Block Slash Command"}
 ] as const;
 
-export {COMMAND_INVOKE_CONDITIONS};
+export {
+    BLOCK_CONTEXT_MENU_INVOKE_CONDITIONS,
+    COMMAND_INVOKE_CONDITIONS,
+    PAGE_CONTEXT_MENU_INVOKE_CONDITIONS
+};
 
 export const COMMAND_FRONTMATTER_FIELDS = [
     {key: "name", dataKey: "name", valueType: "string", required: true},

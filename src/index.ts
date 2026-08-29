@@ -8,11 +8,11 @@ import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?
 import pkg from "./../package.json";
 import {
     initAIChat,
-    initBuiltInCommandFiles,
     initBuiltInSkillFiles,
     initContextMenu,
     OpenAIChatCommand
 } from "./core/chat-interop";
+import {initBuiltInCommandFiles} from "./core/user-commands";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
