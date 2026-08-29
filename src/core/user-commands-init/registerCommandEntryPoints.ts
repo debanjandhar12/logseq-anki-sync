@@ -5,14 +5,14 @@ import type {CommandFileData} from "../stores/command-file-store/types";
 import {
     classifyBlockCommandInvocationContext,
     classifyPageCommandInvocationContext
-} from "../user-commands/classifyCommandInvocationContext";
-import {createUserCommand} from "../user-commands/createUserCommand";
-import {getEligibleCommandFiles} from "../user-commands/getEligibleCommandFiles";
+} from "./classifyCommandInvocationContext";
+import {createUserCommand} from "./createUserCommand";
+import {getEligibleCommandFiles} from "./getEligibleCommandFiles";
 import type {
     CommandCenterInvocationContext,
     ContextMenuCommandInvocationContext,
     SlashCommandInvocationContext
-} from "../user-commands/types";
+} from "./types";
 
 const logger = createLogger(LoggerCategory.MISC);
 

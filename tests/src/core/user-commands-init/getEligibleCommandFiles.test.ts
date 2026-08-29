@@ -4,8 +4,8 @@ import {ChatInteropCommandQueue} from "../../../../src/core/chat-interop/queue/C
 import * as commandTemplate from "../../../../src/core/command-parser";
 import {CommandFileStore} from "../../../../src/core/stores/command-file-store/CommandFileStore";
 import type {CommandFileData} from "../../../../src/core/stores/command-file-store/types";
-import {getEligibleCommandFiles} from "../../../../src/core/user-commands";
-import {createUserCommand} from "../../../../src/core/user-commands/createUserCommand";
+import {getEligibleCommandFiles} from "../../../../src/core/user-commands-init";
+import {createUserCommand} from "../../../../src/core/user-commands-init/createUserCommand";
 
 function commandFile(overrides: Partial<CommandFileData> = {}): CommandFileData {
     return {

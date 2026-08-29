@@ -1,5 +1,5 @@
 import React from "react";
-import type {UserCommand} from "../../core/user-commands";
+import type {UserCommand} from "../../core/user-commands-init";
 import {createModalPromise} from "../modals/utils/createModalPromise";
 import {AICommandPaletteModalComponent} from "../pages/AICommandPaletteModal";
 
