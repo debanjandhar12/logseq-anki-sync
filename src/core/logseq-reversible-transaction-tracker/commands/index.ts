@@ -135,6 +135,8 @@ export {
     type UpsertPropertyToBlockCommandArgsInput,
     UpsertPropertyToBlockCommandArgsSchema
 } from "./UpsertPropertyToBlockCommand";
+export {isFlashcardBlock} from "./utils/isFlashcardBlock";
+export {isVideoBlock} from "./utils/isVideoBlock";
 export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
     AddPropertyToTagPageCommandCodec,
     AddTagToBlockCommandCodec,

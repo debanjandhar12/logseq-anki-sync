@@ -1,0 +1,1 @@
+export {blockHasMacro} from "./blockHasMacro";
