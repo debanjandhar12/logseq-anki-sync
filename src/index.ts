@@ -8,6 +8,7 @@ import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?
 import pkg from "./../package.json";
 import {
     initAIChat,
+    initBuiltInCommandFiles,
     initBuiltInSkillFiles,
     initContextMenu,
     OpenAIChatCommand
@@ -40,7 +41,6 @@ async function main(baseInfo: LSPluginBaseInfo) {
 
     // Register UI and Commands
     await initAIChat();
-    await initContextMenu();
     WindowParentBridge.setGlobalObject("LogseqAIChat", {
         showAIChat: () => new OpenAIChatCommand().execute()
     });
@@ -54,6 +54,8 @@ async function main(baseInfo: LSPluginBaseInfo) {
     LogseqAppListeners.init();
     UI.init();
     await initBuiltInSkillFiles();
+    await initBuiltInCommandFiles();
+    await initContextMenu();
 
     // The lines below are needed for vite build and dev to work properly.
     // @ts-ignore
