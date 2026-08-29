@@ -12,7 +12,7 @@ export {
     classifyPageCommandInvocationContext
 } from "./classifyCommandInvocationContext";
 export {ADD_AS_ATTACHMENT_COMMAND_NAME} from "./constants";
-export {getUserCommands} from "./getUserCommands";
+export {getEligibleCommandFiles} from "./getEligibleCommandFiles";
 export {initBuiltInCommandFiles} from "./initBuiltInCommandFiles";
 export {registerUserCommandEntryPoints} from "./registerCommandEntryPoints";
 export type {

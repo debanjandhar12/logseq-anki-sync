@@ -8,7 +8,7 @@ function createCommandSource(metadata = "", body = "Prompt") {
 describe("validateCommandFileContent", () => {
     test("parses all fields and preserves unknown metadata", () => {
         const content = createCommandSource(
-            "user-invocable: false\ncommand-invoke-in-new-thread: false\nbuilt-in-command: true\nbuilt-in-command-user-controllable: true\ncustom-field: accepted\n"
+            "user-invocable: false\ncommand-invoke-in-new-thread: false\ncommand-appear-seperately-in-context-menu: true\nbuilt-in-command: true\nbuilt-in-command-user-controllable: true\ncustom-field: accepted\n"
         );
         const result = validateCommandFileContent(content);
 
@@ -19,6 +19,7 @@ describe("validateCommandFileContent", () => {
                 invokeConditions: ["Block Context Menu/Image"],
                 userInvocable: false,
                 commandInvokeInNewThread: false,
+                commandAppearSeparatelyInContextMenu: true,
                 builtInCommand: true,
                 builtInCommandUserControllable: true,
                 content
@@ -27,13 +28,14 @@ describe("validateCommandFileContent", () => {
         });
     });
 
-    test("defaults optional invocation booleans to true", () => {
+    test("applies optional invocation boolean defaults", () => {
         const result = validateCommandFileContent(createCommandSource());
 
         expect(result.valid).toBe(true);
         expect(result.commandFile).toMatchObject({
             userInvocable: true,
-            commandInvokeInNewThread: true
+            commandInvokeInNewThread: true,
+            commandAppearSeparatelyInContextMenu: false
         });
     });
 
@@ -136,6 +138,7 @@ invoke-condition:
   - Block Slash Command
 user-invocable: enabled
 command-invoke-in-new-thread: new
+command-appear-seperately-in-context-menu: separate
 built-in-command: built-in
 built-in-command-user-controllable: controllable
 ---`;
@@ -146,6 +149,7 @@ built-in-command-user-controllable: controllable
             "Invalid command file metadata: name is required",
             "Invalid command file metadata: user-invocable must be a boolean",
             "Invalid command file metadata: command-invoke-in-new-thread must be a boolean",
+            "Invalid command file metadata: command-appear-seperately-in-context-menu must be a boolean",
             "Invalid command file metadata: built-in-command must be a boolean",
             "Invalid command file metadata: built-in-command-user-controllable must be a boolean"
         ]);

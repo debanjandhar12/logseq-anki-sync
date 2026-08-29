@@ -5,6 +5,7 @@ import {LogseqPluginStorageManager} from "../../../../src/logseq/LogseqPluginSto
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
 
 const ADD_AS_ATTACHMENT_FILE_NAME = "Add as attachment.md";
+const ADD_TO_CHAT_FILE_NAME = "Add to Chat.md";
 
 function createCommandSource(name: string, metadata = "", body = "Prompt"): string {
     return `---\nname: ${name}\ninvoke-condition:\n  - Block Slash Command\n${metadata}---\n${body}`;
@@ -14,6 +15,21 @@ describe("initBuiltInCommandFiles", () => {
     beforeEach(() => {
         InMemoryStore.clearAll();
         LogseqPluginStorageManager.store = new InMemoryStore("built-in-command-test");
+    });
+
+    test("installs the controllable Add to Chat command as a separate menu item", async () => {
+        await initBuiltInCommandFiles();
+
+        await expect(CommandFileStore.getCommandFile(ADD_TO_CHAT_FILE_NAME)).resolves.toEqual(
+            expect.objectContaining({
+                name: "Add to Chat",
+                userInvocable: true,
+                commandInvokeInNewThread: false,
+                commandAppearSeparatelyInContextMenu: true,
+                builtInCommand: true,
+                builtInCommandUserControllable: true
+            })
+        );
     });
 
     test("installs the locked Add as attachment command with an empty body", async () => {

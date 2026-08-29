@@ -38,6 +38,11 @@ export const COMMAND_FRONTMATTER_FIELDS = [
         dataKey: "commandInvokeInNewThread",
         valueType: "boolean"
     },
+    {
+        key: "command-appear-seperately-in-context-menu",
+        dataKey: "commandAppearSeparatelyInContextMenu",
+        valueType: "boolean"
+    },
     {key: "built-in-command", dataKey: "builtInCommand", valueType: "boolean"},
     {
         key: "built-in-command-user-controllable",

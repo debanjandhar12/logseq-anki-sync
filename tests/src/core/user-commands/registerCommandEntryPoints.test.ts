@@ -1,5 +1,9 @@
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {CommandFileStore} from "../../../../src/core/stores/command-file-store/CommandFileStore";
+import type {
+    CommandFileData,
+    CommandInvokeCondition
+} from "../../../../src/core/stores/command-file-store/types";
 
 const {showPaletteMock} = vi.hoisted(() => ({showPaletteMock: vi.fn()}));
 
@@ -9,13 +13,18 @@ vi.mock("../../../../src/ui/launchers/showAICommandPaletteModal", () => ({
 
 import {registerUserCommandEntryPoints} from "../../../../src/core/user-commands/registerCommandEntryPoints";
 
-function commandFile(invokeConditions: Array<"Logseq Command Center" | "Block Slash Command">) {
+function commandFile(
+    invokeConditions: CommandInvokeCondition[],
+    overrides: Partial<CommandFileData> = {}
+): CommandFileData {
     return {
         name: "Summarize",
         invokeConditions,
         userInvocable: true,
         commandInvokeInNewThread: false,
-        content: `---\nname: Summarize\ninvoke-condition:\n${invokeConditions.map((condition) => `  - ${condition}`).join("\n")}\n---\nSummarize`
+        commandAppearSeparatelyInContextMenu: false,
+        content: `---\nname: Summarize\ninvoke-condition:\n${invokeConditions.map((condition) => `  - ${condition}`).join("\n")}\n---\nSummarize`,
+        ...overrides
     };
 }
 
@@ -66,5 +75,22 @@ describe("registerCommandEntryPoints", () => {
             expect.any(Function)
         );
         expect(registerSlashCommand).toHaveBeenCalledWith("Summarize", expect.any(Function));
+    });
+
+    test("registers opted-in commands as separate block and page menu items", async () => {
+        vi.spyOn(CommandFileStore, "getAllCommandFiles").mockResolvedValue([
+            commandFile(["Block Context Menu/Other Blocks", "Page Context Menu/Other Pages"], {
+                name: "Add to Chat",
+                commandAppearSeparatelyInContextMenu: true
+            })
+        ]);
+
+        await registerUserCommandEntryPoints();
+
+        expect(registerBlockContextMenuItem).toHaveBeenCalledWith(
+            "Add to Chat",
+            expect.any(Function)
+        );
+        expect(registerPageMenuItem).toHaveBeenCalledWith("Add to Chat", expect.any(Function));
     });
 });

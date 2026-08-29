@@ -1,10 +1,11 @@
 import matter from "gray-matter";
 import COMMAND_ADD_AS_ATTACHMENT_RAW from "../../chat-app/prompts/COMMAND_ADD_AS_ATTACHMENT.md?inlineSkill";
+import COMMAND_ADD_TO_CHAT_RAW from "../../chat-app/prompts/COMMAND_ADD_TO_CHAT.md?inlineSkill";
 import {COMMAND_FRONTMATTER_KEYS, parseCommandFile} from "../command-parser";
 import {CommandFileStore} from "../stores/command-file-store/CommandFileStore";
 import type {CommandFileData} from "../stores/command-file-store/types";
 
-const BUILT_IN_COMMAND_FILES = [COMMAND_ADD_AS_ATTACHMENT_RAW];
+const BUILT_IN_COMMAND_FILES = [COMMAND_ADD_AS_ATTACHMENT_RAW, COMMAND_ADD_TO_CHAT_RAW];
 
 export const initBuiltInCommandFiles = async () => {
     const builtInCommandFileNames = new Set(

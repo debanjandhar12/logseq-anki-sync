@@ -27,6 +27,7 @@ export interface CommandFileData {
     invokeConditions: CommandInvokeCondition[];
     userInvocable: boolean;
     commandInvokeInNewThread: boolean;
+    commandAppearSeparatelyInContextMenu: boolean;
     content: string;
     builtInCommand?: boolean;
     builtInCommandUserControllable?: boolean;

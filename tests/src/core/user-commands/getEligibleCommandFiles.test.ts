@@ -4,7 +4,8 @@ import {ChatInteropCommandQueue} from "../../../../src/core/chat-interop/queue/C
 import * as commandTemplate from "../../../../src/core/command-parser";
 import {CommandFileStore} from "../../../../src/core/stores/command-file-store/CommandFileStore";
 import type {CommandFileData} from "../../../../src/core/stores/command-file-store/types";
-import {getUserCommands} from "../../../../src/core/user-commands";
+import {getEligibleCommandFiles} from "../../../../src/core/user-commands";
+import {createUserCommand} from "../../../../src/core/user-commands/createUserCommand";
 
 function commandFile(overrides: Partial<CommandFileData> = {}): CommandFileData {
     return {
@@ -12,6 +13,7 @@ function commandFile(overrides: Partial<CommandFileData> = {}): CommandFileData 
         invokeConditions: ["Block Context Menu/Other Blocks"],
         userInvocable: true,
         commandInvokeInNewThread: true,
+        commandAppearSeparatelyInContextMenu: false,
         content: `---\nname: Summarize\ninvoke-condition:\n  - Block Context Menu/Other Blocks\n---\nSummarize this`,
         ...overrides
     };
@@ -23,7 +25,7 @@ const context = {
     uuid: "block-uuid"
 };
 
-describe("getUserCommands", () => {
+describe("getEligibleCommandFiles", () => {
     afterEach(() => vi.restoreAllMocks());
 
     test("filters disabled and ineligible files and pins Add as attachment first", async () => {
@@ -38,21 +40,20 @@ describe("getUserCommands", () => {
             commandFile({name: "Slash", invokeConditions: ["Block Slash Command"]})
         ]);
 
-        const commands = await getUserCommands(context);
+        const commands = await getEligibleCommandFiles(context);
 
         expect(commands.map(({name}) => name)).toEqual(["Add as attachment", "Zebra"]);
         expect(commands[0].builtInCommand).toBe(true);
     });
 
     test("renders first and enqueues the invocation steps before opening chat", async () => {
-        vi.spyOn(CommandFileStore, "getAllCommandFiles").mockResolvedValue([commandFile()]);
         vi.spyOn(commandTemplate, "renderCommandFileTemplate").mockResolvedValue(
             "  Summarize this\n"
         );
         const enqueue = vi.spyOn(ChatInteropCommandQueue, "enqueue").mockImplementation(() => {});
         const open = vi.spyOn(OpenAIChatCommand.prototype, "execute").mockResolvedValue();
 
-        const [command] = await getUserCommands(context);
+        const command = createUserCommand(commandFile(), context);
         await command.execute();
 
         expect(enqueue.mock.calls.map(([runtimeCommand]) => runtimeCommand)).toEqual([
@@ -67,17 +68,38 @@ describe("getUserCommands", () => {
         );
     });
 
-    test("does not enqueue anything when template rendering fails", async () => {
-        vi.spyOn(CommandFileStore, "getAllCommandFiles").mockResolvedValue([
-            commandFile({content: "---\nname: Summarize\n---\n<% unknownVariable %>"})
+    test("preserves the composer and skips an empty prompt for same-thread commands", async () => {
+        vi.spyOn(commandTemplate, "renderCommandFileTemplate").mockResolvedValue("  \n");
+        const enqueue = vi.spyOn(ChatInteropCommandQueue, "enqueue").mockImplementation(() => {});
+        vi.spyOn(OpenAIChatCommand.prototype, "execute").mockResolvedValue();
+
+        const command = createUserCommand(commandFile({commandInvokeInNewThread: false}), context);
+        await command.execute();
+
+        expect(enqueue.mock.calls.map(([runtimeCommand]) => runtimeCommand)).toEqual([
+            {type: "add-attachment", payload: {uuid: "block-uuid"}}
         ]);
+    });
+
+    test("keeps separately displayed commands eligible for native registration", async () => {
+        vi.spyOn(CommandFileStore, "getAllCommandFiles").mockResolvedValue([
+            commandFile({commandAppearSeparatelyInContextMenu: true})
+        ]);
+
+        await expect(getEligibleCommandFiles(context)).resolves.toHaveLength(1);
+    });
+
+    test("does not enqueue anything when template rendering fails", async () => {
         vi.spyOn(commandTemplate, "renderCommandFileTemplate").mockRejectedValue(
             new Error("Template failed")
         );
         const enqueue = vi.spyOn(ChatInteropCommandQueue, "enqueue").mockImplementation(() => {});
         const open = vi.spyOn(OpenAIChatCommand.prototype, "execute").mockResolvedValue();
 
-        const [command] = await getUserCommands(context);
+        const command = createUserCommand(
+            commandFile({content: "---\nname: Summarize\n---\n<% unknownVariable %>"}),
+            context
+        );
         await expect(command.execute()).rejects.toThrow();
         expect(enqueue).not.toHaveBeenCalled();
         expect(open).not.toHaveBeenCalled();

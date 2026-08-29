@@ -13,6 +13,7 @@ describe("command frontmatter fields", () => {
             "invokeConditions",
             "userInvocable",
             "commandInvokeInNewThread",
+            "commandAppearSeparatelyInContextMenu",
             "builtInCommand",
             "builtInCommandUserControllable"
         ]);
@@ -25,6 +26,7 @@ describe("command frontmatter fields", () => {
             invokeConditions: "invoke-condition",
             userInvocable: "user-invocable",
             commandInvokeInNewThread: "command-invoke-in-new-thread",
+            commandAppearSeparatelyInContextMenu: "command-appear-seperately-in-context-menu",
             builtInCommand: "built-in-command",
             builtInCommandUserControllable: "built-in-command-user-controllable"
         });

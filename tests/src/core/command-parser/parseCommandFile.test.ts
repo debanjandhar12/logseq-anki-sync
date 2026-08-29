@@ -15,6 +15,7 @@ Prompt`;
             invokeConditions: ["Logseq Command Center"],
             userInvocable: true,
             commandInvokeInNewThread: true,
+            commandAppearSeparatelyInContextMenu: false,
             builtInCommand: undefined,
             builtInCommandUserControllable: undefined,
             content

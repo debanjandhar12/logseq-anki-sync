@@ -22,9 +22,9 @@ export function createUserCommand(
             const prompt = (await renderCommandFileTemplate(commandFile.content)).trim();
             const steps: ChatCommand[] = [
                 ...(commandFile.commandInvokeInNewThread ? [new NewThreadCommand()] : []),
-                new ClearComposerCommand(),
+                ...(commandFile.commandInvokeInNewThread ? [new ClearComposerCommand()] : []),
                 ...("uuid" in context ? [new AddAttachmentCommand(context.uuid)] : []),
-                new SetComposerTextCommand(prompt)
+                ...(prompt ? [new SetComposerTextCommand(prompt)] : [])
             ];
 
             // Every step enqueues synchronously, keeping this invocation contiguous.

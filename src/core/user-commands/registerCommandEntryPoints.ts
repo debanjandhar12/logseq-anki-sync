@@ -1,11 +1,13 @@
 import {createLogger, LoggerCategory} from "../../logger";
 import {showAICommandPaletteModal} from "../../ui/launchers/showAICommandPaletteModal";
+import {CommandFileStore} from "../stores/command-file-store/CommandFileStore";
+import type {CommandFileData} from "../stores/command-file-store/types";
 import {
     classifyBlockCommandInvocationContext,
     classifyPageCommandInvocationContext
 } from "./classifyCommandInvocationContext";
 import {createUserCommand} from "./createUserCommand";
-import {getEligibleCommandFiles, getUserCommands} from "./getUserCommands";
+import {getEligibleCommandFiles} from "./getEligibleCommandFiles";
 import type {
     CommandCenterInvocationContext,
     ContextMenuCommandInvocationContext,
@@ -16,11 +18,12 @@ const logger = createLogger(LoggerCategory.MISC);
 
 export async function registerUserCommandEntryPoints(): Promise<void> {
     logseq.Editor.registerBlockContextMenuItem("Invoke AI Command", async ({uuid}) => {
-        await pickAndExecuteUserCommand(() => classifyBlockCommandInvocationContext(uuid));
+        await executeContextMenuCommand(() => classifyBlockCommandInvocationContext(uuid));
     });
     logseq.App.registerPageMenuItem("Invoke AI Command", async ({page}) => {
-        await pickAndExecuteUserCommand(() => classifyPageCommandInvocationContext(page));
+        await executeContextMenuCommand(() => classifyPageCommandInvocationContext(page));
     });
+    await registerSeparateContextMenuCommands();
 
     const commandCenterContext: CommandCenterInvocationContext = {
         source: "command-center",
@@ -34,6 +37,44 @@ export async function registerUserCommandEntryPoints(): Promise<void> {
         uuid: ""
     };
     await registerSlashCommands(slashRegistrationContext);
+}
+
+async function registerSeparateContextMenuCommands(): Promise<void> {
+    const commandFiles = (await CommandFileStore.getAllCommandFiles()).filter(
+        (commandFile) =>
+            commandFile.userInvocable && commandFile.commandAppearSeparatelyInContextMenu
+    );
+
+    for (const commandFile of commandFiles) {
+        try {
+            if (
+                commandFile.invokeConditions.some((condition) =>
+                    condition.startsWith("Block Context Menu/")
+                )
+            ) {
+                logseq.Editor.registerBlockContextMenuItem(commandFile.name, async ({uuid}) => {
+                    await executeContextMenuCommand(
+                        () => classifyBlockCommandInvocationContext(uuid),
+                        commandFile
+                    );
+                });
+            }
+            if (
+                commandFile.invokeConditions.some((condition) =>
+                    condition.startsWith("Page Context Menu/")
+                )
+            ) {
+                logseq.App.registerPageMenuItem(commandFile.name, async ({page}) => {
+                    await executeContextMenuCommand(
+                        () => classifyPageCommandInvocationContext(page),
+                        commandFile
+                    );
+                });
+            }
+        } catch (error) {
+            logger.error(`Failed to register separate AI command "${commandFile.name}"`, error);
+        }
+    }
 }
 
 async function registerCommandCenterCommands(
@@ -78,11 +119,27 @@ async function registerSlashCommands(context: SlashCommandInvocationContext): Pr
     }
 }
 
-async function pickAndExecuteUserCommand(
-    classify: () => Promise<ContextMenuCommandInvocationContext>
+async function executeContextMenuCommand(
+    classify: () => Promise<ContextMenuCommandInvocationContext>,
+    directCommandFile?: CommandFileData
 ): Promise<void> {
     try {
-        const commands = await getUserCommands(await classify());
+        const context = await classify();
+        if (directCommandFile) {
+            if (!directCommandFile.invokeConditions.includes(context.condition)) {
+                await logseq.UI.showMsg(
+                    `"${directCommandFile.name}" is not available here.`,
+                    "warning"
+                );
+                return;
+            }
+            await createUserCommand(directCommandFile, context).execute();
+            return;
+        }
+
+        const commands = (await getEligibleCommandFiles(context))
+            .filter((commandFile) => !commandFile.commandAppearSeparatelyInContextMenu)
+            .map((commandFile) => createUserCommand(commandFile, context));
         if (commands.length === 0) {
             await logseq.UI.showMsg("No AI commands are available here.", "warning");
             return;
@@ -91,8 +148,17 @@ async function pickAndExecuteUserCommand(
         const selectedCommand = await showAICommandPaletteModal(commands);
         await selectedCommand?.execute();
     } catch (error) {
-        logger.error("Failed to invoke AI command", error);
-        await logseq.UI.showMsg("Failed to invoke AI command.", "error");
+        const commandName = directCommandFile?.name;
+        logger.error(
+            commandName
+                ? `Failed to invoke AI command "${commandName}"`
+                : "Failed to invoke AI command",
+            error
+        );
+        await logseq.UI.showMsg(
+            commandName ? `Failed to invoke "${commandName}".` : "Failed to invoke AI command.",
+            "error"
+        );
     }
 }
 

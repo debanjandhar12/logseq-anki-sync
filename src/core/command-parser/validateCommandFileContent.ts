@@ -100,6 +100,8 @@ export function validateCommandFileContent(content: string): CommandFileValidati
             invokeConditions: values.invokeConditions as CommandInvokeCondition[],
             userInvocable: values.userInvocable !== false,
             commandInvokeInNewThread: values.commandInvokeInNewThread !== false,
+            commandAppearSeparatelyInContextMenu:
+                values.commandAppearSeparatelyInContextMenu === true,
             builtInCommand: values.builtInCommand,
             builtInCommandUserControllable: values.builtInCommandUserControllable,
             content
