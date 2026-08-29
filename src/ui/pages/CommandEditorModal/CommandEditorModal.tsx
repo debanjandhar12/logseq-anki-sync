@@ -1,7 +1,7 @@
 import {Plus, Trash} from "lucide-react";
 import React from "react";
 import {CommandFileStore} from "src/core/stores/command-file-store/CommandFileStore";
-import {registerNativeUserCommands} from "src/core/user-commands";
+import {WindowParentBridge} from "src/logseq/WindowParentBridge";
 import {LogseqButton} from "../../components/LogseqButton";
 import {LogseqCheckbox} from "../../components/LogseqCheckbox";
 import {LogseqCodeEditor} from "../../components/LogseqCodeEditor";
@@ -172,8 +172,10 @@ export const CommandEditorModalComponent: React.FC<CommandEditorModalProps> = ({
             for (const parsedFile of parsedFiles) {
                 await CommandFileStore.saveCommandFile(parsedFile.content);
             }
-            await registerNativeUserCommands();
             returnResult(true);
+            setTimeout(() => {
+                WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
+            }, 0);
         } catch (error) {
             await logseq.UI.showMsg(
                 `Failed to save command files: ${getErrorMessage(error)}`,
@@ -300,10 +302,6 @@ export const CommandEditorModalComponent: React.FC<CommandEditorModalProps> = ({
                                                 onChange={handleContentChange}
                                             />
                                         </div>
-                                        <p className="border-border border-t px-4 py-2 text-xs opacity-70">
-                                            Removing a Command Center or slash command takes effect
-                                            after reloading the plugin.
-                                        </p>
                                     </>
                                 ) : (
                                     <div className="flex h-full items-center justify-center p-4 text-sm opacity-70">

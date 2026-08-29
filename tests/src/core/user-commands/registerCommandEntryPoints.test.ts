@@ -7,10 +7,7 @@ vi.mock("../../../../src/ui/launchers/showAICommandPaletteModal", () => ({
     showAICommandPaletteModal: showPaletteMock
 }));
 
-import {
-    registerContextMenuUserCommands,
-    registerNativeUserCommands
-} from "../../../../src/core/user-commands/registerCommandEntryPoints";
+import {registerUserCommandEntryPoints} from "../../../../src/core/user-commands/registerCommandEntryPoints";
 
 function commandFile(invokeConditions: Array<"Logseq Command Center" | "Block Slash Command">) {
     return {
@@ -49,8 +46,12 @@ describe("registerCommandEntryPoints", () => {
         showPaletteMock.mockReset();
     });
 
-    test("registers one block and one page context-menu entry", () => {
-        registerContextMenuUserCommands();
+    test("registers context-menu and enabled direct entry points", async () => {
+        vi.spyOn(CommandFileStore, "getAllCommandFiles").mockResolvedValue([
+            commandFile(["Logseq Command Center", "Block Slash Command"])
+        ]);
+
+        await registerUserCommandEntryPoints();
 
         expect(registerBlockContextMenuItem).toHaveBeenCalledWith(
             "Invoke AI Command",
@@ -60,27 +61,10 @@ describe("registerCommandEntryPoints", () => {
             "Invoke AI Command",
             expect.any(Function)
         );
-    });
-
-    test("registers enabled native routes and revalidates stale callbacks", async () => {
-        const getAll = vi
-            .spyOn(CommandFileStore, "getAllCommandFiles")
-            .mockResolvedValue([commandFile(["Logseq Command Center", "Block Slash Command"])]);
-
-        await registerNativeUserCommands();
-
         expect(registerCommandPalette).toHaveBeenCalledWith(
             expect.objectContaining({label: "Summarize"}),
             expect.any(Function)
         );
         expect(registerSlashCommand).toHaveBeenCalledWith("Summarize", expect.any(Function));
-
-        getAll.mockResolvedValue([]);
-        await registerCommandPalette.mock.calls[0][1]();
-
-        expect(showMsg).toHaveBeenCalledWith(
-            '"Summarize" is no longer available. Reload the plugin to remove it.',
-            "warning"
-        );
     });
 });

@@ -37,7 +37,7 @@ export function useModal<T = any>(
         enableEscapeKey = true,
         enableEnterKey = false,
         enableOutsideClickClose = true,
-        enableArrowKeyScroll = true,
+        enableArrowKeyScroll = true, // set to false for scroll control in command palette etc
         modalId
     } = options;
 

@@ -10,7 +10,7 @@ function compareCommandFiles(left: CommandFileData, right: CommandFileData): num
     return left.name.localeCompare(right.name);
 }
 
-async function getEligibleCommandFiles(
+export async function getEligibleCommandFiles(
     context: CommandInvocationContext
 ): Promise<CommandFileData[]> {
     return (await CommandFileStore.getAllCommandFiles())
@@ -23,12 +23,4 @@ export async function getUserCommands(context: CommandInvocationContext): Promis
     return (await getEligibleCommandFiles(context)).map((commandFile) =>
         createUserCommand(commandFile, context)
     );
-}
-
-export async function findUserCommand(
-    name: string,
-    context: CommandInvocationContext
-): Promise<UserCommand | null> {
-    const commands = await getUserCommands(context);
-    return commands.find((command) => command.name === name) ?? null;
 }

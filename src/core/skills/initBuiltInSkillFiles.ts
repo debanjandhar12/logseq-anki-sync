@@ -46,7 +46,7 @@ export const initBuiltInSkillFiles = async () => {
             continue;
         }
 
-        // if file content has not change (ignoring disable-model-invocation), skip overwrite
+        // If content has not changed, ignoring the user-controlled flag, skip overwrite.
         if (
             existing &&
             getComparableSkillContent(existing.content) === getComparableSkillContent(raw)

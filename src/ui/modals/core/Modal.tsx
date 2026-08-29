@@ -6,7 +6,7 @@ interface ModalProps {
     open: boolean;
     setOpen: React.Dispatch<React.SetStateAction<boolean>>;
     onClose?: () => void;
-    size?: "default" | "large" | "chat";
+    size?: "default" | "large" | "chat" | "commandPalette";
     zDepth?: "high" | "default";
     hasCloseButton?: boolean;
     className?: string;

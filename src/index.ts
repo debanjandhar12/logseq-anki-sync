@@ -6,13 +6,9 @@ import GITHUB_ICON from "../node_modules/@tabler/icons/icons/outline/brand-githu
 import HEART_ICON from "../node_modules/@tabler/icons/icons/outline/heart.svg?raw";
 import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?raw";
 import pkg from "./../package.json";
-import {
-    initAIChat,
-    initBuiltInSkillFiles,
-    initContextMenu,
-    OpenAIChatCommand
-} from "./core/chat-interop";
-import {initUserCommands} from "./core/user-commands";
+import {initAIChat, initContextMenu, OpenAIChatCommand} from "./core/chat-interop";
+import {initBuiltInSkillFiles} from "./core/skills";
+import {initBuiltInCommandFiles, registerUserCommandEntryPoints} from "./core/user-commands";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
@@ -54,7 +50,8 @@ async function main(baseInfo: LSPluginBaseInfo) {
     LogseqAppListeners.init();
     UI.init();
     await initBuiltInSkillFiles();
-    await initUserCommands();
+    await initBuiltInCommandFiles();
+    await registerUserCommandEntryPoints();
     await initContextMenu();
 
     // The lines below are needed for vite build and dev to work properly.

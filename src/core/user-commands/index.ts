@@ -12,9 +12,9 @@ export {
     classifyPageCommandInvocationContext
 } from "./classifyCommandInvocationContext";
 export {ADD_AS_ATTACHMENT_COMMAND_NAME} from "./constants";
-export {findUserCommand, getUserCommands} from "./getUserCommands";
-export {initUserCommands} from "./initUserCommands";
-export {registerNativeUserCommands} from "./registerCommandEntryPoints";
+export {getUserCommands} from "./getUserCommands";
+export {initBuiltInCommandFiles} from "./initBuiltInCommandFiles";
+export {registerUserCommandEntryPoints} from "./registerCommandEntryPoints";
 export type {
     BlockCommandInvocationContext,
     BlockContextMenuInvokeCondition,

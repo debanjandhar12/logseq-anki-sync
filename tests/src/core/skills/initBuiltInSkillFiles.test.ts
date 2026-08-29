@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, test} from "vitest";
-import {initBuiltInSkillFiles} from "../../../../src/core/chat-interop/initBuiltInSkillFiles";
+import {initBuiltInSkillFiles} from "../../../../src/core/skills/initBuiltInSkillFiles";
 import {SkillFileStore} from "../../../../src/core/stores/skill-file-store/SkillFileStore";
 import {LogseqPluginStorageManager} from "../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";

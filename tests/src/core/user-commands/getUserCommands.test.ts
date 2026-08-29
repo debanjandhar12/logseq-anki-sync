@@ -4,7 +4,7 @@ import {ChatInteropCommandQueue} from "../../../../src/core/chat-interop/queue/C
 import * as commandTemplate from "../../../../src/core/command-parser";
 import {CommandFileStore} from "../../../../src/core/stores/command-file-store/CommandFileStore";
 import type {CommandFileData} from "../../../../src/core/stores/command-file-store/types";
-import {findUserCommand, getUserCommands} from "../../../../src/core/user-commands";
+import {getUserCommands} from "../../../../src/core/user-commands";
 
 function commandFile(overrides: Partial<CommandFileData> = {}): CommandFileData {
     return {
@@ -46,12 +46,14 @@ describe("getUserCommands", () => {
 
     test("renders first and enqueues the invocation steps before opening chat", async () => {
         vi.spyOn(CommandFileStore, "getAllCommandFiles").mockResolvedValue([commandFile()]);
-        vi.spyOn(commandTemplate, "renderCommandFileTemplate").mockResolvedValue("Summarize this");
+        vi.spyOn(commandTemplate, "renderCommandFileTemplate").mockResolvedValue(
+            "  Summarize this\n"
+        );
         const enqueue = vi.spyOn(ChatInteropCommandQueue, "enqueue").mockImplementation(() => {});
         const open = vi.spyOn(OpenAIChatCommand.prototype, "execute").mockResolvedValue();
 
-        const command = await findUserCommand("Summarize", context);
-        await command?.execute();
+        const [command] = await getUserCommands(context);
+        await command.execute();
 
         expect(enqueue.mock.calls.map(([runtimeCommand]) => runtimeCommand)).toEqual([
             {type: "new-thread"},
@@ -75,8 +77,8 @@ describe("getUserCommands", () => {
         const enqueue = vi.spyOn(ChatInteropCommandQueue, "enqueue").mockImplementation(() => {});
         const open = vi.spyOn(OpenAIChatCommand.prototype, "execute").mockResolvedValue();
 
-        const command = await findUserCommand("Summarize", context);
-        await expect(command?.execute()).rejects.toThrow();
+        const [command] = await getUserCommands(context);
+        await expect(command.execute()).rejects.toThrow();
         expect(enqueue).not.toHaveBeenCalled();
         expect(open).not.toHaveBeenCalled();
     });

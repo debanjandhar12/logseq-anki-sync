@@ -19,7 +19,7 @@ export function createUserCommand(
         builtInCommand: commandFile.builtInCommand === true,
         execute: async () => {
             // Rendering must succeed before any destructive composer operation is queued.
-            const prompt = await renderCommandFileTemplate(commandFile.content);
+            const prompt = (await renderCommandFileTemplate(commandFile.content)).trim();
             const steps: ChatCommand[] = [
                 ...(commandFile.commandInvokeInNewThread ? [new NewThreadCommand()] : []),
                 new ClearComposerCommand(),
