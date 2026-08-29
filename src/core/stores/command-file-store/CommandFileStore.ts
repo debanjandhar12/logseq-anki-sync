@@ -1,6 +1,6 @@
 import {createLogger, LoggerCategory} from "../../../logger";
 import {LogseqPluginStorageManager} from "../../../logseq/LogseqPluginStorageManager";
-import {parseCommandFile} from "../../command-parser";
+import {parseCommandFile} from "../../command-parser/parseCommandFile";
 import type {CommandFileData} from "./types";
 
 const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);

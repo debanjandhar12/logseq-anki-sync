@@ -1,6 +1,5 @@
 import {beforeEach, describe, expect, test, vi} from "vitest";
-import {validateFrontmatterTemplate} from "../../../../src/core/frontmatter-parser";
-import {MustacheView} from "../../../../src/core/template-engine";
+import {MustacheView, validateFrontmatterTemplate} from "../../../../../src/core/template-engine";
 
 beforeEach(() => {
     vi.spyOn(MustacheView, "getVariableNames").mockResolvedValue(["today"]);

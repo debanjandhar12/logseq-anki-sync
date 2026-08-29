@@ -1,6 +1,6 @@
 import Mustache from "mustache";
-import {MUSTACHE_TEMPLATE_TAGS} from "./constants";
-import {MustacheView} from "./MustacheView";
+import {MUSTACHE_TEMPLATE_TAGS} from "../constants";
+import {MustacheView} from "../renderer/MustacheView";
 
 type MustacheToken = [string, string, number, number, MustacheToken[]?];
 

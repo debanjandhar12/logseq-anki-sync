@@ -1,7 +1,7 @@
-import {validateFrontmatterTemplate} from "src/core/frontmatter-parser";
 import {parseSkillFile} from "src/core/skill-parser";
 import type {SkillFileData} from "src/core/stores/skill-file-store/types";
 import type {MustacheTemplateIssue} from "src/core/template-engine";
+import {validateFrontmatterTemplate} from "src/core/template-engine";
 import type {EditableSkillFile} from "../types";
 import {getErrorMessage} from "./getErrorMessage";
 import {getSkillFileDisplayName} from "./getSkillFileDisplayName";

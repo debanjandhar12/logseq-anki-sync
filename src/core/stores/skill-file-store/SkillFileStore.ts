@@ -1,6 +1,6 @@
 import {createLogger, LoggerCategory} from "../../../logger";
 import {LogseqPluginStorageManager} from "../../../logseq/LogseqPluginStorageManager";
-import {parseSkillFile} from "../../skill-parser";
+import {parseSkillFile} from "../../skill-parser/parseSkillFile";
 import type {SkillFileData} from "./types";
 
 const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);

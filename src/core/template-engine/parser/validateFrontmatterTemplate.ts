@@ -1,7 +1,7 @@
-import {MUSTACHE_TEMPLATE_TAGS} from "../template-engine/constants";
-import type {MustacheTemplateIssue} from "../template-engine/validateMustacheTemplate";
-import {validateMustacheTemplate} from "../template-engine/validateMustacheTemplate";
+import {MUSTACHE_TEMPLATE_TAGS} from "../constants";
 import {splitFrontmatter} from "./splitFrontmatter";
+import type {MustacheTemplateIssue} from "./validateMustacheTemplate";
+import {validateMustacheTemplate} from "./validateMustacheTemplate";
 
 const FRONTMATTER_TEMPLATE_MESSAGE = "Mustache templates are not supported in frontmatter.";
 

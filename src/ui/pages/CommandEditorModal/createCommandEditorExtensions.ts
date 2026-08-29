@@ -3,8 +3,12 @@ import {autocompletion} from "@codemirror/autocomplete";
 import {lintGutter} from "@codemirror/lint";
 import type {Extension} from "@codemirror/state";
 import {COMMAND_FRONTMATTER_FIELDS, validateCommandFileContent} from "src/core/command-parser";
-import {splitFrontmatter, validateFrontmatterTemplate} from "src/core/frontmatter-parser";
-import {MUSTACHE_TEMPLATE_TAGS, MustacheView} from "src/core/template-engine";
+import {
+    MUSTACHE_TEMPLATE_TAGS,
+    MustacheView,
+    splitFrontmatter,
+    validateFrontmatterTemplate
+} from "src/core/template-engine";
 import {
     createFrontmatterCompletionSource,
     createFrontmatterLinter,

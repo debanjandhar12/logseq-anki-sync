@@ -1,8 +1,8 @@
 import {PDFDocument} from "pdf-lib";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {ParsePdfTool} from "../../../../../src/chat-app/tools/impl/ParsePdfTool";
-import type {PdfMarkdownParser} from "../../../../../src/core/anydoc/AnyDocPdfParser";
-import {getPdfSha256} from "../../../../../src/core/pdf/getPdfSha256";
+import type {PdfMarkdownParser} from "../../../../../src/core/anydoc/AnyDocParser";
+import {getPdfSha256} from "../../../../../src/core/anydoc/pdf/getPdfSha256";
 import {AnyDocParseResultStore} from "../../../../../src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {LogseqPluginStorageManager} from "../../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
@@ -42,7 +42,7 @@ describe("ParsePdfTool", () => {
     });
 
     test("accepts a PDF path without a page range", () => {
-        const parameters = new ParsePdfTool({parsePage: vi.fn()}).parameters;
+        const parameters = new ParsePdfTool({parsePdfPage: vi.fn()}).parameters;
 
         expect(parameters.safeParse({pdfPath: "../assets/file.pdf"}).success).toBe(true);
         expect(parameters.safeParse({pdfPath: "../assets/file.txt"}).success).toBe(false);
@@ -55,13 +55,13 @@ describe("ParsePdfTool", () => {
             "fetch",
             vi.fn(async () => new Response(pdfBytes))
         );
-        const parsePage = vi
-            .fn<PdfMarkdownParser["parsePage"]>()
+        const parsePdfPage = vi
+            .fn<PdfMarkdownParser["parsePdfPage"]>()
             .mockResolvedValueOnce("page one")
             .mockResolvedValueOnce("page two")
             .mockResolvedValueOnce("page three");
 
-        const response = await new ParsePdfTool({parsePage}).execute({
+        const response = await new ParsePdfTool({parsePdfPage}).execute({
             pdfPath: "../assets/file.pdf"
         });
 
@@ -70,7 +70,7 @@ describe("ParsePdfTool", () => {
             success: true,
             result: `Parsed pages stored in /home/user/anydoc-parse-results as: ${pdfHash}-page-<page no>. Use bash to list / search the pages and read the relevent context.`
         });
-        expect(parsePage).toHaveBeenCalledTimes(3);
+        expect(parsePdfPage).toHaveBeenCalledTimes(3);
         await expect(
             LogseqPluginStorageManager.getFileContent(AnyDocParseResultStore.groupName, files[0])
         ).resolves.toBe("page one");
@@ -87,14 +87,14 @@ describe("ParsePdfTool", () => {
             vi.fn(async () => new Response(pdfBytes))
         );
         await AnyDocParseResultStore.save(pdfHash, 1, "cached");
-        const parsePage = vi.fn(async () => "new page");
+        const parsePdfPage = vi.fn(async () => "new page");
 
-        const response = await new ParsePdfTool({parsePage}).execute({
+        const response = await new ParsePdfTool({parsePdfPage}).execute({
             pdfPath: "../assets/file.pdf"
         });
 
         expect(response.result.success).toBe(true);
-        expect(parsePage).toHaveBeenCalledTimes(1);
+        expect(parsePdfPage).toHaveBeenCalledTimes(1);
         await expect(
             LogseqPluginStorageManager.getFileContent(
                 AnyDocParseResultStore.groupName,
@@ -116,14 +116,14 @@ describe("ParsePdfTool", () => {
             2,
             createStoredPageFailure(2, "Previously failed")
         );
-        const parsePage = vi.fn<PdfMarkdownParser["parsePage"]>();
+        const parsePdfPage = vi.fn<PdfMarkdownParser["parsePdfPage"]>();
 
-        const response = await new ParsePdfTool({parsePage}).execute({
+        const response = await new ParsePdfTool({parsePdfPage}).execute({
             pdfPath: "../assets/file.pdf"
         });
 
         expect(response.result.success).toBe(true);
-        expect(parsePage).not.toHaveBeenCalled();
+        expect(parsePdfPage).not.toHaveBeenCalled();
     });
 
     test("stores a page error without failing when no more than half of pages fail", async () => {
@@ -134,12 +134,12 @@ describe("ParsePdfTool", () => {
             vi.fn(async () => new Response(pdfBytes))
         );
         const error = Object.assign(new Error("no text"), {code: "unsupported"});
-        const parsePage = vi
-            .fn<PdfMarkdownParser["parsePage"]>()
+        const parsePdfPage = vi
+            .fn<PdfMarkdownParser["parsePdfPage"]>()
             .mockRejectedValueOnce(error)
             .mockResolvedValueOnce("page two");
 
-        const response = await new ParsePdfTool({parsePage}).execute({
+        const response = await new ParsePdfTool({parsePdfPage}).execute({
             pdfPath: "../assets/file.pdf"
         });
 
@@ -157,13 +157,13 @@ describe("ParsePdfTool", () => {
             "fetch",
             vi.fn(async () => new Response(pdfBytes))
         );
-        const parsePage = vi
-            .fn<PdfMarkdownParser["parsePage"]>()
+        const parsePdfPage = vi
+            .fn<PdfMarkdownParser["parsePdfPage"]>()
             .mockRejectedValueOnce(Object.assign(new Error("encrypted"), {code: "encrypted"}))
             .mockResolvedValueOnce("page two")
             .mockRejectedValueOnce(Object.assign(new Error("malformed"), {code: "malformed"}));
 
-        const response = await new ParsePdfTool({parsePage}).execute({
+        const response = await new ParsePdfTool({parsePdfPage}).execute({
             pdfPath: "../assets/file.pdf"
         });
 
@@ -190,17 +190,17 @@ describe("ParsePdfTool", () => {
             1,
             createStoredPageFailure(1, "Previously failed")
         );
-        const parsePage = vi
-            .fn<PdfMarkdownParser["parsePage"]>()
+        const parsePdfPage = vi
+            .fn<PdfMarkdownParser["parsePdfPage"]>()
             .mockRejectedValueOnce(Object.assign(new Error("I/O failure"), {code: "io"}))
             .mockResolvedValueOnce("page three");
 
-        const response = await new ParsePdfTool({parsePage}).execute({
+        const response = await new ParsePdfTool({parsePdfPage}).execute({
             pdfPath: "../assets/file.pdf"
         });
 
         expect(response.result.success).toBe(false);
-        expect(parsePage).toHaveBeenCalledTimes(2);
+        expect(parsePdfPage).toHaveBeenCalledTimes(2);
         await expect(getStoredPage(pdfHash, 2)).resolves.toContain(
             "because of an input/output error"
         );
@@ -214,11 +214,11 @@ describe("ParsePdfTool", () => {
             vi.fn(async () => new Response(pdfBytes))
         );
         const firstParsePage = vi
-            .fn<PdfMarkdownParser["parsePage"]>()
+            .fn<PdfMarkdownParser["parsePdfPage"]>()
             .mockResolvedValueOnce("page one")
             .mockRejectedValueOnce(new DOMException("cancelled", "AbortError"));
 
-        const cancelledResponse = await new ParsePdfTool({parsePage: firstParsePage}).execute({
+        const cancelledResponse = await new ParsePdfTool({parsePdfPage: firstParsePage}).execute({
             pdfPath: "../assets/file.pdf"
         });
 
@@ -230,10 +230,10 @@ describe("ParsePdfTool", () => {
         await expect(getStoredPage(pdfHash, 2)).resolves.toBeUndefined();
 
         const resumedParsePage = vi
-            .fn<PdfMarkdownParser["parsePage"]>()
+            .fn<PdfMarkdownParser["parsePdfPage"]>()
             .mockResolvedValueOnce("page two")
             .mockResolvedValueOnce("page three");
-        const resumedResponse = await new ParsePdfTool({parsePage: resumedParsePage}).execute({
+        const resumedResponse = await new ParsePdfTool({parsePdfPage: resumedParsePage}).execute({
             pdfPath: "../assets/file.pdf"
         });
 
@@ -256,11 +256,11 @@ describe("ParsePdfTool", () => {
             .mockImplementationOnce(originalSave)
             .mockRejectedValueOnce(new Error("storage unavailable"));
         const firstParsePage = vi
-            .fn<PdfMarkdownParser["parsePage"]>()
+            .fn<PdfMarkdownParser["parsePdfPage"]>()
             .mockResolvedValueOnce("page one")
             .mockResolvedValueOnce("page two");
 
-        const failedResponse = await new ParsePdfTool({parsePage: firstParsePage}).execute({
+        const failedResponse = await new ParsePdfTool({parsePdfPage: firstParsePage}).execute({
             pdfPath: "../assets/file.pdf"
         });
 
@@ -274,10 +274,10 @@ describe("ParsePdfTool", () => {
 
         save.mockRestore();
         const resumedParsePage = vi
-            .fn<PdfMarkdownParser["parsePage"]>()
+            .fn<PdfMarkdownParser["parsePdfPage"]>()
             .mockResolvedValueOnce("page two")
             .mockResolvedValueOnce("page three");
-        const resumedResponse = await new ParsePdfTool({parsePage: resumedParsePage}).execute({
+        const resumedResponse = await new ParsePdfTool({parsePdfPage: resumedParsePage}).execute({
             pdfPath: "../assets/file.pdf"
         });
 

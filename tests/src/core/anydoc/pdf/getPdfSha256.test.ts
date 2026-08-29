@@ -1,5 +1,5 @@
 import {describe, expect, test} from "vitest";
-import {getPdfSha256} from "../../../../src/core/pdf/getPdfSha256";
+import {getPdfSha256} from "../../../../../src/core/anydoc/pdf/getPdfSha256";
 
 describe("getPdfSha256", () => {
     test("hashes the complete byte sequence as lowercase SHA-256", async () => {

@@ -1,5 +1,5 @@
 import Mustache from "mustache";
-import {MUSTACHE_TEMPLATE_TAGS} from "./constants";
+import {MUSTACHE_TEMPLATE_TAGS} from "../constants";
 import {type MustacheTemplateView, MustacheView} from "./MustacheView";
 
 const mustache = Mustache as unknown as {

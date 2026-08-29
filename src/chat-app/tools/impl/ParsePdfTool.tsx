@@ -8,10 +8,10 @@ import {
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {CHAT_APP_AGENT_ANYDOC_PAGE_ERROR_THRESHOLD} from "src/constants";
-import {anyDocPdfParser, type PdfMarkdownParser} from "src/core/anydoc/AnyDocPdfParser";
+import {anyDocParser, type PdfMarkdownParser} from "src/core/anydoc/AnyDocParser";
+import {getPdfSha256} from "src/core/anydoc/pdf/getPdfSha256";
+import {PdfPageSplitter} from "src/core/anydoc/pdf/PdfPageSplitter";
 import {JUST_BASH_USER_HOME} from "src/core/just-bash-wrapper/types";
-import {getPdfSha256} from "src/core/pdf/getPdfSha256";
-import {PdfPageSplitter} from "src/core/pdf/PdfPageSplitter";
 import {AnyDocParseResultStore} from "src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {WindowParentBridge} from "src/logseq/WindowParentBridge";
 import {z} from "zod";
@@ -42,7 +42,7 @@ export class ParsePdfTool extends BaseChatToolWithDefaultUI<ParsePdfArgs, ParseP
         "Read the returned files with the bash tool.";
     readonly parameters = parsePdfParameters;
 
-    constructor(private readonly pdfMarkdownParser: PdfMarkdownParser = anyDocPdfParser) {
+    constructor(private readonly pdfMarkdownParser: PdfMarkdownParser = anyDocParser) {
         super();
     }
 
@@ -77,7 +77,7 @@ export class ParsePdfTool extends BaseChatToolWithDefaultUI<ParsePdfArgs, ParseP
                 this.throwIfAborted(context?.abortSignal);
                 let markdown: string;
                 try {
-                    markdown = await this.pdfMarkdownParser.parsePage(page.bytes);
+                    markdown = await this.pdfMarkdownParser.parsePdfPage(page.bytes);
                 } catch (error) {
                     if (error instanceof DOMException && error.name === "AbortError") throw error;
                     failedPageCount++;

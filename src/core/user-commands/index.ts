@@ -1,7 +1,6 @@
 /**
- * This module owns the user-facing command system: registering command entry points in
- * Logseq chrome, and producing invocable command objects for the command palette and for
- * native Logseq routes.
+ * This module owns reusable user-command behavior and types. Logseq startup registration
+ * lives in `src/core/user-commands-init`.
  *
  * Not to be confused with `src/core/chat-interop` (one-operation ChatCommand transports)
  * or `src/core/logseq-reversible-transaction-tracker/commands` (reversible graph mutations).
@@ -13,8 +12,6 @@ export {
 } from "./classifyCommandInvocationContext";
 export {ADD_AS_ATTACHMENT_COMMAND_NAME} from "./constants";
 export {getEligibleCommandFiles} from "./getEligibleCommandFiles";
-export {initBuiltInCommandFiles} from "./initBuiltInCommandFiles";
-export {registerUserCommandEntryPoints} from "./registerCommandEntryPoints";
 export type {
     BlockCommandInvocationContext,
     BlockContextMenuInvokeCondition,

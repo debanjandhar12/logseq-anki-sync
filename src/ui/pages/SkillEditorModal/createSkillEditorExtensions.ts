@@ -2,9 +2,13 @@ import type {CompletionContext} from "@codemirror/autocomplete";
 import {autocompletion} from "@codemirror/autocomplete";
 import {lintGutter} from "@codemirror/lint";
 import type {Extension} from "@codemirror/state";
-import {splitFrontmatter, validateFrontmatterTemplate} from "src/core/frontmatter-parser";
 import {SKILL_FRONTMATTER_FIELDS, validateSkillFileContent} from "src/core/skill-parser";
-import {MUSTACHE_TEMPLATE_TAGS, MustacheView} from "src/core/template-engine";
+import {
+    MUSTACHE_TEMPLATE_TAGS,
+    MustacheView,
+    splitFrontmatter,
+    validateFrontmatterTemplate
+} from "src/core/template-engine";
 import {
     createFrontmatterCompletionSource,
     createFrontmatterLinter,

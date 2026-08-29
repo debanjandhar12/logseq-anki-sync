@@ -3,7 +3,7 @@ import {yamlFrontmatter} from "@codemirror/lang-yaml";
 import type {Language, LanguageSupport} from "@codemirror/language";
 import {type Diagnostic, linter} from "@codemirror/lint";
 import type {Extension} from "@codemirror/state";
-import {splitFrontmatter} from "src/core/frontmatter-parser";
+import {splitFrontmatter} from "src/core/template-engine";
 import {isInsideOpenTag} from "./mustache";
 
 export interface FrontmatterFieldDefinition {

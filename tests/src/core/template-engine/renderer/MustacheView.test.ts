@@ -1,10 +1,10 @@
 import {afterEach, describe, expect, test, vi} from "vitest";
-import {MustacheView} from "../../../../src/core/template-engine";
-import * as skillListModule from "../../../../src/core/template-engine/getModelInvokableSkillListString";
-import * as dateFormatModule from "../../../../src/core/template-engine/getUserPreferredDayjsFormat";
-import * as timeZoneModule from "../../../../src/core/template-engine/getUserTimeZone";
-import {LogseqEditor} from "../../../../src/logseq/LogseqEditor";
-import {LogseqSettingAccessor} from "../../../../src/logseq/LogseqSettingAccessor";
+import {MustacheView} from "../../../../../src/core/template-engine";
+import * as skillListModule from "../../../../../src/core/template-engine/renderer/getModelInvokableSkillListString";
+import * as dateFormatModule from "../../../../../src/core/template-engine/renderer/getUserPreferredDayjsFormat";
+import * as timeZoneModule from "../../../../../src/core/template-engine/renderer/getUserTimeZone";
+import {LogseqEditor} from "../../../../../src/logseq/LogseqEditor";
+import {LogseqSettingAccessor} from "../../../../../src/logseq/LogseqSettingAccessor";
 
 function mockMustacheViewDependencies() {
     vi.spyOn(LogseqSettingAccessor, "getPluginSettings").mockReturnValue({

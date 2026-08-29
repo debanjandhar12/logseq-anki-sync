@@ -11,7 +11,7 @@ vi.mock("../../../../src/ui/launchers/showAICommandPaletteModal", () => ({
     showAICommandPaletteModal: showPaletteMock
 }));
 
-import {registerUserCommandEntryPoints} from "../../../../src/core/user-commands/registerCommandEntryPoints";
+import {registerUserCommandEntryPoints} from "../../../../src/core/user-commands-init/registerCommandEntryPoints";
 
 function commandFile(
     invokeConditions: CommandInvokeCondition[],

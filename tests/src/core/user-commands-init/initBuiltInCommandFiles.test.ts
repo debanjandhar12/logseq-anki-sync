@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, test} from "vitest";
 import {CommandFileStore} from "../../../../src/core/stores/command-file-store/CommandFileStore";
-import {initBuiltInCommandFiles} from "../../../../src/core/user-commands/initBuiltInCommandFiles";
+import {initBuiltInCommandFiles} from "../../../../src/core/user-commands-init/initBuiltInCommandFiles";
 import {LogseqPluginStorageManager} from "../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
 

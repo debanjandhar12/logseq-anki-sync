@@ -6,6 +6,8 @@ describe("template-engine module", () => {
         expect(templateEngine.MUSTACHE_TEMPLATE_TAGS).toEqual(["<%", "%>"]);
         expect(templateEngine.MustacheView).toBeTypeOf("function");
         expect(templateEngine.parseTemplateString).toBeTypeOf("function");
+        expect(templateEngine.splitFrontmatter).toBeTypeOf("function");
+        expect(templateEngine.validateFrontmatterTemplate).toBeTypeOf("function");
         expect(templateEngine.validateMustacheTemplate).toBeTypeOf("function");
     });
 });

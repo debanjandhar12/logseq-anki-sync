@@ -1,8 +1,8 @@
 import matter from "gray-matter";
 import {COMMAND_FRONTMATTER_KEYS, parseCommandFile} from "src/core/command-parser";
-import {validateFrontmatterTemplate} from "src/core/frontmatter-parser";
 import type {CommandFileData} from "src/core/stores/command-file-store/types";
 import type {MustacheTemplateIssue} from "src/core/template-engine";
+import {validateFrontmatterTemplate} from "src/core/template-engine";
 import {getErrorMessage} from "../../SkillEditorModal/utils/getErrorMessage";
 import type {EditableCommandFile, OriginalBuiltInCommandFile} from "../types";
 import {getCommandFileDisplayName} from "./getCommandFileDisplayName";

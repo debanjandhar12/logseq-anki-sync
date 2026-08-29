@@ -7,8 +7,8 @@ import HEART_ICON from "../node_modules/@tabler/icons/icons/outline/heart.svg?ra
 import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?raw";
 import pkg from "./../package.json";
 import {initAIChat, initContextMenu, OpenAIChatCommand} from "./core/chat-interop";
-import {initBuiltInSkillFiles} from "./core/skills";
-import {initBuiltInCommandFiles, registerUserCommandEntryPoints} from "./core/user-commands";
+import {initBuiltInSkillFiles} from "./core/skill-init";
+import {initBuiltInCommandFiles, registerUserCommandEntryPoints} from "./core/user-commands-init";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";

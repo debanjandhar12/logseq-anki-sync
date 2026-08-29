@@ -13,9 +13,9 @@ vi.mock("@firecrawl/anydoc-wasm/anydoc_wasm_bg.wasm?url", () => ({
     default: "https://plugins.test/anydoc.wasm"
 }));
 
-import {AnyDocPdfParser} from "../../../../src/core/anydoc/AnyDocPdfParser";
+import {AnyDocParser} from "../../../../src/core/anydoc/AnyDocParser";
 
-describe("AnyDocPdfParser", () => {
+describe("AnyDocParser", () => {
     afterEach(() => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
@@ -27,11 +27,11 @@ describe("AnyDocPdfParser", () => {
         const wasmBytes = new Uint8Array([0, 97, 115, 109]);
         const fetchMock = vi.fn(async () => new Response(wasmBytes));
         vi.stubGlobal("fetch", fetchMock);
-        const parser = new AnyDocPdfParser();
+        const parser = new AnyDocParser();
 
         expect(fetchMock).not.toHaveBeenCalled();
-        await expect(parser.parsePage(new Uint8Array([1]))).resolves.toBe("parsed markdown");
-        await expect(parser.parsePage(new Uint8Array([2]))).resolves.toBe("parsed markdown");
+        await expect(parser.parsePdfPage(new Uint8Array([1]))).resolves.toBe("parsed markdown");
+        await expect(parser.parsePdfPage(new Uint8Array([2]))).resolves.toBe("parsed markdown");
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(anyDocMocks.initialize).toHaveBeenCalledTimes(1);
@@ -50,10 +50,10 @@ describe("AnyDocPdfParser", () => {
         anyDocMocks.initialize
             .mockRejectedValueOnce(new Error("init failed"))
             .mockResolvedValueOnce(undefined);
-        const parser = new AnyDocPdfParser();
+        const parser = new AnyDocParser();
 
-        await expect(parser.parsePage(new Uint8Array([1]))).rejects.toThrow("init failed");
-        await expect(parser.parsePage(new Uint8Array([1]))).resolves.toBe("parsed markdown");
+        await expect(parser.parsePdfPage(new Uint8Array([1]))).rejects.toThrow("init failed");
+        await expect(parser.parsePdfPage(new Uint8Array([1]))).resolves.toBe("parsed markdown");
         expect(anyDocMocks.initialize).toHaveBeenCalledTimes(2);
     });
 });

@@ -1,4 +1,4 @@
-import {SkillFileStore} from "../stores/skill-file-store/SkillFileStore";
+import {SkillFileStore} from "../../stores/skill-file-store/SkillFileStore";
 
 export async function getModelInvokableSkillListString(): Promise<string> {
     const skillFiles = await SkillFileStore.getAllSkillFile();

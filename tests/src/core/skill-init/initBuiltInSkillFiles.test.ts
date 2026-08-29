@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, test} from "vitest";
-import {initBuiltInSkillFiles} from "../../../../src/core/skills/initBuiltInSkillFiles";
+import {initBuiltInSkillFiles} from "../../../../src/core/skill-init/initBuiltInSkillFiles";
 import {SkillFileStore} from "../../../../src/core/stores/skill-file-store/SkillFileStore";
 import {LogseqPluginStorageManager} from "../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";

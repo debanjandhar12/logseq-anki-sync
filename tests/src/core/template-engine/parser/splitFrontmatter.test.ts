@@ -1,6 +1,6 @@
 import matter from "gray-matter";
 import {describe, expect, test} from "vitest";
-import {splitFrontmatter} from "../../../../src/core/frontmatter-parser";
+import {splitFrontmatter} from "../../../../../src/core/template-engine";
 
 describe("splitFrontmatter", () => {
     test.each([

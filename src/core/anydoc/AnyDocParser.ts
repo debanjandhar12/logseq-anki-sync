@@ -2,13 +2,13 @@ import initializeAnyDoc, {toMarkdownBytes} from "@firecrawl/anydoc-wasm";
 import anyDocWasmUrl from "@firecrawl/anydoc-wasm/anydoc_wasm_bg.wasm?url";
 
 export interface PdfMarkdownParser {
-    parsePage(pdfBytes: Uint8Array): Promise<string>;
+    parsePdfPage(pdfBytes: Uint8Array): Promise<string>;
 }
 
-export class AnyDocPdfParser implements PdfMarkdownParser {
+export class AnyDocParser implements PdfMarkdownParser {
     private initializationPromise: Promise<void> | null = null;
 
-    async parsePage(pdfBytes: Uint8Array): Promise<string> {
+    async parsePdfPage(pdfBytes: Uint8Array): Promise<string> {
         await this.initialize();
         return toMarkdownBytes(pdfBytes, "pdf");
     }
@@ -32,4 +32,4 @@ export class AnyDocPdfParser implements PdfMarkdownParser {
     }
 }
 
-export const anyDocPdfParser = new AnyDocPdfParser();
+export const anyDocParser = new AnyDocParser();

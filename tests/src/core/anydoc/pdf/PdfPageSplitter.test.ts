@@ -1,6 +1,6 @@
 import {PDFDocument} from "pdf-lib";
 import {describe, expect, test} from "vitest";
-import {PdfPageSplitter} from "../../../../src/core/pdf/PdfPageSplitter";
+import {PdfPageSplitter} from "../../../../../src/core/anydoc/pdf/PdfPageSplitter";
 
 async function createPdf(pageCount: number): Promise<Uint8Array> {
     const pdf = await PDFDocument.create();
