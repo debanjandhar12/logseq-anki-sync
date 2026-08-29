@@ -2,10 +2,14 @@ import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {LogseqSettingAccessor} from "../../src/logseq/LogseqSettingAccessor";
 
-const {showSkillEditorModalMock} = vi.hoisted(() => ({
+const {showCommandEditorModalMock, showSkillEditorModalMock} = vi.hoisted(() => ({
+    showCommandEditorModalMock: vi.fn<() => Promise<boolean | null>>(),
     showSkillEditorModalMock: vi.fn<() => Promise<boolean | null>>()
 }));
 
+vi.mock("../../src/ui/launchers/showCommandEditorModal", () => ({
+    showCommandEditorModal: showCommandEditorModalMock
+}));
 vi.mock("../../src/ui/launchers/showSkillEditorModal", () => ({
     showSkillEditorModal: showSkillEditorModalMock
 }));
@@ -23,6 +27,7 @@ describe("addSettingsToLogseq", () => {
     let useSettingsSchemaSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
+        showCommandEditorModalMock.mockResolvedValue(null);
         showSkillEditorModalMock.mockResolvedValue(null);
         vi.stubGlobal("logseq", {
             baseInfo: {id: "test-plugin"},
@@ -42,6 +47,7 @@ describe("addSettingsToLogseq", () => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
         provideModelMock.mockReset();
+        showCommandEditorModalMock.mockReset();
         showSkillEditorModalMock.mockReset();
     });
 
@@ -60,6 +66,9 @@ describe("addSettingsToLogseq", () => {
             (setting) => setting.key === "mainSettingsHeading"
         );
         const skillEditorButton = settingsSchema[mainHeadingIndex + 1] as SettingsButtonSchemaDesc;
+        const commandEditorButton = settingsSchema[
+            mainHeadingIndex + 2
+        ] as SettingsButtonSchemaDesc;
 
         expect(settingsSchema[mainHeadingIndex]).toMatchObject({
             title: "💬 Main",
@@ -74,12 +83,23 @@ describe("addSettingsToLogseq", () => {
             buttonText: "Open Skill Editor",
             buttonAction: "openSkillEditorFromSettings"
         });
-        expect(settingsSchema[mainHeadingIndex + 2].key).toBe("globalAgentInstruction");
-        expect(settingsSchema[mainHeadingIndex + 3].key).toBe("webToolsHeading");
+        expect(commandEditorButton).toMatchObject({
+            key: "openCommandEditorButton",
+            type: "button",
+            default: null,
+            title: "Command Editor",
+            buttonText: "Open Command Editor",
+            buttonAction: "openCommandEditorFromSettings"
+        });
+        expect(settingsSchema[mainHeadingIndex + 3].key).toBe("globalAgentInstruction");
+        expect(settingsSchema[mainHeadingIndex + 4].key).toBe("webToolsHeading");
 
         expect(model).toHaveProperty("openSkillEditorFromSettings");
         expect(model.openSkillEditorFromSettings()).toBeUndefined();
         expect(showSkillEditorModalMock).toHaveBeenCalledOnce();
+        expect(model).toHaveProperty("openCommandEditorFromSettings");
+        expect(model.openCommandEditorFromSettings()).toBeUndefined();
+        expect(showCommandEditorModalMock).toHaveBeenCalledOnce();
     });
 
     test("consumes a rejected Skill Editor launch", async () => {
@@ -91,5 +111,16 @@ describe("addSettingsToLogseq", () => {
         await Promise.resolve();
 
         expect(showSkillEditorModalMock).toHaveBeenCalledOnce();
+    });
+
+    test("consumes a rejected Command Editor launch", async () => {
+        showCommandEditorModalMock.mockRejectedValue(new Error("Failed to open"));
+        await addSettingsToLogseq();
+
+        const model = provideModelMock.mock.calls[0][0];
+        expect(model.openCommandEditorFromSettings()).toBeUndefined();
+        await Promise.resolve();
+
+        expect(showCommandEditorModalMock).toHaveBeenCalledOnce();
     });
 });

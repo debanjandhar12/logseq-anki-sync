@@ -4,9 +4,11 @@ import {DONATE_ICON, LogseqModelAction} from "./constants";
 import {ProviderEnum, type ReasoningEffort, WebToolsProviderEnum} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
+import {showCommandEditorModal} from "./ui/launchers/showCommandEditorModal";
 import {showSkillEditorModal} from "./ui/launchers/showSkillEditorModal";
 
 // Remove when @logseq/libs includes the settings button schema.
+// Added temporarily until typing based on https://github.com/logseq/logseq/pull/13105 is released.
 type SettingsButtonSchemaDesc = Omit<SettingSchemaDesc, "type"> & {
     type: "button";
     buttonText: string;
@@ -35,6 +37,9 @@ export const addSettingsToLogseq = async () => {
     logseq.provideModel({
         [LogseqModelAction.OPEN_SKILL_EDITOR_SETTINGS]: () => {
             void showSkillEditorModal().catch(() => undefined);
+        },
+        [LogseqModelAction.OPEN_COMMAND_EDITOR_SETTINGS]: () => {
+            void showCommandEditorModal().catch(() => undefined);
         }
     });
 
@@ -89,6 +94,15 @@ export const addSettingsToLogseq = async () => {
             description: "",
             type: "heading",
             default: null
+        },
+        {
+            key: "openCommandEditorButton",
+            type: "button",
+            default: null,
+            title: "Command Editor",
+            description: "Create and manage reusable AI commands.",
+            buttonText: "Open Command Editor",
+            buttonAction: LogseqModelAction.OPEN_COMMAND_EDITOR_SETTINGS
         },
         {
             key: "openSkillEditorButton",
