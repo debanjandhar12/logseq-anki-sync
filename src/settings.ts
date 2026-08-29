@@ -116,6 +116,7 @@ export const addSettingsToLogseq = async () => {
         {
             key: "globalAgentInstruction",
             type: "string",
+            inputAs: "textarea",
             default: "",
             title: "Global Agent Instruction",
             description:
