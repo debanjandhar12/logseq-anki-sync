@@ -1,5 +1,4 @@
 import {LogseqModelAction} from "src/constants";
-import {AddAttachmentCommand} from "src/core/chat-interop/commands/AddAttachmentCommand";
 import {OpenAIChatCommand} from "src/core/chat-interop/commands/OpenAIChatCommand";
 
 /**
@@ -17,17 +16,4 @@ export const initContextMenu = async () => {
         },
         () => new OpenAIChatCommand().execute()
     );
-    const addBlockToAIChat = async (e) => {
-        let uuid = e.uuid;
-        if (!uuid && e.page) {
-            const page = await logseq.Editor.getPage(e.page);
-            uuid = page.uuid;
-        }
-        if (!uuid) throw new Error("addBlockToAIChat: Could not find block UUID");
-        const command = new AddAttachmentCommand(uuid);
-        await command.execute();
-        await new OpenAIChatCommand().execute();
-    };
-    logseq.Editor.registerBlockContextMenuItem("Add to AI Chat", addBlockToAIChat);
-    logseq.App.registerPageMenuItem("Add to AI Chat", addBlockToAIChat);
 };

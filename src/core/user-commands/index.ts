@@ -11,7 +11,10 @@ export {
     classifyBlockCommandInvocationContext,
     classifyPageCommandInvocationContext
 } from "./classifyCommandInvocationContext";
-export {initBuiltInCommandFiles} from "./initBuiltInCommandFiles";
+export {ADD_AS_ATTACHMENT_COMMAND_NAME} from "./constants";
+export {findUserCommand, getUserCommands} from "./getUserCommands";
+export {initUserCommands} from "./initUserCommands";
+export {registerNativeUserCommands} from "./registerCommandEntryPoints";
 export type {
     BlockCommandInvocationContext,
     BlockContextMenuInvokeCondition,
@@ -20,5 +23,6 @@ export type {
     ContextMenuCommandInvocationContext,
     PageCommandInvocationContext,
     PageContextMenuInvokeCondition,
-    SlashCommandInvocationContext
+    SlashCommandInvocationContext,
+    UserCommand
 } from "./types";

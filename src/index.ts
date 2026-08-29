@@ -12,7 +12,7 @@ import {
     initContextMenu,
     OpenAIChatCommand
 } from "./core/chat-interop";
-import {initBuiltInCommandFiles} from "./core/user-commands";
+import {initUserCommands} from "./core/user-commands";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
@@ -54,7 +54,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     LogseqAppListeners.init();
     UI.init();
     await initBuiltInSkillFiles();
-    await initBuiltInCommandFiles();
+    await initUserCommands();
     await initContextMenu();
 
     // The lines below are needed for vite build and dev to work properly.

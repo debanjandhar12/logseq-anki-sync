@@ -10,6 +10,7 @@ export interface UseModalOptions<T = any> {
     enableEscapeKey?: boolean;
     enableEnterKey?: boolean;
     enableOutsideClickClose?: boolean;
+    enableArrowKeyScroll?: boolean;
     modalId?: string | null;
 }
 
@@ -36,6 +37,7 @@ export function useModal<T = any>(
         enableEscapeKey = true,
         enableEnterKey = false,
         enableOutsideClickClose = true,
+        enableArrowKeyScroll = true,
         modalId
     } = options;
 
@@ -107,7 +109,7 @@ export function useModal<T = any>(
                 }
                 e.preventDefault();
                 e.stopImmediatePropagation();
-            } else if (e.key === "ArrowDown") {
+            } else if (enableArrowKeyScroll && e.key === "ArrowDown") {
                 if (
                     document.activeElement?.tagName === "INPUT" ||
                     document.activeElement?.tagName === "TEXTAREA"
@@ -127,7 +129,7 @@ export function useModal<T = any>(
                     e.preventDefault();
                     e.stopImmediatePropagation();
                 }
-            } else if (e.key === "ArrowUp") {
+            } else if (enableArrowKeyScroll && e.key === "ArrowUp") {
                 if (
                     document.activeElement?.tagName === "INPUT" ||
                     document.activeElement?.tagName === "TEXTAREA"
@@ -154,7 +156,15 @@ export function useModal<T = any>(
         return () => {
             WindowBridge.removeDocumentEventListener("keydown", onKeydown);
         };
-    }, [open, handleConfirm, handleCancel, enableEscapeKey, enableEnterKey, modalId]);
+    }, [
+        open,
+        handleConfirm,
+        handleCancel,
+        enableEscapeKey,
+        enableEnterKey,
+        enableArrowKeyScroll,
+        modalId
+    ]);
 
     // Handle click outside to close
     React.useEffect(() => {

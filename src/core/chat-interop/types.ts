@@ -2,7 +2,8 @@ export interface ChatCommand {
     execute(): Promise<void>;
 }
 
-export interface ChatRuntimeCommand {
-    type: string;
-    payload?: any;
-}
+export type ChatRuntimeCommand =
+    | {type: "new-thread"}
+    | {type: "clear-composer"}
+    | {type: "add-attachment"; payload: {uuid: string}}
+    | {type: "set-composer-text"; payload: {text: string}};

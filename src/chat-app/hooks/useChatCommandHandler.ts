@@ -4,7 +4,9 @@ import type {ChatRuntimeCommand} from "../../core/chat-interop";
 import {
     AddAttachmentCommand,
     ChatInteropCommandQueue,
-    NewThreadCommand
+    ClearComposerCommand,
+    NewThreadCommand,
+    SetComposerTextCommand
 } from "../../core/chat-interop";
 import {createLogger, LoggerCategory} from "../../logger";
 import {createLogseqAttachmentFromUuid} from "../runtime/LogseqAttachmentAdapter";
@@ -29,13 +31,20 @@ async function executeRuntimeCommand(
             return;
         }
 
-        if (command.type === AddAttachmentCommand.TYPE) {
-            const uuid = command.payload?.uuid;
-            if (typeof uuid !== "string") {
-                throw new Error("Cannot add a Logseq attachment without a UUID.");
-            }
+        if (command.type === ClearComposerCommand.TYPE) {
+            aui.composer().reset();
+            return;
+        }
 
-            await aui.composer().addAttachment(await createLogseqAttachmentFromUuid(uuid));
+        if (command.type === AddAttachmentCommand.TYPE) {
+            await aui
+                .composer()
+                .addAttachment(await createLogseqAttachmentFromUuid(command.payload.uuid));
+            return;
+        }
+
+        if (command.type === SetComposerTextCommand.TYPE) {
+            aui.composer().setText(command.payload.text);
         }
     } catch (error) {
         logger.error("Failed to execute AI Chat runtime command", error);

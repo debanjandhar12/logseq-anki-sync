@@ -1,6 +1,7 @@
 // Base modal component
 
 export {showAIChatModal} from "./launchers/showAIChatModal";
+export {showAICommandPaletteModal} from "./launchers/showAICommandPaletteModal";
 export type {ButtonModalButton} from "./launchers/showButtonModal";
 export {showButtonModal} from "./launchers/showButtonModal";
 export {showCommandEditorModal} from "./launchers/showCommandEditorModal";
@@ -36,6 +37,8 @@ export {createModalPromise} from "./modals/utils/createModalPromise";
 export {ActionNotification} from "./notifications/ActionNotification";
 export type {AIChatModalProps} from "./pages/AIChatModal";
 export {AIChatModalComponent} from "./pages/AIChatModal";
+export type {AICommandPaletteModalProps} from "./pages/AICommandPaletteModal";
+export {AICommandPaletteModalComponent} from "./pages/AICommandPaletteModal";
 export type {CommandEditorModalProps} from "./pages/CommandEditorModal";
 export {CommandEditorModalComponent} from "./pages/CommandEditorModal";
 export type {SkillEditorModalProps} from "./pages/SkillEditorModal";

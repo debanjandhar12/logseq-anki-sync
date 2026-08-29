@@ -40,3 +40,10 @@ export type CommandInvocationContext =
     | ContextMenuCommandInvocationContext
     | SlashCommandInvocationContext
     | CommandCenterInvocationContext;
+
+/** A stored command bound to the invocation context against which it will run. */
+export interface UserCommand {
+    name: string;
+    builtInCommand: boolean;
+    execute(): Promise<void>;
+}

@@ -3,8 +3,10 @@
  */
 
 export {AddAttachmentCommand} from "./commands/AddAttachmentCommand";
+export {ClearComposerCommand} from "./commands/ClearComposerCommand";
 export {NewThreadCommand} from "./commands/NewThreadCommand";
 export {OpenAIChatCommand} from "./commands/OpenAIChatCommand";
+export {SetComposerTextCommand} from "./commands/SetComposerTextCommand";
 export {initAIChat} from "./initAIChat";
 export {initBuiltInSkillFiles} from "./initBuiltInSkillFiles";
 export {initContextMenu} from "./initContextMenu";
