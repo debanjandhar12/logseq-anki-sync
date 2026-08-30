@@ -1,7 +1,7 @@
 import AsyncLock from "async-lock";
 import type {OpenAIOAuthTokens, TokenStore} from "openai-oauth-ai-provider/core";
 import {ProviderConfigRepository} from "../provider-config/ProviderConfigRepository";
-import {decodeCodexCredentials} from "./CodexCredentialCodec";
+import {decodeCodexCredentials, normalizeCodexTokens} from "./CodexCredentialCodec";
 
 export class CodexProviderTokenStore implements TokenStore {
     private readonly lock = new AsyncLock();
@@ -23,7 +23,7 @@ export class CodexProviderTokenStore implements TokenStore {
         this.expectedCredentials = await ProviderConfigRepository.updateCodexCredentials(
             this.providerId,
             this.expectedCredentials,
-            tokens
+            normalizeCodexTokens(tokens)
         );
     }
 
