@@ -32,13 +32,18 @@ async function fetchJson(url: string, headers: HeadersInit): Promise<unknown> {
     }
 }
 
-export async function fetchProviderModels(config: ProviderConfig): Promise<string[]> {
+export async function fetchProviderModels(
+    config: ProviderConfig,
+    onCodexCredentialsUpdated?: (encodedCredentials: string) => void
+): Promise<string[]> {
     validateProviderConnection(config);
     const baseUrl = validateProviderBaseUrl(config.baseUrl);
 
     if (config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION) {
-        const models =
-            await CodexSessionManager.getConfigSession(config).codexClient.listCodexModels();
+        const models = await CodexSessionManager.getConfigSession(
+            config,
+            onCodexCredentialsUpdated
+        ).codexClient.listCodexModels();
         return uniqueModelIds(models.map((model) => model.slug));
     }
 

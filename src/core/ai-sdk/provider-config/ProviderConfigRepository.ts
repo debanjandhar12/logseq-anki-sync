@@ -33,6 +33,9 @@ class ProviderConfigRepositoryImpl {
     ): Promise<void> {
         await this.lock.acquire("provider-configs", async () => {
             const settings = LogseqSettingAccessor.getPluginSettings() as ProviderSettings;
+            const currentConfigs = settings.providerConfigSetting
+                ? decodeProviderConfigs(settings.providerConfigSetting)
+                : [];
             const selectedModelId = reconcileSelectedModelId(
                 settings.selectedModelId,
                 configs,
@@ -42,6 +45,7 @@ class ProviderConfigRepositoryImpl {
                 providerConfigSetting: encodeProviderConfigs(configs),
                 selectedModelId
             });
+            this.publishChangedCodexCredentials(currentConfigs, configs);
         });
     }
 
@@ -80,7 +84,31 @@ class ProviderConfigRepositoryImpl {
                 providerConfigSetting: encodeProviderConfigs(configs),
                 selectedModelId
             });
+            this.publishChangedCodexCredentials(currentConfigs, configs);
         });
+    }
+
+    private publishChangedCodexCredentials(
+        previousConfigs: ProviderConfig[],
+        nextConfigs: ProviderConfig[]
+    ): void {
+        const previousById = new Map<string, string>(
+            previousConfigs
+                .filter((config) => config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION)
+                .map((config) => [config.id, config.apiKey])
+        );
+        const nextById = new Map<string, string>(
+            nextConfigs
+                .filter((config) => config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION)
+                .map((config) => [config.id, config.apiKey])
+        );
+        for (const providerId of new Set([...previousById.keys(), ...nextById.keys()])) {
+            const encodedCredentials = nextById.get(providerId) ?? "";
+            if (previousById.get(providerId) === encodedCredentials) continue;
+            for (const listener of this.credentialListeners) {
+                listener({providerId, encodedCredentials});
+            }
+        }
     }
 
     async updateCodexCredentials(

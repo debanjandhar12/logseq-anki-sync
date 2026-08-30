@@ -62,7 +62,14 @@ export const providerConfigSchema = z
                 message: "Provider API key is required"
             });
         }
-    });
+    })
+    .transform((config) => ({
+        ...config,
+        apiKey:
+            config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION
+                ? config.apiKey
+                : config.apiKey.trim()
+    }));
 
 export const providerConfigsSchema = z
     .array(providerConfigSchema)

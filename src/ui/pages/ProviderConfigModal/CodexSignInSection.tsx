@@ -135,21 +135,31 @@ export const CodexSignInSection: React.FC<CodexSignInSectionProps> = ({
 
     return (
         <div className="space-y-2 rounded-md border border-border p-3">
-            <LogseqButton
-                icon={OPENAI_ICON}
-                isFullWidth
-                color="primary"
-                size="lg"
-                disabled={disabled || state.status === "starting"}
-                onClick={signIn}>
-                {state.status === "starting"
-                    ? "Starting Codex sign-in..."
-                    : "Sign in with Codex Subscription"}
-            </LogseqButton>
-            {state.status === "starting" && (
-                <div role="status" className="text-center text-sm opacity-80">
-                    Requesting a device code...
+            {state.status === "starting" ? (
+                <div role="status" aria-busy="true" className="space-y-2 text-center">
+                    <div className="flex items-center justify-center gap-2 text-sm opacity-80">
+                        <LoaderCircle
+                            className="animate-spin motion-reduce:animate-none"
+                            size={18}
+                        />
+                        Requesting a device code...
+                    </div>
+                    <div className="flex justify-center">
+                        <LogseqButton color="outline-link" size="sm" onClick={cancel}>
+                            <X size={15} /> Cancel sign-in
+                        </LogseqButton>
+                    </div>
                 </div>
+            ) : (
+                <LogseqButton
+                    icon={OPENAI_ICON}
+                    isFullWidth
+                    color="primary"
+                    size="lg"
+                    disabled={disabled}
+                    onClick={signIn}>
+                    Sign in with Codex Subscription
+                </LogseqButton>
             )}
             {state.status === "error" && (
                 <div role="alert" className="text-center text-sm text-red-600">

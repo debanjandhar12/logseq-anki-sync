@@ -4,7 +4,10 @@ import {createLLMModel} from "../getLLMModel";
 import {type ProviderConfig, ProviderTypeEnum} from "../types";
 import {validateProviderConnection} from "./validateProviderConfig";
 
-export async function testProviderConfig(config: ProviderConfig): Promise<void> {
+export async function testProviderConfig(
+    config: ProviderConfig,
+    onCodexCredentialsUpdated?: (encodedCredentials: string) => void
+): Promise<void> {
     validateProviderConnection(config);
     const model = config.models.find((candidate) => candidate.enabled && candidate.id.trim());
     if (!model) throw new Error("At least one enabled model is required");
@@ -14,7 +17,10 @@ export async function testProviderConfig(config: ProviderConfig): Promise<void> 
     try {
         const languageModel =
             config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION
-                ? CodexSessionManager.getConfigSession(config).aiProvider.responses(model.id.trim())
+                ? CodexSessionManager.getConfigSession(
+                      config,
+                      onCodexCredentialsUpdated
+                  ).aiProvider.responses(model.id.trim())
                 : createLLMModel({config, rawModelId: model.id.trim()});
         await generateText({
             model: languageModel,

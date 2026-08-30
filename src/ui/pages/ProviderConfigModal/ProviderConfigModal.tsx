@@ -227,7 +227,13 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
         }
         setFetchingEditorKey(activeConfig.editorKey);
         try {
-            const models = await discoverProviderModels(activeConfig);
+            const models = await discoverProviderModels(activeConfig, (encodedCredentials) =>
+                updateConfig(activeConfig.editorKey, (config) => ({
+                    ...config,
+                    apiKey: encodedCredentials,
+                    codexCredentialIntent: "replace"
+                }))
+            );
             updateConfig(activeConfig.editorKey, (config) => ({...config, models}));
             await logseq.UI.showMsg("Provider models fetched successfully.", "success");
         } catch {
@@ -246,14 +252,20 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
         }
         setTestingEditorKey(activeConfig.editorKey);
         try {
-            await verifyProviderConfig(activeConfig);
+            await verifyProviderConfig(activeConfig, (encodedCredentials) =>
+                updateConfig(activeConfig.editorKey, (config) => ({
+                    ...config,
+                    apiKey: encodedCredentials,
+                    codexCredentialIntent: "replace"
+                }))
+            );
             await logseq.UI.showMsg("Provider connection test succeeded.", "success");
         } catch {
             await logseq.UI.showMsg("Provider connection test failed.", "error");
         } finally {
             setTestingEditorKey(null);
         }
-    }, [activeConfig, getActionValidationError, isBusy]);
+    }, [activeConfig, getActionValidationError, isBusy, updateConfig]);
 
     const focusIssue = React.useCallback((issue: ProviderConfigValidationIssue) => {
         setTimeout(() => {

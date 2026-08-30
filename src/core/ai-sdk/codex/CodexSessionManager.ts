@@ -34,7 +34,10 @@ function createSession(
 }
 
 export const CodexSessionManager = {
-    getConfigSession(config: ProviderConfig): CodexSession {
+    getConfigSession(
+        config: ProviderConfig,
+        onDraftCredentialsUpdated?: (encodedCredentials: string) => void
+    ): CodexSession {
         validateCodexAuthentication(config);
         const persisted = ProviderConfigRepository.read().find(
             (candidate) =>
@@ -42,7 +45,9 @@ export const CodexSessionManager = {
                 candidate.type === config.type &&
                 candidate.apiKey === config.apiKey
         );
-        return persisted ? this.getRuntimeSession(config) : this.createDraftSession(config.apiKey);
+        return persisted
+            ? this.getRuntimeSession(config)
+            : this.createDraftSession(config.apiKey, onDraftCredentialsUpdated);
     },
 
     getRuntimeSession(config: ProviderConfig): CodexSession {

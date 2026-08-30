@@ -25,14 +25,18 @@ export function loadProviderConfigs(): ProviderConfig[] {
 }
 
 export async function discoverProviderModels(
-    config: ProviderConfig
+    config: ProviderConfig,
+    onCodexCredentialsUpdated?: (encodedCredentials: string) => void
 ): Promise<ProviderModelConfig[]> {
-    const fetchedModels = await fetchProviderModels(config);
+    const fetchedModels = await fetchProviderModels(config, onCodexCredentialsUpdated);
     return mergeProviderModels(config.models, fetchedModels);
 }
 
-export async function verifyProviderConfig(config: ProviderConfig): Promise<void> {
-    await testProviderConfig(config);
+export async function verifyProviderConfig(
+    config: ProviderConfig,
+    onCodexCredentialsUpdated?: (encodedCredentials: string) => void
+): Promise<void> {
+    await testProviderConfig(config, onCodexCredentialsUpdated);
 }
 
 export async function saveProviderConfigs(
