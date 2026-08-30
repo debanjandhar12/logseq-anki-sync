@@ -236,8 +236,9 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
             );
             updateConfig(activeConfig.editorKey, (config) => ({...config, models}));
             await logseq.UI.showMsg("Provider models fetched successfully.", "success");
-        } catch {
-            await logseq.UI.showMsg("Failed to fetch models from the provider.", "error");
+        } catch (error) {
+            const message = getErrorMessage(error);
+            await logseq.UI.showMsg(`Failed to fetch provider models: ${message}`, "error");
         } finally {
             setFetchingEditorKey(null);
         }
@@ -260,8 +261,9 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                 }))
             );
             await logseq.UI.showMsg("Provider connection test succeeded.", "success");
-        } catch {
-            await logseq.UI.showMsg("Provider connection test failed.", "error");
+        } catch (error) {
+            const message = getErrorMessage(error);
+            await logseq.UI.showMsg(`Provider connection test failed: ${message}`, "error");
         } finally {
             setTestingEditorKey(null);
         }

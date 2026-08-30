@@ -27,6 +27,16 @@ export default defineConfig(({mode}) => {
                 src: path.resolve(__dirname, "./src")
             }
         },
+        optimizeDeps: {
+            // This package statically imports its Node file store. Keep its entry points out of
+            // the dev pre-bundle so openAIOAuthBrowserPlugin can replace that internal module.
+            exclude: [
+                "openai-oauth-ai-provider",
+                "openai-oauth-ai-provider/ai-sdk",
+                "openai-oauth-ai-provider/codex",
+                "openai-oauth-ai-provider/core"
+            ]
+        },
         plugins: [
             tailwindcss(),
             inlineSkillFilePlugin(),
