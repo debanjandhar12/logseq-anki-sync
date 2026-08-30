@@ -13,6 +13,7 @@ export const LOGSEQ_DB_TRANSACTION_COMMAND_DELAY_MS = 320;
 
 export enum LogseqModelAction {
     SHOW_AI_CHAT = "showAIChat",
+    OPEN_PROVIDER_CONFIG_SETTINGS = "openProviderConfigFromSettings",
     OPEN_SKILL_EDITOR_SETTINGS = "openSkillEditorFromSettings",
     OPEN_COMMAND_EDITOR_SETTINGS = "openCommandEditorFromSettings"
 }

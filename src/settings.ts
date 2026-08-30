@@ -1,10 +1,12 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {DONATE_ICON, LogseqModelAction} from "./constants";
-import {ProviderEnum, type ReasoningEffort, WebToolsProviderEnum} from "./core/ai-sdk/types";
+import {encodeProviderConfigs} from "./core/ai-sdk/provider-config/providerConfigCodec";
+import {type ReasoningEffort, WebToolsProviderEnum} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 import {showCommandEditorModal} from "./ui/launchers/showCommandEditorModal";
+import {showProviderConfigModal} from "./ui/launchers/showProviderConfigModal";
 import {showSkillEditorModal} from "./ui/launchers/showSkillEditorModal";
 
 // Remove when @logseq/libs includes the settings button schema.
@@ -18,10 +20,7 @@ type SettingsButtonSchemaDesc = Omit<SettingSchemaDesc, "type"> & {
 // Type definitions for plugin settings
 export interface PluginSettings {
     disabled: boolean;
-    llmProvider?: ProviderEnum;
-    llmAPIUrl?: string;
-    llmAPIKey?: string;
-    llmAPIModelList?: string;
+    providerConfigSetting?: string;
     globalAgentInstruction?: string;
     openChatInSidebar?: boolean;
     webToolsProvider?: WebToolsProviderEnum;
@@ -35,6 +34,9 @@ export interface PluginSettings {
 
 export const addSettingsToLogseq = async () => {
     logseq.provideModel({
+        [LogseqModelAction.OPEN_PROVIDER_CONFIG_SETTINGS]: () => {
+            void showProviderConfigModal().catch(() => undefined);
+        },
         [LogseqModelAction.OPEN_SKILL_EDITOR_SETTINGS]: () => {
             void showSkillEditorModal().catch(() => undefined);
         },
@@ -59,34 +61,20 @@ export const addSettingsToLogseq = async () => {
             default: null
         },
         {
-            key: "llmProvider",
-            type: "enum",
-            default: Object.values(ProviderEnum)[0],
-            title: "LLM Provider type",
-            description: "Chose a supported provider type from the list.",
-            enumChoices: Object.values(ProviderEnum),
-            enumPicker: "select"
+            key: "openProviderConfigButton",
+            type: "button",
+            default: null,
+            title: "Provider Configurations",
+            description: "Create and manage LLM provider configurations.",
+            buttonText: "Open Provider Configurations",
+            buttonAction: LogseqModelAction.OPEN_PROVIDER_CONFIG_SETTINGS
         },
         {
-            key: "llmAPIUrl",
+            key: "providerConfigSetting",
             type: "string",
-            default: "https://opencode.ai/zen/v1",
-            title: "LLM API Url",
-            description: "The base URL for the LLM API provider (e.g. https://opencode.ai/zen/v1)."
-        },
-        {
-            key: "llmAPIKey",
-            type: "string",
-            default: "",
-            title: "LLM API Key",
-            description: "The API key for the LLM provider"
-        },
-        {
-            key: "llmAPIModelList",
-            type: "string",
-            default: "big-pickle",
-            title: "LLM Model List",
-            description: "Comma-separated model identifiers. For example: big-pickle,glm-5.2"
+            default: encodeProviderConfigs([]),
+            title: "Provider Configurations Storage",
+            description: "Internal storage for provider configurations."
         },
         {
             key: "mainSettingsHeading",
@@ -186,21 +174,6 @@ export const addSettingsToLogseq = async () => {
             if (!_.isEqual(newSettings.debug, oldSettings.debug)) {
                 updateLoggerLevels();
             }
-
-            // Model Native only works with OpenAI or Google providers
-            if (
-                newSettings.webToolsProvider === WebToolsProviderEnum.MODEL_NATIVE &&
-                newSettings.llmProvider !== ProviderEnum.OPENAI &&
-                newSettings.llmProvider !== ProviderEnum.GOOGLE
-            ) {
-                logseq.UI.showMsg(
-                    "Model Native web search is only available with OpenAI or Google providers. Please change the LLM Provider or Web Search Provider.",
-                    "error"
-                );
-                LogseqSettingAccessor.updatePluginSettings({
-                    webToolsProvider: WebToolsProviderEnum.DISABLED
-                });
-            }
         }
     );
     logseq.provideStyle(`
@@ -211,33 +184,15 @@ export const addSettingsToLogseq = async () => {
         [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="donationHeading"].heading-item {
             border: none;
         }
+
+        [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="providerConfigSetting"] {
+            display: none;
+        }
     `);
 
     const applySettingsVisibility = (settings: PluginSettings) => {
         const {id} = logseq.baseInfo;
-        const showLlmApiUrl = settings.llmProvider === ProviderEnum.OPENAI_COMPATIBLE;
         const showJinaApiKey = settings.webToolsProvider === WebToolsProviderEnum.JINA;
-
-        logseq.provideStyle({
-            key: "hide-llm-api-url",
-            style: showLlmApiUrl
-                ? `
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llmAPIUrl"] {
-                    display: block !important;
-                }
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llmAPIModelList"] {
-                    display: block !important;
-                }
-            `
-                : `
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llmAPIUrl"] {
-                    display: none;
-                }
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="llmAPIModelList"] {
-                    display: none;
-                }
-            `
-        });
 
         logseq.provideStyle({
             key: "hide-jina-api-key",

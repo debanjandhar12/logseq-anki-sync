@@ -1,17 +1,23 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
+import {encodeProviderConfigs} from "../../src/core/ai-sdk/provider-config/providerConfigCodec";
 import {LogseqSettingAccessor} from "../../src/logseq/LogseqSettingAccessor";
 
-const {showCommandEditorModalMock, showSkillEditorModalMock} = vi.hoisted(() => ({
-    showCommandEditorModalMock: vi.fn<() => Promise<boolean | null>>(),
-    showSkillEditorModalMock: vi.fn<() => Promise<boolean | null>>()
-}));
+const {showCommandEditorModalMock, showProviderConfigModalMock, showSkillEditorModalMock} =
+    vi.hoisted(() => ({
+        showCommandEditorModalMock: vi.fn<() => Promise<boolean | null>>(),
+        showProviderConfigModalMock: vi.fn<() => Promise<boolean | null>>(),
+        showSkillEditorModalMock: vi.fn<() => Promise<boolean | null>>()
+    }));
 
 vi.mock("../../src/ui/launchers/showCommandEditorModal", () => ({
     showCommandEditorModal: showCommandEditorModalMock
 }));
 vi.mock("../../src/ui/launchers/showSkillEditorModal", () => ({
     showSkillEditorModal: showSkillEditorModalMock
+}));
+vi.mock("../../src/ui/launchers/showProviderConfigModal", () => ({
+    showProviderConfigModal: showProviderConfigModalMock
 }));
 
 import {addSettingsToLogseq} from "../../src/settings";
@@ -28,6 +34,7 @@ describe("addSettingsToLogseq", () => {
 
     beforeEach(() => {
         showCommandEditorModalMock.mockResolvedValue(null);
+        showProviderConfigModalMock.mockResolvedValue(null);
         showSkillEditorModalMock.mockResolvedValue(null);
         vi.stubGlobal("logseq", {
             baseInfo: {id: "test-plugin"},
@@ -48,10 +55,11 @@ describe("addSettingsToLogseq", () => {
         vi.unstubAllGlobals();
         provideModelMock.mockReset();
         showCommandEditorModalMock.mockReset();
+        showProviderConfigModalMock.mockReset();
         showSkillEditorModalMock.mockReset();
     });
 
-    test("registers the Skill Editor action and settings button", async () => {
+    test("registers editor actions and settings buttons before the schema", async () => {
         await addSettingsToLogseq();
 
         expect(provideModelMock.mock.invocationCallOrder[0]).toBeLessThan(
@@ -65,6 +73,15 @@ describe("addSettingsToLogseq", () => {
         const mainHeadingIndex = settingsSchema.findIndex(
             (setting) => setting.key === "mainSettingsHeading"
         );
+        const llmHeadingIndex = settingsSchema.findIndex(
+            (setting) => setting.key === "llmSettingsHeading"
+        );
+        const providerConfigButton = settingsSchema.find(
+            (setting) => setting.key === "openProviderConfigButton"
+        ) as SettingsButtonSchemaDesc;
+        const providerConfigSetting = settingsSchema.find(
+            (setting) => setting.key === "providerConfigSetting"
+        );
         const commandEditorButton = settingsSchema.find(
             (setting) => setting.key === "openCommandEditorButton"
         ) as SettingsButtonSchemaDesc;
@@ -77,6 +94,24 @@ describe("addSettingsToLogseq", () => {
             type: "heading",
             default: null
         });
+        expect(providerConfigButton).toMatchObject({
+            key: "openProviderConfigButton",
+            type: "button",
+            default: null,
+            title: "Provider Configurations",
+            buttonText: "Open Provider Configurations",
+            buttonAction: "openProviderConfigFromSettings"
+        });
+        expect(settingsSchema[llmHeadingIndex + 1]).toBe(providerConfigButton);
+        expect(settingsSchema[llmHeadingIndex + 2]).toBe(providerConfigSetting);
+        expect(providerConfigSetting).toMatchObject({
+            key: "providerConfigSetting",
+            type: "string",
+            default: encodeProviderConfigs([])
+        });
+        expect(settingsSchema.map((setting) => setting.key)).not.toEqual(
+            expect.arrayContaining(["llmProvider", "llmAPIUrl", "llmAPIKey", "llmAPIModelList"])
+        );
         expect(skillEditorButton).toMatchObject({
             key: "openSkillEditorButton",
             type: "button",
@@ -111,6 +146,14 @@ describe("addSettingsToLogseq", () => {
         expect(model).toHaveProperty("openCommandEditorFromSettings");
         expect(model.openCommandEditorFromSettings()).toBeUndefined();
         expect(showCommandEditorModalMock).toHaveBeenCalledOnce();
+        expect(model).toHaveProperty("openProviderConfigFromSettings");
+        expect(model.openProviderConfigFromSettings()).toBeUndefined();
+        expect(showProviderConfigModalMock).toHaveBeenCalledOnce();
+
+        const staticStyle = vi.mocked(logseq.provideStyle).mock.calls[0][0];
+        expect(staticStyle).toContain('[data-id="test-plugin"]');
+        expect(staticStyle).toContain('[data-key="providerConfigSetting"]');
+        expect(staticStyle).toContain("display: none");
     });
 
     test("consumes a rejected Skill Editor launch", async () => {
@@ -133,5 +176,16 @@ describe("addSettingsToLogseq", () => {
         await Promise.resolve();
 
         expect(showCommandEditorModalMock).toHaveBeenCalledOnce();
+    });
+
+    test("consumes a rejected Provider Configurations launch", async () => {
+        showProviderConfigModalMock.mockRejectedValue(new Error("Failed to open"));
+        await addSettingsToLogseq();
+
+        const model = provideModelMock.mock.calls[0][0];
+        expect(model.openProviderConfigFromSettings()).toBeUndefined();
+        await Promise.resolve();
+
+        expect(showProviderConfigModalMock).toHaveBeenCalledOnce();
     });
 });

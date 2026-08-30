@@ -4,8 +4,7 @@ const sidebars = {
         {
             type: "category",
             label: "Providers",
-            items: [
-            ],
+            items: ["providers/provider-configurations"],
         },
     ],
 };

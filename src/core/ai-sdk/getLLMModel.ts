@@ -1,45 +1,41 @@
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
 import {createOpenAI} from "@ai-sdk/openai";
 import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
-import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
-import {ProviderEnum} from "./types";
+import {readProviderConfigs} from "./provider-config/readProviderConfigs";
+import {
+    type ResolvedLLMSelection,
+    resolveLLMSelection
+} from "./provider-config/resolveLLMSelection";
+import {validateProviderBaseUrl} from "./provider-config/validateProviderConfig";
+import {ProviderTypeEnum} from "./types";
 
-export async function getLLMModel(modelId: string) {
-    const llmProvider = LogseqSettingAccessor.getPluginSettings().llmProvider;
-    const llmAPIUrl = LogseqSettingAccessor.getPluginSettings().llmAPIUrl;
-    const llmAPIKey = LogseqSettingAccessor.getPluginSettings().llmAPIKey;
-
-    if (!llmProvider) {
-        throw new Error("LLM provider not set");
-    }
-    if (!llmAPIKey) {
-        throw new Error("LLM API Key not set");
-    }
-    if (!modelId) {
-        throw new Error("LLM Model not selected");
-    }
-
-    if (llmProvider === ProviderEnum.OPENAI) {
+export function createLLMModel({config, rawModelId}: ResolvedLLMSelection) {
+    const baseURL = validateProviderBaseUrl(config.baseUrl);
+    if (config.type === ProviderTypeEnum.OPENAI) {
         const openai = createOpenAI({
-            apiKey: llmAPIKey
+            apiKey: config.apiKey,
+            baseURL
         });
-        return openai.responses(modelId); // responses() is required for provider-defined tools like web_search
-    } else if (llmProvider === ProviderEnum.OPENAI_COMPATIBLE) {
-        if (!llmAPIUrl) {
-            throw new Error("LLM API URL not set");
-        }
-        const openaiCompatible = createOpenAICompatible({
-            name: "openai-compatible",
-            baseURL: llmAPIUrl,
-            apiKey: llmAPIKey
-        });
-        return openaiCompatible.chatModel(modelId);
-    } else if (llmProvider === ProviderEnum.GOOGLE) {
-        const google = createGoogleGenerativeAI({
-            apiKey: llmAPIKey
-        });
-        return google.chat(modelId);
+        return openai.responses(rawModelId);
     }
-
+    if (config.type === ProviderTypeEnum.OPENAI_COMPATIBLE) {
+        const openaiCompatible = createOpenAICompatible({
+            name: config.id,
+            baseURL,
+            apiKey: config.apiKey
+        });
+        return openaiCompatible.chatModel(rawModelId);
+    }
+    if (config.type === ProviderTypeEnum.GOOGLE) {
+        const google = createGoogleGenerativeAI({
+            apiKey: config.apiKey,
+            baseURL
+        });
+        return google.chat(rawModelId);
+    }
     throw new Error("Unsupported LLM provider");
+}
+
+export async function getLLMModel(selectedModelId: string) {
+    return createLLMModel(resolveLLMSelection(selectedModelId, readProviderConfigs()));
 }

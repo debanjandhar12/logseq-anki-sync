@@ -3,7 +3,22 @@ import type {Tool} from "assistant-stream";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {LocalAISDKChatModelAdapter} from "../../../../../src/chat-app/runtime/LocalChatModelAdapter/LocalAISDKChatModelAdapter";
 
-const {streamTextMock} = vi.hoisted(() => ({streamTextMock: vi.fn()}));
+const {streamTextMock, createLLMModelMock, getLLMProviderToolsMock, resolveLLMSelectionMock} =
+    vi.hoisted(() => ({
+        streamTextMock: vi.fn(),
+        createLLMModelMock: vi.fn(() => ({})),
+        getLLMProviderToolsMock: vi.fn(() => ({})),
+        resolveLLMSelectionMock: vi.fn(() => ({
+            config: {
+                id: "selected",
+                type: "openai",
+                baseUrl: "https://provider.test/v1",
+                apiKey: "secret",
+                models: [{id: "test-model", enabled: true}]
+            },
+            rawModelId: "test-model"
+        }))
+    }));
 
 vi.mock("ai", async (importOriginal) => {
     const original = await importOriginal<typeof import("ai")>();
@@ -15,11 +30,19 @@ vi.mock("ai", async (importOriginal) => {
 });
 
 vi.mock("../../../../../src/core/ai-sdk/getLLMModel", () => ({
-    getLLMModel: vi.fn(async () => ({}))
+    createLLMModel: createLLMModelMock
 }));
 
 vi.mock("../../../../../src/core/ai-sdk/getLLMProviderTools", () => ({
-    getLLMProviderTools: vi.fn(() => ({}))
+    getLLMProviderTools: getLLMProviderToolsMock
+}));
+
+vi.mock("../../../../../src/core/ai-sdk/provider-config/readProviderConfigs", () => ({
+    readProviderConfigs: vi.fn(() => [])
+}));
+
+vi.mock("../../../../../src/core/ai-sdk/provider-config/resolveLLMSelection", () => ({
+    resolveLLMSelection: resolveLLMSelectionMock
 }));
 
 type Deferred<T> = {
@@ -64,7 +87,7 @@ function runAdapter(tools: Record<string, Tool>, abortSignal = new AbortControll
     const result = LocalAISDKChatModelAdapter.run({
         messages: [],
         abortSignal,
-        context: {config: {modelName: "test-model"}, tools},
+        context: {config: {modelName: "selected////test-model"}, tools},
         unstable_getMessage: currentAssistantMessage
     } as never);
 
@@ -118,6 +141,10 @@ describe("LocalAISDKChatModelAdapter frontend tool lifecycle", () => {
 
         expect((await nextValue(stream)).status).toEqual({type: "running"});
         expect((await nextValue(stream)).status).toEqual({type: "running"});
+        expect(resolveLLMSelectionMock).toHaveBeenCalledOnce();
+        const resolvedSelection = resolveLLMSelectionMock.mock.results[0]?.value;
+        expect(createLLMModelMock).toHaveBeenCalledWith(resolvedSelection);
+        expect(getLLMProviderToolsMock).toHaveBeenCalledWith(resolvedSelection);
 
         const firstStarted = await nextValue(stream);
         expect(getToolPart(firstStarted, "call-1").timing).toEqual({

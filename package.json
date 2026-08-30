@@ -47,7 +47,6 @@
         "@floating-ui/react-dom-original": "npm:@floating-ui/react-dom@2.1.7",
         "@lezer/highlight": "^1.2.3",
         "@logseq/libs": "^0.3.3",
-        "@opencode-ai/models": "^0.0.29",
         "@opencode-ai/sdk": "^1.18.18",
         "@radix-ui/react-avatar": "^1.1.11",
         "@radix-ui/react-collapsible": "^1.1.12",

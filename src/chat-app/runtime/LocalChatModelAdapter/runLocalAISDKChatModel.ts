@@ -8,8 +8,10 @@ import {
     type ToolSet
 } from "ai";
 import {toToolsJSONSchema} from "assistant-stream";
-import {getLLMModel} from "src/core/ai-sdk/getLLMModel";
+import {createLLMModel} from "src/core/ai-sdk/getLLMModel";
 import {getLLMProviderTools} from "src/core/ai-sdk/getLLMProviderTools";
+import {readProviderConfigs} from "src/core/ai-sdk/provider-config/readProviderConfigs";
+import {resolveLLMSelection} from "src/core/ai-sdk/provider-config/resolveLLMSelection";
 import {getErrorMessage} from "./error-utils";
 import {executeFrontendToolPlan} from "./frontend-tool-executor";
 import {planFrontendToolCalls} from "./frontend-tool-planner";
@@ -39,8 +41,9 @@ export async function* runLocalAISDKChatModel({
     try {
         const modelId = context.config?.modelName;
         if (!modelId) throw new Error("No model selected");
-        const model = await getLLMModel(modelId);
-        const tools = buildStreamTextTools(context.tools, getLLMProviderTools());
+        const resolvedSelection = resolveLLMSelection(modelId, readProviderConfigs());
+        const model = createLLMModel(resolvedSelection);
+        const tools = buildStreamTextTools(context.tools, getLLMProviderTools(resolvedSelection));
 
         const currentAssistantMessage = unstable_getMessage();
         const conversationMessages = hasToolResults(currentAssistantMessage)

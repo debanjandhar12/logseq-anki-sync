@@ -8,6 +8,7 @@ export {showCommandEditorModal} from "./launchers/showCommandEditorModal";
 // Modal launchers
 export {showConfirmModal} from "./launchers/showConfirmModal";
 export {showInputModal} from "./launchers/showInputModal";
+export {showProviderConfigModal} from "./launchers/showProviderConfigModal";
 // Page launchers
 export type {SelectionModalItem} from "./launchers/showSelectionModal";
 export {showSelectionModal} from "./launchers/showSelectionModal";
@@ -41,6 +42,8 @@ export type {AICommandPaletteModalProps} from "./pages/AICommandPaletteModal";
 export {AICommandPaletteModalComponent} from "./pages/AICommandPaletteModal";
 export type {CommandEditorModalProps} from "./pages/CommandEditorModal";
 export {CommandEditorModalComponent} from "./pages/CommandEditorModal";
+export type {ProviderConfigModalProps} from "./pages/ProviderConfigModal";
+export {ProviderConfigModalComponent} from "./pages/ProviderConfigModal";
 export type {SkillEditorModalProps} from "./pages/SkillEditorModal";
 export {SkillEditorModalComponent} from "./pages/SkillEditorModal";
 // ShadowWrapper

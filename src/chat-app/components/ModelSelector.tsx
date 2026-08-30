@@ -40,6 +40,7 @@ import {Popover, PopoverContent, PopoverTrigger} from "src/shadcn/radix-ui/popov
  *     which would reserve gutter space and squeeze the list).
  * (e) Controlled state uses prop presence so an empty model list can explicitly select nothing.
  * (f) Model context only registers IDs present in the current model list.
+ * (g) Groups models by provider configuration and disambiguates the trigger label and search.
  */
 
 export type ModelSelectorEffortOption = {
@@ -59,6 +60,7 @@ export type ModelOption = {
     description?: string;
     disabled?: boolean;
     keywords?: readonly string[];
+    providerConfigId?: string;
     efforts?: boolean | readonly ModelSelectorEffortOption[];
 };
 
@@ -306,7 +308,11 @@ function ModelSelectorValue({
         <span
             data-slot="model-selector-value"
             className={cn("flex min-w-0 items-center gap-2", className)}>
-            <span className="truncate font-medium">{selectedModel.name}</span>
+            <span className="truncate font-medium">
+                {selectedModel.providerConfigId
+                    ? `${selectedModel.providerConfigId} / ${selectedModel.name}`
+                    : selectedModel.name}
+            </span>
             {effortName && (
                 <span className="text-muted-foreground min-w-7.5 truncate text-center">
                     {effortName}
@@ -415,6 +421,15 @@ export type ModelSelectorListProps = ComponentPropsWithoutRef<typeof CommandList
 
 function ModelSelectorList({className, children, ...props}: ModelSelectorListProps) {
     const {models} = useModelSelectorContext();
+    const modelGroups = useMemo(() => {
+        const groups = new Map<string | undefined, ModelOption[]>();
+        for (const model of models) {
+            const group = groups.get(model.providerConfigId) ?? [];
+            group.push(model);
+            groups.set(model.providerConfigId, group);
+        }
+        return groups;
+    }, [models]);
     const listRef = useRef<HTMLDivElement>(null);
     const [scrollInfo, setScrollInfo] = useState({top: 0, height: 0, clientHeight: 0});
 
@@ -455,11 +470,15 @@ function ModelSelectorList({className, children, ...props}: ModelSelectorListPro
                 {children ?? (
                     <>
                         <ModelSelectorEmpty />
-                        <CommandGroup>
-                            {models.map((model) => (
-                                <ModelSelectorItem key={model.id} model={model} />
-                            ))}
-                        </CommandGroup>
+                        {Array.from(modelGroups, ([providerConfigId, groupModels]) => (
+                            <CommandGroup
+                                key={providerConfigId ?? "models"}
+                                heading={providerConfigId}>
+                                {groupModels.map((model) => (
+                                    <ModelSelectorItem key={model.id} model={model} />
+                                ))}
+                            </CommandGroup>
+                        ))}
                     </>
                 )}
             </CommandList>
@@ -515,7 +534,11 @@ function ModelSelectorItem({
         <CommandItem
             data-slot="model-selector-item"
             value={model.id}
-            keywords={[model.name, ...(model.keywords ?? [])]}
+            keywords={[
+                model.name,
+                ...(model.providerConfigId ? [model.providerConfigId] : []),
+                ...(model.keywords ?? [])
+            ]}
             {...(model.disabled ? {disabled: true} : undefined)}
             onSelect={(selectedValue) => {
                 setValue(model.id);

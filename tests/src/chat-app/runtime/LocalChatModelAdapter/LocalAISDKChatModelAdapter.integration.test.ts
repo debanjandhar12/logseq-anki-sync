@@ -3,9 +3,19 @@ import type {Tool} from "assistant-stream";
 import {beforeEach, describe, expect, test, vi} from "vitest";
 import {LocalAISDKChatModelAdapter} from "../../../../../src/chat-app/runtime/LocalChatModelAdapter/LocalAISDKChatModelAdapter";
 
-const {convertToModelMessagesMock, streamTextMock} = vi.hoisted(() => ({
+const {convertToModelMessagesMock, streamTextMock, resolveLLMSelectionMock} = vi.hoisted(() => ({
     convertToModelMessagesMock: vi.fn(async (..._args: unknown[]) => []),
-    streamTextMock: vi.fn()
+    streamTextMock: vi.fn(),
+    resolveLLMSelectionMock: vi.fn(() => ({
+        config: {
+            id: "selected",
+            type: "openai",
+            baseUrl: "https://provider.test/v1",
+            apiKey: "secret",
+            models: [{id: "test-model", enabled: true}]
+        },
+        rawModelId: "test-model"
+    }))
 }));
 
 vi.mock("ai", async (importOriginal) => {
@@ -18,11 +28,19 @@ vi.mock("ai", async (importOriginal) => {
 });
 
 vi.mock("../../../../../src/core/ai-sdk/getLLMModel", () => ({
-    getLLMModel: vi.fn(async () => ({}))
+    createLLMModel: vi.fn(() => ({}))
 }));
 
 vi.mock("../../../../../src/core/ai-sdk/getLLMProviderTools", () => ({
     getLLMProviderTools: vi.fn(() => ({}))
+}));
+
+vi.mock("../../../../../src/core/ai-sdk/provider-config/readProviderConfigs", () => ({
+    readProviderConfigs: vi.fn(() => [])
+}));
+
+vi.mock("../../../../../src/core/ai-sdk/provider-config/resolveLLMSelection", () => ({
+    resolveLLMSelection: resolveLLMSelectionMock
 }));
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 10));
@@ -60,7 +78,10 @@ describe("LocalAISDKChatModelAdapter with LocalRuntime", () => {
         );
         const tool: Tool = {type: "frontend", execute} as Tool;
         core.registerModelContextProvider({
-            getModelContext: () => ({config: {modelName: "test-model"}, tools: {automatic: tool}})
+            getModelContext: () => ({
+                config: {modelName: "selected////test-model"},
+                tools: {automatic: tool}
+            })
         });
         const thread = core.threads.getMainThreadRuntimeCore();
 
@@ -141,7 +162,7 @@ describe("LocalAISDKChatModelAdapter with LocalRuntime", () => {
         );
         core.registerModelContextProvider({
             getModelContext: () => ({
-                config: {modelName: "test-model"},
+                config: {modelName: "selected////test-model"},
                 tools: {
                     first: {type: "frontend", execute: firstExecute} as Tool,
                     second: {type: "frontend", execute: secondExecute} as Tool

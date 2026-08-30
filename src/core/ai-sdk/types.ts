@@ -1,7 +1,20 @@
-export enum ProviderEnum {
-    OPENAI = "OpenAI",
-    OPENAI_COMPATIBLE = "OpenAI Compatible",
-    GOOGLE = "Google Generative AI"
+export enum ProviderTypeEnum {
+    OPENAI = "openai",
+    OPENAI_COMPATIBLE = "openai-compatible",
+    GOOGLE = "google"
+}
+
+export interface ProviderModelConfig {
+    id: string;
+    enabled: boolean;
+}
+
+export interface ProviderConfig {
+    id: string;
+    type: ProviderTypeEnum;
+    baseUrl: string;
+    apiKey: string;
+    models: ProviderModelConfig[];
 }
 
 export enum WebToolsProviderEnum {
