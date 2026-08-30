@@ -37,7 +37,9 @@ export const LogseqCheckbox: FC<LogseqCheckboxProps> = ({
                 onChange={onChange}
                 ref={checkboxRef}
             />
-            <span className="html-content pl-1 flex-1 text-sm">{children}</span>
+            {children != null && (
+                <span className="html-content pl-1 flex-1 text-sm">{children}</span>
+            )}
         </label>
     );
 };

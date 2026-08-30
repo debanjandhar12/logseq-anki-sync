@@ -1,6 +1,8 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
+import {DEFAULT_OPENAI_COMPATIBLE_BASE_URL} from "../../src/core/ai-sdk/provider-config/constants";
 import {encodeProviderConfigs} from "../../src/core/ai-sdk/provider-config/providerConfigCodec";
+import {ProviderTypeEnum} from "../../src/core/ai-sdk/types";
 import {LogseqSettingAccessor} from "../../src/logseq/LogseqSettingAccessor";
 
 const {showCommandEditorModalMock, showProviderConfigModalMock, showSkillEditorModalMock} =
@@ -73,9 +75,6 @@ describe("addSettingsToLogseq", () => {
         const mainHeadingIndex = settingsSchema.findIndex(
             (setting) => setting.key === "mainSettingsHeading"
         );
-        const llmHeadingIndex = settingsSchema.findIndex(
-            (setting) => setting.key === "llmSettingsHeading"
-        );
         const providerConfigButton = settingsSchema.find(
             (setting) => setting.key === "openProviderConfigButton"
         ) as SettingsButtonSchemaDesc;
@@ -102,12 +101,23 @@ describe("addSettingsToLogseq", () => {
             buttonText: "Open Provider Configurations",
             buttonAction: "openProviderConfigFromSettings"
         });
-        expect(settingsSchema[llmHeadingIndex + 1]).toBe(providerConfigButton);
-        expect(settingsSchema[llmHeadingIndex + 2]).toBe(providerConfigSetting);
+        expect(
+            settingsSchema.find((setting) => setting.key === "llmSettingsHeading")
+        ).toBeUndefined();
+        expect(settingsSchema[mainHeadingIndex + 1]).toBe(providerConfigButton);
+        expect(settingsSchema[mainHeadingIndex + 2]).toBe(providerConfigSetting);
         expect(providerConfigSetting).toMatchObject({
             key: "providerConfigSetting",
             type: "string",
-            default: encodeProviderConfigs([])
+            default: encodeProviderConfigs([
+                {
+                    id: "opencode-zen",
+                    type: ProviderTypeEnum.OPENAI_COMPATIBLE,
+                    baseUrl: DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
+                    apiKey: "test",
+                    models: [{id: "big-pickle", enabled: true}]
+                }
+            ])
         });
         expect(settingsSchema.map((setting) => setting.key)).not.toEqual(
             expect.arrayContaining(["llmProvider", "llmAPIUrl", "llmAPIKey", "llmAPIModelList"])

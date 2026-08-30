@@ -1,8 +1,9 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import {DONATE_ICON, LogseqModelAction} from "./constants";
+import {DEFAULT_OPENAI_COMPATIBLE_BASE_URL} from "./core/ai-sdk/provider-config/constants";
 import {encodeProviderConfigs} from "./core/ai-sdk/provider-config/providerConfigCodec";
-import {type ReasoningEffort, WebToolsProviderEnum} from "./core/ai-sdk/types";
+import {ProviderTypeEnum, type ReasoningEffort, WebToolsProviderEnum} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 import {showCommandEditorModal} from "./ui/launchers/showCommandEditorModal";
@@ -16,6 +17,16 @@ type SettingsButtonSchemaDesc = Omit<SettingSchemaDesc, "type"> & {
     buttonText: string;
     buttonAction: string;
 };
+
+const DEFAULT_PROVIDER_CONFIG_SETTING = encodeProviderConfigs([
+    {
+        id: "opencode-zen",
+        type: ProviderTypeEnum.OPENAI_COMPATIBLE,
+        baseUrl: DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
+        apiKey: "test",
+        models: [{id: "big-pickle", enabled: true}]
+    }
+]);
 
 // Type definitions for plugin settings
 export interface PluginSettings {
@@ -54,8 +65,8 @@ export const addSettingsToLogseq = async () => {
             default: null
         },
         {
-            key: "llmSettingsHeading",
-            title: "🤖 LLM Settings",
+            key: "mainSettingsHeading",
+            title: "💬 Main",
             description: "",
             type: "heading",
             default: null
@@ -72,16 +83,9 @@ export const addSettingsToLogseq = async () => {
         {
             key: "providerConfigSetting",
             type: "string",
-            default: encodeProviderConfigs([]),
+            default: DEFAULT_PROVIDER_CONFIG_SETTING,
             title: "Provider Configurations Storage",
             description: "Internal storage for provider configurations."
-        },
-        {
-            key: "mainSettingsHeading",
-            title: "💬 Main",
-            description: "",
-            type: "heading",
-            default: null
         },
         {
             key: "openCommandEditorButton",

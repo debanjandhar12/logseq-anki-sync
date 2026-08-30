@@ -3,6 +3,8 @@ import React from "react";
 import {type ProviderConfig, ProviderTypeEnum} from "src/core/ai-sdk/types";
 import {LogseqButton} from "../../components/LogseqButton";
 import {LogseqCheckbox} from "../../components/LogseqCheckbox";
+import {LogseqInput} from "../../components/LogseqInput";
+import {LogseqSelect} from "../../components/LogseqSelect";
 import {showConfirmModal} from "../../launchers/showConfirmModal";
 import {Modal} from "../../modals/core/Modal";
 import {ModalFooter} from "../../modals/core/ModalFooter";
@@ -41,10 +43,6 @@ const PROVIDER_OPTIONS = [
     {value: ProviderTypeEnum.OPENAI_COMPATIBLE, label: "OpenAI Compatible"},
     {value: ProviderTypeEnum.GOOGLE, label: "Google Gemini"}
 ];
-
-const INPUT_CLASS =
-    "w-full rounded border border-border bg-primary-background px-3 py-2 text-sm text-text outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-60";
-const ERROR_INPUT_CLASS = "!border-red-500 focus:!border-red-500";
 
 function createEditorConfig(config: ProviderConfig): EditableProviderConfig {
     return {...config, editorKey: crypto.randomUUID(), originalId: config.id};
@@ -220,8 +218,10 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
         if (validationIssues.length > 0) {
             const firstIssue = validationIssues[0];
             setIssues(validationIssues);
-            setActiveEditorKey(firstIssue.editorKey);
-            focusIssue(firstIssue);
+            if (firstIssue.editorKey) {
+                setActiveEditorKey(firstIssue.editorKey);
+                focusIssue(firstIssue);
+            }
             await logseq.UI.showMsg(`Validation failed: ${firstIssue.message}`, "error");
             return;
         }
@@ -331,293 +331,308 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                     )}
                                 </div>
                             </aside>
-                            <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-primary-background">
+                            <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
                                 {activeConfig ? (
-                                    <div
-                                        ref={formRef}
-                                        className="min-h-0 flex-1 overflow-y-auto p-5">
-                                        <div className="mx-auto max-w-4xl space-y-5">
-                                            <div className="grid gap-4 md:grid-cols-2">
-                                                <label className="space-y-1 text-sm font-medium">
-                                                    <span>Configuration ID</span>
-                                                    <input
-                                                        data-error-field="id"
-                                                        aria-invalid={hasFieldIssue("id")}
-                                                        className={`${INPUT_CLASS} ${hasFieldIssue("id") ? ERROR_INPUT_CLASS : ""}`}
-                                                        value={activeConfig.id}
+                                    <>
+                                        <div className="flex items-center justify-between gap-3 border-border border-b bg-secondary-background px-4 py-2">
+                                            <div className="min-w-0 truncate text-sm font-medium">
+                                                {activeConfig.id || "Untitled configuration"}
+                                            </div>
+                                            <LogseqButton
+                                                color="failed"
+                                                size="xs"
+                                                disabled={isBusy}
+                                                title="Delete provider configuration"
+                                                onClick={handleDeleteConfig}>
+                                                <Trash size={15} /> Delete
+                                            </LogseqButton>
+                                        </div>
+                                        <div
+                                            ref={formRef}
+                                            className="min-h-0 flex-1 overflow-y-auto p-5">
+                                            <div className="mx-auto max-w-4xl space-y-5">
+                                                <div className="grid gap-4 md:grid-cols-2">
+                                                    <label
+                                                        htmlFor={`provider-config-id-${activeConfig.editorKey}`}
+                                                        className="space-y-1 text-sm font-medium">
+                                                        <span>Configuration ID</span>
+                                                        <LogseqInput
+                                                            id={`provider-config-id-${activeConfig.editorKey}`}
+                                                            data-error-field="id"
+                                                            invalid={hasFieldIssue("id")}
+                                                            value={activeConfig.id}
+                                                            disabled={isBusy}
+                                                            onChange={(event) =>
+                                                                updateConfig(
+                                                                    activeConfig.editorKey,
+                                                                    (config) => ({
+                                                                        ...config,
+                                                                        id: event.target.value.toLowerCase()
+                                                                    })
+                                                                )
+                                                            }
+                                                        />
+                                                    </label>
+                                                    <label
+                                                        htmlFor={`provider-type-${activeConfig.editorKey}`}
+                                                        className="space-y-1 text-sm font-medium">
+                                                        <span>Provider</span>
+                                                        <LogseqSelect
+                                                            id={`provider-type-${activeConfig.editorKey}`}
+                                                            value={activeConfig.type}
+                                                            disabled={isBusy}
+                                                            invalid={hasFieldIssue("type")}
+                                                            errorField="type"
+                                                            width="100%"
+                                                            options={PROVIDER_OPTIONS}
+                                                            onChange={(value) => {
+                                                                const type =
+                                                                    value as ProviderTypeEnum;
+                                                                updateConfig(
+                                                                    activeConfig.editorKey,
+                                                                    (config) => ({
+                                                                        ...config,
+                                                                        type,
+                                                                        baseUrl:
+                                                                            getDefaultBaseUrl(type)
+                                                                    })
+                                                                );
+                                                            }}
+                                                        />
+                                                    </label>
+                                                </div>
+                                                <label
+                                                    htmlFor={`provider-base-url-${activeConfig.editorKey}`}
+                                                    className="block space-y-1 text-sm font-medium">
+                                                    <span>Base URL</span>
+                                                    <LogseqInput
+                                                        id={`provider-base-url-${activeConfig.editorKey}`}
+                                                        data-error-field="baseUrl"
+                                                        invalid={hasFieldIssue("baseUrl")}
+                                                        value={activeConfig.baseUrl}
+                                                        disabled={
+                                                            isBusy ||
+                                                            activeConfig.type !==
+                                                                ProviderTypeEnum.OPENAI_COMPATIBLE
+                                                        }
+                                                        placeholder="https://provider.example/v1"
+                                                        onChange={(event) =>
+                                                            updateConfig(
+                                                                activeConfig.editorKey,
+                                                                (config) => ({
+                                                                    ...config,
+                                                                    baseUrl: event.target.value
+                                                                })
+                                                            )
+                                                        }
+                                                    />
+                                                    {activeConfig.type ===
+                                                        ProviderTypeEnum.OPENAI_COMPATIBLE && (
+                                                        <span className="block text-xs font-normal opacity-70">
+                                                            Enter the API base URL.
+                                                        </span>
+                                                    )}
+                                                </label>
+                                                <label
+                                                    htmlFor={`provider-api-key-${activeConfig.editorKey}`}
+                                                    className="block space-y-1 text-sm font-medium">
+                                                    <span>API Key</span>
+                                                    <LogseqInput
+                                                        id={`provider-api-key-${activeConfig.editorKey}`}
+                                                        data-error-field="apiKey"
+                                                        invalid={hasFieldIssue("apiKey")}
+                                                        value={activeConfig.apiKey}
                                                         disabled={isBusy}
                                                         onChange={(event) =>
                                                             updateConfig(
                                                                 activeConfig.editorKey,
                                                                 (config) => ({
                                                                     ...config,
-                                                                    id: event.target.value.toLowerCase()
+                                                                    apiKey: event.target.value
                                                                 })
                                                             )
                                                         }
                                                     />
                                                 </label>
-                                                <label className="space-y-1 text-sm font-medium">
-                                                    <span>Provider</span>
-                                                    <select
-                                                        data-error-field="type"
-                                                        aria-invalid={hasFieldIssue("type")}
-                                                        className={`${INPUT_CLASS} ${hasFieldIssue("type") ? ERROR_INPUT_CLASS : ""}`}
-                                                        value={activeConfig.type}
-                                                        disabled={isBusy}
-                                                        onChange={(event) => {
-                                                            const type = event.target
-                                                                .value as ProviderTypeEnum;
-                                                            updateConfig(
-                                                                activeConfig.editorKey,
-                                                                (config) => ({
-                                                                    ...config,
-                                                                    type,
-                                                                    baseUrl: getDefaultBaseUrl(type)
-                                                                })
-                                                            );
-                                                        }}>
-                                                        {PROVIDER_OPTIONS.map((option) => (
-                                                            <option
-                                                                key={option.value}
-                                                                value={option.value}>
-                                                                {option.label}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </label>
-                                            </div>
-                                            <label className="block space-y-1 text-sm font-medium">
-                                                <span>Base URL</span>
-                                                <input
-                                                    data-error-field="baseUrl"
-                                                    aria-invalid={hasFieldIssue("baseUrl")}
-                                                    className={`${INPUT_CLASS} ${hasFieldIssue("baseUrl") ? ERROR_INPUT_CLASS : ""}`}
-                                                    value={activeConfig.baseUrl}
-                                                    disabled={
-                                                        isBusy ||
-                                                        activeConfig.type !==
-                                                            ProviderTypeEnum.OPENAI_COMPATIBLE
-                                                    }
-                                                    placeholder="https://provider.example/v1"
-                                                    onChange={(event) =>
-                                                        updateConfig(
-                                                            activeConfig.editorKey,
-                                                            (config) => ({
-                                                                ...config,
-                                                                baseUrl: event.target.value
-                                                            })
-                                                        )
-                                                    }
-                                                />
-                                                {activeConfig.type ===
-                                                    ProviderTypeEnum.OPENAI_COMPATIBLE && (
-                                                    <span className="block text-xs font-normal opacity-70">
-                                                        Enter the API base URL that exposes a
-                                                        /models endpoint.
-                                                    </span>
+                                                <div className="rounded-md border border-border">
+                                                    <div className="flex flex-wrap items-center justify-between gap-2 border-border border-b bg-secondary-background px-3 py-2">
+                                                        <div>
+                                                            <div className="text-sm font-medium">
+                                                                Models
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex flex-wrap items-center">
+                                                            <LogseqButton
+                                                                color="outline-link"
+                                                                size="sm"
+                                                                disabled={isBusy}
+                                                                onClick={handleFetchModels}>
+                                                                <RefreshCw size={14} />
+                                                                {fetchingEditorKey ===
+                                                                activeConfig.editorKey
+                                                                    ? "Fetching..."
+                                                                    : "Fetch Models"}
+                                                            </LogseqButton>
+                                                            <LogseqButton
+                                                                color="outline-link"
+                                                                size="sm"
+                                                                disabled={isBusy}
+                                                                onClick={handleTest}>
+                                                                <FlaskConical size={14} />
+                                                                {testingEditorKey ===
+                                                                activeConfig.editorKey
+                                                                    ? "Testing..."
+                                                                    : "Test"}
+                                                            </LogseqButton>
+                                                            <LogseqButton
+                                                                color="primary"
+                                                                size="sm"
+                                                                disabled={isBusy}
+                                                                onClick={() =>
+                                                                    updateConfig(
+                                                                        activeConfig.editorKey,
+                                                                        (config) => ({
+                                                                            ...config,
+                                                                            models: [
+                                                                                ...config.models,
+                                                                                {
+                                                                                    id: "",
+                                                                                    enabled: true
+                                                                                }
+                                                                            ]
+                                                                        })
+                                                                    )
+                                                                }>
+                                                                <Plus size={14} /> Add Model
+                                                            </LogseqButton>
+                                                        </div>
+                                                    </div>
+                                                    <div
+                                                        data-error-field="models"
+                                                        tabIndex={-1}
+                                                        aria-invalid={hasFieldIssue("models")}
+                                                        className={`p-2 ${hasFieldIssue("models") ? "ring-1 ring-inset ring-red-500" : ""}`}>
+                                                        {activeConfig.models.length === 0 ? (
+                                                            <div className="px-2 py-5 text-center text-sm opacity-70">
+                                                                Fetch models or add one manually.
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-2">
+                                                                {activeConfig.models.map(
+                                                                    (model, modelIndex) => (
+                                                                        <div
+                                                                            // biome-ignore lint/suspicious/noArrayIndexKey: model rows have no persisted identity beyond their position.
+                                                                            key={`${activeConfig.editorKey}-${modelIndex}`}
+                                                                            className="flex items-center gap-2">
+                                                                            <LogseqCheckbox
+                                                                                checked={
+                                                                                    model.enabled
+                                                                                }
+                                                                                disabled={isBusy}
+                                                                                onChange={() =>
+                                                                                    updateConfig(
+                                                                                        activeConfig.editorKey,
+                                                                                        (
+                                                                                            config
+                                                                                        ) => ({
+                                                                                            ...config,
+                                                                                            models: config.models.map(
+                                                                                                (
+                                                                                                    item,
+                                                                                                    index
+                                                                                                ) =>
+                                                                                                    index ===
+                                                                                                    modelIndex
+                                                                                                        ? {
+                                                                                                              ...item,
+                                                                                                              enabled:
+                                                                                                                  !item.enabled
+                                                                                                          }
+                                                                                                        : item
+                                                                                            )
+                                                                                        })
+                                                                                    )
+                                                                                }
+                                                                            />
+                                                                            <LogseqInput
+                                                                                data-model-index={
+                                                                                    modelIndex
+                                                                                }
+                                                                                invalid={hasModelIssue(
+                                                                                    modelIndex
+                                                                                )}
+                                                                                value={model.id}
+                                                                                disabled={isBusy}
+                                                                                placeholder="Model ID"
+                                                                                onChange={(
+                                                                                    event
+                                                                                ) => {
+                                                                                    const id =
+                                                                                        event.target
+                                                                                            .value;
+                                                                                    updateConfig(
+                                                                                        activeConfig.editorKey,
+                                                                                        (
+                                                                                            config
+                                                                                        ) => ({
+                                                                                            ...config,
+                                                                                            models: config.models.map(
+                                                                                                (
+                                                                                                    item,
+                                                                                                    index
+                                                                                                ) =>
+                                                                                                    index ===
+                                                                                                    modelIndex
+                                                                                                        ? {
+                                                                                                              ...item,
+                                                                                                              id
+                                                                                                          }
+                                                                                                        : item
+                                                                                            )
+                                                                                        })
+                                                                                    );
+                                                                                }}
+                                                                            />
+                                                                            <LogseqButton
+                                                                                color="failed"
+                                                                                size="xs"
+                                                                                disabled={isBusy}
+                                                                                title="Delete model"
+                                                                                onClick={() =>
+                                                                                    updateConfig(
+                                                                                        activeConfig.editorKey,
+                                                                                        (
+                                                                                            config
+                                                                                        ) => ({
+                                                                                            ...config,
+                                                                                            models: config.models.filter(
+                                                                                                (
+                                                                                                    _item,
+                                                                                                    index
+                                                                                                ) =>
+                                                                                                    index !==
+                                                                                                    modelIndex
+                                                                                            )
+                                                                                        })
+                                                                                    )
+                                                                                }>
+                                                                                <Trash size={14} />
+                                                                            </LogseqButton>
+                                                                        </div>
+                                                                    )
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {activeIssues.length > 0 && (
+                                                    <div className="rounded border border-red-500/60 bg-red-500/10 px-3 py-2 text-sm text-red-600">
+                                                        {activeIssues[0].message}
+                                                    </div>
                                                 )}
-                                            </label>
-                                            <label className="block space-y-1 text-sm font-medium">
-                                                <span>API Key</span>
-                                                <input
-                                                    type="password"
-                                                    autoComplete="off"
-                                                    data-error-field="apiKey"
-                                                    aria-invalid={hasFieldIssue("apiKey")}
-                                                    className={`${INPUT_CLASS} ${hasFieldIssue("apiKey") ? ERROR_INPUT_CLASS : ""}`}
-                                                    value={activeConfig.apiKey}
-                                                    disabled={isBusy}
-                                                    onChange={(event) =>
-                                                        updateConfig(
-                                                            activeConfig.editorKey,
-                                                            (config) => ({
-                                                                ...config,
-                                                                apiKey: event.target.value
-                                                            })
-                                                        )
-                                                    }
-                                                />
-                                            </label>
-                                            <div className="rounded-md border border-border">
-                                                <div className="flex flex-wrap items-center justify-between gap-2 border-border border-b bg-secondary-background px-3 py-2">
-                                                    <div>
-                                                        <div className="text-sm font-medium">
-                                                            Models
-                                                        </div>
-                                                        <div className="text-xs opacity-70">
-                                                            Only enabled models appear in the model
-                                                            selector.
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex flex-wrap items-center">
-                                                        <LogseqButton
-                                                            color="outline-link"
-                                                            size="sm"
-                                                            disabled={isBusy}
-                                                            onClick={handleFetchModels}>
-                                                            <RefreshCw size={14} />
-                                                            {fetchingEditorKey ===
-                                                            activeConfig.editorKey
-                                                                ? "Fetching..."
-                                                                : "Fetch Models"}
-                                                        </LogseqButton>
-                                                        <LogseqButton
-                                                            color="outline-link"
-                                                            size="sm"
-                                                            disabled={isBusy}
-                                                            onClick={handleTest}>
-                                                            <FlaskConical size={14} />
-                                                            {testingEditorKey ===
-                                                            activeConfig.editorKey
-                                                                ? "Testing..."
-                                                                : "Test"}
-                                                        </LogseqButton>
-                                                        <LogseqButton
-                                                            color="primary"
-                                                            size="sm"
-                                                            disabled={isBusy}
-                                                            onClick={() =>
-                                                                updateConfig(
-                                                                    activeConfig.editorKey,
-                                                                    (config) => ({
-                                                                        ...config,
-                                                                        models: [
-                                                                            ...config.models,
-                                                                            {id: "", enabled: true}
-                                                                        ]
-                                                                    })
-                                                                )
-                                                            }>
-                                                            <Plus size={14} /> Add Model
-                                                        </LogseqButton>
-                                                    </div>
-                                                </div>
-                                                <div
-                                                    data-error-field="models"
-                                                    tabIndex={-1}
-                                                    aria-invalid={hasFieldIssue("models")}
-                                                    className={`max-h-64 overflow-y-auto p-2 ${hasFieldIssue("models") ? "ring-1 ring-inset ring-red-500" : ""}`}>
-                                                    {activeConfig.models.length === 0 ? (
-                                                        <div className="px-2 py-5 text-center text-sm opacity-70">
-                                                            Fetch models or add one manually.
-                                                        </div>
-                                                    ) : (
-                                                        <div className="space-y-2">
-                                                            {activeConfig.models.map(
-                                                                (model, modelIndex) => (
-                                                                    <div
-                                                                        // biome-ignore lint/suspicious/noArrayIndexKey: model rows have no persisted identity beyond their position.
-                                                                        key={`${activeConfig.editorKey}-${modelIndex}`}
-                                                                        className="flex items-center gap-2">
-                                                                        <LogseqCheckbox
-                                                                            checked={model.enabled}
-                                                                            disabled={isBusy}
-                                                                            onChange={() =>
-                                                                                updateConfig(
-                                                                                    activeConfig.editorKey,
-                                                                                    (config) => ({
-                                                                                        ...config,
-                                                                                        models: config.models.map(
-                                                                                            (
-                                                                                                item,
-                                                                                                index
-                                                                                            ) =>
-                                                                                                index ===
-                                                                                                modelIndex
-                                                                                                    ? {
-                                                                                                          ...item,
-                                                                                                          enabled:
-                                                                                                              !item.enabled
-                                                                                                      }
-                                                                                                    : item
-                                                                                        )
-                                                                                    })
-                                                                                )
-                                                                            }>
-                                                                            Enabled
-                                                                        </LogseqCheckbox>
-                                                                        <input
-                                                                            data-model-index={
-                                                                                modelIndex
-                                                                            }
-                                                                            aria-invalid={hasModelIssue(
-                                                                                modelIndex
-                                                                            )}
-                                                                            className={`${INPUT_CLASS} ${hasModelIssue(modelIndex) ? ERROR_INPUT_CLASS : ""}`}
-                                                                            value={model.id}
-                                                                            disabled={isBusy}
-                                                                            placeholder="Model ID"
-                                                                            onChange={(event) => {
-                                                                                const id =
-                                                                                    event.target
-                                                                                        .value;
-                                                                                updateConfig(
-                                                                                    activeConfig.editorKey,
-                                                                                    (config) => ({
-                                                                                        ...config,
-                                                                                        models: config.models.map(
-                                                                                            (
-                                                                                                item,
-                                                                                                index
-                                                                                            ) =>
-                                                                                                index ===
-                                                                                                modelIndex
-                                                                                                    ? {
-                                                                                                          ...item,
-                                                                                                          id
-                                                                                                      }
-                                                                                                    : item
-                                                                                        )
-                                                                                    })
-                                                                                );
-                                                                            }}
-                                                                        />
-                                                                        <LogseqButton
-                                                                            color="failed"
-                                                                            size="xs"
-                                                                            disabled={isBusy}
-                                                                            title="Delete model"
-                                                                            onClick={() =>
-                                                                                updateConfig(
-                                                                                    activeConfig.editorKey,
-                                                                                    (config) => ({
-                                                                                        ...config,
-                                                                                        models: config.models.filter(
-                                                                                            (
-                                                                                                _item,
-                                                                                                index
-                                                                                            ) =>
-                                                                                                index !==
-                                                                                                modelIndex
-                                                                                        )
-                                                                                    })
-                                                                                )
-                                                                            }>
-                                                                            <Trash size={14} />
-                                                                        </LogseqButton>
-                                                                    </div>
-                                                                )
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            {activeIssues.length > 0 && (
-                                                <div className="rounded border border-red-500/60 bg-red-500/10 px-3 py-2 text-sm text-red-600">
-                                                    {activeIssues[0].message}
-                                                </div>
-                                            )}
-                                            <div className="flex justify-end">
-                                                <LogseqButton
-                                                    color="failed"
-                                                    disabled={isBusy}
-                                                    onClick={handleDeleteConfig}>
-                                                    <Trash size={15} /> Delete Configuration
-                                                </LogseqButton>
                                             </div>
                                         </div>
-                                    </div>
+                                    </>
                                 ) : (
                                     <div className="flex h-full items-center justify-center p-4 text-sm opacity-70">
                                         Add a provider configuration to get started.

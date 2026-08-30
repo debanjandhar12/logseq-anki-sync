@@ -20,8 +20,10 @@ function config(overrides: Partial<EditableProviderConfig> = {}): EditableProvid
 }
 
 describe("provider configuration validation", () => {
-    test("accepts an empty configuration list", () => {
-        expect(validateProviderConfigs([])).toEqual([]);
+    test("requires at least one provider configuration", () => {
+        expect(validateProviderConfigs([])).toEqual([
+            expect.objectContaining({message: "At least one provider configuration is required."})
+        ]);
     });
 
     test("rejects duplicate, uppercase, and delimiter-containing IDs", () => {

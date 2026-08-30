@@ -21,6 +21,16 @@ function isValidBaseUrl(value: string): boolean {
 export function validateProviderConfigs(
     configs: EditableProviderConfig[]
 ): ProviderConfigValidationIssue[] {
+    if (configs.length === 0) {
+        return [
+            {
+                editorKey: "",
+                field: "id",
+                message: "At least one provider configuration is required."
+            }
+        ];
+    }
+
     const issues: ProviderConfigValidationIssue[] = [];
     const idCounts = new Map<string, number>();
 
