@@ -12,13 +12,16 @@ import {ModalHeader} from "../../modals/core/ModalHeader";
 import {useModal} from "../../modals/hooks/useModal";
 import {UI} from "../../UI";
 import {getErrorMessage} from "../SkillEditorModal/utils/getErrorMessage";
+import {CodexSignInSection} from "./CodexSignInSection";
 import {
+    DEFAULT_CODEX_BASE_URL,
     DEFAULT_GOOGLE_BASE_URL,
     DEFAULT_OPENAI_BASE_URL,
     DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
     discoverProviderModels,
     loadProviderConfigs,
     saveProviderConfigs,
+    subscribeToCodexCredentialUpdates,
     verifyProviderConfig
 } from "./providerConfigIntegration";
 import {
@@ -41,16 +44,23 @@ export interface ProviderConfigModalProps {
 const PROVIDER_OPTIONS = [
     {value: ProviderTypeEnum.OPENAI, label: "OpenAI"},
     {value: ProviderTypeEnum.OPENAI_COMPATIBLE, label: "OpenAI Compatible"},
-    {value: ProviderTypeEnum.GOOGLE, label: "Google Gemini"}
+    {value: ProviderTypeEnum.GOOGLE, label: "Google Gemini"},
+    {value: ProviderTypeEnum.CODEX_SUBSCRIPTION, label: "Codex Subscription"}
 ];
 
 function createEditorConfig(config: ProviderConfig): EditableProviderConfig {
-    return {...config, editorKey: crypto.randomUUID(), originalId: config.id};
+    return {
+        ...config,
+        editorKey: crypto.randomUUID(),
+        originalId: config.id,
+        codexCredentialIntent: "unchanged"
+    };
 }
 
 function getDefaultBaseUrl(type: ProviderTypeEnum): string {
     if (type === ProviderTypeEnum.OPENAI) return DEFAULT_OPENAI_BASE_URL;
     if (type === ProviderTypeEnum.GOOGLE) return DEFAULT_GOOGLE_BASE_URL;
+    if (type === ProviderTypeEnum.CODEX_SUBSCRIPTION) return DEFAULT_CODEX_BASE_URL;
     return DEFAULT_OPENAI_COMPATIBLE_BASE_URL;
 }
 
@@ -67,6 +77,7 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
     const [isSaving, setIsSaving] = React.useState(false);
     const [fetchingEditorKey, setFetchingEditorKey] = React.useState<string | null>(null);
     const [testingEditorKey, setTestingEditorKey] = React.useState<string | null>(null);
+    const [codexAuthBusy, setCodexAuthBusy] = React.useState(false);
     const formRef = React.useRef<HTMLDivElement>(null);
     const {open, setOpen, returnResult} = useModal<boolean | null>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
@@ -93,11 +104,50 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
         }
     }, []);
 
+    React.useEffect(
+        () =>
+            subscribeToCodexCredentialUpdates(({providerId, encodedCredentials}) => {
+                setInitialSnapshot((current) => {
+                    try {
+                        const snapshotConfigs = JSON.parse(current) as EditableProviderConfig[];
+                        return getProviderConfigsSnapshot(
+                            snapshotConfigs.map((config) =>
+                                config.originalId === providerId &&
+                                config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION &&
+                                config.codexCredentialIntent === "unchanged"
+                                    ? {...config, apiKey: encodedCredentials}
+                                    : config
+                            )
+                        );
+                    } catch {
+                        return current;
+                    }
+                });
+                setConfigs((current) => {
+                    return current.map((config) => {
+                        if (
+                            config.originalId !== providerId ||
+                            config.type !== ProviderTypeEnum.CODEX_SUBSCRIPTION ||
+                            config.codexCredentialIntent !== "unchanged"
+                        ) {
+                            return config;
+                        }
+                        return {...config, apiKey: encodedCredentials};
+                    });
+                });
+            }),
+        []
+    );
+
     const activeConfig =
         configs.find((config) => config.editorKey === activeEditorKey) ?? configs[0] ?? null;
     const hasUnsavedChanges = getProviderConfigsSnapshot(configs) !== initialSnapshot;
     const isBusy =
-        loadError !== null || isSaving || fetchingEditorKey !== null || testingEditorKey !== null;
+        loadError !== null ||
+        isSaving ||
+        fetchingEditorKey !== null ||
+        testingEditorKey !== null ||
+        codexAuthBusy;
 
     const clearConfigIssues = React.useCallback((editorKey: string) => {
         setIssues((current) => current.filter((issue) => issue.editorKey !== editorKey));
@@ -124,7 +174,8 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
             type: ProviderTypeEnum.OPENAI,
             baseUrl: DEFAULT_OPENAI_BASE_URL,
             apiKey: "",
-            models: []
+            models: [],
+            codexCredentialIntent: "unchanged"
         };
         setConfigs((current) => [...current, config]);
         setActiveEditorKey(config.editorKey);
@@ -154,7 +205,11 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
             } catch {
                 return "Enter a valid Base URL first.";
             }
-            if (!config.apiKey.trim()) return "Enter an API key first.";
+            if (config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION) {
+                if (!config.apiKey) return "Sign in to Codex Subscription first.";
+            } else if (!config.apiKey.trim()) {
+                return "Enter an API key first.";
+            }
             if (requireModel && !config.models.some((model) => model.enabled && model.id.trim())) {
                 return "Enable at least one model first.";
             }
@@ -234,7 +289,14 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                     .filter((config) => config.originalId && config.originalId !== config.id.trim())
                     .map((config) => [config.originalId as string, config.id.trim().toLowerCase()])
             );
-            await saveProviderConfigs(persistedConfigs, renamedIds);
+            await saveProviderConfigs(
+                persistedConfigs.map((config, index) => ({
+                    config,
+                    originalId: configs[index].originalId,
+                    codexCredentialIntent: configs[index].codexCredentialIntent
+                })),
+                renamedIds
+            );
             returnResult(true);
         } catch {
             await logseq.UI.showMsg("Failed to save provider configurations.", "error");
@@ -244,7 +306,8 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
     }, [configs, focusIssue, isBusy, returnResult]);
 
     const handleCancel = React.useCallback(async () => {
-        if (isSaving || fetchingEditorKey !== null || testingEditorKey !== null) return;
+        if (isSaving || fetchingEditorKey !== null || testingEditorKey !== null || codexAuthBusy)
+            return;
         if (hasUnsavedChanges) {
             const shouldClose = await showConfirmModal(
                 "You have unsaved provider configuration changes. Close without saving?",
@@ -253,7 +316,14 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
             if (!shouldClose) return;
         }
         returnResult(null);
-    }, [fetchingEditorKey, hasUnsavedChanges, isSaving, returnResult, testingEditorKey]);
+    }, [
+        codexAuthBusy,
+        fetchingEditorKey,
+        hasUnsavedChanges,
+        isSaving,
+        returnResult,
+        testingEditorKey
+    ]);
 
     const activeIssues = activeConfig
         ? issues.filter((issue) => issue.editorKey === activeConfig.editorKey)
@@ -394,7 +464,14 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                                         ...config,
                                                                         type,
                                                                         baseUrl:
-                                                                            getDefaultBaseUrl(type)
+                                                                            getDefaultBaseUrl(type),
+                                                                        apiKey: "",
+                                                                        models: [],
+                                                                        codexCredentialIntent:
+                                                                            type ===
+                                                                            ProviderTypeEnum.CODEX_SUBSCRIPTION
+                                                                                ? "clear"
+                                                                                : "unchanged"
                                                                     })
                                                                 );
                                                             }}
@@ -441,8 +518,23 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                         id={`provider-api-key-${activeConfig.editorKey}`}
                                                         data-error-field="apiKey"
                                                         invalid={hasFieldIssue("apiKey")}
-                                                        value={activeConfig.apiKey}
-                                                        disabled={isBusy}
+                                                        value={
+                                                            activeConfig.type ===
+                                                            ProviderTypeEnum.CODEX_SUBSCRIPTION
+                                                                ? ""
+                                                                : activeConfig.apiKey
+                                                        }
+                                                        placeholder={
+                                                            activeConfig.type ===
+                                                            ProviderTypeEnum.CODEX_SUBSCRIPTION
+                                                                ? "Managed by Codex Subscription sign-in"
+                                                                : undefined
+                                                        }
+                                                        disabled={
+                                                            isBusy ||
+                                                            activeConfig.type ===
+                                                                ProviderTypeEnum.CODEX_SUBSCRIPTION
+                                                        }
                                                         onChange={(event) =>
                                                             updateConfig(
                                                                 activeConfig.editorKey,
@@ -454,6 +546,34 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                         }
                                                     />
                                                 </label>
+                                                {activeConfig.type ===
+                                                    ProviderTypeEnum.CODEX_SUBSCRIPTION && (
+                                                    <CodexSignInSection
+                                                        encodedCredentials={activeConfig.apiKey}
+                                                        disabled={isBusy && !codexAuthBusy}
+                                                        onBusyChange={setCodexAuthBusy}
+                                                        onSignedIn={(encodedCredentials) =>
+                                                            updateConfig(
+                                                                activeConfig.editorKey,
+                                                                (config) => ({
+                                                                    ...config,
+                                                                    apiKey: encodedCredentials,
+                                                                    codexCredentialIntent: "replace"
+                                                                })
+                                                            )
+                                                        }
+                                                        onLogout={() =>
+                                                            updateConfig(
+                                                                activeConfig.editorKey,
+                                                                (config) => ({
+                                                                    ...config,
+                                                                    apiKey: "",
+                                                                    codexCredentialIntent: "clear"
+                                                                })
+                                                            )
+                                                        }
+                                                    />
+                                                )}
                                                 <div className="rounded-md border border-border">
                                                     <div className="flex flex-wrap items-center justify-between gap-2 border-border border-b bg-secondary-background px-3 py-2">
                                                         <div>

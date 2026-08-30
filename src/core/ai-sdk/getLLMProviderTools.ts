@@ -2,6 +2,7 @@ import {createGoogleGenerativeAI} from "@ai-sdk/google";
 import {createOpenAI} from "@ai-sdk/openai";
 import type {ToolSet} from "ai";
 import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
+import {CodexSessionManager} from "./codex/CodexSessionManager";
 import {readProviderConfigs} from "./provider-config/readProviderConfigs";
 import {
     type ResolvedLLMSelection,
@@ -31,6 +32,11 @@ export function getLLMProviderTools(resolvedSelection?: ResolvedLLMSelection): T
         };
     }
 
+    if (resolved.config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION) {
+        const provider = CodexSessionManager.getRuntimeSession(resolved.config).aiProvider;
+        return {web_search: provider.tools.webSearch({})};
+    }
+
     if (resolved.config.type === ProviderTypeEnum.GOOGLE) {
         const google = createGoogleGenerativeAI({
             apiKey: resolved.config.apiKey,
@@ -39,7 +45,7 @@ export function getLLMProviderTools(resolvedSelection?: ResolvedLLMSelection): T
         return {
             google_search: google.tools.googleSearch({}),
             url_context: google.tools.urlContext({})
-        };
+        } as ToolSet;
     }
 
     return {};

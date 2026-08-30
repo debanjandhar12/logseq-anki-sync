@@ -1,4 +1,5 @@
 import {afterEach, describe, expect, test, vi} from "vitest";
+import {encodeCodexCredentials} from "../../../../../src/core/ai-sdk/codex/CodexCredentialCodec";
 import {fetchProviderModels} from "../../../../../src/core/ai-sdk/provider-config/fetchProviderModels";
 import {mergeProviderModels} from "../../../../../src/core/ai-sdk/provider-config/mergeProviderModels";
 import {
@@ -25,6 +26,27 @@ const config = (overrides: Partial<ProviderConfig> = {}): ProviderConfig => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe("provider configuration codec", () => {
+    test("accepts signed-out Codex and validates signed-in envelopes and the fixed URL", () => {
+        const codexConfig = config({
+            type: ProviderTypeEnum.CODEX_SUBSCRIPTION,
+            baseUrl: "https://chatgpt.com/backend-api/codex",
+            apiKey: ""
+        });
+        expect(decodeProviderConfigs(encodeProviderConfigs([codexConfig]))).toEqual([codexConfig]);
+
+        const apiKey = encodeCodexCredentials({
+            accessToken: "access",
+            idToken: "id",
+            refreshToken: "refresh",
+            updatedAt: 1
+        });
+        expect(() => encodeProviderConfigs([{...codexConfig, apiKey}])).not.toThrow();
+        expect(() => encodeProviderConfigs([{...codexConfig, apiKey: "invalid"}])).toThrow();
+        expect(() =>
+            encodeProviderConfigs([{...codexConfig, baseUrl: "https://example.test"}])
+        ).toThrow();
+    });
+
     test("round trips Unicode ProviderConfig arrays directly", () => {
         const configs = [config({id: "日本", models: [{id: "modèle", enabled: true}]})];
         const encoded = encodeProviderConfigs(configs);

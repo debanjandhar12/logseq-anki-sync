@@ -1,5 +1,7 @@
 import {z} from "zod";
+import {isValidCodexCredentials} from "../codex/CodexCredentialCodec";
 import {ProviderTypeEnum} from "../types";
+import {DEFAULT_CODEX_BASE_URL} from "./constants";
 import {SELECTED_MODEL_ID_DELIMITER} from "./selectedModelId";
 import {validateProviderBaseUrl} from "./validateProviderConfig";
 
@@ -27,10 +29,40 @@ export const providerConfigSchema = z
                 return false;
             }
         }),
-        apiKey: z.string().trim().min(1),
+        apiKey: z.string(),
         models: z.array(providerModelConfigSchema)
     })
-    .strict();
+    .strict()
+    .superRefine((config, context) => {
+        if (config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION) {
+            let baseUrl: string | undefined;
+            try {
+                baseUrl = validateProviderBaseUrl(config.baseUrl);
+            } catch {
+                // The field-level validation reports this error.
+            }
+            if (baseUrl !== DEFAULT_CODEX_BASE_URL) {
+                context.addIssue({
+                    code: "custom",
+                    path: ["baseUrl"],
+                    message: "Codex Subscription Base URL is fixed"
+                });
+            }
+            if (config.apiKey && !isValidCodexCredentials(config.apiKey)) {
+                context.addIssue({
+                    code: "custom",
+                    path: ["apiKey"],
+                    message: "Codex Subscription credentials are invalid"
+                });
+            }
+        } else if (!config.apiKey.trim()) {
+            context.addIssue({
+                code: "custom",
+                path: ["apiKey"],
+                message: "Provider API key is required"
+            });
+        }
+    });
 
 export const providerConfigsSchema = z
     .array(providerConfigSchema)
@@ -58,7 +90,10 @@ export const providerConfigsSchema = z
                 seenModelIds.add(model.id);
             }
 
-            if (!config.models.some((model) => model.enabled)) {
+            if (
+                !config.models.some((model) => model.enabled) &&
+                !(config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION && config.apiKey.length === 0)
+            ) {
                 context.addIssue({
                     code: "custom",
                     path: [configIndex, "models"],

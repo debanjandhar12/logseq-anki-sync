@@ -5,11 +5,15 @@ import {ProviderTypeEnum, WebToolsProviderEnum} from "../../../../src/core/ai-sd
 const mocks = vi.hoisted(() => ({
     createOpenAI: vi.fn(),
     createGoogle: vi.fn(),
+    getRuntimeSession: vi.fn(),
     getPluginSettings: vi.fn()
 }));
 
 vi.mock("@ai-sdk/openai", () => ({createOpenAI: mocks.createOpenAI}));
 vi.mock("@ai-sdk/google", () => ({createGoogleGenerativeAI: mocks.createGoogle}));
+vi.mock("../../../../src/core/ai-sdk/codex/CodexSessionManager", () => ({
+    CodexSessionManager: {getRuntimeSession: mocks.getRuntimeSession}
+}));
 vi.mock("../../../../src/logseq/LogseqSettingAccessor", () => ({
     LogseqSettingAccessor: {getPluginSettings: mocks.getPluginSettings}
 }));
@@ -34,6 +38,9 @@ describe("getLLMProviderTools", () => {
                 googleSearch: vi.fn().mockReturnValue("search"),
                 urlContext: vi.fn().mockReturnValue("url")
             }
+        });
+        mocks.getRuntimeSession.mockReturnValue({
+            aiProvider: {tools: {webSearch: vi.fn().mockReturnValue("codex-web")}}
         });
     });
 
@@ -73,5 +80,15 @@ describe("getLLMProviderTools", () => {
             webToolsProvider: WebToolsProviderEnum.MODEL_NATIVE
         });
         expect(getLLMProviderTools(resolved(ProviderTypeEnum.OPENAI_COMPATIBLE))).toEqual({});
+    });
+
+    test("uses the OAuth-backed native web search tool for Codex", () => {
+        mocks.getPluginSettings.mockReturnValue({
+            webToolsProvider: WebToolsProviderEnum.MODEL_NATIVE
+        });
+        const selection = resolved(ProviderTypeEnum.CODEX_SUBSCRIPTION);
+        expect(getLLMProviderTools(selection)).toEqual({web_search: "codex-web"});
+        expect(mocks.getRuntimeSession).toHaveBeenCalledWith(selection.config);
+        expect(mocks.createOpenAI).not.toHaveBeenCalled();
     });
 });

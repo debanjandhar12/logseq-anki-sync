@@ -1,4 +1,6 @@
 import {describe, expect, test} from "vitest";
+import {encodeCodexCredentials} from "../../../../../src/core/ai-sdk/codex/CodexCredentialCodec";
+import {DEFAULT_CODEX_BASE_URL} from "../../../../../src/core/ai-sdk/provider-config/constants";
 import {ProviderTypeEnum} from "../../../../../src/core/ai-sdk/types";
 import {
     toPersistedProviderConfigs,
@@ -15,6 +17,7 @@ function config(overrides: Partial<EditableProviderConfig> = {}): EditableProvid
         baseUrl: "https://api.openai.com/v1",
         apiKey: "secret",
         models: [{id: "gpt-5", enabled: true}],
+        codexCredentialIntent: "unchanged",
         ...overrides
     };
 }
@@ -81,5 +84,40 @@ describe("provider configuration validation", () => {
                 models: [{id: "gpt-5", enabled: true}]
             }
         ]);
+    });
+
+    test("allows a signed-out Codex provider without models", () => {
+        expect(
+            validateProviderConfigs([
+                config({
+                    type: ProviderTypeEnum.CODEX_SUBSCRIPTION,
+                    baseUrl: DEFAULT_CODEX_BASE_URL,
+                    apiKey: "",
+                    models: []
+                })
+            ])
+        ).toEqual([]);
+    });
+
+    test("preserves encoded Codex credentials without exposing API key semantics", () => {
+        const credentials = encodeCodexCredentials({
+            accessToken: "access",
+            idToken: "id",
+            refreshToken: "refresh",
+            updatedAt: 1
+        });
+        const [persisted] = toPersistedProviderConfigs([
+            config({
+                type: ProviderTypeEnum.CODEX_SUBSCRIPTION,
+                baseUrl: DEFAULT_CODEX_BASE_URL,
+                apiKey: credentials,
+                models: [{id: " codex-model ", enabled: true}],
+                codexCredentialIntent: "replace"
+            })
+        ]);
+
+        expect(persisted.apiKey).toBe(credentials);
+        expect(persisted.models).toEqual([{id: "codex-model", enabled: true}]);
+        expect(validateProviderConfigs([{...config(), ...persisted}])).toEqual([]);
     });
 });

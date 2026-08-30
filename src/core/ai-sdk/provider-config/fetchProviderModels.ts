@@ -1,4 +1,5 @@
 import {z} from "zod";
+import {CodexSessionManager} from "../codex/CodexSessionManager";
 import {type ProviderConfig, ProviderTypeEnum} from "../types";
 import {validateProviderBaseUrl, validateProviderConnection} from "./validateProviderConfig";
 
@@ -34,6 +35,12 @@ async function fetchJson(url: string, headers: HeadersInit): Promise<unknown> {
 export async function fetchProviderModels(config: ProviderConfig): Promise<string[]> {
     validateProviderConnection(config);
     const baseUrl = validateProviderBaseUrl(config.baseUrl);
+
+    if (config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION) {
+        const models =
+            await CodexSessionManager.getConfigSession(config).codexClient.listCodexModels();
+        return uniqueModelIds(models.map((model) => model.slug));
+    }
 
     if (config.type !== ProviderTypeEnum.GOOGLE) {
         const payload = await fetchJson(`${baseUrl}/models`, {

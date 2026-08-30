@@ -1,6 +1,7 @@
 import {generateText} from "ai";
+import {CodexSessionManager} from "../codex/CodexSessionManager";
 import {createLLMModel} from "../getLLMModel";
-import type {ProviderConfig} from "../types";
+import {type ProviderConfig, ProviderTypeEnum} from "../types";
 import {validateProviderConnection} from "./validateProviderConfig";
 
 export async function testProviderConfig(config: ProviderConfig): Promise<void> {
@@ -11,8 +12,12 @@ export async function testProviderConfig(config: ProviderConfig): Promise<void> 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
     try {
+        const languageModel =
+            config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION
+                ? CodexSessionManager.getConfigSession(config).aiProvider.responses(model.id.trim())
+                : createLLMModel({config, rawModelId: model.id.trim()});
         await generateText({
-            model: createLLMModel({config, rawModelId: model.id.trim()}),
+            model: languageModel,
             prompt: "Reply with OK.",
             maxOutputTokens: 8,
             abortSignal: controller.signal

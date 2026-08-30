@@ -1,7 +1,8 @@
 export enum ProviderTypeEnum {
     OPENAI = "openai",
     OPENAI_COMPATIBLE = "openai-compatible",
-    GOOGLE = "google"
+    GOOGLE = "google",
+    CODEX_SUBSCRIPTION = "codex-subscription"
 }
 
 export interface ProviderModelConfig {
@@ -20,7 +21,7 @@ export interface ProviderConfig {
 export enum WebToolsProviderEnum {
     DISABLED = "Disable Web Search",
     JINA = "Jina.ai",
-    MODEL_NATIVE = "Model Native (OpenAI / Google)"
+    MODEL_NATIVE = "Model Native (OpenAI / Google / Codex)"
 }
 
 export type ReasoningEffort = "low" | "medium" | "high";

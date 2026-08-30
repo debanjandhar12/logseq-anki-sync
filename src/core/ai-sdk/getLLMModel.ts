@@ -1,6 +1,7 @@
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
 import {createOpenAI} from "@ai-sdk/openai";
 import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
+import {CodexSessionManager} from "./codex/CodexSessionManager";
 import {readProviderConfigs} from "./provider-config/readProviderConfigs";
 import {
     type ResolvedLLMSelection,
@@ -10,6 +11,9 @@ import {validateProviderBaseUrl} from "./provider-config/validateProviderConfig"
 import {ProviderTypeEnum} from "./types";
 
 export function createLLMModel({config, rawModelId}: ResolvedLLMSelection) {
+    if (config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION) {
+        return CodexSessionManager.getRuntimeSession(config).aiProvider.responses(rawModelId);
+    }
     const baseURL = validateProviderBaseUrl(config.baseUrl);
     if (config.type === ProviderTypeEnum.OPENAI) {
         const openai = createOpenAI({

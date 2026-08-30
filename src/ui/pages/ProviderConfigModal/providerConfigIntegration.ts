@@ -1,4 +1,5 @@
 import {
+    DEFAULT_CODEX_BASE_URL,
     DEFAULT_GOOGLE_BASE_URL,
     DEFAULT_OPENAI_BASE_URL,
     DEFAULT_OPENAI_COMPATIBLE_BASE_URL
@@ -6,23 +7,21 @@ import {
 import {fetchProviderModels} from "src/core/ai-sdk/provider-config/fetchProviderModels";
 import {mergeProviderModels} from "src/core/ai-sdk/provider-config/mergeProviderModels";
 import {
-    decodeProviderConfigs,
-    encodeProviderConfigs
-} from "src/core/ai-sdk/provider-config/providerConfigCodec";
-import {reconcileSelectedModelId} from "src/core/ai-sdk/provider-config/selectedModelId";
+    ProviderConfigRepository,
+    type ProviderConfigSaveDraft
+} from "src/core/ai-sdk/provider-config/ProviderConfigRepository";
 import {testProviderConfig} from "src/core/ai-sdk/provider-config/testProviderConfig";
 import type {ProviderConfig, ProviderModelConfig} from "src/core/ai-sdk/types";
-import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
 
-type ProviderSettings = ReturnType<typeof LogseqSettingAccessor.getPluginSettings> & {
-    providerConfigSetting?: string;
+export {
+    DEFAULT_CODEX_BASE_URL,
+    DEFAULT_GOOGLE_BASE_URL,
+    DEFAULT_OPENAI_BASE_URL,
+    DEFAULT_OPENAI_COMPATIBLE_BASE_URL
 };
 
-export {DEFAULT_GOOGLE_BASE_URL, DEFAULT_OPENAI_BASE_URL, DEFAULT_OPENAI_COMPATIBLE_BASE_URL};
-
 export function loadProviderConfigs(): ProviderConfig[] {
-    const settings = LogseqSettingAccessor.getPluginSettings() as ProviderSettings;
-    return decodeProviderConfigs(settings.providerConfigSetting ?? encodeProviderConfigs([]));
+    return ProviderConfigRepository.read();
 }
 
 export async function discoverProviderModels(
@@ -37,17 +36,11 @@ export async function verifyProviderConfig(config: ProviderConfig): Promise<void
 }
 
 export async function saveProviderConfigs(
-    configs: ProviderConfig[],
+    configs: ProviderConfigSaveDraft[],
     renamedIds: Map<string, string>
 ): Promise<void> {
-    const settings = LogseqSettingAccessor.getPluginSettings() as ProviderSettings;
-    const selectedModelId = reconcileSelectedModelId(settings.selectedModelId, configs, renamedIds);
-    const patch = {
-        providerConfigSetting: encodeProviderConfigs(configs),
-        selectedModelId
-    };
-
-    await LogseqSettingAccessor.updatePluginSettings(
-        patch as Parameters<typeof LogseqSettingAccessor.updatePluginSettings>[0]
-    );
+    await ProviderConfigRepository.saveFromModal(configs, renamedIds);
 }
+
+export const subscribeToCodexCredentialUpdates =
+    ProviderConfigRepository.subscribeToCredentialUpdates.bind(ProviderConfigRepository);

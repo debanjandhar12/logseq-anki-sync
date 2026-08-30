@@ -1,3 +1,5 @@
+import {isValidCodexCredentials} from "src/core/ai-sdk/codex/CodexCredentialCodec";
+import {DEFAULT_CODEX_BASE_URL} from "src/core/ai-sdk/provider-config/constants";
 import {SELECTED_MODEL_ID_DELIMITER} from "src/core/ai-sdk/provider-config/selectedModelId";
 import {validateProviderBaseUrl} from "src/core/ai-sdk/provider-config/validateProviderConfig";
 import {type ProviderConfig, ProviderTypeEnum} from "src/core/ai-sdk/types";
@@ -6,7 +8,8 @@ import type {EditableProviderConfig, ProviderConfigValidationIssue} from "./type
 const SUPPORTED_PROVIDER_TYPES = new Set<ProviderTypeEnum>([
     ProviderTypeEnum.OPENAI,
     ProviderTypeEnum.OPENAI_COMPATIBLE,
-    ProviderTypeEnum.GOOGLE
+    ProviderTypeEnum.GOOGLE,
+    ProviderTypeEnum.CODEX_SUBSCRIPTION
 ]);
 
 function isValidBaseUrl(value: string): boolean {
@@ -80,8 +83,27 @@ export function validateProviderConfigs(
                 field: "baseUrl",
                 message: "Enter a valid HTTP or HTTPS Base URL without embedded credentials."
             });
+        } else if (
+            config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION &&
+            validateProviderBaseUrl(config.baseUrl) !== DEFAULT_CODEX_BASE_URL
+        ) {
+            issues.push({
+                editorKey: config.editorKey,
+                field: "baseUrl",
+                message: "Codex Subscription uses a fixed Base URL."
+            });
         }
-        if (!config.apiKey.trim()) {
+        if (
+            config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION &&
+            config.apiKey &&
+            !isValidCodexCredentials(config.apiKey)
+        ) {
+            issues.push({
+                editorKey: config.editorKey,
+                field: "apiKey",
+                message: "Codex sign-in is invalid. Log out and sign in again."
+            });
+        } else if (config.type !== ProviderTypeEnum.CODEX_SUBSCRIPTION && !config.apiKey.trim()) {
             issues.push({
                 editorKey: config.editorKey,
                 field: "apiKey",
@@ -112,7 +134,10 @@ export function validateProviderConfigs(
                 });
             }
         });
-        if (!config.models.some((model) => model.enabled && model.id.trim())) {
+        if (
+            !config.models.some((model) => model.enabled && model.id.trim()) &&
+            !(config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION && config.apiKey.length === 0)
+        ) {
             issues.push({
                 editorKey: config.editorKey,
                 field: "models",
@@ -125,12 +150,23 @@ export function validateProviderConfigs(
 }
 
 export function toPersistedProviderConfigs(configs: EditableProviderConfig[]): ProviderConfig[] {
-    return configs.map(({editorKey: _editorKey, originalId: _originalId, ...config}) => ({
-        ...config,
-        id: config.id.trim().toLowerCase(),
-        baseUrl: validateProviderBaseUrl(config.baseUrl),
-        models: config.models.map((model) => ({...model, id: model.id.trim()}))
-    }));
+    return configs.map(
+        ({
+            editorKey: _editorKey,
+            originalId: _originalId,
+            codexCredentialIntent: _intent,
+            ...config
+        }) => ({
+            ...config,
+            id: config.id.trim().toLowerCase(),
+            baseUrl: validateProviderBaseUrl(config.baseUrl),
+            apiKey:
+                config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION
+                    ? config.apiKey
+                    : config.apiKey.trim(),
+            models: config.models.map((model) => ({...model, id: model.id.trim()}))
+        })
+    );
 }
 
 export function getProviderConfigsSnapshot(configs: EditableProviderConfig[]): string {

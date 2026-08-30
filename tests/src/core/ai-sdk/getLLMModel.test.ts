@@ -5,7 +5,8 @@ import {ProviderTypeEnum} from "../../../../src/core/ai-sdk/types";
 const mocks = vi.hoisted(() => ({
     createOpenAI: vi.fn(),
     createOpenAICompatible: vi.fn(),
-    createGoogle: vi.fn()
+    createGoogle: vi.fn(),
+    getRuntimeSession: vi.fn()
 }));
 
 vi.mock("@ai-sdk/openai", () => ({createOpenAI: mocks.createOpenAI}));
@@ -13,6 +14,9 @@ vi.mock("@ai-sdk/openai-compatible", () => ({
     createOpenAICompatible: mocks.createOpenAICompatible
 }));
 vi.mock("@ai-sdk/google", () => ({createGoogleGenerativeAI: mocks.createGoogle}));
+vi.mock("../../../../src/core/ai-sdk/codex/CodexSessionManager", () => ({
+    CodexSessionManager: {getRuntimeSession: mocks.getRuntimeSession}
+}));
 
 describe("createLLMModel", () => {
     beforeEach(() => {
@@ -22,6 +26,9 @@ describe("createLLMModel", () => {
             chatModel: vi.fn().mockReturnValue("compatible-model")
         });
         mocks.createGoogle.mockReturnValue({chat: vi.fn().mockReturnValue("google-model")});
+        mocks.getRuntimeSession.mockReturnValue({
+            aiProvider: {responses: vi.fn().mockReturnValue("codex-model")}
+        });
     });
 
     test.each([
@@ -52,5 +59,18 @@ describe("createLLMModel", () => {
                 ? {name: "config-name", baseURL: "https://provider.test/v1", apiKey: "secret"}
                 : {baseURL: "https://provider.test/v1", apiKey: "secret"}
         );
+    });
+
+    test("uses the OAuth session for Codex without passing the envelope as an API key", () => {
+        const config = {
+            id: "codex",
+            type: ProviderTypeEnum.CODEX_SUBSCRIPTION,
+            baseUrl: "https://chatgpt.com/backend-api/codex",
+            apiKey: "encoded-credentials",
+            models: [{id: "gpt-5", enabled: true}]
+        };
+        expect(createLLMModel({config, rawModelId: "gpt-5"})).toBe("codex-model");
+        expect(mocks.getRuntimeSession).toHaveBeenCalledWith(config);
+        expect(mocks.createOpenAI).not.toHaveBeenCalled();
     });
 });
