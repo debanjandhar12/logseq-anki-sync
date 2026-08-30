@@ -12,7 +12,9 @@ import {ModalHeader} from "../../modals/core/ModalHeader";
 import {useModal} from "../../modals/hooks/useModal";
 import {UI} from "../../UI";
 import {getErrorMessage} from "../SkillEditorModal/utils/getErrorMessage";
+import {CodexSignInSection} from "./CodexSignInSection";
 import {
+    DEFAULT_CODEX_BASE_URL,
     DEFAULT_GOOGLE_BASE_URL,
     DEFAULT_OPENAI_BASE_URL,
     DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
@@ -41,7 +43,8 @@ export interface ProviderConfigModalProps {
 const PROVIDER_OPTIONS = [
     {value: ProviderTypeEnum.OPENAI, label: "OpenAI"},
     {value: ProviderTypeEnum.OPENAI_COMPATIBLE, label: "OpenAI Compatible"},
-    {value: ProviderTypeEnum.GOOGLE, label: "Google Gemini"}
+    {value: ProviderTypeEnum.GOOGLE, label: "Google Gemini"},
+    {value: ProviderTypeEnum.CODEX, label: "Codex (ChatGPT OAuth)"}
 ];
 
 function createEditorConfig(config: ProviderConfig): EditableProviderConfig {
@@ -51,6 +54,7 @@ function createEditorConfig(config: ProviderConfig): EditableProviderConfig {
 function getDefaultBaseUrl(type: ProviderTypeEnum): string {
     if (type === ProviderTypeEnum.OPENAI) return DEFAULT_OPENAI_BASE_URL;
     if (type === ProviderTypeEnum.GOOGLE) return DEFAULT_GOOGLE_BASE_URL;
+    if (type === ProviderTypeEnum.CODEX) return DEFAULT_CODEX_BASE_URL;
     return DEFAULT_OPENAI_COMPATIBLE_BASE_URL;
 }
 
@@ -433,6 +437,9 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                         </span>
                                                     )}
                                                 </label>
+                                                {activeConfig.type === ProviderTypeEnum.CODEX && (
+                                                    <CodexSignInSection />
+                                                )}
                                                 <label
                                                     htmlFor={`provider-api-key-${activeConfig.editorKey}`}
                                                     className="block space-y-1 text-sm font-medium">

@@ -1,4 +1,5 @@
 import {
+    DEFAULT_CODEX_BASE_URL,
     DEFAULT_GOOGLE_BASE_URL,
     DEFAULT_OPENAI_BASE_URL,
     DEFAULT_OPENAI_COMPATIBLE_BASE_URL
@@ -18,7 +19,12 @@ type ProviderSettings = ReturnType<typeof LogseqSettingAccessor.getPluginSetting
     providerConfigSetting?: string;
 };
 
-export {DEFAULT_GOOGLE_BASE_URL, DEFAULT_OPENAI_BASE_URL, DEFAULT_OPENAI_COMPATIBLE_BASE_URL};
+export {
+    DEFAULT_CODEX_BASE_URL,
+    DEFAULT_GOOGLE_BASE_URL,
+    DEFAULT_OPENAI_BASE_URL,
+    DEFAULT_OPENAI_COMPATIBLE_BASE_URL
+};
 
 export function loadProviderConfigs(): ProviderConfig[] {
     const settings = LogseqSettingAccessor.getPluginSettings() as ProviderSettings;

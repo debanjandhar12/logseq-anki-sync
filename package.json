@@ -27,6 +27,11 @@
     "dependencies": {
         "@ai-sdk/google": "4.0.18",
         "@ai-sdk/openai": "4.0.16",
+        "@openai-oauth/core": "^2.0.0",
+        "@openai-oauth/web": "^2.0.0",
+        "@openai-oauth/react": "^2.0.0",
+        "@openai-oauth/ai-sdk": "^2.0.0",
+        "openai-oauth-ai-provider": "^0.2.1",
         "@ai-sdk/openai-compatible": "3.0.12",
         "@ai-sdk/react": "4.0.34",
         "@assistant-ui/core": "0.2.21",

@@ -6,7 +6,8 @@ import type {EditableProviderConfig, ProviderConfigValidationIssue} from "./type
 const SUPPORTED_PROVIDER_TYPES = new Set<ProviderTypeEnum>([
     ProviderTypeEnum.OPENAI,
     ProviderTypeEnum.OPENAI_COMPATIBLE,
-    ProviderTypeEnum.GOOGLE
+    ProviderTypeEnum.GOOGLE,
+    ProviderTypeEnum.CODEX
 ]);
 
 function isValidBaseUrl(value: string): boolean {

@@ -7,6 +7,7 @@ import {bundleJSStringPlugin} from "./vite-plugins/bundleJSStringPlugin";
 import {inlineSkillFilePlugin} from "./vite-plugins/inlineSkillFilePlugin";
 import {logseqDevPlugin} from "./vite-plugins/logseqDevPlugin";
 import {logseqReactBridgePlugin} from "./vite-plugins/logseqReactBridgePlugin";
+import {openAIOAuthBrowserPlugin} from "./vite-plugins/openAIOAuthBrowserPlugin";
 import {rewriteDistReqToRootPlugin} from "./vite-plugins/rewriteDistReqToRootPlugin";
 import {shadowDOMFloatingUIReactPopperBridgePlugin} from "./vite-plugins/shadowDOMFloatingUIReactPopperBridgePlugin";
 import {staticFileSyncTransformPlugin} from "./vite-plugins/staticFileSyncTransformPlugin";
@@ -35,6 +36,7 @@ export default defineConfig(({mode}) => {
             mode === "development" && logseqDevPlugin(), // for dev only
             mode === "development" && reactPlugin(), // for dev only
             mode === "development" && rewriteDistReqToRootPlugin(), // for dev only
+            openAIOAuthBrowserPlugin(),
             nodePolyfills({
                 globals: {
                     process: mode !== "test"

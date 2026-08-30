@@ -1,7 +1,8 @@
 export enum ProviderTypeEnum {
     OPENAI = "openai",
     OPENAI_COMPATIBLE = "openai-compatible",
-    GOOGLE = "google"
+    GOOGLE = "google",
+    CODEX = "codex"
 }
 
 export interface ProviderModelConfig {

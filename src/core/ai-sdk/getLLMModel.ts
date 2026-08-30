@@ -1,6 +1,8 @@
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
 import {createOpenAI} from "@ai-sdk/openai";
 import {createOpenAICompatible} from "@ai-sdk/openai-compatible";
+import {createOpenAIOAuthProvider} from "openai-oauth-ai-provider/ai-sdk";
+import {MemoryTokenStore} from "../../shims/openaiOauthTokenStoreShim";
 import {readProviderConfigs} from "./provider-config/readProviderConfigs";
 import {
     type ResolvedLLMSelection,
@@ -32,6 +34,15 @@ export function createLLMModel({config, rawModelId}: ResolvedLLMSelection) {
             baseURL
         });
         return google.chat(rawModelId);
+    }
+    if (config.type === ProviderTypeEnum.CODEX) {
+        // Experimental: tokens are not persisted yet, so chat will fail until the
+        // OAuth session storage is wired up. Use a memory store for now.
+        const codex = createOpenAIOAuthProvider({
+            baseURL,
+            authOptions: {tokenStore: new MemoryTokenStore()}
+        });
+        return codex.responses(rawModelId);
     }
     throw new Error("Unsupported LLM provider");
 }
