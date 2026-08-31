@@ -11,6 +11,7 @@ Open Logseq's plugin settings for Logseq AI Chat and select **Open Provider Conf
 - **OpenAI** uses the pre-populated OpenAI Base URL.
 - **Google Gemini** uses the pre-populated Gemini Base URL.
 - **OpenAI Compatible** starts with the OpenCode Zen Base URL and accepts any HTTP or HTTPS API Base URL that exposes a `/models` endpoint.
+- **Codex** includes experimental ChatGPT OAuth sign-in controls for comparing browser and device authorization libraries.
 
 OpenAI and Gemini Base URL fields are populated automatically and disabled. OpenAI Compatible URLs remain editable, including HTTP endpoints for local providers.
 
@@ -39,6 +40,14 @@ The global **Model Native** web-search option is applied at request time:
 - OpenAI Compatible models receive no provider-native search tools.
 
 Jina.ai web tools continue to use the separate global Jina configuration.
+
+## Experimental Codex Sign-In
+
+The Codex provider includes test controls for several OAuth implementations. In Logseq's embedded browser, `@ai-oauth-sdk/browser` is expected to choose OpenAI's device flow. Enable **Device code authorization for Codex** under ChatGPT **Settings > Security** before starting it.
+
+The Browser SDK experiments compare direct `deviceLogin` with flow-aware `autoLogin` and a forced-popup diagnostic. The popup bypasses flow selection and targets OpenAI's fixed `http://localhost:1455/auth/callback`; it is expected to time out unless that callback is being served. Experiments can use session, local, or memory-only storage. Local storage persists bearer credentials across plugin reloads; use **Clear stored credentials** after testing. Notifications show summarized credentials for diagnostics and omit the SDK's duplicate raw token response.
+
+These experimental sessions are not yet connected to the Codex provider used by chat requests. A successful test only verifies authentication and storage behavior.
 
 ## Credential Storage
 

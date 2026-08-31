@@ -9,6 +9,7 @@ import {MemoryTokenStore} from "../../../shims/openaiOauthTokenStoreShim";
 import {LogseqButton} from "../../components/LogseqButton";
 import {LogseqInput} from "../../components/LogseqInput";
 import {getErrorMessage} from "../SkillEditorModal/utils/getErrorMessage";
+import {AiOAuthSdkBrowserSection} from "./AiOAuthSdkBrowserSection";
 
 const logger = createLogger(LoggerCategory.OTHER_UI);
 
@@ -189,90 +190,97 @@ export const CodexSignInSection: React.FC = () => {
     }, [run]);
 
     return (
-        <div className="space-y-3 rounded-md border border-border p-3">
-            <div>
-                <div className="text-sm font-medium">Sign in with ChatGPT (experimental)</div>
-                <p className="mt-1 text-xs opacity-70">
-                    Try the different OAuth approaches below. Returned credentials are shown in a
-                    notification. Only the device code flow is expected to complete inside Logseq;
-                    the others are included to observe SDK behavior.
-                </p>
-            </div>
-
-            <div className="space-y-1">
-                <div className="text-xs font-medium opacity-80">1. Device code flow</div>
-                <div className="flex flex-wrap items-center">
-                    <LogseqButton
-                        color="outline-link"
-                        size="sm"
-                        disabled={busyAction !== null}
-                        onClick={handleDeviceStart}>
-                        {busyAction === "device-start" ? "Starting..." : "Start device sign-in"}
-                    </LogseqButton>
-                    <LogseqButton
-                        color="outline-link"
-                        size="sm"
-                        disabled={busyAction !== null || deviceAuth === null}
-                        onClick={handleDeviceComplete}>
-                        {busyAction === "device-complete" ? "Completing..." : "Complete sign-in"}
-                    </LogseqButton>
-                </div>
-                {deviceAuth && (
-                    <p className="text-xs opacity-70">
-                        Enter code{" "}
-                        <span className="font-mono font-medium">{deviceAuth.userCode}</span> at{" "}
-                        {deviceAuth.verificationUrl}, then press Complete sign-in.
+        <div className="space-y-3">
+            <div className="space-y-3 rounded-md border border-border p-3">
+                <div>
+                    <div className="text-sm font-medium">Sign in with ChatGPT (experimental)</div>
+                    <p className="mt-1 text-xs opacity-70">
+                        Try the different OAuth approaches below. Returned credentials are shown in
+                        a notification. Only the device code flow is expected to complete inside
+                        Logseq; the others are included to observe SDK behavior.
                     </p>
-                )}
-            </div>
+                </div>
 
-            <div className="space-y-1">
-                <div className="text-xs font-medium opacity-80">2. Loopback redirect flow</div>
-                <div className="flex flex-wrap items-center">
-                    <LogseqButton
-                        color="outline-link"
-                        size="sm"
-                        disabled={busyAction !== null}
-                        onClick={handleLoopback}>
-                        {busyAction === "loopback" ? "Creating..." : "Open loopback auth URL"}
-                    </LogseqButton>
+                <div className="space-y-1">
+                    <div className="text-xs font-medium opacity-80">1. Device code flow</div>
+                    <div className="flex flex-wrap items-center">
+                        <LogseqButton
+                            color="outline-link"
+                            size="sm"
+                            disabled={busyAction !== null}
+                            onClick={handleDeviceStart}>
+                            {busyAction === "device-start" ? "Starting..." : "Start device sign-in"}
+                        </LogseqButton>
+                        <LogseqButton
+                            color="outline-link"
+                            size="sm"
+                            disabled={busyAction !== null || deviceAuth === null}
+                            onClick={handleDeviceComplete}>
+                            {busyAction === "device-complete"
+                                ? "Completing..."
+                                : "Complete sign-in"}
+                        </LogseqButton>
+                    </div>
+                    {deviceAuth && (
+                        <p className="text-xs opacity-70">
+                            Enter code{" "}
+                            <span className="font-mono font-medium">{deviceAuth.userCode}</span> at{" "}
+                            {deviceAuth.verificationUrl}, then press Complete sign-in.
+                        </p>
+                    )}
                 </div>
-            </div>
 
-            <div className="space-y-1">
-                <div className="text-xs font-medium opacity-80">3. Web SDK (extension / popup)</div>
-                <div className="flex flex-wrap items-center">
-                    <LogseqButton
-                        color="outline-link"
-                        size="sm"
-                        disabled={busyAction !== null}
-                        onClick={handleWebStart}>
-                        {busyAction === "web-start" ? "Starting..." : "startLogin (popup)"}
-                    </LogseqButton>
-                    <LogseqButton
-                        color="outline-link"
-                        size="sm"
-                        disabled={busyAction !== null}
-                        onClick={handleWebSession}>
-                        {busyAction === "web-session" ? "Reading..." : "getSession"}
-                    </LogseqButton>
+                <div className="space-y-1">
+                    <div className="text-xs font-medium opacity-80">2. Loopback redirect flow</div>
+                    <div className="flex flex-wrap items-center">
+                        <LogseqButton
+                            color="outline-link"
+                            size="sm"
+                            disabled={busyAction !== null}
+                            onClick={handleLoopback}>
+                            {busyAction === "loopback" ? "Creating..." : "Open loopback auth URL"}
+                        </LogseqButton>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <LogseqInput
-                        value={callbackUrl}
-                        disabled={busyAction !== null}
-                        placeholder="Paste callback URL (?code=...&state=...)"
-                        onChange={(event) => setCallbackUrl(event.target.value)}
-                    />
-                    <LogseqButton
-                        color="outline-link"
-                        size="sm"
-                        disabled={busyAction !== null}
-                        onClick={handleWebComplete}>
-                        {busyAction === "web-complete" ? "Completing..." : "completeLogin"}
-                    </LogseqButton>
+
+                <div className="space-y-1">
+                    <div className="text-xs font-medium opacity-80">
+                        3. Web SDK (extension / popup)
+                    </div>
+                    <div className="flex flex-wrap items-center">
+                        <LogseqButton
+                            color="outline-link"
+                            size="sm"
+                            disabled={busyAction !== null}
+                            onClick={handleWebStart}>
+                            {busyAction === "web-start" ? "Starting..." : "startLogin (popup)"}
+                        </LogseqButton>
+                        <LogseqButton
+                            color="outline-link"
+                            size="sm"
+                            disabled={busyAction !== null}
+                            onClick={handleWebSession}>
+                            {busyAction === "web-session" ? "Reading..." : "getSession"}
+                        </LogseqButton>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <LogseqInput
+                            value={callbackUrl}
+                            disabled={busyAction !== null}
+                            placeholder="Paste callback URL (?code=...&state=...)"
+                            onChange={(event) => setCallbackUrl(event.target.value)}
+                        />
+                        <LogseqButton
+                            color="outline-link"
+                            size="sm"
+                            disabled={busyAction !== null}
+                            onClick={handleWebComplete}>
+                            {busyAction === "web-complete" ? "Completing..." : "completeLogin"}
+                        </LogseqButton>
+                    </div>
                 </div>
             </div>
+            <AiOAuthSdkBrowserSection />
         </div>
     );
 };

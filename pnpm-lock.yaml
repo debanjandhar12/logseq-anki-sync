@@ -12,6 +12,9 @@ importers:
 
   .:
     dependencies:
+      '@ai-oauth-sdk/browser':
+        specifier: ^1.2.0
+        version: 1.2.0
       '@ai-sdk/google':
         specifier: 4.0.18
         version: 4.0.18(zod@4.4.3)
@@ -354,6 +357,13 @@ importers:
         version: 1.1.2
 
 packages:
+
+  '@ai-oauth-sdk/browser@1.2.0':
+    resolution: {integrity: sha512-VvZ5sGXoxumoKB5yEb77yo2aC+WHSxpR7SSUYvwDXcoN6BECAt/slDDLfPYPh5GJ+GU1u63byd+BJ3z1vzObYg==}
+
+  '@ai-oauth-sdk/core@1.2.0':
+    resolution: {integrity: sha512-1NN4CHm20l7Y6w1wmUfn5OfW+lZOpOrY+JTQr6WcLZrpugL2DquVL2i7Fy14AqNJ09O0gIZCgUXTXQ5fN+JuBQ==}
+    engines: {node: '>=22'}
 
   '@ai-sdk/gateway@4.0.23':
     resolution: {integrity: sha512-f85diFdPMXYJpxCjOYZchMQkRH8h3r6lhK4Q2xmzJ7UA2OQ80L3W7tFu61742xGQK7zHWm5AhxYhNuc50H9SGQ==}
@@ -7034,6 +7044,12 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
+
+  '@ai-oauth-sdk/browser@1.2.0':
+    dependencies:
+      '@ai-oauth-sdk/core': 1.2.0
+
+  '@ai-oauth-sdk/core@1.2.0': {}
 
   '@ai-sdk/gateway@4.0.23(zod@4.4.3)':
     dependencies:
