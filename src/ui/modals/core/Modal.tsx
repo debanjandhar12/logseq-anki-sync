@@ -65,13 +65,13 @@ export function Modal({
                 className="fixed inset-0 flex items-center justify-center p-4"
                 style={{zIndex: calculatedZIndex}}>
                 {/* Overlay */}
-                <div className="fixed inset-0 bg-black/50" />
+                <div className="fixed inset-0 bg-black/50 animate-in fade-in-0 motion-reduce:animate-none" />
 
                 {/* Modal Panel */}
                 <div
                     ref={panelRef}
                     tabIndex={-1}
-                    className="relative bg-secondary-background border border-border rounded-md shadow-lg z-10"
+                    className="relative bg-secondary-background border border-border rounded-md shadow-lg z-10 animate-in fade-in-0 zoom-in-95 duration-160 ease-[ease-out] motion-reduce:animate-none"
                     style={style}>
                     {hasCloseButton && (
                         <div className="absolute top-0 right-0 pt-2 pr-2">
