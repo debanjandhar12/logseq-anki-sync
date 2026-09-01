@@ -13,21 +13,21 @@ import {useModal} from "../../modals/hooks/useModal";
 import {UI} from "../../UI";
 import {getErrorMessage} from "../SkillEditorModal/utils/getErrorMessage";
 import {createCommandEditorExtensions} from "./createCommandEditorExtensions";
-import {InvokeConditionTreePopover} from "./InvokeConditionTreePopover";
+import {InvokeLocationTreePopover} from "./InvokeLocationTreePopover";
 import type {EditableCommandFile, OriginalBuiltInCommandFile} from "./types";
 import {getCommandFilesSnapshot} from "./utils/commandFilesSnapshot";
 import {getCommandFileDisplayName} from "./utils/getCommandFileDisplayName";
 import {getCommandFileMetadata} from "./utils/getCommandFileMetadata";
 import {getCommandFileName} from "./utils/getCommandFileName";
 import {
-    updateCommandInvokeConditions,
+    updateCommandInvokeLocations,
     updateCommandUserInvocable
 } from "./utils/updateCommandMetadata";
 import {validateCommandFilesForSave} from "./utils/validateCommandFiles";
 
 const NEW_COMMAND_CONTENT = `---
 name: New command
-invoke-condition:
+invoke-location:
   - Block Context Menu/Other Blocks
 user-invocable: true
 command-invoke-in-new-thread: true
@@ -268,15 +268,15 @@ export const CommandEditorModalComponent: React.FC<CommandEditorModalProps> = ({
                                                     onChange={handleToggleEnabled}>
                                                     Enabled
                                                 </LogseqCheckbox>
-                                                <InvokeConditionTreePopover
-                                                    value={activeMetadata?.invokeConditions ?? []}
+                                                <InvokeLocationTreePopover
+                                                    value={activeMetadata?.invokeLocations ?? []}
                                                     readOnly={isActiveFileBuiltIn}
-                                                    onValueChange={(conditions) => {
+                                                    onValueChange={(locations) => {
                                                         if (isActiveFileBuiltIn) return;
                                                         handleContentChange(
-                                                            updateCommandInvokeConditions(
+                                                            updateCommandInvokeLocations(
                                                                 activeFile.content,
-                                                                conditions
+                                                                locations
                                                             )
                                                         );
                                                     }}

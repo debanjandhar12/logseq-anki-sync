@@ -8,7 +8,7 @@ const ADD_AS_ATTACHMENT_FILE_NAME = "Add as attachment.md";
 const ADD_TO_CHAT_FILE_NAME = "Add to Chat.md";
 
 function createCommandSource(name: string, metadata = "", body = "Prompt"): string {
-    return `---\nname: ${name}\ninvoke-condition:\n  - Block Slash Command\n${metadata}---\n${body}`;
+    return `---\nname: ${name}\ninvoke-location:\n  - Block Slash Command\n${metadata}---\n${body}`;
 }
 
 describe("initBuiltInCommandFiles", () => {
@@ -42,7 +42,7 @@ describe("initBuiltInCommandFiles", () => {
                 commandInvokeInNewThread: false,
                 builtInCommand: true,
                 builtInCommandUserControllable: false,
-                invokeConditions: [
+                invokeLocations: [
                     "Block Context Menu/Image",
                     "Block Context Menu/Pdf",
                     "Block Context Menu/Video",

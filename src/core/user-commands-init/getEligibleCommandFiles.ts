@@ -14,6 +14,6 @@ export async function getEligibleCommandFiles(
 ): Promise<CommandFileData[]> {
     return (await CommandFileStore.getAllCommandFiles())
         .filter((commandFile) => commandFile.userInvocable)
-        .filter((commandFile) => commandFile.invokeConditions.includes(context.condition))
+        .filter((commandFile) => commandFile.invokeLocations.includes(context.location))
         .sort(compareCommandFiles);
 }

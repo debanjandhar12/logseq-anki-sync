@@ -1,6 +1,6 @@
 ---
 name: Add to Chat
-invoke-condition:
+invoke-location:
   - Block Context Menu/Image
   - Block Context Menu/Pdf
   - Block Context Menu/Video

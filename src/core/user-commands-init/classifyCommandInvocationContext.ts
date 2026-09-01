@@ -5,9 +5,9 @@ import {isFlashcardBlock} from "../logseq-reversible-transaction-tracker/command
 import {isVideoBlock} from "../logseq-reversible-transaction-tracker/commands/utils/isVideoBlock";
 import type {
     BlockCommandInvocationContext,
-    BlockContextMenuInvokeCondition,
+    BlockContextMenuInvokeLocation,
     PageCommandInvocationContext,
-    PageContextMenuInvokeCondition
+    PageContextMenuInvokeLocation
 } from "./types";
 
 export async function classifyBlockCommandInvocationContext(
@@ -21,7 +21,7 @@ export async function classifyBlockCommandInvocationContext(
 
     return {
         source: "block-context-menu",
-        condition: await classifyBlockCondition(block),
+        location: await classifyBlockLocation(block),
         uuid
     };
 }
@@ -34,14 +34,12 @@ export async function classifyPageCommandInvocationContext(
 
     return {
         source: "page-context-menu",
-        condition: await classifyPageCondition(page),
+        location: await classifyPageLocation(page),
         uuid: page.uuid
     };
 }
 
-async function classifyBlockCondition(
-    block: BlockEntity
-): Promise<BlockContextMenuInvokeCondition> {
+async function classifyBlockLocation(block: BlockEntity): Promise<BlockContextMenuInvokeLocation> {
     if (LogseqEditor.isImageAssetBlock(block)) return "Block Context Menu/Image";
     if (LogseqEditor.isPdfAssetBlock(block)) return "Block Context Menu/Pdf";
     if (isVideoBlock(block)) return "Block Context Menu/Video";
@@ -49,7 +47,7 @@ async function classifyBlockCondition(
     return "Block Context Menu/Other Blocks";
 }
 
-async function classifyPageCondition(page: PageEntity): Promise<PageContextMenuInvokeCondition> {
+async function classifyPageLocation(page: PageEntity): Promise<PageContextMenuInvokeLocation> {
     if (await LogseqEditor.isTagBlock(page)) return "Page Context Menu/Tag";
     if (await LogseqEditor.isPropertyBlock(page)) return "Page Context Menu/Property";
     if ((await getJournalDayByPageUuid(page.uuid)) !== null) {

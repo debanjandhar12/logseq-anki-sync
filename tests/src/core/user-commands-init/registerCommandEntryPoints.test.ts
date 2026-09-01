@@ -2,7 +2,7 @@ import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {CommandFileStore} from "../../../../src/core/stores/command-file-store/CommandFileStore";
 import type {
     CommandFileData,
-    CommandInvokeCondition
+    CommandInvokeLocation
 } from "../../../../src/core/stores/command-file-store/types";
 
 const {showPaletteMock} = vi.hoisted(() => ({showPaletteMock: vi.fn()}));
@@ -14,16 +14,16 @@ vi.mock("../../../../src/ui/launchers/showAICommandPaletteModal", () => ({
 import {registerUserCommandEntryPoints} from "../../../../src/core/user-commands-init/registerCommandEntryPoints";
 
 function commandFile(
-    invokeConditions: CommandInvokeCondition[],
+    invokeLocations: CommandInvokeLocation[],
     overrides: Partial<CommandFileData> = {}
 ): CommandFileData {
     return {
         name: "Summarize",
-        invokeConditions,
+        invokeLocations,
         userInvocable: true,
         commandInvokeInNewThread: false,
         commandAppearSeparatelyInContextMenu: false,
-        content: `---\nname: Summarize\ninvoke-condition:\n${invokeConditions.map((condition) => `  - ${condition}`).join("\n")}\n---\nSummarize`,
+        content: `---\nname: Summarize\ninvoke-location:\n${invokeLocations.map((location) => `  - ${location}`).join("\n")}\n---\nSummarize`,
         ...overrides
     };
 }

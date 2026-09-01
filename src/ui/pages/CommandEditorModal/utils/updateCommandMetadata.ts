@@ -1,6 +1,6 @@
 import matter from "gray-matter";
 import {COMMAND_FRONTMATTER_KEYS} from "src/core/command-parser";
-import type {CommandInvokeCondition} from "src/core/stores/command-file-store/types";
+import type {CommandInvokeLocation} from "src/core/stores/command-file-store/types";
 
 export function updateCommandUserInvocable(content: string, enabled: boolean): string {
     return updateCommandMetadata(content, {
@@ -8,12 +8,12 @@ export function updateCommandUserInvocable(content: string, enabled: boolean): s
     });
 }
 
-export function updateCommandInvokeConditions(
+export function updateCommandInvokeLocations(
     content: string,
-    conditions: readonly CommandInvokeCondition[]
+    locations: readonly CommandInvokeLocation[]
 ): string {
     return updateCommandMetadata(content, {
-        [COMMAND_FRONTMATTER_KEYS.invokeConditions]: [...conditions]
+        [COMMAND_FRONTMATTER_KEYS.invokeLocations]: [...locations]
     });
 }
 

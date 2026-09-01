@@ -6,7 +6,7 @@ import {beforeEach, describe, expect, test, vi} from "vitest";
 function createCommandContent(
     overrides: {
         name?: string;
-        conditions?: string[];
+        locations?: string[];
         body?: string;
         builtIn?: boolean;
         controllable?: boolean;
@@ -15,7 +15,7 @@ function createCommandContent(
 ): string {
     const {
         name = "My command",
-        conditions = ["Block Context Menu/Other Blocks"],
+        locations = ["Block Context Menu/Other Blocks"],
         body = "Summarize this block.",
         builtIn,
         controllable,
@@ -23,7 +23,7 @@ function createCommandContent(
     } = overrides;
     return matter.stringify(body, {
         name,
-        "invoke-condition": conditions,
+        "invoke-location": locations,
         "user-invocable": enabled,
         ...(builtIn === undefined ? {} : {"built-in-command": builtIn}),
         ...(controllable === undefined ? {} : {"built-in-command-user-controllable": controllable})
@@ -49,19 +49,19 @@ describe("validateCommandFilesForSave", () => {
 
     test("rejects invalid templates before command metadata errors", async () => {
         const result = await validateCommandFilesForSave([
-            {id: "broken", content: "---\nname: 42\ninvoke-condition: []\n---\n<% unknown %>"}
+            {id: "broken", content: "---\nname: 42\ninvoke-location: []\n---\n<% unknown %>"}
         ]);
 
         expect(result.issue).toMatchObject({kind: "invalid-template", fileId: "broken"});
     });
 
-    test("rejects empty invoke conditions", async () => {
+    test("rejects empty invoke locations", async () => {
         const result = await validateCommandFilesForSave([
-            {id: "empty", content: createCommandContent({conditions: []})}
+            {id: "empty", content: createCommandContent({locations: []})}
         ]);
 
         expect(result.issue).toMatchObject({kind: "parse-error", fileId: "empty"});
-        expect(result.issue?.message).toContain("invoke-condition must contain at least one value");
+        expect(result.issue?.message).toContain("invoke-location must contain at least one value");
     });
 
     test("rejects duplicate names case-insensitively", async () => {

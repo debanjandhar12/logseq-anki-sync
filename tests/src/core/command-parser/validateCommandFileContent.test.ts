@@ -2,7 +2,7 @@ import {describe, expect, test} from "vitest";
 import {validateCommandFileContent} from "../../../../src/core/command-parser";
 
 function createCommandSource(metadata = "", body = "Prompt") {
-    return `---\nname: Test command\ninvoke-condition:\n  - Block Context Menu/Image\n${metadata}---\n${body}`;
+    return `---\nname: Test command\ninvoke-location:\n  - Block Context Menu/Image\n${metadata}---\n${body}`;
 }
 
 describe("validateCommandFileContent", () => {
@@ -16,7 +16,7 @@ describe("validateCommandFileContent", () => {
             valid: true,
             commandFile: {
                 name: "Test command",
-                invokeConditions: ["Block Context Menu/Image"],
+                invokeLocations: ["Block Context Menu/Image"],
                 userInvocable: false,
                 commandInvokeInNewThread: false,
                 commandAppearSeparatelyInContextMenu: true,
@@ -41,23 +41,23 @@ describe("validateCommandFileContent", () => {
 
     test.each([
         ["missing", "---\nname: Test\n---", "must be a non-empty array"],
-        ["empty", "---\nname: Test\ninvoke-condition: []\n---", "must contain at least one value"],
+        ["empty", "---\nname: Test\ninvoke-location: []\n---", "must contain at least one value"],
         [
             "scalar",
-            "---\nname: Test\ninvoke-condition: Block Slash Command\n---",
+            "---\nname: Test\ninvoke-location: Block Slash Command\n---",
             "must be a non-empty array"
         ]
-    ])("rejects a %s invoke-condition", (_case, content, expectedMessage) => {
+    ])("rejects a %s invoke-location", (_case, content, expectedMessage) => {
         const result = validateCommandFileContent(content);
 
         expect(result.valid).toBe(false);
         expect(result.issues[0].message).toContain(expectedMessage);
     });
 
-    test("reports unsupported and duplicate conditions at their array items", () => {
+    test("reports unsupported and duplicate locations at their array items", () => {
         const content = `---
 name: Test
-invoke-condition:
+invoke-location:
   - Unsupported Route
   - Block Slash Command
   - Block Slash Command
@@ -66,8 +66,8 @@ invoke-condition:
 
         expect(result.valid).toBe(false);
         expect(result.issues.map(({message}) => message)).toEqual([
-            "Invalid command file metadata: unsupported invoke condition: Unsupported Route",
-            "Invalid command file metadata: duplicate invoke condition: Block Slash Command"
+            "Invalid command file metadata: unsupported invoke location: Unsupported Route",
+            "Invalid command file metadata: duplicate invoke location: Block Slash Command"
         ]);
         expect(result.issues.map(({from, to}) => content.slice(from, to))).toEqual([
             "  - Unsupported Route",
@@ -79,7 +79,7 @@ invoke-condition:
     test("locates each repeated duplicate occurrence", () => {
         const content = `---
 name: Test
-invoke-condition:
+invoke-location:
   - Block Slash Command
   - Block Slash Command
   - Block Slash Command
@@ -91,12 +91,12 @@ invoke-condition:
         expect(result.issues[1].from).toBeGreaterThan(result.issues[0].from);
     });
 
-    test("scopes CRLF item diagnostics to invoke-condition", () => {
+    test("scopes CRLF item diagnostics to invoke-location", () => {
         const content = [
             "---",
             "other-values:",
             "  - Unsupported Route",
-            "invoke-condition:",
+            "invoke-location:",
             "  - Unsupported Route",
             "  - Unsupported Route",
             "---"
@@ -109,17 +109,17 @@ invoke-condition:
             "  - Unsupported Route",
             "  - Unsupported Route"
         ]);
-        expect(result.issues[1].from).toBeGreaterThan(content.indexOf("invoke-condition:"));
+        expect(result.issues[1].from).toBeGreaterThan(content.indexOf("invoke-location:"));
         expect(result.issues[2].from).toBeGreaterThan(result.issues[1].from);
     });
 
-    test("locates items under the top-level invoke-condition key", () => {
+    test("locates items under the top-level invoke-location key", () => {
         const content = `---
 nested:
-  invoke-condition:
+  invoke-location:
     - Unsupported Route
 name: Test
-invoke-condition:
+invoke-location:
   - Unsupported Route
 ---`;
         const result = validateCommandFileContent(content);
@@ -128,13 +128,13 @@ invoke-condition:
         expect(content.slice(result.issues[0].from, result.issues[0].to)).toBe(
             "  - Unsupported Route"
         );
-        expect(result.issues[0].from).toBeGreaterThan(content.lastIndexOf("invoke-condition:"));
+        expect(result.issues[0].from).toBeGreaterThan(content.lastIndexOf("invoke-location:"));
     });
 
     test("collects invalid name and boolean fields", () => {
         const content = `---
 name: " "
-invoke-condition:
+invoke-location:
   - Block Slash Command
 user-invocable: enabled
 command-invoke-in-new-thread: new
@@ -156,7 +156,7 @@ built-in-command-user-controllable: controllable
     });
 
     test("returns bounded diagnostics for missing frontmatter and malformed YAML", () => {
-        for (const content of ["Prompt", "---\r\nname: [\r\ninvoke-condition: []\r\n---"]) {
+        for (const content of ["Prompt", "---\r\nname: [\r\ninvoke-location: []\r\n---"]) {
             const result = validateCommandFileContent(content);
             expect(result.valid).toBe(false);
             for (const issue of result.issues) {

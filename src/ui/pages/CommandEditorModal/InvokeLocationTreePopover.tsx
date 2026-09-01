@@ -11,28 +11,28 @@ import {
 } from "@floating-ui/react";
 import {ChevronRight, ListTree} from "lucide-react";
 import React from "react";
-import {COMMAND_INVOKE_CONDITION_TREE, COMMAND_INVOKE_CONDITIONS} from "src/core/command-parser";
-import type {CommandInvokeCondition} from "src/core/stores/command-file-store/types";
+import {COMMAND_INVOKE_LOCATION_TREE, COMMAND_INVOKE_LOCATIONS} from "src/core/command-parser";
+import type {CommandInvokeLocation} from "src/core/stores/command-file-store/types";
 import {LogseqCheckbox} from "../../components/LogseqCheckbox";
 
-export interface InvokeConditionTreePopoverProps {
-    value: readonly CommandInvokeCondition[];
+export interface InvokeLocationTreePopoverProps {
+    value: readonly CommandInvokeLocation[];
     readOnly?: boolean;
-    onValueChange: (value: CommandInvokeCondition[]) => void;
+    onValueChange: (value: CommandInvokeLocation[]) => void;
 }
 
 export function getCategoryCheckState(
-    selected: ReadonlySet<CommandInvokeCondition>,
-    children: readonly CommandInvokeCondition[]
+    selected: ReadonlySet<CommandInvokeLocation>,
+    children: readonly CommandInvokeLocation[]
 ): {checked: boolean; indeterminate: boolean} {
-    const selectedCount = children.filter((condition) => selected.has(condition)).length;
+    const selectedCount = children.filter((location) => selected.has(location)).length;
     return {
         checked: selectedCount === children.length,
         indeterminate: selectedCount > 0 && selectedCount < children.length
     };
 }
 
-export const InvokeConditionTreePopover: React.FC<InvokeConditionTreePopoverProps> = ({
+export const InvokeLocationTreePopover: React.FC<InvokeLocationTreePopoverProps> = ({
     value,
     readOnly = false,
     onValueChange
@@ -69,25 +69,25 @@ export const InvokeConditionTreePopover: React.FC<InvokeConditionTreePopoverProp
         }
     }, [isOpen, refs.domReference, refs.floating]);
 
-    const emitSelection = (nextSelected: ReadonlySet<CommandInvokeCondition>) => {
-        onValueChange(COMMAND_INVOKE_CONDITIONS.filter((condition) => nextSelected.has(condition)));
+    const emitSelection = (nextSelected: ReadonlySet<CommandInvokeLocation>) => {
+        onValueChange(COMMAND_INVOKE_LOCATIONS.filter((location) => nextSelected.has(location)));
     };
 
-    const toggleLeaf = (condition: CommandInvokeCondition) => {
+    const toggleLeaf = (location: CommandInvokeLocation) => {
         if (readOnly) return;
         const nextSelected = new Set(selected);
-        if (nextSelected.has(condition)) nextSelected.delete(condition);
-        else nextSelected.add(condition);
+        if (nextSelected.has(location)) nextSelected.delete(location);
+        else nextSelected.add(location);
         emitSelection(nextSelected);
     };
 
-    const toggleCategory = (children: readonly CommandInvokeCondition[]) => {
+    const toggleCategory = (children: readonly CommandInvokeLocation[]) => {
         if (readOnly) return;
         const nextSelected = new Set(selected);
-        const allSelected = children.every((condition) => nextSelected.has(condition));
-        for (const condition of children) {
-            if (allSelected) nextSelected.delete(condition);
-            else nextSelected.add(condition);
+        const allSelected = children.every((location) => nextSelected.has(location));
+        for (const location of children) {
+            if (allSelected) nextSelected.delete(location);
+            else nextSelected.add(location);
         }
         emitSelection(nextSelected);
     };
@@ -156,7 +156,7 @@ export const InvokeConditionTreePopover: React.FC<InvokeConditionTreePopoverProp
                     </div>
                     <fieldset className="border-0 p-0">
                         <legend className="sr-only">Command invocation locations</legend>
-                        {COMMAND_INVOKE_CONDITION_TREE.map((node) => {
+                        {COMMAND_INVOKE_LOCATION_TREE.map((node) => {
                             if ("children" in node) {
                                 const isExpanded = expandedCategories.has(node.label);
                                 const state = getCategoryCheckState(selected, node.children);
@@ -192,15 +192,15 @@ export const InvokeConditionTreePopover: React.FC<InvokeConditionTreePopoverProp
                                                 <legend className="sr-only">
                                                     {node.label} options
                                                 </legend>
-                                                {node.children.map((condition) => (
+                                                {node.children.map((location) => (
                                                     <div
-                                                        key={condition}
+                                                        key={location}
                                                         className="rounded px-1 py-1 hover:bg-tertiary/50">
                                                         <LogseqCheckbox
-                                                            checked={selected.has(condition)}
+                                                            checked={selected.has(location)}
                                                             disabled={readOnly}
-                                                            onChange={() => toggleLeaf(condition)}>
-                                                            {getConditionLeafLabel(condition)}
+                                                            onChange={() => toggleLeaf(location)}>
+                                                            {getLocationLeafLabel(location)}
                                                         </LogseqCheckbox>
                                                     </div>
                                                 ))}
@@ -230,6 +230,6 @@ export const InvokeConditionTreePopover: React.FC<InvokeConditionTreePopoverProp
     );
 };
 
-function getConditionLeafLabel(condition: CommandInvokeCondition): string {
-    return condition.includes("/") ? condition.slice(condition.lastIndexOf("/") + 1) : condition;
+function getLocationLeafLabel(location: CommandInvokeLocation): string {
+    return location.includes("/") ? location.slice(location.lastIndexOf("/") + 1) : location;
 }

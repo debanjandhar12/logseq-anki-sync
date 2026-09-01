@@ -1,8 +1,8 @@
 export type {CommandEditorModalProps} from "./CommandEditorModal";
 export {CommandEditorModalComponent} from "./CommandEditorModal";
 export {createCommandEditorExtensions} from "./createCommandEditorExtensions";
-export type {InvokeConditionTreePopoverProps} from "./InvokeConditionTreePopover";
-export {getCategoryCheckState, InvokeConditionTreePopover} from "./InvokeConditionTreePopover";
+export type {InvokeLocationTreePopoverProps} from "./InvokeLocationTreePopover";
+export {getCategoryCheckState, InvokeLocationTreePopover} from "./InvokeLocationTreePopover";
 export type {
     CommandFileSaveIssue,
     CommandFileSaveIssueKind,

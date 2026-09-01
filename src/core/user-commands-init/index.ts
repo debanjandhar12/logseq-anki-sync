@@ -17,12 +17,12 @@ export {initBuiltInCommandFiles} from "./initBuiltInCommandFiles";
 export {registerUserCommandEntryPoints} from "./registerCommandEntryPoints";
 export type {
     BlockCommandInvocationContext,
-    BlockContextMenuInvokeCondition,
+    BlockContextMenuInvokeLocation,
     CommandCenterInvocationContext,
     CommandInvocationContext,
     ContextMenuCommandInvocationContext,
     PageCommandInvocationContext,
-    PageContextMenuInvokeCondition,
+    PageContextMenuInvokeLocation,
     SlashCommandInvocationContext,
     UserCommand
 } from "./types";

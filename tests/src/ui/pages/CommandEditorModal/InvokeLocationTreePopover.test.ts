@@ -1,14 +1,14 @@
 import React, {act} from "react";
 import {createRoot, type Root} from "react-dom/client";
-import type {CommandInvokeCondition} from "src/core/stores/command-file-store/types";
-import {getCategoryCheckState, InvokeConditionTreePopover} from "src/ui/pages/CommandEditorModal";
+import type {CommandInvokeLocation} from "src/core/stores/command-file-store/types";
+import {getCategoryCheckState, InvokeLocationTreePopover} from "src/ui/pages/CommandEditorModal";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 
 describe("getCategoryCheckState", () => {
     const children = [
         "Block Context Menu/Image",
         "Block Context Menu/Pdf"
-    ] as const satisfies readonly CommandInvokeCondition[];
+    ] as const satisfies readonly CommandInvokeLocation[];
 
     test("derives checked and indeterminate category states", () => {
         expect(getCategoryCheckState(new Set(), children)).toEqual({
@@ -26,7 +26,7 @@ describe("getCategoryCheckState", () => {
     });
 });
 
-describe("InvokeConditionTreePopover", () => {
+describe("InvokeLocationTreePopover", () => {
     let container: HTMLDivElement;
     let root: Root;
 
@@ -46,9 +46,7 @@ describe("InvokeConditionTreePopover", () => {
     test("selects every child when a category is toggled", async () => {
         const onValueChange = vi.fn();
         await act(async () => {
-            root.render(
-                React.createElement(InvokeConditionTreePopover, {value: [], onValueChange})
-            );
+            root.render(React.createElement(InvokeLocationTreePopover, {value: [], onValueChange}));
         });
 
         const trigger = container.querySelector<HTMLButtonElement>(
@@ -69,11 +67,11 @@ describe("InvokeConditionTreePopover", () => {
         ]);
     });
 
-    test("keeps built-in conditions read-only", async () => {
+    test("keeps built-in locations read-only", async () => {
         const onValueChange = vi.fn();
         await act(async () => {
             root.render(
-                React.createElement(InvokeConditionTreePopover, {
+                React.createElement(InvokeLocationTreePopover, {
                     value: ["Block Context Menu/Image"],
                     readOnly: true,
                     onValueChange

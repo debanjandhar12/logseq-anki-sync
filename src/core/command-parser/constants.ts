@@ -1,34 +1,34 @@
 import {
-    BLOCK_CONTEXT_MENU_INVOKE_CONDITIONS,
-    COMMAND_INVOKE_CONDITIONS,
-    PAGE_CONTEXT_MENU_INVOKE_CONDITIONS
+    BLOCK_CONTEXT_MENU_INVOKE_LOCATIONS,
+    COMMAND_INVOKE_LOCATIONS,
+    PAGE_CONTEXT_MENU_INVOKE_LOCATIONS
 } from "../stores/command-file-store/types";
 import type {CommandFrontmatterFieldDefinition} from "./types";
 
-export const COMMAND_INVOKE_CONDITION_TREE = [
+export const COMMAND_INVOKE_LOCATION_TREE = [
     {
         label: "Block Context Menu",
-        children: BLOCK_CONTEXT_MENU_INVOKE_CONDITIONS
+        children: BLOCK_CONTEXT_MENU_INVOKE_LOCATIONS
     },
     {
         label: "Page Context Menu",
-        children: PAGE_CONTEXT_MENU_INVOKE_CONDITIONS
+        children: PAGE_CONTEXT_MENU_INVOKE_LOCATIONS
     },
     {label: "Logseq Command Center", value: "Logseq Command Center"},
     {label: "Block Slash Command", value: "Block Slash Command"}
 ] as const;
 
 export {
-    BLOCK_CONTEXT_MENU_INVOKE_CONDITIONS,
-    COMMAND_INVOKE_CONDITIONS,
-    PAGE_CONTEXT_MENU_INVOKE_CONDITIONS
+    BLOCK_CONTEXT_MENU_INVOKE_LOCATIONS,
+    COMMAND_INVOKE_LOCATIONS,
+    PAGE_CONTEXT_MENU_INVOKE_LOCATIONS
 };
 
 export const COMMAND_FRONTMATTER_FIELDS = [
     {key: "name", dataKey: "name", valueType: "string", required: true},
     {
-        key: "invoke-condition",
-        dataKey: "invokeConditions",
+        key: "invoke-location",
+        dataKey: "invokeLocations",
         valueType: "string-array",
         required: true
     },

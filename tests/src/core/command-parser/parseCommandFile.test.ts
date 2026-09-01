@@ -5,14 +5,14 @@ describe("parseCommandFile", () => {
     test("returns a normalized command", () => {
         const content = `---
 name: My command
-invoke-condition:
+invoke-location:
   - Logseq Command Center
 ---
 Prompt`;
 
         expect(parseCommandFile(content)).toEqual({
             name: "My command",
-            invokeConditions: ["Logseq Command Center"],
+            invokeLocations: ["Logseq Command Center"],
             userInvocable: true,
             commandInvokeInNewThread: true,
             commandAppearSeparatelyInContextMenu: false,

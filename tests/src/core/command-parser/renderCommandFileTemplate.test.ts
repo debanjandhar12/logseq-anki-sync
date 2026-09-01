@@ -9,7 +9,7 @@ describe("renderCommandFileTemplate", () => {
         const source = [
             "---",
             "name: <% today %>",
-            "invoke-condition:",
+            "invoke-location:",
             "  - Block Slash Command",
             "---",
             "Ask about <% today %>"
@@ -23,7 +23,7 @@ describe("renderCommandFileTemplate", () => {
     test("supports an empty body", async () => {
         await expect(
             renderCommandFileTemplate(
-                "---\nname: Empty\ninvoke-condition:\n  - Block Slash Command\n---",
+                "---\nname: Empty\ninvoke-location:\n  - Block Slash Command\n---",
                 {} as never
             )
         ).resolves.toBe("");

@@ -27,13 +27,13 @@ export async function registerUserCommandEntryPoints(): Promise<void> {
 
     const commandCenterContext: CommandCenterInvocationContext = {
         source: "command-center",
-        condition: "Logseq Command Center"
+        location: "Logseq Command Center"
     };
     await registerCommandCenterCommands(commandCenterContext);
 
     const slashRegistrationContext: SlashCommandInvocationContext = {
         source: "block-slash-command",
-        condition: "Block Slash Command",
+        location: "Block Slash Command",
         uuid: ""
     };
     await registerSlashCommands(slashRegistrationContext);
@@ -48,8 +48,8 @@ async function registerSeparateContextMenuCommands(): Promise<void> {
     for (const commandFile of commandFiles) {
         try {
             if (
-                commandFile.invokeConditions.some((condition) =>
-                    condition.startsWith("Block Context Menu/")
+                commandFile.invokeLocations.some((location) =>
+                    location.startsWith("Block Context Menu/")
                 )
             ) {
                 logseq.Editor.registerBlockContextMenuItem(commandFile.name, async ({uuid}) => {
@@ -60,8 +60,8 @@ async function registerSeparateContextMenuCommands(): Promise<void> {
                 });
             }
             if (
-                commandFile.invokeConditions.some((condition) =>
-                    condition.startsWith("Page Context Menu/")
+                commandFile.invokeLocations.some((location) =>
+                    location.startsWith("Page Context Menu/")
                 )
             ) {
                 logseq.App.registerPageMenuItem(commandFile.name, async ({page}) => {
@@ -108,7 +108,7 @@ async function registerSlashCommands(context: SlashCommandInvocationContext): Pr
                 await executeNativeUserCommand(
                     createUserCommand(commandFile, {
                         source: "block-slash-command",
-                        condition: "Block Slash Command",
+                        location: "Block Slash Command",
                         uuid
                     })
                 );
@@ -126,7 +126,7 @@ async function executeContextMenuCommand(
     try {
         const context = await classify();
         if (directCommandFile) {
-            if (!directCommandFile.invokeConditions.includes(context.condition)) {
+            if (!directCommandFile.invokeLocations.includes(context.location)) {
                 await logseq.UI.showMsg(
                     `"${directCommandFile.name}" is not available here.`,
                     "warning"

@@ -1,6 +1,6 @@
 import matter from "gray-matter";
-import type {CommandFileData, CommandInvokeCondition} from "../stores/command-file-store/types";
-import {COMMAND_FRONTMATTER_FIELDS, COMMAND_INVOKE_CONDITIONS} from "./constants";
+import type {CommandFileData, CommandInvokeLocation} from "../stores/command-file-store/types";
+import {COMMAND_FRONTMATTER_FIELDS, COMMAND_INVOKE_LOCATIONS} from "./constants";
 import {readCommandFrontmatterValues} from "./readCommandFrontmatterValues";
 import type {CommandFrontmatterFieldDefinition} from "./types";
 
@@ -24,8 +24,8 @@ interface YamlErrorLike {
 }
 
 const FRONTMATTER_REQUIRED_MESSAGE = "Invalid command file structure: frontmatter is required";
-const INVOKE_CONDITION_KEY = "invoke-condition";
-const invokeConditionSet = new Set<string>(COMMAND_INVOKE_CONDITIONS);
+const INVOKE_LOCATION_KEY = "invoke-location";
+const invokeLocationSet = new Set<string>(COMMAND_INVOKE_LOCATIONS);
 
 export function validateCommandFileContent(content: string): CommandFileValidationResult {
     if (!matter.test(content)) {
@@ -65,7 +65,7 @@ export function validateCommandFileContent(content: string): CommandFileValidati
     const issues: CommandFileValidationIssue[] = [];
 
     for (const field of COMMAND_FRONTMATTER_FIELDS) {
-        if (field.dataKey === "invokeConditions") continue;
+        if (field.dataKey === "invokeLocations") continue;
         const message = getInvalidFieldMessage(field, parsed.data[field.key]);
         if (!message) continue;
 
@@ -82,11 +82,11 @@ export function validateCommandFileContent(content: string): CommandFileValidati
     }
 
     issues.push(
-        ...validateInvokeConditions(
+        ...validateInvokeLocations(
             content,
             parsed.matter,
             matterFrom,
-            parsed.data[INVOKE_CONDITION_KEY]
+            parsed.data[INVOKE_LOCATION_KEY]
         )
     );
 
@@ -97,7 +97,7 @@ export function validateCommandFileContent(content: string): CommandFileValidati
         valid: true,
         commandFile: {
             name: values.name as string,
-            invokeConditions: values.invokeConditions as CommandInvokeCondition[],
+            invokeLocations: values.invokeLocations as CommandInvokeLocation[],
             userInvocable: values.userInvocable !== false,
             commandInvokeInNewThread: values.commandInvokeInNewThread !== false,
             commandAppearSeparatelyInContextMenu:
@@ -110,7 +110,7 @@ export function validateCommandFileContent(content: string): CommandFileValidati
     };
 }
 
-function validateInvokeConditions(
+function validateInvokeLocations(
     content: string,
     rawMatter: string,
     matterFrom: number,
@@ -118,14 +118,14 @@ function validateInvokeConditions(
 ): CommandFileValidationIssue[] {
     if (!Array.isArray(value) || value.length === 0) {
         const message = Array.isArray(value)
-            ? "Invalid command file metadata: invoke-condition must contain at least one value"
-            : "Invalid command file metadata: invoke-condition must be a non-empty array";
+            ? "Invalid command file metadata: invoke-location must contain at least one value"
+            : "Invalid command file metadata: invoke-location must be a non-empty array";
         return [
             createMetadataIssue(
                 content,
                 rawMatter,
                 matterFrom,
-                INVOKE_CONDITION_KEY,
+                INVOKE_LOCATION_KEY,
                 message,
                 value !== undefined
             )
@@ -134,18 +134,18 @@ function validateInvokeConditions(
 
     const occurrenceCounts = new Map<string, number>();
     const issues: CommandFileValidationIssue[] = [];
-    for (const condition of value) {
-        const conditionKey = String(condition);
-        const occurrence = (occurrenceCounts.get(conditionKey) ?? 0) + 1;
-        occurrenceCounts.set(conditionKey, occurrence);
-        if (typeof condition !== "string" || !invokeConditionSet.has(condition)) {
+    for (const location of value) {
+        const locationKey = String(location);
+        const occurrence = (occurrenceCounts.get(locationKey) ?? 0) + 1;
+        occurrenceCounts.set(locationKey, occurrence);
+        if (typeof location !== "string" || !invokeLocationSet.has(location)) {
             issues.push(
                 createArrayValueIssue(
                     content,
                     rawMatter,
                     matterFrom,
-                    condition,
-                    `Invalid command file metadata: unsupported invoke condition: ${conditionKey}`,
+                    location,
+                    `Invalid command file metadata: unsupported invoke location: ${locationKey}`,
                     occurrence
                 )
             );
@@ -157,8 +157,8 @@ function validateInvokeConditions(
                     content,
                     rawMatter,
                     matterFrom,
-                    condition,
-                    `Invalid command file metadata: duplicate invoke condition: ${condition}`,
+                    location,
+                    `Invalid command file metadata: duplicate invoke location: ${location}`,
                     occurrence
                 )
             );
@@ -197,9 +197,9 @@ function createArrayValueIssue(
     occurrence = 1
 ): CommandFileValidationIssue {
     const escapedValue = escapeRegex(String(value));
-    const sequenceRange = getSequenceRange(rawMatter, INVOKE_CONDITION_KEY);
+    const sequenceRange = getSequenceRange(rawMatter, INVOKE_LOCATION_KEY);
     if (!sequenceRange) {
-        return createMetadataIssue(content, rawMatter, matterFrom, INVOKE_CONDITION_KEY, message);
+        return createMetadataIssue(content, rawMatter, matterFrom, INVOKE_LOCATION_KEY, message);
     }
     const valuePattern = new RegExp(
         `^[ \\t]*-[ \\t]+(?:${escapedValue}|["']${escapedValue}["'])[ \\t]*\\r?$`,
@@ -209,7 +209,7 @@ function createArrayValueIssue(
     const matches = Array.from(sequence.matchAll(valuePattern));
     const match = matches[Math.min(occurrence - 1, matches.length - 1)];
     if (!match) {
-        return createMetadataIssue(content, rawMatter, matterFrom, INVOKE_CONDITION_KEY, message);
+        return createMetadataIssue(content, rawMatter, matterFrom, INVOKE_LOCATION_KEY, message);
     }
     return createLineIssue(content, matterFrom + sequenceRange.from + match.index, message, {
         from: 0,

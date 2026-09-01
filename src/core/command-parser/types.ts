@@ -1,6 +1,6 @@
 import type {CommandFileData} from "../stores/command-file-store/types";
 
-export type {CommandInvokeCondition} from "../stores/command-file-store/types";
+export type {CommandInvokeLocation} from "../stores/command-file-store/types";
 
 export type CommandFrontmatterDataKey = Exclude<keyof CommandFileData, "content">;
 

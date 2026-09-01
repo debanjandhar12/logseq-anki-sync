@@ -1,13 +1,13 @@
 import matter from "gray-matter";
 import {
-    updateCommandInvokeConditions,
+    updateCommandInvokeLocations,
     updateCommandUserInvocable
 } from "src/ui/pages/CommandEditorModal/utils/updateCommandMetadata";
 import {describe, expect, test} from "vitest";
 
 const source = `---
 name: Test command
-invoke-condition:
+invoke-location:
   - Block Context Menu/Other Blocks
 user-invocable: true
 custom-field: retained
@@ -28,15 +28,15 @@ describe("command metadata updates", () => {
         expect(updated.content).toBe("\nPrompt body\n");
     });
 
-    test("writes invoke conditions in the supplied canonical order", () => {
+    test("writes invoke locations in the supplied canonical order", () => {
         const updated = matter(
-            updateCommandInvokeConditions(source, [
+            updateCommandInvokeLocations(source, [
                 "Block Context Menu/Image",
                 "Logseq Command Center"
             ])
         );
 
-        expect(updated.data["invoke-condition"]).toEqual([
+        expect(updated.data["invoke-location"]).toEqual([
             "Block Context Menu/Image",
             "Logseq Command Center"
         ]);

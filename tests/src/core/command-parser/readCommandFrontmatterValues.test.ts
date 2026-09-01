@@ -2,7 +2,7 @@ import {describe, expect, test} from "vitest";
 import {
     COMMAND_FRONTMATTER_FIELDS,
     COMMAND_FRONTMATTER_KEYS,
-    COMMAND_INVOKE_CONDITIONS,
+    COMMAND_INVOKE_LOCATIONS,
     readCommandFrontmatterValues
 } from "../../../../src/core/command-parser";
 
@@ -10,20 +10,20 @@ describe("command frontmatter fields", () => {
     test("defines every metadata field once in canonical order", () => {
         expect(COMMAND_FRONTMATTER_FIELDS.map(({dataKey}) => dataKey)).toEqual([
             "name",
-            "invokeConditions",
+            "invokeLocations",
             "userInvocable",
             "commandInvokeInNewThread",
             "commandAppearSeparatelyInContextMenu",
             "builtInCommand",
             "builtInCommandUserControllable"
         ]);
-        expect(new Set(COMMAND_INVOKE_CONDITIONS).size).toBe(11);
+        expect(new Set(COMMAND_INVOKE_LOCATIONS).size).toBe(11);
     });
 
     test("exposes YAML keys by data key", () => {
         expect(COMMAND_FRONTMATTER_KEYS).toEqual({
             name: "name",
-            invokeConditions: "invoke-condition",
+            invokeLocations: "invoke-location",
             userInvocable: "user-invocable",
             commandInvokeInNewThread: "command-invoke-in-new-thread",
             commandAppearSeparatelyInContextMenu: "command-appear-seperately-in-context-menu",
@@ -36,7 +36,7 @@ describe("command frontmatter fields", () => {
         expect(
             readCommandFrontmatterValues({
                 name: "  Test  ",
-                "invoke-condition": ["Unsupported Route"],
+                "invoke-location": ["Unsupported Route"],
                 "user-invocable": false,
                 "command-invoke-in-new-thread": "yes"
             })

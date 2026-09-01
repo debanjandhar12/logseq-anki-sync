@@ -7,7 +7,7 @@ export function getCommandFileMetadata(
 ): Pick<
     CommandFileData,
     | "name"
-    | "invokeConditions"
+    | "invokeLocations"
     | "userInvocable"
     | "commandInvokeInNewThread"
     | "builtInCommand"
@@ -19,7 +19,7 @@ export function getCommandFileMetadata(
         const values = readCommandFrontmatterValues(matter(content).data);
         return {
             name: values.name ?? "",
-            invokeConditions: values.invokeConditions ?? [],
+            invokeLocations: values.invokeLocations ?? [],
             userInvocable: values.userInvocable !== false,
             commandInvokeInNewThread: values.commandInvokeInNewThread !== false,
             builtInCommand: values.builtInCommand,

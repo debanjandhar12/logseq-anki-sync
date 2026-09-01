@@ -3,8 +3,8 @@ import {CommandFileStore} from "../../../../src/core/stores/command-file-store/C
 import {LogseqPluginStorageManager} from "../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
 
-function createCommandSource(name: string, condition = "Block Slash Command") {
-    return `---\nname: ${name}\ninvoke-condition:\n  - ${condition}\n---\nPrompt`;
+function createCommandSource(name: string, location = "Block Slash Command") {
+    return `---\nname: ${name}\ninvoke-location:\n  - ${location}\n---\nPrompt`;
 }
 
 describe("CommandFileStore", () => {

@@ -1,33 +1,33 @@
 import type {
-    BLOCK_CONTEXT_MENU_INVOKE_CONDITIONS,
-    PAGE_CONTEXT_MENU_INVOKE_CONDITIONS
+    BLOCK_CONTEXT_MENU_INVOKE_LOCATIONS,
+    PAGE_CONTEXT_MENU_INVOKE_LOCATIONS
 } from "../command-parser";
 
-export type BlockContextMenuInvokeCondition = (typeof BLOCK_CONTEXT_MENU_INVOKE_CONDITIONS)[number];
+export type BlockContextMenuInvokeLocation = (typeof BLOCK_CONTEXT_MENU_INVOKE_LOCATIONS)[number];
 
-export type PageContextMenuInvokeCondition = (typeof PAGE_CONTEXT_MENU_INVOKE_CONDITIONS)[number];
+export type PageContextMenuInvokeLocation = (typeof PAGE_CONTEXT_MENU_INVOKE_LOCATIONS)[number];
 
 export interface BlockCommandInvocationContext {
     source: "block-context-menu";
-    condition: BlockContextMenuInvokeCondition;
+    location: BlockContextMenuInvokeLocation;
     uuid: string;
 }
 
 export interface PageCommandInvocationContext {
     source: "page-context-menu";
-    condition: PageContextMenuInvokeCondition;
+    location: PageContextMenuInvokeLocation;
     uuid: string;
 }
 
 export interface SlashCommandInvocationContext {
     source: "block-slash-command";
-    condition: "Block Slash Command";
+    location: "Block Slash Command";
     uuid: string;
 }
 
 export interface CommandCenterInvocationContext {
     source: "command-center";
-    condition: "Logseq Command Center";
+    location: "Logseq Command Center";
 }
 
 /** Invocation contexts that are routed through the plugin's own command palette. */

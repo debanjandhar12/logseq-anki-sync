@@ -1,6 +1,6 @@
 ---
 name: Add as attachment
-invoke-condition:
+invoke-location:
   - Block Context Menu/Image
   - Block Context Menu/Pdf
   - Block Context Menu/Video

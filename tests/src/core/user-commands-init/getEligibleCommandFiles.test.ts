@@ -10,18 +10,18 @@ import {createUserCommand} from "../../../../src/core/user-commands-init/createU
 function commandFile(overrides: Partial<CommandFileData> = {}): CommandFileData {
     return {
         name: "Summarize",
-        invokeConditions: ["Block Context Menu/Other Blocks"],
+        invokeLocations: ["Block Context Menu/Other Blocks"],
         userInvocable: true,
         commandInvokeInNewThread: true,
         commandAppearSeparatelyInContextMenu: false,
-        content: `---\nname: Summarize\ninvoke-condition:\n  - Block Context Menu/Other Blocks\n---\nSummarize this`,
+        content: `---\nname: Summarize\ninvoke-location:\n  - Block Context Menu/Other Blocks\n---\nSummarize this`,
         ...overrides
     };
 }
 
 const context = {
     source: "block-context-menu" as const,
-    condition: "Block Context Menu/Other Blocks" as const,
+    location: "Block Context Menu/Other Blocks" as const,
     uuid: "block-uuid"
 };
 
@@ -37,7 +37,7 @@ describe("getEligibleCommandFiles", () => {
                 builtInCommand: true
             }),
             commandFile({name: "Disabled", userInvocable: false}),
-            commandFile({name: "Slash", invokeConditions: ["Block Slash Command"]})
+            commandFile({name: "Slash", invokeLocations: ["Block Slash Command"]})
         ]);
 
         const commands = await getEligibleCommandFiles(context);
