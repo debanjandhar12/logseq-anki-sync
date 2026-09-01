@@ -3,8 +3,12 @@ import {CommandFileStore} from "../../../../src/core/stores/command-file-store/C
 import {LogseqPluginStorageManager} from "../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
 
-function createCommandSource(name: string, location = "Block Slash Command") {
-    return `---\nname: ${name}\ninvoke-location:\n  - ${location}\n---\nPrompt`;
+function createCommandSource(
+    name: string,
+    location = "Block Slash Command",
+    builtInCommand = false
+) {
+    return `---\nname: ${name}\ninvoke-location:\n  - ${location}\nbuilt-in-command: ${builtInCommand}\n---\nPrompt`;
 }
 
 describe("CommandFileStore", () => {
@@ -36,11 +40,11 @@ describe("CommandFileStore", () => {
         await expect(CommandFileStore.commandFileExists("Missing.md")).resolves.toBe(false);
     });
 
-    test("sorts valid commands and skips malformed files", async () => {
+    test("sorts built-in commands before user commands and skips malformed files", async () => {
         await LogseqPluginStorageManager.saveFile(
             CommandFileStore.groupName,
             "Zed.md",
-            createCommandSource("Zed")
+            createCommandSource("Zed", "Block Slash Command", true)
         );
         await LogseqPluginStorageManager.saveFile(
             CommandFileStore.groupName,
@@ -52,10 +56,22 @@ describe("CommandFileStore", () => {
             "Alpha.md",
             createCommandSource("Alpha")
         );
+        await LogseqPluginStorageManager.saveFile(
+            CommandFileStore.groupName,
+            "Yankee.md",
+            createCommandSource("Yankee", "Block Slash Command", true)
+        );
+        await LogseqPluginStorageManager.saveFile(
+            CommandFileStore.groupName,
+            "Bravo.md",
+            createCommandSource("Bravo")
+        );
 
         await expect(CommandFileStore.getAllCommandFiles()).resolves.toEqual([
-            expect.objectContaining({name: "Alpha"}),
-            expect.objectContaining({name: "Zed"})
+            expect.objectContaining({name: "Yankee", builtInCommand: true}),
+            expect.objectContaining({name: "Zed", builtInCommand: true}),
+            expect.objectContaining({name: "Alpha", builtInCommand: false}),
+            expect.objectContaining({name: "Bravo", builtInCommand: false})
         ]);
         await expect(CommandFileStore.getCommandFile("broken.md")).resolves.toBeNull();
     });

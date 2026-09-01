@@ -50,7 +50,11 @@ export class CommandFileStore {
             }
         }
 
-        return commandFiles.sort((left, right) => left.name.localeCompare(right.name));
+        return commandFiles.sort(
+            (left, right) =>
+                Number(right.builtInCommand === true) - Number(left.builtInCommand === true) ||
+                left.name.localeCompare(right.name)
+        );
     }
 
     static async saveCommandFile(content: string): Promise<void> {

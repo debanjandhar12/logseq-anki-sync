@@ -45,7 +45,11 @@ export class SkillFileStore {
             }
         }
 
-        return skillFiles.sort((a, b) => a.name.localeCompare(b.name));
+        return skillFiles.sort(
+            (left, right) =>
+                Number(right.builtInSkill === true) - Number(left.builtInSkill === true) ||
+                left.name.localeCompare(right.name)
+        );
     }
 
     static async saveSkillFile(content: string): Promise<void> {
