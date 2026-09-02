@@ -1,12 +1,14 @@
+import {type AuthClient, createAuthenticatedFetch} from "@ai-oauth-sdk/browser";
+import {createOpenAI} from "@ai-sdk/openai";
 import {streamText} from "ai";
-import {CodexSessionManager} from "../codex/CodexSessionManager";
 import {createLLMModel} from "../getLLMModel";
+import {OAuthClientCache} from "../oauth/OAuthClientCache";
 import {type ProviderConfig, ProviderTypeEnum} from "../types";
 import {validateProviderConnection} from "./validateProviderConfig";
 
 export async function testProviderConfig(
     config: ProviderConfig,
-    onCodexCredentialsUpdated?: (encodedCredentials: string) => void
+    oauthClient?: AuthClient
 ): Promise<void> {
     validateProviderConnection(config);
     const model = config.models.find((candidate) => candidate.enabled && candidate.id.trim());
@@ -16,13 +18,19 @@ export async function testProviderConfig(
     const timeoutMs = config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION ? 60_000 : 15_000;
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
-        const languageModel =
-            config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION
-                ? CodexSessionManager.getConfigSession(
-                      config,
-                      onCodexCredentialsUpdated
-                  ).aiProvider.responses(model.id.trim())
-                : createLLMModel({config, rawModelId: model.id.trim()});
+        const languageModel = (() => {
+            if (config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION) {
+                // Modal tests must use the unsaved, memory-backed OAuth client. createLLMModel
+                // resolves the persisted client and could otherwise test stale credentials.
+                const client = oauthClient ?? OAuthClientCache.get(config);
+                return createOpenAI({
+                    apiKey: "unused",
+                    baseURL: client.provider.apiBaseUrl,
+                    fetch: createAuthenticatedFetch(client)
+                }).responses(model.id.trim());
+            }
+            return createLLMModel({config, rawModelId: model.id.trim()});
+        })();
         const result = streamText({
             model: languageModel,
             prompt: "Reply with OK.",

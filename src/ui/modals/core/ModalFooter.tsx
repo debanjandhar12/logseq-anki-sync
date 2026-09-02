@@ -21,6 +21,8 @@ export interface ModalFooterProps {
     confirmShortcut?: string;
     children?: React.ReactNode;
     className?: string;
+    confirmDisabled?: boolean;
+    cancelDisabled?: boolean;
 }
 
 export const ModalFooter: React.FC<ModalFooterProps> = ({
@@ -34,13 +36,19 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
     showCancel = true,
     confirmShortcut = "⏎",
     children,
-    className = ""
+    className = "",
+    confirmDisabled = false,
+    cancelDisabled = false
 }) => {
     return (
         <div className={`mt-5 sm:mt-4 sm:flex sm:flex-row-reverse ${className}`}>
             {children}
             {showConfirm && onConfirm && (
-                <LogseqButton isFullWidth={true} onClick={onConfirm} color={confirmColor}>
+                <LogseqButton
+                    isFullWidth={true}
+                    onClick={onConfirm}
+                    color={confirmColor}
+                    disabled={confirmDisabled}>
                     <span
                         style={{
                             display: "flex",
@@ -57,7 +65,11 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
                 </LogseqButton>
             )}
             {showCancel && onCancel && (
-                <LogseqButton color={cancelColor} isFullWidth={true} onClick={onCancel}>
+                <LogseqButton
+                    color={cancelColor}
+                    isFullWidth={true}
+                    onClick={onCancel}
+                    disabled={cancelDisabled}>
                     {cancelText}
                 </LogseqButton>
             )}

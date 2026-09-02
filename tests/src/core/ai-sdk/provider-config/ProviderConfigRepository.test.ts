@@ -1,11 +1,17 @@
 import {beforeEach, describe, expect, test, vi} from "vitest";
-import {encodeCodexCredentials} from "../../../../../src/core/ai-sdk/codex/CodexCredentialCodec";
 import {ProviderConfigRepository} from "../../../../../src/core/ai-sdk/provider-config/ProviderConfigRepository";
 import {
     decodeProviderConfigs,
     encodeProviderConfigs
 } from "../../../../../src/core/ai-sdk/provider-config/providerConfigCodec";
-import {type ProviderConfig, ProviderTypeEnum} from "../../../../../src/core/ai-sdk/types";
+import {
+    type ApiKeyProviderConfig,
+    type OAuthProviderConfig,
+    ProviderTypeEnum
+} from "../../../../../src/core/ai-sdk/types";
+
+const CODEX_UUID = "10000000-0000-4000-8000-000000000001";
+const API_UUID = "10000000-0000-4000-8000-000000000002";
 
 const mocks = vi.hoisted(() => ({
     settings: {} as {providerConfigSetting?: string; selectedModelId?: string},
@@ -19,19 +25,25 @@ vi.mock("../../../../../src/logseq/LogseqSettingAccessor", () => ({
     }
 }));
 
-const originalTokens = {
-    accessToken: "access-1",
-    idToken: "id-1",
-    refreshToken: "refresh-1",
-    updatedAt: 1
-};
-
-function config(overrides: Partial<ProviderConfig> = {}): ProviderConfig {
+function oauthConfig(overrides: Partial<OAuthProviderConfig> = {}): OAuthProviderConfig {
     return {
-        id: "codex",
+        uuid: CODEX_UUID,
+        name: "Codex",
         type: ProviderTypeEnum.CODEX_SUBSCRIPTION,
         baseUrl: "https://chatgpt.com/backend-api/codex",
-        apiKey: encodeCodexCredentials(originalTokens),
+        oauthStorage: {accessToken: "access-1", refreshToken: "refresh-1"},
+        models: [{id: "gpt-5", enabled: true}],
+        ...overrides
+    };
+}
+
+function apiConfig(overrides: Partial<ApiKeyProviderConfig> = {}): ApiKeyProviderConfig {
+    return {
+        uuid: API_UUID,
+        name: "OpenAI",
+        type: ProviderTypeEnum.OPENAI,
+        baseUrl: "https://api.openai.com/v1",
+        apiKey: "secret",
         models: [{id: "gpt-5", enabled: true}],
         ...overrides
     };
@@ -46,70 +58,49 @@ describe("ProviderConfigRepository", () => {
         });
     });
 
-    test("updates only the target credentials and publishes the encoded replacement", async () => {
-        const codex = config();
-        const other = config({
-            id: "other",
-            type: ProviderTypeEnum.OPENAI,
-            baseUrl: "https://api.openai.com/v1",
-            apiKey: "other-key"
-        });
-        mocks.settings.providerConfigSetting = encodeProviderConfigs([codex, other]);
-        const listener = vi.fn();
-        const unsubscribe = ProviderConfigRepository.subscribeToCredentialUpdates(listener);
+    test("reads the embedded provider configurations from settings", () => {
+        const configs = [oauthConfig(), apiConfig()];
+        mocks.settings.providerConfigSetting = encodeProviderConfigs(configs);
 
-        const encoded = await ProviderConfigRepository.updateCodexCredentials(
-            codex.id,
-            codex.apiKey,
-            {...originalTokens, accessToken: "access-2", refreshToken: "refresh-2", updatedAt: 2}
-        );
+        expect(ProviderConfigRepository.read()).toEqual(configs);
+        mocks.settings.providerConfigSetting = undefined;
+        expect(ProviderConfigRepository.read()).toEqual([]);
+    });
+
+    test("updates only the target OAuth storage", async () => {
+        const codex = oauthConfig();
+        const api = apiConfig();
+        mocks.settings.providerConfigSetting = encodeProviderConfigs([codex, api]);
+
+        await ProviderConfigRepository.updateOAuthStorage(codex.uuid, (storage) => ({
+            ...storage,
+            accessToken: "access-2"
+        }));
 
         expect(decodeProviderConfigs(mocks.settings.providerConfigSetting ?? "")).toEqual([
-            {...codex, apiKey: encoded},
-            other
+            {...codex, oauthStorage: {...codex.oauthStorage, accessToken: "access-2"}},
+            api
         ]);
-        expect(listener).toHaveBeenCalledWith({providerId: codex.id, encodedCredentials: encoded});
-        unsubscribe();
     });
 
-    test.each([
-        ["logout", config({apiKey: ""})],
-        [
-            "replacement",
-            config({apiKey: encodeCodexCredentials({...originalTokens, updatedAt: 2})})
-        ],
-        ["rename", config({id: "renamed"})],
-        ["type change", config({type: ProviderTypeEnum.OPENAI, apiKey: "ordinary-key"})]
-    ])("rejects a stale refresh after %s", async (_name, changedConfig) => {
-        const original = config();
-        mocks.settings.providerConfigSetting = encodeProviderConfigs([changedConfig]);
+    test("rejects OAuth updates for missing and API-key providers", async () => {
+        mocks.settings.providerConfigSetting = encodeProviderConfigs([apiConfig()]);
+
         await expect(
-            ProviderConfigRepository.updateCodexCredentials(original.id, original.apiKey, {
-                ...originalTokens,
-                updatedAt: 3
-            })
-        ).rejects.toThrow("credentials changed before refresh completed");
-        expect(mocks.updatePluginSettings).not.toHaveBeenCalled();
+            ProviderConfigRepository.updateOAuthStorage(API_UUID, (storage) => storage)
+        ).rejects.toThrow("OAuth provider configuration is unavailable");
+        await expect(
+            ProviderConfigRepository.updateOAuthStorage(CODEX_UUID, (storage) => storage)
+        ).rejects.toThrow("OAuth provider configuration is unavailable");
     });
 
-    test("preserves credentials refreshed while an unchanged modal draft was open", async () => {
-        const original = config();
-        const refreshed = {
-            ...original,
-            apiKey: encodeCodexCredentials({
-                ...originalTokens,
-                accessToken: "access-2",
-                updatedAt: 2
-            })
-        };
+    test("preserves storage changed while an unmodified modal draft was open", async () => {
+        const draft = oauthConfig();
+        const refreshed = oauthConfig({oauthStorage: {accessToken: "access-2"}});
         mocks.settings.providerConfigSetting = encodeProviderConfigs([refreshed]);
 
-        await ProviderConfigRepository.saveFromModal([
-            {
-                config: {...original, models: [{id: "gpt-5.1", enabled: true}]},
-                originalId: original.id,
-                codexCredentialIntent: "unchanged"
-            }
+        await ProviderConfigRepository.save([
+            {config: {...draft, models: [{id: "gpt-5.1", enabled: true}]}}
         ]);
 
         expect(decodeProviderConfigs(mocks.settings.providerConfigSetting ?? "")).toEqual([
@@ -117,26 +108,47 @@ describe("ProviderConfigRepository", () => {
         ]);
     });
 
-    test("an explicit modal logout wins over a prior runtime refresh", async () => {
-        const refreshed = config({
-            apiKey: encodeCodexCredentials({
-                ...originalTokens,
-                accessToken: "access-2",
-                updatedAt: 2
-            })
+    test("applies an explicit storage replacement", async () => {
+        const codex = oauthConfig();
+        mocks.settings.providerConfigSetting = encodeProviderConfigs([codex]);
+
+        await ProviderConfigRepository.save([
+            {
+                config: codex,
+                oauthStorageMutation: {kind: "replace", oauthStorage: {accessToken: "new"}}
+            }
+        ]);
+        expect(ProviderConfigRepository.read()[0]).toMatchObject({
+            oauthStorage: {accessToken: "new"}
         });
+    });
+
+    test("compare-and-set does not overwrite a concurrent OAuth refresh", async () => {
+        const baseline = {accessToken: "access-1", refreshToken: "refresh-1"};
+        const refreshed = oauthConfig({oauthStorage: {accessToken: "runtime-refresh"}});
         mocks.settings.providerConfigSetting = encodeProviderConfigs([refreshed]);
 
-        await ProviderConfigRepository.saveFromModal([
+        await ProviderConfigRepository.save([
             {
-                config: {...refreshed, apiKey: ""},
-                originalId: refreshed.id,
-                codexCredentialIntent: "clear"
+                config: oauthConfig(),
+                oauthStorageMutation: {
+                    kind: "compare-and-set",
+                    baseline,
+                    oauthStorage: {accessToken: "modal-login"}
+                }
             }
         ]);
 
-        expect(decodeProviderConfigs(mocks.settings.providerConfigSetting ?? "")[0].apiKey).toBe(
-            ""
-        );
+        expect(ProviderConfigRepository.read()[0]).toMatchObject({
+            oauthStorage: {accessToken: "runtime-refresh"}
+        });
+    });
+
+    test("reconciles selection using provider UUID and model ID", async () => {
+        mocks.settings.selectedModelId = `${CODEX_UUID}////missing`;
+
+        await ProviderConfigRepository.save([{config: apiConfig()}]);
+
+        expect(mocks.settings.selectedModelId).toBe(`${API_UUID}////gpt-5`);
     });
 });

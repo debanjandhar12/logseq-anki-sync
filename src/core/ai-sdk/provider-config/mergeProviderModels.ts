@@ -9,7 +9,7 @@ export function mergeProviderModels(
     for (const id of fetchedModelIds) {
         if (knownIds.has(id)) continue;
         knownIds.add(id);
-        merged.push({id, enabled: true});
+        merged.push({id, enabled: false});
     }
     return merged;
 }

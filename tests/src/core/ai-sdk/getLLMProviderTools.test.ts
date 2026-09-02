@@ -1,31 +1,47 @@
 import {beforeEach, describe, expect, test, vi} from "vitest";
 import {getLLMProviderTools} from "../../../../src/core/ai-sdk/getLLMProviderTools";
+import type {ResolvedLLMSelection} from "../../../../src/core/ai-sdk/provider-config/resolveLLMSelection";
 import {ProviderTypeEnum, WebToolsProviderEnum} from "../../../../src/core/ai-sdk/types";
 
 const mocks = vi.hoisted(() => ({
     createOpenAI: vi.fn(),
     createGoogle: vi.fn(),
-    getRuntimeSession: vi.fn(),
+    getOAuthClient: vi.fn(),
+    authenticatedFetch: vi.fn(),
     getPluginSettings: vi.fn()
 }));
 
 vi.mock("@ai-sdk/openai", () => ({createOpenAI: mocks.createOpenAI}));
 vi.mock("@ai-sdk/google", () => ({createGoogleGenerativeAI: mocks.createGoogle}));
-vi.mock("../../../../src/core/ai-sdk/codex/CodexSessionManager", () => ({
-    CodexSessionManager: {getRuntimeSession: mocks.getRuntimeSession}
+vi.mock("@ai-oauth-sdk/browser", () => ({
+    createAuthenticatedFetch: vi.fn(() => mocks.authenticatedFetch)
+}));
+vi.mock("../../../../src/core/ai-sdk/oauth/OAuthClientCache", () => ({
+    OAuthClientCache: {get: mocks.getOAuthClient}
 }));
 vi.mock("../../../../src/logseq/LogseqSettingAccessor", () => ({
     LogseqSettingAccessor: {getPluginSettings: mocks.getPluginSettings}
 }));
 
-const resolved = (type: ProviderTypeEnum) => ({
-    config: {
-        id: "selected",
-        type,
-        baseUrl: "https://provider.test/v1",
-        apiKey: "selected-secret",
-        models: [{id: "model", enabled: true}]
-    },
+const resolved = (type: ProviderTypeEnum): ResolvedLLMSelection => ({
+    config:
+        type === ProviderTypeEnum.CODEX_SUBSCRIPTION
+            ? {
+                  uuid: "10000000-0000-4000-8000-000000000001",
+                  name: "Selected",
+                  type,
+                  baseUrl: "https://chatgpt.com/backend-api/codex",
+                  oauthStorage: {accessToken: "stored"},
+                  models: [{id: "model", enabled: true}]
+              }
+            : {
+                  uuid: "10000000-0000-4000-8000-000000000001",
+                  name: "Selected",
+                  type,
+                  baseUrl: "https://provider.test/v1",
+                  apiKey: "selected-secret",
+                  models: [{id: "model", enabled: true}]
+              },
     rawModelId: "model"
 });
 
@@ -39,8 +55,8 @@ describe("getLLMProviderTools", () => {
                 urlContext: vi.fn().mockReturnValue("url")
             }
         });
-        mocks.getRuntimeSession.mockReturnValue({
-            aiProvider: {tools: {webSearch: vi.fn().mockReturnValue("codex-web")}}
+        mocks.getOAuthClient.mockReturnValue({
+            provider: {apiBaseUrl: "https://chatgpt.com/backend-api/codex"}
         });
     });
 
@@ -87,8 +103,12 @@ describe("getLLMProviderTools", () => {
             webToolsProvider: WebToolsProviderEnum.MODEL_NATIVE
         });
         const selection = resolved(ProviderTypeEnum.CODEX_SUBSCRIPTION);
-        expect(getLLMProviderTools(selection)).toEqual({web_search: "codex-web"});
-        expect(mocks.getRuntimeSession).toHaveBeenCalledWith(selection.config);
-        expect(mocks.createOpenAI).not.toHaveBeenCalled();
+        expect(getLLMProviderTools(selection)).toEqual({web_search: "web"});
+        expect(mocks.getOAuthClient).toHaveBeenCalledWith(selection.config);
+        expect(mocks.createOpenAI).toHaveBeenCalledWith({
+            apiKey: "unused",
+            baseURL: "https://chatgpt.com/backend-api/codex",
+            fetch: mocks.authenticatedFetch
+        });
     });
 });

@@ -1,13 +1,15 @@
-import type {CodexCredentialIntent} from "src/core/ai-sdk/provider-config/ProviderConfigRepository";
+import type {ProviderConfigSaveDraft} from "src/core/ai-sdk/provider-config/ProviderConfigRepository";
 import type {ProviderConfig} from "src/core/ai-sdk/types";
 
-export interface EditableProviderConfig extends ProviderConfig {
-    editorKey: string;
-    originalId?: string;
-    codexCredentialIntent: CodexCredentialIntent;
-}
+export type EditableProviderConfig = ProviderConfig & {editorKey: string};
 
-export type ProviderConfigErrorField = "id" | "type" | "baseUrl" | "apiKey" | "models";
+export type ProviderConfigErrorField =
+    | "name"
+    | "type"
+    | "baseUrl"
+    | "apiKey"
+    | "authentication"
+    | "models";
 
 export interface ProviderConfigValidationIssue {
     editorKey: string;
@@ -15,3 +17,12 @@ export interface ProviderConfigValidationIssue {
     message: string;
     modelIndex?: number;
 }
+
+export type OAuthSignInState =
+    | {status: "idle"}
+    | {status: "starting"}
+    | {status: "waiting"; userCode: string; verificationUrl: string}
+    | {status: "logging-out"}
+    | {status: "error"; message: string};
+
+export type OAuthSaveDraft = Pick<ProviderConfigSaveDraft, "oauthStorageMutation">;

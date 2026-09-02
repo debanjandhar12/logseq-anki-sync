@@ -25,6 +25,7 @@
         "effect": true
     },
     "dependencies": {
+        "@ai-oauth-sdk/browser": "1.2.0",
         "@ai-sdk/google": "4.0.18",
         "@ai-sdk/openai": "4.0.28",
         "@ai-sdk/openai-compatible": "3.0.12",
@@ -81,7 +82,6 @@
         "lucide-react": "^1.14.0",
         "mldoc": "^1.5.9",
         "mustache": "^4.2.0",
-        "openai-oauth-ai-provider": "0.2.1",
         "p-memoize": "^8.0.0",
         "p-retry": "^7.1.1",
         "parse-diff": "^0.12.0",

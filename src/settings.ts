@@ -1,5 +1,6 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
+import {v4 as uuidv4} from "uuid";
 import {DONATE_ICON, LogseqModelAction} from "./constants";
 import {DEFAULT_OPENAI_COMPATIBLE_BASE_URL} from "./core/ai-sdk/provider-config/constants";
 import {encodeProviderConfigs} from "./core/ai-sdk/provider-config/providerConfigCodec";
@@ -20,7 +21,8 @@ type SettingsButtonSchemaDesc = Omit<SettingSchemaDesc, "type"> & {
 
 const DEFAULT_PROVIDER_CONFIG_SETTING = encodeProviderConfigs([
     {
-        id: "opencode-zen",
+        uuid: uuidv4(),
+        name: "OpenCode Zen",
         type: ProviderTypeEnum.OPENAI_COMPATIBLE,
         baseUrl: DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
         apiKey: "test",
@@ -31,7 +33,7 @@ const DEFAULT_PROVIDER_CONFIG_SETTING = encodeProviderConfigs([
 // Type definitions for plugin settings
 export interface PluginSettings {
     disabled: boolean;
-    providerConfigSetting?: string;
+    providerConfigSetting?: string | null;
     globalAgentInstruction?: string;
     openChatInSidebar?: boolean;
     webToolsProvider?: WebToolsProviderEnum;

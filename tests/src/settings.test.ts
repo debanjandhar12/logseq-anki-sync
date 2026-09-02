@@ -1,7 +1,8 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
+import {validate as isUuid} from "uuid";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {DEFAULT_OPENAI_COMPATIBLE_BASE_URL} from "../../src/core/ai-sdk/provider-config/constants";
-import {encodeProviderConfigs} from "../../src/core/ai-sdk/provider-config/providerConfigCodec";
+import {decodeProviderConfigs} from "../../src/core/ai-sdk/provider-config/providerConfigCodec";
 import {ProviderTypeEnum} from "../../src/core/ai-sdk/types";
 import {LogseqSettingAccessor} from "../../src/logseq/LogseqSettingAccessor";
 
@@ -106,18 +107,16 @@ describe("addSettingsToLogseq", () => {
         ).toBeUndefined();
         expect(settingsSchema[mainHeadingIndex + 1]).toBe(providerConfigButton);
         expect(settingsSchema[mainHeadingIndex + 2]).toBe(providerConfigSetting);
-        expect(providerConfigSetting).toMatchObject({
-            key: "providerConfigSetting",
-            type: "string",
-            default: encodeProviderConfigs([
-                {
-                    id: "opencode-zen",
-                    type: ProviderTypeEnum.OPENAI_COMPATIBLE,
-                    baseUrl: DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
-                    apiKey: "test",
-                    models: [{id: "big-pickle", enabled: true}]
-                }
-            ])
+        expect(providerConfigSetting).toMatchObject({key: "providerConfigSetting", type: "string"});
+        const [defaultProvider] = decodeProviderConfigs(String(providerConfigSetting?.default));
+        expect(isUuid(defaultProvider.uuid)).toBe(true);
+        expect(defaultProvider).toEqual({
+            uuid: defaultProvider.uuid,
+            name: "OpenCode Zen",
+            type: ProviderTypeEnum.OPENAI_COMPATIBLE,
+            baseUrl: DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
+            apiKey: "test",
+            models: [{id: "big-pickle", enabled: true}]
         });
         expect(settingsSchema.map((setting) => setting.key)).not.toEqual(
             expect.arrayContaining(["llmProvider", "llmAPIUrl", "llmAPIKey", "llmAPIModelList"])

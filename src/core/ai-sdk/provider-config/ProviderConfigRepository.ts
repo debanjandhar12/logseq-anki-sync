@@ -1,149 +1,93 @@
 import AsyncLock from "async-lock";
-import type {OpenAIOAuthTokens} from "openai-oauth-ai-provider/core";
 import {LogseqSettingAccessor} from "../../../logseq/LogseqSettingAccessor";
-import {encodeCodexCredentials} from "../codex/CodexCredentialCodec";
-import {type ProviderConfig, ProviderTypeEnum} from "../types";
+import {isOAuthProviderConfig, type OAuthProviderConfig, type ProviderConfig} from "../types";
 import {decodeProviderConfigs, encodeProviderConfigs} from "./providerConfigCodec";
 import {reconcileSelectedModelId} from "./selectedModelId";
 
-type CredentialListener = (update: {providerId: string; encodedCredentials: string}) => void;
-export type CodexCredentialIntent = "unchanged" | "replace" | "clear";
+export type OAuthStorageMutation =
+    | {kind: "replace"; oauthStorage: Record<string, string>}
+    | {
+          kind: "compare-and-set";
+          baseline: Record<string, string>;
+          oauthStorage: Record<string, string>;
+      };
+
 export interface ProviderConfigSaveDraft {
     config: ProviderConfig;
-    originalId?: string;
-    codexCredentialIntent: CodexCredentialIntent;
+    oauthStorageMutation?: OAuthStorageMutation;
 }
-type ProviderSettings = ReturnType<typeof LogseqSettingAccessor.getPluginSettings> & {
-    providerConfigSetting?: string;
-};
+
+function storageMatches(left: Record<string, string>, right: Record<string, string>): boolean {
+    return JSON.stringify(left) === JSON.stringify(right);
+}
 
 class ProviderConfigRepositoryImpl {
     private readonly lock = new AsyncLock();
-    private readonly credentialListeners = new Set<CredentialListener>();
 
     read(): ProviderConfig[] {
-        const encoded = (LogseqSettingAccessor.getPluginSettings() as ProviderSettings)
-            .providerConfigSetting;
+        const encoded = LogseqSettingAccessor.getPluginSettings().providerConfigSetting;
         return encoded ? decodeProviderConfigs(encoded) : [];
     }
 
-    async save(
-        configs: ProviderConfig[],
-        renamedIds: Map<string, string> = new Map()
+    async updateOAuthStorage(
+        providerUuid: string,
+        update: (storage: Record<string, string>) => Record<string, string>
     ): Promise<void> {
         await this.lock.acquire("provider-configs", async () => {
-            const settings = LogseqSettingAccessor.getPluginSettings() as ProviderSettings;
-            const currentConfigs = settings.providerConfigSetting
-                ? decodeProviderConfigs(settings.providerConfigSetting)
-                : [];
-            const selectedModelId = reconcileSelectedModelId(
-                settings.selectedModelId,
-                configs,
-                renamedIds
-            );
-            await LogseqSettingAccessor.updatePluginSettings({
-                providerConfigSetting: encodeProviderConfigs(configs),
-                selectedModelId
-            });
-            this.publishChangedCodexCredentials(currentConfigs, configs);
-        });
-    }
-
-    async saveFromModal(
-        drafts: ProviderConfigSaveDraft[],
-        renamedIds: Map<string, string> = new Map()
-    ): Promise<void> {
-        await this.lock.acquire("provider-configs", async () => {
-            const settings = LogseqSettingAccessor.getPluginSettings() as ProviderSettings;
-            const currentConfigs = settings.providerConfigSetting
-                ? decodeProviderConfigs(settings.providerConfigSetting)
-                : [];
-            const configs = drafts.map(({config, originalId, codexCredentialIntent}) => {
-                if (
-                    config.type !== ProviderTypeEnum.CODEX_SUBSCRIPTION ||
-                    codexCredentialIntent !== "unchanged"
-                ) {
-                    return config;
-                }
-                const current = currentConfigs.find(
-                    (candidate) =>
-                        candidate.id === (originalId ?? config.id) &&
-                        candidate.type === ProviderTypeEnum.CODEX_SUBSCRIPTION
-                );
-                if (!current) {
-                    throw new Error("Codex Subscription credentials changed while editing");
-                }
-                return {...config, apiKey: current.apiKey};
-            });
-            const selectedModelId = reconcileSelectedModelId(
-                settings.selectedModelId,
-                configs,
-                renamedIds
-            );
-            await LogseqSettingAccessor.updatePluginSettings({
-                providerConfigSetting: encodeProviderConfigs(configs),
-                selectedModelId
-            });
-            this.publishChangedCodexCredentials(currentConfigs, configs);
-        });
-    }
-
-    private publishChangedCodexCredentials(
-        previousConfigs: ProviderConfig[],
-        nextConfigs: ProviderConfig[]
-    ): void {
-        const previousById = new Map<string, string>(
-            previousConfigs
-                .filter((config) => config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION)
-                .map((config) => [config.id, config.apiKey])
-        );
-        const nextById = new Map<string, string>(
-            nextConfigs
-                .filter((config) => config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION)
-                .map((config) => [config.id, config.apiKey])
-        );
-        for (const providerId of new Set([...previousById.keys(), ...nextById.keys()])) {
-            const encodedCredentials = nextById.get(providerId) ?? "";
-            if (previousById.get(providerId) === encodedCredentials) continue;
-            for (const listener of this.credentialListeners) {
-                listener({providerId, encodedCredentials});
-            }
-        }
-    }
-
-    async updateCodexCredentials(
-        providerId: string,
-        expectedCredentials: string,
-        tokens: OpenAIOAuthTokens
-    ): Promise<string> {
-        return this.lock.acquire("provider-configs", async () => {
-            const settings = LogseqSettingAccessor.getPluginSettings() as ProviderSettings;
+            const settings = LogseqSettingAccessor.getPluginSettings();
             const configs = settings.providerConfigSetting
                 ? decodeProviderConfigs(settings.providerConfigSetting)
                 : [];
-            const config = configs.find((candidate) => candidate.id === providerId);
-            if (
-                config?.type !== ProviderTypeEnum.CODEX_SUBSCRIPTION ||
-                config.apiKey !== expectedCredentials
-            ) {
-                throw new Error("Codex Subscription credentials changed before refresh completed");
+            const config = configs.find((candidate) => candidate.uuid === providerUuid);
+            if (!config || !isOAuthProviderConfig(config)) {
+                throw new Error("OAuth provider configuration is unavailable");
             }
-
-            const encodedCredentials = encodeCodexCredentials(tokens);
-            config.apiKey = encodedCredentials;
+            config.oauthStorage = update({...config.oauthStorage});
             await LogseqSettingAccessor.updatePluginSettings({
                 providerConfigSetting: encodeProviderConfigs(configs)
             });
-            for (const listener of this.credentialListeners) {
-                listener({providerId, encodedCredentials});
-            }
-            return encodedCredentials;
         });
     }
 
-    subscribeToCredentialUpdates(listener: CredentialListener): () => void {
-        this.credentialListeners.add(listener);
-        return () => this.credentialListeners.delete(listener);
+    async save(drafts: ProviderConfigSaveDraft[]): Promise<void> {
+        await this.lock.acquire("provider-configs", async () => {
+            const settings = LogseqSettingAccessor.getPluginSettings();
+            const currentConfigs = settings.providerConfigSetting
+                ? decodeProviderConfigs(settings.providerConfigSetting)
+                : [];
+            const currentByUuid = new Map(currentConfigs.map((config) => [config.uuid, config]));
+            const configs = drafts.map(({config, oauthStorageMutation}) => {
+                if (!isOAuthProviderConfig(config)) return config;
+
+                const current = currentByUuid.get(config.uuid);
+                const currentIsOAuth = current !== undefined && isOAuthProviderConfig(current);
+                const currentStorage = currentIsOAuth ? current.oauthStorage : {};
+                return {
+                    ...config,
+                    oauthStorage: this.resolveOAuthStorage(
+                        currentStorage,
+                        config.oauthStorage,
+                        oauthStorageMutation,
+                        currentIsOAuth
+                    )
+                } satisfies OAuthProviderConfig;
+            });
+            await LogseqSettingAccessor.updatePluginSettings({
+                providerConfigSetting: encodeProviderConfigs(configs),
+                selectedModelId: reconcileSelectedModelId(settings.selectedModelId, configs)
+            });
+        });
+    }
+
+    private resolveOAuthStorage(
+        current: Record<string, string>,
+        draft: Record<string, string>,
+        mutation: OAuthStorageMutation | undefined,
+        hasCurrentConfig: boolean
+    ): Record<string, string> {
+        if (!mutation) return hasCurrentConfig ? current : draft;
+        if (mutation.kind === "replace") return mutation.oauthStorage;
+        return storageMatches(current, mutation.baseline) ? mutation.oauthStorage : current;
     }
 }
 

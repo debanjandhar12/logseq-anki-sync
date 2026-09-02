@@ -1,6 +1,14 @@
 import {FlaskConical, Plus, RefreshCw, Trash} from "lucide-react";
 import React from "react";
-import {type ProviderConfig, ProviderTypeEnum} from "src/core/ai-sdk/types";
+import {
+    DEFAULT_CODEX_BASE_URL,
+    DEFAULT_GOOGLE_BASE_URL,
+    DEFAULT_OPENAI_BASE_URL,
+    DEFAULT_OPENAI_COMPATIBLE_BASE_URL
+} from "src/core/ai-sdk/provider-config/constants";
+import {isOAuthProviderConfig, ProviderTypeEnum} from "src/core/ai-sdk/types";
+import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
+import {WindowParentBridge} from "src/logseq/WindowParentBridge";
 import {LogseqButton} from "../../components/LogseqButton";
 import {LogseqCheckbox} from "../../components/LogseqCheckbox";
 import {LogseqInput} from "../../components/LogseqInput";
@@ -11,29 +19,17 @@ import {ModalFooter} from "../../modals/core/ModalFooter";
 import {ModalHeader} from "../../modals/core/ModalHeader";
 import {useModal} from "../../modals/hooks/useModal";
 import {UI} from "../../UI";
-import {getErrorMessage} from "../SkillEditorModal/utils/getErrorMessage";
-import {CodexSignInSection} from "./CodexSignInSection";
-import {
-    DEFAULT_CODEX_BASE_URL,
-    DEFAULT_GOOGLE_BASE_URL,
-    DEFAULT_OPENAI_BASE_URL,
-    DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
-    discoverProviderModels,
-    loadProviderConfigs,
-    saveProviderConfigs,
-    subscribeToCodexCredentialUpdates,
-    verifyProviderConfig
-} from "./providerConfigIntegration";
-import {
-    getProviderConfigsSnapshot,
-    toPersistedProviderConfigs,
-    validateProviderConfigs
-} from "./providerConfigValidation";
+import {OAuthSignInSection} from "./OAuthSignInSection";
+import {getProviderConfigsSnapshot} from "./providerConfigValidation";
 import type {
     EditableProviderConfig,
     ProviderConfigErrorField,
     ProviderConfigValidationIssue
 } from "./types";
+import {useProviderConfigActions} from "./useProviderConfigActions";
+import {useProviderConfigDrafts} from "./useProviderConfigDrafts";
+import {useProviderConfigOAuth} from "./useProviderConfigOAuth";
+import {useProviderConfigPersistence} from "./useProviderConfigPersistence";
 
 export interface ProviderConfigModalProps {
     resolve: (value: boolean | null) => void;
@@ -48,15 +44,6 @@ const PROVIDER_OPTIONS = [
     {value: ProviderTypeEnum.CODEX_SUBSCRIPTION, label: "Codex Subscription"}
 ];
 
-function createEditorConfig(config: ProviderConfig): EditableProviderConfig {
-    return {
-        ...config,
-        editorKey: crypto.randomUUID(),
-        originalId: config.id,
-        codexCredentialIntent: "unchanged"
-    };
-}
-
 function getDefaultBaseUrl(type: ProviderTypeEnum): string {
     if (type === ProviderTypeEnum.OPENAI) return DEFAULT_OPENAI_BASE_URL;
     if (type === ProviderTypeEnum.GOOGLE) return DEFAULT_GOOGLE_BASE_URL;
@@ -68,17 +55,22 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
     resolve,
     modalContext
 }) => {
-    const [configs, setConfigs] = React.useState<EditableProviderConfig[]>([]);
-    const [initialSnapshot, setInitialSnapshot] = React.useState("");
-    const [activeEditorKey, setActiveEditorKey] = React.useState<string | null>(null);
-    const [issues, setIssues] = React.useState<ProviderConfigValidationIssue[]>([]);
-    const [isLoading, setIsLoading] = React.useState(true);
-    const [loadError, setLoadError] = React.useState<string | null>(null);
-    const [isSaving, setIsSaving] = React.useState(false);
-    const [fetchingEditorKey, setFetchingEditorKey] = React.useState<string | null>(null);
-    const [testingEditorKey, setTestingEditorKey] = React.useState<string | null>(null);
-    const [codexAuthBusy, setCodexAuthBusy] = React.useState(false);
+    const {
+        configs,
+        initialSnapshot,
+        setActiveEditorKey,
+        activeConfig,
+        issues,
+        setIssues,
+        isLoading,
+        loadError,
+        updateConfig,
+        changeProviderType,
+        addConfig,
+        deleteConfig
+    } = useProviderConfigDrafts();
     const formRef = React.useRef<HTMLDivElement>(null);
+    const [isResetting, setIsResetting] = React.useState(false);
     const {open, setOpen, returnResult} = useModal<boolean | null>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
         enableEscapeKey: false,
@@ -88,186 +80,15 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
         modalId: modalContext?.modalId
     });
 
-    React.useEffect(() => {
-        try {
-            const loadedConfigs = loadProviderConfigs().map(createEditorConfig);
-            const snapshot = getProviderConfigsSnapshot(loadedConfigs);
-            setConfigs(loadedConfigs);
-            setInitialSnapshot(snapshot);
-            setActiveEditorKey(loadedConfigs[0]?.editorKey ?? null);
-        } catch (error) {
-            const message = getErrorMessage(error);
-            setLoadError(message);
-            void logseq.UI.showMsg(`Failed to load provider configurations: ${message}`, "error");
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    React.useEffect(
-        () =>
-            subscribeToCodexCredentialUpdates(({providerId, encodedCredentials}) => {
-                setInitialSnapshot((current) => {
-                    try {
-                        const snapshotConfigs = JSON.parse(current) as EditableProviderConfig[];
-                        return getProviderConfigsSnapshot(
-                            snapshotConfigs.map((config) =>
-                                config.originalId === providerId &&
-                                config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION &&
-                                config.codexCredentialIntent === "unchanged"
-                                    ? {...config, apiKey: encodedCredentials}
-                                    : config
-                            )
-                        );
-                    } catch {
-                        return current;
-                    }
-                });
-                setConfigs((current) => {
-                    return current.map((config) => {
-                        if (
-                            config.originalId !== providerId ||
-                            config.type !== ProviderTypeEnum.CODEX_SUBSCRIPTION ||
-                            config.codexCredentialIntent !== "unchanged"
-                        ) {
-                            return config;
-                        }
-                        return {...config, apiKey: encodedCredentials};
-                    });
-                });
-            }),
-        []
+    const oauth = useProviderConfigOAuth(configs, updateConfig);
+    const actions = useProviderConfigActions(
+        updateConfig,
+        oauth.getOAuthClient,
+        oauth.captureClientChanges,
+        oauth.isSignedIn
     );
-
-    const activeConfig =
-        configs.find((config) => config.editorKey === activeEditorKey) ?? configs[0] ?? null;
-    const hasUnsavedChanges = getProviderConfigsSnapshot(configs) !== initialSnapshot;
-    const isBusy =
-        loadError !== null ||
-        isSaving ||
-        fetchingEditorKey !== null ||
-        testingEditorKey !== null ||
-        codexAuthBusy;
-
-    const clearConfigIssues = React.useCallback((editorKey: string) => {
-        setIssues((current) => current.filter((issue) => issue.editorKey !== editorKey));
-    }, []);
-
-    const updateConfig = React.useCallback(
-        (editorKey: string, update: (config: EditableProviderConfig) => EditableProviderConfig) => {
-            setConfigs((current) =>
-                current.map((config) => (config.editorKey === editorKey ? update(config) : config))
-            );
-            clearConfigIssues(editorKey);
-        },
-        [clearConfigIssues]
-    );
-
-    const handleAddConfig = React.useCallback(() => {
-        if (isBusy) return;
-        const usedIds = new Set(configs.map((config) => config.id));
-        let suffix = configs.length + 1;
-        while (usedIds.has(`provider-${suffix}`)) suffix += 1;
-        const config: EditableProviderConfig = {
-            editorKey: crypto.randomUUID(),
-            id: `provider-${suffix}`,
-            type: ProviderTypeEnum.OPENAI,
-            baseUrl: DEFAULT_OPENAI_BASE_URL,
-            apiKey: "",
-            models: [],
-            codexCredentialIntent: "unchanged"
-        };
-        setConfigs((current) => [...current, config]);
-        setActiveEditorKey(config.editorKey);
-    }, [configs, isBusy]);
-
-    const handleDeleteConfig = React.useCallback(() => {
-        if (!activeConfig || isBusy) return;
-        setConfigs((current) => {
-            const activeIndex = current.findIndex(
-                (config) => config.editorKey === activeConfig.editorKey
-            );
-            const next = current.filter((config) => config.editorKey !== activeConfig.editorKey);
-            setActiveEditorKey(next[Math.max(0, activeIndex - 1)]?.editorKey ?? null);
-            return next;
-        });
-        clearConfigIssues(activeConfig.editorKey);
-    }, [activeConfig, clearConfigIssues, isBusy]);
-
-    const getActionValidationError = React.useCallback(
-        (config: EditableProviderConfig, requireModel: boolean): string | null => {
-            if (!config.baseUrl.trim()) return "Enter a Base URL first.";
-            try {
-                const url = new URL(config.baseUrl.trim());
-                if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) {
-                    return "Enter a valid HTTP or HTTPS Base URL without embedded credentials.";
-                }
-            } catch {
-                return "Enter a valid Base URL first.";
-            }
-            if (config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION) {
-                if (!config.apiKey) return "Sign in to Codex Subscription first.";
-            } else if (!config.apiKey.trim()) {
-                return "Enter an API key first.";
-            }
-            if (requireModel && !config.models.some((model) => model.enabled && model.id.trim())) {
-                return "Enable at least one model first.";
-            }
-            return null;
-        },
-        []
-    );
-
-    const handleFetchModels = React.useCallback(async () => {
-        if (!activeConfig || isBusy) return;
-        const validationError = getActionValidationError(activeConfig, false);
-        if (validationError) {
-            await logseq.UI.showMsg(validationError, "error");
-            return;
-        }
-        setFetchingEditorKey(activeConfig.editorKey);
-        try {
-            const models = await discoverProviderModels(activeConfig, (encodedCredentials) =>
-                updateConfig(activeConfig.editorKey, (config) => ({
-                    ...config,
-                    apiKey: encodedCredentials,
-                    codexCredentialIntent: "replace"
-                }))
-            );
-            updateConfig(activeConfig.editorKey, (config) => ({...config, models}));
-            await logseq.UI.showMsg("Provider models fetched successfully.", "success");
-        } catch (error) {
-            const message = getErrorMessage(error);
-            await logseq.UI.showMsg(`Failed to fetch provider models: ${message}`, "error");
-        } finally {
-            setFetchingEditorKey(null);
-        }
-    }, [activeConfig, getActionValidationError, isBusy, updateConfig]);
-
-    const handleTest = React.useCallback(async () => {
-        if (!activeConfig || isBusy) return;
-        const validationError = getActionValidationError(activeConfig, true);
-        if (validationError) {
-            await logseq.UI.showMsg(validationError, "error");
-            return;
-        }
-        setTestingEditorKey(activeConfig.editorKey);
-        try {
-            await verifyProviderConfig(activeConfig, (encodedCredentials) =>
-                updateConfig(activeConfig.editorKey, (config) => ({
-                    ...config,
-                    apiKey: encodedCredentials,
-                    codexCredentialIntent: "replace"
-                }))
-            );
-            await logseq.UI.showMsg("Provider connection test succeeded.", "success");
-        } catch (error) {
-            const message = getErrorMessage(error);
-            await logseq.UI.showMsg(`Provider connection test failed: ${message}`, "error");
-        } finally {
-            setTestingEditorKey(null);
-        }
-    }, [activeConfig, getActionValidationError, isBusy, updateConfig]);
+    const hasUnsavedChanges =
+        getProviderConfigsSnapshot(configs) !== initialSnapshot || oauth.authDirty;
 
     const focusIssue = React.useCallback((issue: ProviderConfigValidationIssue) => {
         setTimeout(() => {
@@ -281,46 +102,39 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
         }, 0);
     }, []);
 
-    const handleSave = React.useCallback(async () => {
-        if (isBusy) return;
-        const validationIssues = validateProviderConfigs(configs);
-        if (validationIssues.length > 0) {
-            const firstIssue = validationIssues[0];
+    const handleValidationError = React.useCallback(
+        (
+            issue: ProviderConfigValidationIssue,
+            validationIssues: ProviderConfigValidationIssue[]
+        ) => {
             setIssues(validationIssues);
-            if (firstIssue.editorKey) {
-                setActiveEditorKey(firstIssue.editorKey);
-                focusIssue(firstIssue);
-            }
-            await logseq.UI.showMsg(`Validation failed: ${firstIssue.message}`, "error");
-            return;
-        }
-
-        setIsSaving(true);
-        try {
-            const persistedConfigs = toPersistedProviderConfigs(configs);
-            const renamedIds = new Map(
-                configs
-                    .filter((config) => config.originalId && config.originalId !== config.id.trim())
-                    .map((config) => [config.originalId as string, config.id.trim().toLowerCase()])
-            );
-            await saveProviderConfigs(
-                persistedConfigs.map((config, index) => ({
-                    config,
-                    originalId: configs[index].originalId,
-                    codexCredentialIntent: configs[index].codexCredentialIntent
-                })),
-                renamedIds
-            );
-            returnResult(true);
-        } catch {
-            await logseq.UI.showMsg("Failed to save provider configurations.", "error");
-        } finally {
-            setIsSaving(false);
-        }
-    }, [configs, focusIssue, isBusy, returnResult]);
+            if (issue.editorKey) setActiveEditorKey(issue.editorKey);
+            focusIssue(issue);
+        },
+        [focusIssue, setActiveEditorKey, setIssues]
+    );
+    const persistence = useProviderConfigPersistence(
+        configs,
+        oauth.getOAuthStorageMutation,
+        oauth.getChangedProviderUuids,
+        oauth.isSignedIn,
+        handleValidationError,
+        () => returnResult(true)
+    );
+    const isBusy =
+        loadError !== null ||
+        persistence.isSaving ||
+        actions.fetchingEditorKey !== null ||
+        actions.testingEditorKey !== null ||
+        oauth.isAuthBusy;
 
     const handleCancel = React.useCallback(async () => {
-        if (isSaving || fetchingEditorKey !== null || testingEditorKey !== null || codexAuthBusy)
+        if (
+            persistence.isSaving ||
+            actions.fetchingEditorKey !== null ||
+            actions.testingEditorKey !== null ||
+            oauth.isAuthBusy
+        )
             return;
         if (hasUnsavedChanges) {
             const shouldClose = await showConfirmModal(
@@ -331,13 +145,25 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
         }
         returnResult(null);
     }, [
-        codexAuthBusy,
-        fetchingEditorKey,
+        actions.fetchingEditorKey,
+        actions.testingEditorKey,
         hasUnsavedChanges,
-        isSaving,
-        returnResult,
-        testingEditorKey
+        oauth.isAuthBusy,
+        persistence.isSaving,
+        returnResult
     ]);
+
+    const handleReset = React.useCallback(async () => {
+        if (isResetting) return;
+        setIsResetting(true);
+        try {
+            await LogseqSettingAccessor.updatePluginSettings({providerConfigSetting: null});
+            WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
+        } catch {
+            setIsResetting(false);
+            await logseq.UI.showMsg("Failed to reset provider configurations.", "error");
+        }
+    }, [isResetting]);
 
     const activeIssues = activeConfig
         ? issues.filter((issue) => issue.editorKey === activeConfig.editorKey)
@@ -368,9 +194,18 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                             Loading provider configurations...
                         </div>
                     ) : loadError ? (
-                        <div className="m-5 rounded border border-red-500/60 bg-red-500/10 p-4 text-sm text-red-600">
-                            Provider configurations could not be loaded. Close this modal without
-                            saving and correct the stored configuration before trying again.
+                        <div className="m-5 space-y-3 rounded border border-red-500/60 bg-red-500/10 p-4 text-sm text-red-600">
+                            <p>
+                                Provider configurations could not be loaded. Reset them to the
+                                defaults and reload the plugin.
+                            </p>
+                            <LogseqButton
+                                color="failed"
+                                size="sm"
+                                disabled={isResetting}
+                                onClick={() => void handleReset()}>
+                                {isResetting ? "Resetting..." : "Reset Provider Configurations"}
+                            </LogseqButton>
                         </div>
                     ) : (
                         <>
@@ -378,7 +213,7 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                 <div className="flex items-center justify-between gap-2 border-border border-b px-4 py-2">
                                     <span className="text-sm font-medium">Configurations</span>
                                     <LogseqButton
-                                        onClick={handleAddConfig}
+                                        onClick={addConfig}
                                         color="primary"
                                         size="xs"
                                         disabled={isBusy}
@@ -407,7 +242,7 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                         setActiveEditorKey(config.editorKey)
                                                     }>
                                                     <span className="block truncate">
-                                                        {config.id || "Untitled configuration"}
+                                                        {config.name || "Untitled configuration"}
                                                     </span>
                                                 </button>
                                             ))}
@@ -420,14 +255,21 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                     <>
                                         <div className="flex items-center justify-between gap-3 border-border border-b bg-secondary-background px-4 py-2">
                                             <div className="min-w-0 truncate text-sm font-medium">
-                                                {activeConfig.id || "Untitled configuration"}
+                                                {activeConfig.name || "Untitled configuration"}
                                             </div>
                                             <LogseqButton
                                                 color="failed"
                                                 size="xs"
                                                 disabled={isBusy}
                                                 title="Delete provider configuration"
-                                                onClick={handleDeleteConfig}>
+                                                onClick={() => {
+                                                    if (isOAuthProviderConfig(activeConfig)) {
+                                                        oauth.markOAuthProviderChanged(
+                                                            activeConfig.uuid
+                                                        );
+                                                    }
+                                                    deleteConfig(activeConfig.editorKey);
+                                                }}>
                                                 <Trash size={15} /> Delete
                                             </LogseqButton>
                                         </div>
@@ -437,21 +279,21 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                             <div className="mx-auto max-w-4xl space-y-5">
                                                 <div className="grid gap-4 md:grid-cols-2">
                                                     <label
-                                                        htmlFor={`provider-config-id-${activeConfig.editorKey}`}
+                                                        htmlFor={`provider-config-name-${activeConfig.editorKey}`}
                                                         className="space-y-1 text-sm font-medium">
-                                                        <span>Configuration ID</span>
+                                                        <span>Configuration Name</span>
                                                         <LogseqInput
-                                                            id={`provider-config-id-${activeConfig.editorKey}`}
-                                                            data-error-field="id"
-                                                            invalid={hasFieldIssue("id")}
-                                                            value={activeConfig.id}
+                                                            id={`provider-config-name-${activeConfig.editorKey}`}
+                                                            data-error-field="name"
+                                                            invalid={hasFieldIssue("name")}
+                                                            value={activeConfig.name}
                                                             disabled={isBusy}
                                                             onChange={(event) =>
                                                                 updateConfig(
                                                                     activeConfig.editorKey,
                                                                     (config) => ({
                                                                         ...config,
-                                                                        id: event.target.value.toLowerCase()
+                                                                        name: event.target.value
                                                                     })
                                                                 )
                                                             }
@@ -472,21 +314,20 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                             onChange={(value) => {
                                                                 const type =
                                                                     value as ProviderTypeEnum;
-                                                                updateConfig(
+                                                                if (
+                                                                    isOAuthProviderConfig(
+                                                                        activeConfig
+                                                                    ) &&
+                                                                    type !== activeConfig.type
+                                                                ) {
+                                                                    oauth.markOAuthProviderChanged(
+                                                                        activeConfig.uuid
+                                                                    );
+                                                                }
+                                                                changeProviderType(
                                                                     activeConfig.editorKey,
-                                                                    (config) => ({
-                                                                        ...config,
-                                                                        type,
-                                                                        baseUrl:
-                                                                            getDefaultBaseUrl(type),
-                                                                        apiKey: "",
-                                                                        models: [],
-                                                                        codexCredentialIntent:
-                                                                            type ===
-                                                                            ProviderTypeEnum.CODEX_SUBSCRIPTION
-                                                                                ? "clear"
-                                                                                : "unchanged"
-                                                                    })
+                                                                    type,
+                                                                    getDefaultBaseUrl(type)
                                                                 );
                                                             }}
                                                         />
@@ -524,69 +365,68 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                         </span>
                                                     )}
                                                 </label>
-                                                <label
-                                                    htmlFor={`provider-api-key-${activeConfig.editorKey}`}
-                                                    className="block space-y-1 text-sm font-medium">
-                                                    <span>API Key</span>
-                                                    <LogseqInput
-                                                        id={`provider-api-key-${activeConfig.editorKey}`}
-                                                        data-error-field="apiKey"
-                                                        invalid={hasFieldIssue("apiKey")}
-                                                        value={
-                                                            activeConfig.type ===
-                                                            ProviderTypeEnum.CODEX_SUBSCRIPTION
-                                                                ? ""
-                                                                : activeConfig.apiKey
-                                                        }
-                                                        placeholder={
-                                                            activeConfig.type ===
-                                                            ProviderTypeEnum.CODEX_SUBSCRIPTION
-                                                                ? "Managed by Codex Subscription sign-in"
-                                                                : undefined
-                                                        }
-                                                        disabled={
-                                                            isBusy ||
-                                                            activeConfig.type ===
-                                                                ProviderTypeEnum.CODEX_SUBSCRIPTION
-                                                        }
-                                                        onChange={(event) =>
-                                                            updateConfig(
-                                                                activeConfig.editorKey,
-                                                                (config) => ({
-                                                                    ...config,
-                                                                    apiKey: event.target.value
-                                                                })
-                                                            )
-                                                        }
-                                                    />
-                                                </label>
-                                                {activeConfig.type ===
-                                                    ProviderTypeEnum.CODEX_SUBSCRIPTION && (
-                                                    <CodexSignInSection
-                                                        encodedCredentials={activeConfig.apiKey}
-                                                        disabled={isBusy && !codexAuthBusy}
-                                                        onBusyChange={setCodexAuthBusy}
-                                                        onSignedIn={(encodedCredentials) =>
-                                                            updateConfig(
-                                                                activeConfig.editorKey,
-                                                                (config) => ({
-                                                                    ...config,
-                                                                    apiKey: encodedCredentials,
-                                                                    codexCredentialIntent: "replace"
-                                                                })
-                                                            )
-                                                        }
-                                                        onLogout={() =>
-                                                            updateConfig(
-                                                                activeConfig.editorKey,
-                                                                (config) => ({
-                                                                    ...config,
-                                                                    apiKey: "",
-                                                                    codexCredentialIntent: "clear"
-                                                                })
-                                                            )
-                                                        }
-                                                    />
+                                                {!isOAuthProviderConfig(activeConfig) && (
+                                                    <label
+                                                        htmlFor={`provider-api-key-${activeConfig.editorKey}`}
+                                                        className="block space-y-1 text-sm font-medium">
+                                                        <span>API Key</span>
+                                                        <LogseqInput
+                                                            id={`provider-api-key-${activeConfig.editorKey}`}
+                                                            data-error-field="apiKey"
+                                                            invalid={hasFieldIssue("apiKey")}
+                                                            value={activeConfig.apiKey}
+                                                            disabled={isBusy}
+                                                            onChange={(event) =>
+                                                                updateConfig(
+                                                                    activeConfig.editorKey,
+                                                                    (config) =>
+                                                                        isOAuthProviderConfig(
+                                                                            config
+                                                                        )
+                                                                            ? config
+                                                                            : {
+                                                                                  ...config,
+                                                                                  apiKey: event
+                                                                                      .target.value
+                                                                              }
+                                                                )
+                                                            }
+                                                        />
+                                                    </label>
+                                                )}
+                                                {isOAuthProviderConfig(activeConfig) && (
+                                                    <div
+                                                        data-error-field="authentication"
+                                                        tabIndex={-1}>
+                                                        <OAuthSignInSection
+                                                            providerName="Codex Subscription"
+                                                            prerequisite='Turn on "Enable device code authorization for Codex" in ChatGPT Settings > Security first.'
+                                                            signedIn={oauth.isSignedIn(
+                                                                activeConfig
+                                                            )}
+                                                            accountEmail={oauth.getAccountEmail(
+                                                                activeConfig.uuid
+                                                            )}
+                                                            disabled={isBusy}
+                                                            state={oauth.getSignInState(
+                                                                activeConfig.editorKey
+                                                            )}
+                                                            onSignIn={() =>
+                                                                void oauth.signIn(activeConfig)
+                                                            }
+                                                            onLogout={() =>
+                                                                void oauth.logout(activeConfig)
+                                                            }
+                                                            onCancel={() =>
+                                                                oauth.cancelSignIn(
+                                                                    activeConfig.editorKey
+                                                                )
+                                                            }
+                                                            onOpenVerificationUrl={
+                                                                oauth.openVerificationUrl
+                                                            }
+                                                        />
+                                                    </div>
                                                 )}
                                                 <div className="rounded-md border border-border">
                                                     <div className="flex flex-wrap items-center justify-between gap-2 border-border border-b bg-secondary-background px-3 py-2">
@@ -600,9 +440,13 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                                 color="outline-link"
                                                                 size="sm"
                                                                 disabled={isBusy}
-                                                                onClick={handleFetchModels}>
+                                                                onClick={() =>
+                                                                    void actions.fetchModels(
+                                                                        activeConfig
+                                                                    )
+                                                                }>
                                                                 <RefreshCw size={14} />
-                                                                {fetchingEditorKey ===
+                                                                {actions.fetchingEditorKey ===
                                                                 activeConfig.editorKey
                                                                     ? "Fetching..."
                                                                     : "Fetch Models"}
@@ -611,9 +455,11 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                                 color="outline-link"
                                                                 size="sm"
                                                                 disabled={isBusy}
-                                                                onClick={handleTest}>
+                                                                onClick={() =>
+                                                                    void actions.test(activeConfig)
+                                                                }>
                                                                 <FlaskConical size={14} />
-                                                                {testingEditorKey ===
+                                                                {actions.testingEditorKey ===
                                                                 activeConfig.editorKey
                                                                     ? "Testing..."
                                                                     : "Test"}
@@ -759,11 +605,6 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                         )}
                                                     </div>
                                                 </div>
-                                                {activeIssues.length > 0 && (
-                                                    <div className="rounded border border-red-500/60 bg-red-500/10 px-3 py-2 text-sm text-red-600">
-                                                        {activeIssues[0].message}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </>
@@ -777,11 +618,13 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                     )}
                 </div>
                 <ModalFooter
-                    onConfirm={handleSave}
+                    onConfirm={persistence.save}
                     onCancel={handleCancel}
-                    confirmText={isSaving ? "Saving..." : "Save"}
+                    confirmText={persistence.isSaving ? "Saving..." : "Save"}
                     cancelText="Cancel"
                     confirmShortcut=""
+                    confirmDisabled={isBusy}
+                    cancelDisabled={isBusy && loadError === null}
                     className="border-border border-t px-4 pb-2 pt-1 !mt-0"
                 />
             </div>
