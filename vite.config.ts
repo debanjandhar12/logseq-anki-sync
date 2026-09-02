@@ -7,7 +7,6 @@ import {bundleJSStringPlugin} from "./vite-plugins/bundleJSStringPlugin";
 import {inlineSkillFilePlugin} from "./vite-plugins/inlineSkillFilePlugin";
 import {logseqDevPlugin} from "./vite-plugins/logseqDevPlugin";
 import {logseqReactBridgePlugin} from "./vite-plugins/logseqReactBridgePlugin";
-import {openAIOAuthBrowserPlugin} from "./vite-plugins/openAIOAuthBrowserPlugin";
 import {rewriteDistReqToRootPlugin} from "./vite-plugins/rewriteDistReqToRootPlugin";
 import {shadowDOMFloatingUIReactPopperBridgePlugin} from "./vite-plugins/shadowDOMFloatingUIReactPopperBridgePlugin";
 import {staticFileSyncTransformPlugin} from "./vite-plugins/staticFileSyncTransformPlugin";
@@ -27,16 +26,6 @@ export default defineConfig(({mode}) => {
                 src: path.resolve(__dirname, "./src")
             }
         },
-        optimizeDeps: {
-            // This package statically imports its Node file store. Keep its entry points out of
-            // the dev pre-bundle so openAIOAuthBrowserPlugin can replace that internal module.
-            exclude: [
-                "openai-oauth-ai-provider",
-                "openai-oauth-ai-provider/ai-sdk",
-                "openai-oauth-ai-provider/codex",
-                "openai-oauth-ai-provider/core"
-            ]
-        },
         plugins: [
             tailwindcss(),
             inlineSkillFilePlugin(),
@@ -46,7 +35,6 @@ export default defineConfig(({mode}) => {
             mode === "development" && logseqDevPlugin(), // for dev only
             mode === "development" && reactPlugin(), // for dev only
             mode === "development" && rewriteDistReqToRootPlugin(), // for dev only
-            openAIOAuthBrowserPlugin(),
             nodePolyfills({
                 globals: {
                     Buffer: true,

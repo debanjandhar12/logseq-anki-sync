@@ -1,8 +1,9 @@
+import {createAuthenticatedFetch} from "@ai-oauth-sdk/browser";
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
 import {createOpenAI} from "@ai-sdk/openai";
 import type {ToolSet} from "ai";
 import {LogseqSettingAccessor} from "../../logseq/LogseqSettingAccessor";
-import {CodexSessionManager} from "./codex/CodexSessionManager";
+import {OAuthClientCache} from "./oauth/OAuthClientCache";
 import {readProviderConfigs} from "./provider-config/readProviderConfigs";
 import {
     type ResolvedLLMSelection,
@@ -33,7 +34,12 @@ export function getLLMProviderTools(resolvedSelection?: ResolvedLLMSelection): T
     }
 
     if (resolved.config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION) {
-        const provider = CodexSessionManager.getRuntimeSession(resolved.config).aiProvider;
+        const client = OAuthClientCache.get(resolved.config);
+        const provider = createOpenAI({
+            apiKey: "unused",
+            baseURL: client.provider.apiBaseUrl,
+            fetch: createAuthenticatedFetch(client)
+        });
         return {web_search: provider.tools.webSearch({})};
     }
 

@@ -10,7 +10,8 @@ const {streamTextMock, createLLMModelMock, getLLMProviderToolsMock, resolveLLMSe
         getLLMProviderToolsMock: vi.fn(() => ({})),
         resolveLLMSelectionMock: vi.fn(() => ({
             config: {
-                id: "selected",
+                uuid: "10000000-0000-4000-8000-000000000001",
+                name: "Selected",
                 type: "openai",
                 baseUrl: "https://provider.test/v1",
                 apiKey: "secret",

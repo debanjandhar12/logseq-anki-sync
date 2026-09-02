@@ -14,7 +14,8 @@ describe("getLLMModelList", () => {
     test("aggregates enabled models in persisted provider and model order", () => {
         readProviderConfigs.mockReturnValue([
             {
-                id: "work",
+                uuid: "10000000-0000-4000-8000-000000000001",
+                name: "Work",
                 type: ProviderTypeEnum.OPENAI,
                 baseUrl: "https://work.test/v1",
                 apiKey: "secret",
@@ -24,7 +25,8 @@ describe("getLLMModelList", () => {
                 ]
             },
             {
-                id: "personal",
+                uuid: "10000000-0000-4000-8000-000000000002",
+                name: "Personal",
                 type: ProviderTypeEnum.GOOGLE,
                 baseUrl: "https://personal.test/v1",
                 apiKey: "secret",
@@ -34,15 +36,17 @@ describe("getLLMModelList", () => {
 
         expect(getLLMModelList()).toEqual([
             {
-                id: "work////gpt-5",
+                id: "10000000-0000-4000-8000-000000000001////gpt-5",
                 name: "gpt-5",
-                providerConfigId: "work",
+                providerConfigUuid: "10000000-0000-4000-8000-000000000001",
+                providerConfigName: "Work",
                 efforts: true
             },
             {
-                id: "personal////gemini////pro",
+                id: "10000000-0000-4000-8000-000000000002////gemini////pro",
                 name: "gemini////pro",
-                providerConfigId: "personal",
+                providerConfigUuid: "10000000-0000-4000-8000-000000000002",
+                providerConfigName: "Personal",
                 efforts: true
             }
         ]);

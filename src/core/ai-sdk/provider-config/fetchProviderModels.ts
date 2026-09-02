@@ -1,5 +1,6 @@
+import {type AuthClient, fetchCodexModels} from "@ai-oauth-sdk/browser";
 import {z} from "zod";
-import {CodexSessionManager} from "../codex/CodexSessionManager";
+import {OAuthClientCache} from "../oauth/OAuthClientCache";
 import {type ProviderConfig, ProviderTypeEnum} from "../types";
 import {validateProviderBaseUrl, validateProviderConnection} from "./validateProviderConfig";
 
@@ -34,17 +35,13 @@ async function fetchJson(url: string, headers: HeadersInit): Promise<unknown> {
 
 export async function fetchProviderModels(
     config: ProviderConfig,
-    onCodexCredentialsUpdated?: (encodedCredentials: string) => void
+    oauthClient?: AuthClient
 ): Promise<string[]> {
     validateProviderConnection(config);
     const baseUrl = validateProviderBaseUrl(config.baseUrl);
 
     if (config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION) {
-        const models = await CodexSessionManager.getConfigSession(
-            config,
-            onCodexCredentialsUpdated
-        ).codexClient.listCodexModels();
-        return uniqueModelIds(models.map((model) => model.slug));
+        return uniqueModelIds(await fetchCodexModels(oauthClient ?? OAuthClientCache.get(config)));
     }
 
     if (config.type !== ProviderTypeEnum.GOOGLE) {

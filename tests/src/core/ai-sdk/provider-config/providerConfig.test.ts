@@ -1,5 +1,4 @@
 import {afterEach, describe, expect, test, vi} from "vitest";
-import {encodeCodexCredentials} from "../../../../../src/core/ai-sdk/codex/CodexCredentialCodec";
 import {fetchProviderModels} from "../../../../../src/core/ai-sdk/provider-config/fetchProviderModels";
 import {mergeProviderModels} from "../../../../../src/core/ai-sdk/provider-config/mergeProviderModels";
 import {
@@ -12,10 +11,18 @@ import {
     parseSelectedModelId,
     reconcileSelectedModelId
 } from "../../../../../src/core/ai-sdk/provider-config/selectedModelId";
-import {type ProviderConfig, ProviderTypeEnum} from "../../../../../src/core/ai-sdk/types";
+import {
+    type ApiKeyProviderConfig,
+    type OAuthProviderConfig,
+    ProviderTypeEnum
+} from "../../../../../src/core/ai-sdk/types";
 
-const config = (overrides: Partial<ProviderConfig> = {}): ProviderConfig => ({
-    id: "primary",
+const PRIMARY_UUID = "10000000-0000-4000-8000-000000000001";
+const RENAMED_UUID = "10000000-0000-4000-8000-000000000002";
+
+const config = (overrides: Partial<ApiKeyProviderConfig> = {}): ApiKeyProviderConfig => ({
+    uuid: PRIMARY_UUID,
+    name: "Primary",
     type: ProviderTypeEnum.OPENAI,
     baseUrl: "https://api.example.test/v1/",
     apiKey: "secret-key",
@@ -23,32 +30,44 @@ const config = (overrides: Partial<ProviderConfig> = {}): ProviderConfig => ({
     ...overrides
 });
 
+const oauthConfig = (overrides: Partial<OAuthProviderConfig> = {}): OAuthProviderConfig => ({
+    uuid: PRIMARY_UUID,
+    name: "Codex",
+    type: ProviderTypeEnum.CODEX_SUBSCRIPTION,
+    baseUrl: "https://chatgpt.com/backend-api/codex",
+    oauthStorage: {},
+    models: [],
+    ...overrides
+});
+
 afterEach(() => vi.unstubAllGlobals());
 
 describe("provider configuration codec", () => {
-    test("accepts signed-out Codex and validates signed-in envelopes and the fixed URL", () => {
-        const codexConfig = config({
-            type: ProviderTypeEnum.CODEX_SUBSCRIPTION,
-            baseUrl: "https://chatgpt.com/backend-api/codex",
-            apiKey: ""
-        });
-        expect(decodeProviderConfigs(encodeProviderConfigs([codexConfig]))).toEqual([codexConfig]);
-
-        const apiKey = encodeCodexCredentials({
-            accessToken: "access",
-            idToken: "id",
-            refreshToken: "refresh",
-            updatedAt: 1
-        });
-        expect(() => encodeProviderConfigs([{...codexConfig, apiKey}])).not.toThrow();
-        expect(() => encodeProviderConfigs([{...codexConfig, apiKey: "invalid"}])).toThrow();
+    test("requires signed-in Codex storage and validates the fixed URL", () => {
+        expect(() => encodeProviderConfigs([oauthConfig()])).toThrow();
         expect(() =>
-            encodeProviderConfigs([{...codexConfig, baseUrl: "https://example.test"}])
+            encodeProviderConfigs([
+                oauthConfig({
+                    oauthStorage: {accessToken: "access", refreshToken: "refresh"},
+                    models: [{id: "gpt-5", enabled: true}]
+                })
+            ])
+        ).not.toThrow();
+        expect(() =>
+            encodeProviderConfigs([
+                oauthConfig({
+                    oauthStorage: {accessToken: "access", refreshToken: "refresh"},
+                    models: []
+                })
+            ])
+        ).toThrow();
+        expect(() =>
+            encodeProviderConfigs([oauthConfig({baseUrl: "https://example.test"})])
         ).toThrow();
     });
 
     test("round trips Unicode ProviderConfig arrays directly", () => {
-        const configs = [config({id: "日本", models: [{id: "modèle", enabled: true}]})];
+        const configs = [config({name: "日本", models: [{id: "modèle", enabled: true}]})];
         const encoded = encodeProviderConfigs(configs);
         const decodedJson = new TextDecoder().decode(
             Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))
@@ -95,38 +114,43 @@ describe("provider configuration codec", () => {
 
 describe("selected model identity and resolution", () => {
     test("splits only the first delimiter", () => {
-        expect(parseSelectedModelId(formatSelectedModelId("primary", "model////version"))).toEqual({
-            configId: "primary",
-            modelId: "model////version"
-        });
+        expect(
+            parseSelectedModelId(formatSelectedModelId(PRIMARY_UUID, "model////version"))
+        ).toEqual({providerUuid: PRIMARY_UUID, modelId: "model////version"});
     });
 
-    test("rejects reserved configuration IDs and malformed selections", () => {
-        expect(() => formatSelectedModelId("bad////id", "model")).toThrow();
+    test("rejects reserved provider UUIDs and malformed selections", () => {
+        expect(() => formatSelectedModelId("bad////uuid", "model")).toThrow();
         expect(() => parseSelectedModelId("legacy-model-id")).toThrow();
     });
 
     test("requires the configured enabled model, key, and URL", () => {
-        expect(resolveLLMSelection("primary////model////version", [config()])).toEqual({
+        expect(resolveLLMSelection(`${PRIMARY_UUID}////model////version`, [config()])).toEqual({
             config: config(),
             rawModelId: "model////version"
         });
         expect(() =>
-            resolveLLMSelection("primary////disabled", [
+            resolveLLMSelection(`${PRIMARY_UUID}////disabled`, [
                 config({models: [{id: "disabled", enabled: false}]})
             ])
         ).toThrow("not enabled");
         expect(() =>
-            resolveLLMSelection("primary////model////version", [config({apiKey: ""})])
+            resolveLLMSelection(`${PRIMARY_UUID}////model////version`, [config({apiKey: ""})])
         ).toThrow("API key");
     });
 
-    test("reconciles renames and deterministically falls back", () => {
-        const renamed = config({id: "renamed", models: [{id: "model", enabled: true}]});
-        expect(
-            reconcileSelectedModelId("old////model", [renamed], new Map([["old", "renamed"]]))
-        ).toBe("renamed////model");
-        expect(reconcileSelectedModelId("missing////model", [renamed])).toBe("renamed////model");
+    test("keeps valid UUID selections and deterministically falls back", () => {
+        const renamed = config({
+            uuid: RENAMED_UUID,
+            name: "Renamed",
+            models: [{id: "model", enabled: true}]
+        });
+        expect(reconcileSelectedModelId(`${RENAMED_UUID}////model`, [renamed])).toBe(
+            `${RENAMED_UUID}////model`
+        );
+        expect(reconcileSelectedModelId(`${PRIMARY_UUID}////model`, [renamed])).toBe(
+            `${RENAMED_UUID}////model`
+        );
         expect(reconcileSelectedModelId(undefined, [])).toBe("");
     });
 });
@@ -199,7 +223,7 @@ describe("provider model discovery and merge", () => {
         ).toEqual([
             {id: "manual", enabled: false},
             {id: "existing", enabled: true},
-            {id: "new", enabled: true}
+            {id: "new", enabled: false}
         ]);
     });
 });

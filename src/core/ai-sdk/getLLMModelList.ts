@@ -5,7 +5,8 @@ export interface LLMModelOption {
     id: string;
     name: string;
     description?: string;
-    providerConfigId: string;
+    providerConfigUuid: string;
+    providerConfigName: string;
     efforts?: boolean;
 }
 
@@ -14,9 +15,10 @@ export function getLLMModelList(): LLMModelOption[] {
         config.models
             .filter((model) => model.enabled)
             .map((model) => ({
-                id: formatSelectedModelId(config.id, model.id),
+                id: formatSelectedModelId(config.uuid, model.id),
                 name: model.id,
-                providerConfigId: config.id,
+                providerConfigUuid: config.uuid,
+                providerConfigName: config.name,
                 efforts: true
             }))
     );

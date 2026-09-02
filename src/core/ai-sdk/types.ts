@@ -10,12 +10,27 @@ export interface ProviderModelConfig {
     enabled: boolean;
 }
 
-export interface ProviderConfig {
-    id: string;
-    type: ProviderTypeEnum;
+interface ProviderConfigBase {
+    uuid: string;
+    name: string;
     baseUrl: string;
-    apiKey: string;
     models: ProviderModelConfig[];
+}
+
+export type ApiKeyProviderConfig = ProviderConfigBase & {
+    type: ProviderTypeEnum.OPENAI | ProviderTypeEnum.OPENAI_COMPATIBLE | ProviderTypeEnum.GOOGLE;
+    apiKey: string;
+};
+
+export type OAuthProviderConfig = ProviderConfigBase & {
+    type: ProviderTypeEnum.CODEX_SUBSCRIPTION;
+    oauthStorage: Record<string, string>;
+};
+
+export type ProviderConfig = ApiKeyProviderConfig | OAuthProviderConfig;
+
+export function isOAuthProviderConfig(config: ProviderConfig): config is OAuthProviderConfig {
+    return config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION;
 }
 
 export enum WebToolsProviderEnum {

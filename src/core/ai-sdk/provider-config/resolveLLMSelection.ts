@@ -11,8 +11,8 @@ export function resolveLLMSelection(
     selection: string,
     configs: ProviderConfig[]
 ): ResolvedLLMSelection {
-    const {configId, modelId} = parseSelectedModelId(selection);
-    const config = configs.find((candidate) => candidate.id === configId);
+    const {providerUuid, modelId} = parseSelectedModelId(selection);
+    const config = configs.find((candidate) => candidate.uuid === providerUuid);
     if (!config) throw new Error("Selected provider configuration was not found");
 
     const model = config.models.find((candidate) => candidate.id === modelId);

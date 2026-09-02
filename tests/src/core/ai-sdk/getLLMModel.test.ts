@@ -1,12 +1,17 @@
 import {beforeEach, describe, expect, test, vi} from "vitest";
 import {createLLMModel} from "../../../../src/core/ai-sdk/getLLMModel";
-import {ProviderTypeEnum} from "../../../../src/core/ai-sdk/types";
+import {
+    type ApiKeyProviderConfig,
+    type OAuthProviderConfig,
+    ProviderTypeEnum
+} from "../../../../src/core/ai-sdk/types";
 
 const mocks = vi.hoisted(() => ({
     createOpenAI: vi.fn(),
     createOpenAICompatible: vi.fn(),
     createGoogle: vi.fn(),
-    getRuntimeSession: vi.fn()
+    getOAuthClient: vi.fn(),
+    authenticatedFetch: vi.fn()
 }));
 
 vi.mock("@ai-sdk/openai", () => ({createOpenAI: mocks.createOpenAI}));
@@ -14,8 +19,11 @@ vi.mock("@ai-sdk/openai-compatible", () => ({
     createOpenAICompatible: mocks.createOpenAICompatible
 }));
 vi.mock("@ai-sdk/google", () => ({createGoogleGenerativeAI: mocks.createGoogle}));
-vi.mock("../../../../src/core/ai-sdk/codex/CodexSessionManager", () => ({
-    CodexSessionManager: {getRuntimeSession: mocks.getRuntimeSession}
+vi.mock("@ai-oauth-sdk/browser", () => ({
+    createAuthenticatedFetch: vi.fn(() => mocks.authenticatedFetch)
+}));
+vi.mock("../../../../src/core/ai-sdk/oauth/OAuthClientCache", () => ({
+    OAuthClientCache: {get: mocks.getOAuthClient}
 }));
 
 describe("createLLMModel", () => {
@@ -26,8 +34,8 @@ describe("createLLMModel", () => {
             chatModel: vi.fn().mockReturnValue("compatible-model")
         });
         mocks.createGoogle.mockReturnValue({chat: vi.fn().mockReturnValue("google-model")});
-        mocks.getRuntimeSession.mockReturnValue({
-            aiProvider: {responses: vi.fn().mockReturnValue("codex-model")}
+        mocks.getOAuthClient.mockReturnValue({
+            provider: {apiBaseUrl: "https://chatgpt.com/backend-api/codex"}
         });
     });
 
@@ -35,15 +43,17 @@ describe("createLLMModel", () => {
         [ProviderTypeEnum.OPENAI, "openai-model"],
         [ProviderTypeEnum.OPENAI_COMPATIBLE, "compatible-model"],
         [ProviderTypeEnum.GOOGLE, "google-model"]
-    ])("passes credentials, base URL, and raw model ID for %s", (type, expected) => {
+    ] as const)("passes credentials, base URL, and raw model ID for %s", (type, expected) => {
+        const config: ApiKeyProviderConfig = {
+            uuid: "10000000-0000-4000-8000-000000000001",
+            name: "config-name",
+            type,
+            baseUrl: "https://provider.test/v1",
+            apiKey: "secret",
+            models: [{id: "raw-model", enabled: true}]
+        };
         const result = createLLMModel({
-            config: {
-                id: "config-name",
-                type,
-                baseUrl: "https://provider.test/v1",
-                apiKey: "secret",
-                models: [{id: "raw-model", enabled: true}]
-            },
+            config,
             rawModelId: "raw-model"
         });
 
@@ -61,16 +71,21 @@ describe("createLLMModel", () => {
         );
     });
 
-    test("uses the OAuth session for Codex without passing the envelope as an API key", () => {
-        const config = {
-            id: "codex",
+    test("uses authenticated OAuth fetch for Codex", () => {
+        const config: OAuthProviderConfig = {
+            uuid: "10000000-0000-4000-8000-000000000002",
+            name: "Codex",
             type: ProviderTypeEnum.CODEX_SUBSCRIPTION,
             baseUrl: "https://chatgpt.com/backend-api/codex",
-            apiKey: "encoded-credentials",
+            oauthStorage: {accessToken: "stored"},
             models: [{id: "gpt-5", enabled: true}]
         };
-        expect(createLLMModel({config, rawModelId: "gpt-5"})).toBe("codex-model");
-        expect(mocks.getRuntimeSession).toHaveBeenCalledWith(config);
-        expect(mocks.createOpenAI).not.toHaveBeenCalled();
+        expect(createLLMModel({config, rawModelId: "gpt-5"})).toBe("openai-model");
+        expect(mocks.getOAuthClient).toHaveBeenCalledWith(config);
+        expect(mocks.createOpenAI).toHaveBeenCalledWith({
+            apiKey: "unused",
+            baseURL: "https://chatgpt.com/backend-api/codex",
+            fetch: mocks.authenticatedFetch
+        });
     });
 });

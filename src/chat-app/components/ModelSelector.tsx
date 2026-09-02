@@ -60,7 +60,8 @@ export type ModelOption = {
     description?: string;
     disabled?: boolean;
     keywords?: readonly string[];
-    providerConfigId?: string;
+    providerConfigUuid?: string;
+    providerConfigName?: string;
     efforts?: boolean | readonly ModelSelectorEffortOption[];
 };
 
@@ -309,8 +310,8 @@ function ModelSelectorValue({
             data-slot="model-selector-value"
             className={cn("flex min-w-0 items-center gap-2", className)}>
             <span className="truncate font-medium">
-                {selectedModel.providerConfigId
-                    ? `${selectedModel.providerConfigId} / ${selectedModel.name}`
+                {selectedModel.providerConfigName
+                    ? `${selectedModel.providerConfigName} / ${selectedModel.name}`
                     : selectedModel.name}
             </span>
             {effortName && (
@@ -422,11 +423,17 @@ export type ModelSelectorListProps = ComponentPropsWithoutRef<typeof CommandList
 function ModelSelectorList({className, children, ...props}: ModelSelectorListProps) {
     const {models} = useModelSelectorContext();
     const modelGroups = useMemo(() => {
-        const groups = new Map<string | undefined, ModelOption[]>();
+        const groups = new Map<
+            string | undefined,
+            {name: string | undefined; models: ModelOption[]}
+        >();
         for (const model of models) {
-            const group = groups.get(model.providerConfigId) ?? [];
-            group.push(model);
-            groups.set(model.providerConfigId, group);
+            const group = groups.get(model.providerConfigUuid) ?? {
+                name: model.providerConfigName,
+                models: []
+            };
+            group.models.push(model);
+            groups.set(model.providerConfigUuid, group);
         }
         return groups;
     }, [models]);
@@ -470,11 +477,9 @@ function ModelSelectorList({className, children, ...props}: ModelSelectorListPro
                 {children ?? (
                     <>
                         <ModelSelectorEmpty />
-                        {Array.from(modelGroups, ([providerConfigId, groupModels]) => (
-                            <CommandGroup
-                                key={providerConfigId ?? "models"}
-                                heading={providerConfigId}>
-                                {groupModels.map((model) => (
+                        {Array.from(modelGroups, ([providerConfigUuid, group]) => (
+                            <CommandGroup key={providerConfigUuid ?? "models"} heading={group.name}>
+                                {group.models.map((model) => (
                                     <ModelSelectorItem key={model.id} model={model} />
                                 ))}
                             </CommandGroup>
@@ -536,7 +541,7 @@ function ModelSelectorItem({
             value={model.id}
             keywords={[
                 model.name,
-                ...(model.providerConfigId ? [model.providerConfigId] : []),
+                ...(model.providerConfigName ? [model.providerConfigName] : []),
                 ...(model.keywords ?? [])
             ]}
             {...(model.disabled ? {disabled: true} : undefined)}

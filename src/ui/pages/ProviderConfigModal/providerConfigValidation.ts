@@ -1,72 +1,52 @@
-import {isValidCodexCredentials} from "src/core/ai-sdk/codex/CodexCredentialCodec";
 import {DEFAULT_CODEX_BASE_URL} from "src/core/ai-sdk/provider-config/constants";
-import {SELECTED_MODEL_ID_DELIMITER} from "src/core/ai-sdk/provider-config/selectedModelId";
 import {validateProviderBaseUrl} from "src/core/ai-sdk/provider-config/validateProviderConfig";
-import {type ProviderConfig, ProviderTypeEnum} from "src/core/ai-sdk/types";
+import {isOAuthProviderConfig, type ProviderConfig, ProviderTypeEnum} from "src/core/ai-sdk/types";
 import type {EditableProviderConfig, ProviderConfigValidationIssue} from "./types";
 
-const SUPPORTED_PROVIDER_TYPES = new Set<ProviderTypeEnum>([
-    ProviderTypeEnum.OPENAI,
-    ProviderTypeEnum.OPENAI_COMPATIBLE,
-    ProviderTypeEnum.GOOGLE,
-    ProviderTypeEnum.CODEX_SUBSCRIPTION
-]);
+const SUPPORTED_PROVIDER_TYPES = new Set<ProviderTypeEnum>(Object.values(ProviderTypeEnum));
 
-function isValidBaseUrl(value: string): boolean {
+function normalizedBaseUrl(value: string): string | null {
     try {
-        validateProviderBaseUrl(value);
-        return true;
+        return validateProviderBaseUrl(value);
     } catch {
-        return false;
+        return null;
     }
 }
 
 export function validateProviderConfigs(
-    configs: EditableProviderConfig[]
+    configs: EditableProviderConfig[],
+    isOAuthSignedIn: (config: EditableProviderConfig) => boolean
 ): ProviderConfigValidationIssue[] {
     if (configs.length === 0) {
         return [
             {
                 editorKey: "",
-                field: "id",
+                field: "name",
                 message: "At least one provider configuration is required."
             }
         ];
     }
 
     const issues: ProviderConfigValidationIssue[] = [];
-    const idCounts = new Map<string, number>();
-
+    const nameCounts = new Map<string, number>();
     for (const config of configs) {
-        const normalizedId = config.id.trim().toLowerCase();
-        idCounts.set(normalizedId, (idCounts.get(normalizedId) ?? 0) + 1);
+        const name = config.name.trim().toLowerCase();
+        nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
     }
 
     for (const config of configs) {
-        const trimmedId = config.id.trim();
-        if (!trimmedId) {
+        const name = config.name.trim();
+        if (!name) {
             issues.push({
                 editorKey: config.editorKey,
-                field: "id",
-                message: "Configuration ID is required."
+                field: "name",
+                message: "Configuration name is required."
             });
-        } else if (config.id !== config.id.toLowerCase()) {
+        } else if ((nameCounts.get(name.toLowerCase()) ?? 0) > 1) {
             issues.push({
                 editorKey: config.editorKey,
-                field: "id",
-                message: "Configuration ID must be lowercase."
-            });
-        } else if (trimmedId.includes(SELECTED_MODEL_ID_DELIMITER)) {
-            issues.push({
-                editorKey: config.editorKey,
-                field: "id",
-                message: `Configuration ID cannot contain ${SELECTED_MODEL_ID_DELIMITER}.`
-            });
-        } else if ((idCounts.get(trimmedId.toLowerCase()) ?? 0) > 1) {
-            issues.push({
-                editorKey: config.editorKey,
-                field: "id",
-                message: "Configuration ID must be unique."
+                field: "name",
+                message: "Configuration name must be unique."
             });
         }
 
@@ -77,37 +57,31 @@ export function validateProviderConfigs(
                 message: "Select a supported provider type."
             });
         }
-        if (!isValidBaseUrl(config.baseUrl.trim())) {
+        const baseUrl = normalizedBaseUrl(config.baseUrl);
+        if (!baseUrl) {
             issues.push({
                 editorKey: config.editorKey,
                 field: "baseUrl",
                 message: "Enter a valid HTTP or HTTPS Base URL without embedded credentials."
             });
-        } else if (
-            config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION &&
-            validateProviderBaseUrl(config.baseUrl) !== DEFAULT_CODEX_BASE_URL
-        ) {
+        } else if (isOAuthProviderConfig(config) && baseUrl !== DEFAULT_CODEX_BASE_URL) {
             issues.push({
                 editorKey: config.editorKey,
                 field: "baseUrl",
                 message: "Codex Subscription uses a fixed Base URL."
             });
         }
-        if (
-            config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION &&
-            config.apiKey &&
-            !isValidCodexCredentials(config.apiKey)
-        ) {
-            issues.push({
-                editorKey: config.editorKey,
-                field: "apiKey",
-                message: "Codex sign-in is invalid. Log out and sign in again."
-            });
-        } else if (config.type !== ProviderTypeEnum.CODEX_SUBSCRIPTION && !config.apiKey.trim()) {
+        if (!isOAuthProviderConfig(config) && !config.apiKey.trim()) {
             issues.push({
                 editorKey: config.editorKey,
                 field: "apiKey",
                 message: "API key is required."
+            });
+        } else if (isOAuthProviderConfig(config) && !isOAuthSignedIn(config)) {
+            issues.push({
+                editorKey: config.editorKey,
+                field: "authentication",
+                message: "Sign in to Codex Subscription first."
             });
         }
 
@@ -134,10 +108,7 @@ export function validateProviderConfigs(
                 });
             }
         });
-        if (
-            !config.models.some((model) => model.enabled && model.id.trim()) &&
-            !(config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION && config.apiKey.length === 0)
-        ) {
+        if (!config.models.some((model) => model.enabled && model.id.trim())) {
             issues.push({
                 editorKey: config.editorKey,
                 field: "models",
@@ -145,28 +116,25 @@ export function validateProviderConfigs(
             });
         }
     }
-
     return issues;
 }
 
 export function toPersistedProviderConfigs(configs: EditableProviderConfig[]): ProviderConfig[] {
-    return configs.map(
-        ({
-            editorKey: _editorKey,
-            originalId: _originalId,
-            codexCredentialIntent: _intent,
-            ...config
-        }) => ({
-            ...config,
-            id: config.id.trim().toLowerCase(),
+    return configs.map(({editorKey: _editorKey, ...config}) => {
+        const common = {
+            uuid: config.uuid,
+            name: config.name.trim(),
             baseUrl: validateProviderBaseUrl(config.baseUrl),
-            apiKey:
-                config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION
-                    ? config.apiKey
-                    : config.apiKey.trim(),
             models: config.models.map((model) => ({...model, id: model.id.trim()}))
-        })
-    );
+        };
+        return isOAuthProviderConfig(config)
+            ? {
+                  ...common,
+                  type: ProviderTypeEnum.CODEX_SUBSCRIPTION,
+                  oauthStorage: {...config.oauthStorage}
+              }
+            : {...common, type: config.type, apiKey: config.apiKey.trim()};
+    });
 }
 
 export function getProviderConfigsSnapshot(configs: EditableProviderConfig[]): string {

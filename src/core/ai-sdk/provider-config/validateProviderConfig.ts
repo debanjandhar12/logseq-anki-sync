@@ -1,4 +1,3 @@
-import {isValidCodexCredentials} from "../codex/CodexCredentialCodec";
 import {type ProviderConfig, ProviderTypeEnum} from "../types";
 import {DEFAULT_CODEX_BASE_URL} from "./constants";
 
@@ -40,12 +39,7 @@ export function validateCodexAuthentication(config: ProviderConfig): void {
     } catch {
         // Runtime callers receive one safe authentication/configuration error below.
     }
-    if (
-        config.type !== ProviderTypeEnum.CODEX_SUBSCRIPTION ||
-        !validBaseUrl ||
-        !config.apiKey ||
-        !isValidCodexCredentials(config.apiKey)
-    ) {
+    if (config.type !== ProviderTypeEnum.CODEX_SUBSCRIPTION || !validBaseUrl) {
         throw new Error("Sign in to Codex Subscription first");
     }
 }
