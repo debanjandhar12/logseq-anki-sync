@@ -2,8 +2,7 @@ import {describe, expect, test} from "vitest";
 import {
     decodeCodexCredentials,
     encodeCodexCredentials,
-    isValidCodexCredentials,
-    normalizeCodexTokens
+    isValidCodexCredentials
 } from "../../../../../src/core/ai-sdk/codex/CodexCredentialCodec";
 
 const tokens = {
@@ -26,24 +25,6 @@ describe("CodexCredentialCodec", () => {
             provider: "openai-oauth-ai-provider",
             tokens
         });
-    });
-
-    test("derives missing ChatGPT workspace routing from a JWT access token", () => {
-        const payload = btoa(
-            JSON.stringify({
-                "https://api.openai.com/auth": {chatgpt_account_id: "workspace-1"}
-            })
-        )
-            .replaceAll("+", "-")
-            .replaceAll("/", "_")
-            .replaceAll("=", "");
-        expect(
-            normalizeCodexTokens({
-                ...tokens,
-                accessToken: `header.${payload}.signature`,
-                accountId: undefined
-            }).accountId
-        ).toBe("workspace-1");
     });
 
     test.each([

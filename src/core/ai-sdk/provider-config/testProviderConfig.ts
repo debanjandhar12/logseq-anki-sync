@@ -26,7 +26,7 @@ export async function testProviderConfig(
         const result = streamText({
             model: languageModel,
             prompt: "Reply with OK.",
-            maxOutputTokens: 64,
+            maxOutputTokens: 8,
             abortSignal: controller.signal
         });
         let finished = false;

@@ -1,5 +1,4 @@
 import type {OpenAIOAuthTokens, TokenStore} from "openai-oauth-ai-provider/core";
-import {normalizeCodexTokens} from "./CodexCredentialCodec";
 
 export class InMemoryCodexTokenStore implements TokenStore {
     private tokens: OpenAIOAuthTokens | undefined;
@@ -20,8 +19,7 @@ export class InMemoryCodexTokenStore implements TokenStore {
     }
 
     async save(tokens: OpenAIOAuthTokens): Promise<void> {
-        const normalized = normalizeCodexTokens(tokens);
-        this.tokens = normalized;
-        this.onSave?.(normalized);
+        this.tokens = tokens;
+        this.onSave?.(tokens);
     }
 }
