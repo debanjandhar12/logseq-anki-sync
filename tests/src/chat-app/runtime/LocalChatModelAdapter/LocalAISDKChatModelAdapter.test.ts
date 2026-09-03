@@ -2,24 +2,32 @@ import type {ChatModelRunResult, ThreadMessage} from "@assistant-ui/react";
 import type {Tool} from "assistant-stream";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {LocalAISDKChatModelAdapter} from "../../../../../src/chat-app/runtime/LocalChatModelAdapter/LocalAISDKChatModelAdapter";
+import {WebSearchTool} from "../../../../../src/chat-app/tools/impl/WebSearchTool";
+import {ProviderTypeEnum} from "../../../../../src/core/ai-sdk/types";
 
-const {streamTextMock, createLLMModelMock, getLLMProviderToolsMock, resolveLLMSelectionMock} =
-    vi.hoisted(() => ({
-        streamTextMock: vi.fn(),
-        createLLMModelMock: vi.fn(() => ({})),
-        getLLMProviderToolsMock: vi.fn(() => ({})),
-        resolveLLMSelectionMock: vi.fn(() => ({
-            config: {
-                uuid: "10000000-0000-4000-8000-000000000001",
-                name: "Selected",
-                type: "openai",
-                baseUrl: "https://provider.test/v1",
-                apiKey: "secret",
-                models: [{id: "test-model", enabled: true}]
-            },
-            rawModelId: "test-model"
-        }))
-    }));
+const {
+    streamTextMock,
+    createLLMModelMock,
+    getLLMProviderToolsMock,
+    resolveLLMSelectionMock,
+    getPluginSettingsMock
+} = vi.hoisted(() => ({
+    streamTextMock: vi.fn(),
+    createLLMModelMock: vi.fn(() => ({})),
+    getLLMProviderToolsMock: vi.fn(() => ({})),
+    getPluginSettingsMock: vi.fn(() => ({jinaApiKey: undefined as string | undefined})),
+    resolveLLMSelectionMock: vi.fn(() => ({
+        config: {
+            uuid: "10000000-0000-4000-8000-000000000001",
+            name: "Selected",
+            type: "openai",
+            baseUrl: "https://provider.test/v1",
+            apiKey: "secret",
+            models: [{id: "test-model", enabled: true}]
+        },
+        rawModelId: "test-model"
+    }))
+}));
 
 vi.mock("ai", async (importOriginal) => {
     const original = await importOriginal<typeof import("ai")>();
@@ -44,6 +52,10 @@ vi.mock("../../../../../src/core/ai-sdk/provider-config/readProviderConfigs", ()
 
 vi.mock("../../../../../src/core/ai-sdk/provider-config/resolveLLMSelection", () => ({
     resolveLLMSelection: resolveLLMSelectionMock
+}));
+
+vi.mock("../../../../../src/logseq/LogseqSettingAccessor", () => ({
+    LogseqSettingAccessor: {getPluginSettings: getPluginSettingsMock}
 }));
 
 type Deferred<T> = {
@@ -348,5 +360,55 @@ describe("LocalAISDKChatModelAdapter frontend tool lifecycle", () => {
         });
         expect((await nextValue(stream)).status).toEqual({type: "complete", reason: "stop"});
         expect(frontendExecute).not.toHaveBeenCalled();
+    });
+
+    test("does not advertise Jina tools to a native provider", async () => {
+        streamTextMock.mockReturnValue({
+            stream: (async function* () {
+                yield {type: "finish", finishReason: "stop", totalUsage: {}};
+            })()
+        });
+
+        const stream = runAdapter({
+            web_search: {type: "frontend", execute: vi.fn()} as Tool,
+            web_page_get: {type: "frontend", execute: vi.fn()} as Tool
+        });
+        await nextValue(stream);
+
+        expect(streamTextMock.mock.calls[0][0].tools).toEqual({});
+    });
+
+    test("advertises and executes Jina tools for a non-native provider with a key", async () => {
+        const execute = vi.fn().mockResolvedValue({success: true});
+        getPluginSettingsMock.mockReturnValue({jinaApiKey: "key"});
+        resolveLLMSelectionMock.mockReturnValueOnce({
+            config: {
+                uuid: "10000000-0000-4000-8000-000000000001",
+                name: "Selected",
+                type: ProviderTypeEnum.OPENAI_COMPATIBLE,
+                baseUrl: "https://provider.test/v1",
+                apiKey: "secret",
+                models: [{id: "test-model", enabled: true}]
+            },
+            rawModelId: "test-model"
+        });
+        streamTextMock.mockReturnValue({
+            stream: (async function* () {
+                yield toolCall("search-1", "web_search");
+                yield {type: "finish", finishReason: "tool-calls", totalUsage: {}};
+            })()
+        });
+
+        const stream = runAdapter({
+            web_search: {...new WebSearchTool().getDefinition(), execute} as Tool
+        });
+        await nextValue(stream);
+        await nextValue(stream);
+        await nextValue(stream);
+        const result = await nextValue(stream);
+
+        expect(streamTextMock.mock.calls[0][0].tools.web_search).toBeDefined();
+        expect(execute).toHaveBeenCalledOnce();
+        expect(result.status).toEqual({type: "requires-action", reason: "tool-calls"});
     });
 });

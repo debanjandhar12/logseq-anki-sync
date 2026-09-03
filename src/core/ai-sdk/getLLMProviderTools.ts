@@ -10,14 +10,10 @@ import {
     resolveLLMSelection
 } from "./provider-config/resolveLLMSelection";
 import {validateProviderBaseUrl} from "./provider-config/validateProviderConfig";
-import {ProviderTypeEnum, WebToolsProviderEnum} from "./types";
+import {ProviderTypeEnum} from "./types";
 
 export function getLLMProviderTools(resolvedSelection?: ResolvedLLMSelection): ToolSet {
     const settings = LogseqSettingAccessor.getPluginSettings();
-
-    if (settings.webToolsProvider !== WebToolsProviderEnum.MODEL_NATIVE) {
-        return {};
-    }
 
     const resolved =
         resolvedSelection ??

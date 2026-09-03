@@ -4,7 +4,7 @@ import {v4 as uuidv4} from "uuid";
 import {DONATE_ICON, LogseqModelAction} from "./constants";
 import {DEFAULT_OPENAI_COMPATIBLE_BASE_URL} from "./core/ai-sdk/provider-config/constants";
 import {encodeProviderConfigs} from "./core/ai-sdk/provider-config/providerConfigCodec";
-import {ProviderTypeEnum, type ReasoningEffort, WebToolsProviderEnum} from "./core/ai-sdk/types";
+import {ProviderTypeEnum, type ReasoningEffort} from "./core/ai-sdk/types";
 import {LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqSettingAccessor} from "./logseq/LogseqSettingAccessor";
 import {showCommandEditorModal} from "./ui/launchers/showCommandEditorModal";
@@ -36,7 +36,6 @@ export interface PluginSettings {
     providerConfigSetting?: string | null;
     globalAgentInstruction?: string;
     openChatInSidebar?: boolean;
-    webToolsProvider?: WebToolsProviderEnum;
     jinaApiKey?: string;
     debug?: LoggerCategory[];
     // used as storage during runtime
@@ -124,21 +123,12 @@ export const addSettingsToLogseq = async () => {
             default: null
         },
         {
-            key: "webToolsProvider",
-            type: "enum",
-            default: WebToolsProviderEnum.DISABLED,
-            title: "Web Search Provider",
-            description: "Choose how the AI searches the web.",
-            enumChoices: Object.values(WebToolsProviderEnum),
-            enumPicker: "select"
-        },
-        {
             key: "jinaApiKey",
             type: "string",
             default: "",
-            title: "Jina AI API Key (Mandatory)",
+            title: "Jina AI API Key (Optional)",
             description:
-                "API key for Jina AI (https://jina.ai). Required when Web Search Provider is set to Jina.ai."
+                "Enables Jina AI web tools for providers that do not support native web search. Not required for OpenAI / Google / Codex providers."
         },
         {
             key: "displaySettingsHeading",
@@ -195,28 +185,4 @@ export const addSettingsToLogseq = async () => {
             display: none;
         }
     `);
-
-    const applySettingsVisibility = (settings: PluginSettings) => {
-        const {id} = logseq.baseInfo;
-        const showJinaApiKey = settings.webToolsProvider === WebToolsProviderEnum.JINA;
-
-        logseq.provideStyle({
-            key: "hide-jina-api-key",
-            style: showJinaApiKey
-                ? `
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="jinaApiKey"] {
-                    display: block !important;
-                }
-            `
-                : `
-                [data-id="${id}"] .cp__plugins-settings-inner [data-key="jinaApiKey"] {
-                    display: none;
-                }
-            `
-        });
-    };
-    applySettingsVisibility(LogseqSettingAccessor.getPluginSettings());
-    LogseqSettingAccessor.registerSettingsChangeListener((newSettings) => {
-        applySettingsVisibility(newSettings);
-    });
 };

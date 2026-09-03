@@ -33,10 +33,4 @@ export function isOAuthProviderConfig(config: ProviderConfig): config is OAuthPr
     return config.type === ProviderTypeEnum.CODEX_SUBSCRIPTION;
 }
 
-export enum WebToolsProviderEnum {
-    DISABLED = "Disable Web Search",
-    JINA = "Jina.ai",
-    MODEL_NATIVE = "Model Native (OpenAI / Google / Codex)"
-}
-
 export type ReasoningEffort = "low" | "medium" | "high";

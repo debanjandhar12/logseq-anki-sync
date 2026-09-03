@@ -148,6 +148,14 @@ describe("addSettingsToLogseq", () => {
         ).toBe(1);
         expect(globalInstructionIndex).toBeGreaterThan(settingsSchema.indexOf(skillEditorButton));
         expect(settingsSchema[globalInstructionIndex + 1].key).toBe("webToolsHeading");
+        expect(
+            settingsSchema.find((setting) => setting.key === "webToolsProvider")
+        ).toBeUndefined();
+        expect(settingsSchema.find((setting) => setting.key === "jinaApiKey")).toMatchObject({
+            type: "string",
+            default: "",
+            title: "Jina AI API Key (Optional)"
+        });
 
         expect(model).toHaveProperty("openSkillEditorFromSettings");
         expect(model.openSkillEditorFromSettings()).toBeUndefined();
@@ -163,6 +171,7 @@ describe("addSettingsToLogseq", () => {
         expect(staticStyle).toContain('[data-id="test-plugin"]');
         expect(staticStyle).toContain('[data-key="providerConfigSetting"]');
         expect(staticStyle).toContain("display: none");
+        expect(logseq.provideStyle).toHaveBeenCalledOnce();
     });
 
     test("consumes a rejected Skill Editor launch", async () => {

@@ -43,14 +43,14 @@ Select **Test** to run a small generation request with the first enabled model. 
 
 The selected model records both the configuration ID and provider model ID. Renaming a selected configuration preserves the selection when that model remains enabled. Deleting or disabling the selected configuration or model falls back to the first enabled model in configuration order.
 
-The global **Model Native** web-search option is applied at request time:
+Web tools are selected automatically from the selected model's provider configuration at request time:
 
-- OpenAI models receive OpenAI native web search.
-- Gemini models receive Google Search and URL Context.
-- OpenAI Compatible models receive no provider-native search tools.
-- Codex Subscription models receive OAuth-backed OpenAI native web search.
+- OpenAI models receive native `web_search`.
+- Gemini models receive native `google_search` and `url_context`.
+- Codex Subscription models receive OAuth-backed native `web_search`.
+- OpenAI Compatible models receive Jina.ai `web_search` and `web_page_get` when the optional global Jina AI API key is configured.
 
-Jina.ai web tools continue to use the separate global Jina configuration.
+There is no separate web-search provider selector. If the Jina AI API key is empty, providers without native web tools receive no web tools. The Provider Configurations editor displays a warning for those providers. Tool selection uses the saved configuration associated with the selected chat model; merely switching drafts in the editor does not change chat behavior.
 
 ## Credential Storage
 
