@@ -28,8 +28,6 @@ import {ParsePdfTool} from "src/chat-app/tools/impl/ParsePdfTool";
 import {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 import {WebPageGetTool} from "src/chat-app/tools/impl/WebPageGetTool";
 import {WebSearchTool} from "src/chat-app/tools/impl/WebSearchTool";
-import {WebToolsProviderEnum} from "src/core/ai-sdk/types";
-import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
 
 export const ToolkitEnum = {
     LOGSEQ: "logseq",
@@ -67,7 +65,6 @@ export class ChatToolRegistry {
 
     static build(): ChatToolRegistry {
         const registry = new ChatToolRegistry();
-        const settings = LogseqSettingAccessor.getPluginSettings();
 
         registry.registerTool(new LogseqReadBlockTool(), ToolkitEnum.LOGSEQ);
         registry.registerTool(new LogseqDataScriptQueryTool(), ToolkitEnum.LOGSEQ);
@@ -90,10 +87,8 @@ export class ChatToolRegistry {
         registry.registerTool(new LogseqClearUncommittedChangesTool(), ToolkitEnum.LOGSEQ);
         registry.registerTool(new LogseqCommitChangesTool(), ToolkitEnum.LOGSEQ);
 
-        if (settings.webToolsProvider === WebToolsProviderEnum.JINA) {
-            registry.registerTool(new WebSearchTool(), ToolkitEnum.WEB);
-            registry.registerTool(new WebPageGetTool(), ToolkitEnum.WEB);
-        }
+        registry.registerTool(new WebSearchTool(), ToolkitEnum.WEB);
+        registry.registerTool(new WebPageGetTool(), ToolkitEnum.WEB);
 
         registry.registerTool(new ParsePdfTool(), ToolkitEnum.PDF);
 

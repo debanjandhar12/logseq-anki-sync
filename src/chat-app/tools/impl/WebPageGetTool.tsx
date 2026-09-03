@@ -36,10 +36,10 @@ export class WebPageGetTool extends BaseChatToolWithDefaultUI<WebPageGetArgs, We
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<WebPageGetResult>> {
         try {
-            const jinaApiKey = LogseqSettingAccessor.getPluginSettings().jinaApiKey;
+            const jinaApiKey = LogseqSettingAccessor.getPluginSettings().jinaApiKey?.trim();
             if (!jinaApiKey) {
                 return ChatToolResponse.error(
-                    "Jina AI API key is not configured. Please set the JINA_API_KEY setting to use web tools."
+                    "Jina AI API key is not configured. Please set the Jina AI API Key setting to use web tools."
                 );
             }
 

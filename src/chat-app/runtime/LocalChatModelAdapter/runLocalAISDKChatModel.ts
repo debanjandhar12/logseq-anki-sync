@@ -12,7 +12,9 @@ import {createLLMModel} from "src/core/ai-sdk/getLLMModel";
 import {getLLMProviderTools} from "src/core/ai-sdk/getLLMProviderTools";
 import {readProviderConfigs} from "src/core/ai-sdk/provider-config/readProviderConfigs";
 import {resolveLLMSelection} from "src/core/ai-sdk/provider-config/resolveLLMSelection";
+import {LogseqSettingAccessor} from "src/logseq/LogseqSettingAccessor";
 import {getErrorMessage} from "./error-utils";
+import {filterFrontendToolsForProvider} from "./filterFrontendToolsForProvider";
 import {executeFrontendToolPlan} from "./frontend-tool-executor";
 import {planFrontendToolCalls} from "./frontend-tool-planner";
 import {threadMessageToUIMessage} from "./message-conversion";
@@ -43,7 +45,15 @@ export async function* runLocalAISDKChatModel({
         if (!modelId) throw new Error("No model selected");
         const resolvedSelection = resolveLLMSelection(modelId, readProviderConfigs());
         const model = createLLMModel(resolvedSelection);
-        const tools = buildStreamTextTools(context.tools, getLLMProviderTools(resolvedSelection));
+        const frontendToolDefinitions = filterFrontendToolsForProvider(
+            context.tools,
+            resolvedSelection.config.type,
+            LogseqSettingAccessor.getPluginSettings().jinaApiKey
+        );
+        const tools = buildStreamTextTools(
+            frontendToolDefinitions,
+            getLLMProviderTools(resolvedSelection)
+        );
 
         const currentAssistantMessage = unstable_getMessage();
         const conversationMessages = hasToolResults(currentAssistantMessage)
@@ -143,7 +153,7 @@ export async function* runLocalAISDKChatModel({
             }
         }
 
-        const plan = planFrontendToolCalls(clientToolCalls, context.tools);
+        const plan = planFrontendToolCalls(clientToolCalls, frontendToolDefinitions);
         for await (const event of executeFrontendToolPlan(plan, {
             abortSignal,
             getMessages: () => getCurrentBranchMessages(messages, unstable_getMessage())

@@ -1,20 +1,8 @@
-import {beforeEach, describe, expect, test, vi} from "vitest";
-
-const settingsMocks = vi.hoisted(() => ({getPluginSettings: vi.fn()}));
-
-vi.mock("../../../../src/logseq/LogseqSettingAccessor", () => ({
-    LogseqSettingAccessor: settingsMocks
-}));
+import {describe, expect, test} from "vitest";
 
 import {ChatToolRegistry} from "../../../../src/chat-app/tools/ToolRegistry";
 
 describe("ChatToolRegistry PDF tools", () => {
-    beforeEach(() => {
-        settingsMocks.getPluginSettings.mockReturnValue({
-            contentParsingProvider: "Disable Content Parsing"
-        });
-    });
-
     test("always registers parse_pdf and removes read_pdf", () => {
         const toolkit = ChatToolRegistry.build().getAUIToolkit();
 
@@ -31,5 +19,12 @@ describe("ChatToolRegistry PDF tools", () => {
             display: "standalone"
         });
         expect(registry.getHumanToolNames()).toContain("logseq_commit_changes");
+    });
+
+    test("keeps Jina web tools in the registry for request-time filtering", () => {
+        const toolkit = ChatToolRegistry.build().getAUIToolkit();
+
+        expect(toolkit.web_search).toBeDefined();
+        expect(toolkit.web_page_get).toBeDefined();
     });
 });

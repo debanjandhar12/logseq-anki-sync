@@ -19,13 +19,10 @@ import {ModalFooter} from "../../modals/core/ModalFooter";
 import {ModalHeader} from "../../modals/core/ModalHeader";
 import {useModal} from "../../modals/hooks/useModal";
 import {UI} from "../../UI";
+import {JinaWebToolsWarning} from "./JinaWebToolsWarning";
 import {OAuthSignInSection} from "./OAuthSignInSection";
 import {getProviderConfigsSnapshot} from "./providerConfigValidation";
-import type {
-    EditableProviderConfig,
-    ProviderConfigErrorField,
-    ProviderConfigValidationIssue
-} from "./types";
+import type {ProviderConfigErrorField, ProviderConfigValidationIssue} from "./types";
 import {useProviderConfigActions} from "./useProviderConfigActions";
 import {useProviderConfigDrafts} from "./useProviderConfigDrafts";
 import {useProviderConfigOAuth} from "./useProviderConfigOAuth";
@@ -394,6 +391,9 @@ export const ProviderConfigModalComponent: React.FC<ProviderConfigModalProps> = 
                                                         />
                                                     </label>
                                                 )}
+                                                <JinaWebToolsWarning
+                                                    providerType={activeConfig.type}
+                                                />
                                                 {isOAuthProviderConfig(activeConfig) && (
                                                     <div
                                                         data-error-field="authentication"
