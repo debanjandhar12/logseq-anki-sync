@@ -6,6 +6,7 @@ import {testProviderConfig} from "src/core/ai-sdk/provider-config/testProviderCo
 import {isOAuthProviderConfig} from "src/core/ai-sdk/types";
 import {getErrorMessage} from "../SkillEditorModal/utils/getErrorMessage";
 import type {EditableProviderConfig} from "./types";
+import {getProviderConfigActionValidationMessage} from "./validation";
 
 export function useProviderConfigActions(
     updateConfig: (
@@ -19,31 +20,12 @@ export function useProviderConfigActions(
     const [fetchingEditorKey, setFetchingEditorKey] = React.useState<string | null>(null);
     const [testingEditorKey, setTestingEditorKey] = React.useState<string | null>(null);
 
-    const validateAction = React.useCallback(
-        (config: EditableProviderConfig, requireModel: boolean) => {
-            try {
-                const url = new URL(config.baseUrl.trim());
-                if (!["http:", "https:"].includes(url.protocol) || url.username || url.password)
-                    throw new Error();
-            } catch {
-                return "Enter a valid Base URL first.";
-            }
-            if (isOAuthProviderConfig(config)) {
-                if (!isOAuthSignedIn(config)) return "Sign in first.";
-            } else if (!config.apiKey.trim()) {
-                return "Enter an API key first.";
-            }
-            if (requireModel && !config.models.some((model) => model.enabled && model.id.trim())) {
-                return "Enable at least one model first.";
-            }
-            return null;
-        },
-        [isOAuthSignedIn]
-    );
-
     const fetchModels = React.useCallback(
         async (config: EditableProviderConfig) => {
-            const validationError = validateAction(config, false);
+            const validationError = getProviderConfigActionValidationMessage(config, {
+                requireEnabledModel: false,
+                isOAuthSignedIn
+            });
             if (validationError) return void (await logseq.UI.showMsg(validationError, "error"));
             setFetchingEditorKey(config.editorKey);
             try {
@@ -63,12 +45,15 @@ export function useProviderConfigActions(
                 setFetchingEditorKey(null);
             }
         },
-        [captureClientChanges, getOAuthClient, updateConfig, validateAction]
+        [captureClientChanges, getOAuthClient, isOAuthSignedIn, updateConfig]
     );
 
     const test = React.useCallback(
         async (config: EditableProviderConfig) => {
-            const validationError = validateAction(config, true);
+            const validationError = getProviderConfigActionValidationMessage(config, {
+                requireEnabledModel: true,
+                isOAuthSignedIn
+            });
             if (validationError) return void (await logseq.UI.showMsg(validationError, "error"));
             setTestingEditorKey(config.editorKey);
             try {
@@ -86,7 +71,7 @@ export function useProviderConfigActions(
                 setTestingEditorKey(null);
             }
         },
-        [captureClientChanges, getOAuthClient, validateAction]
+        [captureClientChanges, getOAuthClient, isOAuthSignedIn]
     );
 
     return {fetchingEditorKey, testingEditorKey, fetchModels, test};

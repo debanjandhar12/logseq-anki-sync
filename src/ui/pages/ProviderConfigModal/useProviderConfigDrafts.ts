@@ -3,7 +3,7 @@ import {DEFAULT_OPENAI_BASE_URL} from "src/core/ai-sdk/provider-config/constants
 import {ProviderConfigRepository} from "src/core/ai-sdk/provider-config/ProviderConfigRepository";
 import {isOAuthProviderConfig, ProviderTypeEnum} from "src/core/ai-sdk/types";
 import {v4 as uuidv4} from "uuid";
-import {getProviderConfigsSnapshot} from "./providerConfigValidation";
+import {getProviderConfigsSnapshot} from "./getProviderConfigsSnapshot";
 import type {EditableProviderConfig, ProviderConfigValidationIssue} from "./types";
 
 export function useProviderConfigDrafts() {

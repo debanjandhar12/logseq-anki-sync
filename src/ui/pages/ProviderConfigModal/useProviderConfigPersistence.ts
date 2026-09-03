@@ -5,8 +5,9 @@ import {
     type ProviderConfigSaveDraft
 } from "src/core/ai-sdk/provider-config/ProviderConfigRepository";
 import {isOAuthProviderConfig} from "src/core/ai-sdk/types";
-import {toPersistedProviderConfigs, validateProviderConfigs} from "./providerConfigValidation";
+import {toPersistedProviderConfigs} from "./toPersistedProviderConfigs";
 import type {EditableProviderConfig, ProviderConfigValidationIssue} from "./types";
+import {validateProviderConfigs} from "./validation";
 
 export function useProviderConfigPersistence(
     configs: EditableProviderConfig[],
