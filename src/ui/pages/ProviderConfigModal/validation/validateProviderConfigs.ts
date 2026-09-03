@@ -1,17 +1,11 @@
 import {DEFAULT_CODEX_BASE_URL} from "src/core/ai-sdk/provider-config/constants";
-import {validateProviderBaseUrl} from "src/core/ai-sdk/provider-config/validateProviderConfig";
-import {isOAuthProviderConfig, type ProviderConfig, ProviderTypeEnum} from "src/core/ai-sdk/types";
-import type {EditableProviderConfig, ProviderConfigValidationIssue} from "./types";
+import {isOAuthProviderConfig, ProviderTypeEnum} from "src/core/ai-sdk/types";
+import type {EditableProviderConfig, ProviderConfigValidationIssue} from "../types";
+import {validateProviderConfigAuthentication} from "./validateProviderConfigAuthentication";
+import {validateProviderConfigBaseUrl} from "./validateProviderConfigBaseUrl";
+import {validateProviderConfigEnabledModel} from "./validateProviderConfigEnabledModel";
 
 const SUPPORTED_PROVIDER_TYPES = new Set<ProviderTypeEnum>(Object.values(ProviderTypeEnum));
-
-function normalizedBaseUrl(value: string): string | null {
-    try {
-        return validateProviderBaseUrl(value);
-    } catch {
-        return null;
-    }
-}
 
 export function validateProviderConfigs(
     configs: EditableProviderConfig[],
@@ -57,32 +51,40 @@ export function validateProviderConfigs(
                 message: "Select a supported provider type."
             });
         }
-        const baseUrl = normalizedBaseUrl(config.baseUrl);
-        if (!baseUrl) {
+
+        const baseUrl = validateProviderConfigBaseUrl(config.baseUrl);
+        if (!baseUrl.valid) {
             issues.push({
                 editorKey: config.editorKey,
                 field: "baseUrl",
                 message: "Enter a valid HTTP or HTTPS Base URL without embedded credentials."
             });
-        } else if (isOAuthProviderConfig(config) && baseUrl !== DEFAULT_CODEX_BASE_URL) {
+        } else if (
+            isOAuthProviderConfig(config) &&
+            baseUrl.normalizedBaseUrl !== DEFAULT_CODEX_BASE_URL
+        ) {
             issues.push({
                 editorKey: config.editorKey,
                 field: "baseUrl",
                 message: "Codex Subscription uses a fixed Base URL."
             });
         }
-        if (!isOAuthProviderConfig(config) && !config.apiKey.trim()) {
-            issues.push({
-                editorKey: config.editorKey,
-                field: "apiKey",
-                message: "API key is required."
-            });
-        } else if (isOAuthProviderConfig(config) && !isOAuthSignedIn(config)) {
-            issues.push({
-                editorKey: config.editorKey,
-                field: "authentication",
-                message: "Sign in to Codex Subscription first."
-            });
+
+        const authentication = validateProviderConfigAuthentication(config, isOAuthSignedIn);
+        if (authentication.valid === false) {
+            issues.push(
+                authentication.reason === "api-key-required"
+                    ? {
+                          editorKey: config.editorKey,
+                          field: "apiKey",
+                          message: "API key is required."
+                      }
+                    : {
+                          editorKey: config.editorKey,
+                          field: "authentication",
+                          message: "Sign in to Codex Subscription first."
+                      }
+            );
         }
 
         const modelCounts = new Map<string, number>();
@@ -108,7 +110,7 @@ export function validateProviderConfigs(
                 });
             }
         });
-        if (!config.models.some((model) => model.enabled && model.id.trim())) {
+        if (!validateProviderConfigEnabledModel(config).valid) {
             issues.push({
                 editorKey: config.editorKey,
                 field: "models",
@@ -117,26 +119,4 @@ export function validateProviderConfigs(
         }
     }
     return issues;
-}
-
-export function toPersistedProviderConfigs(configs: EditableProviderConfig[]): ProviderConfig[] {
-    return configs.map(({editorKey: _editorKey, ...config}) => {
-        const common = {
-            uuid: config.uuid,
-            name: config.name.trim(),
-            baseUrl: validateProviderBaseUrl(config.baseUrl),
-            models: config.models.map((model) => ({...model, id: model.id.trim()}))
-        };
-        return isOAuthProviderConfig(config)
-            ? {
-                  ...common,
-                  type: ProviderTypeEnum.CODEX_SUBSCRIPTION,
-                  oauthStorage: {...config.oauthStorage}
-              }
-            : {...common, type: config.type, apiKey: config.apiKey.trim()};
-    });
-}
-
-export function getProviderConfigsSnapshot(configs: EditableProviderConfig[]): string {
-    return JSON.stringify(configs.map(({editorKey: _editorKey, ...config}) => config));
 }
