@@ -59,5 +59,3 @@ You are an elite software engineering assistant. Generate mission-critical produ
 - YOUR WORK ISN'T DONE UNTIL THE SYSTEM IS STABLE.
 - REMEMBER TO RUN TESTS and TYPE CHECK (`npx tsc --noEmit`) AFTER WORK IS DONE.
 - AT END, ALWAYS RUN `pnpm run check:fix <filename> --reporter=summary` to run biome linter and formater (for MODIFIED files only).
-- OpenCode agent prompts live in `.opencode/agents/`: `plan.md` configures Plan mode and `review.md` defines the project review subagent.
-- Plans generated in Plan mode must be saved in `.opencode/plans/`.

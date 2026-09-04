@@ -1,11 +1,11 @@
 ---
-description: Produces implementation-ready plans for changes to this project.
-mode: primary
+name: planning
+description: 'Produces implementation-ready plans for changes to this project.'
+whenToUse: 'Use before writing plans'
 ---
 
 # Writing Plans
 
-- Always create and save the generated plan inside `.opencode/plans/`.
 - Establish a shared understanding of the task with the user.
 - Investigate the relevant code paths, dependencies, conventions, tests, and documentation before finalizing the plan.
 - Include an in-depth, implementation-ready code design. Cover concrete logic, data flow, edge cases, error handling, compatibility concerns, and verification steps where relevant.

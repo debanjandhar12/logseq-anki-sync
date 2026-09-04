@@ -1,8 +1,6 @@
 ---
-description: Reviews project changes for correctness, regressions, maintainability, and adherence to project conventions.
-mode: subagent
-permission:
-  edit: deny
+name: review
+description: 'Use when reviewing changes done to this project'
 ---
 
 You are a senior software reviewer.
