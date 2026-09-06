@@ -93,12 +93,13 @@ describe("JustBashWrapper", () => {
         await expectCommandToFail(`rm /home/user/anydoc-parse-results/${fileName}`);
     });
 
-    test("uses /home/user, disables Python, and registers qjs", async () => {
+    test("uses /home/user and registers Pyodide command aliases", async () => {
         const bash = JustBashWrapper.getInstance();
 
         expect((await bash.exec("pwd")).stdout).toBe("/home/user\n");
-        expect((await bash.exec("python3 --version")).exitCode).not.toBe(0);
+        expect((await bash.exec("python --help")).stdout).toContain("Usage: python");
+        expect((await bash.exec("python3 --help")).stdout).toContain("Usage: python3");
         expect((await bash.exec("js-exec '1 + 1'")).exitCode).not.toBe(0);
-        expect((await bash.exec("qjs --help")).stdout).toContain("Usage: qjs");
+        expect((await bash.exec("qjs --help")).exitCode).not.toBe(0);
     });
 });

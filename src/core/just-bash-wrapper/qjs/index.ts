@@ -1,1 +1,0 @@
-export {qjsCommand} from "./qjsCommand";

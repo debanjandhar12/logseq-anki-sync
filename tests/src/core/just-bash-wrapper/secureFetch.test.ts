@@ -61,4 +61,22 @@ describe("allowlisted fetch", () => {
             /Network access denied/
         );
     });
+
+    test("enforces the response limit when streaming is unavailable", async () => {
+        const response = new Response(new Uint8Array(10 * 1024 * 1024 + 1));
+        Object.defineProperty(response, "body", {value: null});
+        const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response);
+
+        await expect(createAllowlistedFetch(fetchImpl)("https://github.com/file")).rejects.toThrow(
+            /size limit/
+        );
+    });
+
+    test("rejects an untrusted SciPy wheel despite its larger size allowance", async () => {
+        const url =
+            "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/scipy-1.18.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl";
+        const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response("not scipy"));
+
+        await expect(createAllowlistedFetch(fetchImpl)(url)).rejects.toThrow(/integrity check/);
+    });
 });

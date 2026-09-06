@@ -16,10 +16,12 @@ type ProxyInternals = {
 const proxy = LogseqHttpProxy as unknown as ProxyInternals;
 
 describe("LogseqHttpProxy binary responses", () => {
-    test("selects binary mode only for GET WASM requests", () => {
-        expect(proxy.getReturnType(new Request("https://plugins.test/anydoc.wasm"))).toBe(
-            "arraybuffer"
-        );
+    test("selects binary mode for GET runtime and package assets", () => {
+        for (const extension of ["wasm", "whl", "zip"]) {
+            expect(proxy.getReturnType(new Request(`https://plugins.test/file.${extension}`))).toBe(
+                "arraybuffer"
+            );
+        }
         expect(proxy.getReturnType(new Request("https://plugins.test/api"))).toBe("text");
         expect(
             proxy.getReturnType(new Request("https://plugins.test/anydoc.wasm", {method: "POST"}))
