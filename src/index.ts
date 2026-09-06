@@ -9,6 +9,7 @@ import pkg from "./../package.json";
 import {initAIChat, initContextMenu, OpenAIChatCommand} from "./core/chat-interop";
 import {initBuiltInSkillFiles} from "./core/skill-init";
 import {initBuiltInCommandFiles, registerUserCommandEntryPoints} from "./core/user-commands-init";
+import {UtilityScriptInit} from "./core/utility-script-init";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqAppListeners} from "./logseq/LogseqAppListeners";
@@ -35,6 +36,10 @@ async function main(baseInfo: LSPluginBaseInfo) {
 
     LogseqHttpProxy.init();
 
+    // Initialize storage-backed resources before exposing UI that can use them.
+    await LogseqPluginStorageManager.init();
+    await UtilityScriptInit.init();
+
     // Register UI and Commands
     await initAIChat();
     WindowParentBridge.setGlobalObject("LogseqAIChat", {
@@ -45,7 +50,6 @@ async function main(baseInfo: LSPluginBaseInfo) {
     addSettingsToLogseq();
 
     // Init various modules
-    await LogseqPluginStorageManager.init();
     LogseqSettingAccessor.init();
     LogseqAppListeners.init();
     UI.init();

@@ -10,6 +10,7 @@ import {JustBashWrapper} from "src/core/just-bash-wrapper";
 import {JUST_BASH_USER_HOME} from "src/core/just-bash-wrapper/types";
 import {AnyDocParseResultStore} from "src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {ToolResultStore} from "src/core/stores/tool-results/ToolResultStore";
+import {UtilityScriptStore} from "src/core/stores/utility-script-store/UtilityScriptStore";
 import {z} from "zod";
 
 const bashToolParameters = z.object({
@@ -33,9 +34,10 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
     readonly name = BashTool.NAME;
     readonly description =
         "Run a bash command in an isolated virtual filesystem with no host access. " +
-        "Python and JavaScript execution are disabled. Files under /home/user persist between " +
-        `commands. Prior tool results are read-only at ${JUST_BASH_USER_HOME}/${ToolResultStore.groupName}, ` +
-        `and parsed PDF pages are read-only at ${JUST_BASH_USER_HOME}/${AnyDocParseResultStore.groupName}.`;
+        "Python is disabled. Sandboxed JavaScript is available through qjs. " +
+        `Prior tool results are read-only at ${JUST_BASH_USER_HOME}/${ToolResultStore.groupName}, ` +
+        `parsed PDF pages are read-only at ${JUST_BASH_USER_HOME}/${AnyDocParseResultStore.groupName}, ` +
+        `and executable utilities are at ${JUST_BASH_USER_HOME}/${UtilityScriptStore.groupName}.`;
     readonly parameters = bashToolParameters;
 
     async execute(

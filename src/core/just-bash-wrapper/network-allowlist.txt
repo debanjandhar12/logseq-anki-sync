@@ -1,0 +1,22 @@
+# Apex hosts listed here also allow all subdomains.
+github.com
+gitlab.com
+stackoverflow.com
+reddit.com
+quora.com
+ycombinator.com
+youtube.com
+youtu.be
+dailymotion.com
+bilibili.com
+twitter.com
+facebook.com
+discord.com
+codeforces.com
+leetcode.com
+linkedin.com
+pastebin.com
+logseq.com
+googleapis.com
+googlevideo.com
+hdslb.com

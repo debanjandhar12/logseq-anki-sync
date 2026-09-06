@@ -62,6 +62,11 @@ export class LogseqHttpProxy {
         return LogseqHttpProxy.originalFetch;
     }
 
+    /** Browser transport for callers that must observe and validate redirect hops. */
+    static getNativeFetch(): typeof fetch {
+        return LogseqHttpProxy.originalFetch ?? window.fetch.bind(window);
+    }
+
     private static hasExecCallableAPIAsync(): boolean {
         return (
             typeof (logseq as {_execCallableAPIAsync?: unknown})._execCallableAPIAsync ===

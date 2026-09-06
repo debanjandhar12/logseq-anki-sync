@@ -1,0 +1,51 @@
+import {describe, expect, test, vi} from "vitest";
+import {createAllowlistedFetch} from "../../../../src/core/just-bash-wrapper/network";
+
+describe("allowlisted fetch", () => {
+    test("rejects redirect targets outside the allowlist", async () => {
+        const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+            new Response(null, {
+                status: 302,
+                headers: {location: "https://example.com/private"}
+            })
+        );
+
+        await expect(createAllowlistedFetch(fetchImpl)("https://github.com/start")).rejects.toThrow(
+            /Network access denied/
+        );
+    });
+
+    test("converts POST to GET for a 303 redirect", async () => {
+        const fetchImpl = vi
+            .fn<typeof fetch>()
+            .mockResolvedValueOnce(
+                new Response(null, {
+                    status: 303,
+                    headers: {location: "https://api.github.com/final"}
+                })
+            )
+            .mockResolvedValueOnce(new Response("ok", {status: 200}));
+
+        const result = await createAllowlistedFetch(fetchImpl)("https://github.com/start", {
+            method: "POST",
+            body: "data"
+        });
+
+        expect(new TextDecoder().decode(result.body)).toBe("ok");
+        expect(fetchImpl).toHaveBeenNthCalledWith(
+            2,
+            expect.any(URL),
+            expect.objectContaining({method: "GET", body: undefined})
+        );
+    });
+
+    test("fails closed when the browser hides a redirect target", async () => {
+        const response = new Response(null, {status: 200});
+        Object.defineProperty(response, "type", {value: "opaqueredirect"});
+        const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response);
+
+        await expect(createAllowlistedFetch(fetchImpl)("https://github.com/start")).rejects.toThrow(
+            /destination is hidden/
+        );
+    });
+});
