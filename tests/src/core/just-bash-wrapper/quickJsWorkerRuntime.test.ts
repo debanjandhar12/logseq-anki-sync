@@ -10,6 +10,14 @@ const fetch = async () =>
         url: "https://example.com"
     });
 
+const execution = (code: string) => ({
+    code,
+    fileName: "test.js",
+    args: [],
+    cwd: "/home/user",
+    env: {}
+});
+
 describe("QuickJS worker runtime", () => {
     test("waits for utility completion", async () => {
         await expect(
@@ -24,6 +32,88 @@ describe("QuickJS worker runtime", () => {
                 fetch
             )
         ).resolves.toEqual({stdout: "42\n", stderr: "", exitCode: 0});
+    });
+
+    test("imports HTTPS modules and resolves transitive CDN paths", async () => {
+        const requestedUrls: string[] = [];
+        const moduleFetch = async (url: string) => {
+            requestedUrls.push(url);
+            const body = url.endsWith("/entry.js")
+                ? 'import {answer} from "/shared.js"; export const result = answer + 1;'
+                : "export const answer = 41;";
+            return JSON.stringify({
+                status: 200,
+                statusText: "OK",
+                headers: {"content-type": "text/javascript"},
+                body,
+                url
+            });
+        };
+
+        await expect(
+            executeQuickJsInWorker(
+                execution(
+                    'import {result} from "https://cdn.example.com/entry.js"; console.log(result);'
+                ),
+                moduleFetch
+            )
+        ).resolves.toEqual({stdout: "42\n", stderr: "", exitCode: 0});
+        expect(requestedUrls).toEqual([
+            "https://cdn.example.com/entry.js",
+            "https://cdn.example.com/shared.js"
+        ]);
+    });
+
+    test("rejects bare module specifiers", async () => {
+        await expect(
+            executeQuickJsInWorker(execution('import value from "package-name";'), fetch)
+        ).resolves.toEqual(
+            expect.objectContaining({
+                exitCode: 1,
+                stderr: expect.stringContaining("module import denied")
+            })
+        );
+    });
+
+    test("rejects non-HTTPS module imports before fetching", async () => {
+        let fetchCalled = false;
+
+        await expect(
+            executeQuickJsInWorker(
+                execution('import value from "http://example.com/value.js";'),
+                async () => {
+                    fetchCalled = true;
+                    return "";
+                }
+            )
+        ).resolves.toEqual(
+            expect.objectContaining({
+                exitCode: 1,
+                stderr: expect.stringContaining("module import denied")
+            })
+        );
+        expect(fetchCalled).toBe(false);
+    });
+
+    test("rejects a module response from a different final URL", async () => {
+        await expect(
+            executeQuickJsInWorker(
+                execution('import value from "https://example.com/value.js";'),
+                async () =>
+                    JSON.stringify({
+                        status: 200,
+                        statusText: "OK",
+                        headers: {"content-type": "text/javascript"},
+                        body: "export default 42;",
+                        url: "https://other.example.com/value.js"
+                    })
+            )
+        ).resolves.toEqual(
+            expect.objectContaining({
+                exitCode: 1,
+                stderr: expect.stringContaining("module redirect denied")
+            })
+        );
     });
 
     test("supports sequential host fetches without corrupting QuickJS", async () => {

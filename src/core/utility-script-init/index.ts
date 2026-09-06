@@ -1,1 +1,0 @@
-export {UtilityScriptInit} from "./UtilityScriptInit";

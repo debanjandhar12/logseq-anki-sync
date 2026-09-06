@@ -5,6 +5,7 @@ import SKILL_LOGSEQ_PROPERTIES_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_PRO
 import SKILL_LOGSEQ_TOOLS_GUIDE_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_TOOLS_GUIDE.md?inlineSkill";
 import SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_WORKING_WITH_VIDEO_AND_WEB_EMBEDS.md?inlineSkill";
 import SKILL_CREATOR_RAW from "../../chat-app/prompts/SKILL_SKILL_CREATOR.md?inlineSkill";
+import SKILL_WORKING_WITH_BASH_RAW from "../../chat-app/prompts/SKILL_WORKING_WITH_BASH.md?inlineSkill";
 import {parseSkillFile, SKILL_FRONTMATTER_KEYS} from "../skill-parser";
 import {SkillFileStore} from "../stores/skill-file-store/SkillFileStore";
 
@@ -14,6 +15,7 @@ const BUILT_IN_SKILL_FILES = [
     SKILL_LOGSEQ_PROPERTIES_RAW,
     SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW,
     SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW,
+    SKILL_WORKING_WITH_BASH_RAW,
     SKILL_CREATOR_RAW
 ];
 

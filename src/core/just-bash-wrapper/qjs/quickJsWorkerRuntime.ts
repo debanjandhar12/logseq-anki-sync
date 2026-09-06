@@ -1,7 +1,7 @@
-import RELEASE_SYNC from "@jitl/quickjs-wasmfile-release-sync";
+import RELEASE_ASYNCIFY from "@jitl/quickjs-wasmfile-release-asyncify";
 import {releaseProxy} from "comlink";
 import {
-    newQuickJSWASMModuleFromVariant,
+    newQuickJSAsyncWASMModuleFromVariant,
     type QuickJSContext,
     type QuickJSHandle
 } from "quickjs-emscripten-core";
@@ -14,14 +14,15 @@ import type {
 const MEMORY_LIMIT_BYTES = 64 * 1024 * 1024;
 const STACK_LIMIT_BYTES = 512 * 1024;
 const MAX_OUTPUT_BYTES = 1024 * 1024;
+const MAX_MODULES = 64;
+const MAX_MODULE_SOURCE_BYTES = 10 * 1024 * 1024;
 const PROCESS_EXIT_PREFIX = "__QJS_PROCESS_EXIT__";
 
-const quickJsModule = newQuickJSWASMModuleFromVariant(RELEASE_SYNC);
-
 type ReleasableWorkerFetch = QuickJsWorkerFetch & {[releaseProxy]?: () => void};
+let preparedModule: Awaited<ReturnType<typeof newQuickJSAsyncWASMModuleFromVariant>> | undefined;
 
 export async function initializeQuickJsWorker(): Promise<void> {
-    await quickJsModule;
+    preparedModule = await newQuickJSAsyncWASMModuleFromVariant(RELEASE_ASYNCIFY);
 }
 
 function printable(context: QuickJSContext, handle: QuickJSHandle): string {
@@ -43,14 +44,20 @@ export async function executeQuickJsInWorker(
     options: QuickJsWorkerExecution,
     fetch: QuickJsWorkerFetch
 ): Promise<QuickJsExecutionResult> {
-    const context = (await quickJsModule).newContext();
-    const runtime = context.runtime;
+    // Each worker executes once. A fresh module also contains asyncify state if execution fails.
+    const quickJsModule =
+        preparedModule ?? (await newQuickJSAsyncWASMModuleFromVariant(RELEASE_ASYNCIFY));
+    preparedModule = undefined;
+    const runtime = quickJsModule.newRuntime();
     runtime.setMemoryLimit(MEMORY_LIMIT_BYTES);
     runtime.setMaxStackSize(STACK_LIMIT_BYTES);
+    const context = runtime.newContext();
     let stdout = "";
     let stderr = "";
     let exitCode = 0;
     const pendingFetches = new Set<() => void>();
+    const moduleSources = new Map<string, string>();
+    let moduleSourceBytes = 0;
 
     const appendOutput = (current: string, value: string): string => {
         const next = current + value;
@@ -61,6 +68,47 @@ export async function executeQuickJsInWorker(
     };
 
     try {
+        runtime.setModuleLoader(
+            async (moduleName) => {
+                if (!moduleName) {
+                    throw new Error(
+                        "module import denied: use a full HTTPS URL instead of a bare specifier"
+                    );
+                }
+                const cached = moduleSources.get(moduleName);
+                if (cached != null) return cached;
+                if (moduleSources.size >= MAX_MODULES) {
+                    throw new Error(`module graph exceeded ${MAX_MODULES} modules`);
+                }
+
+                const response = JSON.parse(await fetch(moduleName, {method: "GET"})) as {
+                    status: number;
+                    statusText: string;
+                    body: string;
+                    url: string;
+                };
+                if (response.status < 200 || response.status >= 300) {
+                    throw new Error(
+                        `failed to load module ${JSON.stringify(moduleName)}: ${response.status} ${response.statusText}`
+                    );
+                }
+                if (normalizeModuleUrl(response.url) !== moduleName) {
+                    throw new Error(
+                        `module redirect denied: ${JSON.stringify(moduleName)} redirected to ${JSON.stringify(response.url)}`
+                    );
+                }
+
+                moduleSourceBytes += new TextEncoder().encode(response.body).byteLength;
+                if (moduleSourceBytes > MAX_MODULE_SOURCE_BYTES) {
+                    throw new Error("module graph source exceeded 10 MiB");
+                }
+                moduleSources.set(moduleName, response.body);
+                return response.body;
+            },
+            (baseModuleName, requestedName) =>
+                normalizeModuleSpecifier(baseModuleName, requestedName)
+        );
+
         installFunction(context, "__stdout", (...args) => {
             try {
                 stdout = appendOutput(
@@ -142,7 +190,10 @@ export async function executeQuickJsInWorker(
         context.setProp(context.global, "__hostFetch", hostFetch);
         hostFetch.dispose();
 
-        const bootstrapResult = context.evalCode(createBootstrap(options), "<qjs-bootstrap>");
+        const bootstrapResult = await context.evalCodeAsync(
+            createBootstrap(options),
+            "<qjs-bootstrap>"
+        );
         if ("error" in bootstrapResult) {
             const message = printable(context, bootstrapResult.error);
             bootstrapResult.error.dispose();
@@ -150,10 +201,10 @@ export async function executeQuickJsInWorker(
         }
         bootstrapResult.value.dispose();
 
-        const result = context.evalCode(
-            `(async () => {\n${options.code}\nif (globalThis.__utilityPromise) await globalThis.__utilityPromise;\n})()`,
+        const result = await context.evalCodeAsync(
+            `${options.code}\nif (globalThis.__utilityPromise) await globalThis.__utilityPromise;`,
             options.fileName,
-            {type: "global"}
+            {type: "module"}
         );
         if ("error" in result) return guestError(context, result.error, stdout, stderr, exitCode);
 
@@ -182,12 +233,45 @@ export async function executeQuickJsInWorker(
         for (const cancel of [...pendingFetches]) cancel();
         if (hadPendingFetches) await new Promise((resolve) => setTimeout(resolve, 0));
         context.dispose();
+        // quickjs-emscripten 0.32.0 removes async runtime callbacks before finalizers run.
+        // Worker termination releases the one-shot runtime without invoking that broken path.
         try {
             (fetch as ReleasableWorkerFetch)[releaseProxy]?.();
         } catch {
             // Worker termination remains the authoritative callback cleanup.
         }
     }
+}
+
+function normalizeModuleSpecifier(baseModuleName: string, requestedName: string): string {
+    if (/^[A-Za-z][A-Za-z\d+.-]*:/.test(requestedName)) {
+        return normalizeModuleUrl(requestedName);
+    }
+    if (!requestedName.startsWith(".") && !requestedName.startsWith("/")) {
+        throw new Error(
+            `bare module specifier denied: ${JSON.stringify(requestedName)}; use a full HTTPS URL`
+        );
+    }
+    return normalizeModuleUrl(new URL(requestedName, normalizeModuleUrl(baseModuleName)).href);
+}
+
+function normalizeModuleUrl(value: string): string {
+    let url: URL;
+    try {
+        url = new URL(value);
+    } catch {
+        throw new Error(`invalid module URL: ${JSON.stringify(value)}`);
+    }
+    if (
+        url.protocol !== "https:" ||
+        url.username ||
+        url.password ||
+        (url.port && url.port !== "443")
+    ) {
+        throw new Error(`module import denied: ${JSON.stringify(value)}`);
+    }
+    url.hash = "";
+    return url.href;
 }
 
 function guestError(

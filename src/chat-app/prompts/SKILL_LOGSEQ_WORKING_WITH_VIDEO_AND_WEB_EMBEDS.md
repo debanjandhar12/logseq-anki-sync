@@ -30,7 +30,7 @@ Add a timestamp annotation as a child of the video block. `youtube-timestamp` ac
 - Use `{{youtube-timestamp ...}}` only in a child block of its video embed.
 - Convert requested timestamps to seconds before writing the macro.
 - When asked to add comments based on video content, fetch the online video's transcript first, then write the comments as timestamp children.
-- Fetch YouTube and Bilibili transcripts with `qjs /home/user/utility-scripts/fetch-transcript.js 'VIDEO_URL'`. The command returns JSON containing timestamped `segments`.
+- Load the `Working with Bash` skill for supported YouTube and Bilibili transcript commands.
 - Local video files do not expose a transcript through web fetch. Tell the user that transcript-based comments cannot be created for local videos.
 
 ## Tweet Embeds

@@ -66,14 +66,6 @@ describe("JustBashAdapterFS", () => {
         );
     });
 
-    test("reports executable mode without allowing writes", async () => {
-        await LogseqPluginStorageManager.saveFile("utility-scripts", "script.js", "content");
-        const fs = new JustBashAdapterFS("utility-scripts", "readexecute");
-
-        expect((await fs.stat("/script.js")).mode).toBe(0o100555);
-        await expect(fs.writeFile("/script.js", "changed")).rejects.toThrow(/EROFS/);
-    });
-
     test("persists read-write operations through plugin storage", async () => {
         const fs = new JustBashAdapterFS("scratch", "readwrite");
 

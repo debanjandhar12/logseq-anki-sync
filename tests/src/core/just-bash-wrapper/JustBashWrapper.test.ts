@@ -2,7 +2,6 @@ import {beforeAll, beforeEach, describe, expect, test} from "vitest";
 import {JustBashAdapterFS, JustBashWrapper} from "../../../../src/core/just-bash-wrapper";
 import {AnyDocParseResultStore} from "../../../../src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {ToolResultStore} from "../../../../src/core/stores/tool-results/ToolResultStore";
-import {UtilityScriptStore} from "../../../../src/core/stores/utility-script-store/UtilityScriptStore";
 import {LogseqPluginStorageManager} from "../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
 
@@ -101,19 +100,5 @@ describe("JustBashWrapper", () => {
         expect((await bash.exec("python3 --version")).exitCode).not.toBe(0);
         expect((await bash.exec("js-exec '1 + 1'")).exitCode).not.toBe(0);
         expect((await bash.exec("qjs --help")).stdout).toContain("Usage: qjs");
-    });
-
-    test("mounts utility scripts as read-only executable files", async () => {
-        const script = "#!/usr/bin/env qjs\nconsole.log(process.argv[2]);";
-        await UtilityScriptStore.saveScript("test-script.js", script);
-        const bash = JustBashWrapper.getInstance();
-
-        expect((await bash.exec("cat /home/user/utility-scripts/test-script.js")).stdout).toBe(
-            script
-        );
-        expect((await bash.fs.stat("/home/user/utility-scripts/test-script.js")).mode).toBe(
-            0o100555
-        );
-        await expectCommandToFail("rm /home/user/utility-scripts/test-script.js");
     });
 });

@@ -9,7 +9,6 @@ import type {
 } from "just-bash";
 import {AnyDocParseResultStore} from "src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {ToolResultStore} from "src/core/stores/tool-results/ToolResultStore";
-import {UtilityScriptStore} from "src/core/stores/utility-script-store/UtilityScriptStore";
 import {LogseqPluginStorageManager} from "src/logseq/LogseqPluginStorageManager";
 import {JUST_BASH_USER_HOME, type JustBashMountPermission} from "./types";
 import {encodeStoredText, type FileEncodingOptions, toStorableText} from "./utils/fsContent";
@@ -256,4 +255,3 @@ export class JustBashAdapterFS implements IFileSystem {
 
 JustBashAdapterFS.addLogseqPluginFolder(ToolResultStore.groupName, "read");
 JustBashAdapterFS.addLogseqPluginFolder(AnyDocParseResultStore.groupName, "read");
-JustBashAdapterFS.addLogseqPluginFolder(UtilityScriptStore.groupName, "readexecute");

@@ -22,7 +22,7 @@ export function bundleJSStringPlugin(mode: string) {
                     write: false,
                     format: "iife",
                     loader: {
-                        ".css": "empty" // Ignore CSS imports in bundled JS strings
+                        ".css": "empty"
                     },
                     define: {
                         "import.meta.env.PROD": JSON.stringify(isProd),
@@ -43,6 +43,6 @@ export function bundleJSStringPlugin(mode: string) {
                     await ctx.dispose();
                 }
             }
-        },
+        }
     };
 }

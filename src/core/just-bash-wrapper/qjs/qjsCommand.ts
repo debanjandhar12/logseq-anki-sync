@@ -3,8 +3,9 @@ import {executeQuickJs} from "./quickJsRuntime";
 
 const HELP = `Usage: qjs [-e CODE | FILE] [ARGS...]
 
-Execute JavaScript in browser-compatible QuickJS. The runtime provides console,
-process.argv, URL, URLSearchParams, and allowlisted fetch.
+Execute an ES module in browser-compatible QuickJS. The runtime provides console,
+process.argv, URL, URLSearchParams, top-level await, allowlisted fetch, and HTTPS
+module imports from allowlisted hosts. Imports require full URLs.
 `;
 
 function error(message: string): ExecResult {
