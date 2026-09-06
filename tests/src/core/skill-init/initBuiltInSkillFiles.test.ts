@@ -34,4 +34,16 @@ describe("initBuiltInSkillFiles", () => {
         );
         await expect(SkillFileStore.skillFileExists("Present.md")).resolves.toBe(true);
     });
+
+    test("installs the Working with Bash skill", async () => {
+        await initBuiltInSkillFiles();
+
+        await expect(SkillFileStore.getSkillFile("Working with Bash.md")).resolves.toEqual(
+            expect.objectContaining({
+                name: "Working with Bash",
+                builtInSkill: true,
+                disableModelInvocation: false
+            })
+        );
+    });
 });

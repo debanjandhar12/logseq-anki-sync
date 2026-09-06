@@ -33,8 +33,9 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
     readonly name = BashTool.NAME;
     readonly description =
         "Run a bash command in an isolated virtual filesystem with no host access. " +
-        "Python and JavaScript execution are disabled. Files under /home/user persist between " +
-        `commands. Prior tool results are read-only at ${JUST_BASH_USER_HOME}/${ToolResultStore.groupName}, ` +
+        "Python is disabled. Sandboxed JavaScript is available through qjs, for example: " +
+        "`qjs -e 'console.log(1+1)'`. " +
+        `Prior tool results are read-only at ${JUST_BASH_USER_HOME}/${ToolResultStore.groupName}, ` +
         `and parsed PDF pages are read-only at ${JUST_BASH_USER_HOME}/${AnyDocParseResultStore.groupName}.`;
     readonly parameters = bashToolParameters;
 

@@ -59,7 +59,7 @@ export class JustBashAdapterFS implements IFileSystem {
     }
 
     private assertWritable(operation: string, path: string): void {
-        if (this.permission === "read") throw erofsError(operation, path);
+        if (this.permission !== "readwrite") throw erofsError(operation, path);
     }
 
     private dirStat(): FsStat {
@@ -67,7 +67,7 @@ export class JustBashAdapterFS implements IFileSystem {
             isFile: false,
             isDirectory: true,
             isSymbolicLink: false,
-            mode: this.permission === "read" ? 0o40555 : 0o40777,
+            mode: this.permission === "readwrite" ? 0o40777 : 0o40555,
             size: 0,
             mtime: new Date(0)
         };
@@ -78,7 +78,12 @@ export class JustBashAdapterFS implements IFileSystem {
             isFile: true,
             isDirectory: false,
             isSymbolicLink: false,
-            mode: this.permission === "read" ? 0o100444 : 0o100666,
+            mode:
+                this.permission === "readexecute"
+                    ? 0o100555
+                    : this.permission === "read"
+                      ? 0o100444
+                      : 0o100666,
             size: new TextEncoder().encode(content).length,
             mtime: new Date(0)
         };

@@ -35,6 +35,9 @@ async function main(baseInfo: LSPluginBaseInfo) {
 
     LogseqHttpProxy.init();
 
+    // Initialize storage-backed resources before exposing UI that can use them.
+    await LogseqPluginStorageManager.init();
+
     // Register UI and Commands
     await initAIChat();
     WindowParentBridge.setGlobalObject("LogseqAIChat", {
@@ -45,7 +48,6 @@ async function main(baseInfo: LSPluginBaseInfo) {
     addSettingsToLogseq();
 
     // Init various modules
-    await LogseqPluginStorageManager.init();
     LogseqSettingAccessor.init();
     LogseqAppListeners.init();
     UI.init();

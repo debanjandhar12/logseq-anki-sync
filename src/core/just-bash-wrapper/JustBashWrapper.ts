@@ -1,5 +1,7 @@
 import {Bash, InMemoryFs, MountableFs} from "just-bash";
 import {JustBashAdapterFS} from "./JustBashAdapterFS";
+import {createAllowlistedFetch} from "./network";
+import {qjsCommand} from "./qjs";
 import {ReadOnlyFileSystem} from "./ReadOnlyFileSystem";
 import {JUST_BASH_USER_HOME} from "./types";
 
@@ -19,6 +21,8 @@ export class JustBashWrapper {
                     mounts: JustBashAdapterFS.getMountConfigs()
                 }),
                 cwd: JUST_BASH_USER_HOME,
+                fetch: createAllowlistedFetch(globalThis.fetch.bind(globalThis)),
+                customCommands: [qjsCommand],
                 python: false,
                 javascript: false
             });

@@ -1,4 +1,4 @@
-type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+type HttpMethod = "GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE";
 type ProxyReturnType = "text" | "arraybuffer";
 
 type LogseqProxyResponse = {
@@ -7,7 +7,11 @@ type LogseqProxyResponse = {
     ok: boolean;
     body: unknown;
     headers?: Record<string, string>;
+    url?: string;
 };
+
+export const LOGSEQ_PROXY_FINAL_URL_HEADER = "x-logseq-proxy-final-url";
+const REQUEST_TIMEOUT_MS = 30_000;
 
 /**
  * Replaces window.fetch to avoid electron cross-origin restrictions.
@@ -48,7 +52,8 @@ export class LogseqHttpProxy {
             method: LogseqHttpProxy.getMethod(request.method),
             headers: LogseqHttpProxy.getHeaders(request.headers),
             body: await LogseqHttpProxy.getRequestBody(request),
-            returnType
+            returnType,
+            signal: request.signal
         });
 
         return LogseqHttpProxy.toResponse(result, returnType);
@@ -75,6 +80,7 @@ export class LogseqHttpProxy {
         headers: Record<string, string>;
         body?: unknown;
         returnType: ProxyReturnType;
+        signal: AbortSignal;
     }): Promise<unknown> {
         const host = logseq as typeof logseq & {
             _execCallableAPIAsync: (
@@ -83,30 +89,48 @@ export class LogseqHttpProxy {
             Request: {once: (event: string, callback: (payload: unknown) => void) => void};
         };
 
-        const requestId = await host._execCallableAPIAsync("exper_request", host.baseInfo.id, {
-            url: options.url,
-            method: options.method,
-            headers: options.headers,
-            data: options.body,
-            returnType: options.returnType,
-            includeResponse: true
-        });
+        const requestId = await withAbort(
+            host._execCallableAPIAsync("exper_request", host.baseInfo.id, {
+                url: options.url,
+                method: options.method,
+                headers: options.headers,
+                data: options.body,
+                returnType: options.returnType,
+                includeResponse: true,
+                abortable: true,
+                timeout: REQUEST_TIMEOUT_MS
+            }),
+            options.signal
+        );
 
         if (!requestId) {
             throw new Error("Logseq exper_request is not available");
         }
 
-        return new Promise((resolve) => {
-            host.Request.once(`task_callback_${requestId}`, resolve);
-        });
+        const abortHostRequest = () => {
+            void host._execCallableAPIAsync("http_request_abort", requestId);
+        };
+        options.signal.addEventListener("abort", abortHostRequest, {once: true});
+        try {
+            return await withAbort(
+                new Promise((resolve) => {
+                    host.Request.once(`task_callback_${requestId}`, resolve);
+                }),
+                options.signal
+            );
+        } finally {
+            options.signal.removeEventListener("abort", abortHostRequest);
+        }
     }
 
     private static toResponse(result: unknown, returnType: ProxyReturnType): Response {
         if (LogseqHttpProxy.isProxyResponse(result)) {
+            const headers = new Headers(result.headers);
+            if (result.url) headers.set(LOGSEQ_PROXY_FINAL_URL_HEADER, result.url);
             return new Response(LogseqHttpProxy.getResponseBody(result.body, returnType), {
                 status: result.status,
                 statusText: result.statusText,
-                headers: result.headers
+                headers
             });
         }
 
@@ -124,7 +148,7 @@ export class LogseqHttpProxy {
 
     private static getMethod(requestMethod: string): HttpMethod {
         const method = requestMethod.toUpperCase();
-        if (["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+        if (["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"].includes(method)) {
             return method as HttpMethod;
         }
         throw new Error(`Unsupported HTTP method for Logseq exper_request: ${method}`);
@@ -198,4 +222,24 @@ export class LogseqHttpProxy {
         }
         throw new Error("Logseq exper_request returned an invalid binary response");
     }
+}
+
+function withAbort<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+    if (signal.aborted)
+        return Promise.reject(signal.reason ?? new DOMException("Aborted", "AbortError"));
+
+    return new Promise((resolve, reject) => {
+        const abort = () => reject(signal.reason ?? new DOMException("Aborted", "AbortError"));
+        signal.addEventListener("abort", abort, {once: true});
+        operation.then(
+            (value) => {
+                signal.removeEventListener("abort", abort);
+                resolve(value);
+            },
+            (error) => {
+                signal.removeEventListener("abort", abort);
+                reject(error);
+            }
+        );
+    });
 }

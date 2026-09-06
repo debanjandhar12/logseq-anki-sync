@@ -1,7 +1,14 @@
 import {describe, expect, test} from "vitest";
-import {LogseqHttpProxy} from "../../../src/logseq/LogseqHttpProxy";
+import {LOGSEQ_PROXY_FINAL_URL_HEADER, LogseqHttpProxy} from "../../../src/logseq/LogseqHttpProxy";
 
 type ProxyInternals = {
+    experRequest(options: {
+        url: string;
+        method: "GET";
+        headers: Record<string, string>;
+        returnType: "text";
+        signal: AbortSignal;
+    }): Promise<unknown>;
     getReturnType(request: Request): string;
     toResponse(result: unknown, returnType: "text" | "arraybuffer"): Response;
 };
@@ -32,7 +39,39 @@ describe("LogseqHttpProxy binary responses", () => {
     });
 
     test("preserves text responses", async () => {
-        const response = proxy.toResponse({status: 200, ok: true, body: {ok: true}}, "text");
+        const response = proxy.toResponse(
+            {status: 200, ok: true, body: {ok: true}, url: "https://example.com/final"},
+            "text"
+        );
         await expect(response.text()).resolves.toBe('{"ok":true}');
+        expect(response.headers.get(LOGSEQ_PROXY_FINAL_URL_HEADER)).toBe(
+            "https://example.com/final"
+        );
+    });
+});
+
+describe("LogseqHttpProxy cancellation", () => {
+    test("stops waiting for a host callback when aborted", async () => {
+        const controller = new AbortController();
+        const originalLogseq = globalThis.logseq;
+        globalThis.logseq = {
+            baseInfo: {id: "test"},
+            _execCallableAPIAsync: async () => "request-id",
+            Request: {once: () => undefined}
+        } as unknown as typeof logseq;
+
+        try {
+            const request = proxy.experRequest({
+                url: "https://example.com",
+                method: "GET",
+                headers: {},
+                returnType: "text",
+                signal: controller.signal
+            });
+            controller.abort();
+            await expect(request).rejects.toBeDefined();
+        } finally {
+            globalThis.logseq = originalLogseq;
+        }
     });
 });
