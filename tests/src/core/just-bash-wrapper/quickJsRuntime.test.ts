@@ -2,8 +2,9 @@ import type {SecureFetch} from "just-bash";
 import {describe, expect, test, vi} from "vitest";
 import {executeQuickJs} from "../../../../src/core/just-bash-wrapper/qjs/quickJsRuntime";
 import type {
-    QuickJsWorkerRequest,
-    QuickJsWorkerResponse
+    QuickJsExecutionResult,
+    QuickJsWorkerExecution,
+    QuickJsWorkerFetch
 } from "../../../../src/core/just-bash-wrapper/qjs/workerProtocol";
 
 const fetch: SecureFetch = async (url) => ({
@@ -16,119 +17,142 @@ const fetch: SecureFetch = async (url) => ({
 
 class FakeWorker {
     onerror: ((event: ErrorEvent) => void) | null = null;
-    onmessage: ((event: MessageEvent<QuickJsWorkerResponse>) => void) | null = null;
-    postMessage = vi.fn<(message: QuickJsWorkerRequest) => void>();
+    onmessageerror: ((event: MessageEvent) => void) | null = null;
     terminate = vi.fn();
+}
 
-    respond(response: QuickJsWorkerResponse): void {
-        this.onmessage?.({data: response} as MessageEvent<QuickJsWorkerResponse>);
-    }
+class FakeWorkerClient {
+    ready = vi.fn<() => Promise<void>>(() => Promise.resolve());
+    execute = vi.fn<
+        (
+            execution: QuickJsWorkerExecution,
+            fetch: QuickJsWorkerFetch
+        ) => Promise<QuickJsExecutionResult>
+    >(() => Promise.resolve({stdout: "2\n", stderr: "", exitCode: 0}));
+    release = vi.fn();
+}
+
+function executionOptions(worker: FakeWorker, client: FakeWorkerClient) {
+    return {
+        code: "console.log(2)",
+        fileName: "test.js",
+        args: [],
+        cwd: "/home/user",
+        env: {},
+        fetch,
+        workerFactory: () => worker as unknown as Worker,
+        workerClientFactory: () => client
+    };
 }
 
 describe("QuickJS worker orchestration", () => {
-    test("returns a worker result and terminates the worker", async () => {
+    test("waits for worker readiness before execution", async () => {
         const worker = new FakeWorker();
-        const execution = executeQuickJs({
-            code: "console.log(2)",
-            fileName: "test.js",
-            args: [],
-            cwd: "/home/user",
-            env: {},
-            fetch,
-            workerFactory: () => worker as unknown as Worker
-        });
+        const client = new FakeWorkerClient();
+        let markReady: (() => void) | undefined;
+        client.ready.mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    markReady = resolve;
+                })
+        );
 
-        worker.respond({type: "result", result: {stdout: "2\n", stderr: "", exitCode: 0}});
+        const execution = executeQuickJs(executionOptions(worker, client));
+        await Promise.resolve();
+        expect(client.execute).not.toHaveBeenCalled();
 
+        markReady?.();
         await expect(execution).resolves.toEqual({stdout: "2\n", stderr: "", exitCode: 0});
+        expect(client.execute).toHaveBeenCalledOnce();
+        expect(client.release).toHaveBeenCalledOnce();
         expect(worker.terminate).toHaveBeenCalledOnce();
     });
 
-    test("executes fetch requests on the host and returns their result", async () => {
+    test("executes fetch callbacks on the host", async () => {
         const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
         const hostFetch = vi.fn(fetch);
-        executeQuickJs({
-            code: "",
-            fileName: "test.js",
-            args: [],
-            cwd: "/home/user",
-            env: {},
-            fetch: hostFetch,
-            workerFactory: () => worker as unknown as Worker
+        client.execute.mockImplementation(async (_execution, workerFetch) => {
+            const response = JSON.parse(await workerFetch("https://example.com", {method: "GET"}));
+            expect(response.body).toBe("");
+            return {stdout: "", stderr: "", exitCode: 0};
         });
 
-        worker.respond({
-            type: "fetch",
-            id: 3,
-            url: "https://example.com",
-            options: {method: "GET"}
-        });
-        await vi.waitFor(() => expect(worker.postMessage).toHaveBeenCalledTimes(2));
+        await executeQuickJs({...executionOptions(worker, client), fetch: hostFetch});
 
         expect(hostFetch).toHaveBeenCalledWith(
             "https://example.com",
             expect.objectContaining({method: "GET", signal: expect.any(AbortSignal)})
         );
-        expect(worker.postMessage).toHaveBeenLastCalledWith(
-            expect.objectContaining({type: "fetch-result", id: 3})
-        );
     });
 
-    test("hard-terminates an unresponsive worker", async () => {
+    test("fails quickly when worker startup hangs", async () => {
         const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
+        client.ready.mockImplementation(() => new Promise(() => undefined));
 
         await expect(
-            executeQuickJs({
-                code: "while (true) {}",
-                fileName: "test.js",
-                args: [],
-                cwd: "/home/user",
-                env: {},
-                fetch,
-                executionTimeoutMs: 20,
-                workerFactory: () => worker as unknown as Worker
-            })
-        ).resolves.toEqual(expect.objectContaining({exitCode: 124}));
+            executeQuickJs({...executionOptions(worker, client), startupTimeoutMs: 20})
+        ).resolves.toEqual(
+            expect.objectContaining({exitCode: 124, stderr: "qjs: worker startup timed out\n"})
+        );
+        expect(client.execute).not.toHaveBeenCalled();
+        expect(worker.terminate).toHaveBeenCalledOnce();
+    });
+
+    test("hard-terminates an unresponsive execution", async () => {
+        const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
+        client.execute.mockImplementation(() => new Promise(() => undefined));
+
+        await expect(
+            executeQuickJs({...executionOptions(worker, client), executionTimeoutMs: 20})
+        ).resolves.toEqual(
+            expect.objectContaining({exitCode: 124, stderr: "qjs: execution timed out\n"})
+        );
         expect(worker.terminate).toHaveBeenCalledOnce();
     });
 
     test("immediately terminates for an already-aborted signal", async () => {
         const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
         const controller = new AbortController();
         controller.abort();
 
         await expect(
-            executeQuickJs({
-                code: "",
-                fileName: "test.js",
-                args: [],
-                cwd: "/home/user",
-                env: {},
-                fetch,
-                signal: controller.signal,
-                workerFactory: () => worker as unknown as Worker
-            })
-        ).resolves.toEqual(expect.objectContaining({exitCode: 124}));
+            executeQuickJs({...executionOptions(worker, client), signal: controller.signal})
+        ).resolves.toEqual(
+            expect.objectContaining({exitCode: 124, stderr: "qjs: execution aborted\n"})
+        );
         expect(worker.terminate).toHaveBeenCalledOnce();
     });
 
-    test("cleans up after synchronous postMessage failures", async () => {
+    test("terminates when the worker reports a startup error", async () => {
         const worker = new FakeWorker();
-        worker.postMessage.mockImplementation(() => {
-            throw new Error("clone failed");
+        const client = new FakeWorkerClient();
+        client.ready.mockImplementation(() => {
+            queueMicrotask(() => worker.onerror?.({message: "WASM failed"} as ErrorEvent));
+            return new Promise(() => undefined);
         });
 
-        await expect(
-            executeQuickJs({
-                code: "",
-                fileName: "test.js",
-                args: [],
-                cwd: "/home/user",
-                env: {},
-                fetch,
-                workerFactory: () => worker as unknown as Worker
-            })
-        ).resolves.toEqual(expect.objectContaining({exitCode: 1, stderr: "qjs: clone failed\n"}));
+        await expect(executeQuickJs(executionOptions(worker, client))).resolves.toEqual(
+            expect.objectContaining({exitCode: 1, stderr: "qjs: WASM failed\n"})
+        );
+        expect(worker.terminate).toHaveBeenCalledOnce();
+    });
+
+    test("terminates even when releasing the Comlink proxy fails", async () => {
+        const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
+        client.release.mockImplementation(() => {
+            throw new Error("release failed");
+        });
+
+        await expect(executeQuickJs(executionOptions(worker, client))).resolves.toEqual({
+            stdout: "2\n",
+            stderr: "",
+            exitCode: 0
+        });
         expect(worker.terminate).toHaveBeenCalledOnce();
     });
 });

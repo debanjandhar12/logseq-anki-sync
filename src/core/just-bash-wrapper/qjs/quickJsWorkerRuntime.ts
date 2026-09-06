@@ -1,20 +1,36 @@
-import {newAsyncContext, type QuickJSAsyncContext, type QuickJSHandle} from "quickjs-emscripten";
-import type {QuickJsExecutionResult, QuickJsWorkerExecution} from "./workerProtocol";
+import RELEASE_SYNC from "@jitl/quickjs-wasmfile-release-sync";
+import {releaseProxy} from "comlink";
+import {
+    newQuickJSWASMModuleFromVariant,
+    type QuickJSContext,
+    type QuickJSHandle
+} from "quickjs-emscripten-core";
+import type {
+    QuickJsExecutionResult,
+    QuickJsWorkerExecution,
+    QuickJsWorkerFetch
+} from "./workerProtocol";
 
 const MEMORY_LIMIT_BYTES = 64 * 1024 * 1024;
 const STACK_LIMIT_BYTES = 512 * 1024;
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const PROCESS_EXIT_PREFIX = "__QJS_PROCESS_EXIT__";
 
-type WorkerFetch = (url: string, options: Record<string, unknown>) => Promise<string>;
+const quickJsModule = newQuickJSWASMModuleFromVariant(RELEASE_SYNC);
 
-function printable(context: QuickJSAsyncContext, handle: QuickJSHandle): string {
+type ReleasableWorkerFetch = QuickJsWorkerFetch & {[releaseProxy]?: () => void};
+
+export async function initializeQuickJsWorker(): Promise<void> {
+    await quickJsModule;
+}
+
+function printable(context: QuickJSContext, handle: QuickJSHandle): string {
     const value = context.dump(handle);
     return typeof value === "string" ? value : JSON.stringify(value);
 }
 
 function installFunction(
-    context: QuickJSAsyncContext,
+    context: QuickJSContext,
     name: string,
     implementation: (...args: QuickJSHandle[]) => QuickJSHandle | {error: QuickJSHandle} | undefined
 ): void {
@@ -25,15 +41,16 @@ function installFunction(
 
 export async function executeQuickJsInWorker(
     options: QuickJsWorkerExecution,
-    fetch: WorkerFetch
+    fetch: QuickJsWorkerFetch
 ): Promise<QuickJsExecutionResult> {
-    const context = await newAsyncContext({});
+    const context = (await quickJsModule).newContext();
     const runtime = context.runtime;
     runtime.setMemoryLimit(MEMORY_LIMIT_BYTES);
     runtime.setMaxStackSize(STACK_LIMIT_BYTES);
     let stdout = "";
     let stderr = "";
     let exitCode = 0;
+    const pendingFetches = new Set<() => void>();
 
     const appendOutput = (current: string, value: string): string => {
         const next = current + value;
@@ -88,21 +105,44 @@ export async function executeQuickJsInWorker(
             return {error: context.newError(`${PROCESS_EXIT_PREFIX}${exitCode}`)};
         });
 
-        const hostFetch = context.newAsyncifiedFunction("__hostFetch", async (url, init) =>
-            context.newString(
-                await fetch(
-                    context.getString(url),
-                    (init ? context.dump(init) : {}) as Record<string, unknown>
-                )
-            )
-        );
+        const hostFetch = context.newFunction("__hostFetch", (url, init) => {
+            const requestUrl = context.getString(url);
+            const requestOptions = (init ? context.dump(init) : {}) as Record<string, unknown>;
+            const promise = context.newPromise();
+            let settled = false;
+            const settle = (value?: string, error?: unknown) => {
+                if (settled) return;
+                settled = true;
+                pendingFetches.delete(cancel);
+                if (!context.alive || !promise.alive) return;
+                const handle = error
+                    ? context.newError(error instanceof Error ? error.message : String(error))
+                    : context.newString(value ?? "");
+                if (error) promise.reject(handle);
+                else promise.resolve(handle);
+                handle.dispose();
+            };
+            const cancel = () => settle(undefined, new Error("fetch cancelled"));
+            pendingFetches.add(cancel);
+            void fetch(requestUrl, requestOptions).then(
+                (value) => settle(value),
+                (error) => settle(undefined, error)
+            );
+            void promise.settled.then(() => {
+                try {
+                    if (!runtime.alive) return;
+                    const pendingJobs = runtime.executePendingJobs();
+                    if (pendingJobs.error) pendingJobs.error.dispose();
+                } finally {
+                    promise.dispose();
+                }
+            });
+            return promise.handle;
+        });
         context.setProp(context.global, "__hostFetch", hostFetch);
         hostFetch.dispose();
 
-        const bootstrapResult = await context.evalCodeAsync(
-            createBootstrap(options),
-            "<qjs-bootstrap>"
-        );
+        const bootstrapResult = context.evalCode(createBootstrap(options), "<qjs-bootstrap>");
         if ("error" in bootstrapResult) {
             const message = printable(context, bootstrapResult.error);
             bootstrapResult.error.dispose();
@@ -110,7 +150,7 @@ export async function executeQuickJsInWorker(
         }
         bootstrapResult.value.dispose();
 
-        const result = await context.evalCodeAsync(
+        const result = context.evalCode(
             `(async () => {\n${options.code}\nif (globalThis.__utilityPromise) await globalThis.__utilityPromise;\n})()`,
             options.fileName,
             {type: "global"}
@@ -138,12 +178,20 @@ export async function executeQuickJsInWorker(
         completion.value.dispose();
         return {stdout, stderr, exitCode};
     } finally {
+        const hadPendingFetches = pendingFetches.size > 0;
+        for (const cancel of [...pendingFetches]) cancel();
+        if (hadPendingFetches) await new Promise((resolve) => setTimeout(resolve, 0));
         context.dispose();
+        try {
+            (fetch as ReleasableWorkerFetch)[releaseProxy]?.();
+        } catch {
+            // Worker termination remains the authoritative callback cleanup.
+        }
     }
 }
 
 function guestError(
-    context: QuickJSAsyncContext,
+    context: QuickJSContext,
     error: QuickJSHandle,
     stdout: string,
     stderr: string,
@@ -177,7 +225,7 @@ class Response {
   text() { return Promise.resolve(this.body); }
   json() { return Promise.resolve(JSON.parse(this.body)); }
 }
-globalThis.fetch = async (url, init) => new Response(JSON.parse(__hostFetch(String(url), init || {})));
+globalThis.fetch = async (url, init) => new Response(JSON.parse(await __hostFetch(String(url), init || {})));
 globalThis.console = Object.freeze({log: (...args) => __stdout(...args), error: (...args) => __stderr(...args), warn: (...args) => __stderr(...args)});
 globalThis.process = Object.freeze({argv: ${JSON.stringify(["qjs", options.fileName, ...options.args])}, env: Object.freeze(${JSON.stringify(options.env)}), cwd: () => ${JSON.stringify(options.cwd)}, exit: __exit});
 `;
