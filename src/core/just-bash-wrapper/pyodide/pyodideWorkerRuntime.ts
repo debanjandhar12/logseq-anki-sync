@@ -15,7 +15,20 @@ let pyodide: PyodideInterface | undefined;
 let micropipLoaded = false;
 let originalFetch: typeof globalThis.fetch | undefined;
 let allowedLocalAssetUrls: ReadonlySet<string> = new Set();
-const pythonGlobals: {fetch?: typeof globalThis.fetch} = {};
+const pythonGlobals: {
+    fetch?: typeof globalThis.fetch;
+    AbortController: typeof AbortController;
+    AbortSignal: typeof AbortSignal;
+    Object: ObjectConstructor;
+    Request: typeof Request;
+} = {
+    AbortController: protectConstructor(globalThis.AbortController),
+    AbortSignal: protectConstructor(globalThis.AbortSignal),
+    Object: protectConstructor(globalThis.Object, {
+        fromEntries: protectCallable(globalThis.Object.fromEntries)
+    }),
+    Request: protectConstructor(globalThis.Request)
+};
 let stdout = "";
 let stderr = "";
 let stdoutDecoder = new TextDecoder();
@@ -93,7 +106,11 @@ export async function executePythonInWorker(
         });
         appendStdout(stdoutDecoder.decode());
         appendStderr(stderrDecoder.decode());
-        return {stdout, stderr, exitCode: Number(exitCode)};
+        const normalizedExitCode = Number(exitCode);
+        if (!Number.isInteger(normalizedExitCode)) {
+            throw new Error("Python runtime returned an invalid exit code");
+        }
+        return {stdout, stderr, exitCode: normalizedExitCode};
     } catch (error) {
         appendStdout(stdoutDecoder.decode());
         appendStderr(stderrDecoder.decode());
@@ -143,6 +160,20 @@ function protectCallable<T extends (...args: never[]) => unknown>(callback: T): 
     });
 }
 
+function protectConstructor<T extends abstract new (...args: never[]) => unknown>(
+    constructorFn: T,
+    allowedProperties: Record<PropertyKey, unknown> = {}
+): T {
+    return new Proxy(constructorFn, {
+        get: (_target, property) => {
+            if (property === "name") return "securedCapability";
+            if (Object.hasOwn(allowedProperties, property)) return allowedProperties[property];
+            throw new Error(`Access to ${constructorFn.name}.${String(property)} is denied`);
+        },
+        construct: (target, args) => Reflect.construct(target, args)
+    });
+}
+
 function appendStdout(value: string): void {
     stdout = appendOutput(stdout, value);
 }
@@ -181,6 +212,7 @@ function createExecutionWrapper(execution: PythonWorkerExecution): string {
 import sys
 from pyodide.code import eval_code_async
 
+exit_code = 0
 try:
     await eval_code_async(
         ${JSON.stringify(execution.code)},
@@ -189,13 +221,13 @@ try:
     )
 except SystemExit as error:
     if error.code is None:
-        0
+        exit_code = 0
     elif isinstance(error.code, int):
-        error.code
+        exit_code = error.code
     else:
         print(error.code, file=sys.stderr)
-        1
-else:
-    0
+        exit_code = 1
+
+exit_code
 `;
 }

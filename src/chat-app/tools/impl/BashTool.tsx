@@ -48,6 +48,9 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
                 cwd,
                 signal: context?.abortSignal
             });
+            if (!Number.isInteger(exitCode)) {
+                throw new Error("Bash returned an invalid exit code");
+            }
             return ChatToolResponse.success({stdout, stderr, exitCode});
         } catch (error) {
             return ChatToolResponse.error(
