@@ -27,3 +27,5 @@ logseq.com
 googleapis.com
 googlevideo.com
 hdslb.com
+pypi.org
+pythonhosted.org

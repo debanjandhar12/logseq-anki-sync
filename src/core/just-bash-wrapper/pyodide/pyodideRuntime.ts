@@ -1,40 +1,41 @@
 import {proxy, releaseProxy, wrap} from "comlink";
 import type {SecureFetch} from "just-bash";
-import QuickJsWorker from "./quickJsWorker?worker";
+import PyodideWorker from "./pyodideWorker?worker";
 import type {
-    QuickJsExecutionResult,
-    QuickJsWorkerApi,
-    QuickJsWorkerExecution,
-    QuickJsWorkerFetch
+    PythonExecutionResult,
+    PythonWorkerApi,
+    PythonWorkerExecution,
+    PythonWorkerFetch
 } from "./workerProtocol";
 
-const STARTUP_TIMEOUT_MS = 5_000;
-const EXECUTION_TIMEOUT_MS = 30_000;
+const STARTUP_TIMEOUT_MS = 30_000;
+const EXECUTION_TIMEOUT_MS = 120_000;
 
-interface QuickJsWorkerClient {
-    ready(): Promise<void>;
+interface PythonWorkerClient {
+    ready(runtimeBaseUrl: string): Promise<void>;
     execute(
-        execution: QuickJsWorkerExecution,
-        fetch: QuickJsWorkerFetch
-    ): Promise<QuickJsExecutionResult>;
+        execution: PythonWorkerExecution,
+        fetch: PythonWorkerFetch
+    ): Promise<PythonExecutionResult>;
     release(): void;
 }
 
-interface ExecutionOptions extends QuickJsWorkerExecution {
+interface ExecutionOptions extends PythonWorkerExecution {
     fetch: SecureFetch;
     signal?: AbortSignal;
     startupTimeoutMs?: number;
     executionTimeoutMs?: number;
+    runtimeBaseUrl?: string;
     workerFactory?: () => Worker;
-    workerClientFactory?: (worker: Worker) => QuickJsWorkerClient;
+    workerClientFactory?: (worker: Worker) => PythonWorkerClient;
 }
 
-class QuickJsDeadlineError extends Error {}
+class PythonDeadlineError extends Error {}
 
-export async function executeQuickJs(options: ExecutionOptions): Promise<QuickJsExecutionResult> {
+export async function executePython(options: ExecutionOptions): Promise<PythonExecutionResult> {
     let worker: Worker;
     try {
-        worker = options.workerFactory?.() ?? new QuickJsWorker();
+        worker = options.workerFactory?.() ?? new PyodideWorker();
     } catch (error) {
         return failure(error);
     }
@@ -48,7 +49,7 @@ export async function executeQuickJs(options: ExecutionOptions): Promise<QuickJs
         worker.onerror = ({message}) => reject(new Error(message || "worker failed to start"));
         worker.onmessageerror = () => reject(new Error("worker message could not be decoded"));
     });
-    let client: QuickJsWorkerClient;
+    let client: PythonWorkerClient;
     try {
         client = options.workerClientFactory?.(worker) ?? createComlinkClient(worker);
     } catch (error) {
@@ -60,7 +61,7 @@ export async function executeQuickJs(options: ExecutionOptions): Promise<QuickJs
 
     try {
         await withDeadline(
-            client.ready(),
+            client.ready(options.runtimeBaseUrl ?? new URL("pyodide/", document.baseURI).href),
             options.startupTimeoutMs ?? STARTUP_TIMEOUT_MS,
             "worker startup timed out",
             controller.signal,
@@ -77,10 +78,10 @@ export async function executeQuickJs(options: ExecutionOptions): Promise<QuickJs
             workerError
         );
     } catch (error) {
-        if (error instanceof QuickJsDeadlineError || controller.signal.aborted) {
+        if (error instanceof PythonDeadlineError || controller.signal.aborted) {
             return {
                 stdout: "",
-                stderr: `qjs: ${error instanceof Error ? error.message : "execution aborted"}\n`,
+                stderr: `python: ${error instanceof Error ? error.message : "execution aborted"}\n`,
                 exitCode: 124
             };
         }
@@ -98,30 +99,28 @@ export async function executeQuickJs(options: ExecutionOptions): Promise<QuickJs
     }
 }
 
-function createComlinkClient(worker: Worker): QuickJsWorkerClient {
-    const remote = wrap<QuickJsWorkerApi>(worker);
+function createExecution(options: ExecutionOptions): PythonWorkerExecution {
     return {
-        ready: () => remote.ready(),
+        code: options.code,
+        fileName: options.fileName,
+        args: options.args,
+        stdin: options.stdin,
+        cwd: options.cwd,
+        env: options.env
+    };
+}
+
+function createComlinkClient(worker: Worker): PythonWorkerClient {
+    const remote = wrap<PythonWorkerApi>(worker);
+    return {
+        ready: (runtimeBaseUrl) => remote.ready(runtimeBaseUrl),
         execute: (execution, fetch) => remote.execute(execution, fetch),
         release: () => remote[releaseProxy]()
     };
 }
 
-function createWorkerFetch(fetch: SecureFetch, signal: AbortSignal): QuickJsWorkerFetch {
-    return async (url, requestOptions) => {
-        const result = await fetch(url, {...requestOptions, signal});
-        return JSON.stringify({...result, body: new TextDecoder().decode(result.body)});
-    };
-}
-
-function createExecution(options: ExecutionOptions): QuickJsWorkerExecution {
-    return {
-        code: options.code,
-        fileName: options.fileName,
-        args: options.args,
-        cwd: options.cwd,
-        env: options.env
-    };
+function createWorkerFetch(fetch: SecureFetch, signal: AbortSignal): PythonWorkerFetch {
+    return (url, requestOptions) => fetch(url, {...requestOptions, signal});
 }
 
 function withDeadline<T>(
@@ -141,9 +140,9 @@ function withDeadline<T>(
             callback();
         };
         const handleAbort = () =>
-            finish(() => reject(new QuickJsDeadlineError("execution aborted")));
+            finish(() => reject(new PythonDeadlineError("execution aborted")));
         const timeout = setTimeout(
-            () => finish(() => reject(new QuickJsDeadlineError(timeoutMessage))),
+            () => finish(() => reject(new PythonDeadlineError(timeoutMessage))),
             timeoutMs
         );
         signal.addEventListener("abort", handleAbort, {once: true});
@@ -156,10 +155,10 @@ function withDeadline<T>(
     });
 }
 
-function failure(error: unknown): QuickJsExecutionResult {
+function failure(error: unknown): PythonExecutionResult {
     return {
         stdout: "",
-        stderr: `qjs: ${error instanceof Error ? error.message : String(error)}\n`,
+        stderr: `python: ${error instanceof Error ? error.message : String(error)}\n`,
         exitCode: 1
     };
 }

@@ -3,6 +3,10 @@ import {LOGSEQ_PROXY_FINAL_URL_HEADER} from "src/logseq/LogseqHttpProxy";
 import {assertNetworkRequestAllowed} from "./networkPolicy";
 
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
+const SCIPY_WHEEL =
+    "/pyodide/v314.0.6/full/scipy-1.18.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl";
+const SCIPY_WHEEL_MAX_BYTES = 15 * 1024 * 1024;
+const SCIPY_WHEEL_SHA256 = "8512aee3e4b36b5a79523628d97d0d34612a366aecbb5b44a08c7ae45dd50d57";
 const MAX_REDIRECTS = 10;
 const TIMEOUT_MS = 30_000;
 
@@ -57,10 +61,12 @@ export function createAllowlistedFetch(fetchImpl: typeof fetch): SecureFetch {
                     response.headers.get(LOGSEQ_PROXY_FINAL_URL_HEADER) || response.url || url.href;
                 assertNetworkRequestAllowed(finalUrl, method);
                 const declaredSize = Number(response.headers.get("content-length"));
-                if (Number.isFinite(declaredSize) && declaredSize > MAX_RESPONSE_BYTES) {
+                const maxResponseBytes = getMaxResponseBytes(new URL(finalUrl));
+                if (Number.isFinite(declaredSize) && declaredSize > maxResponseBytes) {
                     throw new Error("Network response exceeded the size limit.");
                 }
-                const responseBody = await readResponseBody(response);
+                const responseBody = await readResponseBody(response, maxResponseBytes);
+                await assertApprovedArtifactIntegrity(new URL(finalUrl), responseBody);
                 return toFetchResult(response, new URL(finalUrl), responseBody);
             }
         } finally {
@@ -70,8 +76,14 @@ export function createAllowlistedFetch(fetchImpl: typeof fetch): SecureFetch {
     };
 }
 
-async function readResponseBody(response: Response): Promise<Uint8Array> {
-    if (!response.body) return new Uint8Array(await response.arrayBuffer());
+async function readResponseBody(response: Response, maxResponseBytes: number): Promise<Uint8Array> {
+    if (!response.body) {
+        const body = new Uint8Array(await response.arrayBuffer());
+        if (body.byteLength > maxResponseBytes) {
+            throw new Error("Network response exceeded the size limit.");
+        }
+        return body;
+    }
 
     const reader = response.body.getReader();
     const chunks: Uint8Array[] = [];
@@ -80,7 +92,7 @@ async function readResponseBody(response: Response): Promise<Uint8Array> {
         const {done, value} = await reader.read();
         if (done) break;
         length += value.byteLength;
-        if (length > MAX_RESPONSE_BYTES) {
+        if (length > maxResponseBytes) {
             await reader.cancel();
             throw new Error("Network response exceeded the size limit.");
         }
@@ -94,6 +106,24 @@ async function readResponseBody(response: Response): Promise<Uint8Array> {
         offset += chunk.byteLength;
     }
     return body;
+}
+
+function getMaxResponseBytes(url: URL): number {
+    return isScipyWheel(url) ? SCIPY_WHEEL_MAX_BYTES : MAX_RESPONSE_BYTES;
+}
+
+async function assertApprovedArtifactIntegrity(url: URL, body: Uint8Array): Promise<void> {
+    if (!isScipyWheel(url)) return;
+
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", body));
+    const actualHash = [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    if (actualHash !== SCIPY_WHEEL_SHA256) {
+        throw new Error("Network package failed its integrity check.");
+    }
+}
+
+function isScipyWheel(url: URL): boolean {
+    return url.hostname === "cdn.jsdelivr.net" && url.pathname === SCIPY_WHEEL;
 }
 
 function toFetchResult(response: Response, url: URL, body: Uint8Array) {

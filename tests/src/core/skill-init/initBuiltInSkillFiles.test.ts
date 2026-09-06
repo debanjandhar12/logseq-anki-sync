@@ -38,12 +38,18 @@ describe("initBuiltInSkillFiles", () => {
     test("installs the Working with Bash skill", async () => {
         await initBuiltInSkillFiles();
 
-        await expect(SkillFileStore.getSkillFile("Working with Bash.md")).resolves.toEqual(
+        const skill = await SkillFileStore.getSkillFile("Working with Bash.md");
+
+        expect(skill).toEqual(
             expect.objectContaining({
                 name: "Working with Bash",
                 builtInSkill: true,
                 disableModelInvocation: false
             })
         );
+        expect(skill?.content).toContain("micropip");
+        expect(skill?.content).toContain("scipy==1.18.0");
+        expect(skill?.content).toContain("youtube-transcript-api==1.2.4");
+        expect(skill?.content).not.toContain("qjs");
     });
 });

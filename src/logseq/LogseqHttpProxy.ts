@@ -155,9 +155,11 @@ export class LogseqHttpProxy {
     }
 
     private static getReturnType(request: Request): ProxyReturnType {
-        return request.method === "GET" && new URL(request.url).pathname.endsWith(".wasm")
-            ? "arraybuffer"
-            : "text";
+        const pathname = new URL(request.url).pathname.toLowerCase();
+        const hasBinaryExtension = [".wasm", ".whl", ".zip"].some((extension) =>
+            pathname.endsWith(extension)
+        );
+        return request.method === "GET" && hasBinaryExtension ? "arraybuffer" : "text";
     }
 
     private static getHeaders(headersInit?: HeadersInit): Record<string, string> {

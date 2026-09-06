@@ -1,6 +1,6 @@
 ---
 name: Working with Bash
-description: Use when running isolated Bash commands, processing data, working with JavaScript, or performing math and numerical calculations.
+description: Use when running isolated Bash commands, processing data, working with Python, or performing math and numerical calculations.
 disable-model-invocation: false
 built-in-skill: true
 built-in-skill-user-controllable: false
@@ -8,38 +8,82 @@ built-in-skill-user-controllable: false
 
 # Working with Bash
 
-The Bash tool runs in an isolated virtual filesystem and cannot access host files. Python and Node.js are unavailable.
-
-Use `qjs` for sandboxed JavaScript. Pass short ES modules with `-e`:
+The Bash tool runs in an isolated virtual filesystem and cannot access host files. Node.js is unavailable. Use `python` or `python3` to run Python 3.14 in browser-compatible Pyodide:
 
 ```bash
-qjs -e 'console.log([3, 1, 2].sort((a, b) => a - b).join(", "))'
+python -c 'print(", ".join(map(str, sorted([3, 1, 2]))))'
 ```
 
-Top-level `await` and ES module imports are supported. Network requests and imports must use full HTTPS URLs on allowlisted hosts. Pin imported packages to specific versions.
+Python uses a separate empty filesystem. Pipe Bash file contents into a `python -c` command and return generated data through stdout instead of opening Bash paths from Python.
+
+Top-level `await` is supported. Install Pyodide-compatible packages with `micropip`, always pin exact versions, and perform the installation and use in the same command. Packages are not preserved between commands. Network requests must use allowlisted HTTPS hosts.
 
 ## Math
 
-Import mathjs from jsDelivr and calculate `sin(45 deg) ^ 2`:
+Install SciPy with micropip and calculate `sin(45 degrees) ** 2`:
 
 ```bash
-qjs -e 'import {evaluate} from "https://cdn.jsdelivr.net/npm/mathjs@14.9.1/+esm"; console.log(evaluate("sin(45 deg) ^ 2"))'
+python - <<'PY'
+import micropip
+await micropip.install("scipy==1.18.0")
+import numpy as np
+print(np.sin(np.deg2rad(45)) ** 2)
+PY
 ```
 
-The result is approximately `0.5`.
+The result is approximately `0.5`. Loading SciPy for the first time downloads a large WebAssembly wheel and can take longer than standard-library calculations.
 
 ## Video Transcripts
 
-Fetch a public YouTube transcript by importing `youtube-caption-extractor` from jsDelivr:
+Fetch a public YouTube transcript with `youtube-transcript-api`:
 
 ```bash
-qjs -e 'import {getSubtitles} from "https://cdn.jsdelivr.net/npm/youtube-caption-extractor@1.10.2/+esm"; const subtitles = await getSubtitles({videoID: "VIDEO_ID", lang: "en", fetch}); console.log(JSON.stringify(subtitles))'
+python - <<'PY'
+import json
+import micropip
+await micropip.install("youtube-transcript-api==1.2.4")
+from youtube_transcript_api import YouTubeTranscriptApi
+
+transcript = YouTubeTranscriptApi().fetch("VIDEO_ID", languages=["en"])
+print(json.dumps(transcript.to_raw_data(), ensure_ascii=False))
+PY
 ```
 
-Fetch the first public subtitle track for a Bilibili video with its API:
+No maintained Bilibili subtitle package has a Pyodide-compatible dependency set. Fetch public Bilibili subtitles directly with Python and the secured browser fetch bridge:
 
 ```bash
-qjs -e 'const bvid = "BV_VIDEO_ID"; const pages = await (await fetch(`https://api.bilibili.com/x/player/pagelist?bvid=${bvid}`)).json(); const cid = pages.data[0].cid; const player = await (await fetch(`https://api.bilibili.com/x/player/v2?bvid=${bvid}&cid=${cid}`)).json(); const track = player.data.subtitle.subtitles[0]; const url = new URL(track.subtitle_url, "https://www.bilibili.com"); console.log(JSON.stringify(await (await fetch(url.href)).json()))'
+python - <<'PY'
+import json
+from js import fetch
+from urllib.parse import urlencode, urljoin
+
+bvid = "BV_VIDEO_ID"
+
+async def get_json(url):
+    response = await fetch(url)
+    if not response.ok:
+        raise RuntimeError(f"HTTP {response.status}: {url}")
+    return (await response.json()).to_py()
+
+pages = await get_json(
+    "https://api.bilibili.com/x/player/pagelist?" + urlencode({"bvid": bvid})
+)
+page_list = pages.get("data") or []
+if not page_list:
+    raise RuntimeError("Bilibili returned no video pages")
+
+cid = page_list[0].get("cid")
+player = await get_json(
+    "https://api.bilibili.com/x/player/v2?" + urlencode({"bvid": bvid, "cid": cid})
+)
+tracks = ((player.get("data") or {}).get("subtitle") or {}).get("subtitles") or []
+if not tracks:
+    raise RuntimeError("This video has no public subtitle track")
+
+subtitle_url = urljoin("https://www.bilibili.com", tracks[0]["subtitle_url"])
+subtitle = await get_json(subtitle_url)
+print(json.dumps(subtitle.get("body") or [], ensure_ascii=False))
+PY
 ```
 
-Public subtitles are not available for every video. Check that the returned page, player, and subtitle data exist before relying on them in a longer command.
+Public subtitles are not available for every video. YouTube can reject automated transcript requests, and some Bilibili subtitles require an authenticated session that the sandbox does not receive.

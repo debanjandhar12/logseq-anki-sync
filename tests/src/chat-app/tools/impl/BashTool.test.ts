@@ -1,4 +1,4 @@
-import {beforeAll, beforeEach, describe, expect, test} from "vitest";
+import {afterEach, beforeAll, beforeEach, describe, expect, test, vi} from "vitest";
 import {BashTool} from "../../../../../src/chat-app/tools/impl/BashTool";
 import {JustBashWrapper} from "../../../../../src/core/just-bash-wrapper";
 import {ToolResultStore} from "../../../../../src/core/stores/tool-results/ToolResultStore";
@@ -19,6 +19,10 @@ describe("BashTool", () => {
             "call-1_web_search.json",
             '{"ok":true}'
         );
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     test("returns command output inline", async () => {
@@ -49,5 +53,18 @@ describe("BashTool", () => {
         const response = await new BashTool().execute({command: "exit 3"});
 
         expect(response.result).toMatchObject({success: true, exitCode: 3});
+    });
+
+    test("rejects non-JSON exit codes before creating a tool result", async () => {
+        vi.spyOn(JustBashWrapper, "getInstance").mockReturnValue({
+            exec: async () => ({stdout: "", stderr: "", exitCode: Number.NaN})
+        } as unknown as ReturnType<typeof JustBashWrapper.getInstance>);
+
+        const response = await new BashTool().execute({command: "python -c 'pass'"});
+
+        expect(response.result).toEqual({
+            success: false,
+            error: "Failed to execute bash command: Bash returned an invalid exit code"
+        });
     });
 });

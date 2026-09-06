@@ -7,6 +7,7 @@ import {bundleJSStringPlugin} from "./vite-plugins/bundleJSStringPlugin";
 import {inlineSkillFilePlugin} from "./vite-plugins/inlineSkillFilePlugin";
 import {logseqDevPlugin} from "./vite-plugins/logseqDevPlugin";
 import {logseqReactBridgePlugin} from "./vite-plugins/logseqReactBridgePlugin";
+import {pyodideAssetsPlugin} from "./vite-plugins/pyodideAssetsPlugin";
 import {rewriteDistReqToRootPlugin} from "./vite-plugins/rewriteDistReqToRootPlugin";
 import {shadowDOMFloatingUIReactPopperBridgePlugin} from "./vite-plugins/shadowDOMFloatingUIReactPopperBridgePlugin";
 import {staticFileSyncTransformPlugin} from "./vite-plugins/staticFileSyncTransformPlugin";
@@ -28,6 +29,7 @@ export default defineConfig(({mode}) => {
         },
         plugins: [
             tailwindcss(),
+            pyodideAssetsPlugin(),
             inlineSkillFilePlugin(),
             stripUseClientDirectivePlugin(),
             logseqReactBridgePlugin(), // Must be first to intercept React imports
@@ -60,6 +62,9 @@ export default defineConfig(({mode}) => {
             minify: "oxc",
             emptyOutDir: true,
             reportCompressedSize: true
+        },
+        worker: {
+            format: "es"
         },
         test: {
             include: ["**/*.test.ts"],
