@@ -1,247 +1,116 @@
 import type {SecureFetch} from "just-bash";
-import {newAsyncContext, type QuickJSAsyncContext, type QuickJSHandle} from "quickjs-emscripten";
+import QuickJsWorker from "./quickJsWorker?worker";
+import type {
+    QuickJsExecutionResult,
+    QuickJsWorkerExecution,
+    QuickJsWorkerRequest,
+    QuickJsWorkerResponse
+} from "./workerProtocol";
 
-const MEMORY_LIMIT_BYTES = 64 * 1024 * 1024;
-const STACK_LIMIT_BYTES = 512 * 1024;
 const EXECUTION_TIMEOUT_MS = 30_000;
-const MAX_OUTPUT_BYTES = 1024 * 1024;
-const PROCESS_EXIT_PREFIX = "__QJS_PROCESS_EXIT__";
 
-interface ExecutionOptions {
-    code: string;
-    fileName: string;
-    args: string[];
-    cwd: string;
-    env: Record<string, string>;
+interface ExecutionOptions extends QuickJsWorkerExecution {
     fetch: SecureFetch;
     signal?: AbortSignal;
     executionTimeoutMs?: number;
+    workerFactory?: () => Worker;
 }
 
-function printable(context: QuickJSAsyncContext, handle: QuickJSHandle): string {
-    const value = context.dump(handle);
-    return typeof value === "string" ? value : JSON.stringify(value);
-}
-
-function installFunction(
-    context: QuickJSAsyncContext,
-    name: string,
-    implementation: (...args: QuickJSHandle[]) => QuickJSHandle | {error: QuickJSHandle} | undefined
-): void {
-    const fn = context.newFunction(name, implementation);
-    context.setProp(context.global, name, fn);
-    fn.dispose();
-}
-
-export async function executeQuickJs(options: ExecutionOptions) {
-    const context = await newAsyncContext({});
-    const runtime = context.runtime;
-    runtime.setMemoryLimit(MEMORY_LIMIT_BYTES);
-    runtime.setMaxStackSize(STACK_LIMIT_BYTES);
-    const executionController = new AbortController();
-    const abortExecution = () => executionController.abort(options.signal?.reason);
-    options.signal?.addEventListener("abort", abortExecution, {once: true});
-    const executionTimeout = setTimeout(
-        () => executionController.abort(new Error("QuickJS execution timed out.")),
-        options.executionTimeoutMs ?? EXECUTION_TIMEOUT_MS
-    );
-    const deadline = Date.now() + (options.executionTimeoutMs ?? EXECUTION_TIMEOUT_MS);
-    runtime.setInterruptHandler(() => executionController.signal.aborted || Date.now() >= deadline);
-    let stdout = "";
-    let stderr = "";
-    let exitCode = 0;
-
-    const appendOutput = (current: string, value: string): string => {
-        const next = current + value;
-        if (new TextEncoder().encode(next).byteLength > MAX_OUTPUT_BYTES) {
-            throw new Error("output exceeded 1 MiB");
-        }
-        return next;
-    };
-
+export function executeQuickJs(options: ExecutionOptions): Promise<QuickJsExecutionResult> {
+    let worker: Worker;
     try {
-        installFunction(context, "__stdout", (...args) => {
-            try {
-                stdout = appendOutput(
-                    stdout,
-                    `${args.map((arg) => printable(context, arg)).join(" ")}\n`
-                );
-                return context.undefined;
-            } catch (error) {
-                return {error: context.newError((error as Error).message)};
-            }
+        worker = options.workerFactory?.() ?? new QuickJsWorker();
+    } catch (error) {
+        return Promise.resolve({
+            stdout: "",
+            stderr: `qjs: ${error instanceof Error ? error.message : String(error)}\n`,
+            exitCode: 1
         });
-        installFunction(context, "__stderr", (...args) => {
-            try {
-                stderr = appendOutput(
-                    stderr,
-                    `${args.map((arg) => printable(context, arg)).join(" ")}\n`
-                );
-                return context.undefined;
-            } catch (error) {
-                return {error: context.newError((error as Error).message)};
-            }
-        });
-        installFunction(context, "__parseUrl", (input, base) => {
-            const parsed = new URL(
-                context.getString(input),
-                base && context.typeof(base) !== "undefined" ? context.getString(base) : undefined
-            );
-            return context.newString(
-                JSON.stringify({
-                    href: parsed.href,
-                    protocol: parsed.protocol,
-                    hostname: parsed.hostname,
-                    pathname: parsed.pathname,
-                    search: parsed.search,
-                    hash: parsed.hash,
-                    searchParams: [...parsed.searchParams.entries()]
-                })
-            );
-        });
-        installFunction(context, "__exit", (code) => {
-            exitCode = code ? context.getNumber(code) : 0;
-            return {error: context.newError(`${PROCESS_EXIT_PREFIX}${exitCode}`)};
-        });
-
-        const hostFetch = context.newAsyncifiedFunction("__hostFetch", async (url, init) => {
-            const request = init ? context.dump(init) : undefined;
-            const result = await withAbort(
-                options.fetch(context.getString(url), {
-                    ...(typeof request === "object" && request !== null ? request : {}),
-                    signal: executionController.signal
-                }),
-                executionController.signal
-            );
-            return context.newString(
-                JSON.stringify({...result, body: new TextDecoder().decode(result.body)})
-            );
-        });
-        context.setProp(context.global, "__hostFetch", hostFetch);
-        hostFetch.dispose();
-
-        const bootstrap = createBootstrap(options);
-        const bootstrapResult = await context.evalCodeAsync(bootstrap, "<qjs-bootstrap>");
-        if ("error" in bootstrapResult) {
-            const message = printable(context, bootstrapResult.error);
-            bootstrapResult.error.dispose();
-            return {stdout, stderr: `${stderr}qjs: ${message}\n`, exitCode: 1};
-        }
-        bootstrapResult.value.dispose();
-
-        const result = await context.evalCodeAsync(
-            `(async () => {\n${options.code}\nif (globalThis.__utilityPromise) await globalThis.__utilityPromise;\n})()`,
-            options.fileName,
-            {type: "global"}
-        );
-        if ("error" in result) {
-            const message = printable(context, result.error);
-            result.error.dispose();
-            if (executionController.signal.aborted || Date.now() >= deadline) {
-                return {
-                    stdout,
-                    stderr: `${stderr}qjs: execution timed out or was aborted\n`,
-                    exitCode: 124
-                };
-            }
-            if (message.includes(PROCESS_EXIT_PREFIX)) return {stdout, stderr, exitCode};
-            return {stdout, stderr: `${stderr}qjs: ${message}\n`, exitCode: 1};
-        }
-        const execution = context.resolvePromise(result.value);
-        result.value.dispose();
-        let settled = false;
-        execution.finally(() => {
-            settled = true;
-        });
-        while (!settled) {
-            if (executionController.signal.aborted || Date.now() >= deadline) {
-                return {
-                    stdout,
-                    stderr: `${stderr}qjs: execution timed out or was aborted\n`,
-                    exitCode: 124
-                };
-            }
-            const pendingJobs = runtime.executePendingJobs();
-            if (pendingJobs.error) {
-                const message = printable(context, pendingJobs.error);
-                pendingJobs.error.dispose();
-                if (executionController.signal.aborted || Date.now() >= deadline) {
-                    return {
-                        stdout,
-                        stderr: `${stderr}qjs: execution timed out or was aborted\n`,
-                        exitCode: 124
-                    };
-                }
-                return {stdout, stderr: `${stderr}qjs: ${message}\n`, exitCode: 1};
-            }
-            await new Promise((resolve) => setTimeout(resolve, 0));
-        }
-        const completion = await execution;
-        if ("error" in completion) {
-            const message = printable(context, completion.error);
-            completion.error.dispose();
-            if (executionController.signal.aborted || Date.now() >= deadline) {
-                return {
-                    stdout,
-                    stderr: `${stderr}qjs: execution timed out or was aborted\n`,
-                    exitCode: 124
-                };
-            }
-            if (message.includes(PROCESS_EXIT_PREFIX)) return {stdout, stderr, exitCode};
-            return {stdout, stderr: `${stderr}qjs: ${message}\n`, exitCode: 1};
-        }
-        completion.value.dispose();
-
-        return {stdout, stderr, exitCode};
-    } finally {
-        clearTimeout(executionTimeout);
-        options.signal?.removeEventListener("abort", abortExecution);
-        context.dispose();
     }
-}
+    const controller = new AbortController();
+    const abort = () => controller.abort(options.signal?.reason);
+    options.signal?.addEventListener("abort", abort, {once: true});
+    if (options.signal?.aborted) abort();
 
-function withAbort<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
-    if (signal.aborted) return Promise.reject(signal.reason ?? new Error("Aborted"));
-
-    return new Promise((resolve, reject) => {
-        const abort = () => reject(signal.reason ?? new Error("Aborted"));
-        signal.addEventListener("abort", abort, {once: true});
-        operation.then(
-            (value) => {
-                signal.removeEventListener("abort", abort);
-                resolve(value);
-            },
-            (error) => {
-                signal.removeEventListener("abort", abort);
-                reject(error);
-            }
+    return new Promise((resolve) => {
+        let settled = false;
+        const finish = (result: QuickJsExecutionResult) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            options.signal?.removeEventListener("abort", abort);
+            controller.abort();
+            worker.terminate();
+            resolve(result);
+        };
+        const timeout = setTimeout(
+            () =>
+                finish({
+                    stdout: "",
+                    stderr: "qjs: execution timed out or was aborted\n",
+                    exitCode: 124
+                }),
+            options.executionTimeoutMs ?? EXECUTION_TIMEOUT_MS
         );
+
+        const finishAborted = () =>
+            finish({
+                stdout: "",
+                stderr: "qjs: execution timed out or was aborted\n",
+                exitCode: 124
+            });
+        controller.signal.addEventListener("abort", finishAborted, {once: true});
+        if (controller.signal.aborted) finishAborted();
+        worker.onerror = ({message}) =>
+            finish({stdout: "", stderr: `qjs: ${message}\n`, exitCode: 1});
+        worker.onmessage = ({data}: MessageEvent<QuickJsWorkerResponse>) => {
+            if (data.type === "result") finish(data.result);
+            else if (data.type === "error") {
+                finish({stdout: "", stderr: `qjs: ${data.message}\n`, exitCode: 1});
+            } else if (data.type === "fetch") {
+                void handleFetch(worker, data, options.fetch, controller.signal);
+            }
+        };
+
+        const request: QuickJsWorkerRequest = {
+            type: "execute",
+            execution: {
+                code: options.code,
+                fileName: options.fileName,
+                args: options.args,
+                cwd: options.cwd,
+                env: options.env
+            }
+        };
+        try {
+            worker.postMessage(request);
+        } catch (error) {
+            finish({
+                stdout: "",
+                stderr: `qjs: ${error instanceof Error ? error.message : String(error)}\n`,
+                exitCode: 1
+            });
+        }
     });
 }
 
-function createBootstrap(options: ExecutionOptions): string {
-    return `
-class URLSearchParams {
-  constructor(entries = []) { this.entries_ = Array.from(entries); }
-  get(name) { const found = this.entries_.find(([key]) => key === String(name)); return found ? found[1] : null; }
-  entries() { return this.entries_[Symbol.iterator](); }
-  [Symbol.iterator]() { return this.entries(); }
-}
-class URL {
-  constructor(input, base) {
-    const value = JSON.parse(__parseUrl(String(input), base === undefined ? undefined : String(base)));
-    Object.assign(this, value);
-    this.searchParams = new URLSearchParams(value.searchParams);
-  }
-  toString() { return this.href; }
-}
-class Response {
-  constructor(value) { Object.assign(this, value); this.ok = this.status >= 200 && this.status < 300; }
-  text() { return Promise.resolve(this.body); }
-  json() { return Promise.resolve(JSON.parse(this.body)); }
-}
-globalThis.fetch = async (url, init) => new Response(JSON.parse(__hostFetch(String(url), init || {})));
-globalThis.console = Object.freeze({log: (...args) => __stdout(...args), error: (...args) => __stderr(...args), warn: (...args) => __stderr(...args)});
-globalThis.process = Object.freeze({argv: ${JSON.stringify(["qjs", options.fileName, ...options.args])}, env: Object.freeze(${JSON.stringify(options.env)}), cwd: () => ${JSON.stringify(options.cwd)}, exit: __exit});
-`;
+async function handleFetch(
+    worker: Worker,
+    request: Extract<QuickJsWorkerResponse, {type: "fetch"}>,
+    fetch: SecureFetch,
+    signal: AbortSignal
+): Promise<void> {
+    try {
+        const result = await fetch(request.url, {...request.options, signal});
+        const response: QuickJsWorkerRequest = {type: "fetch-result", id: request.id, result};
+        worker.postMessage(response);
+    } catch (error) {
+        if (signal.aborted) return;
+        const response: QuickJsWorkerRequest = {
+            type: "fetch-error",
+            id: request.id,
+            message: error instanceof Error ? error.message : String(error)
+        };
+        worker.postMessage(response);
+    }
 }
