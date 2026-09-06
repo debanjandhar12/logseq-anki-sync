@@ -180,6 +180,9 @@ importers:
       mldoc:
         specifier: ^1.5.9
         version: 1.5.9
+      mri:
+        specifier: ^1.2.0
+        version: 1.2.0
       mustache:
         specifier: ^4.2.0
         version: 4.2.0
@@ -5543,6 +5546,10 @@ packages:
   modern-tar@0.7.7:
     resolution: {integrity: sha512-t9VmxaqrmANnEOBhpSDI6HD192Ge48k8vmWqQQL7hSFEqHEYwZbbsu49+aKLWZeRvFs3j1pMhXOqqF4kPlvjkQ==}
     engines: {node: '>=18.0.0'}
+
+  mri@1.2.0:
+    resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}
+    engines: {node: '>=4'}
 
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
@@ -12661,6 +12668,8 @@ snapshots:
       yargs: 12.0.5
 
   modern-tar@0.7.7: {}
+
+  mri@1.2.0: {}
 
   mrmime@2.0.1: {}
 

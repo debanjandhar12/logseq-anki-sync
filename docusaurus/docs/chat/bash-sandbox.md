@@ -15,4 +15,4 @@ qjs /home/user/utility-scripts/fetch-transcript.js 'VIDEO_URL'
 
 The command returns JSON with the provider, video ID, language, and timestamped transcript segments.
 
-Network access is limited by `src/core/just-bash-wrapper/network-allowlist.txt`. Each non-comment line is an HTTPS host whose apex and subdomains are allowed. Requests are limited to `GET`, `HEAD`, and `POST`; redirects are checked against the same list. Requests use browser fetch and therefore require the destination to permit CORS. Cross-origin redirects whose destination the browser hides are rejected rather than bypassing the allowlist.
+Network access is limited by `src/core/just-bash-wrapper/network-allowlist.txt`. Each non-comment line is an HTTPS host whose apex and subdomains are allowed. Requests are limited to `GET`, `HEAD`, and `POST`. Requests use Logseq's patched fetch transport to avoid Electron iframe CORS restrictions. Logseq follows redirects in its host process; the plugin validates the returned final URL and discards responses that end at a non-allowlisted host, but the current Logseq API cannot expose redirect hops before they are requested.

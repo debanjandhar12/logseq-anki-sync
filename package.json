@@ -81,6 +81,7 @@
         "logseq-proxy": "^0.1.2",
         "lucide-react": "^1.14.0",
         "mldoc": "^1.5.9",
+        "mri": "^1.2.0",
         "mustache": "^4.2.0",
         "p-memoize": "^8.0.0",
         "p-retry": "^7.1.1",

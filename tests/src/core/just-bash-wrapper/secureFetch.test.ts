@@ -1,5 +1,6 @@
 import {describe, expect, test, vi} from "vitest";
 import {createAllowlistedFetch} from "../../../../src/core/just-bash-wrapper/network";
+import {LOGSEQ_PROXY_FINAL_URL_HEADER} from "../../../../src/logseq/LogseqHttpProxy";
 
 describe("allowlisted fetch", () => {
     test("rejects redirect targets outside the allowlist", async () => {
@@ -46,6 +47,18 @@ describe("allowlisted fetch", () => {
 
         await expect(createAllowlistedFetch(fetchImpl)("https://github.com/start")).rejects.toThrow(
             /destination is hidden/
+        );
+    });
+
+    test("rejects a patched-fetch final URL outside the allowlist", async () => {
+        const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+            new Response("private", {
+                headers: {[LOGSEQ_PROXY_FINAL_URL_HEADER]: "https://example.com/private"}
+            })
+        );
+
+        await expect(createAllowlistedFetch(fetchImpl)("https://github.com/start")).rejects.toThrow(
+            /Network access denied/
         );
     });
 });

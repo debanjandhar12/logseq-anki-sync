@@ -1,4 +1,4 @@
-# Apex hosts listed here also allow all subdomains.
+# Allow host list
 github.com
 gitlab.com
 stackoverflow.com

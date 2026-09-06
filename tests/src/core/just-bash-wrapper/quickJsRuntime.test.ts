@@ -37,19 +37,18 @@ describe("QuickJS runtime", () => {
         ).resolves.toEqual(expect.objectContaining({exitCode: 1}));
     });
 
-    test("returns when an idle promise is aborted", async () => {
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 10);
+    test("returns when a host fetch never settles", async () => {
+        const hangingFetch: SecureFetch = () => new Promise(() => {});
 
         await expect(
             executeQuickJs({
-                code: "globalThis.__utilityPromise = new Promise(() => {})",
+                code: "globalThis.__utilityPromise = fetch('https://example.com')",
                 fileName: "test.js",
                 args: [],
                 cwd: "/home/user",
                 env: {},
-                fetch,
-                signal: controller.signal
+                fetch: hangingFetch,
+                executionTimeoutMs: 20
             })
         ).resolves.toEqual(expect.objectContaining({exitCode: 124}));
     });

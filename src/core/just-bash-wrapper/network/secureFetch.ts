@@ -1,4 +1,5 @@
 import type {SecureFetch} from "just-bash";
+import {LOGSEQ_PROXY_FINAL_URL_HEADER} from "src/logseq/LogseqHttpProxy";
 import {assertNetworkRequestAllowed} from "./networkPolicy";
 
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
@@ -52,13 +53,15 @@ export function createAllowlistedFetch(fetchImpl: typeof fetch): SecureFetch {
                     continue;
                 }
 
-                assertNetworkRequestAllowed(response.url || url.href, method);
+                const finalUrl =
+                    response.headers.get(LOGSEQ_PROXY_FINAL_URL_HEADER) || response.url || url.href;
+                assertNetworkRequestAllowed(finalUrl, method);
                 const declaredSize = Number(response.headers.get("content-length"));
                 if (Number.isFinite(declaredSize) && declaredSize > MAX_RESPONSE_BYTES) {
                     throw new Error("Network response exceeded the size limit.");
                 }
                 const responseBody = await readResponseBody(response);
-                return toFetchResult(response, url, responseBody);
+                return toFetchResult(response, new URL(finalUrl), responseBody);
             }
         } finally {
             clearTimeout(timeout);
@@ -94,10 +97,12 @@ async function readResponseBody(response: Response): Promise<Uint8Array> {
 }
 
 function toFetchResult(response: Response, url: URL, body: Uint8Array) {
+    const headers = Object.fromEntries(response.headers.entries());
+    delete headers[LOGSEQ_PROXY_FINAL_URL_HEADER];
     return {
         status: response.status,
         statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
+        headers,
         body,
         url: response.url || url.href
     };

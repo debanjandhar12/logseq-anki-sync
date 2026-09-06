@@ -15,6 +15,7 @@ interface ExecutionOptions {
     env: Record<string, string>;
     fetch: SecureFetch;
     signal?: AbortSignal;
+    executionTimeoutMs?: number;
 }
 
 function printable(context: QuickJSAsyncContext, handle: QuickJSHandle): string {
@@ -37,8 +38,15 @@ export async function executeQuickJs(options: ExecutionOptions) {
     const runtime = context.runtime;
     runtime.setMemoryLimit(MEMORY_LIMIT_BYTES);
     runtime.setMaxStackSize(STACK_LIMIT_BYTES);
-    const deadline = Date.now() + EXECUTION_TIMEOUT_MS;
-    runtime.setInterruptHandler(() => options.signal?.aborted === true || Date.now() >= deadline);
+    const executionController = new AbortController();
+    const abortExecution = () => executionController.abort(options.signal?.reason);
+    options.signal?.addEventListener("abort", abortExecution, {once: true});
+    const executionTimeout = setTimeout(
+        () => executionController.abort(new Error("QuickJS execution timed out.")),
+        options.executionTimeoutMs ?? EXECUTION_TIMEOUT_MS
+    );
+    const deadline = Date.now() + (options.executionTimeoutMs ?? EXECUTION_TIMEOUT_MS);
+    runtime.setInterruptHandler(() => executionController.signal.aborted || Date.now() >= deadline);
     let stdout = "";
     let stderr = "";
     let exitCode = 0;
@@ -98,10 +106,13 @@ export async function executeQuickJs(options: ExecutionOptions) {
 
         const hostFetch = context.newAsyncifiedFunction("__hostFetch", async (url, init) => {
             const request = init ? context.dump(init) : undefined;
-            const result = await options.fetch(context.getString(url), {
-                ...(typeof request === "object" && request !== null ? request : {}),
-                signal: options.signal
-            });
+            const result = await withAbort(
+                options.fetch(context.getString(url), {
+                    ...(typeof request === "object" && request !== null ? request : {}),
+                    signal: executionController.signal
+                }),
+                executionController.signal
+            );
             return context.newString(
                 JSON.stringify({...result, body: new TextDecoder().decode(result.body)})
             );
@@ -126,7 +137,7 @@ export async function executeQuickJs(options: ExecutionOptions) {
         if ("error" in result) {
             const message = printable(context, result.error);
             result.error.dispose();
-            if (options.signal?.aborted || Date.now() >= deadline) {
+            if (executionController.signal.aborted || Date.now() >= deadline) {
                 return {
                     stdout,
                     stderr: `${stderr}qjs: execution timed out or was aborted\n`,
@@ -143,7 +154,7 @@ export async function executeQuickJs(options: ExecutionOptions) {
             settled = true;
         });
         while (!settled) {
-            if (options.signal?.aborted || Date.now() >= deadline) {
+            if (executionController.signal.aborted || Date.now() >= deadline) {
                 return {
                     stdout,
                     stderr: `${stderr}qjs: execution timed out or was aborted\n`,
@@ -154,7 +165,7 @@ export async function executeQuickJs(options: ExecutionOptions) {
             if (pendingJobs.error) {
                 const message = printable(context, pendingJobs.error);
                 pendingJobs.error.dispose();
-                if (options.signal?.aborted || Date.now() >= deadline) {
+                if (executionController.signal.aborted || Date.now() >= deadline) {
                     return {
                         stdout,
                         stderr: `${stderr}qjs: execution timed out or was aborted\n`,
@@ -169,7 +180,7 @@ export async function executeQuickJs(options: ExecutionOptions) {
         if ("error" in completion) {
             const message = printable(context, completion.error);
             completion.error.dispose();
-            if (options.signal?.aborted || Date.now() >= deadline) {
+            if (executionController.signal.aborted || Date.now() >= deadline) {
                 return {
                     stdout,
                     stderr: `${stderr}qjs: execution timed out or was aborted\n`,
@@ -183,8 +194,29 @@ export async function executeQuickJs(options: ExecutionOptions) {
 
         return {stdout, stderr, exitCode};
     } finally {
+        clearTimeout(executionTimeout);
+        options.signal?.removeEventListener("abort", abortExecution);
         context.dispose();
     }
+}
+
+function withAbort<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+    if (signal.aborted) return Promise.reject(signal.reason ?? new Error("Aborted"));
+
+    return new Promise((resolve, reject) => {
+        const abort = () => reject(signal.reason ?? new Error("Aborted"));
+        signal.addEventListener("abort", abort, {once: true});
+        operation.then(
+            (value) => {
+                signal.removeEventListener("abort", abort);
+                resolve(value);
+            },
+            (error) => {
+                signal.removeEventListener("abort", abort);
+                reject(error);
+            }
+        );
+    });
 }
 
 function createBootstrap(options: ExecutionOptions): string {

@@ -1,5 +1,4 @@
 import {Bash, InMemoryFs, MountableFs} from "just-bash";
-import {LogseqHttpProxy} from "src/logseq/LogseqHttpProxy";
 import {JustBashAdapterFS} from "./JustBashAdapterFS";
 import {createAllowlistedFetch} from "./network";
 import {qjsCommand} from "./qjs";
@@ -22,9 +21,7 @@ export class JustBashWrapper {
                     mounts: JustBashAdapterFS.getMountConfigs()
                 }),
                 cwd: JUST_BASH_USER_HOME,
-                // The Logseq proxy cannot expose redirect hops, so sandbox requests use the
-                // browser transport where every redirect can be checked against the allowlist.
-                fetch: createAllowlistedFetch(LogseqHttpProxy.getNativeFetch()),
+                fetch: createAllowlistedFetch(globalThis.fetch.bind(globalThis)),
                 customCommands: [qjsCommand],
                 python: false,
                 javascript: false
