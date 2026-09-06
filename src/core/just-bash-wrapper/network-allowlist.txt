@@ -1,4 +1,11 @@
 # Allow host list
+npmjs.com
+npmjs.org
+cloudflare.com
+cdnjs.com
+esm.sh
+jsdelivr.net
+unpkg.com
 github.com
 gitlab.com
 stackoverflow.com
