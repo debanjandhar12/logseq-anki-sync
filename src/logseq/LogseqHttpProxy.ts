@@ -1,3 +1,6 @@
+import {LOGSEQ_HTTP_PROXY_TIMEOUT_MS} from "src/constants";
+import {LogseqAppInfoFetcher} from "src/logseq/LogseqAppInfoFetcher";
+
 type HttpMethod = "GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE";
 type ProxyReturnType = "text" | "arraybuffer";
 
@@ -10,8 +13,10 @@ type LogseqProxyResponse = {
     url?: string;
 };
 
+/**
+ * Carries the host proxy's post-redirect final URL; needed because constructed Responses have an empty `response.url` (read-only per spec).
+ */
 export const LOGSEQ_PROXY_FINAL_URL_HEADER = "x-logseq-proxy-final-url";
-const REQUEST_TIMEOUT_MS = 30_000;
 
 /**
  * Replaces window.fetch to avoid electron cross-origin restrictions.
@@ -20,8 +25,10 @@ const REQUEST_TIMEOUT_MS = 30_000;
 export class LogseqHttpProxy {
     private static originalFetch: typeof fetch | null = null;
 
-    static init() {
-        if (LogseqHttpProxy.originalFetch !== null) {
+    static async init() {
+        if (process.env.NODE_ENV === "test"
+            || (await LogseqAppInfoFetcher.checkCurrentIsDbGraph())
+            || LogseqHttpProxy.originalFetch !== null) {
             return;
         }
 
@@ -98,7 +105,7 @@ export class LogseqHttpProxy {
                 returnType: options.returnType,
                 includeResponse: true,
                 abortable: true,
-                timeout: REQUEST_TIMEOUT_MS
+                timeout: LOGSEQ_HTTP_PROXY_TIMEOUT_MS
             }),
             options.signal
         );

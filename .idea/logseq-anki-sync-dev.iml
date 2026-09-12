@@ -10,6 +10,9 @@
       <excludeFolder url="file://$MODULE_DIR$/.agents" />
       <excludeFolder url="file://$MODULE_DIR$/.codex" />
       <excludeFolder url="file://$MODULE_DIR$/.kiro" />
+      <excludeFolder url="file://$MODULE_DIR$/.opencode" />
+      <excludeFolder url="file://$MODULE_DIR$/.opencode-trace" />
+      <excludeFolder url="file://$MODULE_DIR$/.vite_cache" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
