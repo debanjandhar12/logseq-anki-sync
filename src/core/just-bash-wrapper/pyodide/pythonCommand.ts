@@ -1,10 +1,16 @@
 import {defineCommand, type ExecResult} from "just-bash";
+import {
+    applySharedFileChanges,
+    snapshotSharedFiles
+} from "../zenfs/sharedFiles";
 import {executePython} from "./pyodideRuntime";
 
 const HELP = `Usage: python [-c CODE | FILE | -] [ARGS...]
 
 Execute Python in browser-compatible Pyodide. Top-level await and micropip are
-available. Network access is restricted to allowlisted HTTPS hosts.
+available. Network access is restricted to allowlisted HTTPS hosts. Files under
+/home/user are shared with the Bash sandbox: Python reads the sandbox view and
+its writes there are folded back (read-only mounts are discarded).
 `;
 
 function error(commandName: string, message: string): ExecResult {
@@ -50,7 +56,17 @@ function createPythonCommand(commandName: "python" | "python3") {
         if (code.startsWith("#!")) code = code.slice(Math.max(0, code.indexOf("\n") + 1));
         if (!context.fetch) return error(commandName, "network access is not configured");
 
-        return executePython({
+        let files;
+        try {
+            files = await snapshotSharedFiles();
+        } catch (snapshotError) {
+            return error(
+                commandName,
+                snapshotError instanceof Error ? snapshotError.message : String(snapshotError)
+            );
+        }
+
+        const result = await executePython({
             code,
             fileName,
             args: scriptArgs,
@@ -58,9 +74,33 @@ function createPythonCommand(commandName: "python" | "python3") {
             cwd: context.cwd,
             env: context.exportedEnv ?? {},
             fetch: context.fetch,
-            signal: context.signal
+            signal: context.signal,
+            files
         });
+        return foldChangedFilesBack(result);
     });
+}
+
+async function foldChangedFilesBack(result: ExecResult & {
+    changedFiles?: Array<{path: string}>;
+}): Promise<ExecResult> {
+    if (!result.changedFiles?.length) return result;
+    let discarded: string[] = [];
+    let applyError: string | undefined;
+    try {
+        discarded = await applySharedFileChanges(result.changedFiles);
+    } catch (error) {
+        applyError = error instanceof Error ? error.message : String(error);
+    }
+    const warnings = [
+        ...(discarded.length > 0
+            ? [`discarded writes to read-only mounts: ${discarded.join(", ")}`]
+            : []),
+        ...(applyError ? [applyError] : [])
+    ].join("; ");
+    const {changedFiles: _folded, ...plain} = result;
+    if (!warnings) return plain;
+    return {...plain, stderr: `${plain.stderr}python: ${warnings}\n`};
 }
 
 function decodeStdin(stdin: string): string {

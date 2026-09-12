@@ -58,6 +58,17 @@ export class JustBashAdapterFS implements IFileSystem {
         }));
     }
 
+    /** Registry entries for filesystems composed outside this adapter (session zenfs). */
+    static getMountDescriptors(): Array<{
+        folderName: string;
+        permission: JustBashMountPermission;
+    }> {
+        return [...JustBashAdapterFS.mountRegistry.entries()].map(([folderName, permission]) => ({
+            folderName,
+            permission
+        }));
+    }
+
     private assertWritable(operation: string, path: string): void {
         if (this.permission !== "readwrite") throw erofsError(operation, path);
     }
