@@ -33,7 +33,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
         return;
     }
 
-    LogseqHttpProxy.init();
+    await LogseqHttpProxy.init();
 
     // Initialize storage-backed resources before exposing UI that can use them.
     await LogseqPluginStorageManager.init();
@@ -45,7 +45,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     });
     registerToolbar(baseInfo);
     updateLoggerLevels();
-    addSettingsToLogseq();
+    await addSettingsToLogseq();
 
     // Init various modules
     LogseqSettingAccessor.init();
