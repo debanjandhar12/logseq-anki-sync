@@ -23,7 +23,7 @@ export class JustBashWrapper {
                 cwd: JUST_BASH_USER_HOME,
                 fetch: createAllowlistedFetch(globalThis.fetch.bind(globalThis)),
                 customCommands: [pythonCommand, python3Command],
-                python: false,
+                python: false, // python provided using pyodide through pythonCommand
                 javascript: false
             });
         }
