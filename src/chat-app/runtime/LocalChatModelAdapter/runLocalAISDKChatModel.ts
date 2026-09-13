@@ -31,12 +31,12 @@ import {
     updateToolCall
 } from "./tool-call-message-part";
 
-export async function* runLocalAISDKChatModel({
-    messages,
-    abortSignal,
-    context,
-    unstable_getMessage
-}: Parameters<ChatModelAdapter["run"]>[0]): AsyncGenerator<ChatModelRunResult> {
+type CreateLanguageModel = typeof createLLMModel;
+
+export async function* runLocalAISDKChatModel(
+    {messages, abortSignal, context, unstable_getMessage}: Parameters<ChatModelAdapter["run"]>[0],
+    createLanguageModel: CreateLanguageModel = createLLMModel
+): AsyncGenerator<ChatModelRunResult> {
     let streamError: unknown;
     let content: NonNullable<ChatModelRunResult["content"]> = [];
 
@@ -44,7 +44,7 @@ export async function* runLocalAISDKChatModel({
         const modelId = context.config?.modelName;
         if (!modelId) throw new Error("No model selected");
         const resolvedSelection = resolveLLMSelection(modelId, readProviderConfigs());
-        const model = createLLMModel(resolvedSelection);
+        const model = createLanguageModel(resolvedSelection);
         const frontendToolDefinitions = filterFrontendToolsForProvider(
             context.tools,
             resolvedSelection.config.type,

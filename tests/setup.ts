@@ -1,16 +1,19 @@
-import proxyLogseq from "logseq-proxy";
+import {beforeAll} from "vitest";
 
 // Worker/Pyodide tests use Node and do not require the browser-only Logseq client.
 if (typeof window !== "undefined") {
     // @ts-ignore -- Vitest supports top-level await in setup files.
     await import("@logseq/libs");
+    // @ts-ignore -- Vitest supports top-level await in setup files.
+    const {setupLogseqProxy} = await import("./helpers/logseq-proxy-wrapper");
+    // @ts-ignore -- Vitest supports top-level await in setup files.
+    const {LogseqPluginStorageManager} = await import("../src/logseq/LogseqPluginStorageManager");
+
     // Setup logseq proxy before all test cases run
-    proxyLogseq({
-        settings: {},
-        config: {
-            apiServer: process.env.LOGSEQ_API_SERVER || "http://127.0.0.1:12315",
-            apiToken: process.env.LOGSEQ_API_TOKEN || ""
-        }
+    setupLogseqProxy();
+
+    beforeAll(async () => {
+        await LogseqPluginStorageManager.init();
     });
 
     // Check Logseq availability

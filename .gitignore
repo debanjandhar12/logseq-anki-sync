@@ -30,3 +30,7 @@ docusaurus/node_modules/
 .kiro/*
 .idea/*
 .vscode/*
+/.vitest-attachments/
+.vitest/
+**/__traces__/
+**/__screenshots__/
