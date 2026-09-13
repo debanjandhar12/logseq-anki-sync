@@ -1,6 +1,7 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import reactPlugin from "@vitejs/plugin-react";
+import {playwright} from "@vitest/browser-playwright";
 import {defineConfig, loadEnv} from "vite";
 import {nodePolyfills} from "vite-plugin-node-polyfills";
 import {bundleJSStringPlugin} from "./vite-plugins/bundleJSStringPlugin";
@@ -67,16 +68,16 @@ export default defineConfig(({mode}) => {
             format: "es"
         },
         test: {
-            include: ["**/*.test.ts"],
+            include: ["**/*.test.{ts,tsx}"],
             exclude: ["**/logseq-dev-plugin/**", "**/node_modules/**"],
             setupFiles: ["./tests/setup.ts"],
-            environment: "jsdom",
             env: {...env, NODE_ENV: mode},
-            pool: "forks",
-            singleFork: true,
-            fileParallelism: false,
-            sequence: {
-                concurrent: false
+            browser: {
+                enabled: true,
+                headless: true,
+                provider: playwright(),
+                instances: [{browser: "chromium"}],
+                trace: "on"
             },
             server: {
                 deps: {

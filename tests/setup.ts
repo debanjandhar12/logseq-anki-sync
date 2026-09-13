@@ -1,13 +1,13 @@
 import "@logseq/libs";
-import proxyLogseq from "logseq-proxy";
+import {beforeAll} from "vitest";
+import {LogseqPluginStorageManager} from "../src/logseq/LogseqPluginStorageManager";
+import {setupLogseqProxy} from "./helpers/setupLogseqProxy";
 
 // Setup logseq proxy before all test cases run
-proxyLogseq({
-    settings: {},
-    config: {
-        apiServer: process.env.LOGSEQ_API_SERVER || "http://127.0.0.1:12315",
-        apiToken: process.env.LOGSEQ_API_TOKEN || ""
-    }
+setupLogseqProxy();
+
+beforeAll(async () => {
+    await LogseqPluginStorageManager.init();
 });
 
 // Check Logseq availability
