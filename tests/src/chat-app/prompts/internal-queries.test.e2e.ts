@@ -1,0 +1,548 @@
+import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import BLOCK_PROPERTIES_MAP_FAILS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/BLOCK_PROPERTIES_MAP_FAILS.ds?raw";
+import BLOCK_SCHEDULED_FAILS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/BLOCK_SCHEDULED_FAILS.ds?raw";
+import CASE_INSENSITIVE_TITLE_SEARCH from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/CASE_INSENSITIVE_TITLE_SEARCH.ds?raw";
+import CLASS_TAG_IDENT_SEARCH from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/CLASS_TAG_IDENT_SEARCH.ds?raw";
+import COMPLEX_ACTIONABLE_TASK_SEARCH from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/COMPLEX_ACTIONABLE_TASK_SEARCH.ds?raw";
+import FILE_GRAPH_BLOCK_CONTENT_FAILS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/FILE_GRAPH_BLOCK_CONTENT_FAILS.ds?raw";
+import IDENT_REGEX_MATCH_FAILS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/IDENT_REGEX_MATCH_FAILS.ds?raw";
+import IDENT_SUBSTRING_MATCH from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/IDENT_SUBSTRING_MATCH.ds?raw";
+import JOURNAL_PAGES_IN_RANGE from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/JOURNAL_PAGES_IN_RANGE.ds?raw";
+import MIXED_PROPERTY_TYPES_AND_TITLE_SEARCH from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/MIXED_PROPERTY_TYPES_AND_TITLE_SEARCH.ds?raw";
+import OR_VARIABLE_MISMATCH_FAILS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/OR_VARIABLE_MISMATCH_FAILS.ds?raw";
+import PAGE_BY_NAME from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/PAGE_BY_NAME.ds?raw";
+import PAGE_REFERENCE_BACKLINKS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/PAGE_REFERENCE_BACKLINKS.ds?raw";
+import PROPERTY_NODE_LIST_ANY from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/PROPERTY_NODE_LIST_ANY.ds?raw";
+import PUBLIC_PROPERTY_SCHEMAS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/PUBLIC_PROPERTY_SCHEMAS.ds?raw";
+import RECURSIVE_PAGE_REFERENCE_BACKLINKS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/RECURSIVE_PAGE_REFERENCE_BACKLINKS.ds?raw";
+import TAG_IDENT_MATCH from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TAG_IDENT_MATCH.ds?raw";
+import TAG_OR_CHILD_TAG_MATCH from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TAG_OR_CHILD_TAG_MATCH.ds?raw";
+import TAG_TEXT_SEARCH_FAILS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TAG_TEXT_SEARCH_FAILS.ds?raw";
+import TASKS_BY_STATUS_OR_IMPLICIT_TODO from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TASKS_BY_STATUS_OR_IMPLICIT_TODO.ds?raw";
+import TASKS_PRIORITY_NOT_ARCHIVED from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TASKS_PRIORITY_NOT_ARCHIVED.ds?raw";
+import TASKS_SCHEDULED_IN_RANGE from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TASKS_SCHEDULED_IN_RANGE.ds?raw";
+import {DataScriptQueryCommand} from "src/core/logseq-reversible-transaction-tracker/commands/DataScriptQueryCommand";
+import {afterAll, beforeAll, describe, expect, it} from "vitest";
+
+type PulledEntity = Record<string, unknown>;
+type PropertyEntity = BlockEntity & {ident?: string};
+
+import {deletePagePermanently} from "../../../helpers/logseq/deletePagePermanently";
+
+const pageName = "test-skill-query-regression";
+const parentTagName = "test-skill-query-parent-tag";
+const childTagName = "test-skill-query-child-tag";
+const archivedTagName = "test-skill-query-archived";
+const checkedPropertyKey = "test-skill-query-checked";
+const numberPropertyKey = "test-skill-query-score";
+const nodePropertyKey = "test-skill-query-node";
+const priorityPropertyKey = "test-skill-query-priority";
+const scheduledPropertyKey = "test-skill-query-scheduled";
+const scheduledDay = 20990115;
+const scheduledDate = new Date(2099, 0, 15);
+const shouldRunTests = () =>
+    globalThis.isLogseqAvailable === true && globalThis.isLogseqCurrentIsDBGraph === true;
+
+function ednString(value: string): string {
+    return JSON.stringify(value);
+}
+
+function uuidOf(entity: PulledEntity): string | undefined {
+    return (entity[":block/uuid"] ?? entity["block/uuid"] ?? entity.uuid) as string | undefined;
+}
+
+function idOf(entity: PulledEntity): number | undefined {
+    return (entity[":db/id"] ?? entity["db/id"] ?? entity.id) as number | undefined;
+}
+
+function titleOf(entity: PulledEntity): string | undefined {
+    return (entity[":block/title"] ?? entity["block/title"] ?? entity.title) as string | undefined;
+}
+
+function flatEntities(result: unknown): PulledEntity[] {
+    return (result as Array<[PulledEntity]>).map(([entity]) => entity);
+}
+
+function hasEntityWithUuid(result: unknown, uuid: string): boolean {
+    return flatEntities(result).some((entity) => uuidOf(entity) === uuid);
+}
+
+function expectEntityWithUuid(result: unknown, uuid: string): void {
+    expect(hasEntityWithUuid(result, uuid)).toBe(true);
+}
+
+async function createTag(name: string): Promise<PageEntity> {
+    return (await logseq.Editor.createTag(name)) ?? (await logseq.Editor.getTag(name))!;
+}
+
+async function getPropertyIdent(propertyKey: string): Promise<string> {
+    const property = (await logseq.Editor.getProperty(propertyKey)) as PropertyEntity | null;
+    if (!property?.ident) throw new Error(`Property ident not found for ${propertyKey}`);
+    return property.ident;
+}
+
+async function getJournalPageByDay(journalDay: number): Promise<PageEntity> {
+    const result = await logseq.DB.datascriptQuery(
+        JOURNAL_PAGES_IN_RANGE,
+        String(journalDay),
+        String(journalDay)
+    );
+    const entity = flatEntities(result)[0] ?? {};
+    const uuid = uuidOf(entity);
+    const id = idOf(entity);
+    if (!uuid || !id) throw new Error(`Journal page not found for day ${journalDay}`);
+    return {id, uuid} as PageEntity;
+}
+
+describe.skipIf(!shouldRunTests())("Datascript queries documented in skill files", () => {
+    const recursiveParts = RECURSIVE_PAGE_REFERENCE_BACKLINKS.match(
+        /\{:query\s*(\[[\s\S]+\])\s*:rules\s*(\[[\s\S]+\])\s*\}\s*$/
+    );
+    if (!recursiveParts)
+        throw new Error("Recursive backlinks must contain query and rules vectors");
+    const [, recursiveBacklinkQuery, recursiveBacklinkRules] = recursiveParts;
+    let page: PageEntity;
+    let parentTag: PageEntity;
+    let childTag: PageEntity;
+    let archivedTag: PageEntity;
+    let journalPage: PageEntity;
+    let titleBlock: BlockEntity;
+    let backlinkBlock: BlockEntity;
+    let parentTaggedBlock: BlockEntity;
+    let childTaggedBlock: BlockEntity;
+    let actionableTaskBlock: BlockEntity;
+    let archivedTaskBlock: BlockEntity;
+    let indirectBacklinkBlock: BlockEntity;
+    let deepBacklinkBlock: BlockEntity;
+    let diamondBacklinkBlock: BlockEntity;
+    let checkedPropertyIdent: string;
+    let numberPropertyIdent: string;
+    let nodePropertyIdent: string;
+    let priorityPropertyIdent: string;
+    let scheduledPropertyIdent: string;
+
+    beforeAll(async () => {
+        for (const name of [
+            pageName,
+            childTagName,
+            parentTagName,
+            archivedTagName,
+            checkedPropertyKey,
+            numberPropertyKey,
+            nodePropertyKey,
+            priorityPropertyKey,
+            scheduledPropertyKey
+        ])
+            await deletePagePermanently(name);
+        page =
+            (await logseq.Editor.createPage(
+                pageName,
+                {},
+                {redirect: false, createFirstBlock: false}
+            )) ?? (await logseq.Editor.getPage(pageName))!;
+        titleBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            "Skill Query Mixed Case Keyword"
+        ))!;
+        backlinkBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            `References [[${pageName}]] for query tests`
+        ))!;
+        indirectBacklinkBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            `Indirect [[${backlinkBlock.uuid}]]`
+        ))!;
+        deepBacklinkBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            `Deep [[${indirectBacklinkBlock.uuid}]]`
+        ))!;
+        diamondBacklinkBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            `Diamond [[${backlinkBlock.uuid}]] [[${deepBacklinkBlock.uuid}]]`
+        ))!;
+        // Reachable cycle plus a direct edge to the shared page.
+        await logseq.Editor.updateBlock(
+            backlinkBlock.uuid,
+            `References [[${pageName}]] [[${deepBacklinkBlock.uuid}]]`
+        );
+        // An outward edge must not make its target an incoming backlink.
+        await logseq.Editor.appendBlockInPage(page.uuid, `Outgoing only [[${titleBlock.uuid}]]`);
+        parentTaggedBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            "Parent tagged query block"
+        ))!;
+        childTaggedBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            "Child tagged query block"
+        ))!;
+        actionableTaskBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            "Launch actionable task"
+        ))!;
+        archivedTaskBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            "Launch archived task"
+        ))!;
+
+        await logseq.Editor.createJournalPage(scheduledDate);
+        journalPage = await getJournalPageByDay(scheduledDay);
+
+        parentTag = await createTag(parentTagName);
+        childTag = await createTag(childTagName);
+        archivedTag = await createTag(archivedTagName);
+        await logseq.Editor.addTagExtends(childTag.uuid, parentTag.uuid);
+        await logseq.Editor.addBlockTag(parentTaggedBlock.uuid, parentTag.uuid);
+        await logseq.Editor.addBlockTag(childTaggedBlock.uuid, childTag.uuid);
+
+        const taskTag =
+            (await logseq.Editor.createTag("Task")) ?? (await logseq.Editor.getTag("Task"))!;
+        await logseq.Editor.addBlockTag(actionableTaskBlock.uuid, taskTag.uuid);
+        await logseq.Editor.addBlockTag(archivedTaskBlock.uuid, taskTag.uuid);
+        await logseq.Editor.addBlockTag(archivedTaskBlock.uuid, archivedTag.uuid);
+
+        await logseq.Editor.upsertProperty(checkedPropertyKey, {
+            type: "checkbox",
+            cardinality: "one"
+        });
+        await logseq.Editor.upsertProperty(numberPropertyKey, {type: "number", cardinality: "one"});
+        await logseq.Editor.upsertProperty(nodePropertyKey, {type: "node", cardinality: "many"});
+        await logseq.Editor.upsertProperty(priorityPropertyKey, {type: "node", cardinality: "one"});
+        await logseq.Editor.upsertProperty(scheduledPropertyKey, {
+            type: "node",
+            cardinality: "one"
+        });
+
+        checkedPropertyIdent = await getPropertyIdent(checkedPropertyKey);
+        numberPropertyIdent = await getPropertyIdent(numberPropertyKey);
+        nodePropertyIdent = await getPropertyIdent(nodePropertyKey);
+        priorityPropertyIdent = await getPropertyIdent(priorityPropertyKey);
+        scheduledPropertyIdent = await getPropertyIdent(scheduledPropertyKey);
+
+        await logseq.Editor.upsertBlockProperty(
+            actionableTaskBlock.uuid,
+            checkedPropertyKey,
+            true,
+            {
+                reset: true
+            }
+        );
+        await logseq.Editor.upsertBlockProperty(actionableTaskBlock.uuid, numberPropertyKey, 91, {
+            reset: true
+        });
+        await logseq.Editor.upsertBlockProperty(
+            actionableTaskBlock.uuid,
+            nodePropertyKey,
+            [page.id],
+            {
+                reset: true
+            }
+        );
+        await logseq.Editor.upsertBlockProperty(
+            actionableTaskBlock.uuid,
+            priorityPropertyKey,
+            page.id,
+            {reset: true}
+        );
+        await logseq.Editor.upsertBlockProperty(
+            actionableTaskBlock.uuid,
+            scheduledPropertyKey,
+            journalPage.id,
+            {reset: true}
+        );
+        await logseq.Editor.upsertBlockProperty(
+            archivedTaskBlock.uuid,
+            priorityPropertyKey,
+            page.id,
+            {reset: true}
+        );
+        await logseq.Editor.upsertBlockProperty(
+            archivedTaskBlock.uuid,
+            scheduledPropertyKey,
+            journalPage.id,
+            {reset: true}
+        );
+        await logseq.Editor.upsertBlockProperty(
+            archivedTaskBlock.uuid,
+            nodePropertyKey,
+            [page.id],
+            {
+                reset: true
+            }
+        );
+    }, 60_000);
+
+    afterAll(async () => {
+        await deletePagePermanently(pageName);
+        for (const name of [childTagName, parentTagName, archivedTagName])
+            await deletePagePermanently(name);
+        for (const propertyKey of [
+            checkedPropertyKey,
+            numberPropertyKey,
+            nodePropertyKey,
+            priorityPropertyKey,
+            scheduledPropertyKey
+        ]) {
+            await deletePagePermanently(propertyKey);
+        }
+    }, 60_000);
+
+    it("CASE_INSENSITIVE_TITLE_SEARCH.ds finds the known block", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            CASE_INSENSITIVE_TITLE_SEARCH,
+            ednString("(?i)mixed case keyword")
+        );
+
+        expectEntityWithUuid(result, titleBlock.uuid);
+    }, 30_000);
+
+    it("file graph content failure query does not find DB graph block text", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            FILE_GRAPH_BLOCK_CONTENT_FAILS,
+            ednString("(?i)mixed case keyword")
+        );
+
+        expect(hasEntityWithUuid(result, titleBlock.uuid)).toBe(false);
+    }, 30_000);
+
+    it("PAGE_BY_NAME.ds finds the known page", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            PAGE_BY_NAME,
+            ednString(pageName.toLowerCase())
+        );
+
+        expect(flatEntities(result).some((entity) => titleOf(entity) === pageName)).toBe(true);
+    }, 30_000);
+
+    it("PAGE_REFERENCE_BACKLINKS.ds finds the known page reference", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            PAGE_REFERENCE_BACKLINKS,
+            ednString(pageName.toLowerCase())
+        );
+
+        expectEntityWithUuid(result, backlinkBlock.uuid);
+    }, 30_000);
+
+    it("TAG_OR_CHILD_TAG_MATCH.ds finds direct and child tag matches", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            TAG_OR_CHILD_TAG_MATCH,
+            ednString(parentTagName)
+        );
+
+        expectEntityWithUuid(result, parentTaggedBlock.uuid);
+        expectEntityWithUuid(result, childTaggedBlock.uuid);
+    }, 30_000);
+
+    it("TAG_IDENT_MATCH.ds finds blocks tagged with a known built-in tag ident", async () => {
+        const result = await logseq.DB.datascriptQuery(TAG_IDENT_MATCH, ":logseq.class/Task");
+
+        expectEntityWithUuid(result, actionableTaskBlock.uuid);
+        expectEntityWithUuid(result, archivedTaskBlock.uuid);
+    }, 30_000);
+
+    it("ident regex match failure query returns an error", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            IDENT_REGEX_MATCH_FAILS,
+            ednString("(?i)logseq")
+        );
+
+        expect(result).toMatchObject({
+            error: expect.stringContaining("re-find must match against a string")
+        });
+    }, 30_000);
+
+    it("IDENT_SUBSTRING_MATCH.ds finds built-in idents via bound (str ?ident)", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            IDENT_SUBSTRING_MATCH,
+            ednString("(?i)logseq")
+        );
+
+        const rows = result as unknown[];
+        expect(Array.isArray(rows)).toBe(true);
+        expect(rows.length, "expected built-in logseq.* idents").toBeGreaterThan(0);
+        const someMatchedLogseq = rows.some((row) => {
+            const ident = Array.isArray(row) ? row[0] : row;
+            return String(ident).toLowerCase().includes("logseq");
+        });
+        expect(someMatchedLogseq).toBe(true);
+    }, 30_000);
+
+    it("CLASS_TAG_IDENT_SEARCH.ds discovers a built-in class ident by text", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            CLASS_TAG_IDENT_SEARCH,
+            ednString("(?i)task")
+        );
+
+        const entities = flatEntities(result);
+        expect(entities.length).toBeGreaterThan(0);
+        const foundTaskClass = entities.some((entity) => {
+            const ident = String(entity[":db/ident"] ?? entity["db/ident"] ?? entity.ident ?? "");
+            return ident.toLowerCase().includes("task");
+        });
+        expect(foundTaskClass).toBe(true);
+    }, 30_000);
+
+    it("tag text-search failure query does not find DB graph tag refs", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            TAG_TEXT_SEARCH_FAILS,
+            ednString(parentTagName)
+        );
+
+        expect(hasEntityWithUuid(result, parentTaggedBlock.uuid)).toBe(false);
+    }, 30_000);
+
+    it("PUBLIC_PROPERTY_SCHEMAS.ds finds the known property schema", async () => {
+        const result = await logseq.DB.datascriptQuery(PUBLIC_PROPERTY_SCHEMAS);
+
+        expect(flatEntities(result).some((entity) => titleOf(entity) === checkedPropertyKey)).toBe(
+            true
+        );
+    }, 30_000);
+
+    it("JOURNAL_PAGES_IN_RANGE.ds finds the known journal page", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            JOURNAL_PAGES_IN_RANGE,
+            String(scheduledDay),
+            String(scheduledDay)
+        );
+
+        expectEntityWithUuid(result, journalPage.uuid);
+    }, 30_000);
+
+    it("PROPERTY_NODE_LIST_ANY.ds finds the known node-list property value", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            PROPERTY_NODE_LIST_ANY,
+            nodePropertyIdent,
+            `[${ednString(pageName)}]`
+        );
+
+        expectEntityWithUuid(result, actionableTaskBlock.uuid);
+    }, 30_000);
+
+    it("file graph properties-map failure query does not find DB graph properties", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            BLOCK_PROPERTIES_MAP_FAILS,
+            `:${numberPropertyKey}`
+        );
+
+        expect(hasEntityWithUuid(result, actionableTaskBlock.uuid)).toBe(false);
+    }, 30_000);
+
+    it("MIXED_PROPERTY_TYPES_AND_TITLE_SEARCH.ds finds the known mixed-property block", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            MIXED_PROPERTY_TYPES_AND_TITLE_SEARCH,
+            ednString("(?i)launch actionable"),
+            checkedPropertyIdent,
+            numberPropertyIdent,
+            nodePropertyIdent,
+            "80",
+            ednString(pageName)
+        );
+
+        expectEntityWithUuid(result, actionableTaskBlock.uuid);
+    }, 30_000);
+
+    it("TASKS_BY_STATUS_OR_IMPLICIT_TODO.ds finds the known implicit Todo task", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            TASKS_BY_STATUS_OR_IMPLICIT_TODO,
+            `#{${ednString("Todo")}}`
+        );
+
+        expectEntityWithUuid(result, actionableTaskBlock.uuid);
+    }, 30_000);
+
+    it("TASKS_SCHEDULED_IN_RANGE.ds finds the known scheduled task", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            TASKS_SCHEDULED_IN_RANGE,
+            scheduledPropertyIdent,
+            `#{${ednString("Todo")}}`,
+            String(scheduledDay),
+            String(scheduledDay)
+        );
+
+        expectEntityWithUuid(result, actionableTaskBlock.uuid);
+    }, 30_000);
+
+    it("file graph scheduled failure query does not find DB graph scheduled refs", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            BLOCK_SCHEDULED_FAILS,
+            String(scheduledDay),
+            String(scheduledDay)
+        );
+
+        expect(hasEntityWithUuid(result, actionableTaskBlock.uuid)).toBe(false);
+    }, 30_000);
+
+    it("TASKS_PRIORITY_NOT_ARCHIVED.ds includes the known task and excludes archived", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            TASKS_PRIORITY_NOT_ARCHIVED,
+            priorityPropertyIdent,
+            `#{${ednString(pageName)}}`,
+            ednString(archivedTagName)
+        );
+
+        expectEntityWithUuid(result, actionableTaskBlock.uuid);
+        expect(hasEntityWithUuid(result, archivedTaskBlock.uuid)).toBe(false);
+    }, 30_000);
+
+    it("or variable mismatch failure query returns an error", async () => {
+        const result = await logseq.DB.datascriptQuery(OR_VARIABLE_MISMATCH_FAILS);
+
+        expect(result).toMatchObject({
+            error: expect.stringContaining("All clauses in 'or' must use same set of free vars")
+        });
+    }, 30_000);
+
+    it("COMPLEX_ACTIONABLE_TASK_SEARCH.ds finds the known task and excludes archived", async () => {
+        const result = await logseq.DB.datascriptQuery(
+            COMPLEX_ACTIONABLE_TASK_SEARCH,
+            ednString("(?i)launch"),
+            `#{${ednString("Todo")}}`,
+            priorityPropertyIdent,
+            `#{${ednString(pageName)}}`,
+            scheduledPropertyIdent,
+            String(scheduledDay),
+            String(scheduledDay),
+            nodePropertyIdent,
+            `#{${ednString(pageName)}}`,
+            ednString(archivedTagName)
+        );
+
+        expectEntityWithUuid(result, actionableTaskBlock.uuid);
+        expect(hasEntityWithUuid(result, archivedTaskBlock.uuid)).toBe(false);
+    }, 30_000);
+    it("finds deep incoming refs, terminates on a cycle, and deduplicates multiple paths", async () => {
+        const result = await new DataScriptQueryCommand({
+            datalogString: recursiveBacklinkQuery,
+            inputs: [ednString(pageName.toLowerCase()), recursiveBacklinkRules]
+        }).execute();
+        const uuids = flatEntities(result).map(uuidOf);
+        expect(uuids.sort()).toEqual(
+            [
+                backlinkBlock.uuid,
+                indirectBacklinkBlock.uuid,
+                deepBacklinkBlock.uuid,
+                diamondBacklinkBlock.uuid,
+                actionableTaskBlock.uuid,
+                archivedTaskBlock.uuid
+            ].sort()
+        );
+        expect(new Set(uuids).size).toBe(uuids.length);
+        expect(uuids).not.toContain(titleBlock.uuid);
+        const directResult = await new DataScriptQueryCommand({
+            datalogString: PAGE_REFERENCE_BACKLINKS,
+            inputs: [ednString(pageName.toLowerCase())]
+        }).execute();
+        // The shared tasks' node properties also produce page refs in this host.
+        expect(flatEntities(directResult).map(uuidOf).sort()).toEqual(
+            [backlinkBlock.uuid, actionableTaskBlock.uuid, archivedTaskBlock.uuid].sort()
+        );
+    }, 30_000);
+
+    it("returns no rows for an unknown target", async () => {
+        const result = await new DataScriptQueryCommand({
+            datalogString: recursiveBacklinkQuery,
+            inputs: [ednString("test-skill-query-missing"), recursiveBacklinkRules]
+        }).execute();
+        expect(result).toEqual([]);
+    }, 30_000);
+});

@@ -131,14 +131,16 @@ function isAllowedBuiltInChange(originalSource: string, nextSource: string): boo
 
     const originalMatter = matter(originalSource);
     const nextMatter = matter(nextSource);
+    const originalMetadata = {...originalMatter.data};
+    const nextMetadata = {...nextMatter.data};
     if (original.builtInCommandUserControllable) {
-        delete originalMatter.data[COMMAND_FRONTMATTER_KEYS.userInvocable];
-        delete nextMatter.data[COMMAND_FRONTMATTER_KEYS.userInvocable];
+        delete originalMetadata[COMMAND_FRONTMATTER_KEYS.userInvocable];
+        delete nextMetadata[COMMAND_FRONTMATTER_KEYS.userInvocable];
     }
 
     return (
         originalMatter.content === nextMatter.content &&
-        JSON.stringify(originalMatter.data) === JSON.stringify(nextMatter.data)
+        JSON.stringify(originalMetadata) === JSON.stringify(nextMetadata)
     );
 }
 

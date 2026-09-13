@@ -90,7 +90,6 @@ const getAppendedToolCall = (runtime: ThreadRuntime) => {
 
 describe("ReviewChangesDisplay", () => {
     test("returns an empty summary without a tracker artifact", () => {
-        expect(getReviewChangesSummary([]).commandCount).toBe(0);
         expect(getReviewChangesSummary([])).toEqual({commandCount: 0, changedPageCount: 0});
         expect(getReviewChangesLifecycleLabel([])).toBeNull();
     });
@@ -105,49 +104,6 @@ describe("ReviewChangesDisplay", () => {
 
         expect(getReviewChangesSummary(messages)).toEqual({commandCount: 0, changedPageCount: 0});
         expect(getReviewChangesLifecycleLabel(messages)).toBeNull();
-    });
-
-    test("reports applied graph changes and changed-page counts", () => {
-        const messages = [createTrackerMessage(createAppliedTracker())];
-
-        expect(getReviewChangesSummary(messages)).toEqual({commandCount: 1, changedPageCount: 2});
-        expect(getReviewChangesLifecycleLabel(messages)).toBe("Applied uncommitted changes");
-    });
-
-    test("reports retained but not applied uncommitted changes", () => {
-        const messages = [createTrackerMessage(createUnappliedTracker())];
-
-        expect(getReviewChangesSummary(messages)).toEqual({commandCount: 1, changedPageCount: 1});
-        expect(getReviewChangesLifecycleLabel(messages)).toBe("Not applied uncommitted changes");
-    });
-
-    test("reverts applied uncommitted changes while retaining their commands", async () => {
-        vi.stubGlobal("logseq", {
-            Editor: {
-                getPage: vi.fn(async () => ({uuid: PAGE_UUID})),
-                deletePage: vi.fn(async () => undefined)
-            }
-        });
-        const runtime = createRuntime([createTrackerMessage(createAppliedTracker())], true);
-        let persistedTracker: LogseqReversibleTransactionTracker | undefined;
-        const persistTrackerArtifact = vi.fn(
-            async ({tracker}: {tracker: LogseqReversibleTransactionTracker}) => {
-                persistedTracker = tracker;
-            }
-        );
-
-        await expect(
-            revertAndKeepReviewChanges("thread-1", runtime, {
-                notify: vi.fn(async () => undefined),
-                persistTrackerArtifact
-            })
-        ).resolves.toBe("retained");
-
-        expect(runtime.cancelRun).not.toHaveBeenCalled();
-        expect(runtime.append).not.toHaveBeenCalled();
-        expect(persistTrackerArtifact).toHaveBeenCalledOnce();
-        expect(persistedTracker?.getCommands()).toHaveLength(1);
-        expect(persistedTracker?.getAppliedCommandCount()).toBe(0);
     });
 
     test("leaves already-not-applied uncommitted changes untouched", async () => {

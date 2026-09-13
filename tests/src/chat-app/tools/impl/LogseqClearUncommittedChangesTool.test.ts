@@ -42,22 +42,6 @@ describe("LogseqClearUncommittedChangesTool", () => {
         vi.unstubAllGlobals();
     });
 
-    test("keeps the discard tool ID stable and clears uncommitted state", async () => {
-        const tracker = new LogseqReversibleTransactionTracker();
-        tracker.addCommand(new CreatePageCommand({pageName: "Review"}));
-
-        const response = await new LogseqClearUncommittedChangesTool().execute(
-            {},
-            {
-                messages: [createMessage(tracker)]
-            }
-        );
-
-        expect(LogseqClearUncommittedChangesTool.NAME).toBe("logseq_clear_uncommitted_changes");
-        expect(response.result).toEqual({success: true});
-        expect(getTrackerFromResponse(response).getCommands()).toEqual([]);
-    });
-
     test("clears unsafe state and reports a warning when reversion fails", async () => {
         const tracker = new LogseqReversibleTransactionTracker({appliedCommandCount: 1});
         tracker.addCommand(

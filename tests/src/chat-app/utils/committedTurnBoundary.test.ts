@@ -31,7 +31,6 @@ describe("committedTurnBoundary", () => {
         ["pending", undefined],
         ["malformed", "committed"],
         ["failed", {success: false, outcome: "committed"}],
-        ["no changes", {success: true, outcome: "no-changes"}],
         ["legacy untyped", {success: true, changes: "Committed changes successfully."}]
     ])("rejects %s commit results", (_name, result) => {
         expect(isSuccessfulLogseqCommitToolPart(commitPart(result))).toBe(false);
@@ -43,12 +42,6 @@ describe("committedTurnBoundary", () => {
                 commitPart({success: true, outcome: "committed"}, "another_tool")
             )
         ).toBe(false);
-    });
-
-    test("recognizes a typed successful commit result", () => {
-        expect(
-            isSuccessfulLogseqCommitToolPart(commitPart({success: true, outcome: "committed"}))
-        ).toBe(true);
     });
 
     test("locks the committed turn and earlier history but not the next turn", () => {

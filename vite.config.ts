@@ -1,6 +1,7 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import reactPlugin from "@vitejs/plugin-react";
+import {playwright} from "@vitest/browser-playwright";
 import {defineConfig, loadEnv} from "vite";
 import {nodePolyfills} from "vite-plugin-node-polyfills";
 import {bundleJSStringPlugin} from "./vite-plugins/bundleJSStringPlugin";
@@ -49,6 +50,14 @@ export default defineConfig(({mode}) => {
         define: {
             "process.env": JSON.stringify({...env, NODE_ENV: mode})
         },
+        optimizeDeps: {
+            include: [
+                "vite-plugin-node-polyfills/shims/buffer",
+                "vite-plugin-node-polyfills/shims/global",
+                "@radix-ui/react-popper-original",
+                "@radix-ui/react-portal-original"
+            ]
+        },
         server: {
             port: 5173,
             cors: true,
@@ -67,22 +76,68 @@ export default defineConfig(({mode}) => {
             format: "es"
         },
         test: {
-            include: ["**/*.test.ts"],
             exclude: ["**/logseq-dev-plugin/**", "**/node_modules/**"],
+            expect: {
+                poll: {
+                    timeout: 10_000
+                }
+            },
             setupFiles: ["./tests/setup.ts"],
-            environment: "jsdom",
             env: {...env, NODE_ENV: mode},
-            pool: "forks",
-            singleFork: true,
-            fileParallelism: false,
+            fileParallelism: true,
             sequence: {
                 concurrent: false
             },
-            server: {
-                deps: {
-                    inline: [/@floating-ui/]
+            projects: [
+                {
+                    test: {
+                        name: "unit",
+                        environment: "jsdom",
+                        include: [
+                            "tests/**/*.test.{ts,tsx}",
+                            "!tests/**/*.e2e.test.{ts,tsx}",
+                            "!tests/src/chat-app/prompts/**"
+                        ]
+                    }
+                },
+                {
+                    test: {
+                        name: "prompts",
+                        environment: "jsdom",
+                        include: [
+                            "tests/src/chat-app/prompts/**/*.test.{ts,tsx}",
+                            "tests/src/chat-app/prompts/**/*.test.e2e.{ts,tsx}"
+                        ]
+                    }
+                },
+                {
+                    test: {
+                        name: "e2e",
+                        include: ["tests/**/*.e2e.test.{ts,tsx}"],
+                        browser: {
+                            enabled: true,
+                            headless: true,
+                            provider: playwright(),
+                            instances: [
+                                {
+                                    browser: "chromium",
+                                    viewport: {width: 1280, height: 720}
+                                }
+                            ],
+                            screenshotFailures: false,
+                            trace: {
+                                mode: "retain-on-failure",
+                                tracesDir: ".vitest/traces"
+                            }
+                        },
+                        server: {
+                            deps: {
+                                inline: [/@floating-ui/]
+                            }
+                        }
+                    }
                 }
-            }
+            ]
         }
     };
 });

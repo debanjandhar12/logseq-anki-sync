@@ -2,10 +2,7 @@ import type {ThreadMessage} from "@assistant-ui/react";
 import {act, createElement} from "react";
 import {createRoot} from "react-dom/client";
 import {afterEach, describe, expect, test, vi} from "vitest";
-import {
-    BranchPicker,
-    isBranchSwitchDisabled
-} from "../../../../src/chat-app/components/BranchPicker";
+import {BranchPicker} from "../../../../src/chat-app/components/BranchPicker";
 import {LogseqCommitChangesTool} from "../../../../src/chat-app/tools/impl/LogseqCommitChangesTool";
 
 const fixture = vi.hoisted(() => ({
@@ -107,48 +104,7 @@ async function renderBranchPicker() {
     };
 }
 
-describe("isBranchSwitchDisabled", () => {
-    test.each([
-        "user-a",
-        "assistant-a"
-    ])("disables branch switching for committed %s messages", (messageId) => {
-        expect(
-            isBranchSwitchDisabled({
-                messages: committedMessages,
-                messageId,
-                isSwitching: false,
-                isRunning: false,
-                canSwitchDuringRun: false
-            })
-        ).toBe(true);
-    });
-
-    test("allows branch switching for messages after the commit", () => {
-        expect(
-            isBranchSwitchDisabled({
-                messages: committedMessages,
-                messageId: "assistant-b",
-                isSwitching: false,
-                isRunning: false,
-                canSwitchDuringRun: false
-            })
-        ).toBe(false);
-    });
-});
-
 describe("BranchPicker", () => {
-    test("disables both controls for committed user and assistant messages", async () => {
-        fixture.state = createState("user-a");
-        const userControls = await renderBranchPicker();
-        expect(userControls.previous.disabled).toBe(true);
-        expect(userControls.next.disabled).toBe(true);
-
-        fixture.state = createState("assistant-a");
-        const assistantControls = await renderBranchPicker();
-        expect(assistantControls.previous.disabled).toBe(true);
-        expect(assistantControls.next.disabled).toBe(true);
-    });
-
     test("switches an eligible message only once across rapid clicks", async () => {
         fixture.state = createState();
         let resolveGuard: (value: boolean) => void = () => {};

@@ -31,6 +31,7 @@ export const AIChatModalComponent: React.FC<AIChatModalProps> = ({
 
     return (
         <Modal
+            aria-label="AI chat"
             open={open}
             setOpen={setOpen}
             onClose={() => UI.hideModal(modalContext?.modalId)}

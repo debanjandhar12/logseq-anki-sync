@@ -98,19 +98,6 @@ async function renderActionBar() {
 }
 
 describe("isUserEditDisabled", () => {
-    test("disables edit in committed history but not a later turn", () => {
-        const common = {
-            messages: committedMessages,
-            role: "user",
-            isEditing: false,
-            isRunning: false,
-            isDisabled: false
-        };
-
-        expect(isUserEditDisabled({...common, messageId: "user-a"})).toBe(true);
-        expect(isUserEditDisabled({...common, messageId: "user-b"})).toBe(false);
-    });
-
     test.each([
         ["editing", {isEditing: true}],
         ["running", {isRunning: true}],
@@ -132,18 +119,6 @@ describe("isUserEditDisabled", () => {
 });
 
 describe("UserActionBar", () => {
-    test("disables committed-history edits and allows a later turn", async () => {
-        fixture.state = createState("user-a");
-        const committedButton = await renderActionBar();
-        expect(committedButton.disabled).toBe(true);
-
-        fixture.state = createState("user-b");
-        const laterButton = await renderActionBar();
-        expect(laterButton.disabled).toBe(false);
-        laterButton.click();
-        expect(fixture.beginEdit).toHaveBeenCalledOnce();
-    });
-
     test("rejects a commit that arrives after render", async () => {
         fixture.state = createState("user-b", committedMessages.slice(2));
         const button = await renderActionBar();

@@ -8,15 +8,15 @@ This is a Logseq plugin for ai chat using ai-sdk and assistant-ui.
 - **Main Modules:**
   - `src/logseq/` - Logseq API interaction wrappers
   - `src/ui/` - React-based UI components (modals, pages, settings)
-  - `src/chat/` - Chat ui
-  - `src/ai/` - ai sdk wrappers and assistant ui runtimes
+  - `src/chat-app/` - Chat UI, assistant-ui runtimes and tools
+  - `src/core/ai-sdk/` - AI SDK provider configuration and model creation
 
 ## Tech Stack
 
 - **Language:** TypeScript
 - **Build:** Vite with custom plugins for static file inlining and JS bundling
-- **UI Framework:** React 18 with focus-trap-react
-- **Testing:** Vitest with jsdom environment
+- **UI Framework:** React 19 with focus-trap-react
+- **Testing:** Vitest 5 with jsdom unit tests and Playwright Chromium browser e2e tests
 - **Key Libraries:** @logseq/libs, mldoc (logseq markdown parsing), cheerio (HTML manipulation)
 
 ## Architecture
@@ -29,13 +29,16 @@ This is a Logseq plugin for ai chat using ai-sdk and assistant-ui.
 **Test Location:** `tests/` directory with subdirectories matching src structure
 
 **Running Tests:**
-- `pnpm test --run --reporter=dot --silent` - Run all tests
-- `pnpm test getModal.test.ts --run --reporter=dot --silent` - Run specific test file
-- `pnpm test -t "test case name" --run --reporter=dot --silent` - Run specific test case
+- `pnpm test getModal.test.ts --reporter=dot --silent` - Run a specific test file
+- `pnpm test -t "test case name" --reporter=dot --silent` - Run a specific test case
+- `pnpm run test:unit` / `pnpm run test:e2e` / `pnpm run test:prompts` - Run specific test
+- `pnpm run test` - Run e2e and unit tests
+> Keep file parallelism enabled when running tests.
 
 **Testing Approach:**
-- Uses `logseq-proxy` package to proxy @logseq/libs calls to actual HTTP requests against running Logseq instance
+- Uses `tests/helpers/logseq-api-proxy/` to forward Logseq API calls as HTTP requests to a running Logseq instance
 - `tests/setup.ts` configures proxy to http://127.0.0.1:12315 - tests fail with fetch error if Logseq API server isn't running
+- Mark tests that use logseq-api-proxy or playwright as e2e
 
 ## Best Practices
 

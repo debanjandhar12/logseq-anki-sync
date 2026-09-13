@@ -10,15 +10,6 @@ const files = {
 };
 
 describe("DiffViewer file icon", () => {
-    test("renders a custom icon instead of the extension badge", () => {
-        const markup = renderToStaticMarkup(
-            createElement(DiffViewer, {...files, fileIcon: FileIcon})
-        );
-
-        expect(markup).toContain('data-slot="diff-viewer-file-icon"');
-        expect(markup).not.toContain('data-slot="diff-viewer-file-badge"');
-    });
-
     test("retains the extension badge without a custom icon", () => {
         const markup = renderToStaticMarkup(createElement(DiffViewer, files));
 

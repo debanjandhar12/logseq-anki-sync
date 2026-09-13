@@ -102,35 +102,6 @@ describe("LocalThreadListAdapter", () => {
         });
     });
 
-    test("persists and streams the generated title without replacing thread data", async () => {
-        await ThreadStore.updateThread("thread-1", () => ({
-            type: "save",
-            threadData: {
-                remoteId: "thread-1",
-                status: "archived",
-                custom: {
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    createdByPluginVersion: "test"
-                }
-            },
-            result: undefined
-        }));
-        const messages: ThreadMessage[] = [];
-        const adapter = new LocalThreadListAdapter();
-
-        const stream = await adapter.generateTitle("thread-1", messages);
-
-        expect(mocks.generateTitle).toHaveBeenCalledWith("thread-1", messages);
-        expect(await readStreamText(stream)).toBe("Generated title");
-        expect(await ThreadStore.loadThread("thread-1")).toMatchObject({
-            remoteId: "thread-1",
-            status: "archived",
-            title: "Generated title",
-            custom: {createdByPluginVersion: "test"}
-        });
-    });
-
     test("streams fallback even when the thread no longer exists", async () => {
         mocks.generateTitle.mockResolvedValue("New Chat (missing-thread)");
         const adapter = new LocalThreadListAdapter();

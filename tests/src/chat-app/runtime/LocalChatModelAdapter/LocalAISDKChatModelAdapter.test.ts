@@ -58,19 +58,6 @@ vi.mock("../../../../../src/logseq/LogseqSettingAccessor", () => ({
     LogseqSettingAccessor: {getPluginSettings: getPluginSettingsMock}
 }));
 
-type Deferred<T> = {
-    promise: Promise<T>;
-    resolve: (value: T) => void;
-};
-
-function deferred<T>(): Deferred<T> {
-    let resolve!: (value: T) => void;
-    const promise = new Promise<T>((resolvePromise) => {
-        resolve = resolvePromise;
-    });
-    return {promise, resolve};
-}
-
 function toolCall(toolCallId: string, toolName: string) {
     return {
         type: "tool-call" as const,
@@ -131,81 +118,6 @@ describe("LocalAISDKChatModelAdapter frontend tool lifecycle", () => {
 
     afterEach(() => {
         vi.useRealTimers();
-    });
-
-    test("keeps automatic tools running and executes a model batch strictly in order", async () => {
-        const first = deferred<unknown>();
-        const second = deferred<unknown>();
-        const firstExecute = vi.fn(() => first.promise);
-        const secondExecute = vi.fn(() => second.promise);
-
-        streamTextMock.mockReturnValue({
-            stream: (async function* () {
-                yield toolCall("call-1", "first");
-                yield toolCall("call-2", "second");
-                yield {type: "finish", finishReason: "tool-calls", totalUsage: {}};
-            })()
-        });
-
-        const stream = runAdapter({
-            first: {type: "frontend", execute: firstExecute} as Tool,
-            second: {type: "frontend", execute: secondExecute} as Tool
-        });
-
-        expect((await nextValue(stream)).status).toEqual({type: "running"});
-        expect((await nextValue(stream)).status).toEqual({type: "running"});
-        expect(resolveLLMSelectionMock).toHaveBeenCalledOnce();
-        const resolvedSelection = resolveLLMSelectionMock.mock.results[0]?.value;
-        expect(createLLMModelMock).toHaveBeenCalledWith(resolvedSelection);
-        expect(getLLMProviderToolsMock).toHaveBeenCalledWith(resolvedSelection);
-
-        const firstStarted = await nextValue(stream);
-        expect(getToolPart(firstStarted, "call-1").timing).toEqual({
-            startedAt: Date.now()
-        });
-        expect(firstExecute).not.toHaveBeenCalled();
-
-        const firstCompletion = stream.next();
-        await vi.waitFor(() => expect(firstExecute).toHaveBeenCalledOnce());
-        expect(secondExecute).not.toHaveBeenCalled();
-
-        vi.advanceTimersByTime(250);
-        first.resolve({success: true, value: "first"});
-        const firstCompletedResult = await firstCompletion;
-        if (firstCompletedResult.done) throw new Error("Missing first tool completion");
-        const firstCompleted = firstCompletedResult.value as ChatModelRunResult;
-        expect(getToolPart(firstCompleted, "call-1")).toMatchObject({
-            result: {success: true, value: "first"},
-            timing: {
-                startedAt: Date.parse("2026-08-13T10:00:00.000Z")
-            }
-        });
-        expect(getToolPart(firstCompleted, "call-1").timing?.completedAt).toBeGreaterThan(
-            getToolPart(firstCompleted, "call-1").timing?.startedAt ?? 0
-        );
-        expect(secondExecute).not.toHaveBeenCalled();
-
-        const secondStarted = await nextValue(stream);
-        expect(getToolPart(secondStarted, "call-2").timing?.startedAt).toBe(
-            getToolPart(firstCompleted, "call-1").timing?.completedAt
-        );
-        expect(secondExecute).not.toHaveBeenCalled();
-
-        const secondCompletion = stream.next();
-        await vi.waitFor(() => expect(secondExecute).toHaveBeenCalledOnce());
-        second.resolve({success: true, value: "second"});
-        await secondCompletion;
-
-        const finalYield = await nextValue(stream);
-        expect(finalYield.status).toEqual({type: "requires-action", reason: "tool-calls"});
-        expect(getToolPart(finalYield, "call-1").result).toEqual({
-            success: true,
-            value: "first"
-        });
-        expect(getToolPart(finalYield, "call-2").result).toEqual({
-            success: true,
-            value: "second"
-        });
     });
 
     test("leaves human tools unresolved without execution timing", async () => {

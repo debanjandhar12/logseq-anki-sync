@@ -1,3 +1,5 @@
+import type {ToolCallMessagePartComponent} from "@assistant-ui/react";
+import {ToolFallback} from "src/chat-app/components/ToolFallback";
 import type {ChatToolExecutionContext} from "src/chat-app/tools/base/BaseChatTool";
 import {BaseChatToolWithDefaultUI} from "src/chat-app/tools/base/BaseChatToolWithDefaultUI";
 import {
@@ -28,9 +30,14 @@ export class LogseqClearUncommittedChangesTool extends BaseChatToolWithDefaultUI
     static readonly NAME = "logseq_clear_uncommitted_changes";
 
     readonly name = LogseqClearUncommittedChangesTool.NAME;
+    readonly display = "standalone";
     readonly description =
         "Revert applied uncommitted Logseq graph changes made by block/page editing tools and discard all uncommitted changes.";
     readonly parameters = LogseqClearUncommittedChangesArgsZodObj;
+    readonly render: ToolCallMessagePartComponent<
+        LogseqClearUncommittedChangesArgs,
+        LogseqClearUncommittedChangesResult
+    > = (props) => <ToolFallback {...props} />;
 
     async execute(
         _args: LogseqClearUncommittedChangesArgs = {},

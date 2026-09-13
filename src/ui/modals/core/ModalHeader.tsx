@@ -1,4 +1,6 @@
 import type React from "react";
+import {useContext} from "react";
+import {ModalTitleContext} from "./ModalTitleContext";
 
 export interface ModalHeaderProps {
     title: string;
@@ -15,6 +17,7 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
     showCloseButton = true,
     children
 }) => {
+    const titleId = useContext(ModalTitleContext);
     return (
         <>
             {showCloseButton && onClose && (
@@ -47,8 +50,17 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
                     borderBottom: "1px solid var(--ls-border-color)",
                     padding: "8px 12px"
                 }}>
-                <h3 className="title inline-flex items-center" style={{marginTop: "2px"}}>
-                    {icon && <i className="px-1" dangerouslySetInnerHTML={{__html: icon}} />}
+                <h3
+                    id={titleId}
+                    className="title inline-flex items-center"
+                    style={{marginTop: "2px"}}>
+                    {icon && (
+                        <i
+                            aria-hidden="true"
+                            className="px-1"
+                            dangerouslySetInnerHTML={{__html: icon}}
+                        />
+                    )}
                     <strong>{title}</strong>
                 </h3>
             </header>
@@ -60,10 +72,12 @@ export const SimpleModalHeader: React.FC<{title: string; onClose?: () => void}> 
     title,
     onClose
 }) => {
+    const titleId = useContext(ModalTitleContext);
     return (
         <div className="sm:flex sm:items-start">
             <div className="text-center sm:mt-0 sm:mx-4 sm:text-left w-full">
                 <div
+                    id={titleId}
                     className="headline mt-4 text-lg leading-6 font-medium"
                     dangerouslySetInnerHTML={{__html: title}}
                 />

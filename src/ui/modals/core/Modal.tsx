@@ -1,8 +1,9 @@
 import FocusTrap from "focus-trap-react";
 import React, {type PropsWithChildren} from "react";
 import {UI} from "../../UI";
+import {ModalTitleContext} from "./ModalTitleContext";
 
-interface ModalProps {
+interface ModalProps extends Pick<React.AriaAttributes, "aria-label" | "aria-labelledby"> {
     open: boolean;
     setOpen: React.Dispatch<React.SetStateAction<boolean>>;
     onClose?: () => void;
@@ -20,8 +21,11 @@ export function Modal({
     onClose,
     children,
     hasCloseButton = true,
-    className = ""
+    className = "",
+    "aria-label": ariaLabel,
+    "aria-labelledby": ariaLabelledBy
 }: PropsWithChildren<ModalProps>) {
+    const titleId = React.useId();
     // Handle close - calls setOpen(false), onClose callback, and UI.hideModal()
     const handleClose = React.useCallback(() => {
         setOpen(false);
@@ -70,6 +74,10 @@ export function Modal({
                 {/* Modal Panel */}
                 <div
                     ref={panelRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={ariaLabel}
+                    aria-labelledby={ariaLabelledBy ?? (ariaLabel ? undefined : titleId)}
                     tabIndex={-1}
                     className="relative bg-secondary-background border border-border rounded-md shadow-lg z-10 animate-in fade-in-0 zoom-in-95 duration-160 ease-[ease-out] motion-reduce:animate-none"
                     style={style}>
@@ -97,7 +105,9 @@ export function Modal({
                     )}
                     <div
                         className={`${size === "large" || size === "chat" ? "max-h-[90vh]" : "max-h-[75vh]"} ${className}`}>
-                        {children}
+                        <ModalTitleContext.Provider value={titleId}>
+                            {children}
+                        </ModalTitleContext.Provider>
                     </div>
                 </div>
             </div>

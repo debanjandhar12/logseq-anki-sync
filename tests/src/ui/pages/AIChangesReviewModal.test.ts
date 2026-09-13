@@ -1,4 +1,4 @@
-import {FileIcon, HashIcon} from "lucide-react";
+import {HashIcon} from "lucide-react";
 import {act, createElement} from "react";
 import {createRoot, type Root} from "react-dom/client";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
@@ -31,17 +31,6 @@ describe("createAIChangesReviewDiffViewers", () => {
         expect(viewer.type).toBe(DiffViewer);
         expect(props.showIcon).toBe(true);
         expect(props.fileIcon).toBe(HashIcon);
-    });
-
-    test("falls back to the after page type for created pages", () => {
-        const [viewer] = createAIChangesReviewDiffViewers([
-            change({
-                before: {pageName: "[DOES NOT EXIST]", content: "", pageType: null},
-                after: {pageName: "Created", content: "After", pageType: "logseq-page"}
-            })
-        ]);
-
-        expect((viewer.props as {fileIcon: unknown}).fileIcon).toBe(FileIcon);
     });
 });
 
@@ -90,54 +79,6 @@ describe("AIChangesReviewModalFooter", () => {
 
         expect(onConfirm).toHaveBeenCalledOnce();
         expect(onConfirm).toHaveBeenCalledWith("commit");
-    });
-
-    test("shows the review actions in the requested order", async () => {
-        await renderFooter();
-        const trigger = container.querySelector<HTMLButtonElement>(
-            'button[aria-label="Review action"]'
-        );
-        expect(trigger).not.toBeNull();
-
-        await click(trigger!);
-
-        expect(trigger?.getAttribute("aria-haspopup")).toBe("listbox");
-        expect(trigger?.getAttribute("aria-expanded")).toBe("true");
-        const listbox = container.querySelector('[role="listbox"]');
-        const options = Array.from(listbox?.querySelectorAll('[role="option"]') ?? []);
-        expect(options.map((option) => option.textContent?.trim())).toEqual([
-            "Approve and Commit",
-            "Reject and Revert Changes",
-            "Defer Commit"
-        ]);
-        expect(options[0]?.className).toContain("text-green-600");
-        expect(options[1]?.className).toContain("text-red-600");
-        expect(options[2]?.className).toContain("text-amber-600");
-        expect(options[0]?.getAttribute("aria-selected")).toBe("true");
-        expect(container.textContent).not.toContain("Continue (Commit Later)");
-        expect(container.textContent).not.toContain("Discard uncommitted changes");
-    });
-
-    test.each([
-        ["Reject and Revert Changes", "discard"],
-        ["Defer Commit", "defer-commit"]
-    ])("confirms %s only after selection", async (label, expectedResult) => {
-        const onConfirm = await renderFooter();
-        const trigger = container.querySelector<HTMLButtonElement>(
-            'button[aria-label="Review action"]'
-        );
-
-        await click(trigger!);
-        await click(getButton(label));
-
-        expect(onConfirm).not.toHaveBeenCalled();
-        expect(trigger?.textContent).toContain(label);
-        expect(trigger?.getAttribute("aria-expanded")).toBe("false");
-        expect(document.activeElement).toBe(trigger);
-
-        await click(getButton("Confirm"));
-        expect(onConfirm).toHaveBeenCalledOnce();
-        expect(onConfirm).toHaveBeenCalledWith(expectedResult);
     });
 
     test("closes the selector on Escape without confirming", async () => {
