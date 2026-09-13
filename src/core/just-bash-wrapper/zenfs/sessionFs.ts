@@ -24,11 +24,11 @@ export class SessionFileSystem {
     static async init(): Promise<SessionFileSystem> {
         if (this.instance) return this.instance;
         this.initPromise ??= (async () => {
-            const mounts = await this.buildMounts();
+            const {descriptors, mounts} = await this.buildMounts();
             await configure({mounts: {"/": InMemory, ...mounts}});
             await fs.promises.mkdir(JUST_BASH_USER_HOME, {recursive: true});
             await fs.promises.mkdir("/tmp", {recursive: true});
-            this.instance = new SessionFileSystem(mounts);
+            this.instance = new SessionFileSystem(descriptors);
             return this.instance;
         })();
         return this.initPromise;
@@ -44,17 +44,22 @@ export class SessionFileSystem {
         void configure({mounts: {"/": InMemory}});
     }
 
-    private static async buildMounts(): Promise<Record<string, CopyOnWriteFS>> {
+    private static async buildMounts(): Promise<{
+        descriptors: SessionMount[];
+        mounts: Record<string, CopyOnWriteFS>;
+    }> {
+        const descriptors: SessionMount[] = [];
         const mounts: Record<string, CopyOnWriteFS> = {};
         for (const {folderName, permission} of JustBashAdapterFS.getMountDescriptors()) {
             const readable = await createLogseqStorageFs(folderName, permission);
             const writable = new StoreFS(new InMemoryStore());
             const mountPoint = `${JUST_BASH_USER_HOME}/${folderName}`;
+            descriptors.push({folderName, permission, mountPoint});
             mounts[mountPoint] =
                 permission === "readwrite"
                     ? new CopyOnWriteFS(readable, writable)
                     : new (Readonly(CopyOnWriteFS))(readable, writable);
         }
-        return mounts;
+        return {descriptors, mounts};
     }
 }

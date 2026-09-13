@@ -1,13 +1,22 @@
+import {configure, fs, InMemory} from "@zenfs/core";
 import {releaseProxy} from "comlink";
 import type {PyodideInterface} from "pyodide";
+import {ZenFsEmscriptenBridge} from "../zenfs/EmscriptenBridge";
+import {
+    diffSharedFiles,
+    prepareWorkerSharedFiles,
+    readSharedFilesSync
+} from "../zenfs/sharedFiles";
 import type {
     PythonExecutionResult,
+    PythonSharedFile,
     PythonWorkerExecution,
     PythonWorkerFetch
 } from "./workerProtocol";
 
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const PACKAGE_BASE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/";
+const PYODIDE_MOUNT_POINT = "/home/user";
 
 type ReleasableWorkerFetch = PythonWorkerFetch & {[releaseProxy]?: () => void};
 
@@ -96,6 +105,10 @@ export async function executePythonInWorker(
     });
 
     try {
+        await configure({mounts: {"/": InMemory}});
+        await prepareWorkerSharedFiles(execution.files ?? []);
+        await fs.promises.mkdir(PYODIDE_MOUNT_POINT, {recursive: true});
+        const sharedMount = mountSharedFileSystem(pyodide);
         if (!micropipLoaded) {
             await pyodide.loadPackage("micropip");
             micropipLoaded = true;
@@ -110,13 +123,26 @@ export async function executePythonInWorker(
         if (!Number.isInteger(normalizedExitCode)) {
             throw new Error("Python runtime returned an invalid exit code");
         }
-        return {stdout, stderr, exitCode: normalizedExitCode};
+        return {
+            stdout,
+            stderr,
+            exitCode: normalizedExitCode,
+            changedFiles: diffSharedFiles(
+                execution.files ?? [],
+                readSharedFilesSync(PYODIDE_MOUNT_POINT)
+            )
+        };
     } catch (error) {
         appendStdout(stdoutDecoder.decode());
         appendStderr(stderrDecoder.decode());
         const message = error instanceof Error ? error.message : String(error);
         return {stdout, stderr: appendError(stderr, message), exitCode: 1};
     } finally {
+        try {
+            pyodide.FS.unmount(PYODIDE_MOUNT_POINT);
+        } catch {
+            // the worker is discarded after execution anyway
+        }
         globalThis.fetch = originalFetch;
         delete pythonGlobals.fetch;
         try {
@@ -125,6 +151,19 @@ export async function executePythonInWorker(
             // Worker termination remains the authoritative callback cleanup.
         }
     }
+}
+
+function mountSharedFileSystem(pyodide: PyodideInterface): void {
+    try {
+        pyodide.FS.mkdirTree(PYODIDE_MOUNT_POINT);
+    } catch {
+        // EEXIST is fine — the mount attaches over the existing directory
+    }
+    const bridge = new ZenFsEmscriptenBridge(
+        fs,
+        pyodide.FS as unknown as ConstructorParameters<typeof ZenFsEmscriptenBridge>[1]
+    );
+    pyodide.FS.mount(bridge, {root: PYODIDE_MOUNT_POINT}, PYODIDE_MOUNT_POINT);
 }
 
 function createWorkerFetch(hostFetch: PythonWorkerFetch): typeof globalThis.fetch {

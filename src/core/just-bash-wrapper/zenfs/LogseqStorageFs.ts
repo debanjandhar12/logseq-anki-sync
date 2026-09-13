@@ -59,7 +59,13 @@ class FlatLogseqStorageFs extends FileSystem {
                 mode: DIRECTORY_TYPE | directoryModeFor(this.permission),
                 atimeMs: 0,
                 mtimeMs: 0,
-                ctimeMs: 0
+                ctimeMs: 0,
+                birthtimeMs: 0,
+                uid: 0,
+                gid: 0,
+                ino: 0,
+                nlink: 1,
+                rdev: 0
             };
         }
         const content = await this.storedText(path, "stat");
@@ -68,7 +74,13 @@ class FlatLogseqStorageFs extends FileSystem {
             mode: FILE_TYPE | fileModeFor(this.permission),
             atimeMs: 0,
             mtimeMs: 0,
-            ctimeMs: 0
+            ctimeMs: 0,
+            birthtimeMs: 0,
+            uid: 0,
+            gid: 0,
+            ino: 0,
+            nlink: 1,
+            rdev: 0
         };
     }
 

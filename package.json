@@ -62,7 +62,6 @@
         "@uiw/react-codemirror": "^4.25.10",
         "@yellowdig/cljs-tools": "0.2.0",
         "@zenfs/core": "^2.7.4",
-        "@zenfs/emscripten": "^1.0.9",
         "ai": "7.0.50",
         "assistant-stream": "0.3.26",
         "async-lock": "^1.4.1",

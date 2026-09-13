@@ -32,7 +32,8 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
 
     readonly name = BashTool.NAME;
     readonly description =
-        "Run a bash command in an isolated virtual filesystem with no host access. " +
+        "Run a bash command in an isolated in-memory filesystem with no host access. " +
+        "Files created under /home/user persist for the session and are shared with sandboxed Python. " +
         "Sandboxed Python is available through Pyodide, for example: " +
         "`python -c 'print(1 + 1)'`. Install compatible pinned packages with micropip. " +
         `Prior tool results are read-only at ${JUST_BASH_USER_HOME}/${ToolResultStore.groupName}, ` +
@@ -44,10 +45,13 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<BashToolResult>> {
         try {
-            const {stdout, stderr, exitCode} = await JustBashWrapper.getInstance().exec(command, {
-                cwd,
-                signal: context?.abortSignal
-            });
+            const {stdout, stderr, exitCode} = await (await JustBashWrapper.ensureInstance()).exec(
+                command,
+                {
+                    cwd,
+                    signal: context?.abortSignal
+                }
+            );
             if (!Number.isInteger(exitCode)) {
                 throw new Error("Bash returned an invalid exit code");
             }

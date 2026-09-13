@@ -1,18 +1,24 @@
-import {fs, type InodeLike} from "@zenfs/core";
 import type {
     BufferEncoding,
     CpOptions,
-    DirentEntry,
     FileContent,
     FsStat,
     IFileSystem,
     MkdirOptions,
     RmOptions
 } from "just-bash";
+import {fs, type InodeLike} from "@zenfs/core";
 import {JUST_BASH_USER_HOME} from "../types";
 import {encodeStoredText, type FileEncodingOptions} from "../utils/fsContent";
 import {erofsError} from "../utils/fsErrors";
 import {resolveSandboxPath} from "../utils/fsPaths";
+
+type DirentEntry = {
+    name: string;
+    isFile: boolean;
+    isDirectory: boolean;
+    isSymbolicLink: boolean;
+};
 
 const FILE_TYPE = 0o100000;
 const DIRECTORY_TYPE = 0o40000;

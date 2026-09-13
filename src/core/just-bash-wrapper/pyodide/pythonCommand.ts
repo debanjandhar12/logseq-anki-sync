@@ -1,8 +1,5 @@
 import {defineCommand, type ExecResult} from "just-bash";
-import {
-    applySharedFileChanges,
-    snapshotSharedFiles
-} from "../zenfs/sharedFiles";
+import {applySharedFileChanges, snapshotSharedFiles} from "../zenfs/sharedFiles";
 import {executePython} from "./pyodideRuntime";
 
 const HELP = `Usage: python [-c CODE | FILE | -] [ARGS...]

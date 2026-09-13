@@ -103,7 +103,7 @@ function contentEquals(left: Uint8Array | undefined, right: Uint8Array | undefin
 /** Diff the worker filesystem against the snapshot it started from. */
 export function diffSharedFiles(
     snapshot: readonly SharedFileChange[],
-    current: readonly Array<{path: string; content: Uint8Array}>
+    current: ReadonlyArray<{path: string; content: Uint8Array}>
 ): SharedFileChange[] {
     const before = new Map(snapshot.map((file) => [file.path, file.content]));
     const after = new Map(current.map((file) => [file.path, file.content]));
@@ -142,7 +142,7 @@ export async function applySharedFileChanges(
         try {
             chargeBudget(budget, change.path, change.content?.byteLength ?? 0);
             if (change.deleted) {
-                await fs.promises.rm(change.path, {force: true});
+                await fs.promises.rm(change.path, {force: true, recursive: true});
             } else {
                 await fs.promises.writeFile(change.path, change.content as Uint8Array);
             }

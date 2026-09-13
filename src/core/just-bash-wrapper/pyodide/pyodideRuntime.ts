@@ -1,12 +1,12 @@
 import {proxy, releaseProxy, wrap} from "comlink";
 import type {SecureFetch} from "just-bash";
-import PyodideWorker from "./pyodideWorker?worker";
 import type {
     PythonExecutionResult,
     PythonWorkerApi,
     PythonWorkerExecution,
     PythonWorkerFetch
 } from "./workerProtocol";
+import PyodideWorker from "./pyodideWorker?worker";
 
 const STARTUP_TIMEOUT_MS = 30_000;
 const EXECUTION_TIMEOUT_MS = 120_000;
@@ -106,7 +106,8 @@ function createExecution(options: ExecutionOptions): PythonWorkerExecution {
         args: options.args,
         stdin: options.stdin,
         cwd: options.cwd,
-        env: options.env
+        env: options.env,
+        files: options.files
     };
 }
 
