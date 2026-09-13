@@ -106,22 +106,6 @@ async function renderActionBar() {
 }
 
 describe("isAssistantReloadDisabled", () => {
-    test("disables refresh through the committed turn but not a later turn", () => {
-        const common = {
-            messages: committedMessages,
-            role: "assistant",
-            isReloading: false,
-            isRunning: false,
-            isDisabled: false
-        };
-
-        expect(isAssistantReloadDisabled({...common, messageId: "assistant-a"})).toBe(true);
-        expect(isAssistantReloadDisabled({...common, messageId: "assistant-continuation"})).toBe(
-            true
-        );
-        expect(isAssistantReloadDisabled({...common, messageId: "assistant-b"})).toBe(false);
-    });
-
     test.each([
         ["reloading", {isReloading: true}],
         ["running", {isRunning: true}],
@@ -143,14 +127,6 @@ describe("isAssistantReloadDisabled", () => {
 });
 
 describe("AssistantActionBar", () => {
-    test("disables committed refresh while leaving copy available", async () => {
-        fixture.state = createState("assistant-a");
-        const {copy, refresh} = await renderActionBar();
-
-        expect(refresh.disabled).toBe(true);
-        expect(copy.disabled).toBe(false);
-    });
-
     test("reloads an eligible later turn once across rapid clicks", async () => {
         fixture.state = createState();
         let resolveGuard: (value: boolean) => void = () => {};

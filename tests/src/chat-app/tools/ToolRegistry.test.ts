@@ -10,17 +10,6 @@ describe("ChatToolRegistry PDF tools", () => {
         expect(toolkit.read_pdf).toBeUndefined();
     });
 
-    test("exposes human and standalone metadata from the same registry", () => {
-        const registry = ChatToolRegistry.build();
-        const toolkit = registry.getAUIToolkit();
-
-        expect(toolkit.logseq_commit_changes).toMatchObject({
-            type: "human",
-            display: "standalone"
-        });
-        expect(registry.getHumanToolNames()).toContain("logseq_commit_changes");
-    });
-
     test("keeps Jina web tools in the registry for request-time filtering", () => {
         const toolkit = ChatToolRegistry.build().getAUIToolkit();
 

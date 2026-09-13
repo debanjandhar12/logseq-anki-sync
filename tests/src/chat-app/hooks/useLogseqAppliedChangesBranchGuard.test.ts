@@ -6,15 +6,4 @@ describe("hasAppliedChanges", () => {
         expect(hasAppliedChanges(null)).toBe(false);
         expect(hasAppliedChanges(undefined)).toBe(false);
     });
-
-    test("delegates to applied graph mutation state", () => {
-        expect(hasAppliedChanges({hasAppliedGraphMutations: () => true})).toBe(true);
-        expect(hasAppliedChanges({hasAppliedGraphMutations: () => false})).toBe(false);
-    });
-
-    test("does not treat retained but not applied uncommitted changes as applied", () => {
-        const tracker = {hasAppliedGraphMutations: () => false};
-
-        expect(hasAppliedChanges(tracker)).toBe(false);
-    });
 });

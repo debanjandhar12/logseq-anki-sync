@@ -8,12 +8,12 @@ import STATUS_HISTORY from "src/chat-app/prompts/skills/logseq-datascript-querie
 import {DataScriptQueryCommand} from "src/core/logseq-reversible-transaction-tracker/commands/DataScriptQueryCommand";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
 
-const testId = Date.now();
-const pageName = `SkillAliasOriginal_${testId}`;
-const aliasName = `SkillAliasName_${testId}`;
+import {deletePagePermanently} from "../../../helpers/logseq/deletePagePermanently";
+
+const pageName = "test-skill-alias-original";
+const aliasName = "test-skill-alias-name";
 const shouldRunTests = () =>
     globalThis.isLogseqAvailable === true && globalThis.isLogseqCurrentIsDBGraph === true;
-const waitForLogseqDb = () => new Promise((resolve) => setTimeout(resolve, 700));
 const ednString = (value: string) => JSON.stringify(value);
 
 async function runQuery(datalogString: string, ...inputs: string[]): Promise<unknown> {
@@ -38,7 +38,14 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
     const tags: PageEntity[] = [];
     const blocks: BlockEntity[] = [];
     const contentPages: PageEntity[] = [];
-    const rootName = `SkillExampleRoot_${testId}`;
+    const rootName = "test-skill-example-root";
+    const tagNames = [
+        rootName,
+        "test-skill-example-child",
+        "test-skill-example-grandchild",
+        "test-skill-example-great-grandchild",
+        "test-skill-example-unrelated"
+    ];
     const parts = RECURSIVE_CLASS_INHERITANCE.match(
         /\{:query\s*(\[[\s\S]+\])\s*:rules\s*(\[[\s\S]+\])\s*\}\s*$/
     );
@@ -57,8 +64,9 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
     let manyIdent: string;
 
     async function createNodeProperty(suffix: string, cardinality: "one" | "many") {
-        const key = `skill_example_${suffix}_${testId}`;
+        const key = `test-skill-example-${suffix}`;
         propertyKeys.push(key);
+        await deletePagePermanently(key);
         await logseq.Editor.upsertProperty(key, {type: "node", cardinality});
         const property = (await logseq.Editor.getProperty(key)) as
             | (BlockEntity & {ident?: string})
@@ -68,6 +76,7 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
     }
 
     beforeAll(async () => {
+        for (const name of [pageName, aliasName, ...tagNames]) await deletePagePermanently(name);
         page = (await logseq.Editor.createPage(
             pageName,
             {},
@@ -107,13 +116,7 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
         await logseq.Editor.upsertBlockProperty(manyMatch.uuid, many.key, [page.id, alias.id], {
             reset: true
         });
-        for (const name of [
-            rootName,
-            `SkillExampleChild_${testId}`,
-            `SkillExampleGrandchild_${testId}`,
-            `SkillExampleGreatGrandchild_${testId}`,
-            `SkillExampleUnrelated_${testId}`
-        ]) {
+        for (const name of tagNames) {
             const tag = (await logseq.Editor.createTag(name))!;
             tags.push(tag);
             const block = (await logseq.Editor.appendBlockInPage(alias.uuid, `Tagged ${name}`))!;
@@ -145,7 +148,6 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
                     reset: true
                 }
             );
-            await waitForLogseqDb();
         }
         await logseq.Editor.upsertBlockProperty(
             wrongTarget.uuid,
@@ -153,18 +155,16 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
             "Canceled",
             {reset: true}
         );
-        await waitForLogseqDb();
     }, 60_000);
 
     afterAll(async () => {
-        if (page?.uuid) await logseq.Editor.deletePage(page.uuid);
-        if (alias?.uuid) await logseq.Editor.deletePage(alias.uuid);
-        for (const contentPage of contentPages) await logseq.Editor.deletePage(contentPage.uuid);
-        for (const tag of tags.reverse()) await logseq.Editor.deletePage(tag.uuid);
+        await deletePagePermanently(pageName);
+        await deletePagePermanently(aliasName);
+        for (const contentPage of contentPages) await deletePagePermanently(contentPage.uuid);
+        for (const name of [...tagNames].reverse()) await deletePagePermanently(name);
         for (const key of propertyKeys) {
-            if (await logseq.Editor.getProperty(key)) await logseq.Editor.removeProperty(key);
+            await deletePagePermanently(key);
         }
-        await waitForLogseqDb();
     }, 60_000);
 
     it("FIND_ORIGINAL_PAGE_FROM_ALIAS.ds finds the original page rather than the alias", async () => {
@@ -175,9 +175,10 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
 
     it("FIND_EMPTY_CONTENT_PAGES.ds finds only live pages without property values or children", async () => {
         for (const suffix of ["empty", "child", "zero", "false", "node", "tag", "deleted"]) {
+            await deletePagePermanently(`test-skill-empty-content-${suffix}`);
             contentPages.push(
                 (await logseq.Editor.createPage(
-                    `SkillEmptyContent_${suffix}_${testId}`,
+                    `test-skill-empty-content-${suffix}`,
                     {},
                     {redirect: false, createFirstBlock: false}
                 ))!
@@ -190,16 +191,19 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
             ["false", "checkbox", withFalse, false],
             ["node", "node", withNode, page.id]
         ] as const) {
-            const key = `skill_empty_content_${suffix}_${testId}`;
+            const key = `test-skill-empty-content-property-${suffix}`;
             propertyKeys.push(key);
+            await deletePagePermanently(key);
             await logseq.Editor.upsertProperty(key, {type});
             await logseq.Editor.upsertBlockProperty(target.uuid, key, value, {reset: true});
         }
-        const contentTag = (await logseq.Editor.createTag(`SkillEmptyContentTag_${testId}`))!;
+        await deletePagePermanently("test-skill-empty-content-tag-definition");
+        const contentTag = (await logseq.Editor.createTag(
+            "test-skill-empty-content-tag-definition"
+        ))!;
         contentPages.push(contentTag);
         await logseq.Editor.addBlockTag(withTag.uuid, contentTag.uuid);
         await logseq.Editor.deletePage(deleted.uuid);
-        await waitForLogseqDb();
 
         const uuids = entityUuids(await runQuery(FIND_EMPTY_CONTENT_PAGES));
         expect(uuids).toContain(empty.uuid);
@@ -211,7 +215,9 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
         const result = await runQuery(PAGE_MEMBERSHIP, ednString(pageName.toLowerCase()));
         expect(entityUuids(result).sort()).toEqual([top.uuid, nested.uuid].sort());
         expect(entityUuids(result)).not.toContain(backlink.uuid);
-        expect(await runQuery(PAGE_MEMBERSHIP, ednString(`missing_${testId}`))).toEqual([]);
+        expect(await runQuery(PAGE_MEMBERSHIP, ednString("test-skill-example-missing"))).toEqual(
+            []
+        );
     }, 30_000);
 
     it("PROPERTY_REVERSE_LOOKUP.ds matches only the requested property and target", async () => {
@@ -231,12 +237,16 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
         );
         expect(entityUuids(manyResult)).toEqual([manyMatch.uuid]);
         expect(
-            await runQuery(PROPERTY_REVERSE_LOOKUP, oneIdent, ednString(`missing_${testId}`))
+            await runQuery(
+                PROPERTY_REVERSE_LOOKUP,
+                oneIdent,
+                ednString("test-skill-example-missing")
+            )
         ).toEqual([]);
         expect(
             await runQuery(
                 PROPERTY_REVERSE_LOOKUP,
-                `:user.property/missing-${testId}`,
+                ":user.property/test-skill-example-missing",
                 ednString(pageName.toLowerCase())
             )
         ).toEqual([]);
@@ -254,7 +264,11 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
 
     it("returns no rows for an unknown class", async () => {
         expect(
-            await runQuery(inheritanceQuery, ednString(`missing_${testId}`), inheritanceRules)
+            await runQuery(
+                inheritanceQuery,
+                ednString("test-skill-example-missing"),
+                inheritanceRules
+            )
         ).toEqual([]);
     }, 30_000);
 

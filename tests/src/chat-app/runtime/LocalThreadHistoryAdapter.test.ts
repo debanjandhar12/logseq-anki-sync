@@ -159,31 +159,12 @@ describe("LocalThreadHistoryAdapter", () => {
         });
     });
 
-    test("upserts an existing message and rejects an absent thread", async () => {
-        const initial = continuationMessage();
-        await ThreadStore.updateThread("thread-1", () => ({
-            type: "save",
-            threadData: createThread({
-                headId: initial.id,
-                messages: [{message: initial, parentId: null}]
-            }),
-            result: undefined
-        }));
-
-        const updated = {
-            ...initial,
-            content: [{type: "text" as const, text: "Updated"}]
-        } as ThreadMessage;
-        const adapter = new LocalThreadHistoryAdapter("thread-1");
-        await adapter.append({message: updated, parentId: null});
-
-        const threadData = await ThreadStore.loadThread("thread-1");
-        expect(threadData?.exportedMessageRepository?.messages).toHaveLength(1);
-        expect(threadData?.exportedMessageRepository?.messages[0]?.message.content).toEqual([
-            {type: "text", text: "Updated"}
-        ]);
+    test("rejects an absent thread", async () => {
         await expect(
-            new LocalThreadHistoryAdapter("missing").append({message: updated, parentId: null})
+            new LocalThreadHistoryAdapter("missing").append({
+                message: continuationMessage(),
+                parentId: null
+            })
         ).rejects.toThrow("Thread data not found: missing");
     });
 

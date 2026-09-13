@@ -43,6 +43,7 @@ export const AICommandPaletteModalComponent: React.FC<AICommandPaletteModalProps
 
     return (
         <Modal
+            aria-label="AI commands"
             open={open}
             setOpen={setOpen}
             onClose={handleCancel}

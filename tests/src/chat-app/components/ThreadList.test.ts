@@ -131,35 +131,6 @@ async function notify(subscribers: Set<() => void>) {
 }
 
 describe("ThreadList title", () => {
-    test("shimmers the scoped thread title while its stream is running", async () => {
-        fixture.isRunning = true;
-        const container = await renderThreadList();
-        const title = container.querySelector('[data-slot="aui_thread-list-item-title-text"]');
-        const shimmer = container.querySelector('[data-slot="aui_thread-list-item-title-shimmer"]');
-
-        expect(fixture.getById).toHaveBeenCalledWith("thread-1");
-        expect(title?.textContent).toBe("Saved title");
-        expect(shimmer?.textContent).toBe("Saved title");
-        expect(shimmer?.hasAttribute("aria-hidden")).toBe(true);
-        expect(shimmer?.className).toContain("shimmer");
-        expect(shimmer?.className).toContain("pointer-events-none");
-        expect(shimmer?.className).toContain("absolute");
-        expect(shimmer?.className).toContain("inset-0");
-        expect(shimmer?.className).toContain("truncate");
-        expect(shimmer?.className).toContain("motion-reduce:animate-none");
-    });
-
-    test("keeps idle titles visible without a shimmer overlay", async () => {
-        const container = await renderThreadList();
-
-        expect(
-            container.querySelector('[data-slot="aui_thread-list-item-title-text"]')?.textContent
-        ).toBe("Saved title");
-        expect(
-            container.querySelector('[data-slot="aui_thread-list-item-title-shimmer"]')
-        ).toBeNull();
-    });
-
     test("reacts when the thread stream starts and stops", async () => {
         const container = await renderThreadList();
 

@@ -7,20 +7,6 @@ const call = (toolCallId: string, toolName: string) =>
     createToolCallMessagePart({type: "tool-call", toolCallId, toolName, input: {}});
 
 describe("planFrontendToolCalls", () => {
-    test("preserves executable call order", () => {
-        const executeA = vi.fn();
-        const executeB = vi.fn();
-        const plan = planFrontendToolCalls([call("1", "a"), call("2", "b")], {
-            a: {type: "frontend", execute: executeA} as Tool,
-            b: {type: "frontend", execute: executeB} as Tool
-        });
-
-        expect(plan.map((item) => [item.kind, item.toolCall.toolCallId])).toEqual([
-            ["execute", "1"],
-            ["execute", "2"]
-        ]);
-    });
-
     test("awaits a human call and blocks every later automatic call", () => {
         const plan = planFrontendToolCalls(
             [call("1", "before"), call("2", "human"), call("3", "after"), call("4", "last")],

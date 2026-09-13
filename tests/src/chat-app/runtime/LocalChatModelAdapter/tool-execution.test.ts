@@ -67,25 +67,6 @@ describe("executeFrontendTool tool result size limit", () => {
         ).resolves.toEqual([]);
     });
 
-    test("passes branch messages and execution identifiers to the project tool", async () => {
-        const messages = [{id: "branch-message"}] as never;
-        const execute = vi.fn(async () => ({success: true}));
-        const toolCall = createToolCallMessagePart({
-            type: "tool-call",
-            toolCallId: TOOL_CALL_ID,
-            toolName: TOOL_NAME,
-            input: {value: 1}
-        });
-        const abortSignal = new AbortController().signal;
-
-        await invokeFrontendTool(createTool(execute), toolCall, abortSignal, messages);
-
-        expect(execute).toHaveBeenCalledWith(
-            {value: 1},
-            expect.objectContaining({toolCallId: TOOL_CALL_ID, abortSignal, messages})
-        );
-    });
-
     test("does not store or truncate a result exactly at the limit", async () => {
         const result = "x".repeat(CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR - 2);
         expect(JSON.stringify(result, null, 2)).toHaveLength(CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR);

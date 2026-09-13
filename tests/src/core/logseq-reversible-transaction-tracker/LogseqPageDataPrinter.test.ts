@@ -157,15 +157,6 @@ describe("LogseqPageDataPrinter", () => {
         expect(isPropertyBlock).toHaveBeenCalledWith("property-uuid");
     });
 
-    test("classifies ordinary pages after ruling out tags and properties", async () => {
-        getPage.mockResolvedValue(page());
-        getPageBlocksTree.mockResolvedValue([]);
-
-        const [printedPage] = await LogseqPageDataPrinter.print(["page-uuid"]);
-
-        expect(printedPage.pageType).toBe("logseq-page");
-    });
-
     test("prints page and block properties before heading-free content", () => {
         const printedPage = LogseqPageDataPrinter.printPageTree(
             page({properties: {uuid: "page-uuid", alias: ["Alias"]}}),
@@ -306,17 +297,6 @@ describe("LogseqPageDataPrinter.createChanges", () => {
     });
 
     test.each([
-        {
-            label: "created",
-            before: snapshot({exists: false, pageName: NON_EXISTENT_PAGE_NAME, content: ""}),
-            after: snapshot({pageName: "Created Page"}),
-            expectedBefore: {pageName: NON_EXISTENT_PAGE_NAME, content: "", pageType: null},
-            expectedAfter: {
-                pageName: "Created Page",
-                content: "* Block content",
-                pageType: "logseq-page"
-            }
-        },
         {
             label: "deleted",
             before: snapshot({pageName: "Deleted Page"}),

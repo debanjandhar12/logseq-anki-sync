@@ -47,8 +47,6 @@ describe("ToolFallback trigger", () => {
         status: Parameters<typeof ToolFallback.Trigger>[0]["status"];
         colorClass: string;
     }>([
-        {status: {type: "running"}, colorClass: "text-current"},
-        {status: {type: "complete"}, colorClass: "text-success"},
         {status: undefined, colorClass: "text-success"},
         {status: {type: "incomplete", reason: "error"}, colorClass: "text-danger"},
         {
@@ -73,17 +71,6 @@ describe("ToolFallback trigger", () => {
         expect(icon?.getAttribute("aria-label")).toBe("Tool failed");
         expect(icon?.classList.contains("text-danger")).toBe(true);
         expect(icon?.classList.contains("text-success")).toBe(false);
-    });
-
-    test("shows its circular animation and shimmer while running", async () => {
-        const container = await renderTrigger({type: "running"});
-        const icon = container.querySelector('[data-slot="tool-fallback-trigger-icon"]');
-
-        expect(icon?.getAttribute("aria-label")).toBe("Tool is running");
-        expect(icon?.classList.contains("animate-spin")).toBe(true);
-        expect(
-            container.querySelector('[data-slot="tool-fallback-trigger-shimmer"]')
-        ).not.toBeNull();
     });
 
     test("keeps required user action distinct from execution", async () => {

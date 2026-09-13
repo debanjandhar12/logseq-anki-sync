@@ -91,6 +91,7 @@ export const InputModalComponent: React.FC<InputModalProps> = ({
 
     return (
         <Modal
+            aria-label={title || message || "Input"}
             open={open}
             setOpen={setOpen}
             onClose={() => UI.hideModal(modalContext?.modalId)}
