@@ -33,3 +33,4 @@ docusaurus/node_modules/
 /.vitest-attachments/
 .vitest/
 **/__traces__/
+**/__screenshots__/

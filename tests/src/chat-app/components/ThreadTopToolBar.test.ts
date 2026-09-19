@@ -28,7 +28,8 @@ vi.mock("@assistant-ui/react", async () => {
 });
 
 vi.mock("@assistant-ui/react-ai-sdk", () => ({
-    getThreadMessageTokenUsage: () => undefined
+    getThreadMessageTokenUsage: () => undefined,
+    useThreadTokenUsage: () => undefined
 }));
 
 vi.mock("../../../../src/chat-app/export/ChatPageExporter", () => ({

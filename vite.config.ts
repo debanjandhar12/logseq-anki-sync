@@ -50,6 +50,14 @@ export default defineConfig(({mode}) => {
         define: {
             "process.env": JSON.stringify({...env, NODE_ENV: mode})
         },
+        optimizeDeps: {
+            include: [
+                "vite-plugin-node-polyfills/shims/buffer",
+                "vite-plugin-node-polyfills/shims/global",
+                "@radix-ui/react-popper-original",
+                "@radix-ui/react-portal-original"
+            ]
+        },
         server: {
             port: 5173,
             cors: true,
@@ -77,7 +85,12 @@ export default defineConfig(({mode}) => {
                 headless: true,
                 provider: playwright(),
                 instances: [{browser: "chromium"}],
+                screenshotFailures: false,
                 trace: "on"
+            },
+            fileParallelism: true,
+            sequence: {
+                concurrent: false
             },
             server: {
                 deps: {

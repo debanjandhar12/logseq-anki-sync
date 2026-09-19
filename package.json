@@ -118,9 +118,9 @@
         "@types/react": "19.2.6",
         "@types/react-dom": "19.2.3",
         "@vitejs/plugin-react": "^6.0.5",
-        "@vitest/browser": "4.1.11",
-        "@vitest/browser-playwright": "^4.1.11",
-        "@vitest/ui": "4.1.11",
+        "@vitest/browser": "5.0.1",
+        "@vitest/browser-playwright": "^5.0.1",
+        "@vitest/ui": "5.0.1",
         "assert": "^2.0.0",
         "autoprefixer": "^10.4.23",
         "constants-browserify": "^1.0.0",
@@ -139,7 +139,7 @@
         "typescript": "^5.1.6",
         "vite": "^8.2.1",
         "vite-plugin-node-polyfills": "^0.28.0",
-        "vitest": "4.1.11",
+        "vitest": "5.0.1",
         "vm-browserify": "^1.1.2"
     }
 }
