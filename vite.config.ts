@@ -77,6 +77,11 @@ export default defineConfig(({mode}) => {
         },
         test: {
             exclude: ["**/logseq-dev-plugin/**", "**/node_modules/**"],
+            expect: {
+                poll: {
+                    timeout: 10_000
+                }
+            },
             setupFiles: ["./tests/setup.ts"],
             env: {...env, NODE_ENV: mode},
             fileParallelism: true,
@@ -99,7 +104,10 @@ export default defineConfig(({mode}) => {
                     test: {
                         name: "prompts",
                         environment: "jsdom",
-                        include: ["tests/src/chat-app/prompts/**/*.test.{ts,tsx}"]
+                        include: [
+                            "tests/src/chat-app/prompts/**/*.test.{ts,tsx}",
+                            "tests/src/chat-app/prompts/**/*.test.e2e.{ts,tsx}"
+                        ]
                     }
                 },
                 {
@@ -110,7 +118,12 @@ export default defineConfig(({mode}) => {
                             enabled: true,
                             headless: true,
                             provider: playwright(),
-                            instances: [{browser: "chromium"}],
+                            instances: [
+                                {
+                                    browser: "chromium",
+                                    viewport: {width: 1280, height: 720}
+                                }
+                            ],
                             screenshotFailures: false,
                             trace: "retain-on-failure"
                         },

@@ -9,7 +9,6 @@ import {
 } from "../helpers/mountLauncher";
 
 const {createLLMModelMock} = vi.hoisted(() => ({createLLMModelMock: vi.fn()}));
-const LOGSEQ_TOOL_TIMEOUT_MS = 10_000;
 const pageName = `browser-test-${crypto.randomUUID()}`;
 const model = createMultiTurnMockLanguageModel([
     {
@@ -63,13 +62,12 @@ describe("showAIChatModal", () => {
             });
             await annotate("Tool call streamed");
 
-            await vi.waitFor(
-                () => {
-                    expect(mockTurn).toHaveLength(2);
-                    expect(getTextContentInShadowTree(mounted.container)).toContain("Page created");
-                },
-                {timeout: LOGSEQ_TOOL_TIMEOUT_MS}
-            );
+            await expect
+                .poll(() => {
+                    if (mockTurn.length !== 2) return false;
+                    return getTextContentInShadowTree(mounted.container).includes("Page created");
+                })
+                .toBe(true);
             await annotate("Follow-up response rendered");
 
             expect(createLLMModelMock).toHaveBeenCalled();
