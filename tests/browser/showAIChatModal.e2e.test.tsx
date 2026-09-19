@@ -26,25 +26,6 @@ vi.mock("../../src/core/ai-sdk/getLLMModel", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../src/core/ai-sdk/getLLMModel")>()),
     createLLMModel: createLLMModelMock
 }));
-vi.mock("../../src/core/ai-sdk/provider-config/readProviderConfigs", () => ({
-    readProviderConfigs: () => [
-        {
-            uuid: "00000000-0000-4000-8000-000000000001",
-            name: "Test provider",
-            type: "openai-compatible",
-            baseUrl: "https://provider.test/v1",
-            apiKey: "test-key",
-            models: [{id: "test-model", enabled: true}]
-        }
-    ]
-}));
-vi.mock("../../src/logseq/LogseqSettingAccessor", () => ({
-    LogseqSettingAccessor: {
-        getPluginSettings: () => ({jinaApiKey: ""}),
-        registerSettingsChangeListener: () => () => undefined
-    }
-}));
-
 describe("showAIChatModal", () => {
     beforeEach(() => {
         model.doStreamCalls.length = 0;
