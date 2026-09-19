@@ -2,7 +2,11 @@ import {beforeEach, describe, expect, test, vi} from "vitest";
 import {App} from "../../src/chat-app/App";
 import {showAIChatModal} from "../../src/ui/launchers/showAIChatModal";
 import {createMultiTurnMockLanguageModel} from "../helpers/mockLanguageModel";
-import {findInShadowTree, getTextContentInShadowTree, mountLauncher} from "../helpers/mountLauncher";
+import {
+    findInShadowTree,
+    getTextContentInShadowTree,
+    mountLauncher
+} from "../helpers/mountLauncher";
 
 const {createLLMModelMock} = vi.hoisted(() => ({createLLMModelMock: vi.fn()}));
 const LOGSEQ_TOOL_TIMEOUT_MS = 10_000;

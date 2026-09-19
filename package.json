@@ -14,8 +14,8 @@
         "dev": "vite",
         "build": "export NODE_OPTIONS=--max_old_space_size=4096 && vite build",
         "preinstall": "npx only-allow pnpm",
-        "test": "vitest run --exclude tests/src/chat-app/prompts/** --reporter=default --reporter=html --outputFile.html=.vitest/index.html",
-        "test:prompts": "vitest run tests/src/chat-app/prompts",
+        "test": "vitest run --project unit --project e2e --reporter=default --reporter=html --outputFile.html=.vitest/index.html",
+        "test:prompts": "vitest run --project prompts --reporter=default --reporter=html --outputFile.html=.vitest/index.html",
         "check": "biome check",
         "check:fix": "biome check --write"
     },

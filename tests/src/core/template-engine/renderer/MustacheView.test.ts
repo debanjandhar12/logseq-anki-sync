@@ -1,26 +1,10 @@
 import {afterEach, describe, expect, test, vi} from "vitest";
 import {MustacheView} from "../../../../../src/core/template-engine";
+import * as skillListModule from "../../../../../src/core/template-engine/renderer/getModelInvokableSkillListString";
+import * as dateFormatModule from "../../../../../src/core/template-engine/renderer/getUserPreferredDayjsFormat";
+import * as timeZoneModule from "../../../../../src/core/template-engine/renderer/getUserTimeZone";
 import {LogseqEditor} from "../../../../../src/logseq/LogseqEditor";
 import {LogseqSettingAccessor} from "../../../../../src/logseq/LogseqSettingAccessor";
-
-const mocks = vi.hoisted(() => ({
-    getModelInvokableSkillListString: vi.fn(),
-    getUserPreferredDayjsFormat: vi.fn(),
-    getUserTimeZone: vi.fn()
-}));
-
-vi.mock(
-    "../../../../../src/core/template-engine/renderer/getModelInvokableSkillListString",
-    () => ({
-        getModelInvokableSkillListString: mocks.getModelInvokableSkillListString
-    })
-);
-vi.mock("../../../../../src/core/template-engine/renderer/getUserPreferredDayjsFormat", () => ({
-    getUserPreferredDayjsFormat: mocks.getUserPreferredDayjsFormat
-}));
-vi.mock("../../../../../src/core/template-engine/renderer/getUserTimeZone", () => ({
-    getUserTimeZone: mocks.getUserTimeZone
-}));
 
 function mockMustacheViewDependencies() {
     vi.spyOn(LogseqSettingAccessor, "getPluginSettings").mockReturnValue({
@@ -31,9 +15,9 @@ function mockMustacheViewDependencies() {
     vi.spyOn(LogseqEditor, "getCurrentEditingBlock").mockResolvedValue({
         uuid: "block-uuid"
     } as never);
-    mocks.getModelInvokableSkillListString.mockResolvedValue("skills");
-    mocks.getUserPreferredDayjsFormat.mockResolvedValue("YYYY-MM-DD");
-    mocks.getUserTimeZone.mockReturnValue("UTC");
+    vi.spyOn(skillListModule, "getModelInvokableSkillListString").mockResolvedValue("skills");
+    vi.spyOn(dateFormatModule, "getUserPreferredDayjsFormat").mockResolvedValue("YYYY-MM-DD");
+    vi.spyOn(timeZoneModule, "getUserTimeZone").mockReturnValue("UTC");
 }
 
 describe("MustacheView", () => {

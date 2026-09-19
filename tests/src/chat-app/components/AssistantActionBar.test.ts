@@ -29,13 +29,7 @@ vi.mock("@assistant-ui/react", async () => {
                 reload: fixture.reload
             })
         }),
-        useAuiState: (selector: (state: typeof fixture.state) => unknown) =>
-            selector(fixture.state),
-        useAssistantRuntime: () => ({
-            thread: {getState: () => fixture.state.thread}
-        }),
-        useScrollLock: () => () => undefined,
-        useToolCallElapsed: () => 0
+        useAuiState: (selector: (state: typeof fixture.state) => unknown) => selector(fixture.state)
     };
 });
 

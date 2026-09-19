@@ -76,27 +76,52 @@ export default defineConfig(({mode}) => {
             format: "es"
         },
         test: {
-            include: ["**/*.test.{ts,tsx}"],
             exclude: ["**/logseq-dev-plugin/**", "**/node_modules/**"],
             setupFiles: ["./tests/setup.ts"],
             env: {...env, NODE_ENV: mode},
-            browser: {
-                enabled: true,
-                headless: true,
-                provider: playwright(),
-                instances: [{browser: "chromium"}],
-                screenshotFailures: false,
-                trace: "on"
-            },
             fileParallelism: true,
             sequence: {
                 concurrent: false
             },
-            server: {
-                deps: {
-                    inline: [/@floating-ui/]
+            projects: [
+                {
+                    test: {
+                        name: "unit",
+                        environment: "jsdom",
+                        include: [
+                            "tests/**/*.test.{ts,tsx}",
+                            "!tests/**/*.e2e.test.{ts,tsx}",
+                            "!tests/src/chat-app/prompts/**"
+                        ]
+                    }
+                },
+                {
+                    test: {
+                        name: "prompts",
+                        environment: "jsdom",
+                        include: ["tests/src/chat-app/prompts/**/*.test.{ts,tsx}"]
+                    }
+                },
+                {
+                    test: {
+                        name: "e2e",
+                        include: ["tests/**/*.e2e.test.{ts,tsx}"],
+                        browser: {
+                            enabled: true,
+                            headless: true,
+                            provider: playwright(),
+                            instances: [{browser: "chromium"}],
+                            screenshotFailures: false,
+                            trace: "retain-on-failure"
+                        },
+                        server: {
+                            deps: {
+                                inline: [/@floating-ui/]
+                            }
+                        }
+                    }
                 }
-            }
+            ]
         }
     };
 });

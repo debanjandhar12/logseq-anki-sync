@@ -1,24 +1,18 @@
-import {describe, expect, test, vi} from "vitest";
+import {Buffer} from "node:buffer";
+import {TextDecoder, TextEncoder} from "node:util";
+import {beforeAll, describe, expect, test} from "vitest";
 
-const mocks = vi.hoisted(() => ({
-    rebuild: vi.fn(),
-    dispose: vi.fn()
-}));
+const NodeUint8Array = Object.getPrototypeOf(Buffer.prototype).constructor;
+Object.assign(globalThis, {Buffer, TextDecoder, TextEncoder, Uint8Array: NodeUint8Array});
 
-vi.mock("node:path", () => ({dirname: () => "/project"}));
-vi.mock("esbuild", () => ({
-    context: vi.fn(async () => ({rebuild: mocks.rebuild, dispose: mocks.dispose}))
-}));
+let bundleJSStringPlugin: typeof import("../../vite-plugins/bundleJSStringPlugin").bundleJSStringPlugin;
 
-import {bundleJSStringPlugin} from "../../vite-plugins/bundleJSStringPlugin";
-
-(globalThis as typeof globalThis & {__dirname: string}).__dirname = "/project";
+beforeAll(async () => {
+    ({bundleJSStringPlugin} = await import("../../vite-plugins/bundleJSStringPlugin"));
+});
 
 describe("bundleJSStringPlugin", () => {
     test("bundles TypeScript and replaces Vite environment values", async () => {
-        mocks.rebuild.mockResolvedValue({
-            outputFiles: [{text: '(() => { const value = "42:production:true"; })();'}]
-        });
         const plugin = bundleJSStringPlugin("production");
 
         const result = await plugin.transform(
@@ -33,7 +27,6 @@ describe("bundleJSStringPlugin", () => {
         ) as string;
         expect(bundledSource).toContain("42:production:true");
         expect(bundledSource).not.toContain("import.meta.env");
-        expect(mocks.dispose).toHaveBeenCalledOnce();
     });
 
     test("ignores normal JavaScript modules", async () => {
@@ -42,6 +35,5 @@ describe("bundleJSStringPlugin", () => {
         await expect(
             plugin.transform("export const value = 42;", "/project/example.ts")
         ).resolves.toBeUndefined();
-        expect(mocks.rebuild).not.toHaveBeenCalled();
     });
 });
