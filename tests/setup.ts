@@ -1,7 +1,7 @@
 import "@logseq/libs";
 import {beforeAll} from "vitest";
 import {LogseqPluginStorageManager} from "../src/logseq/LogseqPluginStorageManager";
-import {setupLogseqProxy} from "./helpers/setupLogseqProxy";
+import {setupLogseqProxy} from "./helpers/logseq-proxy-wrapper";
 
 // Setup logseq proxy before all test cases run
 setupLogseqProxy();
