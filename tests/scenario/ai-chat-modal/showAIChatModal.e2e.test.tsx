@@ -6,16 +6,7 @@ import {
     getTextContentInShadowTree,
     mountLauncher
 } from "../../helpers/mountLauncher";
-import {createAIChatScenarioTest} from "./fixture";
-
-const {createLLMModelMock} = vi.hoisted(() => ({createLLMModelMock: vi.fn()}));
-
-vi.mock("../../../src/core/ai-sdk/getLLMModel", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../../src/core/ai-sdk/getLLMModel")>()),
-    createLLMModel: createLLMModelMock
-}));
-
-const test = createAIChatScenarioTest(createLLMModelMock);
+import {test} from "./fixture";
 
 describe("showAIChatModal", () => {
     test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
@@ -32,7 +23,10 @@ describe("showAIChatModal", () => {
                 {type: "text", text: "Page created"}
             ]);
             const mockTurn = languageModel.doStreamCalls;
-            const mounted = await mountLauncher(showAIChatModal, <App />);
+            const mounted = await mountLauncher(
+                showAIChatModal,
+                <App chatModelAdapter={model.chatModelAdapter} />
+            );
 
             try {
                 await annotate("Initial chat modal mounted");

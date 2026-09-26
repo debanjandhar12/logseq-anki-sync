@@ -1,4 +1,4 @@
-import type {AssistantRuntime} from "@assistant-ui/react";
+import type {AssistantRuntime, ChatModelAdapter} from "@assistant-ui/react";
 import {
     CompositeAttachmentAdapter,
     SimpleImageAttachmentAdapter,
@@ -16,7 +16,9 @@ import {withRoundtripPersistence} from "./withRoundtripPersistence";
 /**
  * Creates a thread-bound LocalRuntime backed by the AI SDK.
  */
-export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
+export function useThreadBoundLocalAISDKChat(
+    baseChatModelAdapter: ChatModelAdapter = LocalAISDKChatModelAdapter
+): AssistantRuntime {
     const localThreadId = useAuiState((state) => state.threadListItem.id);
     const remoteThreadId = useAuiState((state) => state.threadListItem.remoteId);
     const threadId = remoteThreadId ?? localThreadId;
@@ -34,8 +36,8 @@ export function useThreadBoundLocalAISDKChat(): AssistantRuntime {
     }, []);
 
     const chatModelAdapter = useMemo(
-        () => withRoundtripPersistence(LocalAISDKChatModelAdapter, historyAdapter, threadId),
-        [historyAdapter, threadId]
+        () => withRoundtripPersistence(baseChatModelAdapter, historyAdapter, threadId),
+        [baseChatModelAdapter, historyAdapter, threadId]
     );
 
     return useLocalRuntime(chatModelAdapter, {
