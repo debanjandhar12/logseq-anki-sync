@@ -27,7 +27,7 @@ export class LogseqHttpProxy {
 
     static async init() {
         if (process.env.NODE_ENV === "test"
-            || (await LogseqAppInfoFetcher.checkCurrentIsDbGraph())
+            || !(await LogseqAppInfoFetcher.checkCurrentIsDbGraph())
             || LogseqHttpProxy.originalFetch !== null) {
             return;
         }
