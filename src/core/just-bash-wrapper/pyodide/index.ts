@@ -1,1 +1,1 @@
-export {python3Command, pythonCommand} from "./pythonCommand";
+export {createPythonCommands} from "./createPythonCommands";

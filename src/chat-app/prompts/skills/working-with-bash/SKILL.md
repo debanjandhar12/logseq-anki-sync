@@ -8,7 +8,7 @@ built-in-skill-user-controllable: false
 
 # Working with Bash
 
-The Bash tool runs in an isolated virtual filesystem and cannot access host files. Node.js is unavailable. Use `python` or `python3` to run Python 3.14 in browser-compatible Pyodide:
+The Bash tool runs in an isolated virtual filesystem and cannot access host files. Node.js is unavailable. Use `python`, `python3`, or `py` to run Python 3.14 in browser-compatible Pyodide:
 
 ```bash
 python -c 'print(", ".join(map(str, sorted([3, 1, 2]))))'

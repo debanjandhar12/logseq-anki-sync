@@ -32,7 +32,7 @@ ls /home/user/skills/*/SKILL.md
 
 Scripts in skill folders can be read by Bash or passed to supported interpreters, such as `python /home/user/skills/my-skill/scripts/example.py`. The mount does not provide host execution or new language runtimes. See [Skills](./skills.md) for naming rules, editing, resource save semantics, and built-in updates.
 
-Python 3.14 is available through the `python` and `python3` commands, backed by Pyodide in an isolated Web Worker. It supports `-c`, script files, stdin, command arguments, and top-level `await`.
+Python 3.14 is available through the `python`, `python3`, and `py` commands, backed by Pyodide in an isolated Web Worker. It supports `-c`, script files, stdin, command arguments, and top-level `await`.
 
 The command adapter can load a selected script from the Bash filesystem, but Python receives a separate empty filesystem. Pass Bash file contents through stdin when Python needs to process them, and write generated data to stdout for a later Bash command.
 

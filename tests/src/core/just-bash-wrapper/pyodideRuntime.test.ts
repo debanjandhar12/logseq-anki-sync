@@ -169,4 +169,140 @@ describe("Pyodide worker orchestration", () => {
         });
         expect(releaseWorker.terminate).toHaveBeenCalledOnce();
     });
+
+    test.each([
+        "startup",
+        "execution"
+    ])("cancels during %s and preserves stable diagnostics", async (phase) => {
+        const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
+        const controller = new AbortController();
+        const pending = vi.fn(() => {
+            queueMicrotask(() => controller.abort("custom reason"));
+            return new Promise<never>(() => undefined);
+        });
+        if (phase === "startup") client.ready.mockImplementation(pending);
+        else client.execute.mockImplementation(pending);
+        expect(
+            await executePython({...executionOptions(worker, client), signal: controller.signal})
+        ).toEqual({stdout: "", stderr: "python: execution aborted\n", exitCode: 124});
+        expect(worker.terminate).toHaveBeenCalledOnce();
+        expect(client.release).toHaveBeenCalledOnce();
+        expect(worker.onerror).toBeNull();
+        expect(worker.onmessageerror).toBeNull();
+    });
+
+    test("does not dispatch readiness for pre-aborted input", async () => {
+        const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
+        await executePython({
+            ...executionOptions(worker, client),
+            signal: AbortSignal.abort("reason")
+        });
+        expect(client.ready).not.toHaveBeenCalled();
+        expect(client.execute).not.toHaveBeenCalled();
+        expect(worker.terminate).toHaveBeenCalledOnce();
+    });
+
+    test("timeout aborts pending host fetch and consumes a late operation rejection", async () => {
+        const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
+        let fetchSignal: AbortSignal | undefined;
+        let rejectOperation: (error: Error) => void;
+        const hostFetch: SecureFetch = async (_url, options) => {
+            fetchSignal = options?.signal;
+            return new Promise(() => undefined);
+        };
+        client.execute.mockImplementation((_execution, workerFetch) => {
+            void workerFetch("https://example.com", {});
+            return new Promise((_, reject) => {
+                rejectOperation = reject;
+            });
+        });
+        const result = await executePython({
+            ...executionOptions(worker, client),
+            fetch: hostFetch,
+            executionTimeoutMs: 10
+        });
+        expect(result.exitCode).toBe(124);
+        expect(fetchSignal?.aborted).toBe(true);
+        rejectOperation(new Error("late failure"));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    test("worker message errors and client construction failures clean up", async () => {
+        const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
+        client.ready.mockImplementation(() => {
+            queueMicrotask(() => worker.onmessageerror?.({} as MessageEvent));
+            return new Promise(() => undefined);
+        });
+        expect((await executePython(executionOptions(worker, client))).stderr).toContain(
+            "could not be decoded"
+        );
+        const secondWorker = new FakeWorker();
+        expect(
+            (
+                await executePython({
+                    ...executionOptions(secondWorker, client),
+                    workerClientFactory: () => {
+                        throw new Error("client failed");
+                    }
+                })
+            ).stderr
+        ).toContain("client failed");
+        expect(secondWorker.terminate).toHaveBeenCalledOnce();
+        expect(
+            (
+                await executePython({
+                    ...executionOptions(secondWorker, client),
+                    workerFactory: () => {
+                        throw new Error("worker failed");
+                    }
+                })
+            ).stderr
+        ).toContain("worker failed");
+    });
+
+    test.each([
+        Number.NaN,
+        Number.NEGATIVE_INFINITY
+    ])("rejects invalid deadlines before dispatch: %s", async (duration) => {
+        const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
+        expect(
+            (await executePython({...executionOptions(worker, client), startupTimeoutMs: duration}))
+                .exitCode
+        ).toBe(1);
+        expect(client.ready).not.toHaveBeenCalled();
+        expect(worker.terminate).toHaveBeenCalledOnce();
+    });
+
+    test.each([0, -1])("normalizes immediate deadlines: %s", async (duration) => {
+        const worker = new FakeWorker();
+        const client = new FakeWorkerClient();
+        client.ready.mockImplementation(() => new Promise(() => undefined));
+        expect(
+            (await executePython({...executionOptions(worker, client), startupTimeoutMs: duration}))
+                .exitCode
+        ).toBe(124);
+    });
+
+    test("clears timeout timers and caller listeners on success", async () => {
+        vi.useFakeTimers();
+        try {
+            const worker = new FakeWorker();
+            const client = new FakeWorkerClient();
+            const controller = new AbortController();
+            const remove = vi.spyOn(controller.signal, "removeEventListener");
+            const options = executionOptions(worker, client);
+            delete options.runtimeBaseUrl;
+            expect((await executePython({...options, signal: controller.signal})).exitCode).toBe(0);
+            expect(client.ready).toHaveBeenCalledWith(new URL("pyodide/", document.baseURI).href);
+            expect(remove).toHaveBeenCalledWith("abort", expect.any(Function));
+            expect(vi.getTimerCount()).toBe(0);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
 });

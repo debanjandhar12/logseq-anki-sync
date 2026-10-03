@@ -99,6 +99,7 @@ describe("JustBashWrapper", () => {
         expect((await bash.exec("pwd")).stdout).toBe("/home/user\n");
         expect((await bash.exec("python --help")).stdout).toContain("Usage: python");
         expect((await bash.exec("python3 --help")).stdout).toContain("Usage: python3");
+        expect((await bash.exec("py --help")).stdout).toContain("Usage: py");
         expect((await bash.exec("js-exec '1 + 1'")).exitCode).not.toBe(0);
         expect((await bash.exec("qjs --help")).exitCode).not.toBe(0);
     });

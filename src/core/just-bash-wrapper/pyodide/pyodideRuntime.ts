@@ -1,6 +1,7 @@
 import {proxy, releaseProxy, wrap} from "comlink";
 import type {SecureFetch} from "just-bash";
-import PyodideWorker from "./pyodideWorker?worker";
+import pTimeout, {TimeoutError} from "p-timeout";
+import PyodideWorker from "./worker/pyodideWorker?worker";
 import type {
     PythonExecutionResult,
     PythonWorkerApi,
@@ -30,8 +31,6 @@ interface ExecutionOptions extends PythonWorkerExecution {
     workerClientFactory?: (worker: Worker) => PythonWorkerClient;
 }
 
-class PythonDeadlineError extends Error {}
-
 export async function executePython(options: ExecutionOptions): Promise<PythonExecutionResult> {
     let worker: Worker;
     try {
@@ -49,48 +48,56 @@ export async function executePython(options: ExecutionOptions): Promise<PythonEx
         worker.onerror = ({message}) => reject(new Error(message || "worker failed to start"));
         worker.onmessageerror = () => reject(new Error("worker message could not be decoded"));
     });
-    let client: PythonWorkerClient;
+    let client: PythonWorkerClient | undefined;
     try {
+        const startupTimeout = normalizeTimeout(options.startupTimeoutMs ?? STARTUP_TIMEOUT_MS);
+        const executionTimeout = normalizeTimeout(
+            options.executionTimeoutMs ?? EXECUTION_TIMEOUT_MS
+        );
+        controller.signal.throwIfAborted();
         client = options.workerClientFactory?.(worker) ?? createComlinkClient(worker);
-    } catch (error) {
-        options.signal?.removeEventListener("abort", abort);
-        controller.abort();
-        worker.terminate();
-        return failure(error);
-    }
-
-    try {
-        await withDeadline(
-            client.ready(options.runtimeBaseUrl ?? new URL("pyodide/", document.baseURI).href),
-            options.startupTimeoutMs ?? STARTUP_TIMEOUT_MS,
-            "worker startup timed out",
-            controller.signal,
-            workerError
+        await pTimeout(
+            Promise.race([
+                client.ready(options.runtimeBaseUrl ?? new URL("pyodide/", document.baseURI).href),
+                workerError
+            ]),
+            {
+                milliseconds: startupTimeout,
+                message: "worker startup timed out",
+                signal: controller.signal
+            }
         );
-        return await withDeadline(
-            client.execute(
-                createExecution(options),
-                proxy(createWorkerFetch(options.fetch, controller.signal))
-            ),
-            options.executionTimeoutMs ?? EXECUTION_TIMEOUT_MS,
-            "execution timed out",
-            controller.signal,
-            workerError
+        controller.signal.throwIfAborted();
+        return await pTimeout(
+            Promise.race([
+                client.execute(
+                    createExecution(options),
+                    proxy(createWorkerFetch(options.fetch, controller.signal))
+                ),
+                workerError
+            ]),
+            {
+                milliseconds: executionTimeout,
+                message: "execution timed out",
+                signal: controller.signal
+            }
         );
     } catch (error) {
-        if (error instanceof PythonDeadlineError || controller.signal.aborted) {
+        if (controller.signal.aborted || error instanceof TimeoutError) {
             return {
                 stdout: "",
-                stderr: `python: ${error instanceof Error ? error.message : "execution aborted"}\n`,
+                stderr: `python: ${controller.signal.aborted ? "execution aborted" : (error as TimeoutError).message}\n`,
                 exitCode: 124
             };
         }
         return failure(error);
     } finally {
         options.signal?.removeEventListener("abort", abort);
+        worker.onerror = null;
+        worker.onmessageerror = null;
         controller.abort();
         try {
-            client.release();
+            client?.release();
         } catch {
             // Worker termination remains the authoritative cleanup operation.
         } finally {
@@ -123,36 +130,11 @@ function createWorkerFetch(fetch: SecureFetch, signal: AbortSignal): PythonWorke
     return (url, requestOptions) => fetch(url, {...requestOptions, signal});
 }
 
-function withDeadline<T>(
-    operation: Promise<T>,
-    timeoutMs: number,
-    timeoutMessage: string,
-    signal: AbortSignal,
-    workerError: Promise<never>
-): Promise<T> {
-    return new Promise((resolve, reject) => {
-        let settled = false;
-        const finish = (callback: () => void) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timeout);
-            signal.removeEventListener("abort", handleAbort);
-            callback();
-        };
-        const handleAbort = () =>
-            finish(() => reject(new PythonDeadlineError("execution aborted")));
-        const timeout = setTimeout(
-            () => finish(() => reject(new PythonDeadlineError(timeoutMessage))),
-            timeoutMs
-        );
-        signal.addEventListener("abort", handleAbort, {once: true});
-        if (signal.aborted) handleAbort();
-
-        void Promise.race([operation, workerError]).then(
-            (value) => finish(() => resolve(value)),
-            (error) => finish(() => reject(error))
-        );
-    });
+function normalizeTimeout(milliseconds: number): number {
+    if (Number.isNaN(milliseconds) || milliseconds === Number.NEGATIVE_INFINITY) {
+        throw new Error("Python timeout must be a finite number or positive infinity");
+    }
+    return Math.max(1, milliseconds);
 }
 
 function failure(error: unknown): PythonExecutionResult {
