@@ -1,4 +1,5 @@
 [:find (pull ?p [:block/uuid :block/title :block/name :block/type])
  :in $ ?page-name
  :where
- [?p :block/name ?page-name]]
+ [?p :block/name ?page-name]
+ (not [?p :logseq.property/deleted-at])]

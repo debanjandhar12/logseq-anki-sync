@@ -1,0 +1,18 @@
+;; Find all non-deleted pages with no child blocks and no property values.
+;; Tool inputs: none. Returns [entity] rows with UUID, title, and lowercase name.
+;; Ignore automatic title, timestamps, refs, and the default Page tag.
+;; Other tags and built-in/user/plugin property values count as content, including 0/false.
+[:find (pull ?p [:block/uuid :block/title :block/name])
+ :where
+ [?p :block/name]
+ (not [?p :logseq.property/deleted-at])
+ (not [?child :block/page ?p])
+ (not-join [?p]
+   [?p :block/tags ?tag]
+   (not [?tag :db/ident :logseq.class/Page]))
+ (not-join [?p]
+   [?p ?attribute _]
+   [?property :db/ident ?attribute]
+   [?property :logseq.property/type]
+   [(contains? #{:block/title :block/created-at :block/updated-at :block/refs :block/tags} ?attribute) ?automatic]
+   [(= ?automatic false)])]

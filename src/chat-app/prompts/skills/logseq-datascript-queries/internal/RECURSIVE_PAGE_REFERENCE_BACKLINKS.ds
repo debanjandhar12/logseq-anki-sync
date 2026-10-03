@@ -3,12 +3,21 @@
   :in $ ?page-name %
   :where
   [?p :block/name ?page-name]
+  (not [?p :logseq.property/deleted-at])
   (connected ?p ?b)
   [?b :block/title]]
  :rules
  [
   [(connected ?from ?to)
-   [?to :block/refs ?from]]
+   [?to :block/refs ?from]
+   (not [?to :logseq.property/deleted-at])
+   (not-join [?to]
+     [?to :block/page ?owner]
+     [?owner :logseq.property/deleted-at])]
   [(connected ?from ?to)
    [?intermediate :block/refs ?from]
+   (not [?intermediate :logseq.property/deleted-at])
+   (not-join [?intermediate]
+     [?intermediate :block/page ?owner]
+     [?owner :logseq.property/deleted-at])
    (connected ?intermediate ?to)]]}

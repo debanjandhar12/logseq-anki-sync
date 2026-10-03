@@ -91,6 +91,8 @@ These are real paths in the [read-only Bash sandbox mount](./bash-sandbox.md), n
 
 The built-in `logseq-datascript-queries` skill includes `examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds` for resolving an alias to its original page and `references/query-pitfalls.md` for debugging failing or unexpected queries. The pitfalls guide is a reference read on demand with Bash. Internal queries are embedded in the skill instructions and debugging reference at build time.
 
+It also includes `examples/FIND_EMPTY_CONTENT_PAGES.ds` to find non-deleted pages with no child blocks or property values. Automatic metadata and the default Page tag are ignored; other tags and property values, including `0` and `false`, count as content. The page lookup, journal range, backlink, alias, page membership, and property reverse-lookup examples explicitly exclude soft-deleted pages. Backlink queries also check owning pages, because blocks under deleted pages can retain references without their own deletion marker.
+
 ## Built-in updates
 
 Initialization compares the complete built-in folder's paths and contents, ignoring only the root instruction file's `disable-model-invocation` preference. An unchanged bundle performs no writes and preserves that preference. Any other instruction or resource change reinstalls the bundled folder, removes extra files, and resets invocation to the bundled default. Obsolete valid built-in folders are removed recursively; user-owned or malformed occupied folders are preserved.

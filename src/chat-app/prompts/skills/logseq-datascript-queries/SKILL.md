@@ -25,6 +25,7 @@ This skill is only for DB graphs. File graph syntax is included only as migratio
 - Never assume a property ident. Discover it first with the property-schema query printed below, `Editor.getProperty`, or an existing property entity returned by Logseq.
 - Never assume a property value type. Inspect `:logseq.property/type` before choosing string, number, boolean, ref/node, date, or datetime query clauses.
 - Use lowercase values with `:block/name`. Use `:block/title` for display casing.
+- Raw queries do not automatically exclude soft-deleted pages. For active pages, add `(not [?p :logseq.property/deleted-at])`. For returned blocks, also exclude their own deletion marker and any owning `:block/page` with a deletion marker; children of a deleted page may have no marker themselves.
 - Use regex for case-insensitive text search. Put `(?i)` in the regex string input, not in a hardcoded clause.
 - Use `or-join` and `not-join` when branches do not bind the same local variables.
 - Prefer narrow pull patterns such as `[:block/uuid :block/title]`; avoid `(pull ?b [*])` unless the user explicitly needs full entity data.
@@ -109,6 +110,7 @@ Use these DB graph attributes:
 - Property schema type: `:logseq.property/type`
 - Property ident: `:db/ident`
 - Journal day: `:block/journal-day`, stored as `YYYYMMDD` integer
+- Soft-deletion marker: `:logseq.property/deleted-at`
 - Task status property: `:logseq.property/status`
 - Task priority property: often `:logseq.property/priority`, but still verify before using
 
@@ -149,7 +151,7 @@ Inputs:
 
 ### 2. Page by Lowercase Name
 
-Use for exact page lookup. The input must be lowercase.
+Use for exact non-deleted page lookup. The input must be lowercase.
 
 ```clojure
 <% #includeFile %>internal/PAGE_BY_NAME.ds<% /includeFile %>
@@ -163,7 +165,7 @@ Inputs:
 
 ### 3. Page Reference Backlinks
 
-Use for blocks that reference a page.
+Use for live entities that reference a non-deleted page. Blocks owned by deleted pages are excluded too.
 
 ```clojure
 <% #includeFile %>internal/PAGE_REFERENCE_BACKLINKS.ds<% /includeFile %>
@@ -354,7 +356,17 @@ Find direct/transitive **incoming** `:block/refs`, not page members (`:block/pag
 
 Use the `:query` vector as `datalogString`, not the map. Inputs, in `:in` order: EDN-quoted lowercase page name (e.g. `"\"project alpha\""`), then the `:rules` vector as **one EDN string input** for `%`. Preserve symbols; do not double-quote the vector or use a separate `rules` tool field.
 
-Returns unique reachable entities, not paths/depth; cycles can include the target itself. Unknown pages return no rows. Large connected graphs can be expensive despite narrow pulls; use direct backlinks for one hop.
+Returns unique reachable entities, not paths/depth; cycles can include the target itself. Unknown/deleted pages return no rows. Deleted entities and blocks owned by deleted pages are excluded, including intermediate hops. Large connected graphs can be expensive despite narrow pulls; use direct backlinks for one hop.
+
+## Empty Content Pages
+
+Find all non-deleted pages with no child blocks and no property values:
+
+```clojure
+<% #includeFile %>examples/FIND_EMPTY_CONTENT_PAGES.ds<% /includeFile %>
+```
+
+Inputs: none. Automatic title, timestamps, references, and the default Page tag do not count as content. Other tags and built-in/user/plugin property values do count, including `0` and `false`. Property values are detected through their schema idents and types, rather than file-graph `:block/properties` maps.
 
 ## Result Handling
 

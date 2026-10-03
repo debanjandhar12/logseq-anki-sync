@@ -1,4 +1,5 @@
 import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
+import FIND_EMPTY_CONTENT_PAGES from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/FIND_EMPTY_CONTENT_PAGES.ds?raw";
 import FIND_ORIGINAL_PAGE_FROM_ALIAS from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds?raw";
 import PAGE_MEMBERSHIP from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/PAGE_MEMBERSHIP.ds?raw";
 import PROPERTY_REVERSE_LOOKUP from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/PROPERTY_REVERSE_LOOKUP.ds?raw";
@@ -36,6 +37,7 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
     const propertyKeys: string[] = [];
     const tags: PageEntity[] = [];
     const blocks: BlockEntity[] = [];
+    const contentPages: PageEntity[] = [];
     const rootName = `SkillExampleRoot_${testId}`;
     const parts = RECURSIVE_CLASS_INHERITANCE.match(
         /\{:query\s*(\[[\s\S]+\])\s*:rules\s*(\[[\s\S]+\])\s*\}\s*$/
@@ -157,6 +159,7 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
     afterAll(async () => {
         if (page?.uuid) await logseq.Editor.deletePage(page.uuid);
         if (alias?.uuid) await logseq.Editor.deletePage(alias.uuid);
+        for (const contentPage of contentPages) await logseq.Editor.deletePage(contentPage.uuid);
         for (const tag of tags.reverse()) await logseq.Editor.deletePage(tag.uuid);
         for (const key of propertyKeys) {
             if (await logseq.Editor.getProperty(key)) await logseq.Editor.removeProperty(key);
@@ -168,6 +171,40 @@ describe.skipIf(!shouldRunTests())("Datascript example queries", () => {
         const result = await runQuery(queryForAlias(aliasName));
         expect(entityUuids(result)).toContain(page.uuid);
         expect(entityUuids(result)).not.toContain(alias.uuid);
+    }, 30_000);
+
+    it("FIND_EMPTY_CONTENT_PAGES.ds finds only live pages without property values or children", async () => {
+        for (const suffix of ["empty", "child", "zero", "false", "node", "tag", "deleted"]) {
+            contentPages.push(
+                (await logseq.Editor.createPage(
+                    `SkillEmptyContent_${suffix}_${testId}`,
+                    {},
+                    {redirect: false, createFirstBlock: false}
+                ))!
+            );
+        }
+        const [empty, withChild, withZero, withFalse, withNode, withTag, deleted] = contentPages;
+        await logseq.Editor.appendBlockInPage(withChild.uuid, "Child content");
+        for (const [suffix, type, target, value] of [
+            ["zero", "number", withZero, 0],
+            ["false", "checkbox", withFalse, false],
+            ["node", "node", withNode, page.id]
+        ] as const) {
+            const key = `skill_empty_content_${suffix}_${testId}`;
+            propertyKeys.push(key);
+            await logseq.Editor.upsertProperty(key, {type});
+            await logseq.Editor.upsertBlockProperty(target.uuid, key, value, {reset: true});
+        }
+        const contentTag = (await logseq.Editor.createTag(`SkillEmptyContentTag_${testId}`))!;
+        contentPages.push(contentTag);
+        await logseq.Editor.addBlockTag(withTag.uuid, contentTag.uuid);
+        await logseq.Editor.deletePage(deleted.uuid);
+        await waitForLogseqDb();
+
+        const uuids = entityUuids(await runQuery(FIND_EMPTY_CONTENT_PAGES));
+        expect(uuids).toContain(empty.uuid);
+        for (const nonEmpty of [withChild, withZero, withFalse, withNode, withTag, deleted])
+            expect(uuids).not.toContain(nonEmpty.uuid);
     }, 30_000);
 
     it("PAGE_MEMBERSHIP.ds includes nested members and excludes external backlinks", async () => {

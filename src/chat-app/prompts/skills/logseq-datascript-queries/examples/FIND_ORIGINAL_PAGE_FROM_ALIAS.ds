@@ -4,4 +4,6 @@
  :where
  [?p :block/alias ?val]
  [?val :block/title "another name"]
+ (not [?p :logseq.property/deleted-at])
+ (not [?val :logseq.property/deleted-at])
  ]}

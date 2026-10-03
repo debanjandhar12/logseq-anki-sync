@@ -3,9 +3,15 @@
 ;; Discover the exact property ident and verify its node/ref type first.
 ;; Supports cardinality-one/many; matches neither other properties nor ordinary backlinks.
 ;; Target uses lowercase page name. Returns [entity] rows with UUID and title.
+;; Excludes deleted targets/entities and blocks owned by deleted pages.
 [:find (pull ?b [:block/uuid :block/title])
  :in $ ?property-ident ?page-name
  :where
  [?p :block/name ?page-name]
+ (not [?p :logseq.property/deleted-at])
  [?b ?property-ident ?p]
- [?b :block/title]]
+ [?b :block/title]
+ (not [?b :logseq.property/deleted-at])
+ (not-join [?b]
+   [?b :block/page ?owner]
+   [?owner :logseq.property/deleted-at])]

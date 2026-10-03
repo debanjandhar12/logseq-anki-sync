@@ -1,9 +1,11 @@
 ;; Owned blocks, including nested blocks; external backlinks do not count.
 ;; Tool inputs (JSON): ["\"project alpha\""] -- lowercase page name.
-;; Returns [entity] rows with UUID and title; unknown pages return no rows.
+;; Returns [entity] rows with UUID and title; unknown/deleted pages return no rows.
 [:find (pull ?b [:block/uuid :block/title])
  :in $ ?page-name
  :where
  [?p :block/name ?page-name]
+ (not [?p :logseq.property/deleted-at])
  [?b :block/page ?p]
- [?b :block/title]]
+ [?b :block/title]
+ (not [?b :logseq.property/deleted-at])]
