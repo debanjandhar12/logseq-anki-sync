@@ -1,5 +1,4 @@
-import QUERY_TAG_TEXT_SEARCH_FAILS_RAW from "../../chat-app/prompts/queries/TAG_TEXT_SEARCH_FAILS.ds?raw";
-import QUERY_TASKS_SCHEDULED_IN_RANGE_RAW from "../../chat-app/prompts/queries/TASKS_SCHEDULED_IN_RANGE.ds?raw";
+import QUERY_FIND_ORIGINAL_PAGE_FROM_ALIAS_RAW from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds?raw";
 import SKILL_LOGSEQ_DATASCRIPT_QUERIES_RAW from "../../chat-app/prompts/skills/logseq-datascript-queries/SKILL.md?inlineSkill";
 import SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW from "../../chat-app/prompts/skills/logseq-datascript-query-pitfalls/SKILL.md?inlineSkill";
 import SKILL_LOGSEQ_PROPERTIES_AND_TAGS_RAW from "../../chat-app/prompts/skills/logseq-properties-and-tags/SKILL.md?inlineSkill";
@@ -14,9 +13,8 @@ import type {BundledSkill} from "../stores/skill-store/types";
 const BUILT_IN_SKILLS: BundledSkill[] = [
     {
         content: SKILL_LOGSEQ_DATASCRIPT_QUERIES_RAW,
-        references: {
-            "TASKS_SCHEDULED_IN_RANGE.ds": QUERY_TASKS_SCHEDULED_IN_RANGE_RAW,
-            "TAG_TEXT_SEARCH_FAILS.ds": QUERY_TAG_TEXT_SEARCH_FAILS_RAW
+        examples: {
+            "FIND_ORIGINAL_PAGE_FROM_ALIAS.ds": QUERY_FIND_ORIGINAL_PAGE_FROM_ALIAS_RAW
         }
     },
     ...[

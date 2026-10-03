@@ -103,7 +103,7 @@ export class SkillStore {
         SkillStore.parseContent(content);
         const files = {...previousFiles};
         files["SKILL.md"] = content;
-        for (const category of ["references", "scripts"] as const) {
+        for (const category of ["references", "examples", "scripts"] as const) {
             const resources = options[category];
             if (resources === undefined) continue;
             if (resources === null || typeof resources !== "object" || Array.isArray(resources)) {

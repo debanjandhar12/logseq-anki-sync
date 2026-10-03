@@ -21,6 +21,7 @@ export type SkillFolderFiles = Record<string, string>;
 
 export interface SaveSkillFileOptions {
     references?: SkillResourceFiles;
+    examples?: SkillResourceFiles;
     scripts?: SkillResourceFiles;
 }
 

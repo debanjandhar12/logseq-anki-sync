@@ -44,12 +44,14 @@ describe("SkillStore", () => {
     test("preserves omitted resources and replaces supplied categories", async () => {
         await SkillStore.saveSkillFile(content(), {
             references: {"nested/info.md": "reference", ".hidden": "hidden"},
+            examples: {"nested/query.ds": "example"},
             scripts: {"run.sh": "script"}
         });
         const edited = content().replace("Instructions", "Edited");
         await SkillStore.saveSkillFile(edited);
         expect(await SkillStore.getSkillFiles("example")).toEqual({
             "SKILL.md": edited,
+            "examples/nested/query.ds": "example",
             "references/nested/info.md": "reference",
             "references/.hidden": "hidden",
             "scripts/run.sh": "script"
@@ -57,10 +59,23 @@ describe("SkillStore", () => {
         await SkillStore.saveSkillFile(edited, {references: {"new.ds": "query"}});
         expect(await SkillStore.listSkillFiles("example")).toEqual([
             "SKILL.md",
+            "examples/nested/query.ds",
             "references/new.ds",
             "scripts/run.sh"
         ]);
         await SkillStore.saveSkillFile(edited, {scripts: {}});
+        expect(await SkillStore.listSkillFiles("example")).toEqual([
+            "SKILL.md",
+            "examples/nested/query.ds",
+            "references/new.ds"
+        ]);
+        await SkillStore.saveSkillFile(edited, {examples: {"alias.ds": "alias query"}});
+        expect(await SkillStore.getSkillFiles("example")).toEqual({
+            "SKILL.md": edited,
+            "examples/alias.ds": "alias query",
+            "references/new.ds": "query"
+        });
+        await SkillStore.saveSkillFile(edited, {examples: {}});
         expect(await SkillStore.listSkillFiles("example")).toEqual([
             "SKILL.md",
             "references/new.ds"

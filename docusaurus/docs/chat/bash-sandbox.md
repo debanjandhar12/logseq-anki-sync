@@ -12,6 +12,8 @@ Skills use this layout:
 ```text
 /home/user/skills/<name>/
 ├── SKILL.md
+├── examples/
+│   └── query.ds
 ├── references/
 │   └── example.md
 └── scripts/
@@ -22,7 +24,7 @@ The skill tool advertises the virtual base directory and up to ten sorted resour
 
 ```bash
 find /home/user/skills/logseq-datascript-queries -type f
-cat /home/user/skills/logseq-datascript-queries/references/TASKS_SCHEDULED_IN_RANGE.ds
+cat /home/user/skills/logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds
 ls /home/user/skills/*/SKILL.md
 ```
 

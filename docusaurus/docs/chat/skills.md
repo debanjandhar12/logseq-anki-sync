@@ -8,6 +8,8 @@ Skills give the chat assistant specialized instructions that it can load on dema
 ```text
 skills/my-skill/
 ├── SKILL.md
+├── examples/
+│   └── query.ds
 ├── references/
 │   └── nested/example.md
 └── scripts/
@@ -36,7 +38,7 @@ Instructions for the assistant go here.
 
 ## Editing, renaming, and deleting
 
-Open the **Skills Editor** from plugin settings to create or edit skills. It edits only `SKILL.md`; references and scripts are not editable or uploadable through this UI. New skills start with an unused valid name such as `new-skill` or `new-skill-2`. Inline diagnostics and save validation enforce the same metadata rules, and duplicate skill names are rejected.
+Open the **Skills Editor** from plugin settings to create or edit skills. It edits only `SKILL.md`; references, examples, and scripts are not editable or uploadable through this UI. New skills start with an unused valid name such as `new-skill` or `new-skill-2`. Inline diagnostics and save validation enforce the same metadata rules, and duplicate skill names are rejected.
 
 Changing a user skill's frontmatter name renames its folder. Edits and renames preserve all current resource files, including nested files. Deleting a skill removes its entire folder and resources. Saving preflights the batch and writes destinations before removing obsolete source folders, supporting name swaps without losing resources. On a storage failure, the store attempts to restore affected folders and the editor retains the draft for retry; a nontransactional backend cannot guarantee atomic recovery if restoration also fails.
 
@@ -44,11 +46,12 @@ Built-in skills cannot be renamed, deleted, or have their instructions edited in
 
 ## Text resources and programmatic saves
 
-The `SkillStore.saveSkillFile(content, {references, scripts})` API accepts maps of resource-relative paths to text:
+The `SkillStore.saveSkillFile(content, {references, examples, scripts})` API accepts maps of resource-relative paths to text:
 
 ```ts
 await SkillStore.saveSkillFile(content, {
     references: {"nested/example.md": "Reference text"},
+    examples: {"query.ds": "[:find ?title :where [?p :block/title ?title]]"},
     scripts: {"example.py": "print('hello')"}
 });
 ```
@@ -86,7 +89,7 @@ python /home/user/skills/my-skill/scripts/example.py
 
 These are real paths in the [read-only Bash sandbox mount](./bash-sandbox.md), never host storage paths. Mounts refresh before each Bash tool execution, so editor additions, renames, and deletions are immediately discoverable. Scripts run only through interpreters already supported by the sandbox. Python has a separate filesystem; pass resource contents through stdin when a Python script needs them.
 
-The built-in `logseq-datascript-queries` skill includes exactly two references: `references/TASKS_SCHEDULED_IN_RANGE.ds` and `references/TAG_TEXT_SEARCH_FAILS.ds`.
+The built-in `logseq-datascript-queries` skill includes `examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds` for resolving an alias to its original page. Internal queries are embedded in the skill instructions at build time.
 
 ## Built-in updates
 

@@ -1,6 +1,5 @@
+import aliasQuery from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds?raw";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
-import tagSearch from "../../../../src/chat-app/prompts/queries/TAG_TEXT_SEARCH_FAILS.ds?raw";
-import scheduledTasks from "../../../../src/chat-app/prompts/queries/TASKS_SCHEDULED_IN_RANGE.ds?raw";
 import {initBuiltInSkillFiles} from "../../../../src/core/skill-init/initBuiltInSkillFiles";
 import {parseSkillFile} from "../../../../src/core/skill-parser";
 import {SkillStore} from "../../../../src/core/stores/skill-store/SkillStore";
@@ -14,7 +13,7 @@ describe("initBuiltInSkillFiles", () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
-    test("installs seven matching folders and only the two requested query references", async () => {
+    test("installs seven matching folders and the alias query example", async () => {
         await initBuiltInSkillFiles();
         const skills = await SkillStore.getAllSkills();
         expect(skills).toHaveLength(7);
@@ -24,12 +23,10 @@ describe("initBuiltInSkillFiles", () => {
         }
         const paths = await Storage.getFiles("skills");
         expect(paths.filter((path) => !path.endsWith("/SKILL.md")).sort()).toEqual([
-            "logseq-datascript-queries/references/TAG_TEXT_SEARCH_FAILS.ds",
-            "logseq-datascript-queries/references/TASKS_SCHEDULED_IN_RANGE.ds"
+            "logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds"
         ]);
         expect(await SkillStore.getSkillFiles("logseq-datascript-queries")).toMatchObject({
-            "references/TASKS_SCHEDULED_IN_RANGE.ds": scheduledTasks,
-            "references/TAG_TEXT_SEARCH_FAILS.ds": tagSearch
+            "examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds": aliasQuery
         });
         const bash = await SkillStore.getSkill("working-with-bash");
         expect(bash?.content).toContain("micropip");
@@ -38,6 +35,12 @@ describe("initBuiltInSkillFiles", () => {
         expect(bash?.content).not.toContain("qjs");
         expect((await SkillStore.getSkill("logseq-datascript-queries"))?.content).not.toContain(
             "includeFile"
+        );
+        expect((await SkillStore.getSkill("logseq-datascript-queries"))?.content).toContain(
+            "[?b :block/title ?title]"
+        );
+        expect((await SkillStore.getSkill("logseq-datascript-query-pitfalls"))?.content).toContain(
+            "[?b :block/content ?content]"
         );
     });
 
@@ -92,19 +95,18 @@ describe("initBuiltInSkillFiles", () => {
         if (change === "edit")
             await Storage.saveFile(
                 `skills/${name}`,
-                "references/TASKS_SCHEDULED_IN_RANGE.ds",
+                "examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds",
                 "changed"
             );
         if (change === "remove")
-            await Storage.deleteFile(`skills/${name}`, "references/TAG_TEXT_SEARCH_FAILS.ds");
+            await Storage.deleteFile(`skills/${name}`, "examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds");
         if (change === "add")
             await Storage.saveFile(`skills/${name}`, "auxiliary/deep/extra.txt", "extra");
         await initBuiltInSkillFiles();
         expect((await SkillStore.getSkill(name))?.content).toBe(original);
         expect(await SkillStore.listSkillFiles(name)).toEqual([
             "SKILL.md",
-            "references/TAG_TEXT_SEARCH_FAILS.ds",
-            "references/TASKS_SCHEDULED_IN_RANGE.ds"
+            "examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds"
         ]);
     });
 

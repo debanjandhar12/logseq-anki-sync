@@ -1,0 +1,6 @@
+;; Find original page which has alias another name
+{:query [:find (pull ?p [*])
+ :where
+ [?p :block/alias ?val]
+ [?val :block/title "another name"]
+ ]}
