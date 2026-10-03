@@ -94,6 +94,8 @@ export default {
                         "hsl(var(--destructive-foreground, 210 40% 98%))"
                     )
                 },
+                success: logseqColor("--rx-green-09", "#30a46c"),
+                danger: logseqColor("--rx-red-09", "#e5484d"),
                 muted: {
                     DEFAULT: mutedColor,
                     foreground: logseqColor(

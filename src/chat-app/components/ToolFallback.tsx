@@ -26,6 +26,7 @@ import {CollapsibleTrigger} from "src/shadcn/radix-ui/collapsible";
  * (a) Decomposed to customize Lucide icons
  * (b) Keeps required-action tools expanded without exposing unsupported generic approval controls
  * (c) Uses explicit accessible labels for execution and action-required states
+ * (d) Uses Logseq success/danger colors for results, keeping cancelled tools muted
  */
 const ToolFallbackImpl: ToolCallMessagePartComponent = ({
     toolName,
@@ -64,6 +65,13 @@ const statusIconMap: Record<ToolStatus, React.ElementType> = {
     complete: CircleCheckIcon,
     incomplete: CircleXIcon,
     "requires-action": CircleAlertIcon
+};
+
+const statusIconColorMap: Record<ToolStatus, string> = {
+    running: "text-current",
+    complete: "text-success",
+    incomplete: "text-danger",
+    "requires-action": "text-current"
 };
 
 const formatToolDuration = (milliseconds: number) => {
@@ -127,7 +135,11 @@ function ToolFallbackTrigger({
                 data-slot="tool-fallback-trigger-icon"
                 className={cn(
                     "aui-tool-fallback-trigger-icon size-4 shrink-0",
-                    isCancelled && "text-muted-foreground",
+                    isError
+                        ? "text-danger"
+                        : isCancelled
+                          ? "text-muted-foreground"
+                          : statusIconColorMap[statusType],
                     isRunning && "animate-spin"
                 )}
             />

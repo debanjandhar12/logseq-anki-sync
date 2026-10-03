@@ -16,7 +16,10 @@ afterEach(async () => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = false;
 });
 
-async function renderTrigger(status: Parameters<typeof ToolFallback.Trigger>[0]["status"]) {
+async function renderTrigger(
+    status: Parameters<typeof ToolFallback.Trigger>[0]["status"],
+    isError = false
+) {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true;
     const container = document.createElement("div");
     document.body.append(container);
@@ -30,7 +33,8 @@ async function renderTrigger(status: Parameters<typeof ToolFallback.Trigger>[0][
                 null,
                 createElement(ToolFallback.Trigger, {
                     toolName: "test_tool",
-                    status
+                    status,
+                    isError
                 })
             )
         );
@@ -39,6 +43,38 @@ async function renderTrigger(status: Parameters<typeof ToolFallback.Trigger>[0][
 }
 
 describe("ToolFallback trigger", () => {
+    test.each<{
+        status: Parameters<typeof ToolFallback.Trigger>[0]["status"];
+        colorClass: string;
+    }>([
+        {status: {type: "running"}, colorClass: "text-current"},
+        {status: {type: "complete"}, colorClass: "text-success"},
+        {status: undefined, colorClass: "text-success"},
+        {status: {type: "incomplete", reason: "error"}, colorClass: "text-danger"},
+        {
+            status: {type: "requires-action", reason: "interrupt"},
+            colorClass: "text-current"
+        },
+        {
+            status: {type: "incomplete", reason: "cancelled"},
+            colorClass: "text-muted-foreground"
+        }
+    ])("uses $colorClass for status $status", async ({status, colorClass}) => {
+        const container = await renderTrigger(status);
+        const icon = container.querySelector('[data-slot="tool-fallback-trigger-icon"]');
+
+        expect(icon?.classList.contains(colorClass)).toBe(true);
+    });
+
+    test("uses the error color instead of the completed tool color for failed results", async () => {
+        const container = await renderTrigger({type: "complete"}, true);
+        const icon = container.querySelector('[data-slot="tool-fallback-trigger-icon"]');
+
+        expect(icon?.getAttribute("aria-label")).toBe("Tool failed");
+        expect(icon?.classList.contains("text-danger")).toBe(true);
+        expect(icon?.classList.contains("text-success")).toBe(false);
+    });
+
     test("shows its circular animation and shimmer while running", async () => {
         const container = await renderTrigger({type: "running"});
         const icon = container.querySelector('[data-slot="tool-fallback-trigger-icon"]');

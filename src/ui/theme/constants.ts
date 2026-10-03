@@ -39,6 +39,8 @@ export const LOGSEQ_THEME_VARIABLES = [
     "--ls-secondary-text-opacity",
 
     // Semantic text colors
+    "--rx-green-09",
+    "--rx-red-09",
     "--ls-title-text-color",
     "--ls-link-text-color",
     "--ls-link-text-hover-color",
