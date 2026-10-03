@@ -1,0 +1,21 @@
+;; Direct tags and arbitrary-depth subclasses; returns unique [entity] rows.
+;; For the plugin tool, use the :query vector as datalogString. Ordered inputs:
+;; EDN-quoted exact class/tag title, then the :rules vector as one EDN string for %.
+;; Verify ambiguous titles; do not pass this map or a separate rules tool field.
+{:query
+ [:find (pull ?b [:block/uuid :block/title])
+  :in $ ?tag-title %
+  :where
+  [?target :block/title ?tag-title]
+  (or-join [?b ?target]
+    [?b :block/tags ?target]
+    (and
+      (subclass ?cls ?target)
+      [?b :block/tags ?cls]))]
+ :rules
+ [
+  [(subclass ?child ?ancestor)
+   [?child :logseq.property.class/extends ?ancestor]]
+  [(subclass ?child ?ancestor)
+   [?child :logseq.property.class/extends ?parent]
+   (subclass ?parent ?ancestor)]]}

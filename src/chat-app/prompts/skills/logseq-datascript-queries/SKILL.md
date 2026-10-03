@@ -344,6 +344,18 @@ Inputs:
 "\"archived\""
 ```
 
+## Recursive Backlinks
+
+Find direct/transitive **incoming** `:block/refs`, not page members (`:block/page`) or arbitrary node-property relationships.
+
+```clojure
+<% #includeFile %>internal/RECURSIVE_PAGE_REFERENCE_BACKLINKS.ds<% /includeFile %>
+```
+
+Use the `:query` vector as `datalogString`, not the map. Inputs, in `:in` order: EDN-quoted lowercase page name (e.g. `"\"project alpha\""`), then the `:rules` vector as **one EDN string input** for `%`. Preserve symbols; do not double-quote the vector or use a separate `rules` tool field.
+
+Returns unique reachable entities, not paths/depth; cycles can include the target itself. Unknown pages return no rows. Large connected graphs can be expensive despite narrow pulls; use direct backlinks for one hop.
+
 ## Result Handling
 
 The tool returns rows from Logseq. Pull queries commonly return `[[entity] [entity]]`. Scalar queries return rows like `[["title"]]` or `[[5]]`.
@@ -352,4 +364,4 @@ When you need only entities, flatten one level in caller code. When you use aggr
 
 ## Debugging reference
 
-When a query fails, returns no rows, or behaves unexpectedly, use Bash to read `<% &virEnvUserPath %>/skills/logseq-datascript-queries/references/query-pitfalls.md` for debugging it. 
+When a query fails, returns no rows, or behaves unexpectedly, use Bash to read `<% &virEnvUserPath %>/skills/logseq-datascript-queries/references/query-pitfalls.md` for debugging it.

@@ -1,4 +1,8 @@
 import QUERY_FIND_ORIGINAL_PAGE_FROM_ALIAS_RAW from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds?raw";
+import QUERY_PAGE_MEMBERSHIP_RAW from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/PAGE_MEMBERSHIP.ds?raw";
+import QUERY_PROPERTY_REVERSE_LOOKUP_RAW from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/PROPERTY_REVERSE_LOOKUP.ds?raw";
+import QUERY_RECURSIVE_CLASS_INHERITANCE_RAW from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/RECURSIVE_CLASS_INHERITANCE.ds?raw";
+import QUERY_STATUS_HISTORY_RAW from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/STATUS_HISTORY.ds?raw";
 import REFERENCE_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW from "../../chat-app/prompts/skills/logseq-datascript-queries/references/query-pitfalls.md?inlineSkill";
 import SKILL_LOGSEQ_DATASCRIPT_QUERIES_RAW from "../../chat-app/prompts/skills/logseq-datascript-queries/SKILL.md?inlineSkill";
 import SKILL_LOGSEQ_PROPERTIES_AND_TAGS_RAW from "../../chat-app/prompts/skills/logseq-properties-and-tags/SKILL.md?inlineSkill";
@@ -17,7 +21,11 @@ const BUILT_IN_SKILLS: BundledSkill[] = [
             "query-pitfalls.md": REFERENCE_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW
         },
         examples: {
-            "FIND_ORIGINAL_PAGE_FROM_ALIAS.ds": QUERY_FIND_ORIGINAL_PAGE_FROM_ALIAS_RAW
+            "FIND_ORIGINAL_PAGE_FROM_ALIAS.ds": QUERY_FIND_ORIGINAL_PAGE_FROM_ALIAS_RAW,
+            "PAGE_MEMBERSHIP.ds": QUERY_PAGE_MEMBERSHIP_RAW,
+            "PROPERTY_REVERSE_LOOKUP.ds": QUERY_PROPERTY_REVERSE_LOOKUP_RAW,
+            "RECURSIVE_CLASS_INHERITANCE.ds": QUERY_RECURSIVE_CLASS_INHERITANCE_RAW,
+            "STATUS_HISTORY.ds": QUERY_STATUS_HISTORY_RAW
         }
     },
     ...[

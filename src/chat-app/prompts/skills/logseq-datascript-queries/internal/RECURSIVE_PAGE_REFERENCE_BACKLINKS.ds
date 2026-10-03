@@ -1,0 +1,14 @@
+{:query
+ [:find (pull ?b [:block/uuid :block/title])
+  :in $ ?page-name %
+  :where
+  [?p :block/name ?page-name]
+  (connected ?p ?b)
+  [?b :block/title]]
+ :rules
+ [
+  [(connected ?from ?to)
+   [?to :block/refs ?from]]
+  [(connected ?from ?to)
+   [?intermediate :block/refs ?from]
+   (connected ?intermediate ?to)]]}

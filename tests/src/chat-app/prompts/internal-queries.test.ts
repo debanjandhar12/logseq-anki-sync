@@ -14,12 +14,14 @@ import PAGE_BY_NAME from "src/chat-app/prompts/skills/logseq-datascript-queries/
 import PAGE_REFERENCE_BACKLINKS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/PAGE_REFERENCE_BACKLINKS.ds?raw";
 import PROPERTY_NODE_LIST_ANY from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/PROPERTY_NODE_LIST_ANY.ds?raw";
 import PUBLIC_PROPERTY_SCHEMAS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/PUBLIC_PROPERTY_SCHEMAS.ds?raw";
+import RECURSIVE_PAGE_REFERENCE_BACKLINKS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/RECURSIVE_PAGE_REFERENCE_BACKLINKS.ds?raw";
 import TAG_IDENT_MATCH from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TAG_IDENT_MATCH.ds?raw";
 import TAG_OR_CHILD_TAG_MATCH from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TAG_OR_CHILD_TAG_MATCH.ds?raw";
 import TAG_TEXT_SEARCH_FAILS from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TAG_TEXT_SEARCH_FAILS.ds?raw";
 import TASKS_BY_STATUS_OR_IMPLICIT_TODO from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TASKS_BY_STATUS_OR_IMPLICIT_TODO.ds?raw";
 import TASKS_PRIORITY_NOT_ARCHIVED from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TASKS_PRIORITY_NOT_ARCHIVED.ds?raw";
 import TASKS_SCHEDULED_IN_RANGE from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/TASKS_SCHEDULED_IN_RANGE.ds?raw";
+import {DataScriptQueryCommand} from "src/core/logseq-reversible-transaction-tracker/commands/DataScriptQueryCommand";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
 
 type PulledEntity = Record<string, unknown>;
@@ -93,6 +95,12 @@ async function getJournalPageByDay(journalDay: number): Promise<PageEntity> {
 }
 
 describe.skipIf(!shouldRunTests())("Datascript queries documented in skill files", () => {
+    const recursiveParts = RECURSIVE_PAGE_REFERENCE_BACKLINKS.match(
+        /\{:query\s*(\[[\s\S]+\])\s*:rules\s*(\[[\s\S]+\])\s*\}\s*$/
+    );
+    if (!recursiveParts)
+        throw new Error("Recursive backlinks must contain query and rules vectors");
+    const [, recursiveBacklinkQuery, recursiveBacklinkRules] = recursiveParts;
     let page: PageEntity;
     let parentTag: PageEntity;
     let childTag: PageEntity;
@@ -104,6 +112,9 @@ describe.skipIf(!shouldRunTests())("Datascript queries documented in skill files
     let childTaggedBlock: BlockEntity;
     let actionableTaskBlock: BlockEntity;
     let archivedTaskBlock: BlockEntity;
+    let indirectBacklinkBlock: BlockEntity;
+    let deepBacklinkBlock: BlockEntity;
+    let diamondBacklinkBlock: BlockEntity;
     let checkedPropertyIdent: string;
     let numberPropertyIdent: string;
     let nodePropertyIdent: string;
@@ -125,6 +136,25 @@ describe.skipIf(!shouldRunTests())("Datascript queries documented in skill files
             page.uuid,
             `References [[${pageName}]] for query tests`
         ))!;
+        indirectBacklinkBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            `Indirect [[${backlinkBlock.uuid}]]`
+        ))!;
+        deepBacklinkBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            `Deep [[${indirectBacklinkBlock.uuid}]]`
+        ))!;
+        diamondBacklinkBlock = (await logseq.Editor.appendBlockInPage(
+            page.uuid,
+            `Diamond [[${backlinkBlock.uuid}]] [[${deepBacklinkBlock.uuid}]]`
+        ))!;
+        // Reachable cycle plus a direct edge to the shared page.
+        await logseq.Editor.updateBlock(
+            backlinkBlock.uuid,
+            `References [[${pageName}]] [[${deepBacklinkBlock.uuid}]]`
+        );
+        // An outward edge must not make its target an incoming backlink.
+        await logseq.Editor.appendBlockInPage(page.uuid, `Outgoing only [[${titleBlock.uuid}]]`);
         parentTaggedBlock = (await logseq.Editor.appendBlockInPage(
             page.uuid,
             `Parent tagged query block ${testId}`
@@ -474,5 +504,40 @@ describe.skipIf(!shouldRunTests())("Datascript queries documented in skill files
 
         expectEntityWithUuid(result, actionableTaskBlock.uuid);
         expect(hasEntityWithUuid(result, archivedTaskBlock.uuid)).toBe(false);
+    }, 30_000);
+    it("finds deep incoming refs, terminates on a cycle, and deduplicates multiple paths", async () => {
+        const result = await new DataScriptQueryCommand({
+            datalogString: recursiveBacklinkQuery,
+            inputs: [ednString(pageName.toLowerCase()), recursiveBacklinkRules]
+        }).execute();
+        const uuids = flatEntities(result).map(uuidOf);
+        expect(uuids.sort()).toEqual(
+            [
+                backlinkBlock.uuid,
+                indirectBacklinkBlock.uuid,
+                deepBacklinkBlock.uuid,
+                diamondBacklinkBlock.uuid,
+                actionableTaskBlock.uuid,
+                archivedTaskBlock.uuid
+            ].sort()
+        );
+        expect(new Set(uuids).size).toBe(uuids.length);
+        expect(uuids).not.toContain(titleBlock.uuid);
+        const directResult = await new DataScriptQueryCommand({
+            datalogString: PAGE_REFERENCE_BACKLINKS,
+            inputs: [ednString(pageName.toLowerCase())]
+        }).execute();
+        // The shared tasks' node properties also produce page refs in this host.
+        expect(flatEntities(directResult).map(uuidOf).sort()).toEqual(
+            [backlinkBlock.uuid, actionableTaskBlock.uuid, archivedTaskBlock.uuid].sort()
+        );
+    }, 30_000);
+
+    it("returns no rows for an unknown target", async () => {
+        const result = await new DataScriptQueryCommand({
+            datalogString: recursiveBacklinkQuery,
+            inputs: [ednString(`missing_${testId}`), recursiveBacklinkRules]
+        }).execute();
+        expect(result).toEqual([]);
     }, 30_000);
 });

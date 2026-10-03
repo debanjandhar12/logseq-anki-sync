@@ -1,4 +1,9 @@
 import aliasQuery from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds?raw";
+import pageMembership from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/PAGE_MEMBERSHIP.ds?raw";
+import propertyReverseLookup from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/PROPERTY_REVERSE_LOOKUP.ds?raw";
+import recursiveInheritance from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/RECURSIVE_CLASS_INHERITANCE.ds?raw";
+import statusHistory from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/STATUS_HISTORY.ds?raw";
+import recursiveBacklinks from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/RECURSIVE_PAGE_REFERENCE_BACKLINKS.ds?raw";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {VIR_ENV_USER_PATH} from "../../../../src/constants";
 import {initBuiltInSkillFiles} from "../../../../src/core/skill-init/initBuiltInSkillFiles";
@@ -8,6 +13,15 @@ import {parseTemplateString} from "../../../../src/core/template-engine/renderer
 import {LogseqPluginStorageManager as Storage} from "../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
 
+const expectedExamples = {
+    "examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds": aliasQuery,
+    "examples/PAGE_MEMBERSHIP.ds": pageMembership,
+    "examples/PROPERTY_REVERSE_LOOKUP.ds": propertyReverseLookup,
+    "examples/RECURSIVE_CLASS_INHERITANCE.ds": recursiveInheritance,
+    "examples/STATUS_HISTORY.ds": statusHistory
+};
+const expectedResources = [...Object.keys(expectedExamples), "references/query-pitfalls.md"].sort();
+
 describe("initBuiltInSkillFiles", () => {
     beforeEach(() => {
         InMemoryStore.clearAll();
@@ -15,7 +29,7 @@ describe("initBuiltInSkillFiles", () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
-    test("installs six matching folders with the alias example and debugging reference", async () => {
+    test("installs six matching folders with exact query examples, rules, and debugging reference", async () => {
         await initBuiltInSkillFiles();
         const skills = await SkillStore.getAllSkills();
         expect(skills).toHaveLength(6);
@@ -24,13 +38,12 @@ describe("initBuiltInSkillFiles", () => {
             expect(skill.builtInSkill).toBe(true);
         }
         const paths = await Storage.getFiles("skills");
-        expect(paths.filter((path) => !path.endsWith("/SKILL.md")).sort()).toEqual([
-            "logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds",
-            "logseq-datascript-queries/references/query-pitfalls.md"
-        ]);
-        expect(await SkillStore.getSkillFiles("logseq-datascript-queries")).toMatchObject({
-            "examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds": aliasQuery
-        });
+        expect(paths.filter((path) => !path.endsWith("/SKILL.md")).sort()).toEqual(
+            expectedResources.map((path) => `logseq-datascript-queries/${path}`)
+        );
+        expect(await SkillStore.getSkillFiles("logseq-datascript-queries")).toMatchObject(
+            expectedExamples
+        );
         const bash = await SkillStore.getSkill("working-with-bash");
         expect(bash?.content).toContain("micropip");
         expect(bash?.content).toContain("scipy==1.18.0");
@@ -42,6 +55,10 @@ describe("initBuiltInSkillFiles", () => {
         expect((await SkillStore.getSkill("logseq-datascript-queries"))?.content).toContain(
             "[?b :block/title ?title]"
         );
+        const querySkill = (await SkillStore.getSkill("logseq-datascript-queries"))!;
+        expect(querySkill.content).toContain(recursiveBacklinks.trim());
+        expect(querySkill.content).not.toContain(statusHistory.trim());
+        expect(querySkill.content).not.toContain(recursiveInheritance.trim());
         const reference = (await SkillStore.getSkillFiles("logseq-datascript-queries"))[
             "references/query-pitfalls.md"
         ];
@@ -118,11 +135,7 @@ describe("initBuiltInSkillFiles", () => {
             await Storage.saveFile(`skills/${name}`, "auxiliary/deep/extra.txt", "extra");
         await initBuiltInSkillFiles();
         expect((await SkillStore.getSkill(name))?.content).toBe(original);
-        expect(await SkillStore.listSkillFiles(name)).toEqual([
-            "SKILL.md",
-            "examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds",
-            "references/query-pitfalls.md"
-        ]);
+        expect(await SkillStore.listSkillFiles(name)).toEqual(["SKILL.md", ...expectedResources]);
     });
 
     test("instruction changes reset preferences and obsolete built-in folders are removed recursively", async () => {

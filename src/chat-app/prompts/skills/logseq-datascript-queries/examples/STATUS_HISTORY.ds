@@ -1,0 +1,17 @@
+;; Recorded ref-valued status changes for one block; requires host history support.
+;; Tool inputs (JSON): ["#uuid \"6a1a83bd-50b7-40b5-8f08-e80576bf2960\"", ":logseq.property/status"]
+;; Replace the UUID and verify the status property ident.
+;; Returns [history-entity-id, status-title, timestamp-ms] rows, not pulled entities.
+;; Preserve columns/event IDs; sort by timestamp in caller code for chronological display.
+;; :block/created-at is the history event timestamp here. Empty results can mean
+;; no recorded history; this is not scalar-property history or a complete transaction log.
+[:find ?history ?status-title ?timestamp
+ :in $ ?block-uuid ?status-property
+ :where
+ [?b :block/uuid ?block-uuid]
+ [?prop :db/ident ?status-property]
+ [?history :logseq.property.history/property ?prop]
+ [?history :logseq.property.history/block ?b]
+ [?history :logseq.property.history/ref-value ?status]
+ [?history :block/created-at ?timestamp]
+ [?status :block/title ?status-title]]

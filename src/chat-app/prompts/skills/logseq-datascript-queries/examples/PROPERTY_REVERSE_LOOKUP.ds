@@ -1,0 +1,11 @@
+;; Find entities whose selected node/ref property points to a target page.
+;; Tool inputs (JSON): [":user.property/works-at-actual-ident", "\"example company\""]
+;; Discover the exact property ident and verify its node/ref type first.
+;; Supports cardinality-one/many; matches neither other properties nor ordinary backlinks.
+;; Target uses lowercase page name. Returns [entity] rows with UUID and title.
+[:find (pull ?b [:block/uuid :block/title])
+ :in $ ?property-ident ?page-name
+ :where
+ [?p :block/name ?page-name]
+ [?b ?property-ident ?p]
+ [?b :block/title]]
