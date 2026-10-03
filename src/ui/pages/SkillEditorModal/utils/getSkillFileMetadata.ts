@@ -1,6 +1,6 @@
 import matter from "gray-matter";
 import {readSkillFrontmatterValues} from "src/core/skill-parser";
-import type {SkillFileData} from "src/core/stores/skill-file-store/types";
+import type {SkillFileData} from "src/core/stores/skill-store/types";
 
 export function getSkillFileMetadata(
     content: string

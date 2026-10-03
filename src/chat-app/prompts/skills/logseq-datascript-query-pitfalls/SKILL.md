@@ -1,5 +1,5 @@
 ---
-name: Logseq Datascript Query Pitfalls
+name: logseq-datascript-query-pitfalls
 description: Use when a Logseq DB Datascript query fails, returns no rows, uses file-graph syntax, mishandles inputs, or combines tags, properties, tasks, dates, or boolean logic incorrectly.
 disable-model-invocation: false
 built-in-skill: true
@@ -45,7 +45,7 @@ To debug a query, collect:
 This old file-graph pattern does not find DB graph block text because DB graph block text is stored as `:block/title`.
 
 ```clojure
-<% #includeFile %>queries/FILE_GRAPH_BLOCK_CONTENT_FAILS.ds<% /includeFile %>
+<% #includeFile %>../../queries/FILE_GRAPH_BLOCK_CONTENT_FAILS.ds<% /includeFile %>
 ```
 
 Workaround: use the tested case-insensitive title search query in the main skill.
@@ -61,7 +61,7 @@ Workaround: lowercase the page-name input, then use the tested page lookup query
 DB graph tags/classes are entity refs. Searching block title text for a tag marker misses blocks that are actually tagged through `:block/tags`.
 
 ```clojure
-<% #includeFile %>queries/TAG_TEXT_SEARCH_FAILS.ds<% /includeFile %>
+<% #includeFile %>../../queries/TAG_TEXT_SEARCH_FAILS.ds<% /includeFile %>
 ```
 
 Workaround: use the tested tag/class query in the main skill when direct tags or child tags should match.
@@ -77,13 +77,13 @@ Workaround: use tag/class title matching unless the graph has already returned t
 `:db/ident` values are keywords. Nesting `(str ?ident)` inside another predicate call in one clause is unreliable: `[(re-find ?pattern (str ?ident))]` errors with `re-find must match against a string`, while `[(clojure.string/includes? (str ?ident) "logseq")]` fails **silently** — returning `[]` with no error.
 
 ```clojure
-<% #includeFile %>queries/IDENT_REGEX_MATCH_FAILS.ds<% /includeFile %>
+<% #includeFile %>../../queries/IDENT_REGEX_MATCH_FAILS.ds<% /includeFile %>
 ```
 
 Workaround: bind `(str ?ident)` to its own variable in a separate clause, then match it.
 
 ```clojure
-<% #includeFile %>queries/IDENT_SUBSTRING_MATCH.ds<% /includeFile %>
+<% #includeFile %>../../queries/IDENT_SUBSTRING_MATCH.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -97,7 +97,7 @@ Inputs:
 DB graph properties are direct attributes on the entity. The old `:block/properties` map pattern does not find DB graph property values.
 
 ```clojure
-<% #includeFile %>queries/BLOCK_PROPERTIES_MAP_FAILS.ds<% /includeFile %>
+<% #includeFile %>../../queries/BLOCK_PROPERTIES_MAP_FAILS.ds<% /includeFile %>
 ```
 
 Workaround: discover property schemas first, then use the tested mixed-property or node-list query in the main skill.
@@ -119,7 +119,7 @@ Workaround: use the property schema discovery query in the main skill before wri
 DB graph scheduled/deadline-style data should not be queried with old file graph block attributes.
 
 ```clojure
-<% #includeFile %>queries/BLOCK_SCHEDULED_FAILS.ds<% /includeFile %>
+<% #includeFile %>../../queries/BLOCK_SCHEDULED_FAILS.ds<% /includeFile %>
 ```
 
 Workaround: use the tested scheduled-task date-range query in the main skill. Pass the exact date-ref property ident and the journal-day range as inputs.
@@ -135,7 +135,7 @@ Workaround: use the tested task-status query in the main skill when Todo should 
 This shape fails because each `or` branch has a different free-variable set.
 
 ```clojure
-<% #includeFile %>queries/OR_VARIABLE_MISMATCH_FAILS.ds<% /includeFile %>
+<% #includeFile %>../../queries/OR_VARIABLE_MISMATCH_FAILS.ds<% /includeFile %>
 ```
 
 Workaround: use the tested `or-join` tag/class query or the tested priority query in the main skill, depending on the filter tree.

@@ -1,5 +1,5 @@
 ---
-name: Working with Bash
+name: working-with-bash
 description: Use when running isolated Bash commands, processing data, working with Python, or performing math and numerical calculations.
 disable-model-invocation: false
 built-in-skill: true

@@ -263,7 +263,12 @@ describe("SkillStore", () => {
     test("reports both save and rollback errors", async () => {
         await SkillStore.saveSkillFile(content());
         const failure = new Error("persistent write failure");
-        vi.spyOn(Storage, "saveFile").mockRejectedValue(failure);
+        const save = Storage.saveFile.bind(Storage);
+        vi.spyOn(Storage, "saveFile").mockImplementation(async (...args) => {
+            // A backend may commit before reporting failure; restoration must then write back.
+            await save(...args);
+            throw failure;
+        });
         await expect(
             SkillStore.saveSkillFile(content().replace("Instructions", "Edited"))
         ).rejects.toMatchObject({

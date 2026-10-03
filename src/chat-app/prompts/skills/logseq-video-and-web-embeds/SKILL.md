@@ -1,5 +1,5 @@
 ---
-name: Logseq Video and Web Embeds
+name: logseq-video-and-web-embeds
 description: Use when working with Logseq video / website embeds, including transcripts.
 disable-model-invocation: false
 built-in-skill: true
@@ -30,7 +30,7 @@ Add a timestamp annotation as a child of the video block. `youtube-timestamp` ac
 - Use `{{youtube-timestamp ...}}` only in a child block of its video embed.
 - Convert requested timestamps to seconds before writing the macro.
 - When asked to add comments based on video content, fetch the online video's transcript first, then write the comments as timestamp children.
-- Load the `Working with Bash` skill for supported YouTube and Bilibili transcript commands.
+- Load the `working-with-bash` skill for supported YouTube and Bilibili transcript commands.
 - Local video files do not expose a transcript through web fetch. Tell the user that transcript-based comments cannot be created for local videos.
 
 ## Tweet Embeds

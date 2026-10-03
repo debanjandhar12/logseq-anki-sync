@@ -5,7 +5,7 @@ describe("parseSkillFile", () => {
     test("parses valid skill frontmatter", () => {
         expect(
             parseSkillFile(`---
-name: Test skill
+name: test-skill
 description: Test description
 built-in-skill: true
 built-in-skill-user-controllable: true
@@ -15,10 +15,10 @@ disable-model-invocation: false
 # Body
 `)
         ).toEqual({
-            name: "Test skill",
+            name: "test-skill",
             description: "Test description",
             content: `---
-name: Test skill
+name: test-skill
 description: Test description
 built-in-skill: true
 built-in-skill-user-controllable: true
@@ -51,7 +51,7 @@ description: Test description
     test("rejects missing description", () => {
         expect(() =>
             parseSkillFile(`---
-name: Test skill
+name: test-skill
 ---
 
 # Body
@@ -62,7 +62,7 @@ name: Test skill
     test("rejects invalid built-in-skill metadata", () => {
         expect(() =>
             parseSkillFile(`---
-name: Test skill
+name: test-skill
 description: Test description
 built-in-skill: yes
 ---
@@ -75,7 +75,7 @@ built-in-skill: yes
     test("rejects invalid built-in-skill-user-controllable metadata", () => {
         expect(() =>
             parseSkillFile(`---
-name: Test skill
+name: test-skill
 description: Test description
 built-in-skill-user-controllable: enabled
 ---
@@ -88,7 +88,7 @@ built-in-skill-user-controllable: enabled
     test("rejects invalid disable-model-invocation metadata", () => {
         expect(() =>
             parseSkillFile(`---
-name: Test skill
+name: test-skill
 description: Test description
 disable-model-invocation: disabled
 ---

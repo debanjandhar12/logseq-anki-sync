@@ -1,4 +1,3 @@
-import matter from "gray-matter";
 import {createLogger, LoggerCategory} from "../../../logger";
 import {LogseqPluginStorageManager as Storage} from "../../../logseq/LogseqPluginStorageManager";
 import {
@@ -6,26 +5,38 @@ import {
     assertStorageFileTree
 } from "../../../logseq/LogseqPluginStorageManager/relativeStoragePath";
 import {parseSkillFile} from "../../skill-parser/parseSkillFile";
-import {skillMetadataSchema, skillNameSchema} from "../../skill-parser/skillMetadataSchema";
-import type {SkillFileData} from "../skill-file-store/types";
+import {skillNameSchema} from "../../skill-parser/skillMetadataSchema";
+import {validateFrontmatterTemplate} from "../../template-engine/parser/validateFrontmatterTemplate";
 import {hashSkillFileSnapshot} from "./hashSkillFileSnapshot";
-import type {HashOptions, SaveSkillFileOptions, SkillFolderFiles, StoredSkill} from "./types";
+import type {
+    BundledSkill,
+    EditedSkill,
+    HashOptions,
+    SaveSkillFileOptions,
+    SkillFileData,
+    SkillFolderFiles,
+    StoredSkill
+} from "./types";
 
 const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);
 
 /** Skill folders and their text resources, independent of model/UI policy. */
 export class SkillStore {
     static readonly groupName = "skills";
+    private static mutationQueue: Promise<unknown> = Promise.resolve();
+
+    private static serializeMutation<T>(operation: () => Promise<T>): Promise<T> {
+        const result = SkillStore.mutationQueue.then(operation);
+        SkillStore.mutationQueue = result.catch(() => {});
+        return result;
+    }
 
     private static folderGroup(name: string): string {
         return `${SkillStore.groupName}/${skillNameSchema.parse(name)}`;
     }
 
     private static parseContent(content: string): SkillFileData {
-        const parsed = parseSkillFile(content);
-        // Validate raw YAML values: the legacy parser intentionally trims strings.
-        skillMetadataSchema.parse(matter(content, {}).data);
-        return parsed;
+        return parseSkillFile(content);
     }
 
     static async getSkill(name: string): Promise<StoredSkill | null> {
@@ -84,9 +95,12 @@ export class SkillStore {
         return Object.fromEntries(entries);
     }
 
-    static async saveSkillFile(content: string, options: SaveSkillFileOptions = {}): Promise<void> {
-        const skill = SkillStore.parseContent(content);
-        const previousFiles = await SkillStore.getSkillFiles(skill.name);
+    private static buildFiles(
+        content: string,
+        options: SaveSkillFileOptions,
+        previousFiles: SkillFolderFiles = {}
+    ): SkillFolderFiles {
+        SkillStore.parseContent(content);
         const files = {...previousFiles};
         files["SKILL.md"] = content;
         for (const category of ["references", "scripts"] as const) {
@@ -106,7 +120,17 @@ export class SkillStore {
             }
         }
         assertStorageFileTree(Object.keys(files));
-        const group = SkillStore.folderGroup(skill.name);
+        return files;
+    }
+
+    private static async writeSnapshot(
+        name: string,
+        files: SkillFolderFiles,
+        removeObsolete = true
+    ): Promise<void> {
+        assertStorageFileTree(Object.keys(files));
+        const previousFiles = await SkillStore.getSkillFiles(name);
+        const group = SkillStore.folderGroup(name);
         const paths = Object.keys(files);
         const removedPaths = Object.keys(previousFiles).filter(
             (path) => !Object.hasOwn(files, path)
@@ -117,36 +141,182 @@ export class SkillStore {
                 (newPath) => oldPath.startsWith(`${newPath}/`) || newPath.startsWith(`${oldPath}/`)
             )
         );
-        try {
-            for (const path of blockers) await Storage.deleteFile(group, path);
-            for (const [path, text] of Object.entries(files)) {
-                if (previousFiles[path] !== text) await Storage.saveFile(group, path, text);
-            }
+        for (const path of blockers) await Storage.deleteFile(group, path);
+        for (const [path, text] of Object.entries(files)) {
+            if (previousFiles[path] !== text) await Storage.saveFile(group, path, text);
+        }
+        if (removeObsolete) {
             for (const path of removedPaths) {
                 if (!blockers.includes(path)) await Storage.deleteFile(group, path);
             }
+        }
+    }
+
+    private static async applySnapshots(
+        desired: Map<string, SkillFolderFiles>,
+        originals: Map<string, SkillFolderFiles>,
+        failureMessage: string
+    ): Promise<void> {
+        const touched: string[] = [];
+        try {
+            for (const [name, files] of desired) {
+                if (Object.keys(files).length === 0) continue;
+                touched.push(name);
+                await SkillStore.writeSnapshot(name, files, false);
+            }
+            // All destination contents exist before stale files or deleted source folders are removed.
+            for (const [name, files] of desired) {
+                if (!touched.includes(name)) touched.push(name);
+                await SkillStore.writeSnapshot(name, files);
+            }
         } catch (error) {
-            try {
-                // Recreate the original tree after removing possible new path-shape conflicts.
-                for (const path of await Storage.getFiles(group)) {
-                    if (!Object.hasOwn(previousFiles, path)) await Storage.deleteFile(group, path);
+            const rollbackErrors: unknown[] = [];
+            for (const name of touched.reverse()) {
+                try {
+                    await SkillStore.writeSnapshot(name, originals.get(name)!);
+                } catch (rollbackError) {
+                    rollbackErrors.push(rollbackError);
                 }
-                for (const [path, text] of Object.entries(previousFiles))
-                    await Storage.saveFile(group, path, text);
-            } catch (rollbackError) {
-                throw new AggregateError(
-                    [error, rollbackError],
-                    `Failed to save and restore skill: ${skill.name}`
+            }
+            if (rollbackErrors.length) {
+                logger.error(
+                    `Failed to restore skill folders: ${touched.join(", ")}`,
+                    rollbackErrors
                 );
+                throw new AggregateError([error, ...rollbackErrors], failureMessage);
             }
             throw error;
         }
     }
 
-    static async deleteSkill(name: string): Promise<void> {
-        const group = SkillStore.folderGroup(name);
-        for (const path of await SkillStore.listSkillFiles(name))
-            await Storage.deleteFile(group, path);
+    static saveSkillFile(content: string, options: SaveSkillFileOptions = {}): Promise<void> {
+        return SkillStore.serializeMutation(async () => {
+            const {name} = SkillStore.parseContent(content);
+            const previous = await SkillStore.getSkillFiles(name);
+            const files = SkillStore.buildFiles(content, options, previous);
+            await SkillStore.applySnapshots(
+                new Map([[name, files]]),
+                new Map([[name, previous]]),
+                `Failed to save and restore skill: ${name}`
+            );
+        });
+    }
+
+    /** Authoritative replacement for bundled skills, including unexpected auxiliary files. */
+    static replaceSkillFolder(content: string, options: SaveSkillFileOptions = {}): Promise<void> {
+        return SkillStore.serializeMutation(async () => {
+            const {name} = SkillStore.parseContent(content);
+            const files = SkillStore.buildFiles(content, options);
+            const previous = await SkillStore.getSkillFiles(name);
+            await SkillStore.applySnapshots(
+                new Map([[name, files]]),
+                new Map([[name, previous]]),
+                `Failed to replace and restore skill: ${name}`
+            );
+        });
+    }
+
+    static async matchesBundledSkill(
+        bundled: BundledSkill,
+        options?: HashOptions
+    ): Promise<boolean> {
+        const {name} = SkillStore.parseContent(bundled.content);
+        return (
+            (await SkillStore.hashSkillFiles(name, options)) ===
+            hashSkillFileSnapshot(SkillStore.buildFiles(bundled.content, bundled), options)
+        );
+    }
+
+    static deleteSkill(name: string): Promise<void> {
+        return SkillStore.serializeMutation(async () => {
+            const previous = await SkillStore.getSkillFiles(name);
+            await SkillStore.applySnapshots(
+                new Map([[name, {}]]),
+                new Map([[name, previous]]),
+                `Failed to delete and restore skill: ${name}`
+            );
+        });
+    }
+
+    /** Save editor identities as one serialized, best-effort rollback batch. */
+    static saveEditedSkills(
+        entries: readonly EditedSkill[],
+        originalNames: readonly string[]
+    ): Promise<void> {
+        return SkillStore.serializeMutation(async () => {
+            const sourceNames = new Set(originalNames.map((name) => skillNameSchema.parse(name)));
+            if (sourceNames.size !== originalNames.length)
+                throw new Error("Duplicate original skill identity");
+            const snapshots = new Map<string, SkillFolderFiles>();
+            const sources = new Map<string, StoredSkill>();
+            for (const name of sourceNames) {
+                const source = await SkillStore.getSkill(name);
+                if (!source) throw new Error(`Missing or invalid original skill: ${name}`);
+                sources.set(name, source);
+                snapshots.set(name, await SkillStore.getSkillFiles(name));
+            }
+            const desired = new Map<string, SkillFolderFiles>();
+            const usedSources = new Set<string>();
+            const storedPaths = await Storage.getFiles(SkillStore.groupName);
+            for (const entry of entries) {
+                const next = SkillStore.parseContent(entry.content);
+                const templateIssue = (await validateFrontmatterTemplate(entry.content))[0];
+                if (templateIssue) throw new Error(templateIssue.message);
+                if (desired.has(next.name)) throw new Error(`Duplicate skill name: ${next.name}`);
+                const originalName = entry.originalSkillName;
+                let files: SkillFolderFiles = {};
+                if (originalName !== undefined) {
+                    if (!sourceNames.has(originalName) || usedSources.has(originalName))
+                        throw new Error(`Invalid original skill identity: ${originalName}`);
+                    usedSources.add(originalName);
+                    files = snapshots.get(originalName)!;
+                    const source = sources.get(originalName)!;
+                    if (source.builtInSkill) {
+                        const options = {
+                            ignoreDisableModelInvocation:
+                                source.builtInSkillUserControllable === true
+                        };
+                        if (
+                            next.name !== originalName ||
+                            hashSkillFileSnapshot(files, options) !==
+                                hashSkillFileSnapshot(
+                                    {...files, "SKILL.md": entry.content},
+                                    options
+                                )
+                        ) {
+                            throw new Error(`Built-in skill is read-only: ${originalName}`);
+                        }
+                    } else if (next.builtInSkill || next.builtInSkillUserControllable) {
+                        throw new Error("Editor cannot create built-in skills");
+                    }
+                } else if (next.builtInSkill || next.builtInSkillUserControllable) {
+                    throw new Error("Editor cannot create built-in skills");
+                }
+                if (!sourceNames.has(next.name)) {
+                    if (
+                        storedPaths.some(
+                            (path) => path === next.name || path.startsWith(`${next.name}/`)
+                        )
+                    )
+                        throw new Error(`Skill destination is occupied: ${next.name}`);
+                    snapshots.set(next.name, {});
+                }
+                const nextFiles = {...files, "SKILL.md": entry.content};
+                assertStorageFileTree(Object.keys(nextFiles));
+                desired.set(next.name, nextFiles);
+            }
+            for (const [name, source] of sources) {
+                if (source.builtInSkill && !usedSources.has(name))
+                    throw new Error(`Built-in skill cannot be deleted: ${name}`);
+            }
+            // Append deletions only after every destination; swaps retain both identities.
+            for (const name of sourceNames) if (!desired.has(name)) desired.set(name, {});
+            await SkillStore.applySnapshots(
+                desired,
+                snapshots,
+                `Failed to save and restore skill folders: ${[...desired.keys()].join(", ")}`
+            );
+        });
     }
 
     /** Read and hash all persisted files recursively, including arbitrary auxiliary folders. */

@@ -1,20 +1,21 @@
 import {afterEach, describe, expect, test, vi} from "vitest";
 import {SkillTool} from "../../../../../src/chat-app/tools/impl/SkillTool";
 import * as skillTemplate from "../../../../../src/core/skill-parser";
-import {SkillFileStore} from "../../../../../src/core/stores/skill-file-store/SkillFileStore";
+import {SkillStore} from "../../../../../src/core/stores/skill-store/SkillStore";
 
 describe("SkillTool", () => {
     afterEach(() => vi.restoreAllMocks());
 
     test("renders the stored skill before returning it", async () => {
         const source = `---
-name: <% today %>
+name: test-skill
 description: Test skill
 ---
 
 # <% currentPage %>`;
-        vi.spyOn(SkillFileStore, "getSkillFile").mockResolvedValue({
-            name: "Test skill",
+        vi.spyOn(SkillStore, "getSkill").mockResolvedValue({
+            name: "test-skill",
+            folderName: "test-skill",
             description: "Test skill",
             content: source
         });
@@ -22,9 +23,9 @@ description: Test skill
             .spyOn(skillTemplate, "renderSkillFileTemplate")
             .mockResolvedValue("rendered skill source");
 
-        const response = await new SkillTool().execute({fileName: "Test skill.md"});
+        const response = await new SkillTool().execute({fileName: "test-skill"});
 
-        expect(SkillFileStore.getSkillFile).toHaveBeenCalledWith("Test skill.md");
+        expect(SkillStore.getSkill).toHaveBeenCalledWith("test-skill");
         expect(render).toHaveBeenCalledWith(source);
         expect(response.result).toEqual({
             success: true,
@@ -33,21 +34,22 @@ description: Test skill
     });
 
     test("returns the existing not-found result", async () => {
-        vi.spyOn(SkillFileStore, "getSkillFile").mockResolvedValue(null);
+        vi.spyOn(SkillStore, "getSkill").mockResolvedValue(null);
         const render = vi.spyOn(skillTemplate, "renderSkillFileTemplate");
 
-        const response = await new SkillTool().execute({fileName: "Missing.md"});
+        const response = await new SkillTool().execute({fileName: "missing"});
 
         expect(render).not.toHaveBeenCalled();
         expect(response.result).toEqual({
             success: false,
-            error: "Skill file not found: Missing.md"
+            error: "Skill file not found: missing"
         });
     });
 
     test("returns an error when rendering fails", async () => {
-        vi.spyOn(SkillFileStore, "getSkillFile").mockResolvedValue({
-            name: "Test skill",
+        vi.spyOn(SkillStore, "getSkill").mockResolvedValue({
+            name: "test-skill",
+            folderName: "test-skill",
             description: "Test skill",
             content: "<% invalid"
         });
@@ -55,11 +57,11 @@ description: Test skill
             new Error("Unclosed tag")
         );
 
-        const response = await new SkillTool().execute({fileName: "Test skill.md"});
+        const response = await new SkillTool().execute({fileName: "test-skill"});
 
         expect(response.result).toEqual({
             success: false,
-            error: "Failed to read skill file Test skill.md: Unclosed tag"
+            error: "Failed to read skill file test-skill: Unclosed tag"
         });
     });
 });

@@ -7,7 +7,7 @@ import {beforeEach, describe, expect, test, vi} from "vitest";
 
 function createSkillContent(overrides: {name?: string; description?: string; body?: string} = {}) {
     const {
-        name = "My skill",
+        name = "my-skill",
         description = "Does something useful",
         body = "# My skill"
     } = overrides;
@@ -106,19 +106,19 @@ describe("validateSkillFilesForSave", () => {
         expect(issue).toBeNull();
     });
 
-    test("reports invalid file names", async () => {
+    test("reports invalid skill names through parser validation", async () => {
         const {issue} = await validateSkillFilesForSave([
             {id: "bad-name", content: createSkillContent({name: 'my/bad"name'})}
         ]);
 
-        expect(issue?.kind).toBe("invalid-file-name");
+        expect(issue?.kind).toBe("parse-error");
         expect(issue?.fileId).toBe("bad-name");
     });
 
-    test("reports duplicate skill names case-insensitively", async () => {
+    test("reports duplicate skill names", async () => {
         const {issue} = await validateSkillFilesForSave([
-            {id: "first", content: createSkillContent({name: "My Skill"})},
-            {id: "second", content: createSkillContent({name: "my skill"})}
+            {id: "first", content: createSkillContent({name: "my-skill"})},
+            {id: "second", content: createSkillContent({name: "my-skill"})}
         ]);
 
         expect(issue?.kind).toBe("duplicate-name");
@@ -126,8 +126,8 @@ describe("validateSkillFilesForSave", () => {
     });
 
     test("returns parsed files in order when everything is valid", async () => {
-        const firstContent = createSkillContent({name: "First"});
-        const secondContent = createSkillContent({name: "Second"});
+        const firstContent = createSkillContent({name: "first"});
+        const secondContent = createSkillContent({name: "second"});
 
         const {issue, parsedFiles} = await validateSkillFilesForSave([
             {id: "first", content: firstContent},
@@ -135,7 +135,7 @@ describe("validateSkillFilesForSave", () => {
         ]);
 
         expect(issue).toBeNull();
-        expect(parsedFiles.map((parsedFile) => parsedFile.name)).toEqual(["First", "Second"]);
+        expect(parsedFiles.map((parsedFile) => parsedFile.name)).toEqual(["first", "second"]);
         expect(parsedFiles.map((parsedFile) => parsedFile.content)).toEqual([
             firstContent,
             secondContent

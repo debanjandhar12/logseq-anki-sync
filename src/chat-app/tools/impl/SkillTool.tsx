@@ -6,11 +6,11 @@ import {
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {renderSkillFileTemplate} from "src/core/skill-parser";
-import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
+import {SkillStore} from "src/core/stores/skill-store/SkillStore";
 import {z} from "zod";
 
 const readSkillFileParameters = z.object({
-    fileName: z.string().describe("Name of the skill file to read.")
+    fileName: z.string().describe("Name of the skill whose SKILL.md instructions to read.")
 });
 
 type SkillArgs = z.infer<typeof readSkillFileParameters>;
@@ -26,7 +26,7 @@ export class SkillTool extends BaseChatToolWithDefaultUI<SkillArgs, SkillResult>
 
     async execute({fileName}: SkillArgs): Promise<ChatToolResponse<SkillResult>> {
         try {
-            const skillFile = await SkillFileStore.getSkillFile(fileName);
+            const skillFile = await SkillStore.getSkill(fileName);
             if (!skillFile) {
                 return ChatToolResponse.error(`Skill file not found: ${fileName}`);
             }

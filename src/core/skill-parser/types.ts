@@ -1,4 +1,4 @@
-import type {SkillFileData} from "../stores/skill-file-store/types";
+import type {SkillFileData} from "../stores/skill-store/types";
 
 export type SkillFrontmatterDataKey = Exclude<keyof SkillFileData, "content">;
 

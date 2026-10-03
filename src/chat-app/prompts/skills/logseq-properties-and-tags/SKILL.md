@@ -1,5 +1,5 @@
 ---
-name: Logseq Properties and Tags
+name: logseq-properties-and-tags
 description: Use when creating, reading, updating, or reasoning about Logseq DB graph properties, property schemas, tags/classes, inherited tag properties, special tags, or special properties.
 disable-model-invocation: false
 built-in-skill: true
@@ -54,7 +54,7 @@ Several special properties change rendering or behavior:
 - All tags are tagged with `#Tag` / `:logseq.class/Tag`.
 - All journal pages are tagged with `#Journal` / `:logseq.class/Journal`.
 
-For low-level query shapes, use the Logseq Datascript Query skill instead of repeating query logic here.
+For low-level query shapes, use the `logseq-datascript-queries` skill instead of repeating query logic here.
 
 # Gotchas
 

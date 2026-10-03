@@ -1,68 +1,56 @@
-import matter from "gray-matter";
-import SKILL_LOGSEQ_QUERY_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_DATASCRIPT_QUERY.md?inlineSkill";
-import SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS.md?inlineSkill";
-import SKILL_LOGSEQ_PROPERTIES_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_PROPERTIES_AND_TAGS.md?inlineSkill";
-import SKILL_LOGSEQ_TOOLS_GUIDE_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_TOOLS_GUIDE.md?inlineSkill";
-import SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW from "../../chat-app/prompts/SKILL_LOGSEQ_WORKING_WITH_VIDEO_AND_WEB_EMBEDS.md?inlineSkill";
-import SKILL_CREATOR_RAW from "../../chat-app/prompts/SKILL_SKILL_CREATOR.md?inlineSkill";
-import SKILL_WORKING_WITH_BASH_RAW from "../../chat-app/prompts/SKILL_WORKING_WITH_BASH.md?inlineSkill";
-import {parseSkillFile, SKILL_FRONTMATTER_KEYS} from "../skill-parser";
-import {SkillFileStore} from "../stores/skill-file-store/SkillFileStore";
+import QUERY_TAG_TEXT_SEARCH_FAILS_RAW from "../../chat-app/prompts/queries/TAG_TEXT_SEARCH_FAILS.ds?raw";
+import QUERY_TASKS_SCHEDULED_IN_RANGE_RAW from "../../chat-app/prompts/queries/TASKS_SCHEDULED_IN_RANGE.ds?raw";
+import SKILL_LOGSEQ_DATASCRIPT_QUERIES_RAW from "../../chat-app/prompts/skills/logseq-datascript-queries/SKILL.md?inlineSkill";
+import SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW from "../../chat-app/prompts/skills/logseq-datascript-query-pitfalls/SKILL.md?inlineSkill";
+import SKILL_LOGSEQ_PROPERTIES_AND_TAGS_RAW from "../../chat-app/prompts/skills/logseq-properties-and-tags/SKILL.md?inlineSkill";
+import SKILL_LOGSEQ_TOOLS_GUIDE_RAW from "../../chat-app/prompts/skills/logseq-tools-guide/SKILL.md?inlineSkill";
+import SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW from "../../chat-app/prompts/skills/logseq-video-and-web-embeds/SKILL.md?inlineSkill";
+import SKILL_CREATOR_RAW from "../../chat-app/prompts/skills/skill-creator/SKILL.md?inlineSkill";
+import SKILL_WORKING_WITH_BASH_RAW from "../../chat-app/prompts/skills/working-with-bash/SKILL.md?inlineSkill";
+import {parseSkillFile} from "../skill-parser";
+import {SkillStore} from "../stores/skill-store/SkillStore";
+import type {BundledSkill} from "../stores/skill-store/types";
 
-const BUILT_IN_SKILL_FILES = [
-    SKILL_LOGSEQ_QUERY_RAW,
-    SKILL_LOGSEQ_TOOLS_GUIDE_RAW,
-    SKILL_LOGSEQ_PROPERTIES_RAW,
-    SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW,
-    SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW,
-    SKILL_WORKING_WITH_BASH_RAW,
-    SKILL_CREATOR_RAW
+const BUILT_IN_SKILLS: BundledSkill[] = [
+    {
+        content: SKILL_LOGSEQ_DATASCRIPT_QUERIES_RAW,
+        references: {
+            "TASKS_SCHEDULED_IN_RANGE.ds": QUERY_TASKS_SCHEDULED_IN_RANGE_RAW,
+            "TAG_TEXT_SEARCH_FAILS.ds": QUERY_TAG_TEXT_SEARCH_FAILS_RAW
+        }
+    },
+    ...[
+        SKILL_LOGSEQ_TOOLS_GUIDE_RAW,
+        SKILL_LOGSEQ_PROPERTIES_AND_TAGS_RAW,
+        SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW,
+        SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW,
+        SKILL_WORKING_WITH_BASH_RAW,
+        SKILL_CREATOR_RAW
+    ].map((content) => ({
+        content,
+        references: {},
+        scripts: {}
+    }))
 ];
 
 export const initBuiltInSkillFiles = async () => {
-    const builtInSkillFileNames = new Set(
-        BUILT_IN_SKILL_FILES.map((raw) => SkillFileStore.getSkillFileName(parseSkillFile(raw)))
-    );
-
-    // Remove built-in skills that are no longer bundled with the plugin.
-    const existingSkillFiles = await SkillFileStore.getAllSkillFile();
-
-    for (const existingSkillFile of existingSkillFiles) {
-        const existingFileName = SkillFileStore.getSkillFileName(existingSkillFile);
-
-        if (existingSkillFile.builtInSkill && !builtInSkillFileNames.has(existingFileName)) {
-            await SkillFileStore.deleteSkillFile(existingFileName);
+    const bundledNames = new Set(BUILT_IN_SKILLS.map(({content}) => parseSkillFile(content).name));
+    for (const existing of await SkillStore.getAllSkills()) {
+        if (existing.builtInSkill && !bundledNames.has(existing.folderName)) {
+            await SkillStore.deleteSkill(existing.folderName);
         }
     }
-
-    for (const raw of BUILT_IN_SKILL_FILES) {
-        const fileName = SkillFileStore.getSkillFileName(parseSkillFile(raw));
-        const fileExists = await SkillFileStore.skillFileExists(fileName);
-        const existing = await SkillFileStore.getSkillFile(fileName);
-
-        if (fileExists && !existing) {
-            continue;
-        }
-
-        if (existing && !existing.builtInSkill) {
-            continue;
-        }
-
-        // If content has not changed, ignoring the user-controlled flag, skip overwrite.
+    for (const bundled of BUILT_IN_SKILLS) {
+        const name = parseSkillFile(bundled.content).name;
+        const exists = await SkillStore.skillExists(name);
+        const existing = await SkillStore.getSkill(name);
+        if (exists && !existing) continue;
+        if (existing && !existing.builtInSkill) continue;
         if (
             existing &&
-            getComparableSkillContent(existing.content) === getComparableSkillContent(raw)
-        ) {
+            (await SkillStore.matchesBundledSkill(bundled, {ignoreDisableModelInvocation: true}))
+        )
             continue;
-        }
-
-        await SkillFileStore.saveSkillFile(raw);
+        await SkillStore.replaceSkillFolder(bundled.content, bundled);
     }
 };
-
-function getComparableSkillContent(content: string): string {
-    const parsed = matter(content);
-    const metadata = {...parsed.data};
-    delete metadata[SKILL_FRONTMATTER_KEYS.disableModelInvocation];
-    return matter.stringify(parsed.content, metadata);
-}

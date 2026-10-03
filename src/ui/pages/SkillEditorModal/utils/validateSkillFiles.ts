@@ -1,13 +1,10 @@
 import {parseSkillFile} from "src/core/skill-parser";
-import type {SkillFileData} from "src/core/stores/skill-file-store/types";
+import type {SkillFileData} from "src/core/stores/skill-store/types";
 import type {MustacheTemplateIssue} from "src/core/template-engine";
 import {validateFrontmatterTemplate} from "src/core/template-engine";
 import type {EditableSkillFile} from "../types";
 import {getErrorMessage} from "./getErrorMessage";
 import {getSkillFileDisplayName} from "./getSkillFileDisplayName";
-import {getSkillFileName} from "./getSkillFileName";
-
-const INVALID_FILE_NAME_CHARACTERS = new Set(["<", ">", ":", '"', "/", "\\", "|", "?"]);
 
 export async function getFirstInvalidSkillTemplate(
     files: readonly Pick<EditableSkillFile, "id" | "content">[]
@@ -20,11 +17,7 @@ export async function getFirstInvalidSkillTemplate(
     return null;
 }
 
-export type SkillFileSaveIssueKind =
-    | "invalid-template"
-    | "invalid-file-name"
-    | "duplicate-name"
-    | "parse-error";
+export type SkillFileSaveIssueKind = "invalid-template" | "duplicate-name" | "parse-error";
 
 export interface SkillFileSaveIssue {
     kind: SkillFileSaveIssueKind;
@@ -66,20 +59,7 @@ export async function validateSkillFilesForSave(
 
         try {
             const parsedFile = parseSkillFile(file.content);
-            const parsedFileName = getSkillFileName(parsedFile);
-            const normalizedName = parsedFile.name.toLocaleLowerCase();
-
-            if (!isValidFileName(parsedFileName)) {
-                return {
-                    issue: {
-                        kind: "invalid-file-name",
-                        fileId: file.id,
-                        fileName: displayFileName,
-                        message: `"${parsedFileName}" is not a valid file name.`
-                    },
-                    parsedFiles: []
-                };
-            }
+            const normalizedName = parsedFile.name;
 
             if (usedNames.has(normalizedName)) {
                 return {
@@ -109,17 +89,4 @@ export async function validateSkillFilesForSave(
     }
 
     return {issue: null, parsedFiles};
-}
-
-function isValidFileName(fileName: string): boolean {
-    return (
-        fileName.trim() === fileName &&
-        fileName.length > 0 &&
-        fileName !== "." &&
-        fileName !== ".." &&
-        Array.from(fileName).every(
-            (character) =>
-                character.charCodeAt(0) >= 32 && !INVALID_FILE_NAME_CHARACTERS.has(character)
-        )
-    );
 }

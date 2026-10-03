@@ -1,5 +1,5 @@
 ---
-name: Logseq Tools Guide
+name: logseq-tools-guide
 description: Use before marking changes in logseq with tools. Contains syntax information and guide to create query blocks, math, code etc
 disable-model-invocation: false
 built-in-skill: true
@@ -26,7 +26,7 @@ built-in-skill-user-controllable: false
 - Normal Logseq block content supports Markdown including math, tables, block refs, page refs, tasks, queries, and cards.
 - Show page/block embeds using `[[<page or block uuid>]]` syntax in Markdown.
 - Logseq is an outliner. When creating pages, break larger concepts into sub-points unless the user specifies a different format.
-- For special blocks, properties, tags, tasks, code, math, queries, and cards, use the Logseq Properties and Tags skill.
+- For special blocks, properties, tags, tasks, code, math, queries, and cards, use the `logseq-properties-and-tags` skill.
 - Invoking create page tool with name in `Aug 22nd, 2026` format creates the corresponding journal page.
 
 ## Creating Query Blocks in DB Graphs

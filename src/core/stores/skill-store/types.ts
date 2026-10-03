@@ -1,4 +1,20 @@
-import type {SkillFileData} from "../skill-file-store/types";
+export interface SkillFileData {
+    name: string;
+    description: string;
+    content: string;
+    builtInSkill?: boolean;
+    builtInSkillUserControllable?: boolean;
+    disableModelInvocation?: boolean;
+}
+
+export interface EditedSkill {
+    content: string;
+    originalSkillName?: string;
+}
+
+export interface BundledSkill extends SaveSkillFileOptions {
+    content: string;
+}
 
 export type SkillResourceFiles = Record<string, string>;
 export type SkillFolderFiles = Record<string, string>;

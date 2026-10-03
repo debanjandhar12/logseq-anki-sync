@@ -17,7 +17,7 @@ describe("validateSkillFileContent", () => {
         for (const newline of ["\n", "\r\n"]) {
             const content = [
                 "---",
-                "name: Test skill",
+                "name: test-skill",
                 "description: Test description",
                 "custom-field: accepted",
                 "---",
@@ -26,7 +26,7 @@ describe("validateSkillFileContent", () => {
             const result = validateSkillFileContent(content);
 
             expect(result.valid).toBe(true);
-            expect(result.skillFile?.name).toBe("Test skill");
+            expect(result.skillFile?.name).toBe("test-skill");
         }
     });
 
@@ -87,7 +87,7 @@ disable-model-invocation: disabled
 
     test("supports quoted known keys and CRLF offsets", () => {
         const content =
-            '---\r\n"name": Test\r\ndescription: Test\r\n"built-in-skill-user-controllable": enabled\r\n---';
+            '---\r\n"name": test\r\ndescription: Test\r\n"built-in-skill-user-controllable": enabled\r\n---';
         const issue = expectBoundedIssues(content)[0];
 
         expect(content.slice(issue.from, issue.to)).toBe(
@@ -104,8 +104,38 @@ disable-model-invocation: disabled
     });
 
     test("preserves gray-matter behavior for an unclosed parseable block", () => {
-        const result = validateSkillFileContent("---\nname: Test\ndescription: Description");
+        const result = validateSkillFileContent("---\nname: test\ndescription: Description");
 
         expect(result.valid).toBe(true);
+    });
+
+    test.each([
+        "Uppercase",
+        "space name",
+        "é",
+        "a_b",
+        "a.b",
+        "-name",
+        "name-",
+        "a--b",
+        " name ",
+        "a".repeat(65)
+    ])("marks invalid raw names %j on their metadata line", (name) => {
+        const content = `---\r\nname: ${JSON.stringify(name)}\r\ndescription: Valid\r\n---`;
+        const issue = expectBoundedIssues(content)[0];
+        expect(content.slice(issue.from, issue.to)).toBe(`name: ${JSON.stringify(name)}`);
+    });
+
+    test("accepts name and description boundaries and rejects untrimmed excessive descriptions", () => {
+        for (const name of ["a", "a".repeat(64), "skill-123"]) {
+            expect(
+                validateSkillFileContent(
+                    `---\nname: ${name}\ndescription: ${"a".repeat(1024)}\n---`
+                ).valid
+            ).toBe(true);
+        }
+        const content = `---\nname: valid\ndescription: "${"a".repeat(1024)} "\n---`;
+        const issue = expectBoundedIssues(content)[0];
+        expect(content.slice(issue.from, issue.to)).toContain("description:");
     });
 });

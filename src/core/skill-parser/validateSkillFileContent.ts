@@ -1,7 +1,8 @@
 import matter from "gray-matter";
-import type {SkillFileData} from "../stores/skill-file-store/types";
+import type {SkillFileData} from "../stores/skill-store/types";
 import {SKILL_FRONTMATTER_FIELDS} from "./constants";
 import {readSkillFrontmatterValues} from "./readSkillFrontmatterValues";
+import {skillDescriptionSchema, skillNameSchema} from "./skillMetadataSchema";
 import type {SkillFrontmatterFieldDefinition} from "./types";
 
 export interface SkillFileValidationIssue {
@@ -106,7 +107,13 @@ function getInvalidFieldMessage(
             : `Invalid skill file metadata: ${field.key} must be a boolean`;
     }
 
-    if (typeof value === "string" && value.trim().length > 0) return null;
+    if (typeof value === "string" && value.trim().length > 0) {
+        const schema = field.key === "name" ? skillNameSchema : skillDescriptionSchema;
+        const result = schema.safeParse(value);
+        return result.success
+            ? null
+            : `Invalid skill file metadata: ${field.key}: ${result.error.issues[0].message}`;
+    }
     if (!field.required && value === undefined) return null;
 
     return field.required

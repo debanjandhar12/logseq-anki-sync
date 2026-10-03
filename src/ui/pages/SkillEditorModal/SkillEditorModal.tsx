@@ -1,6 +1,6 @@
 import {Plus, Trash} from "lucide-react";
 import React from "react";
-import {SkillFileStore} from "src/core/stores/skill-file-store/SkillFileStore";
+import {SkillStore} from "src/core/stores/skill-store/SkillStore";
 import {LogseqButton} from "../../components/LogseqButton";
 import {LogseqCheckbox} from "../../components/LogseqCheckbox";
 import {LogseqCodeEditor} from "../../components/LogseqCodeEditor";
@@ -12,22 +12,14 @@ import {useModal} from "../../modals/hooks/useModal";
 import {UI} from "../../UI";
 import {createSkillEditorExtensions} from "./createSkillEditorExtensions";
 import type {EditableSkillFile} from "./types";
+import {createNewSkillContent} from "./utils/createNewSkillContent";
 import {getErrorMessage} from "./utils/getErrorMessage";
 import {getSkillFileDisplayName} from "./utils/getSkillFileDisplayName";
 import {getSkillFileMetadata} from "./utils/getSkillFileMetadata";
-import {getSkillFileName} from "./utils/getSkillFileName";
 import {getFilesSnapshot} from "./utils/skillFilesSnapshot";
 import {updateDisableModelInvocation} from "./utils/updateSkillMetadata";
 import {validateSkillFilesForSave} from "./utils/validateSkillFiles";
 
-const NEW_SKILL_CONTENT = `---
-name: New skill
-description: Describe what this skill does
-disable-model-invocation: false
----
-
-# New skill
-`;
 const SKILL_EDITOR_EXTENSIONS = createSkillEditorExtensions();
 
 export interface SkillEditorModalProps {
@@ -42,10 +34,11 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
 }) => {
     const [files, setFiles] = React.useState<EditableSkillFile[]>([]);
     const [initialFilesSnapshot, setInitialFilesSnapshot] = React.useState("");
-    const [originalFileNames, setOriginalFileNames] = React.useState<Set<string>>(new Set());
+    const [originalSkillNames, setOriginalSkillNames] = React.useState<Set<string>>(new Set());
     const [activeFileId, setActiveFileId] = React.useState<string | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
+    const saveInProgress = React.useRef(false);
 
     const {open, setOpen, returnResult} = useModal<boolean | null>(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
@@ -60,21 +53,22 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
         let isMounted = true;
 
         const loadFiles = async () => {
-            const storedFiles = await SkillFileStore.getAllSkillFile();
+            const storedFiles = await SkillStore.getAllSkills();
             if (!isMounted) return;
 
             const editableFiles = storedFiles.map((file) => ({
                 id: crypto.randomUUID(),
                 content: file.content,
-                originalFileName: getSkillFileName(file)
+                originalSkillName: file.folderName,
+                originalContent: file.content
             }));
 
             setFiles(editableFiles);
             setInitialFilesSnapshot(getFilesSnapshot(editableFiles));
-            setOriginalFileNames(
+            setOriginalSkillNames(
                 new Set(
                     editableFiles
-                        .map((file) => file.originalFileName)
+                        .map((file) => file.originalSkillName)
                         .filter((fileName): fileName is string => fileName != null)
                 )
             );
@@ -98,20 +92,26 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
 
     const activeFile = files.find((file) => file.id === activeFileId) ?? files[0] ?? null;
     const activeFileMetadata = activeFile ? getSkillFileMetadata(activeFile.content) : null;
-    const isActiveFileBuiltIn = activeFileMetadata?.builtInSkill === true;
+    const originalMetadata = activeFile?.originalContent
+        ? getSkillFileMetadata(activeFile.originalContent)
+        : null;
+    const isActiveFileBuiltIn = originalMetadata?.builtInSkill === true;
     const isActiveFileBuiltInUserControllable =
-        isActiveFileBuiltIn && activeFileMetadata?.builtInSkillUserControllable === true;
+        isActiveFileBuiltIn && originalMetadata?.builtInSkillUserControllable === true;
     const isModelInvocationEnabled = activeFileMetadata?.disableModelInvocation !== true;
     const hasUnsavedChanges = getFilesSnapshot(files) !== initialFilesSnapshot;
 
     const handleAddFile = React.useCallback(() => {
         const newFile = {
             id: crypto.randomUUID(),
-            content: NEW_SKILL_CONTENT
+            content: createNewSkillContent(
+                files.map((file) => file.content),
+                originalSkillNames
+            )
         };
         setFiles((currentFiles) => [...currentFiles, newFile]);
         setActiveFileId(newFile.id);
-    }, []);
+    }, [files, originalSkillNames]);
 
     const handleDeleteFile = React.useCallback(() => {
         if (!activeFile || isActiveFileBuiltIn) return;
@@ -164,10 +164,12 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
     ]);
 
     const handleSave = React.useCallback(async () => {
+        if (saveInProgress.current || isLoading) return;
+        saveInProgress.current = true;
         setIsSaving(true);
 
         try {
-            const {issue, parsedFiles} = await validateSkillFilesForSave(files);
+            const {issue} = await validateSkillFilesForSave(files);
 
             if (issue) {
                 setActiveFileId(issue.fileId);
@@ -178,17 +180,7 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                 return;
             }
 
-            const nextFileNames = new Set(parsedFiles.map(getSkillFileName));
-
-            for (const originalFileName of originalFileNames) {
-                if (!nextFileNames.has(originalFileName)) {
-                    await SkillFileStore.deleteSkillFile(originalFileName);
-                }
-            }
-
-            for (const parsedFile of parsedFiles) {
-                await SkillFileStore.saveSkillFile(parsedFile.content);
-            }
+            await SkillStore.saveEditedSkills(files, [...originalSkillNames]);
 
             returnResult(true);
         } catch (error) {
@@ -197,11 +189,13 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                 "error"
             );
         } finally {
+            saveInProgress.current = false;
             setIsSaving(false);
         }
-    }, [files, originalFileNames, returnResult]);
+    }, [files, originalSkillNames, returnResult, isLoading]);
 
     const handleCancel = React.useCallback(async () => {
+        if (saveInProgress.current) return;
         if (hasUnsavedChanges) {
             const shouldClose = await showConfirmModal(
                 "You have unsaved skill changes. Close without saving?",
@@ -236,19 +230,20 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                         <>
                             <aside className="w-[220px] flex min-h-0 flex-shrink-0 flex-col border-border border-r bg-secondary-background">
                                 <div className="flex items-center justify-between gap-2 border-border border-b px-4 py-2">
-                                    <span className="text-sm font-medium">Files</span>
+                                    <span className="text-sm font-medium">Skills</span>
                                     <LogseqButton
                                         onClick={handleAddFile}
+                                        disabled={isSaving}
                                         color="primary"
                                         size="xs"
-                                        title="New skill file">
+                                        title="New skill">
                                         <Plus size={16} />
                                     </LogseqButton>
                                 </div>
                                 <div className="min-h-0 flex-1 overflow-y-auto p-2">
                                     {files.length === 0 ? (
                                         <div className="px-2 py-3 text-sm opacity-70">
-                                            No skill files yet.
+                                            No skills yet.
                                         </div>
                                     ) : (
                                         <div className="space-y-1">
@@ -283,13 +278,18 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                                 <div className="truncate text-sm font-medium">
                                                     {getSkillFileDisplayName(activeFile.content)}
                                                 </div>
+                                                <div className="text-xs opacity-70">
+                                                    Name: 1–64 lowercase letters, digits, and single
+                                                    separating hyphens.
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <LogseqCheckbox
                                                     checked={isModelInvocationEnabled}
                                                     disabled={
-                                                        isActiveFileBuiltIn &&
-                                                        !isActiveFileBuiltInUserControllable
+                                                        isSaving ||
+                                                        (isActiveFileBuiltIn &&
+                                                            !isActiveFileBuiltInUserControllable)
                                                     }
                                                     onChange={handleToggleModelInvocation}>
                                                     Enabled
@@ -297,9 +297,9 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                                 <LogseqButton
                                                     onClick={handleDeleteFile}
                                                     color="failed"
-                                                    disabled={isActiveFileBuiltIn}
+                                                    disabled={isSaving || isActiveFileBuiltIn}
                                                     size="xs"
-                                                    title="Delete skill file">
+                                                    title="Delete skill and its resources">
                                                     <Trash size={16} />
                                                 </LogseqButton>
                                             </div>
@@ -312,14 +312,14 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                                 height="100%"
                                                 extensions={SKILL_EDITOR_EXTENSIONS}
                                                 basicSetup={{autocompletion: false}}
-                                                editable={!isActiveFileBuiltIn}
+                                                editable={!isSaving && !isActiveFileBuiltIn}
                                                 onChange={handleContentChange}
                                             />
                                         </div>
                                     </>
                                 ) : (
                                     <div className="flex h-full items-center justify-center bg-primary-background p-4 text-sm text-text opacity-70">
-                                        Create a new skill file to start editing.
+                                        Create a new skill to start editing SKILL.md.
                                     </div>
                                 )}
                             </section>
@@ -331,6 +331,8 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                     onConfirm={handleSave}
                     onCancel={handleCancel}
                     confirmText={isSaving ? "Saving..." : "Save"}
+                    confirmDisabled={isSaving || isLoading}
+                    cancelDisabled={isSaving}
                     cancelText="Cancel"
                     confirmShortcut=""
                     className="border-border border-t px-4 pb-2 pt-1 !mt-0"

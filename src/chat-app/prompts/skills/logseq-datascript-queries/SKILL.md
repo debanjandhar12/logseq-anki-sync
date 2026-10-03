@@ -1,5 +1,5 @@
 ---
-name: Logseq Datascript Query
+name: logseq-datascript-queries
 description: Use this skill whenever the user asks for Logseq DB graph Datascript, Datalog, advanced DB queries, task queries, date queries, property queries, tag/class queries, or LogseqDataScriptQueryTool usage.
 disable-model-invocation: false
 built-in-skill: true
@@ -7,6 +7,10 @@ built-in-skill-user-controllable: false
 ---
 
 # Logseq Datascript Query Skill
+
+## Reference files
+
+Read [scheduled tasks in a range](references/TASKS_SCHEDULED_IN_RANGE.ds) when constructing scheduled-date queries, and [tag text search failure](references/TAG_TEXT_SEARCH_FAILS.ds) when diagnosing tag matching. Read these files on demand with Bash; paths are relative to `/home/user/skills/logseq-datascript-queries`.
 
 ## Objective
 
@@ -138,7 +142,7 @@ The queries below are ordered from simple to complex. Use their printed query te
 Use for searching pages, blocks, classes, or property entities by display title.
 
 ```clojure
-<% #includeFile %>queries/CASE_INSENSITIVE_TITLE_SEARCH.ds<% /includeFile %>
+<% #includeFile %>../../queries/CASE_INSENSITIVE_TITLE_SEARCH.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -152,7 +156,7 @@ Inputs:
 Use for exact page lookup. The input must be lowercase.
 
 ```clojure
-<% #includeFile %>queries/PAGE_BY_NAME.ds<% /includeFile %>
+<% #includeFile %>../../queries/PAGE_BY_NAME.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -166,7 +170,7 @@ Inputs:
 Use for blocks that reference a page.
 
 ```clojure
-<% #includeFile %>queries/PAGE_REFERENCE_BACKLINKS.ds<% /includeFile %>
+<% #includeFile %>../../queries/PAGE_REFERENCE_BACKLINKS.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -180,7 +184,7 @@ Inputs:
 Use when tag inheritance should count. This matches blocks tagged directly with the target class/tag or with a child class/tag that extends it.
 
 ```clojure
-<% #includeFile %>queries/TAG_OR_CHILD_TAG_MATCH.ds<% /includeFile %>
+<% #includeFile %>../../queries/TAG_OR_CHILD_TAG_MATCH.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -192,7 +196,7 @@ Inputs:
 When the exact built-in tag/class ident is already known, pass that ident as input and derive its class title in the query. This is especially useful for built-in tags such as `:logseq.class/Task`, `:logseq.class/Query`, or `:logseq.class/Math-block`. Do not add a separate `:db/ident` lookup clause for this pattern; blocks created through the Logseq editor APIs are reliably matched through the tag entity attached in `:block/tags`.
 
 ```clojure
-<% #includeFile %>queries/TAG_IDENT_MATCH.ds<% /includeFile %>
+<% #includeFile %>../../queries/TAG_IDENT_MATCH.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -206,7 +210,7 @@ Inputs:
 Use before property queries to discover exact idents and value types.
 
 ```clojure
-<% #includeFile %>queries/PUBLIC_PROPERTY_SCHEMAS.ds<% /includeFile %>
+<% #includeFile %>../../queries/PUBLIC_PROPERTY_SCHEMAS.ds<% /includeFile %>
 ```
 
 Inputs: none.
@@ -216,7 +220,7 @@ Inputs: none.
 Use to discover the exact `:db/ident` of a class/tag. Returns every class/tag whose ident matches the search text, with its display title.
 
 ```clojure
-<% #includeFile %>queries/CLASS_TAG_IDENT_SEARCH.ds<% /includeFile %>
+<% #includeFile %>../../queries/CLASS_TAG_IDENT_SEARCH.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -230,7 +234,7 @@ Inputs:
 Use for journal page date windows. `:block/journal-day` uses `YYYYMMDD`, not milliseconds.
 
 ```clojure
-<% #includeFile %>queries/JOURNAL_PAGES_IN_RANGE.ds<% /includeFile %>
+<% #includeFile %>../../queries/JOURNAL_PAGES_IN_RANGE.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -245,7 +249,7 @@ Inputs:
 Use for cardinality-many node/ref properties where any selected node title should match.
 
 ```clojure
-<% #includeFile %>queries/PROPERTY_NODE_LIST_ANY.ds<% /includeFile %>
+<% #includeFile %>../../queries/PROPERTY_NODE_LIST_ANY.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -260,7 +264,7 @@ Inputs:
 Use when the block must match title text, checkbox, number, and node/ref property conditions together.
 
 ```clojure
-<% #includeFile %>queries/MIXED_PROPERTY_TYPES_AND_TITLE_SEARCH.ds<% /includeFile %>
+<% #includeFile %>../../queries/MIXED_PROPERTY_TYPES_AND_TITLE_SEARCH.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -279,7 +283,7 @@ Inputs:
 Use when Logseq UI task semantics matter: a block tagged `Task` with no explicit status counts as `Todo`.
 
 ```clojure
-<% #includeFile %>queries/TASKS_BY_STATUS_OR_IMPLICIT_TODO.ds<% /includeFile %>
+<% #includeFile %>../../queries/TASKS_BY_STATUS_OR_IMPLICIT_TODO.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -293,7 +297,7 @@ Inputs:
 Use for active tasks scheduled within a journal-day range. Pass the exact scheduled property ident; do not assume it without checking the graph.
 
 ```clojure
-<% #includeFile %>queries/TASKS_SCHEDULED_IN_RANGE.ds<% /includeFile %>
+<% #includeFile %>../../queries/TASKS_SCHEDULED_IN_RANGE.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -310,7 +314,7 @@ Inputs:
 Use for this filter tree: Task tag AND priority is Urgent or High AND tag is not archived.
 
 ```clojure
-<% #includeFile %>queries/TASKS_PRIORITY_NOT_ARCHIVED.ds<% /includeFile %>
+<% #includeFile %>../../queries/TASKS_PRIORITY_NOT_ARCHIVED.ds<% /includeFile %>
 ```
 
 Inputs:
@@ -326,7 +330,7 @@ Inputs:
 Use as the final pattern when the user asks for a rich task search with title text, status, priority, schedule, node-list membership, and exclusion.
 
 ```clojure
-<% #includeFile %>queries/COMPLEX_ACTIONABLE_TASK_SEARCH.ds<% /includeFile %>
+<% #includeFile %>../../queries/COMPLEX_ACTIONABLE_TASK_SEARCH.ds<% /includeFile %>
 ```
 
 Inputs:

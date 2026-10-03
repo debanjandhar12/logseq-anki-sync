@@ -1,5 +1,6 @@
 export interface EditableSkillFile {
     id: string;
     content: string;
-    originalFileName?: string;
+    originalSkillName?: string;
+    originalContent?: string;
 }

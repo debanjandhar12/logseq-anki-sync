@@ -1,4 +1,4 @@
-import type {SkillFileData} from "../stores/skill-file-store/types";
+import type {SkillFileData} from "../stores/skill-store/types";
 import {validateSkillFileContent} from "./validateSkillFileContent";
 
 export function parseSkillFile(content: string): SkillFileData {
