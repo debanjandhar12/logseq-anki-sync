@@ -260,7 +260,8 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                                         }`}
                                                         onClick={() => setActiveFileId(file.id)}>
                                                         <span className="block truncate">
-                                                            {getSkillFileDisplayName(file.content)}
+                                                            {getSkillFileMetadata(file.content)
+                                                                ?.name ?? "Untitled"}
                                                         </span>
                                                     </button>
                                                 );
@@ -277,10 +278,6 @@ export const SkillEditorModalComponent: React.FC<SkillEditorModalProps> = ({
                                             <div className="min-w-0">
                                                 <div className="truncate text-sm font-medium">
                                                     {getSkillFileDisplayName(activeFile.content)}
-                                                </div>
-                                                <div className="text-xs opacity-70">
-                                                    Name: 1–64 lowercase letters, digits, and single
-                                                    separating hyphens.
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4">

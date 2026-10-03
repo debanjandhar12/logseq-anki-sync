@@ -6,6 +6,11 @@ const sidebars = {
             label: "Providers",
             items: ["providers/provider-configurations"],
         },
+        {
+            type: "category",
+            label: "Chat",
+            items: ["chat/skills", "chat/bash-sandbox"],
+        },
     ],
 };
 

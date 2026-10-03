@@ -15,7 +15,7 @@ import {
     assertRelativeStoragePath,
     assertStorageFileTree
 } from "src/logseq/LogseqPluginStorageManager/relativeStoragePath";
-import {JUST_BASH_USER_HOME, type JustBashMountPermission} from "./types";
+import type {JustBashMountPermission} from "./types";
 import {encodeStoredText, type FileEncodingOptions, toStorableText} from "./utils/fsContent";
 import {
     eexistError,
@@ -27,7 +27,7 @@ import {
     enotsupError,
     erofsError
 } from "./utils/fsErrors";
-import {resolveSandboxPath, toStorageFileName} from "./utils/fsPaths";
+import {getStorageMountPath, resolveSandboxPath, toStorageFileName} from "./utils/fsPaths";
 
 type DirentEntry = {
     name: string;
@@ -66,7 +66,7 @@ export class JustBashAdapterFS implements IFileSystem {
 
     static getMountConfigs(): Array<{mountPoint: string; filesystem: JustBashAdapterFS}> {
         return [...JustBashAdapterFS.mountRegistry.entries()].map(([folderName, permission]) => ({
-            mountPoint: `${JUST_BASH_USER_HOME}/${folderName}`,
+            mountPoint: getStorageMountPath(folderName),
             filesystem: new JustBashAdapterFS(folderName, permission)
         }));
     }

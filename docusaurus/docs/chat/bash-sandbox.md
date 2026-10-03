@@ -7,7 +7,7 @@ The Bash tool runs in a virtual filesystem and cannot access host files. Node.js
 
 Plugin storage mounts support nested directories. Tool results at `/home/user/tool-results`, parsed PDF pages at `/home/user/anydoc-parse-results`, and skill resources at `/home/user/skills` are read-only. Bash refreshes these mounts before each tool execution, so newly stored files are available to directory traversal and shell wildcards immediately.
 
-The folder-based skill storage foundation uses this layout:
+Skills use this layout:
 
 ```text
 /home/user/skills/<name>/
@@ -18,11 +18,15 @@ The folder-based skill storage foundation uses this layout:
     └── example.py
 ```
 
-The new `SkillStore.saveSkillFile(content, {references, scripts})` API accepts maps of relative filenames to text. Names use lowercase letters, digits, and single separating hyphens (1–64 characters); descriptions are nonempty and at most 1024 characters. An omitted resource category preserves its files; a supplied category replaces its files, and an empty map clears it. Resource paths cannot contain traversal segments or escape the skill folder. Folder hashes include file paths and contents, so reference and script changes are detectable as well as instruction changes.
+The skill tool advertises the virtual base directory and up to ten sorted resource paths. Use nested traversal or wildcards to discover more files, and read references on demand:
 
-This is the storage foundation: the current skill editor, skill tool, and built-in installer still use the existing flat skill files until the folder integration is completed. Scripts in the new folders can be read by Bash or passed to supported interpreters; the mount does not provide host execution or new language runtimes.
+```bash
+find /home/user/skills/logseq-datascript-queries -type f
+cat /home/user/skills/logseq-datascript-queries/references/TASKS_SCHEDULED_IN_RANGE.ds
+ls /home/user/skills/*/SKILL.md
+```
 
-`SkillStore.hashSkillFiles(name)` discovers and hashes every stored file recursively, including files in deeply nested or auxiliary folders. The root `SKILL.md` is hashed separately so its invocation frontmatter can be ignored during built-in comparisons. All other files are hashed from sorted relative paths and exact contents, then the instruction and resource hashes are combined into one versioned digest. SHA-256 uses `@noble/hashes` and does not require browser Web Crypto or a secure context.
+Scripts in skill folders can be read by Bash or passed to supported interpreters, such as `python /home/user/skills/my-skill/scripts/example.py`. The mount does not provide host execution or new language runtimes. See [Skills](./skills.md) for naming rules, editing, resource save semantics, and built-in updates.
 
 Python 3.14 is available through the `python` and `python3` commands, backed by Pyodide in an isolated Web Worker. It supports `-c`, script files, stdin, command arguments, and top-level `await`.
 
@@ -39,7 +43,7 @@ print(np.sin(np.deg2rad(45)) ** 2)
 PY
 ```
 
-The built-in `Working with Bash` skill contains Python examples for public YouTube and Bilibili transcripts. YouTube uses the pinned `youtube-transcript-api` package. Bilibili uses its public HTTP APIs directly because available Bilibili Python libraries are not compatible with Pyodide.
+The built-in `working-with-bash` skill contains Python examples for public YouTube and Bilibili transcripts. YouTube uses the pinned `youtube-transcript-api` package. Bilibili uses its public HTTP APIs directly because available Bilibili Python libraries are not compatible with Pyodide.
 
 The Pyodide interpreter and standard library are bundled with the plugin. Additional wheels are loaded from pinned, allowlisted HTTPS sources. Python runs in a one-use worker, so cancelling or timing out a command terminates the runtime and package state.
 
