@@ -4,6 +4,7 @@ import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {LogseqUUIDSchema} from "./LogseqUUIDSchema";
+import {getJournalDayByPageUuid} from "./utils/getJournalDayByPageUuid";
 import {isPageSoftDeleted} from "./utils/isPageSoftDeleted";
 import {requireActivePage} from "./utils/validations";
 
@@ -46,6 +47,15 @@ export class DeletePageCommand extends BaseReversibleCommand<DeletePageCommandSt
         }
 
         const page = await requireActivePage(this.args.pageUuid as PageIdentity);
+
+        // Validation added to ensure revert doesn't fails as logseq immediately created new today's journal page
+        const journalDay = await getJournalDayByPageUuid(page.uuid);
+        const now = new Date();
+        const currentJournalDay =
+            now.getFullYear() * 10_000 + (now.getMonth() + 1) * 100 + now.getDate();
+        if (journalDay === currentJournalDay) {
+            throw new Error("Cannot delete today's journal page using DeletePageCommand.");
+        }
 
         if (await LogseqEditor.isTagBlock(page.uuid)) {
             throw new Error("Cannot delete a tag page using DeletePageCommand.");
