@@ -3,6 +3,9 @@ export const DONATE_ICON =
 
 export const LOGSEQ_HTTP_PROXY_TIMEOUT_MS = 30_000;
 
+/** User directory in the virtual environment and base for plugin storage mounts. */
+export const VIR_ENV_USER_PATH = "/home/user";
+
 export enum LogseqModelAction {
     SHOW_AI_CHAT = "showAIChat",
     OPEN_PROVIDER_CONFIG_SETTINGS = "openProviderConfigFromSettings",

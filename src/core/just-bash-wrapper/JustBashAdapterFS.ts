@@ -51,7 +51,7 @@ export class JustBashAdapterFS implements IFileSystem {
         assertRelativeStoragePath(groupName);
     }
 
-    /** Register a plugin storage folder at /home/user/<folderName>. */
+    /** Register a plugin storage folder under the virtual environment's user directory. */
     static addLogseqPluginFolder(folderName: string, permission: JustBashMountPermission): void {
         try {
             assertRelativeStoragePath(folderName);

@@ -1,8 +1,10 @@
 import {afterEach, describe, expect, test, vi} from "vitest";
+import {VIR_ENV_USER_PATH} from "../../../../../src/constants";
 import {MustacheView} from "../../../../../src/core/template-engine";
 import * as skillListModule from "../../../../../src/core/template-engine/renderer/getModelInvokableSkillListString";
 import * as dateFormatModule from "../../../../../src/core/template-engine/renderer/getUserPreferredDayjsFormat";
 import * as timeZoneModule from "../../../../../src/core/template-engine/renderer/getUserTimeZone";
+import {parseTemplateString} from "../../../../../src/core/template-engine/renderer/parseTemplateString";
 import {LogseqEditor} from "../../../../../src/logseq/LogseqEditor";
 import {LogseqSettingAccessor} from "../../../../../src/logseq/LogseqSettingAccessor";
 
@@ -31,6 +33,10 @@ describe("MustacheView", () => {
         expect(view.globalAgentInstruction).toBe("Be precise");
         expect(view.GLOBALAGENTINSTRUCTION).toBe("Be precise");
         expect(view.currentPage).toBe("page-uuid");
+        expect(view.virEnvUserPath).toBe(VIR_ENV_USER_PATH);
+        expect(await parseTemplateString("<% &virEnvUserPath %>/skills/example", view)).toBe(
+            `${VIR_ENV_USER_PATH}/skills/example`
+        );
         expect(view["last saturday"]).toBe("2026-08-15");
     });
 
@@ -45,6 +51,7 @@ describe("MustacheView", () => {
         expect(variableNames).toEqual(Object.keys(view));
         expect(variableNames).toContain("globalAgentInstruction");
         expect(variableNames).toContain("currentEditingBlock");
+        expect(variableNames).toContain("virEnvUserPath");
         expect(variableNames).not.toContain("additionalSystemMessage");
         expect(variableNames).not.toContain("lastMonday");
     });

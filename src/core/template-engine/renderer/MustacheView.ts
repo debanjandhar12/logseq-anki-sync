@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import {CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR} from "../../../constants";
+import {CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR, VIR_ENV_USER_PATH} from "../../../constants";
 import {LogseqEditor} from "../../../logseq/LogseqEditor";
 import {LogseqSettingAccessor} from "../../../logseq/LogseqSettingAccessor";
 import {getModelInvokableSkillListString} from "./getModelInvokableSkillListString";
@@ -34,6 +34,7 @@ export class MustacheView {
             currentEditingBlock: currentEditingBlock?.uuid ?? "No current editing block",
             modelInvokableSkillList,
             chatAppAgentToolResultMaxChar: String(CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR),
+            virEnvUserPath: VIR_ENV_USER_PATH,
             time: now.format("HH:mm"),
             today: now.format(dayjsFormat),
             tomorrow: now.add(1, "day").format(dayjsFormat),

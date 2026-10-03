@@ -1,8 +1,10 @@
 import aliasQuery from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds?raw";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
+import {VIR_ENV_USER_PATH} from "../../../../src/constants";
 import {initBuiltInSkillFiles} from "../../../../src/core/skill-init/initBuiltInSkillFiles";
 import {parseSkillFile} from "../../../../src/core/skill-parser";
 import {SkillStore} from "../../../../src/core/stores/skill-store/SkillStore";
+import {parseTemplateString} from "../../../../src/core/template-engine/renderer/parseTemplateString";
 import {LogseqPluginStorageManager as Storage} from "../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
 
@@ -13,17 +15,18 @@ describe("initBuiltInSkillFiles", () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
-    test("installs seven matching folders and the alias query example", async () => {
+    test("installs six matching folders with the alias example and debugging reference", async () => {
         await initBuiltInSkillFiles();
         const skills = await SkillStore.getAllSkills();
-        expect(skills).toHaveLength(7);
+        expect(skills).toHaveLength(6);
         for (const skill of skills) {
             expect(parseSkillFile(skill.content).name).toBe(skill.folderName);
             expect(skill.builtInSkill).toBe(true);
         }
         const paths = await Storage.getFiles("skills");
         expect(paths.filter((path) => !path.endsWith("/SKILL.md")).sort()).toEqual([
-            "logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds"
+            "logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds",
+            "logseq-datascript-queries/references/query-pitfalls.md"
         ]);
         expect(await SkillStore.getSkillFiles("logseq-datascript-queries")).toMatchObject({
             "examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds": aliasQuery
@@ -39,8 +42,19 @@ describe("initBuiltInSkillFiles", () => {
         expect((await SkillStore.getSkill("logseq-datascript-queries"))?.content).toContain(
             "[?b :block/title ?title]"
         );
-        expect((await SkillStore.getSkill("logseq-datascript-query-pitfalls"))?.content).toContain(
-            "[?b :block/content ?content]"
+        const reference = (await SkillStore.getSkillFiles("logseq-datascript-queries"))[
+            "references/query-pitfalls.md"
+        ];
+        expect(reference).toContain("[?b :block/content ?content]");
+        expect(reference).not.toContain("includeFile");
+        expect(reference).not.toContain("built-in-skill:");
+        expect(await SkillStore.getSkill("logseq-datascript-query-pitfalls")).toBeNull();
+        const rendered = await parseTemplateString(
+            (await SkillStore.getSkill("logseq-datascript-queries"))!.content,
+            {virEnvUserPath: VIR_ENV_USER_PATH}
+        );
+        expect(rendered).toContain(
+            `${VIR_ENV_USER_PATH}/skills/logseq-datascript-queries/references/query-pitfalls.md`
         );
     });
 
@@ -50,7 +64,7 @@ describe("initBuiltInSkillFiles", () => {
             query: "?raw",
             import: "default"
         });
-        expect(Object.keys(sources)).toHaveLength(7);
+        expect(Object.keys(sources)).toHaveLength(6);
         for (const [path, content] of Object.entries(sources)) {
             expect(parseSkillFile(content as string).name).toBe(path.split("/").at(-2));
         }
@@ -106,7 +120,8 @@ describe("initBuiltInSkillFiles", () => {
         expect((await SkillStore.getSkill(name))?.content).toBe(original);
         expect(await SkillStore.listSkillFiles(name)).toEqual([
             "SKILL.md",
-            "examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds"
+            "examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds",
+            "references/query-pitfalls.md"
         ]);
     });
 
@@ -118,11 +133,11 @@ describe("initBuiltInSkillFiles", () => {
                 "\nChanged"
         );
         await SkillStore.saveSkillFile(
-            "---\nname: obsolete\ndescription: Old\nbuilt-in-skill: true\n---\nOld",
+            "---\nname: logseq-datascript-query-pitfalls\ndescription: Old\nbuilt-in-skill: true\n---\nOld",
             {references: {"nested/file": "old"}}
         );
         await initBuiltInSkillFiles();
         expect((await SkillStore.getSkill("skill-creator"))?.content).toBe(original);
-        expect(await SkillStore.listSkillFiles("obsolete")).toEqual([]);
+        expect(await SkillStore.listSkillFiles("logseq-datascript-query-pitfalls")).toEqual([]);
     });
 });

@@ -7,11 +7,10 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {CHAT_APP_AGENT_ANYDOC_PAGE_ERROR_THRESHOLD} from "src/constants";
+import {CHAT_APP_AGENT_ANYDOC_PAGE_ERROR_THRESHOLD, VIR_ENV_USER_PATH} from "src/constants";
 import {anyDocParser, type PdfMarkdownParser} from "src/core/anydoc/AnyDocParser";
 import {getPdfSha256} from "src/core/anydoc/pdf/getPdfSha256";
 import {PdfPageSplitter} from "src/core/anydoc/pdf/PdfPageSplitter";
-import {JUST_BASH_USER_HOME} from "src/core/just-bash-wrapper/types";
 import {AnyDocParseResultStore} from "src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {WindowParentBridge} from "src/logseq/WindowParentBridge";
 import {z} from "zod";
@@ -106,7 +105,7 @@ export class ParsePdfTool extends BaseChatToolWithDefaultUI<ParsePdfArgs, ParseP
                 );
             }
 
-            const storePath = `${JUST_BASH_USER_HOME}/${AnyDocParseResultStore.groupName}`;
+            const storePath = `${VIR_ENV_USER_PATH}/${AnyDocParseResultStore.groupName}`;
             return ChatToolResponse.success({
                 result: `Parsed pages stored in ${storePath} as: ${pdfHash}-page-<page no>. Use bash to list / search the pages and read the relevent context.`
             });

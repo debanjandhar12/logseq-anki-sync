@@ -1,6 +1,5 @@
 import type {ReadonlyJSONValue} from "assistant-stream/utils";
-import {CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR} from "src/constants";
-import {JUST_BASH_USER_HOME} from "src/core/just-bash-wrapper/types";
+import {CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR, VIR_ENV_USER_PATH} from "src/constants";
 import {ToolResultStore} from "src/core/stores/tool-results/ToolResultStore";
 
 type ToolResultLimitInput = {
@@ -22,7 +21,7 @@ export async function storeAndTruncateOversizedToolResult({
     if (serializedResult.length <= CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR) return undefined;
 
     const fileName = await ToolResultStore.storeToolResult(toolCallId, toolName, result);
-    const filePath = `${JUST_BASH_USER_HOME}/${ToolResultStore.groupName}/${fileName}`;
+    const filePath = `${VIR_ENV_USER_PATH}/${ToolResultStore.groupName}/${fileName}`;
     const removedCharacterCount = serializedResult.length - CHAT_APP_AGENT_TOOL_RESULT_MAX_CHAR;
 
     return `${serializedResult.slice(

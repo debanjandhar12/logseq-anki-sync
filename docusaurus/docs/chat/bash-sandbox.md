@@ -7,6 +7,8 @@ The Bash tool runs in a virtual filesystem and cannot access host files. Node.js
 
 Plugin storage mounts support nested directories. Tool results at `/home/user/tool-results`, parsed PDF pages at `/home/user/anydoc-parse-results`, and skill resources at `/home/user/skills` are read-only. Bash refreshes these mounts before each tool execution, so newly stored files are available to directory traversal and shell wildcards immediately.
 
+The virtual user directory is centralized as `VIR_ENV_USER_PATH` and exposed to skill templates as `<% &virEnvUserPath %>`.
+
 Skills use this layout:
 
 ```text

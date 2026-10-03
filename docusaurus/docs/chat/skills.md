@@ -89,7 +89,7 @@ python /home/user/skills/my-skill/scripts/example.py
 
 These are real paths in the [read-only Bash sandbox mount](./bash-sandbox.md), never host storage paths. Mounts refresh before each Bash tool execution, so editor additions, renames, and deletions are immediately discoverable. Scripts run only through interpreters already supported by the sandbox. Python has a separate filesystem; pass resource contents through stdin when a Python script needs them.
 
-The built-in `logseq-datascript-queries` skill includes `examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds` for resolving an alias to its original page. Internal queries are embedded in the skill instructions at build time.
+The built-in `logseq-datascript-queries` skill includes `examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds` for resolving an alias to its original page and `references/query-pitfalls.md` for debugging failing or unexpected queries. The pitfalls guide is a reference read on demand with Bash. Internal queries are embedded in the skill instructions and debugging reference at build time.
 
 ## Built-in updates
 

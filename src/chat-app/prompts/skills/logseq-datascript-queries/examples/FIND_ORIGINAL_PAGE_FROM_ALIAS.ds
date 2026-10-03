@@ -1,4 +1,5 @@
 ;; Find original page which has alias another name
+;; Logseq support alias for blocks and pages using block/alias property.
 {:query [:find (pull ?p [*])
  :where
  [?p :block/alias ?val]

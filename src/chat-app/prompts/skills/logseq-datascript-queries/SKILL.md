@@ -8,10 +8,6 @@ built-in-skill-user-controllable: false
 
 # Logseq Datascript Query Skill
 
-## Example files
-
-Read [find the original page from an alias](examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds) when resolving an alias to its original page. Replace `"another name"` with the alias title. The example uses an advanced-query `{:query [...]}` wrapper; pass only the inner query vector as `datalogString` to `LogseqDataScriptQueryTool`. Read this file on demand with Bash; paths are relative to `/home/user/skills/logseq-datascript-queries`.
-
 ## Objective
 
 Write reliable Logseq DB graph Datascript queries for `LogseqDataScriptQueryTool`. Prefer the tested query text printed in this skill over inventing new query shapes.
@@ -353,3 +349,7 @@ Inputs:
 The tool returns rows from Logseq. Pull queries commonly return `[[entity] [entity]]`. Scalar queries return rows like `[["title"]]` or `[[5]]`.
 
 When you need only entities, flatten one level in caller code. When you use aggregations or grouped results, do not blindly flatten because rows have meaningful columns.
+
+## Debugging reference
+
+When a query fails, returns no rows, or behaves unexpectedly, use Bash to read `<% &virEnvUserPath %>/skills/logseq-datascript-queries/references/query-pitfalls.md` for debugging it. 

@@ -1,6 +1,6 @@
 import QUERY_FIND_ORIGINAL_PAGE_FROM_ALIAS_RAW from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds?raw";
+import REFERENCE_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW from "../../chat-app/prompts/skills/logseq-datascript-queries/references/query-pitfalls.md?inlineSkill";
 import SKILL_LOGSEQ_DATASCRIPT_QUERIES_RAW from "../../chat-app/prompts/skills/logseq-datascript-queries/SKILL.md?inlineSkill";
-import SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW from "../../chat-app/prompts/skills/logseq-datascript-query-pitfalls/SKILL.md?inlineSkill";
 import SKILL_LOGSEQ_PROPERTIES_AND_TAGS_RAW from "../../chat-app/prompts/skills/logseq-properties-and-tags/SKILL.md?inlineSkill";
 import SKILL_LOGSEQ_TOOLS_GUIDE_RAW from "../../chat-app/prompts/skills/logseq-tools-guide/SKILL.md?inlineSkill";
 import SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW from "../../chat-app/prompts/skills/logseq-video-and-web-embeds/SKILL.md?inlineSkill";
@@ -13,6 +13,9 @@ import type {BundledSkill} from "../stores/skill-store/types";
 const BUILT_IN_SKILLS: BundledSkill[] = [
     {
         content: SKILL_LOGSEQ_DATASCRIPT_QUERIES_RAW,
+        references: {
+            "query-pitfalls.md": REFERENCE_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW
+        },
         examples: {
             "FIND_ORIGINAL_PAGE_FROM_ALIAS.ds": QUERY_FIND_ORIGINAL_PAGE_FROM_ALIAS_RAW
         }
@@ -20,7 +23,6 @@ const BUILT_IN_SKILLS: BundledSkill[] = [
     ...[
         SKILL_LOGSEQ_TOOLS_GUIDE_RAW,
         SKILL_LOGSEQ_PROPERTIES_AND_TAGS_RAW,
-        SKILL_LOGSEQ_DATASCRIPT_QUERY_PITFALLS_RAW,
         SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW,
         SKILL_WORKING_WITH_BASH_RAW,
         SKILL_CREATOR_RAW
