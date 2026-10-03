@@ -1,16 +1,16 @@
 import path from "path-browserify";
-import {enotsupError} from "./fsErrors";
+import {assertRelativeStoragePath} from "../../../logseq/LogseqPluginStorageManager/relativeStoragePath";
 
 /** Resolve a sandbox path against a base using normalized POSIX semantics. */
 export function resolveSandboxPath(base: string, targetPath: string): string {
     return path.normalize(path.resolve(base, targetPath));
 }
 
-/** Map a mount-relative path to the flat Logseq plugin storage namespace. */
+/** Map a normalized mount-relative path to a nested storage key. */
 export function toStorageFileName(resolvedPath: string): string | null {
     if (resolvedPath === "/") return null;
 
     const fileName = resolvedPath.slice(1);
-    if (fileName.includes("/")) throw enotsupError("access", resolvedPath);
+    assertRelativeStoragePath(fileName);
     return fileName;
 }

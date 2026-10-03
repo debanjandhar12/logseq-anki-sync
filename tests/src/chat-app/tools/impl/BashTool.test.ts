@@ -56,9 +56,9 @@ describe("BashTool", () => {
     });
 
     test("rejects non-JSON exit codes before creating a tool result", async () => {
-        vi.spyOn(JustBashWrapper, "getInstance").mockReturnValue({
+        vi.spyOn(JustBashWrapper, "getInstance").mockResolvedValue({
             exec: async () => ({stdout: "", stderr: "", exitCode: Number.NaN})
-        } as unknown as ReturnType<typeof JustBashWrapper.getInstance>);
+        } as unknown as Awaited<ReturnType<typeof JustBashWrapper.getInstance>>);
 
         const response = await new BashTool().execute({command: "python -c 'pass'"});
 

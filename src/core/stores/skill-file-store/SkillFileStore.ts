@@ -34,6 +34,7 @@ export class SkillFileStore {
         const skillFiles = [];
 
         for (const fileName of fileNames) {
+            if (fileName.includes("/")) continue;
             const content = await LogseqPluginStorageManager.getFileContent(
                 SkillFileStore.groupName,
                 fileName

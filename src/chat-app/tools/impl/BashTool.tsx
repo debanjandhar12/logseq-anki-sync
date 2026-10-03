@@ -44,7 +44,8 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<BashToolResult>> {
         try {
-            const {stdout, stderr, exitCode} = await JustBashWrapper.getInstance().exec(command, {
+            const bash = await JustBashWrapper.getInstance();
+            const {stdout, stderr, exitCode} = await bash.exec(command, {
                 cwd,
                 signal: context?.abortSignal
             });

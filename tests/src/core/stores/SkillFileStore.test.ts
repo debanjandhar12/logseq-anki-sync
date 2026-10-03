@@ -26,4 +26,21 @@ describe("SkillFileStore", () => {
             expect.objectContaining({name: "Bravo", builtInSkill: false})
         ]);
     });
+
+    test("ignores folder-based skill files while legacy consumers remain active", async () => {
+        await SkillFileStore.saveSkillFile(createSkillSource("Legacy"));
+        await LogseqPluginStorageManager.saveFile(
+            "skills/new-skill",
+            "SKILL.md",
+            createSkillSource("new-skill")
+        );
+        await LogseqPluginStorageManager.saveFile(
+            "skills/new-skill",
+            "references/example.md",
+            "reference"
+        );
+        expect((await SkillFileStore.getAllSkillFile()).map((skill) => skill.name)).toEqual([
+            "Legacy"
+        ]);
+    });
 });

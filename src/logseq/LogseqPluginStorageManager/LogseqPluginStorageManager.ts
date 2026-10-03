@@ -1,6 +1,7 @@
 import "@logseq/libs";
 import type {IAsyncStorage} from "@logseq/libs/dist/modules/LSPlugin.Storage";
 import {WindowParentBridge} from "../WindowParentBridge";
+import {assertRelativeStoragePath} from "./relativeStoragePath";
 import {StorageBackendFactory} from "./StorageBackendFactory";
 
 /**
@@ -73,8 +74,8 @@ export class LogseqPluginStorageManager {
     private static validateOperation(group?: string, fileName?: string) {
         if (LogseqPluginStorageManager.store == null)
             throw new Error("LogseqPluginStorageManager not initialized");
-        if (group?.includes("/")) throw new Error("Group name cannot contain slash: " + group);
-        if (fileName?.includes("/")) throw new Error("File name cannot contain slash: " + fileName);
+        if (group !== undefined) assertRelativeStoragePath(group);
+        if (fileName !== undefined) assertRelativeStoragePath(fileName);
     }
 }
 

@@ -19,3 +19,6 @@ export const eexistError = (operation: string, path: string): Error =>
 
 export const einvalError = (operation: string, path: string): Error =>
     new Error(`EINVAL: invalid argument, ${operation} '${path}'`);
+
+export const enotemptyError = (operation: string, path: string): Error =>
+    new Error(`ENOTEMPTY: directory not empty, ${operation} '${path}'`);
