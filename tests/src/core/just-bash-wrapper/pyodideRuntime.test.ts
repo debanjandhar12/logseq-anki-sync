@@ -40,6 +40,11 @@ function executionOptions(worker: FakeWorker, client: FakeWorkerClient) {
         stdin: "",
         cwd: "/home/user",
         env: {},
+        snapshot: {
+            root: "/home/user",
+            directories: [{path: "/home/user", mode: 0o555}],
+            files: []
+        },
         fetch,
         runtimeBaseUrl: "https://plugin.test/pyodide/",
         workerFactory: () => worker as unknown as Worker,
@@ -73,7 +78,12 @@ describe("Pyodide worker orchestration", () => {
                 args: [],
                 stdin: "",
                 cwd: "/home/user",
-                env: {}
+                env: {},
+                snapshot: {
+                    root: "/home/user",
+                    directories: [{path: "/home/user", mode: 0o555}],
+                    files: []
+                }
             },
             expect.any(Function)
         );

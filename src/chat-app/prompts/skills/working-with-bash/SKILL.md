@@ -14,9 +14,11 @@ The Bash tool runs in an isolated virtual filesystem and cannot access host file
 python -c 'print(", ".join(map(str, sorted([3, 1, 2]))))'
 ```
 
-Python uses a separate empty filesystem. Pipe Bash file contents into a `python -c` command and return generated data through stdout instead of opening Bash paths from Python.
+Python shares the Bash `/home/user` tree. Ordinary file APIs such as `open`, `pathlib`, `os.listdir`, and `json.load` can read mounted files directly. Before Python starts, this tree is copied into Pyodide; afterward, changes on writable mounts are written back. Creates, modifications, and deletions can persist even when the script exits nonzero. Read-only mounts remain read-only, and a failed write-back is reported on stderr with a nonzero command result.
 
-Top-level `await` is supported. Install Pyodide-compatible packages with `micropip`, always pin exact versions, and perform the installation and use in the same command. Packages are not preserved between commands. Network requests must use allowlisted HTTPS hosts.
+Only `/home/user` is shared. Python's `/tmp`, site packages, and packages installed with `micropip` are private to one command. Files are limited to 16 MiB each and each snapshot or change set is limited to 128 MiB; exceeding these limits fails clearly.
+
+Top-level `await` is supported. Install Pyodide-compatible packages with `micropip`, always pin exact versions, and perform the installation and use in the same command. Packages are not preserved between commands, and there is no pip wheel cache. Network requests must use allowlisted HTTPS hosts.
 
 ## Math
 

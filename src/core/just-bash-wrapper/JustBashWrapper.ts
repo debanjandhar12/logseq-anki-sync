@@ -1,9 +1,16 @@
 import {Bash, InMemoryFs, MountableFs} from "just-bash";
-import {VIR_ENV_USER_PATH} from "../../constants";
+import {
+    VIR_ENV_GID,
+    VIR_ENV_HOSTNAME,
+    VIR_ENV_UID,
+    VIR_ENV_USER,
+    VIR_ENV_USER_PATH
+} from "../../constants";
 import {JustBashAdapterFS} from "./JustBashAdapterFS";
 import {createAllowlistedFetch} from "./network";
 import {createPythonCommands} from "./pyodide";
 import {ReadOnlyFileSystem} from "./ReadOnlyFileSystem";
+import {virtualIdentityCommands} from "./virtualIdentityCommands";
 
 /** Singleton accessor for the shared, fully virtual just-bash sandbox. */
 export class JustBashWrapper {
@@ -38,8 +45,18 @@ export class JustBashWrapper {
                 mounts
             }),
             cwd: VIR_ENV_USER_PATH,
+            env: {
+                HOME: VIR_ENV_USER_PATH,
+                USER: VIR_ENV_USER,
+                LOGNAME: VIR_ENV_USER,
+                HOSTNAME: VIR_ENV_HOSTNAME
+            },
+            processInfo: {uid: VIR_ENV_UID, gid: VIR_ENV_GID},
             fetch: createAllowlistedFetch(globalThis.fetch.bind(globalThis)),
-            customCommands: [...createPythonCommands("python", "python3", "py")],
+            customCommands: [
+                ...createPythonCommands("python", "python3", "py"),
+                ...virtualIdentityCommands
+            ],
             python: false, // Python is provided by the custom Pyodide commands. We cannot use just-bash's inbuilt python environment in-browser.
             javascript: false
         });

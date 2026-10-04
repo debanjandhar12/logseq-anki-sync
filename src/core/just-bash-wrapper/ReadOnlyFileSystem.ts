@@ -42,12 +42,12 @@ export class ReadOnlyFileSystem implements IFileSystem {
         return this.filesystem.exists(path);
     }
 
-    stat(path: string): Promise<FsStat> {
-        return this.filesystem.stat(path);
+    async stat(path: string): Promise<FsStat> {
+        return withoutWritePermissions(await this.filesystem.stat(path));
     }
 
-    lstat(path: string): Promise<FsStat> {
-        return this.filesystem.lstat(path);
+    async lstat(path: string): Promise<FsStat> {
+        return withoutWritePermissions(await this.filesystem.lstat(path));
     }
 
     realpath(path: string): Promise<string> {
@@ -101,4 +101,8 @@ export class ReadOnlyFileSystem implements IFileSystem {
     readlink(path: string): Promise<string> {
         return this.filesystem.readlink(path);
     }
+}
+
+function withoutWritePermissions(stat: FsStat): FsStat {
+    return {...stat, mode: stat.mode & ~0o222};
 }

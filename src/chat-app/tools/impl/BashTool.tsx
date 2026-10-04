@@ -37,7 +37,8 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
     readonly description =
         "Run a bash command in an isolated virtual filesystem with no host access. " +
         "Sandboxed Python is available through Pyodide, for example: " +
-        "`python -c 'print(1 + 1)'`. Install compatible pinned packages with micropip. " +
+        "`python -c 'print(1 + 1)'`, and shares files under the sandbox user directory. " +
+        "Install compatible pinned packages with micropip. " +
         `Prior tool results are read-only at ${VIR_ENV_USER_PATH}/${ToolResultStore.groupName}, ` +
         `and parsed PDF pages are read-only at ${VIR_ENV_USER_PATH}/${AnyDocParseResultStore.groupName}.`;
     readonly parameters = bashToolParameters;

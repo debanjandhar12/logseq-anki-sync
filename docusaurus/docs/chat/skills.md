@@ -87,7 +87,16 @@ cat /home/user/skills/my-skill/references/nested/example.md
 python /home/user/skills/my-skill/scripts/example.py
 ```
 
-These are real paths in the [read-only Bash sandbox mount](./bash-sandbox.md), never host storage paths. Mounts refresh before each Bash tool execution, so editor additions, renames, and deletions are immediately discoverable. Scripts run only through interpreters already supported by the sandbox. Python has a separate filesystem; pass resource contents through stdin when a Python script needs them.
+These are real paths in the [read-only Bash sandbox mount](./bash-sandbox.md), never host storage paths. Mounts refresh before each Bash tool execution, so editor additions, renames, and deletions are immediately discoverable. Scripts run only through interpreters already supported by the sandbox. Python shares `/home/user`, so scripts can read mounted resources with ordinary file APIs. For example, a script can read a resource stored next to it without depending on the command's working directory:
+
+```python
+from pathlib import Path
+
+resource = Path(__file__).parent / "resource.json"
+print(resource.read_text())
+```
+
+Skill mounts are read-only, so Python cannot persist changes to these resources. See [Bash Sandbox](./bash-sandbox.md) for the shared-filesystem lifecycle and size limits.
 
 The built-in `logseq-datascript-queries` skill includes `examples/FIND_ORIGINAL_PAGE_FROM_ALIAS.ds` for resolving an alias to its original page and `references/query-pitfalls.md` for debugging failing or unexpected queries. The pitfalls guide is a reference read on demand with Bash. Internal queries are embedded in the skill instructions and debugging reference at build time.
 

@@ -3,8 +3,12 @@ export const DONATE_ICON =
 
 export const LOGSEQ_HTTP_PROXY_TIMEOUT_MS = 30_000;
 
-/** User directory in the virtual environment and base for plugin storage mounts. */
-export const VIR_ENV_USER_PATH = "/home/user";
+/** Virtual identity shared by the Bash sandbox and Python runtime. */
+export const VIR_ENV_USER = "user";
+export const VIR_ENV_HOSTNAME = "localhost";
+export const VIR_ENV_UID = 1000;
+export const VIR_ENV_GID = 1000;
+export const VIR_ENV_USER_PATH = `/home/${VIR_ENV_USER}`;
 
 export enum LogseqModelAction {
     SHOW_AI_CHAT = "showAIChat",

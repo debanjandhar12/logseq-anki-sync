@@ -6,8 +6,25 @@ import {createPythonGlobals} from "../../../../../../src/core/just-bash-wrapper/
 import {executePythonInWorker} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/executePythonInWorker";
 import type {
     PythonWorkerExecution,
-    PythonWorkerFetch
+    PythonWorkerFetch,
+    SandboxChanges
 } from "../../../../../../src/core/just-bash-wrapper/pyodide/workerProtocol";
+
+const changes: SandboxChanges = {
+    createdDirectories: [],
+    writtenFiles: [],
+    deletedFiles: [],
+    deletedDirectories: [],
+    unsupported: []
+};
+
+vi.mock("../../../../../../src/core/just-bash-wrapper/pyodide/worker/materializeSnapshot", () => ({
+    materializeSnapshot: vi.fn()
+}));
+vi.mock(
+    "../../../../../../src/core/just-bash-wrapper/pyodide/worker/collectSandboxChanges",
+    () => ({collectSandboxChanges: vi.fn(() => changes)})
+);
 
 const execution: PythonWorkerExecution = {
     code: "print(2)",
@@ -15,7 +32,8 @@ const execution: PythonWorkerExecution = {
     args: [],
     stdin: "",
     cwd: "/work",
-    env: {}
+    env: {},
+    snapshot: {root: "/home/user", directories: [], files: []}
 };
 
 function fixture() {
@@ -51,11 +69,9 @@ describe("worker execution cleanup", () => {
         pyodide[method].mockImplementation(() => {
             throw new Error("setup failed");
         });
-        await expect(executePythonInWorker(runtime, execution, hostFetch)).resolves.toEqual({
-            stdout: "",
-            stderr: "setup failed\n",
-            exitCode: 1
-        });
+        await expect(executePythonInWorker(runtime, execution, hostFetch)).resolves.toEqual(
+            expect.objectContaining({stdout: "", stderr: "setup failed\n", exitCode: 1})
+        );
         expect(globalThis.fetch).toBe(runtime.originalFetch);
         expect(runtime.capabilities.globals.fetch).toBeUndefined();
         expect(release).toHaveBeenCalledOnce();
@@ -70,7 +86,8 @@ describe("worker execution cleanup", () => {
         expect(await executePythonInWorker(runtime, execution, hostFetch)).toEqual({
             stdout: "2\n",
             stderr: "",
-            exitCode: 0
+            exitCode: 0,
+            changes
         });
         expect(globalThis.fetch).toBe(runtime.originalFetch);
         expect(pyodide.loadPackage).toHaveBeenCalledWith("micropip");

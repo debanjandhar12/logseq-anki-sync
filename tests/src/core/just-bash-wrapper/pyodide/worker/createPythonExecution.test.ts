@@ -1,6 +1,13 @@
 // @vitest-environment node
 import {loadPyodide, type PyodideInterface} from "pyodide";
 import {beforeAll, describe, expect, test} from "vitest";
+import {
+    VIR_ENV_GID,
+    VIR_ENV_HOSTNAME,
+    VIR_ENV_UID,
+    VIR_ENV_USER,
+    VIR_ENV_USER_PATH
+} from "../../../../../../src/constants";
 import {createPythonExecution} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/createPythonExecution";
 
 let pyodide: PyodideInterface;
@@ -32,7 +39,14 @@ async function execute(code: string) {
         args: ["001", "😀", "line\nvalue"],
         stdin: "",
         cwd: "/work/café",
-        env: {UNICODE_VALUE: "café\n'\\"}
+        env: {
+            HOME: VIR_ENV_USER_PATH,
+            USER: VIR_ENV_USER,
+            LOGNAME: VIR_ENV_USER,
+            HOSTNAME: VIR_ENV_HOSTNAME,
+            UNICODE_VALUE: "café\n'\\"
+        },
+        snapshot: {root: "/home/user", directories: [], files: []}
     });
     pyodide.runPython(bootstrap);
     return pyodide.runPythonAsync(source);
@@ -80,5 +94,20 @@ describe("real Python command wrapper", () => {
             expect(String(error)).toContain("user failure");
             expect(String(error)).toContain("quote'\\café.py");
         }
+    });
+
+    test("uses the shared virtual identity", async () => {
+        expect(
+            await execute(
+                `import getpass, os, platform, socket
+assert os.environ['HOME'] == '${VIR_ENV_USER_PATH}'
+assert os.environ['USER'] == '${VIR_ENV_USER}'
+assert getpass.getuser() == '${VIR_ENV_USER}'
+assert socket.gethostname() == '${VIR_ENV_HOSTNAME}'
+assert platform.node() == '${VIR_ENV_HOSTNAME}'
+assert os.getuid() == ${VIR_ENV_UID}
+assert os.getgid() == ${VIR_ENV_GID}`
+            )
+        ).toBe(0);
     });
 });

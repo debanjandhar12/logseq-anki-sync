@@ -23,8 +23,10 @@ const fetch = vi.fn(async (url: string) => ({
 const [pythonCommand, python3Command, pyCommand] = createPythonCommands("python", "python3", "py");
 
 function createContext(stdin = "", cwd = "/") {
+    const fs = new InMemoryFs();
+    fs.mkdirSync("/home/user", {recursive: true});
     return createCommandContext({
-        fs: new InMemoryFs(),
+        fs,
         cwd,
         env: new Map(),
         exportedEnv: {},
@@ -35,7 +37,8 @@ function createContext(stdin = "", cwd = "/") {
 
 describe("Pyodide Python commands", () => {
     beforeEach(() => {
-        vi.mocked(executePython).mockClear();
+        vi.mocked(executePython).mockReset();
+        vi.mocked(executePython).mockResolvedValue({stdout: "ok\n", stderr: "", exitCode: 0});
     });
 
     test("registers python and python3 aliases", async () => {
@@ -200,5 +203,103 @@ describe("Pyodide Python commands", () => {
                 stdin: "input"
             })
         );
+    });
+
+    test("applies Python filesystem changes through the Bash filesystem", async () => {
+        const context = createContext();
+        vi.mocked(executePython).mockResolvedValue({
+            stdout: "",
+            stderr: "",
+            exitCode: 0,
+            changes: {
+                createdDirectories: ["/home/user/generated"],
+                writtenFiles: [
+                    {path: "/home/user/generated/result.txt", content: Buffer.from("result")}
+                ],
+                deletedFiles: [],
+                deletedDirectories: [],
+                unsupported: []
+            }
+        });
+
+        expect(await pythonCommand.execute(["-c", "pass"], context)).toEqual({
+            stdout: "",
+            stderr: "",
+            exitCode: 0
+        });
+        await expect(context.fs.readFile("/home/user/generated/result.txt")).resolves.toBe(
+            "result"
+        );
+    });
+
+    test("reports write-back failures and forces a successful script to exit nonzero", async () => {
+        const context = createContext();
+        vi.spyOn(context.fs, "writeFile").mockRejectedValue(
+            new Error("EROFS: read-only file system, open '/home/user/denied.txt'")
+        );
+        vi.mocked(executePython).mockResolvedValue({
+            stdout: "script output\n",
+            stderr: "",
+            exitCode: 0,
+            changes: {
+                createdDirectories: [],
+                writtenFiles: [{path: "/home/user/denied.txt", content: Buffer.from("denied")}],
+                deletedFiles: [],
+                deletedDirectories: [],
+                unsupported: []
+            }
+        });
+
+        expect(await pythonCommand.execute(["-c", "pass"], context)).toEqual({
+            stdout: "script output\n",
+            stderr: "python: cannot write back \"/home/user/denied.txt\": EROFS: read-only file system, open '/home/user/denied.txt'\n",
+            exitCode: 1
+        });
+    });
+
+    test("does not apply a partial filesystem diff when the worker returns none", async () => {
+        const context = createContext();
+        const writeFile = vi.spyOn(context.fs, "writeFile");
+        vi.mocked(executePython).mockResolvedValue({
+            stdout: "",
+            stderr: "execution timed out\n",
+            exitCode: 124
+        });
+
+        expect(await pythonCommand.execute(["-c", "pass"], context)).toEqual({
+            stdout: "",
+            stderr: "execution timed out\n",
+            exitCode: 124
+        });
+        expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    test("does not start filesystem write-back after cancellation", async () => {
+        const context = createContext();
+        const controller = new AbortController();
+        context.signal = controller.signal;
+        vi.mocked(executePython).mockImplementation(async () => {
+            controller.abort();
+            return {
+                stdout: "",
+                stderr: "",
+                exitCode: 0,
+                changes: {
+                    createdDirectories: [],
+                    writtenFiles: [{path: "/home/user/denied.txt", content: Buffer.from("denied")}],
+                    deletedFiles: [],
+                    deletedDirectories: [],
+                    unsupported: []
+                }
+            };
+        });
+        const writeFile = vi.spyOn(context.fs, "writeFile");
+
+        expect(await pythonCommand.execute(["-c", "pass"], context)).toEqual({
+            stdout: "",
+            stderr: "python: execution aborted before filesystem write-back\n",
+            exitCode: 124
+        });
+        expect(writeFile).not.toHaveBeenCalled();
     });
 });

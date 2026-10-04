@@ -1,7 +1,15 @@
 import {type ByteString, defineCommand, type ExecResult} from "just-bash";
 import type {Options} from "yargs-parser";
 import parser from "yargs-parser/browser";
+import {VIR_ENV_USER_PATH} from "../../../constants";
+import {
+    applySandboxChanges,
+    SandboxWriteBackAbortedError,
+    type WriteBackFailure
+} from "./fs-bridge/applySandboxChanges";
+import {captureSandboxSnapshot} from "./fs-bridge/captureSandboxSnapshot";
 import {executePython} from "./pyodideRuntime";
+import type {SandboxSnapshot} from "./workerProtocol";
 
 const HELP = `Usage: python [-c CODE | FILE | -] [ARGS...]
 
@@ -9,8 +17,8 @@ Execute Python in browser-compatible Pyodide. Top-level await and micropip are
 available. Network access is restricted to allowlisted HTTPS hosts.
 `;
 
-function error(commandName: string, message: string): ExecResult {
-    return {stdout: "", stderr: `${commandName}: ${message}\n`, exitCode: 2};
+function error(commandName: string, message: string, exitCode = 2): ExecResult {
+    return {stdout: "", stderr: `${commandName}: ${message}\n`, exitCode};
 }
 
 const PARSER_OPTIONS: Options = {
@@ -85,17 +93,77 @@ function createPythonCommand(commandName: string) {
         if (!code.trim()) return error(commandName, "no input provided");
         if (!context.fetch) return error(commandName, "network access is not configured");
 
-        return executePython({
+        let snapshot: SandboxSnapshot;
+        try {
+            snapshot = await captureSandboxSnapshot(context.fs, VIR_ENV_USER_PATH);
+        } catch (cause) {
+            return error(
+                commandName,
+                `cannot snapshot sandbox filesystem: ${getErrorMessage(cause)}`,
+                1
+            );
+        }
+
+        const result = await executePython({
             code,
             fileName,
             args: scriptArgs,
             stdin: programStdin,
             cwd: context.cwd,
             env: context.exportedEnv ?? {},
+            snapshot,
             fetch: context.fetch,
             signal: context.signal
         });
+        if (!result.changes) return toExecResult(result);
+        if (context.signal?.aborted) {
+            return {
+                stdout: result.stdout,
+                stderr: `${result.stderr}${commandName}: execution aborted before filesystem write-back\n`,
+                exitCode: 124
+            };
+        }
+
+        // Once this commit starts, it runs to completion rather than exposing a
+        // partially applied filesystem to cancellation.
+        let failures: WriteBackFailure[];
+        try {
+            failures = await applySandboxChanges(
+                context.fs,
+                result.changes,
+                snapshot,
+                context.signal
+            );
+        } catch (cause) {
+            if (cause instanceof SandboxWriteBackAbortedError) {
+                return {
+                    stdout: result.stdout,
+                    stderr: `${result.stderr}${commandName}: ${cause.message}\n`,
+                    exitCode: 124
+                };
+            }
+            throw cause;
+        }
+        const writeBackErrors = failures
+            .map(
+                ({path, message}) =>
+                    `${commandName}: cannot write back ${JSON.stringify(path)}: ${message}\n`
+            )
+            .join("");
+        return {
+            stdout: result.stdout,
+            stderr: result.stderr + writeBackErrors,
+            exitCode: failures.length > 0 && result.exitCode === 0 ? 1 : result.exitCode
+        };
     });
+}
+
+function toExecResult(result: Awaited<ReturnType<typeof executePython>>): ExecResult {
+    return {stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode};
+}
+
+function getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
 }
 
 function decodeStdin(stdin: ByteString): string {

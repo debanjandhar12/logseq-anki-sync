@@ -15,5 +15,7 @@ export function encodeStoredText(
 
 /** Convert just-bash file content to UTF-8 text suitable for plugin storage. */
 export function toStorableText(content: FileContent): string {
-    return typeof content === "string" ? content : new TextDecoder().decode(content);
+    return typeof content === "string"
+        ? content
+        : new TextDecoder("utf-8", {fatal: true}).decode(content);
 }

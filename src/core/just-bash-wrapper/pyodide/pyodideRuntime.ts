@@ -113,7 +113,8 @@ function createExecution(options: ExecutionOptions): PythonWorkerExecution {
         args: options.args,
         stdin: options.stdin,
         cwd: options.cwd,
-        env: options.env
+        env: options.env,
+        snapshot: options.snapshot
     };
 }
 

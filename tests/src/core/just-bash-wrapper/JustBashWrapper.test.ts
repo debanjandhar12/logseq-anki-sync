@@ -1,4 +1,5 @@
 import {beforeAll, beforeEach, describe, expect, test, vi} from "vitest";
+import {VIR_ENV_HOSTNAME, VIR_ENV_USER, VIR_ENV_USER_PATH} from "../../../../src/constants";
 import {JustBashAdapterFS, JustBashWrapper} from "../../../../src/core/just-bash-wrapper";
 import {AnyDocParseResultStore} from "../../../../src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {ToolResultStore} from "../../../../src/core/stores/tool-results/ToolResultStore";
@@ -102,6 +103,19 @@ describe("JustBashWrapper", () => {
         expect((await bash.exec("py --help")).stdout).toContain("Usage: py");
         expect((await bash.exec("js-exec '1 + 1'")).exitCode).not.toBe(0);
         expect((await bash.exec("qjs --help")).exitCode).not.toBe(0);
+    });
+
+    test("uses one virtual identity across paths, environment and commands", async () => {
+        const bash = await JustBashWrapper.getInstance();
+
+        expect(
+            (await bash.exec('printf \'%s\\n\' "$HOME" "$USER" "$LOGNAME" "$HOSTNAME" ~')).stdout
+        ).toBe(
+            `${VIR_ENV_USER_PATH}\n${VIR_ENV_USER}\n${VIR_ENV_USER}\n${VIR_ENV_HOSTNAME}\n${VIR_ENV_USER_PATH}\n`
+        );
+        expect((await bash.exec("whoami")).stdout).toBe(`${VIR_ENV_USER}\n`);
+        expect((await bash.exec("hostname")).stdout).toBe(`${VIR_ENV_HOSTNAME}\n`);
+        expect((await bash.fs.stat(VIR_ENV_USER_PATH)).mode & 0o222).toBe(0);
     });
 
     test("initializes nested glob state and refreshes external additions/deletions", async () => {

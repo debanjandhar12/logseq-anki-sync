@@ -81,6 +81,15 @@ describe("JustBashAdapterFS", () => {
         await expect(fs.exists("/b.txt")).resolves.toBe(false);
     });
 
+    test("rejects binary writes that cannot round-trip through text storage", async () => {
+        const fs = new JustBashAdapterFS("scratch", "readwrite");
+
+        await expect(fs.writeFile("/binary", new Uint8Array([0, 255, 1]))).rejects.toThrow(
+            /encoded data was not valid/
+        );
+        await expect(fs.exists("/binary")).resolves.toBe(false);
+    });
+
     test("infers nested directories and immediate typed children", async () => {
         await LogseqPluginStorageManager.saveFile("nested", "example/references/info.md", "世界");
         await LogseqPluginStorageManager.saveFile("nested", "example/SKILL.md", "skill");
