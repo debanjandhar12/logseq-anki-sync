@@ -92,7 +92,8 @@ export class AssetOperation {
 
     private async getBase64FromUrl(url: string): Promise<string> {
         try {
-            const response = await WindowParentBridge.getFetch()(url);
+            const resolvedUrl = await WindowParentBridge.makeAssetUrl(url);
+            const response = await WindowParentBridge.getFetch()(resolvedUrl);
             const blob = await response.blob();
             const reader = new FileReader();
             await new Promise((resolve, reject) => {
