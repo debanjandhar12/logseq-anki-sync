@@ -1,16 +1,47 @@
 import {InMemoryFs} from "just-bash";
 import {describe, expect, test, vi} from "vitest";
 import {applySandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/applySandboxChanges";
+import {captureSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/captureSandboxSnapshot";
+import {SandboxWriteBackAbortedError} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/SandboxWriteBackAbortedError";
+import {createSandboxSnapshot} from "../sandboxSnapshotFixture";
 
-const emptySnapshot = {
-    root: "/home/user",
-    directories: [{path: "/home/user", mode: 0o777}],
-    files: []
-};
+const emptySnapshot = createSandboxSnapshot("/home/user", {
+    "/home/user": {kind: "directory", mode: 0o777}
+});
 
 import {ReadOnlyFileSystem} from "../../../../../../src/core/just-bash-wrapper/ReadOnlyFileSystem";
 
 describe("applySandboxChanges", () => {
+    test("preserves new host children when Python deletes their directory", async () => {
+        const filesystem = new InMemoryFs();
+        filesystem.mkdirSync("/home/user/directory", {recursive: true});
+        const snapshot = await captureSandboxSnapshot(filesystem, "/home/user");
+        await filesystem.writeFile("/home/user/directory/host.txt", Buffer.from("host"));
+        expect(
+            await applySandboxChanges(
+                filesystem,
+                {
+                    createdDirectories: [],
+                    writtenFiles: [],
+                    deletedFiles: [],
+                    deletedDirectories: ["/home/user/directory"],
+                    unsupported: []
+                },
+                snapshot
+            )
+        ).toEqual([
+            {
+                path: "/home/user/directory",
+                message: "filesystem changed after the Python snapshot was captured"
+            }
+        ]);
+        await expect(filesystem.readFile("/home/user/directory/host.txt")).resolves.toBe("host");
+    });
+    test("preserves the cancellation error name and message", () => {
+        const error = new SandboxWriteBackAbortedError();
+        expect(error.name).toBe("SandboxWriteBackAbortedError");
+        expect(error.message).toBe("execution aborted before filesystem write-back");
+    });
     test("applies creates, writes, deletions and type replacements", async () => {
         const filesystem = new InMemoryFs();
         filesystem.mkdirSync("/home/user/old-directory", {recursive: true});
@@ -33,21 +64,16 @@ describe("applySandboxChanges", () => {
                     deletedDirectories: ["/home/user/old-directory"],
                     unsupported: []
                 },
-                {
-                    ...emptySnapshot,
-                    directories: [
-                        ...emptySnapshot.directories,
-                        {path: "/home/user/old-directory", mode: 0o755}
-                    ],
-                    files: [
-                        {path: "/home/user/old-file", mode: 0o644, content: Buffer.from("old")},
-                        {
-                            path: "/home/user/old-directory/child",
-                            mode: 0o644,
-                            content: Buffer.from("old")
-                        }
-                    ]
-                }
+                createSandboxSnapshot("/home/user", {
+                    "/home/user": {kind: "directory", mode: 0o777},
+                    "/home/user/old-directory": {kind: "directory", mode: 0o755},
+                    "/home/user/old-file": {kind: "file", mode: 0o644, content: Buffer.from("old")},
+                    "/home/user/old-directory/child": {
+                        kind: "file",
+                        mode: 0o644,
+                        content: Buffer.from("old")
+                    }
+                })
             )
         ).resolves.toEqual([]);
         await expect(filesystem.readFile("/home/user/old-file/new")).resolves.toBe("new");
@@ -92,10 +118,10 @@ describe("applySandboxChanges", () => {
                 deletedDirectories: [],
                 unsupported: []
             },
-            {
-                ...emptySnapshot,
-                files: [{path: "/home/user/file", mode: 0o644, content: Buffer.from("snapshot")}]
-            }
+            createSandboxSnapshot("/home/user", {
+                "/home/user": {kind: "directory", mode: 0o777},
+                "/home/user/file": {kind: "file", mode: 0o644, content: Buffer.from("snapshot")}
+            })
         );
 
         expect(failures).toEqual([
@@ -149,13 +175,10 @@ describe("applySandboxChanges", () => {
                 deletedDirectories: [],
                 unsupported: []
             },
-            {
-                ...emptySnapshot,
-                directories: [
-                    ...emptySnapshot.directories,
-                    {path: "/home/user/directory", mode: 0o755}
-                ]
-            }
+            createSandboxSnapshot("/home/user", {
+                "/home/user": {kind: "directory", mode: 0o777},
+                "/home/user/directory": {kind: "directory", mode: 0o755}
+            })
         );
 
         expect(failures).toEqual([

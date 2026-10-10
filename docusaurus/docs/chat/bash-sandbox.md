@@ -42,6 +42,8 @@ Write-back also checks that affected host paths still match the captured snapsho
 
 Only `/home/user` is shared. Python's `/tmp`, site packages, and `micropip` packages remain private to the one-use Python runtime. There is no pip wheel cache. A snapshot or change set is limited to 16 MiB per file and 128 MiB total; oversized transfers fail with a clear error.
 
+For maintainers, the bridge's shared types, content comparison, pure tree diff, and byte budgets live in `src/core/just-bash-wrapper/pyodide/sandbox-tree/`. Host storage reads and conflict-checked writes live in `just-bash-fs-bridge/`, while the Emscripten filesystem reader and loader live in `worker/`. Snapshots use a structured-cloneable path-to-entry `Map`; write-back remains controlled by the host after Python execution completes.
+
 Use `micropip` to install compatible packages and pin exact versions. Package installations exist only for the current command. For example:
 
 ```bash

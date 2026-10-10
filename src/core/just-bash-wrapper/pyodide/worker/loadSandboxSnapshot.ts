@@ -1,4 +1,5 @@
-import type {SandboxSnapshot} from "../workerProtocol";
+import type {SandboxSnapshot} from "../sandbox-tree/types";
+import {compareByDepthDescending} from "../sandbox-tree/utils/compareByDepth";
 import type {PyodideFS} from "./pyodideFs";
 
 const SNAPSHOT_MTIME_MS = 0;
@@ -11,14 +12,18 @@ export function loadSandboxSnapshot(filesystem: PyodideFS, snapshot: SandboxSnap
         filesystem.mkdirTree(snapshot.root);
     }
 
-    for (const {path} of snapshot.directories) filesystem.mkdirTree(path);
-    for (const {path, content} of snapshot.files) {
-        filesystem.writeFile(path, content);
-        filesystem.utime(path, SNAPSHOT_MTIME_MS, SNAPSHOT_MTIME_MS);
+    for (const [path, entry] of snapshot.entries) {
+        if (entry.kind === "directory") filesystem.mkdirTree(path);
     }
-    for (const {path, mode} of snapshot.files) filesystem.chmod(path, mode);
-    for (const {path, mode} of [...snapshot.directories].sort(byDepthDescending)) {
-        filesystem.chmod(path, mode);
+    for (const [path, entry] of snapshot.entries) {
+        if (entry.kind !== "file") continue;
+        filesystem.writeFile(path, entry.content);
+        filesystem.utime(path, SNAPSHOT_MTIME_MS, SNAPSHOT_MTIME_MS);
+        filesystem.chmod(path, entry.mode);
+    }
+    for (const path of [...snapshot.entries.keys()].sort(compareByDepthDescending)) {
+        const entry = snapshot.entries.get(path)!;
+        if (entry.kind === "directory") filesystem.chmod(path, entry.mode);
     }
 }
 
@@ -36,8 +41,3 @@ function clearDirectory(filesystem: PyodideFS, path: string): void {
         }
     }
 }
-
-const byDepthDescending = (
-    left: SandboxSnapshot["directories"][number],
-    right: SandboxSnapshot["directories"][number]
-): number => right.path.split("/").length - left.path.split("/").length;

@@ -1,41 +1,50 @@
 // @vitest-environment node
+
+import {InMemoryFs, MountableFs} from "just-bash";
 import {loadPyodide, type PyodideInterface} from "pyodide";
-import {beforeAll, beforeEach, describe, expect, test} from "vitest";
-import {MAX_SANDBOX_SNAPSHOT_FILE_BYTES} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/constants";
+import {beforeAll, beforeEach, describe, expect, test, vi} from "vitest";
+import {JustBashAdapterFS} from "../../../../../../src/core/just-bash-wrapper/JustBashAdapterFS";
+import {applySandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/applySandboxChanges";
+import {captureSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/captureSandboxSnapshot";
+import {MAX_SANDBOX_SNAPSHOT_FILE_BYTES} from "../../../../../../src/core/just-bash-wrapper/pyodide/sandbox-tree/constants";
 import {collectSandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/collectSandboxChanges";
 import {loadSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/loadSandboxSnapshot";
 import type {PyodideFS} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/pyodideFs";
-import type {SandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/workerProtocol";
+import {ReadOnlyFileSystem} from "../../../../../../src/core/just-bash-wrapper/ReadOnlyFileSystem";
+import {LogseqPluginStorageManager} from "../../../../../../src/logseq/LogseqPluginStorageManager";
+import {InMemoryStore} from "../../../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";
+import {createSandboxSnapshot} from "../sandboxSnapshotFixture";
 
 let pyodide: PyodideInterface;
 let filesystem: PyodideFS;
 
-const snapshot: SandboxSnapshot = {
-    root: "/home/user",
-    directories: [
-        {path: "/home/user", mode: 0o555},
-        {path: "/home/user/readonly", mode: 0o555},
-        {path: "/home/user/writable", mode: 0o777},
-        {path: "/home/user/writable/remove", mode: 0o777}
-    ],
-    files: [
-        {
-            path: "/home/user/readonly/input.json",
-            mode: 0o444,
-            content: new TextEncoder().encode('{"value":2}')
-        },
-        {
-            path: "/home/user/writable/change.txt",
-            mode: 0o666,
-            content: new TextEncoder().encode("before")
-        },
-        {
-            path: "/home/user/writable/remove/file.txt",
-            mode: 0o666,
-            content: new TextEncoder().encode("remove")
-        }
-    ]
-};
+// The storage-backed round trip uses InMemoryStore, without a browser Logseq host.
+vi.mock("@logseq/libs", () => {
+    vi.stubGlobal("logseq", {settings: {}});
+    return {};
+});
+
+const snapshot = createSandboxSnapshot("/home/user", {
+    "/home/user": {kind: "directory", mode: 0o555},
+    "/home/user/readonly": {kind: "directory", mode: 0o555},
+    "/home/user/writable": {kind: "directory", mode: 0o777},
+    "/home/user/writable/remove": {kind: "directory", mode: 0o777},
+    "/home/user/readonly/input.json": {
+        kind: "file",
+        mode: 0o444,
+        content: new TextEncoder().encode('{"value":2}')
+    },
+    "/home/user/writable/change.txt": {
+        kind: "file",
+        mode: 0o666,
+        content: new TextEncoder().encode("before")
+    },
+    "/home/user/writable/remove/file.txt": {
+        kind: "file",
+        mode: 0o666,
+        content: new TextEncoder().encode("remove")
+    }
+});
 
 beforeAll(async () => {
     const require = process.getBuiltinModule("module").createRequire(import.meta.url);
@@ -47,6 +56,43 @@ beforeAll(async () => {
 beforeEach(() => loadSandboxSnapshot(filesystem, snapshot));
 
 describe("Pyodide sandbox snapshots", () => {
+    test("round-trips Python writes through a readwrite storage mount", async () => {
+        const previousStore = LogseqPluginStorageManager.store;
+        LogseqPluginStorageManager.store = new InMemoryStore("pyodide-roundtrip");
+        try {
+            const base = new InMemoryFs();
+            base.mkdirSync("/home/user", {recursive: true});
+            const host = new MountableFs({
+                base: new ReadOnlyFileSystem(base),
+                mounts: [
+                    {
+                        mountPoint: "/home/user/scratch",
+                        filesystem: new JustBashAdapterFS("scratch", "readwrite")
+                    }
+                ]
+            });
+            await host.writeFile("/home/user/scratch/input.txt", "before");
+            const baseline = structuredClone(await captureSandboxSnapshot(host, "/home/user"));
+            loadSandboxSnapshot(filesystem, baseline);
+            pyodide.runPython(`
+import os
+open('/home/user/scratch/input.txt', 'w').write('after')
+os.mkdir('/home/user/scratch/nested')
+open('/home/user/scratch/nested/output.txt', 'w').write('café')
+`);
+            await expect(
+                applySandboxChanges(host, collectSandboxChanges(filesystem, baseline), baseline)
+            ).resolves.toEqual([]);
+            await expect(
+                LogseqPluginStorageManager.getFileContent("scratch", "input.txt")
+            ).resolves.toBe("after");
+            await expect(host.readFile("/home/user/scratch/nested/output.txt")).resolves.toBe(
+                "café"
+            );
+        } finally {
+            LogseqPluginStorageManager.store = previousStore;
+        }
+    });
     test("reloading replaces stale contents and restores original bytes and modes", () => {
         pyodide.runPython(`
 import os
@@ -60,7 +106,7 @@ os.chmod('/home/user/readonly', 0o777)
 
         expect(filesystem.analyzePath("/home/user/writable/stale.txt").exists).toBe(false);
         expect(filesystem.readFile("/home/user/readonly/input.json")).toEqual(
-            snapshot.files[0].content
+            new TextEncoder().encode('{"value":2}')
         );
         expect(filesystem.lstat("/home/user/readonly/input.json").mode & 0o777).toBe(0o444);
         expect(filesystem.lstat("/home/user/readonly").mode & 0o777).toBe(0o555);

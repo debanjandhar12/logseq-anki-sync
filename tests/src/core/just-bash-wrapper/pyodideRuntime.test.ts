@@ -6,6 +6,7 @@ import type {
     PythonWorkerExecution,
     PythonWorkerFetch
 } from "../../../../src/core/just-bash-wrapper/pyodide/workerProtocol";
+import {createSandboxSnapshot} from "./pyodide/sandboxSnapshotFixture";
 
 const fetch: SecureFetch = async (url) => ({
     status: 200,
@@ -40,11 +41,9 @@ function executionOptions(worker: FakeWorker, client: FakeWorkerClient) {
         stdin: "",
         cwd: "/home/user",
         env: {},
-        snapshot: {
-            root: "/home/user",
-            directories: [{path: "/home/user", mode: 0o555}],
-            files: []
-        },
+        snapshot: createSandboxSnapshot("/home/user", {
+            "/home/user": {kind: "directory", mode: 0o555}
+        }),
         fetch,
         runtimeBaseUrl: "https://plugin.test/pyodide/",
         workerFactory: () => worker as unknown as Worker,
@@ -79,11 +78,9 @@ describe("Pyodide worker orchestration", () => {
                 stdin: "",
                 cwd: "/home/user",
                 env: {},
-                snapshot: {
-                    root: "/home/user",
-                    directories: [{path: "/home/user", mode: 0o555}],
-                    files: []
-                }
+                snapshot: createSandboxSnapshot("/home/user", {
+                    "/home/user": {kind: "directory", mode: 0o555}
+                })
             },
             expect.any(Function)
         );

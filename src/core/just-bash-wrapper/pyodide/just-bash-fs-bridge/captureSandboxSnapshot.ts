@@ -1,42 +1,26 @@
 import type {IFileSystem} from "just-bash";
-import type {SandboxSnapshot} from "../workerProtocol";
-import {assertFileWithinSnapshotBudget} from "./utils/assertFileWithinSnapshotBudget";
-import {assertTotalWithinSnapshotBudget} from "./utils/assertTotalWithinSnapshotBudget";
-import {SandboxSnapshotError} from "./utils/SandboxSnapshotError";
+import {SandboxBudget} from "../sandbox-tree/SandboxBudget";
+import {SandboxSnapshotError} from "../sandbox-tree/SandboxSnapshotError";
+import type {SandboxEntry, SandboxSnapshot} from "../sandbox-tree/types";
+import {joinSandboxPath} from "../sandbox-tree/utils/joinSandboxPath";
+import {readHostEntry} from "./utils/readHostEntry";
 
 /** Capture one virtual filesystem subtree for materialization inside Pyodide. */
 export async function captureSandboxSnapshot(
     filesystem: IFileSystem,
-    root: string
+    rootPath: string
 ): Promise<SandboxSnapshot> {
-    const resolvedRoot = filesystem.resolvePath("/", root);
-    const directories: SandboxSnapshot["directories"] = [];
-    const files: SandboxSnapshot["files"] = [];
-    let totalBytes = 0;
-
+    const root = filesystem.resolvePath("/", rootPath);
+    const entries = new Map<string, SandboxEntry>();
+    const budget = new SandboxBudget();
     async function visit(path: string): Promise<void> {
-        const stat = await filesystem.lstat(path);
-        if (stat.isSymbolicLink) {
-            throw new SandboxSnapshotError(`symbolic links are not supported: ${path}`);
-        }
-        if (stat.isDirectory) {
-            directories.push({path, mode: stat.mode & 0o777});
-            for (const name of (await filesystem.readdir(path)).sort()) {
-                await visit(path === "/" ? `/${name}` : `${path}/${name}`);
-            }
-            return;
-        }
-        if (!stat.isFile) throw new SandboxSnapshotError(`unsupported filesystem entry: ${path}`);
-
-        assertFileWithinSnapshotBudget(path, stat.size);
-        assertTotalWithinSnapshotBudget(totalBytes + stat.size);
-        const content = await filesystem.readFileBuffer(path);
-        assertFileWithinSnapshotBudget(path, content.byteLength);
-        totalBytes += content.byteLength;
-        assertTotalWithinSnapshotBudget(totalBytes);
-        files.push({path, mode: stat.mode & 0o777, content});
+        const entry = await readHostEntry(filesystem, path, budget);
+        if (!entry) throw new SandboxSnapshotError(`missing filesystem entry: ${path}`);
+        entries.set(path, entry);
+        if (entry.kind !== "directory") return;
+        for (const name of (await filesystem.readdir(path)).sort())
+            await visit(joinSandboxPath(path, name));
     }
-
-    await visit(resolvedRoot);
-    return {root: resolvedRoot, directories, files};
+    await visit(root);
+    return {root, entries};
 }

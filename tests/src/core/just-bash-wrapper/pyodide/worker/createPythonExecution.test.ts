@@ -46,7 +46,7 @@ async function execute(code: string) {
             HOSTNAME: VIR_ENV_HOSTNAME,
             UNICODE_VALUE: "café\n'\\"
         },
-        snapshot: {root: "/home/user", directories: [], files: []}
+        snapshot: {root: "/home/user", entries: new Map()}
     });
     pyodide.runPython(bootstrap);
     return pyodide.runPythonAsync(source);

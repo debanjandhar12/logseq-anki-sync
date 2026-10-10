@@ -4,10 +4,10 @@ import parser from "yargs-parser/browser";
 import {VIR_ENV_USER_PATH} from "../../../constants";
 import {applySandboxChanges} from "./just-bash-fs-bridge/applySandboxChanges";
 import {captureSandboxSnapshot} from "./just-bash-fs-bridge/captureSandboxSnapshot";
-import {SandboxWriteBackAbortedError} from "./just-bash-fs-bridge/utils/SandboxWriteBackAbortedError";
-import type {WriteBackFailure} from "./just-bash-fs-bridge/utils/WriteBackFailure";
+import {SandboxWriteBackAbortedError} from "./just-bash-fs-bridge/SandboxWriteBackAbortedError";
+import type {WriteBackFailure} from "./just-bash-fs-bridge/types";
 import {executePython} from "./pyodideRuntime";
-import type {SandboxSnapshot} from "./workerProtocol";
+import type {SandboxSnapshot} from "./sandbox-tree/types";
 
 const HELP = `Usage: python [-c CODE | FILE | -] [ARGS...]
 

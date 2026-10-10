@@ -1,27 +1,4 @@
-export interface SandboxSnapshotDirectory {
-    path: string;
-    mode: number;
-}
-
-export interface SandboxSnapshotFile {
-    path: string;
-    mode: number;
-    content: Uint8Array;
-}
-
-export interface SandboxSnapshot {
-    root: string;
-    directories: SandboxSnapshotDirectory[];
-    files: SandboxSnapshotFile[];
-}
-
-export interface SandboxChanges {
-    createdDirectories: string[];
-    writtenFiles: Array<{path: string; content: Uint8Array}>;
-    deletedFiles: string[];
-    deletedDirectories: string[];
-    unsupported: Array<{path: string; reason: string}>;
-}
+import type {SandboxChanges, SandboxSnapshot} from "./sandbox-tree/types";
 
 export interface PythonWorkerExecution {
     code: string;

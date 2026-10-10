@@ -4,9 +4,10 @@ import {captureSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapp
 import {
     MAX_SANDBOX_SNAPSHOT_FILE_BYTES,
     MAX_SANDBOX_SNAPSHOT_TOTAL_BYTES
-} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/constants";
-import {assertTotalWithinSnapshotBudget} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/utils/assertTotalWithinSnapshotBudget";
+} from "../../../../../../src/core/just-bash-wrapper/pyodide/sandbox-tree/constants";
+import {SandboxBudget} from "../../../../../../src/core/just-bash-wrapper/pyodide/sandbox-tree/SandboxBudget";
 import {ReadOnlyFileSystem} from "../../../../../../src/core/just-bash-wrapper/ReadOnlyFileSystem";
+import {createSandboxSnapshot} from "../sandboxSnapshotFixture";
 
 describe("captureSandboxSnapshot", () => {
     test("captures nested bytes and effective read-only modes", async () => {
@@ -17,17 +18,17 @@ describe("captureSandboxSnapshot", () => {
 
         const snapshot = await captureSandboxSnapshot(filesystem, "/home/user");
 
-        expect(snapshot.directories).toEqual([
-            {path: "/home/user", mode: 0o555},
-            {path: "/home/user/nested", mode: 0o555}
-        ]);
-        expect(snapshot.files).toEqual([
-            {
-                path: "/home/user/nested/data.bin",
-                mode: 0o444,
-                content: new Uint8Array([0, 255, 1])
-            }
-        ]);
+        expect(snapshot).toEqual(
+            createSandboxSnapshot("/home/user", {
+                "/home/user": {kind: "directory", mode: 0o555},
+                "/home/user/nested": {kind: "directory", mode: 0o555},
+                "/home/user/nested/data.bin": {
+                    kind: "file",
+                    mode: 0o444,
+                    content: new Uint8Array([0, 255, 1])
+                }
+            })
+        );
     });
 
     test("fails before reading a file whose stat exceeds the per-file budget", async () => {
@@ -59,8 +60,14 @@ describe("captureSandboxSnapshot", () => {
     });
 
     test("rejects aggregate snapshots over the total byte budget", () => {
-        expect(() => assertTotalWithinSnapshotBudget(MAX_SANDBOX_SNAPSHOT_TOTAL_BYTES + 1)).toThrow(
-            "128 MiB total limit"
-        );
+        const budget = new SandboxBudget();
+        for (
+            let size = 0;
+            size < MAX_SANDBOX_SNAPSHOT_TOTAL_BYTES;
+            size += MAX_SANDBOX_SNAPSHOT_FILE_BYTES
+        ) {
+            budget.add("/home/user/file", MAX_SANDBOX_SNAPSHOT_FILE_BYTES);
+        }
+        expect(() => budget.add("/home/user/extra", 1)).toThrow("128 MiB total limit");
     });
 });
