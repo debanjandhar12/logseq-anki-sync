@@ -1,7 +1,7 @@
 // @vitest-environment node
 import {describe, expect, test, vi} from "vitest";
+import type {PythonWorkerFetch} from "../../../../../../src/core/just-bash-wrapper/pyodide/types";
 import {createWorkerFetch} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/createWorkerFetch";
-import type {PythonWorkerFetch} from "../../../../../../src/core/just-bash-wrapper/pyodide/workerProtocol";
 
 describe("worker fetch bridge", () => {
     test("only exact runtime assets bypass host fetch", async () => {

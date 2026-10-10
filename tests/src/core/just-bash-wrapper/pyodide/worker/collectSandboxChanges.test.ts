@@ -3,7 +3,7 @@ import {describe, expect, test, vi} from "vitest";
 import {MAX_SANDBOX_SNAPSHOT_FILE_BYTES} from "../../../../../../src/core/just-bash-wrapper/pyodide/sandbox-tree/constants";
 import type {SandboxEntry} from "../../../../../../src/core/just-bash-wrapper/pyodide/sandbox-tree/types";
 import {collectSandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/collectSandboxChanges";
-import type {PyodideFS} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/pyodideFs";
+import type {PyodideFS} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/PyodideFS";
 import {createSandboxSnapshot} from "../sandboxSnapshotFixture";
 
 function filesystemWithFiles(files: Record<string, Uint8Array>) {

@@ -2,7 +2,7 @@ import {diffSandboxTrees} from "../sandbox-tree/diffSandboxTrees";
 import {SandboxBudget} from "../sandbox-tree/SandboxBudget";
 import type {SandboxChanges, SandboxSnapshot} from "../sandbox-tree/types";
 import {isSameEntry} from "../sandbox-tree/utils/isSameEntry";
-import type {PyodideFS} from "./pyodideFs";
+import type {PyodideFS} from "./PyodideFS";
 import {readEmscriptenTree} from "./readEmscriptenTree";
 
 /** Collect an indivisible, budget-checked diff of the shared root. */

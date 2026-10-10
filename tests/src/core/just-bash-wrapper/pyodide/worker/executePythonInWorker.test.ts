@@ -3,14 +3,14 @@ import {releaseProxy} from "comlink";
 import type {PyodideInterface} from "pyodide";
 import {beforeEach, describe, expect, test, vi} from "vitest";
 import type {SandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/sandbox-tree/types";
+import type {
+    PythonWorkerExecution,
+    PythonWorkerFetch
+} from "../../../../../../src/core/just-bash-wrapper/pyodide/types";
 import {collectSandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/collectSandboxChanges";
 import {createPythonGlobals} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/createPythonGlobals";
 import {executePythonInWorker} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/executePythonInWorker";
 import {loadSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/loadSandboxSnapshot";
-import type {
-    PythonWorkerExecution,
-    PythonWorkerFetch
-} from "../../../../../../src/core/just-bash-wrapper/pyodide/workerProtocol";
 
 const changes: SandboxChanges = {
     createdDirectories: [],

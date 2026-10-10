@@ -1,6 +1,6 @@
 import type {SecureFetch} from "just-bash";
 import {LOGSEQ_PROXY_FINAL_URL_HEADER} from "src/logseq/LogseqHttpProxy";
-import {assertNetworkRequestAllowed} from "./networkPolicy";
+import {assertNetworkRequestAllowed} from "./assertNetworkRequestAllowed";
 
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
 const SCIPY_WHEEL =
@@ -10,7 +10,7 @@ const SCIPY_WHEEL_SHA256 = "8512aee3e4b36b5a79523628d97d0d34612a366aecbb5b44a08c
 const MAX_REDIRECTS = 10;
 const TIMEOUT_MS = 30_000;
 
-export function createAllowlistedFetch(fetchImpl: typeof fetch): SecureFetch {
+export function createSecureFetch(fetchImpl: typeof fetch): SecureFetch {
     return async (input, options = {}) => {
         let method = (options.method ?? "GET").toUpperCase();
         let requestBody = options.body;

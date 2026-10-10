@@ -1,4 +1,4 @@
-import type {PythonWorkerFetch} from "../workerProtocol";
+import type {PythonWorkerFetch} from "../types";
 
 export function createWorkerFetch(
     hostFetch: PythonWorkerFetch,

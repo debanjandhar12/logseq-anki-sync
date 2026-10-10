@@ -9,7 +9,7 @@ import {captureSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapp
 import {MAX_SANDBOX_SNAPSHOT_FILE_BYTES} from "../../../../../../src/core/just-bash-wrapper/pyodide/sandbox-tree/constants";
 import {collectSandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/collectSandboxChanges";
 import {loadSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/loadSandboxSnapshot";
-import type {PyodideFS} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/pyodideFs";
+import type {PyodideFS} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/PyodideFS";
 import {ReadOnlyFileSystem} from "../../../../../../src/core/just-bash-wrapper/ReadOnlyFileSystem";
 import {LogseqPluginStorageManager} from "../../../../../../src/logseq/LogseqPluginStorageManager";
 import {InMemoryStore} from "../../../../../../src/logseq/LogseqPluginStorageManager/InMemoryStore";

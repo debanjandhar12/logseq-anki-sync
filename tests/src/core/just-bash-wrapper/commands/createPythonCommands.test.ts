@@ -5,10 +5,10 @@ import {
     unsafeBytesFromLatin1
 } from "just-bash";
 import {beforeEach, describe, expect, test, vi} from "vitest";
-import {createPythonCommands} from "../../../../src/core/just-bash-wrapper/pyodide";
-import {executePython} from "../../../../src/core/just-bash-wrapper/pyodide/pyodideRuntime";
+import {createPythonCommands} from "../../../../../src/core/just-bash-wrapper/commands";
+import {executePython} from "../../../../../src/core/just-bash-wrapper/pyodide";
 
-vi.mock("../../../../src/core/just-bash-wrapper/pyodide/pyodideRuntime", () => ({
+vi.mock("../../../../../src/core/just-bash-wrapper/pyodide", () => ({
     executePython: vi.fn(async () => ({stdout: "ok\n", stderr: "", exitCode: 0}))
 }));
 

@@ -1,6 +1,6 @@
 import type {SandboxChanges, SandboxEntry, SandboxSnapshot} from "../sandbox-tree/types";
 import {joinSandboxPath} from "../sandbox-tree/utils/joinSandboxPath";
-import type {PyodideFS} from "./pyodideFs";
+import type {PyodideFS} from "./PyodideFS";
 
 /** Read MEMFS without following links or accepting special filesystem entries. */
 export function readEmscriptenTree(

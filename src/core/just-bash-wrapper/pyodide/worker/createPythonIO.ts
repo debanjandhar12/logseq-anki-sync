@@ -1,4 +1,4 @@
-import type {PythonExecutionResult} from "../workerProtocol";
+import type {PythonExecutionResult} from "../types";
 
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const MAX_DIAGNOSTIC_BYTES = 4096;

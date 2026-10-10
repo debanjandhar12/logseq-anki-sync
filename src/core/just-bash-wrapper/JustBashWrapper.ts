@@ -6,11 +6,10 @@ import {
     VIR_ENV_USER,
     VIR_ENV_USER_PATH
 } from "../../constants";
+import {createPythonCommands, virtualIdentityCommands} from "./commands";
 import {JustBashAdapterFS} from "./JustBashAdapterFS";
-import {createAllowlistedFetch} from "./network";
-import {createPythonCommands} from "./pyodide";
+import {createSecureFetch} from "./network";
 import {ReadOnlyFileSystem} from "./ReadOnlyFileSystem";
-import {virtualIdentityCommands} from "./virtualIdentityCommands";
 
 /** Singleton accessor for the shared, fully virtual just-bash sandbox. */
 export class JustBashWrapper {
@@ -52,7 +51,7 @@ export class JustBashWrapper {
                 HOSTNAME: VIR_ENV_HOSTNAME
             },
             processInfo: {uid: VIR_ENV_UID, gid: VIR_ENV_GID},
-            fetch: createAllowlistedFetch(globalThis.fetch.bind(globalThis)),
+            fetch: createSecureFetch(globalThis.fetch.bind(globalThis)),
             customCommands: [
                 ...createPythonCommands("python", "python3", "py"),
                 ...virtualIdentityCommands

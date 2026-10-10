@@ -1,2 +1,3 @@
-export {assertNetworkRequestAllowed, parseNetworkAllowlist} from "./networkPolicy";
-export {createAllowlistedFetch} from "./secureFetch";
+export {assertNetworkRequestAllowed} from "./assertNetworkRequestAllowed";
+export {createSecureFetch} from "./createSecureFetch";
+export {parseNetworkAllowlist} from "./utils/parseNetworkAllowlist";

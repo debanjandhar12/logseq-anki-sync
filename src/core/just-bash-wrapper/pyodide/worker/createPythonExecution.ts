@@ -1,5 +1,5 @@
 import {VIR_ENV_GID, VIR_ENV_HOSTNAME, VIR_ENV_UID} from "../../../../constants";
-import type {PythonWorkerExecution} from "../workerProtocol";
+import type {PythonWorkerExecution} from "../types";
 
 export function createPythonExecution(execution: PythonWorkerExecution) {
     return {

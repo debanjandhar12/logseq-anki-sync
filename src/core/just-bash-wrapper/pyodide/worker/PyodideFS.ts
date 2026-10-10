@@ -1,6 +1,4 @@
-export interface PyodideFsStat {
-    mode: number;
-}
+import type {PyodideFsStat} from "./PyodideFsStat";
 
 export interface PyodideFS {
     analyzePath(path: string): {exists: boolean};

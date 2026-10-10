@@ -1,9 +1,5 @@
 import {releaseProxy} from "comlink";
-import type {
-    PythonExecutionResult,
-    PythonWorkerExecution,
-    PythonWorkerFetch
-} from "../workerProtocol";
+import type {PythonExecutionResult, PythonWorkerExecution, PythonWorkerFetch} from "../types";
 import {collectSandboxChanges} from "./collectSandboxChanges";
 import {createPythonExecution} from "./createPythonExecution";
 import {createPythonIO} from "./createPythonIO";

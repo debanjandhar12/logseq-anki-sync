@@ -1,6 +1,6 @@
 import type {SandboxSnapshot} from "../sandbox-tree/types";
 import {compareByDepthDescending} from "../sandbox-tree/utils/compareByDepth";
-import type {PyodideFS} from "./pyodideFs";
+import type {PyodideFS} from "./PyodideFS";
 
 const SNAPSHOT_MTIME_MS = 0;
 

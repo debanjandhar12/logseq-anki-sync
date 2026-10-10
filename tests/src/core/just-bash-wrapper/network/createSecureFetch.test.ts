@@ -1,6 +1,6 @@
 import {describe, expect, test, vi} from "vitest";
-import {createAllowlistedFetch} from "../../../../src/core/just-bash-wrapper/network";
-import {LOGSEQ_PROXY_FINAL_URL_HEADER} from "../../../../src/logseq/LogseqHttpProxy";
+import {createSecureFetch} from "../../../../../src/core/just-bash-wrapper/network";
+import {LOGSEQ_PROXY_FINAL_URL_HEADER} from "../../../../../src/logseq/LogseqHttpProxy";
 
 describe("allowlisted fetch", () => {
     test("rejects redirect targets outside the allowlist", async () => {
@@ -11,7 +11,7 @@ describe("allowlisted fetch", () => {
             })
         );
 
-        await expect(createAllowlistedFetch(fetchImpl)("https://github.com/start")).rejects.toThrow(
+        await expect(createSecureFetch(fetchImpl)("https://github.com/start")).rejects.toThrow(
             /Network access denied/
         );
     });
@@ -27,7 +27,7 @@ describe("allowlisted fetch", () => {
             )
             .mockResolvedValueOnce(new Response("ok", {status: 200}));
 
-        const result = await createAllowlistedFetch(fetchImpl)("https://github.com/start", {
+        const result = await createSecureFetch(fetchImpl)("https://github.com/start", {
             method: "POST",
             body: "data"
         });
@@ -45,7 +45,7 @@ describe("allowlisted fetch", () => {
         Object.defineProperty(response, "type", {value: "opaqueredirect"});
         const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response);
 
-        await expect(createAllowlistedFetch(fetchImpl)("https://github.com/start")).rejects.toThrow(
+        await expect(createSecureFetch(fetchImpl)("https://github.com/start")).rejects.toThrow(
             /destination is hidden/
         );
     });
@@ -57,7 +57,7 @@ describe("allowlisted fetch", () => {
             })
         );
 
-        await expect(createAllowlistedFetch(fetchImpl)("https://github.com/start")).rejects.toThrow(
+        await expect(createSecureFetch(fetchImpl)("https://github.com/start")).rejects.toThrow(
             /Network access denied/
         );
     });
@@ -67,7 +67,7 @@ describe("allowlisted fetch", () => {
         Object.defineProperty(response, "body", {value: null});
         const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response);
 
-        await expect(createAllowlistedFetch(fetchImpl)("https://github.com/file")).rejects.toThrow(
+        await expect(createSecureFetch(fetchImpl)("https://github.com/file")).rejects.toThrow(
             /size limit/
         );
     });
@@ -77,6 +77,6 @@ describe("allowlisted fetch", () => {
             "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/scipy-1.18.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl";
         const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response("not scipy"));
 
-        await expect(createAllowlistedFetch(fetchImpl)(url)).rejects.toThrow(/integrity check/);
+        await expect(createSecureFetch(fetchImpl)(url)).rejects.toThrow(/integrity check/);
     });
 });

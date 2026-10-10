@@ -1,12 +1,12 @@
 import type {SecureFetch} from "just-bash";
 import {describe, expect, test, vi} from "vitest";
-import {executePython} from "../../../../src/core/just-bash-wrapper/pyodide/pyodideRuntime";
+import {executePython} from "../../../../../src/core/just-bash-wrapper/pyodide";
 import type {
     PythonExecutionResult,
     PythonWorkerExecution,
     PythonWorkerFetch
-} from "../../../../src/core/just-bash-wrapper/pyodide/workerProtocol";
-import {createSandboxSnapshot} from "./pyodide/sandboxSnapshotFixture";
+} from "../../../../../src/core/just-bash-wrapper/pyodide/types";
+import {createSandboxSnapshot} from "./sandboxSnapshotFixture";
 
 const fetch: SecureFetch = async (url) => ({
     status: 200,

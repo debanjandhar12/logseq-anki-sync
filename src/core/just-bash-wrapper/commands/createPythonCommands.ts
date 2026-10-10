@@ -2,22 +2,18 @@ import {type ByteString, defineCommand, type ExecResult} from "just-bash";
 import type {Options} from "yargs-parser";
 import parser from "yargs-parser/browser";
 import {VIR_ENV_USER_PATH} from "../../../constants";
-import {applySandboxChanges} from "./just-bash-fs-bridge/applySandboxChanges";
-import {captureSandboxSnapshot} from "./just-bash-fs-bridge/captureSandboxSnapshot";
-import {SandboxWriteBackAbortedError} from "./just-bash-fs-bridge/SandboxWriteBackAbortedError";
-import type {WriteBackFailure} from "./just-bash-fs-bridge/types";
-import {executePython} from "./pyodideRuntime";
-import type {SandboxSnapshot} from "./sandbox-tree/types";
+import {executePython} from "../pyodide";
+import {applySandboxChanges} from "../pyodide/just-bash-fs-bridge/applySandboxChanges";
+import {captureSandboxSnapshot} from "../pyodide/just-bash-fs-bridge/captureSandboxSnapshot";
+import {SandboxWriteBackAbortedError} from "../pyodide/just-bash-fs-bridge/SandboxWriteBackAbortedError";
+import type {WriteBackFailure} from "../pyodide/just-bash-fs-bridge/types";
+import type {SandboxSnapshot} from "../pyodide/sandbox-tree/types";
 
 const HELP = `Usage: python [-c CODE | FILE | -] [ARGS...]
 
 Execute Python in browser-compatible Pyodide. Top-level await and micropip are
 available. Network access is restricted to allowlisted HTTPS hosts.
 `;
-
-function error(commandName: string, message: string, exitCode = 2): ExecResult {
-    return {stdout: "", stderr: `${commandName}: ${message}\n`, exitCode};
-}
 
 const PARSER_OPTIONS: Options = {
     boolean: ["help", "version"],
@@ -158,6 +154,10 @@ function createPythonCommand(commandName: string) {
 
 function toExecResult(result: Awaited<ReturnType<typeof executePython>>): ExecResult {
     return {stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode};
+}
+
+function error(commandName: string, message: string, exitCode = 2): ExecResult {
+    return {stdout: "", stderr: `${commandName}: ${message}\n`, exitCode};
 }
 
 function getErrorMessage(error: unknown): string {

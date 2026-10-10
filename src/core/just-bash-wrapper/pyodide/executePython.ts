@@ -1,13 +1,13 @@
 import {proxy, releaseProxy, wrap} from "comlink";
 import type {SecureFetch} from "just-bash";
 import pTimeout, {TimeoutError} from "p-timeout";
-import PyodideWorker from "./worker/pyodideWorker?worker";
 import type {
     PythonExecutionResult,
     PythonWorkerApi,
     PythonWorkerExecution,
     PythonWorkerFetch
-} from "./workerProtocol";
+} from "./types";
+import PyodideWorker from "./worker/pyodide.worker?worker";
 
 const STARTUP_TIMEOUT_MS = 30_000;
 const EXECUTION_TIMEOUT_MS = 120_000;
@@ -21,7 +21,7 @@ interface PythonWorkerClient {
     release(): void;
 }
 
-interface ExecutionOptions extends PythonWorkerExecution {
+interface PythonExecutionOptions extends PythonWorkerExecution {
     fetch: SecureFetch;
     signal?: AbortSignal;
     startupTimeoutMs?: number;
@@ -31,7 +31,9 @@ interface ExecutionOptions extends PythonWorkerExecution {
     workerClientFactory?: (worker: Worker) => PythonWorkerClient;
 }
 
-export async function executePython(options: ExecutionOptions): Promise<PythonExecutionResult> {
+export async function executePython(
+    options: PythonExecutionOptions
+): Promise<PythonExecutionResult> {
     let worker: Worker;
     try {
         worker = options.workerFactory?.() ?? new PyodideWorker();
@@ -106,7 +108,7 @@ export async function executePython(options: ExecutionOptions): Promise<PythonEx
     }
 }
 
-function createExecution(options: ExecutionOptions): PythonWorkerExecution {
+function createExecution(options: PythonExecutionOptions): PythonWorkerExecution {
     return {
         code: options.code,
         fileName: options.fileName,
