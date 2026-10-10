@@ -1,11 +1,11 @@
 import {InMemoryFs, MountableFs} from "just-bash";
 import {describe, expect, test, vi} from "vitest";
-import {captureSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/fs-bridge/captureSandboxSnapshot";
+import {captureSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/captureSandboxSnapshot";
 import {
-    assertTotalWithinSnapshotBudget,
     MAX_SANDBOX_SNAPSHOT_FILE_BYTES,
     MAX_SANDBOX_SNAPSHOT_TOTAL_BYTES
-} from "../../../../../../src/core/just-bash-wrapper/pyodide/fs-bridge/sandboxFsLimits";
+} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/constants";
+import {assertTotalWithinSnapshotBudget} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/utils/assertTotalWithinSnapshotBudget";
 import {ReadOnlyFileSystem} from "../../../../../../src/core/just-bash-wrapper/ReadOnlyFileSystem";
 
 describe("captureSandboxSnapshot", () => {

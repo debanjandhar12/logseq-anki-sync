@@ -9,7 +9,7 @@ import {createPythonExecution} from "./createPythonExecution";
 import {createPythonIO} from "./createPythonIO";
 import {createWorkerFetch} from "./createWorkerFetch";
 import type {PyodideWorkerRuntime} from "./initializePyodideWorker";
-import {materializeSnapshot} from "./materializeSnapshot";
+import {loadSandboxSnapshot} from "./loadSandboxSnapshot";
 
 export async function executePythonInWorker(
     runtime: PyodideWorkerRuntime,
@@ -18,7 +18,7 @@ export async function executePythonInWorker(
 ): Promise<PythonExecutionResult> {
     const {pyodide, originalFetch, allowedLocalAssetUrls, capabilities} = runtime;
     const io = createPythonIO(execution.stdin);
-    let materialized = false;
+    let snapshotLoaded = false;
     let result: PythonExecutionResult;
     try {
         const secureFetch = createWorkerFetch(fetch, originalFetch, allowedLocalAssetUrls);
@@ -27,8 +27,8 @@ export async function executePythonInWorker(
         pyodide.setStdout(io.stdout);
         pyodide.setStderr(io.stderr);
         pyodide.setStdin(io.stdin);
-        materializeSnapshot(pyodide.FS, execution.snapshot);
-        materialized = true;
+        loadSandboxSnapshot(pyodide.FS, execution.snapshot);
+        snapshotLoaded = true;
         await pyodide.loadPackage("micropip");
         const {bootstrap, source} = createPythonExecution(execution);
         pyodide.runPython(bootstrap);
@@ -42,7 +42,7 @@ export async function executePythonInWorker(
         result = io.result(1, error);
     }
 
-    if (materialized) {
+    if (snapshotLoaded) {
         try {
             result.changes = collectSandboxChanges(pyodide.FS, execution.snapshot);
         } catch (error) {

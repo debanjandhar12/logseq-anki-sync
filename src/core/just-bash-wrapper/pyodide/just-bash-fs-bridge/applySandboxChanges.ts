@@ -1,17 +1,8 @@
 import type {IFileSystem} from "just-bash";
 import type {SandboxChanges, SandboxSnapshot} from "../workerProtocol";
 
-export interface WriteBackFailure {
-    path: string;
-    message: string;
-}
-
-export class SandboxWriteBackAbortedError extends Error {
-    constructor() {
-        super("execution aborted before filesystem write-back");
-        this.name = "SandboxWriteBackAbortedError";
-    }
-}
+import {SandboxWriteBackAbortedError} from "./utils/SandboxWriteBackAbortedError";
+import type {WriteBackFailure} from "./utils/WriteBackFailure";
 
 /** Apply a Pyodide filesystem diff through the authoritative just-bash filesystem. */
 export async function applySandboxChanges(

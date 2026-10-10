@@ -1,6 +1,6 @@
 import {InMemoryFs} from "just-bash";
 import {describe, expect, test, vi} from "vitest";
-import {applySandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/fs-bridge/applySandboxChanges";
+import {applySandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/applySandboxChanges";
 
 const emptySnapshot = {
     root: "/home/user",

@@ -1,9 +1,9 @@
 // @vitest-environment node
 import {loadPyodide, type PyodideInterface} from "pyodide";
 import {beforeAll, beforeEach, describe, expect, test} from "vitest";
-import {MAX_SANDBOX_SNAPSHOT_FILE_BYTES} from "../../../../../../src/core/just-bash-wrapper/pyodide/fs-bridge/sandboxFsLimits";
+import {MAX_SANDBOX_SNAPSHOT_FILE_BYTES} from "../../../../../../src/core/just-bash-wrapper/pyodide/just-bash-fs-bridge/constants";
 import {collectSandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/collectSandboxChanges";
-import {materializeSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/materializeSnapshot";
+import {loadSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/loadSandboxSnapshot";
 import type {PyodideFS} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/pyodideFs";
 import type {SandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/workerProtocol";
 
@@ -44,9 +44,35 @@ beforeAll(async () => {
     filesystem = pyodide.FS;
 }, 30_000);
 
-beforeEach(() => materializeSnapshot(filesystem, snapshot));
+beforeEach(() => loadSandboxSnapshot(filesystem, snapshot));
 
 describe("Pyodide sandbox snapshots", () => {
+    test("reloading replaces stale contents and restores original bytes and modes", () => {
+        pyodide.runPython(`
+import os
+os.chmod('/home/user/readonly/input.json', 0o666)
+open('/home/user/readonly/input.json', 'w').write('changed')
+open('/home/user/writable/stale.txt', 'w').write('stale')
+os.chmod('/home/user/readonly', 0o777)
+`);
+
+        loadSandboxSnapshot(filesystem, snapshot);
+
+        expect(filesystem.analyzePath("/home/user/writable/stale.txt").exists).toBe(false);
+        expect(filesystem.readFile("/home/user/readonly/input.json")).toEqual(
+            snapshot.files[0].content
+        );
+        expect(filesystem.lstat("/home/user/readonly/input.json").mode & 0o777).toBe(0o444);
+        expect(filesystem.lstat("/home/user/readonly").mode & 0o777).toBe(0o555);
+        expect(collectSandboxChanges(filesystem, snapshot)).toEqual({
+            createdDirectories: [],
+            writtenFiles: [],
+            deletedFiles: [],
+            deletedDirectories: [],
+            unsupported: []
+        });
+    });
+
     test("supports ordinary Python reads and enforces read-only mode bits", () => {
         expect(
             pyodide

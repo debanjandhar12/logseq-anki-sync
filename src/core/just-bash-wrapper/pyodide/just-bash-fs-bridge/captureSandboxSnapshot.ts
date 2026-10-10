@@ -1,10 +1,8 @@
 import type {IFileSystem} from "just-bash";
 import type {SandboxSnapshot} from "../workerProtocol";
-import {
-    assertFileWithinSnapshotBudget,
-    assertTotalWithinSnapshotBudget,
-    SandboxSnapshotError
-} from "./sandboxFsLimits";
+import {assertFileWithinSnapshotBudget} from "./utils/assertFileWithinSnapshotBudget";
+import {assertTotalWithinSnapshotBudget} from "./utils/assertTotalWithinSnapshotBudget";
+import {SandboxSnapshotError} from "./utils/SandboxSnapshotError";
 
 /** Capture one virtual filesystem subtree for materialization inside Pyodide. */
 export async function captureSandboxSnapshot(

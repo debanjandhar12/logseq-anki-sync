@@ -1,7 +1,5 @@
-import {
-    assertFileWithinSnapshotBudget,
-    assertTotalWithinSnapshotBudget
-} from "../fs-bridge/sandboxFsLimits";
+import {assertFileWithinSnapshotBudget} from "../just-bash-fs-bridge/utils/assertFileWithinSnapshotBudget";
+import {assertTotalWithinSnapshotBudget} from "../just-bash-fs-bridge/utils/assertTotalWithinSnapshotBudget";
 import type {SandboxChanges, SandboxSnapshot} from "../workerProtocol";
 import type {PyodideFS} from "./pyodideFs";
 

@@ -4,7 +4,7 @@ import type {PyodideFS} from "./pyodideFs";
 const SNAPSHOT_MTIME_MS = 0;
 
 /** Replace the Pyodide view of the shared root with an exact host snapshot. */
-export function materializeSnapshot(filesystem: PyodideFS, snapshot: SandboxSnapshot): void {
+export function loadSandboxSnapshot(filesystem: PyodideFS, snapshot: SandboxSnapshot): void {
     if (filesystem.analyzePath(snapshot.root).exists) {
         clearDirectory(filesystem, snapshot.root);
     } else {

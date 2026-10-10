@@ -1,9 +1,11 @@
 // @vitest-environment node
 import {releaseProxy} from "comlink";
 import type {PyodideInterface} from "pyodide";
-import {describe, expect, test, vi} from "vitest";
+import {beforeEach, describe, expect, test, vi} from "vitest";
+import {collectSandboxChanges} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/collectSandboxChanges";
 import {createPythonGlobals} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/createPythonGlobals";
 import {executePythonInWorker} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/executePythonInWorker";
+import {loadSandboxSnapshot} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/loadSandboxSnapshot";
 import type {
     PythonWorkerExecution,
     PythonWorkerFetch,
@@ -18,8 +20,8 @@ const changes: SandboxChanges = {
     unsupported: []
 };
 
-vi.mock("../../../../../../src/core/just-bash-wrapper/pyodide/worker/materializeSnapshot", () => ({
-    materializeSnapshot: vi.fn()
+vi.mock("../../../../../../src/core/just-bash-wrapper/pyodide/worker/loadSandboxSnapshot", () => ({
+    loadSandboxSnapshot: vi.fn()
 }));
 vi.mock(
     "../../../../../../src/core/just-bash-wrapper/pyodide/worker/collectSandboxChanges",
@@ -35,6 +37,11 @@ const execution: PythonWorkerExecution = {
     env: {},
     snapshot: {root: "/home/user", directories: [], files: []}
 };
+
+beforeEach(() => {
+    vi.mocked(loadSandboxSnapshot).mockReset();
+    vi.mocked(collectSandboxChanges).mockReset().mockReturnValue(changes);
+});
 
 function fixture() {
     const pyodide = {
@@ -57,6 +64,61 @@ function fixture() {
 }
 
 describe("worker execution cleanup", () => {
+    test("loads the snapshot before package loading and Python execution", async () => {
+        const {pyodide, runtime, hostFetch} = fixture();
+        await executePythonInWorker(runtime, execution, hostFetch);
+        expect(loadSandboxSnapshot).toHaveBeenCalledWith(runtime.pyodide.FS, execution.snapshot);
+        const loadOrder = vi.mocked(loadSandboxSnapshot).mock.invocationCallOrder[0];
+        expect(loadOrder).toBeLessThan(pyodide.loadPackage.mock.invocationCallOrder[0]);
+        expect(loadOrder).toBeLessThan(pyodide.runPython.mock.invocationCallOrder[0]);
+        expect(loadOrder).toBeLessThan(pyodide.runPythonAsync.mock.invocationCallOrder[0]);
+    });
+
+    test("collects changes after Python execution fails if the snapshot was loaded", async () => {
+        const {pyodide, runtime, hostFetch} = fixture();
+        pyodide.runPythonAsync.mockRejectedValue(new Error("Python failed"));
+        expect(await executePythonInWorker(runtime, execution, hostFetch)).toEqual({
+            stdout: "",
+            stderr: "Python failed\n",
+            exitCode: 1,
+            changes
+        });
+        expect(collectSandboxChanges).toHaveBeenCalledWith(runtime.pyodide.FS, execution.snapshot);
+    });
+
+    test("skips collection and cleans up when snapshot loading fails", async () => {
+        const {pyodide, runtime, hostFetch, release} = fixture();
+        vi.mocked(loadSandboxSnapshot).mockImplementation(() => {
+            throw new Error("snapshot loading failed");
+        });
+        expect(await executePythonInWorker(runtime, execution, hostFetch)).toEqual({
+            stdout: "",
+            stderr: "snapshot loading failed\n",
+            exitCode: 1
+        });
+        expect(collectSandboxChanges).not.toHaveBeenCalled();
+        expect(pyodide.loadPackage).not.toHaveBeenCalled();
+        expect(globalThis.fetch).toBe(runtime.originalFetch);
+        expect(runtime.capabilities.globals.fetch).toBeUndefined();
+        expect(release).toHaveBeenCalledOnce();
+    });
+
+    test("drops changes and preserves stdout when change collection fails", async () => {
+        const {pyodide, runtime, hostFetch, release} = fixture();
+        pyodide.setStdout.mockImplementation(({write}) => write(new TextEncoder().encode("2\n")));
+        vi.mocked(collectSandboxChanges).mockImplementation(() => {
+            throw new Error("collection failed");
+        });
+        expect(await executePythonInWorker(runtime, execution, hostFetch)).toEqual({
+            stdout: "2\n",
+            stderr: "python: cannot collect sandbox filesystem changes: collection failed\n",
+            exitCode: 1
+        });
+        expect(globalThis.fetch).toBe(runtime.originalFetch);
+        expect(runtime.capabilities.globals.fetch).toBeUndefined();
+        expect(release).toHaveBeenCalledOnce();
+    });
+
     test.each([
         "setStdout",
         "setStderr",

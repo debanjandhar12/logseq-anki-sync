@@ -2,12 +2,10 @@ import {type ByteString, defineCommand, type ExecResult} from "just-bash";
 import type {Options} from "yargs-parser";
 import parser from "yargs-parser/browser";
 import {VIR_ENV_USER_PATH} from "../../../constants";
-import {
-    applySandboxChanges,
-    SandboxWriteBackAbortedError,
-    type WriteBackFailure
-} from "./fs-bridge/applySandboxChanges";
-import {captureSandboxSnapshot} from "./fs-bridge/captureSandboxSnapshot";
+import {applySandboxChanges} from "./just-bash-fs-bridge/applySandboxChanges";
+import {captureSandboxSnapshot} from "./just-bash-fs-bridge/captureSandboxSnapshot";
+import {SandboxWriteBackAbortedError} from "./just-bash-fs-bridge/utils/SandboxWriteBackAbortedError";
+import type {WriteBackFailure} from "./just-bash-fs-bridge/utils/WriteBackFailure";
 import {executePython} from "./pyodideRuntime";
 import type {SandboxSnapshot} from "./workerProtocol";
 
