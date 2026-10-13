@@ -75,6 +75,9 @@ export async function* runLocalAISDKChatModel(
             messages: modelMessages,
             tools,
             abortSignal,
+            // AI SDK's default browser telemetry leaves a rejected completion promise on abort.
+            // No telemetry integrations are registered here; explicit call settings can opt in.
+            telemetry: {isEnabled: false},
             ...context.callSettings,
             ...(reasoningEffort ? {reasoning: reasoningEffort} : {}),
             onError: ({error}) => {
