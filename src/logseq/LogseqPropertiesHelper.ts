@@ -45,13 +45,18 @@ export class LogseqPropertiesHelper {
                     .map((t: string) => t.trim())
                     .filter((t: string) => t);
             } else if (Array.isArray(propertyTags)) {
-                mergedTags = [...propertyTags];
+                mergedTags = propertyTags.map((tag) =>
+                    typeof tag === "string" ? tag : tag.name
+                );
             }
         }
 
         // Add block tags
         if (Array.isArray(blockTags) && blockTags.length > 0) {
-            mergedTags = [...mergedTags, ...blockTags];
+            mergedTags = [
+                ...mergedTags,
+                ...blockTags.map((tag) => (typeof tag === "string" ? tag : tag.name))
+            ];
         }
 
         // Return properties with merged tags (remove :block/tags key)
@@ -173,19 +178,10 @@ export class LogseqPropertiesHelper {
 
         const properties = await logseq.Editor.getBlockProperties(b.uuid);
         if (properties) {
-            b.properties = {
-                ...LogseqPropertiesHelper.handleTagProperty(
-                    b,
-                    LogseqPropertiesHelper.addStripedPropertyPrefixes(properties)
-                ),
+            b.properties = LogseqPropertiesHelper.handleTagProperty(b, {
+                ...LogseqPropertiesHelper.addStripedPropertyPrefixes(properties),
                 ...b.properties
-            };
-            if (b.properties["tags"] && typeof b.properties["tags"] === "string") {
-                b.properties["tags"] = b.properties["tags"]
-                    .split(",")
-                    .map((t: string) => t.trim())
-                    .filter((t: string) => t);
-            }
+            });
             if (!b.properties.uuid) b.properties.uuid = b.uuid;
         }
 
@@ -230,11 +226,10 @@ export class LogseqPropertiesHelper {
         if (isDbGraph) {
             const properties = await logseq.Editor.getPageProperties(page.id);
             if (properties) {
-                const strippedProperties = LogseqPropertiesHelper.handleTagProperty(
-                    page,
-                    LogseqPropertiesHelper.addStripedPropertyPrefixes(properties)
-                );
-                page.properties = {...strippedProperties, ...page.properties};
+                page.properties = LogseqPropertiesHelper.handleTagProperty(page, {
+                    ...LogseqPropertiesHelper.addStripedPropertyPrefixes(properties),
+                    ...page.properties
+                });
             }
         }
 
