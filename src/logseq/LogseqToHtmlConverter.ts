@@ -461,19 +461,17 @@ export class LogseqToHtmlConverter {
                 try {
                     const block = await LogseqToHtmlConverter.getBlock(blockUUID);
                     if (!block || !block.uuid) throw new Error("Block not found: " + blockUUID);
-                    const preprocessResult = await LogseqToHtmlConverter.preprocess(
-                        block?.content || "",
-                        block?.format || "markdown"
-                    );
-                    const block_content = preprocessResult.content;
-                    const block_props = preprocessResult.properties || {};
+                    // Select the raw first line before conversion applies annotation/DB formatting.
+                    const [block_content, , rawPropertiesStr] =
+                        LogseqContentPreprocessor.extractProperties(
+                            block.content,
+                            block.format || "markdown"
+                        );
                     let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
                     block_content_first_line =
                         escapeClozesAndMacroDelimiters(block_content_first_line);
 
-                    let blockRef_content = block_content_first_line;
-                    for (const [prop, value] of Object.entries(block_props))
-                        blockRef_content += `\n${prop}:: ${value}`;
+                    const blockRef_content = rawPropertiesStr + block_content_first_line;
 
                     const blockRefHTMLFile = await LogseqToHtmlConverter.convertToHTMLFile(
                         blockRef_content,
