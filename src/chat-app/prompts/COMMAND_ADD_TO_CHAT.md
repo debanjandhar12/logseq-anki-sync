@@ -14,5 +14,5 @@ user-invocable: true
 built-in-command: true
 built-in-command-user-controllable: true
 command-invoke-in-new-thread: false
-command-appear-seperately-in-context-menu: true
+command-appear-separately-in-context-menu: true
 ---

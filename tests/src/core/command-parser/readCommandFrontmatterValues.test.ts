@@ -26,7 +26,7 @@ describe("command frontmatter fields", () => {
             invokeLocations: "invoke-location",
             userInvocable: "user-invocable",
             commandInvokeInNewThread: "command-invoke-in-new-thread",
-            commandAppearSeparatelyInContextMenu: "command-appear-seperately-in-context-menu",
+            commandAppearSeparatelyInContextMenu: "command-appear-separately-in-context-menu",
             builtInCommand: "built-in-command",
             builtInCommandUserControllable: "built-in-command-user-controllable"
         });
