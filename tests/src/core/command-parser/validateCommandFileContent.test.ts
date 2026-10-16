@@ -8,7 +8,7 @@ function createCommandSource(metadata = "", body = "Prompt") {
 describe("validateCommandFileContent", () => {
     test("parses all fields and preserves unknown metadata", () => {
         const content = createCommandSource(
-            "user-invocable: false\ncommand-invoke-in-new-thread: false\ncommand-appear-seperately-in-context-menu: true\nbuilt-in-command: true\nbuilt-in-command-user-controllable: true\ncustom-field: accepted\n"
+            "user-invocable: false\ncommand-invoke-in-new-thread: false\ncommand-appear-separately-in-context-menu: true\nbuilt-in-command: true\nbuilt-in-command-user-controllable: true\ncustom-field: accepted\n"
         );
         const result = validateCommandFileContent(content);
 
@@ -138,7 +138,7 @@ invoke-location:
   - Block Slash Command
 user-invocable: enabled
 command-invoke-in-new-thread: new
-command-appear-seperately-in-context-menu: separate
+command-appear-separately-in-context-menu: separate
 built-in-command: built-in
 built-in-command-user-controllable: controllable
 ---`;
@@ -149,7 +149,7 @@ built-in-command-user-controllable: controllable
             "Invalid command file metadata: name is required",
             "Invalid command file metadata: user-invocable must be a boolean",
             "Invalid command file metadata: command-invoke-in-new-thread must be a boolean",
-            "Invalid command file metadata: command-appear-seperately-in-context-menu must be a boolean",
+            "Invalid command file metadata: command-appear-separately-in-context-menu must be a boolean",
             "Invalid command file metadata: built-in-command must be a boolean",
             "Invalid command file metadata: built-in-command-user-controllable must be a boolean"
         ]);
