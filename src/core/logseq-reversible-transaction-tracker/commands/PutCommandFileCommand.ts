@@ -1,5 +1,5 @@
 import {CommandFileStore} from "src/core/stores/command-file-store/CommandFileStore";
-import {commandNameSchema} from "src/core/stores/command-file-store/validation/commandNameSchema";
+import {storageSafeCommandNameSchema} from "src/core/stores/command-file-store/validation/commandNameSchema";
 import {validateCommandFileForSave} from "src/core/stores/command-file-store/validation/validateCommandFileForSave";
 import {validateCommandMutation} from "src/core/stores/command-file-store/validation/validateCommandMutation";
 import {z} from "zod";
@@ -8,7 +8,7 @@ import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {StoredFileOperations} from "./utils/StoredFileOperations";
 
 export const PutCommandFileCommandArgsSchema = z.object({
-    commandName: commandNameSchema,
+    commandName: storageSafeCommandNameSchema,
     content: z.string().refine((value) => !!value.trim(), "Command content cannot be empty")
 });
 export type PutCommandFileCommandArgsInput = z.input<typeof PutCommandFileCommandArgsSchema>;

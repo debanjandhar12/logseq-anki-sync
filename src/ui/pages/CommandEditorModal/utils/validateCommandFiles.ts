@@ -1,7 +1,7 @@
 import {parseCommandFile} from "src/core/command-parser";
 import type {CommandFileData} from "src/core/stores/command-file-store/types";
-import {commandNameSchema} from "src/core/stores/command-file-store/validation/commandNameSchema";
 import {validateCommandFileForSave} from "src/core/stores/command-file-store/validation/validateCommandFileForSave";
+import {commandFileNameSchema} from "src/core/stores/command-file-store/validation/validateCommandFileName";
 import {validateCommandMutation} from "src/core/stores/command-file-store/validation/validateCommandMutation";
 import type {MustacheTemplateIssue} from "src/core/template-engine";
 import {validateFrontmatterTemplate} from "src/core/template-engine";
@@ -65,7 +65,7 @@ export async function validateCommandFilesForSave(
         try {
             const parsedFile = parseCommandFile(file.content);
             const parsedFileName = getCommandFileName(parsedFile);
-            if (!commandNameSchema.safeParse(parsedFile.name).success) {
+            if (!commandFileNameSchema.safeParse(parsedFileName).success) {
                 return invalid({
                     kind: "invalid-file-name",
                     fileId: file.id,

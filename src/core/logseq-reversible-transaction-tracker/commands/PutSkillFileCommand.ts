@@ -1,4 +1,4 @@
-import {skillNameSchema} from "src/core/skill-parser/skillMetadataSchema";
+import {skillNameSchema} from "src/core/skill-parser/skillNameSchema";
 import {SkillStore} from "src/core/stores/skill-store/SkillStore";
 import {validateSkillFileForSave} from "src/core/stores/skill-store/validation/validateSkillFileForSave";
 import {validateSkillMutation} from "src/core/stores/skill-store/validation/validateSkillMutation";

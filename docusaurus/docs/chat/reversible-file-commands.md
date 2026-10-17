@@ -13,6 +13,8 @@ The transaction tracker provides file operations for internal callers. These com
 
 Markdown put operations require nonblank, valid frontmatter and template syntax. The argument name must match the frontmatter name. User operations cannot create built-ins or delete them; built-in updates permit only the explicitly user-controllable setting, matching the editors.
 
+Name validation has two owners: parser schemas describe frontmatter names, while storage validation checks generated command filenames (including `.md`). Command format names need only be nonblank strings; transaction arguments and editor saves additionally enforce storage-safe identities, rejecting paths, forbidden filename characters, and trailing dots/spaces. Raw transaction identities also reject surrounding whitespace; frontmatter readers retain their existing whitespace trimming before deriving filenames. Skill names retain their lowercase/digit/single-hyphen grammar and 1–64 character limit. Case-insensitive command collisions are checked across the collection, not by the name schema. This separation does not change accepted names or stored filenames.
+
 Read results contain `exists` and either `content` or `contentBase64`, with `null` for missing files. Existing empty files are distinct from missing files. Read commands follow the same execute/revert status lifecycle as other commands, but do not mutate files.
 
 ## Asset paths and host requirements

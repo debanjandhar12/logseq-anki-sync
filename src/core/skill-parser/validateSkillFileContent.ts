@@ -2,7 +2,8 @@ import matter from "gray-matter";
 import type {SkillFileData} from "../stores/skill-store/types";
 import {SKILL_FRONTMATTER_FIELDS} from "./constants";
 import {readSkillFrontmatterValues} from "./readSkillFrontmatterValues";
-import {skillDescriptionSchema, skillNameSchema} from "./skillMetadataSchema";
+import {skillDescriptionSchema} from "./skillMetadataSchema";
+import {skillNameSchema} from "./skillNameSchema";
 import type {SkillFrontmatterFieldDefinition} from "./types";
 
 export interface SkillFileValidationIssue {

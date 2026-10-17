@@ -39,6 +39,25 @@ afterEach(() => {
 });
 
 describe("skill and command file commands", () => {
+    test.each([
+        "../alpha",
+        "folder/alpha",
+        "folder\\alpha",
+        ".",
+        "..",
+        " alpha",
+        "alpha."
+    ])("rejects path-like or storage-unsafe identity %j in every constructor", (name) => {
+        for (const Command of [ReadSkillFileCommand, DeleteSkillFileCommand]) {
+            expect(() => new Command({skillName: name})).toThrow();
+        }
+        expect(() => new PutSkillFileCommand({skillName: name, content: skill()})).toThrow();
+        for (const Command of [ReadCommandFileCommand, DeleteCommandFileCommand]) {
+            expect(() => new Command({commandName: name})).toThrow();
+        }
+        expect(() => new PutCommandFileCommand({commandName: name, content: command()})).toThrow();
+    });
+
     test("updates only SKILL.md and undoes after serialization", async () => {
         await SkillStore.saveSkillFile(skill());
         await Storage.saveFile("skills/alpha", "templates/card.md", "custom resource");

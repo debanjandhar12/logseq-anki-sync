@@ -1,12 +1,14 @@
 import {CommandFileStore} from "src/core/stores/command-file-store/CommandFileStore";
-import {commandNameSchema} from "src/core/stores/command-file-store/validation/commandNameSchema";
+import {storageSafeCommandNameSchema} from "src/core/stores/command-file-store/validation/commandNameSchema";
 import {validateCommandMutation} from "src/core/stores/command-file-store/validation/validateCommandMutation";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {StoredFileOperations} from "./utils/StoredFileOperations";
 
-export const DeleteCommandFileCommandArgsSchema = z.object({commandName: commandNameSchema});
+export const DeleteCommandFileCommandArgsSchema = z.object({
+    commandName: storageSafeCommandNameSchema
+});
 export type DeleteCommandFileCommandArgsInput = z.input<typeof DeleteCommandFileCommandArgsSchema>;
 export type DeleteCommandFileCommandArgs = z.output<typeof DeleteCommandFileCommandArgsSchema>;
 export const DeleteCommandFileCommandStateSchema = z.object({

@@ -1,4 +1,4 @@
-import {skillNameSchema} from "src/core/skill-parser/skillMetadataSchema";
+import {skillNameSchema} from "src/core/skill-parser/skillNameSchema";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";

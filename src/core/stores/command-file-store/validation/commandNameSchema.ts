@@ -1,18 +1,11 @@
-import {z} from "zod";
+import {commandNameSchema as commandFormatNameSchema} from "../../../command-parser/commandNameSchema";
+import {commandFileNameSchema} from "./validateCommandFileName";
 
-/** A command identity, not a filename or filesystem path. */
-export const commandNameSchema = z
-    .string()
-    .min(1)
-    .refine(
-        (name) =>
-            name.trim() === name &&
-            name !== "." &&
-            name !== ".." &&
-            !/[<>:"/\\|?*]/.test(name) &&
-            Array.from(name).every(
-                (character) => character.charCodeAt(0) >= 32 && character.charCodeAt(0) !== 127
-            ) &&
-            !/[. ]$/.test(name),
-        "Command name must be a valid simple name, not a path"
-    );
+/** Format identity composed with storage policy; use for transaction arguments. */
+export const storageSafeCommandNameSchema = commandFormatNameSchema.refine(
+    (name) => commandFileNameSchema.safeParse(`${name}.md`).success,
+    "Command name must be a valid simple name, not a path"
+);
+
+/** Compatibility alias: this remains storage-safe, not the parser's format-only schema. */
+export const commandNameSchema = storageSafeCommandNameSchema;

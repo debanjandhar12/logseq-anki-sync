@@ -1,13 +1,8 @@
 import {z} from "zod";
+import {skillNameSchema} from "./skillNameSchema";
 
-export const skillNameSchema = z
-    .string()
-    .min(1)
-    .max(64)
-    .regex(
-        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        "Skill name must contain lowercase letters, digits, and single separating hyphens"
-    );
+// Retain the original import path for callers of the combined metadata schema.
+export {skillNameSchema} from "./skillNameSchema";
 
 export const skillDescriptionSchema = z
     .string()

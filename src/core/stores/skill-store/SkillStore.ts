@@ -5,7 +5,7 @@ import {
     assertStorageFileTree
 } from "../../../logseq/LogseqPluginStorageManager/relativeStoragePath";
 import {parseSkillFile} from "../../skill-parser/parseSkillFile";
-import {skillNameSchema} from "../../skill-parser/skillMetadataSchema";
+import {skillNameSchema} from "../../skill-parser/skillNameSchema";
 import {hashSkillFileSnapshot} from "./hashSkillFileSnapshot";
 import type {
     BundledSkill,

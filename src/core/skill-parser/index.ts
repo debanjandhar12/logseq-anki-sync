@@ -2,6 +2,7 @@ export {SKILL_FRONTMATTER_FIELDS, SKILL_FRONTMATTER_KEYS} from "./constants";
 export {parseSkillFile} from "./parseSkillFile";
 export {readSkillFrontmatterValues} from "./readSkillFrontmatterValues";
 export {renderSkillFileTemplate} from "./renderSkillFileTemplate";
+export {skillNameSchema} from "./skillNameSchema";
 export type {
     SkillFrontmatterDataKey,
     SkillFrontmatterFieldDefinition,

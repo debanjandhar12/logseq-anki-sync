@@ -1,10 +1,12 @@
-import {commandNameSchema} from "src/core/stores/command-file-store/validation/commandNameSchema";
+import {storageSafeCommandNameSchema} from "src/core/stores/command-file-store/validation/commandNameSchema";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
 import {StoredFileOperations} from "./utils/StoredFileOperations";
 
-export const ReadCommandFileCommandArgsSchema = z.object({commandName: commandNameSchema});
+export const ReadCommandFileCommandArgsSchema = z.object({
+    commandName: storageSafeCommandNameSchema
+});
 export type ReadCommandFileCommandArgsInput = z.input<typeof ReadCommandFileCommandArgsSchema>;
 export type ReadCommandFileCommandArgs = z.output<typeof ReadCommandFileCommandArgsSchema>;
 export type ReadCommandFileCommandResult = {exists: boolean; content: string | null};
