@@ -56,7 +56,12 @@ export class PutSkillFileCommand extends BaseReversibleCommand<PutSkillFileComma
         if (original === undefined) throw new Error("Missing original skill content");
         if (original === null)
             await Storage.deleteFile(`skills/${this.args.skillName}`, "SKILL.md");
-        else await SkillStore.saveSkillFile(original);
+        else
+            await Storage.saveFile(
+                `${SkillStore.groupName}/${this.args.skillName}`,
+                "SKILL.md",
+                original
+            );
         this.commandState.status = "new";
     }
 }
