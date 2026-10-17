@@ -6,6 +6,7 @@ export abstract class BaseReversibleCommand<
     CommandState extends {status: ReversibleCommandStatus}
 > {
     protected changedPages: string[] = [];
+    protected changedAssets: string[] = [];
     public abstract readonly args: unknown;
 
     protected constructor(protected commandState: CommandState) {}
@@ -40,5 +41,13 @@ export abstract class BaseReversibleCommand<
 
     public resetChangedPages(): void {
         this.changedPages = [];
+    }
+
+    public getChangedAssets(): string[] {
+        return [...this.changedAssets];
+    }
+
+    public resetChangedAssets(): void {
+        this.changedAssets = [];
     }
 }

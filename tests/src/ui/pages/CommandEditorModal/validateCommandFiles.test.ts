@@ -35,6 +35,38 @@ beforeEach(() => {
 });
 
 describe("validateCommandFilesForSave", () => {
+    test.each([
+        "../Command",
+        "folder\\Command",
+        ".",
+        "..",
+        "trailing.",
+        "Command?"
+    ])("classifies storage-unsafe name %j without changing selected file or display name", async (name) => {
+        const result = await validateCommandFilesForSave([
+            {id: "selected", content: createCommandContent({name}), originalFileName: "Original.md"}
+        ]);
+        expect(result.issue).toMatchObject({
+            kind: "invalid-file-name",
+            fileId: "selected",
+            fileName: `${name.trim()}.md`,
+            message: `"${name}.md" is not a valid file name.`
+        });
+        expect(result.parsedFiles).toEqual([]);
+    });
+
+    test("preserves frontmatter name trimming when deriving saved filenames", async () => {
+        const result = await validateCommandFilesForSave([
+            {
+                id: "selected",
+                content: createCommandContent({name: " padded "}),
+                originalFileName: "Original.md"
+            }
+        ]);
+        expect(result.issue).toBeNull();
+        expect(result.parsedFiles[0].name).toBe("padded");
+    });
+
     test("returns parsed command files in order", async () => {
         const first = createCommandContent({name: "First"});
         const second = createCommandContent({name: "Second"});

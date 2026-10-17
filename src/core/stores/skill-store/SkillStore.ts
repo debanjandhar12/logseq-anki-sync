@@ -5,8 +5,7 @@ import {
     assertStorageFileTree
 } from "../../../logseq/LogseqPluginStorageManager/relativeStoragePath";
 import {parseSkillFile} from "../../skill-parser/parseSkillFile";
-import {skillNameSchema} from "../../skill-parser/skillMetadataSchema";
-import {validateFrontmatterTemplate} from "../../template-engine/parser/validateFrontmatterTemplate";
+import {skillNameSchema} from "../../skill-parser/skillNameSchema";
 import {hashSkillFileSnapshot} from "./hashSkillFileSnapshot";
 import type {
     BundledSkill,
@@ -17,6 +16,8 @@ import type {
     SkillFolderFiles,
     StoredSkill
 } from "./types";
+import {validateSkillFileForSave} from "./validation/validateSkillFileForSave";
+import {validateSkillMutation} from "./validation/validateSkillMutation";
 
 const logger = createLogger(LoggerCategory.PLUGIN_STORAGE);
 
@@ -189,11 +190,31 @@ export class SkillStore {
         }
     }
 
-    static saveSkillFile(content: string, options: SaveSkillFileOptions = {}): Promise<void> {
+    /** Restore an exact snapshot, including arbitrary auxiliary paths (or an empty folder). */
+    static saveSkillFile(content: string, options?: SaveSkillFileOptions): Promise<void>;
+    static saveSkillFile(snapshot: {skillName: string; files: SkillFolderFiles}): Promise<void>;
+    static saveSkillFile(
+        content: string | {skillName: string; files: SkillFolderFiles},
+        options: SaveSkillFileOptions = {}
+    ): Promise<void> {
         return SkillStore.serializeMutation(async () => {
-            const {name} = SkillStore.parseContent(content);
+            const snapshot = typeof content !== "string";
+            const name = snapshot
+                ? skillNameSchema.parse(content.skillName)
+                : SkillStore.parseContent(content).name;
             const previous = await SkillStore.getSkillFiles(name);
-            const files = SkillStore.buildFiles(content, options, previous);
+            const files = snapshot
+                ? {...content.files}
+                : SkillStore.buildFiles(content, options, previous);
+            assertStorageFileTree(Object.keys(files));
+            for (const text of Object.values(files)) {
+                if (typeof text !== "string") throw new Error("Skill files must contain text");
+            }
+            if (
+                files["SKILL.md"] !== undefined &&
+                SkillStore.parseContent(files["SKILL.md"]).name !== name
+            )
+                throw new Error("Skill name does not match its folder");
             await SkillStore.applySnapshots(
                 new Map([[name, files]]),
                 new Map([[name, previous]]),
@@ -259,9 +280,7 @@ export class SkillStore {
             const usedSources = new Set<string>();
             const storedPaths = await Storage.getFiles(SkillStore.groupName);
             for (const entry of entries) {
-                const next = SkillStore.parseContent(entry.content);
-                const templateIssue = (await validateFrontmatterTemplate(entry.content))[0];
-                if (templateIssue) throw new Error(templateIssue.message);
+                const next = await validateSkillFileForSave(entry.content);
                 if (desired.has(next.name)) throw new Error(`Duplicate skill name: ${next.name}`);
                 const originalName = entry.originalSkillName;
                 let files: SkillFolderFiles = {};
@@ -271,26 +290,11 @@ export class SkillStore {
                     usedSources.add(originalName);
                     files = snapshots.get(originalName)!;
                     const source = sources.get(originalName)!;
-                    if (source.builtInSkill) {
-                        const options = {
-                            ignoreDisableModelInvocation:
-                                source.builtInSkillUserControllable === true
-                        };
-                        if (
-                            next.name !== originalName ||
-                            hashSkillFileSnapshot(files, options) !==
-                                hashSkillFileSnapshot(
-                                    {...files, "SKILL.md": entry.content},
-                                    options
-                                )
-                        ) {
-                            throw new Error(`Built-in skill is read-only: ${originalName}`);
-                        }
-                    } else if (next.builtInSkill || next.builtInSkillUserControllable) {
-                        throw new Error("Editor cannot create built-in skills");
-                    }
-                } else if (next.builtInSkill || next.builtInSkillUserControllable) {
-                    throw new Error("Editor cannot create built-in skills");
+                    const issue = validateSkillMutation(source.content, entry.content);
+                    if (issue) throw new Error(issue);
+                } else {
+                    const issue = validateSkillMutation(undefined, entry.content);
+                    if (issue) throw new Error(issue);
                 }
                 if (!sourceNames.has(next.name)) {
                     if (

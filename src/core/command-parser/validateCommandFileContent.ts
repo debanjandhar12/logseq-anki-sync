@@ -1,5 +1,6 @@
 import matter from "gray-matter";
 import type {CommandFileData, CommandInvokeLocation} from "../stores/command-file-store/types";
+import {commandNameSchema} from "./commandNameSchema";
 import {COMMAND_FRONTMATTER_FIELDS, COMMAND_INVOKE_LOCATIONS} from "./constants";
 import {readCommandFrontmatterValues} from "./readCommandFrontmatterValues";
 import type {CommandFrontmatterFieldDefinition} from "./types";
@@ -177,6 +178,11 @@ function getInvalidFieldMessage(
             : `Invalid command file metadata: ${field.key} must be a boolean`;
     }
     if (field.valueType === "string-array") return null;
+    if (field.key === "name") {
+        return commandNameSchema.safeParse(value).success
+            ? null
+            : "Invalid command file metadata: name is required";
+    }
     if (typeof value === "string" && value.trim().length > 0) return null;
     if (!field.required && value === undefined) return null;
     return field.required

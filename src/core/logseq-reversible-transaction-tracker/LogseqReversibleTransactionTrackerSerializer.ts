@@ -5,14 +5,15 @@ import {LogseqReversibleTransactionTracker} from "./LogseqReversibleTransactionT
 const LogseqReversibleTransactionTrackerDataSchema = z.object({
     commands: z.array(LogseqReversibleCommandCodec),
     appliedCommandCount: z.number().int().nonnegative(),
-    changedPages: z.array(z.string())
+    changedPages: z.array(z.string()),
+    changedAssets: z.array(z.string()).default([])
 });
 
 export const LogseqReversibleTransactionTrackerCodec = z.codec(
     LogseqReversibleTransactionTrackerDataSchema,
     z.instanceof(LogseqReversibleTransactionTracker),
     {
-        decode: ({commands, appliedCommandCount, changedPages}) => {
+        decode: ({commands, appliedCommandCount, changedPages, changedAssets}) => {
             if (appliedCommandCount > commands.length) {
                 throw new Error("Applied command count exceeds command count");
             }
@@ -24,6 +25,7 @@ export const LogseqReversibleTransactionTrackerCodec = z.codec(
             });
             const tracker = new LogseqReversibleTransactionTracker({
                 appliedCommandCount,
+                changedAssets,
                 changedPages
             });
             for (const command of commands) tracker.addCommand(command);
@@ -32,7 +34,8 @@ export const LogseqReversibleTransactionTrackerCodec = z.codec(
         encode: (tracker) => ({
             commands: tracker.getCommands(),
             appliedCommandCount: tracker.getAppliedCommandCount(),
-            changedPages: tracker.getChangedPages()
+            changedPages: tracker.getChangedPages(),
+            changedAssets: tracker.getChangedAssets()
         })
     }
 );

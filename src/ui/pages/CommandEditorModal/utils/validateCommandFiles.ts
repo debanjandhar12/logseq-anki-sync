@@ -1,14 +1,14 @@
-import matter from "gray-matter";
-import {COMMAND_FRONTMATTER_KEYS, parseCommandFile} from "src/core/command-parser";
+import {parseCommandFile} from "src/core/command-parser";
 import type {CommandFileData} from "src/core/stores/command-file-store/types";
+import {validateCommandFileForSave} from "src/core/stores/command-file-store/validation/validateCommandFileForSave";
+import {commandFileNameSchema} from "src/core/stores/command-file-store/validation/validateCommandFileName";
+import {validateCommandMutation} from "src/core/stores/command-file-store/validation/validateCommandMutation";
 import type {MustacheTemplateIssue} from "src/core/template-engine";
 import {validateFrontmatterTemplate} from "src/core/template-engine";
 import {getErrorMessage} from "../../SkillEditorModal/utils/getErrorMessage";
 import type {EditableCommandFile, OriginalBuiltInCommandFile} from "../types";
 import {getCommandFileDisplayName} from "./getCommandFileDisplayName";
 import {getCommandFileName} from "./getCommandFileName";
-
-const INVALID_FILE_NAME_CHARACTERS = new Set(["<", ">", ":", '"', "/", "\\", "|", "?"]);
 
 export type CommandFileSaveIssueKind =
     | "invalid-template"
@@ -65,7 +65,7 @@ export async function validateCommandFilesForSave(
         try {
             const parsedFile = parseCommandFile(file.content);
             const parsedFileName = getCommandFileName(parsedFile);
-            if (!isValidFileName(parsedFileName)) {
+            if (!commandFileNameSchema.safeParse(parsedFileName).success) {
                 return invalid({
                     kind: "invalid-file-name",
                     fileId: file.id,
@@ -84,16 +84,15 @@ export async function validateCommandFilesForSave(
                 });
             }
 
-            if (file.originalContent && parseCommandFile(file.originalContent).builtInCommand) {
-                if (!isAllowedBuiltInChange(file.originalContent, file.content)) {
-                    return invalid({
-                        kind: "built-in-modified",
-                        fileId: file.id,
-                        fileName: displayFileName,
-                        message:
-                            "built-in commands are read-only except for an explicitly controllable Enabled setting."
-                    });
-                }
+            await validateCommandFileForSave(file.content);
+            const mutationIssue = validateCommandMutation(file.originalContent, file.content);
+            if (mutationIssue) {
+                return invalid({
+                    kind: "built-in-modified",
+                    fileId: file.id,
+                    fileName: displayFileName,
+                    message: mutationIssue
+                });
             }
 
             usedNames.add(normalizedName);
@@ -124,39 +123,6 @@ export async function validateCommandFilesForSave(
     return {issue: null, parsedFiles};
 }
 
-function isAllowedBuiltInChange(originalSource: string, nextSource: string): boolean {
-    const original = parseCommandFile(originalSource);
-    const next = parseCommandFile(nextSource);
-    if (!original.builtInCommand || !next.builtInCommand) return false;
-
-    const originalMatter = matter(originalSource);
-    const nextMatter = matter(nextSource);
-    const originalMetadata = {...originalMatter.data};
-    const nextMetadata = {...nextMatter.data};
-    if (original.builtInCommandUserControllable) {
-        delete originalMetadata[COMMAND_FRONTMATTER_KEYS.userInvocable];
-        delete nextMetadata[COMMAND_FRONTMATTER_KEYS.userInvocable];
-    }
-
-    return (
-        originalMatter.content === nextMatter.content &&
-        JSON.stringify(originalMetadata) === JSON.stringify(nextMetadata)
-    );
-}
-
 function invalid(issue: CommandFileSaveIssue): ValidatedCommandFilesForSave {
     return {issue, parsedFiles: []};
-}
-
-function isValidFileName(fileName: string): boolean {
-    return (
-        fileName.trim() === fileName &&
-        fileName.length > 0 &&
-        fileName !== "." &&
-        fileName !== ".." &&
-        Array.from(fileName).every(
-            (character) =>
-                character.charCodeAt(0) >= 32 && !INVALID_FILE_NAME_CHARACTERS.has(character)
-        )
-    );
 }

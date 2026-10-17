@@ -38,6 +38,14 @@ export class WindowParentBridge {
     }
 
     /**
+     * Get the parent host window, including untyped internal Logseq/preload surfaces.
+     * @throws Error if WindowParentBridge not initialized
+     */
+    static getWindow(): any {
+        return WindowParentBridge.getParentWindow();
+    }
+
+    /**
      * Get the internal Logseq API object from parent window
      * @throws Error if WindowParentBridge not initialized
      */

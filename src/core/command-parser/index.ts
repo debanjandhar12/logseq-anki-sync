@@ -1,3 +1,4 @@
+export {commandNameSchema} from "./commandNameSchema";
 export {
     BLOCK_CONTEXT_MENU_INVOKE_LOCATIONS,
     COMMAND_FRONTMATTER_FIELDS,

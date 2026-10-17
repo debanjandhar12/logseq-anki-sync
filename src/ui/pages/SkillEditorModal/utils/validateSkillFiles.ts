@@ -1,5 +1,5 @@
-import {parseSkillFile} from "src/core/skill-parser";
 import type {SkillFileData} from "src/core/stores/skill-store/types";
+import {validateSkillFileForSave} from "src/core/stores/skill-store/validation/validateSkillFileForSave";
 import type {MustacheTemplateIssue} from "src/core/template-engine";
 import {validateFrontmatterTemplate} from "src/core/template-engine";
 import type {EditableSkillFile} from "../types";
@@ -58,7 +58,7 @@ export async function validateSkillFilesForSave(
         const displayFileName = getSkillFileDisplayName(file.content);
 
         try {
-            const parsedFile = parseSkillFile(file.content);
+            const parsedFile = await validateSkillFileForSave(file.content);
             const normalizedName = parsedFile.name;
 
             if (usedNames.has(normalizedName)) {

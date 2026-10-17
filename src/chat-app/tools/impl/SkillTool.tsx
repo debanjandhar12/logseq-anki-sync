@@ -8,7 +8,7 @@ import {
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {getStorageMountPath} from "src/core/just-bash-wrapper/utils/fsPaths";
 import {renderSkillFileTemplate} from "src/core/skill-parser";
-import {skillNameSchema} from "src/core/skill-parser/skillMetadataSchema";
+import {skillNameSchema} from "src/core/skill-parser/skillNameSchema";
 import {SkillStore} from "src/core/stores/skill-store/SkillStore";
 import {z} from "zod";
 
