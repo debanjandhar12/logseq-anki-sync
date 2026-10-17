@@ -64,6 +64,7 @@
         "@tabler/icons": "^3.36.1",
         "@uiw/react-codemirror": "^4.25.10",
         "@yellowdig/cljs-tools": "0.2.0",
+        "@zip.js/zip.js": "2.24.0",
         "ai": "7.0.50",
         "assistant-stream": "0.3.26",
         "async-lock": "^1.4.1",

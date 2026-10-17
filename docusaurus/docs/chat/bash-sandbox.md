@@ -5,7 +5,7 @@ title: Bash Sandbox
 
 The Bash tool runs in a virtual filesystem and cannot access host files. Node.js is unavailable.
 
-Plugin storage mounts support nested directories. Tool results at `/home/user/tool-results`, parsed PDF pages at `/home/user/anydoc-parse-results`, and skill resources at `/home/user/skills` are read-only. Bash refreshes these mounts before each tool execution, so newly stored files are available to directory traversal and shell wildcards immediately.
+Plugin storage mounts support nested directories. Tool results at `/home/user/tool-results`, parsed PDF pages and EPUB sections at `/home/user/anydoc-parse-results`, and skill resources at `/home/user/skills` are read-only. Bash refreshes these mounts before each tool execution, so newly stored files are available to directory traversal and shell wildcards immediately. See [Document Parsing](./document-parsing.md) for supported formats and caching behavior.
 
 The sandbox identity is centralized through `VIR_ENV_USER`, the derived `VIR_ENV_USER_PATH`, and the hostname shared by Bash and Python. The current user is `user`, the current home path is `/home/user`, and the path is exposed to skill templates as `<% &virEnvUserPath %>`.
 

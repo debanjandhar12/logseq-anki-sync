@@ -13,6 +13,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.opencode" />
       <excludeFolder url="file://$MODULE_DIR$/.opencode-trace" />
       <excludeFolder url="file://$MODULE_DIR$/.vite_cache" />
+      <excludeFolder url="file://$MODULE_DIR$/.openchamber" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
