@@ -21,10 +21,16 @@ export class LogseqReversibleTransactionTracker {
     private readonly commandQueue = new LogseqReversibleTransactionCommandQueue();
     private appliedCommandCount: number;
     private changedPages: string[];
+    private changedAssets: string[];
 
-    public constructor(options?: {appliedCommandCount?: number; changedPages?: string[]}) {
+    public constructor(options?: {
+        appliedCommandCount?: number;
+        changedPages?: string[];
+        changedAssets?: string[];
+    }) {
         this.appliedCommandCount = options?.appliedCommandCount ?? 0;
         this.changedPages = [...(options?.changedPages ?? [])];
+        this.changedAssets = [...(options?.changedAssets ?? [])];
     }
 
     public getCommands(): LogseqReversibleCommand[] {
@@ -33,6 +39,10 @@ export class LogseqReversibleTransactionTracker {
 
     public getChangedPages(): string[] {
         return [...this.changedPages];
+    }
+
+    public getChangedAssets(): string[] {
+        return [...this.changedAssets];
     }
 
     public getAppliedCommandCount(): number {
@@ -65,6 +75,7 @@ export class LogseqReversibleTransactionTracker {
         this.commandQueue.clear();
         this.appliedCommandCount = 0;
         this.changedPages = [];
+        this.changedAssets = [];
     }
 
     public async execute(options?: {signal?: AbortSignal}) {
@@ -77,6 +88,7 @@ export class LogseqReversibleTransactionTracker {
                 const command = commands[index];
                 if (!command) continue;
                 command.resetChangedPages();
+                command.resetChangedAssets();
                 try {
                     lastCommandResult = await command.execute();
                 } catch (error) {
@@ -89,6 +101,9 @@ export class LogseqReversibleTransactionTracker {
                     );
                 }
                 this.appliedCommandCount += 1;
+                this.changedAssets = [
+                    ...new Set([...this.changedAssets, ...command.getChangedAssets()])
+                ];
                 this.changedPages = [
                     ...new Set([...this.changedPages, ...command.getChangedPages()])
                 ];

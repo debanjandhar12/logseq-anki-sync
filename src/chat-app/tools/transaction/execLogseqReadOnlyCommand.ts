@@ -15,6 +15,7 @@ export async function execLogseqReadOnlyCommand<Result extends LogseqReversibleT
     return await LogseqReversibleTransactionOperationLockManager.runExclusive(async () => {
         options?.signal?.throwIfAborted();
         command.resetChangedPages();
+        command.resetChangedAssets();
         return (await command.execute()) as Result;
     });
 }
