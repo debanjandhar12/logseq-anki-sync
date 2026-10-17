@@ -24,7 +24,7 @@ import {LogseqTextSearchTool} from "src/chat-app/tools/impl/LogseqTextSearchTool
 import {LogseqUpdateBlockTool} from "src/chat-app/tools/impl/LogseqUpdateBlockTool";
 import {LogseqUpsertPropertyPageTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyPageTool";
 import {LogseqUpsertPropertyToBlockTool} from "src/chat-app/tools/impl/LogseqUpsertPropertyToBlockTool";
-import {ParsePdfTool} from "src/chat-app/tools/impl/ParsePdfTool";
+import {ParseDocumentTool} from "src/chat-app/tools/impl/ParseDocumentTool";
 import {SkillTool} from "src/chat-app/tools/impl/SkillTool";
 import {WebPageGetTool} from "src/chat-app/tools/impl/WebPageGetTool";
 import {WebSearchTool} from "src/chat-app/tools/impl/WebSearchTool";
@@ -90,7 +90,7 @@ export class ChatToolRegistry {
         registry.registerTool(new WebSearchTool(), ToolkitEnum.WEB);
         registry.registerTool(new WebPageGetTool(), ToolkitEnum.WEB);
 
-        registry.registerTool(new ParsePdfTool(), ToolkitEnum.PDF);
+        registry.registerTool(new ParseDocumentTool(), ToolkitEnum.PDF);
 
         registry.registerTool(new SkillTool(), ToolkitEnum.MISC);
         registry.registerTool(new GetUserInfoTool(), ToolkitEnum.MISC);

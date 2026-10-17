@@ -23,10 +23,10 @@ describe("AnyDocParseResultStore", () => {
 
     test("rejects invalid file identity inputs", () => {
         expect(() => AnyDocParseResultStore.getFileName("unsafe/hash", 1)).toThrow(
-            "Invalid PDF hash"
+            "Invalid file hash"
         );
         expect(() => AnyDocParseResultStore.getFileName(PDF_HASH, 0)).toThrow(
-            "Invalid PDF page number"
+            "Invalid document page number"
         );
     });
 
@@ -54,7 +54,7 @@ describe("AnyDocParseResultStore", () => {
 
     test("rejects an invalid PDF hash when getting pages", async () => {
         await expect(AnyDocParseResultStore.getPages("unsafe/hash")).rejects.toThrow(
-            "Invalid PDF hash"
+            "Invalid file hash"
         );
     });
 });

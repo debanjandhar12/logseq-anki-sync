@@ -123,6 +123,9 @@ importers:
       '@yellowdig/cljs-tools':
         specifier: 0.2.0
         version: 0.2.0
+      '@zip.js/zip.js':
+        specifier: 2.24.0
+        version: 2.24.0
       ai:
         specifier: 7.0.50
         version: 7.0.50(zod@4.4.3)
@@ -3876,6 +3879,10 @@ packages:
 
   '@yellowdig/cljs-tools@0.2.0':
     resolution: {integrity: sha512-QZSN3sZE/d66fDwl+oZrQq6XjPVeKh/GHG7YLpmqEv+hdCSKcHAytFqStBRcPhz2NeHNoCZUTEra7cl8sKxf+A==}
+
+  '@zip.js/zip.js@2.24.0':
+    resolution: {integrity: sha512-WlaVKzdqBK+RF3bdiXZWbdCnvGB6PdO4IHC1mn/2Yfl3bASgqUNegnU3+PNg61iecwoPfUi5BgLUPqBukXpyWw==}
+    engines: {bun: '>=0.7.0', deno: '>=1.0.0', node: '>=18.0.0'}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -10755,6 +10762,8 @@ snapshots:
   '@workflow/serde@4.1.0': {}
 
   '@yellowdig/cljs-tools@0.2.0': {}
+
+  '@zip.js/zip.js@2.24.0': {}
 
   accepts@2.0.0:
     dependencies:

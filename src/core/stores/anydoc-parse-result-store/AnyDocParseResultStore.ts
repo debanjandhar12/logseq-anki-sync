@@ -1,6 +1,6 @@
 import {LogseqPluginStorageManager} from "src/logseq/LogseqPluginStorageManager";
 
-export interface StoredAnyDocPdfPage {
+export interface StoredAnyDocPage {
     pageNo: number;
     content: string;
 }
@@ -8,15 +8,16 @@ export interface StoredAnyDocPdfPage {
 export class AnyDocParseResultStore {
     static readonly groupName = "anydoc-parse-results";
 
-    static getFileName(pdfHash: string, pageNo: number): string {
-        AnyDocParseResultStore.validatePdfHash(pdfHash);
-        if (!Number.isInteger(pageNo) || pageNo < 1) throw new Error("Invalid PDF page number.");
-        return `${pdfHash}-page-${pageNo}.md`;
+    static getFileName(fileHash: string, pageNo: number): string {
+        AnyDocParseResultStore.validateFileHash(fileHash);
+        if (!Number.isSafeInteger(pageNo) || pageNo < 1)
+            throw new Error("Invalid document page number.");
+        return `${fileHash}-page-${pageNo}.md`;
     }
 
-    static async getPages(pdfHash: string): Promise<StoredAnyDocPdfPage[]> {
-        AnyDocParseResultStore.validatePdfHash(pdfHash);
-        const filePattern = new RegExp(`^${pdfHash}-page-([1-9]\\d*)\\.md$`);
+    static async getPages(fileHash: string): Promise<StoredAnyDocPage[]> {
+        AnyDocParseResultStore.validateFileHash(fileHash);
+        const filePattern = new RegExp(`^${fileHash}-page-([1-9]\\d*)\\.md$`);
         const matchingFiles = (
             await LogseqPluginStorageManager.getFiles(AnyDocParseResultStore.groupName)
         )
@@ -39,13 +40,11 @@ export class AnyDocParseResultStore {
                 )
             }))
         );
-        return pages.filter(
-            (page): page is StoredAnyDocPdfPage => typeof page.content === "string"
-        );
+        return pages.filter((page): page is StoredAnyDocPage => typeof page.content === "string");
     }
 
-    static async save(pdfHash: string, pageNo: number, markdown: string): Promise<void> {
-        const fileName = AnyDocParseResultStore.getFileName(pdfHash, pageNo);
+    static async save(fileHash: string, pageNo: number, markdown: string): Promise<void> {
+        const fileName = AnyDocParseResultStore.getFileName(fileHash, pageNo);
         await LogseqPluginStorageManager.saveFile(
             AnyDocParseResultStore.groupName,
             fileName,
@@ -53,7 +52,7 @@ export class AnyDocParseResultStore {
         );
     }
 
-    private static validatePdfHash(pdfHash: string): void {
-        if (!/^[a-f0-9]{64}$/.test(pdfHash)) throw new Error("Invalid PDF hash.");
+    private static validateFileHash(fileHash: string): void {
+        if (!/^[a-f0-9]{64}$/.test(fileHash)) throw new Error("Invalid file hash.");
     }
 }

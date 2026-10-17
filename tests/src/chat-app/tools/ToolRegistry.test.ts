@@ -2,11 +2,12 @@ import {describe, expect, test} from "vitest";
 
 import {ChatToolRegistry} from "../../../../src/chat-app/tools/ToolRegistry";
 
-describe("ChatToolRegistry PDF tools", () => {
-    test("always registers parse_pdf and removes read_pdf", () => {
+describe("ChatToolRegistry document tools", () => {
+    test("registers parse_document without legacy PDF tools", () => {
         const toolkit = ChatToolRegistry.build().getAUIToolkit();
 
-        expect(toolkit.parse_pdf).toBeDefined();
+        expect(toolkit.parse_document).toBeDefined();
+        expect(toolkit.parse_pdf).toBeUndefined();
         expect(toolkit.read_pdf).toBeUndefined();
     });
 
