@@ -1,6 +1,6 @@
 import type React from "react";
-import {act} from "react";
 import {createRoot, type Root} from "react-dom/client";
+import {actWithEnvironment} from "./actWithEnvironment";
 
 export function mountComponent(component: React.ReactElement): {
     container: HTMLElement;
@@ -15,7 +15,7 @@ export function mountComponent(component: React.ReactElement): {
         container,
         root,
         unmount: async () => {
-            await act(async () => root.unmount());
+            await actWithEnvironment(() => root.unmount());
             container.remove();
         }
     };

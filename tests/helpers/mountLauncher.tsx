@@ -1,6 +1,6 @@
-import {act} from "react";
 import {vi} from "vitest";
 import {UI} from "../../src/ui/UI";
+import {actWithEnvironment} from "./actWithEnvironment";
 
 export async function mountLauncher<T extends (...args: any[]) => Promise<any>>(
     launcher: T,
@@ -27,7 +27,7 @@ export async function mountLauncher<T extends (...args: any[]) => Promise<any>>(
         container,
         result,
         unmount: async () => {
-            await act(async () => UI._resetForTesting());
+            await actWithEnvironment(() => UI._resetForTesting());
         }
     };
 }
