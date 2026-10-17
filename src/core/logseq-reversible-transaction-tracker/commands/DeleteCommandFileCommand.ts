@@ -1,6 +1,7 @@
 import {CommandFileStore} from "src/core/stores/command-file-store/CommandFileStore";
 import {storageSafeCommandNameSchema} from "src/core/stores/command-file-store/validation/commandNameSchema";
 import {validateCommandMutation} from "src/core/stores/command-file-store/validation/validateCommandMutation";
+import {LogseqPluginStorageManager as Storage} from "src/logseq/LogseqPluginStorageManager";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
@@ -48,7 +49,11 @@ export class DeleteCommandFileCommand extends BaseReversibleCommand<DeleteComman
         this.assertCanRevert();
         if (this.commandState.originalContent === undefined)
             throw new Error("Missing original command content");
-        await CommandFileStore.saveCommandFile(this.commandState.originalContent);
+        await Storage.saveFile(
+            CommandFileStore.groupName,
+            CommandFileStore.getCommandFileName({name: this.args.commandName}),
+            this.commandState.originalContent
+        );
         this.commandState.status = "new";
     }
 }

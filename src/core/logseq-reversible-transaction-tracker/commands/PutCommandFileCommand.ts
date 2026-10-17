@@ -2,6 +2,7 @@ import {CommandFileStore} from "src/core/stores/command-file-store/CommandFileSt
 import {storageSafeCommandNameSchema} from "src/core/stores/command-file-store/validation/commandNameSchema";
 import {validateCommandFileForSave} from "src/core/stores/command-file-store/validation/validateCommandFileForSave";
 import {validateCommandMutation} from "src/core/stores/command-file-store/validation/validateCommandMutation";
+import {LogseqPluginStorageManager as Storage} from "src/logseq/LogseqPluginStorageManager";
 import {z} from "zod";
 import {BaseReversibleCommand} from "./BaseReversibleCommand";
 import {createReversibleCommandCodec} from "./createReversibleCommandCodec";
@@ -58,7 +59,12 @@ export class PutCommandFileCommand extends BaseReversibleCommand<PutCommandFileC
             await CommandFileStore.deleteCommandFile(
                 CommandFileStore.getCommandFileName({name: this.args.commandName})
             );
-        else await CommandFileStore.saveCommandFile(original);
+        else
+            await Storage.saveFile(
+                CommandFileStore.groupName,
+                CommandFileStore.getCommandFileName({name: this.args.commandName}),
+                original
+            );
         this.commandState.status = "new";
     }
 }

@@ -120,6 +120,52 @@ describe("skill and command file commands", () => {
         expect((await CommandFileStore.getCommandFileByName("Alpha"))?.content).toBe(command());
     });
 
+    test.each([
+        "put",
+        "delete"
+    ])("%s undo restores the captured command filename despite mismatched original frontmatter", async (operation) => {
+        const original = command("Beta", "", "Externally edited Alpha file");
+        const unrelated = command("Beta", "", "Unrelated Beta file");
+        await Storage.saveFile(CommandFileStore.groupName, "Alpha.md", original);
+        await Storage.saveFile(CommandFileStore.groupName, "Beta.md", unrelated);
+        const mutation =
+            operation === "put"
+                ? new PutCommandFileCommand({
+                      commandName: "Alpha",
+                      content: command("Alpha", "", "Updated")
+                  })
+                : new DeleteCommandFileCommand({commandName: "Alpha"});
+
+        await mutation.execute();
+        const restored = roundTrip(mutation);
+        await restored.revert();
+
+        expect(await Storage.getFileContent(CommandFileStore.groupName, "Alpha.md")).toBe(original);
+        expect(await Storage.getFileContent(CommandFileStore.groupName, "Beta.md")).toBe(unrelated);
+        expect(restored.getCommandState().status).toBe("new");
+    });
+
+    test("skill put undo restores the captured folder despite mismatched original frontmatter", async () => {
+        const original = skill("beta", "", "Externally edited alpha file");
+        const unrelated = skill("beta", "", "Unrelated beta skill");
+        await Storage.saveFile("skills/alpha", "SKILL.md", original);
+        await Storage.saveFile("skills/alpha", "templates/card.md", "keep auxiliary");
+        await SkillStore.saveSkillFile(unrelated);
+        const put = new PutSkillFileCommand({
+            skillName: "alpha",
+            content: skill("alpha", "", "Updated")
+        });
+
+        await put.execute();
+        await roundTrip(put).revert();
+
+        expect(await Storage.getFileContent("skills/alpha", "SKILL.md")).toBe(original);
+        expect(await Storage.getFileContent("skills/alpha", "templates/card.md")).toBe(
+            "keep auxiliary"
+        );
+        expect(await Storage.getFileContent("skills/beta", "SKILL.md")).toBe(unrelated);
+    });
+
     test("reads raw malformed files, distinguishes absence, and resets lifecycle", async () => {
         await Storage.saveFile("skills/alpha", "SKILL.md", "malformed");
         const read = new ReadSkillFileCommand({skillName: "alpha"});
