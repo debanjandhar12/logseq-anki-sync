@@ -17,6 +17,7 @@ import {PutSkillFileCommandCodec} from "./PutSkillFileCommand";
 import {ReadAssetFileCommandCodec} from "./ReadAssetFileCommand";
 import {ReadBlockCommandCodec} from "./ReadBlockCommand";
 import {ReadCommandFileCommandCodec} from "./ReadCommandFileCommand";
+import {ReadParsedSkillFileCommandCodec} from "./ReadParsedSkillFileCommand";
 import {ReadSkillFileCommandCodec} from "./ReadSkillFileCommand";
 import {RemovePropertyFromTagPageCommandCodec} from "./RemovePropertyFromTagPageCommand";
 import {RemoveTagFromBlockCommandCodec} from "./RemoveTagFromBlockCommand";
@@ -140,6 +141,13 @@ export {
     type ReadCommandFileCommandResult
 } from "./ReadCommandFileCommand";
 export {
+    ReadParsedSkillFileCommand,
+    type ReadParsedSkillFileCommandArgs,
+    type ReadParsedSkillFileCommandArgsInput,
+    ReadParsedSkillFileCommandArgsSchema,
+    type ReadParsedSkillFileCommandResult
+} from "./ReadParsedSkillFileCommand";
+export {
     ReadSkillFileCommand,
     type ReadSkillFileCommandArgs,
     type ReadSkillFileCommandArgsInput,
@@ -215,6 +223,7 @@ export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
     ReadAssetFileCommandCodec,
     ReadBlockCommandCodec,
     ReadCommandFileCommandCodec,
+    ReadParsedSkillFileCommandCodec,
     ReadSkillFileCommandCodec,
     RemovePropertyFromTagPageCommandCodec,
     RemoveTagFromBlockCommandCodec,
