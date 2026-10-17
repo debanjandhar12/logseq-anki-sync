@@ -1,6 +1,8 @@
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {SkillTool} from "../../../../../src/chat-app/tools/impl/SkillTool";
+import * as readOnlyExecution from "../../../../../src/chat-app/tools/transaction/execLogseqReadOnlyCommand";
 import {JustBashWrapper} from "../../../../../src/core/just-bash-wrapper";
+import {ReadParsedSkillFileCommand} from "../../../../../src/core/logseq-reversible-transaction-tracker";
 import * as skillTemplate from "../../../../../src/core/skill-parser";
 import {SkillStore} from "../../../../../src/core/stores/skill-store/SkillStore";
 import {LogseqPluginStorageManager as Storage} from "../../../../../src/logseq/LogseqPluginStorageManager";
@@ -27,6 +29,35 @@ describe("SkillTool", () => {
         );
     });
     afterEach(() => vi.restoreAllMocks());
+
+    test("delegates to the read-only command helper with the skill name and abort signal", async () => {
+        const signal = new AbortController().signal;
+        const execute = vi.spyOn(readOnlyExecution, "execLogseqReadOnlyCommand").mockResolvedValue({
+            exists: true,
+            content: "rendered wrapper"
+        });
+        const response = await new SkillTool().execute({name: "test-skill"}, {abortSignal: signal});
+        expect(execute).toHaveBeenCalledExactlyOnceWith(expect.any(ReadParsedSkillFileCommand), {
+            signal
+        });
+        expect(execute.mock.calls[0][0].args).toEqual({skillName: "test-skill"});
+        expect(response.result).toEqual({success: true, skillFileContent: "rendered wrapper"});
+    });
+
+    test("does not read storage when already aborted", async () => {
+        const controller = new AbortController();
+        controller.abort(new Error("cancelled"));
+        const read = vi.spyOn(SkillStore, "getSkill");
+        const response = await new SkillTool().execute(
+            {name: "test-skill"},
+            {abortSignal: controller.signal}
+        );
+        expect(response.result).toEqual({
+            success: false,
+            error: "Failed to read skill file test-skill: cancelled"
+        });
+        expect(read).not.toHaveBeenCalled();
+    });
 
     test("renders the stored skill and returns the exact wrapper with an empty file list", async () => {
         await SkillStore.saveSkillFile(source);
