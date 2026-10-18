@@ -6,7 +6,12 @@ import GITHUB_ICON from "../node_modules/@tabler/icons/icons/outline/brand-githu
 import HEART_ICON from "../node_modules/@tabler/icons/icons/outline/heart.svg?raw";
 import AI_ICON from "../node_modules/@tabler/icons/icons/outline/robot-face.svg?raw";
 import pkg from "./../package.json";
-import {initAIChat, initContextMenu, OpenAIChatCommand} from "./core/chat-interop";
+import {
+    initAIChat,
+    initContextMenu,
+    initGraphChangePluginReloadHandler,
+    OpenAIChatCommand
+} from "./core/chat-interop";
 import {initBuiltInSkillFiles} from "./core/skill-init";
 import {initBuiltInCommandFiles, registerUserCommandEntryPoints} from "./core/user-commands-init";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
@@ -50,6 +55,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     // Init various modules
     LogseqSettingAccessor.init();
     LogseqAppListeners.init();
+    initGraphChangePluginReloadHandler();
     UI.init();
     await initBuiltInSkillFiles();
     await initBuiltInCommandFiles();
