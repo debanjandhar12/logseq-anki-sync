@@ -32,7 +32,7 @@ explicit in each suite; UI-only suites incur no graph-fixture initialization.
 
 ```sh
 pnpm run test:e2e
-pnpm run test:prompts internal-queries.test.e2e.ts example-queries.test.ts
+pnpm run test:prompts internal-queries.e2e.test.ts example-queries.e2e.test.ts
 pnpm run test:unit LogseqAttachmentAdapter.test.ts
 npx tsc --noEmit
 ```
