@@ -19,6 +19,11 @@ export abstract class BaseReversibleCommand<
         return true;
     }
 
+    /** Composites can retain a partially replayed history after execution fails. */
+    public isExecutionComplete(): boolean {
+        return true;
+    }
+
     public getCommandState(): CommandState {
         return {...this.commandState};
     }

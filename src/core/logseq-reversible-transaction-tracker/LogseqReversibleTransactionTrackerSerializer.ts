@@ -3,7 +3,7 @@ import {LogseqReversibleCommandCodec} from "./commands";
 import {LogseqReversibleTransactionTracker} from "./LogseqReversibleTransactionTracker";
 
 const LogseqReversibleTransactionTrackerDataSchema = z.object({
-    commands: z.array(LogseqReversibleCommandCodec),
+    commands: z.array(z.lazy(() => LogseqReversibleCommandCodec)),
     appliedCommandCount: z.number().int().nonnegative(),
     changedPages: z.array(z.string()),
     changedAssets: z.array(z.string()).default([])

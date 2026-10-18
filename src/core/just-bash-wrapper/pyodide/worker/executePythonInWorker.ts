@@ -1,4 +1,6 @@
 import {releaseProxy} from "comlink";
+import {installLogseqLib} from "../logseq-lib/installLogseqLib";
+import type {LogseqLibBridge} from "../logseq-lib/types";
 import type {PythonExecutionResult, PythonWorkerExecution, PythonWorkerFetch} from "../types";
 import {collectSandboxChanges} from "./collectSandboxChanges";
 import {createPythonExecution} from "./createPythonExecution";
@@ -10,12 +12,14 @@ import {loadSandboxSnapshot} from "./loadSandboxSnapshot";
 export async function executePythonInWorker(
     runtime: PyodideWorkerRuntime,
     execution: PythonWorkerExecution,
-    fetch: PythonWorkerFetch
+    fetch: PythonWorkerFetch,
+    logseqLib?: LogseqLibBridge
 ): Promise<PythonExecutionResult> {
     const {pyodide, originalFetch, allowedLocalAssetUrls, capabilities} = runtime;
     const io = createPythonIO(execution.stdin);
     let snapshotLoaded = false;
     let result: PythonExecutionResult;
+    let uninstallLogseqLib: (() => void) | undefined;
     try {
         const secureFetch = createWorkerFetch(fetch, originalFetch, allowedLocalAssetUrls);
         globalThis.fetch = secureFetch;
@@ -28,6 +32,13 @@ export async function executePythonInWorker(
         await pyodide.loadPackage("micropip");
         const {bootstrap, source} = createPythonExecution(execution);
         pyodide.runPython(bootstrap);
+        if (logseqLib) {
+            // Comlink proxied object properties are asynchronous.
+            uninstallLogseqLib = installLogseqLib(pyodide, {
+                methods: await logseqLib.methods,
+                call: (method, args) => logseqLib.call(method, args)
+            });
+        }
         const exitCode = Number(
             await pyodide.runPythonAsync(source, {filename: "<python-command>"})
         );
@@ -56,9 +67,16 @@ export async function executePythonInWorker(
         globalThis.fetch = originalFetch;
         delete capabilities.globals.fetch;
         try {
-            (fetch as PythonWorkerFetch & {[releaseProxy]?: () => void})[releaseProxy]?.();
-        } catch {
-            // Worker termination remains the authoritative callback cleanup.
+            uninstallLogseqLib?.();
+        } finally {
+            try {
+                (fetch as PythonWorkerFetch & {[releaseProxy]?: () => void})[releaseProxy]?.();
+                (logseqLib as (LogseqLibBridge & {[releaseProxy]?: () => void}) | undefined)?.[
+                    releaseProxy
+                ]?.();
+            } catch {
+                // Worker termination remains the authoritative callback cleanup.
+            }
         }
     }
 }

@@ -82,7 +82,8 @@ describe("Pyodide worker orchestration", () => {
                     "/home/user": {kind: "directory", mode: 0o555}
                 })
             },
-            expect.any(Function)
+            expect.any(Function),
+            undefined
         );
         expect(client.release).toHaveBeenCalledOnce();
         expect(worker.terminate).toHaveBeenCalledOnce();

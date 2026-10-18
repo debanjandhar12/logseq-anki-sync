@@ -1,3 +1,4 @@
+import type {LogseqLibBridge} from "./logseq-lib/types";
 import type {SandboxChanges, SandboxSnapshot} from "./sandbox-tree/types";
 
 export interface PythonWorkerExecution {
@@ -34,6 +35,7 @@ export interface PythonWorkerApi {
     ready(runtimeBaseUrl: string): Promise<void>;
     execute(
         execution: PythonWorkerExecution,
-        fetch: PythonWorkerFetch
+        fetch: PythonWorkerFetch,
+        logseqLib?: LogseqLibBridge
     ): Promise<PythonExecutionResult>;
 }

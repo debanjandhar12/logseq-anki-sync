@@ -1,3 +1,4 @@
+// @vitest-environment node
 import type {Tool} from "assistant-stream";
 import {describe, expect, test, vi} from "vitest";
 import {executeFrontendToolPlan} from "../../../../../src/chat-app/runtime/LocalChatModelAdapter/frontend-tool-executor";
@@ -6,6 +7,10 @@ import {createToolCallMessagePart} from "../../../../../src/chat-app/runtime/Loc
 
 const call = (id: string) =>
     createToolCallMessagePart({type: "tool-call", toolCallId: id, toolName: id, input: {}});
+
+vi.mock("../../../../../src/chat-app/runtime/LocalChatModelAdapter/tool-result-limiter", () => ({
+    storeAndTruncateOversizedToolResult: vi.fn(async () => undefined)
+}));
 
 describe("executeFrontendToolPlan", () => {
     test("cancels promptly and never starts a later call", async () => {

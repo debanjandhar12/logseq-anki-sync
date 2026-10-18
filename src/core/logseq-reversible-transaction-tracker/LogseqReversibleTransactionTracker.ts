@@ -79,67 +79,95 @@ export class LogseqReversibleTransactionTracker {
     }
 
     public async execute(options?: {signal?: AbortSignal}) {
-        return await LogseqReversibleTransactionOperationLockManager.runExclusive(async () => {
-            let lastCommandResult = null;
-            const commands = this.commandQueue.getCommands();
+        return await LogseqReversibleTransactionOperationLockManager.runExclusive(() =>
+            this.executeCommands(options)
+        );
+    }
 
-            for (let index = this.appliedCommandCount; index < commands.length; index += 1) {
-                options?.signal?.throwIfAborted();
-                const command = commands[index];
-                if (!command) continue;
-                command.resetChangedPages();
-                command.resetChangedAssets();
-                try {
-                    lastCommandResult = await command.execute();
-                } catch (error) {
+    /** @internal Composite commands use this only while their parent owns the operation lock. */
+    public async executeCommands(options?: {signal?: AbortSignal}) {
+        let lastCommandResult = null;
+        const commands = this.commandQueue.getCommands();
+        if (
+            commands
+                .slice(0, this.appliedCommandCount)
+                .some((command) => !command.isExecutionComplete())
+        ) {
+            throw new LogseqReversibleTransactionExecutionError(
+                "A composite command is partially applied. Revert it before executing further changes.",
+                this
+            );
+        }
+
+        for (let index = this.appliedCommandCount; index < commands.length; index += 1) {
+            options?.signal?.throwIfAborted();
+            const command = commands[index];
+            if (!command) continue;
+            command.resetChangedPages();
+            command.resetChangedAssets();
+            try {
+                lastCommandResult = await command.execute();
+            } catch (error) {
+                if (command.getCommandState().status === "executed") {
+                    this.appliedCommandCount += 1;
+                    this.changedPages = [
+                        ...new Set([...this.changedPages, ...command.getChangedPages()])
+                    ];
+                    this.changedAssets = [
+                        ...new Set([...this.changedAssets, ...command.getChangedAssets()])
+                    ];
+                } else {
                     this.commandQueue.removeAt(index);
-                    const causeMessage = error instanceof Error ? error.message : String(error);
-                    throw new LogseqReversibleTransactionExecutionError(
-                        `Failed to execute ${command.constructor.name}: ${causeMessage}`,
-                        this,
-                        {cause: error}
-                    );
                 }
-                this.appliedCommandCount += 1;
-                this.changedAssets = [
-                    ...new Set([...this.changedAssets, ...command.getChangedAssets()])
-                ];
-                this.changedPages = [
-                    ...new Set([...this.changedPages, ...command.getChangedPages()])
-                ];
-                await new Promise((resolve) =>
-                    setTimeout(resolve, LOGSEQ_DB_TRANSACTION_COMMAND_DELAY_MS)
+                const causeMessage = error instanceof Error ? error.message : String(error);
+                throw new LogseqReversibleTransactionExecutionError(
+                    `Failed to execute ${command.constructor.name}: ${causeMessage}`,
+                    this,
+                    {cause: error}
                 );
             }
+            this.appliedCommandCount += 1;
+            this.changedAssets = [
+                ...new Set([...this.changedAssets, ...command.getChangedAssets()])
+            ];
+            this.changedPages = [...new Set([...this.changedPages, ...command.getChangedPages()])];
+            await new Promise((resolve) =>
+                setTimeout(resolve, LOGSEQ_DB_TRANSACTION_COMMAND_DELAY_MS)
+            );
+        }
 
-            return lastCommandResult;
-        });
+        return lastCommandResult;
     }
 
     public async revertAppliedCommands(options?: {signal?: AbortSignal}): Promise<boolean> {
-        return await LogseqReversibleTransactionOperationLockManager.runExclusive(async () => {
-            options?.signal?.throwIfAborted();
-            const commands = this.commandQueue.getCommands();
-            while (this.appliedCommandCount > 0) {
-                options?.signal?.throwIfAborted();
-                const command = commands[this.appliedCommandCount - 1];
-                if (!command) break;
-                try {
-                    await command.revert();
-                } catch (error) {
-                    logger.error("Failed to revert Logseq command", {
-                        command: command.constructor.name,
-                        error
-                    });
-                    throw error;
-                }
-                this.appliedCommandCount -= 1;
-                await new Promise((resolve) =>
-                    setTimeout(resolve, LOGSEQ_DB_TRANSACTION_COMMAND_DELAY_MS)
-                );
-            }
+        return await LogseqReversibleTransactionOperationLockManager.runExclusive(() =>
+            this.revertCommands(options)
+        );
+    }
 
-            return true;
-        });
+    /** @internal Composite commands use this only while their parent owns the operation lock. */
+    public async revertCommands(options?: {signal?: AbortSignal}): Promise<boolean> {
+        options?.signal?.throwIfAborted();
+        const commands = this.commandQueue.getCommands();
+        while (this.appliedCommandCount > 0) {
+            options?.signal?.throwIfAborted();
+            const command = commands[this.appliedCommandCount - 1];
+            if (!command) break;
+            try {
+                await command.revert();
+            } catch (error) {
+                logger.error("Failed to revert Logseq command", {
+                    command: command.constructor.name,
+                    error
+                });
+                throw error;
+            }
+            this.appliedCommandCount -= 1;
+            await new Promise((resolve) =>
+                setTimeout(resolve, LOGSEQ_DB_TRANSACTION_COMMAND_DELAY_MS)
+            );
+        }
+
+        return true;
     }
 }

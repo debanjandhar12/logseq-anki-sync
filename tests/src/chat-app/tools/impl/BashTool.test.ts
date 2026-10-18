@@ -56,15 +56,16 @@ describe("BashTool", () => {
     });
 
     test("rejects non-JSON exit codes before creating a tool result", async () => {
-        vi.spyOn(JustBashWrapper, "getInstance").mockResolvedValue({
+        vi.spyOn(JustBashWrapper, "createExecutionInstance").mockResolvedValue({
             exec: async () => ({stdout: "", stderr: "", exitCode: Number.NaN})
         } as unknown as Awaited<ReturnType<typeof JustBashWrapper.getInstance>>);
 
         const response = await new BashTool().execute({command: "python -c 'pass'"});
 
-        expect(response.result).toEqual({
-            success: false,
-            error: "Failed to execute bash command: Bash returned an invalid exit code"
-        });
+        expect(response.result).toMatchObject({success: true, exitCode: 1});
+        expect(response.result).toHaveProperty(
+            "stderr",
+            "bash: Bash returned an invalid exit code\n"
+        );
     });
 });

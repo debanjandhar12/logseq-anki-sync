@@ -7,22 +7,17 @@ import {
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {VIR_ENV_USER_PATH} from "src/constants";
-import {JustBashWrapper} from "src/core/just-bash-wrapper";
+import {
+    BashCommand,
+    BashCommandArgsSchema
+} from "src/core/logseq-reversible-transaction-tracker/commands/BashCommand";
 import {AnyDocParseResultStore} from "src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
 import {ToolResultStore} from "src/core/stores/tool-results/ToolResultStore";
-import {z} from "zod";
+import type {z} from "zod";
+import {createLogseqReversibleTransactionTrackerArtifact} from "../transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getLastLogseqReversibleTransactionTracker} from "../transaction/getLastLogseqReversibleTransactionTracker";
 
-const bashToolParameters = z.object({
-    command: z
-        .string()
-        .describe(
-            "The bash command to execute in the sandbox. Logseq files are not available here."
-        ),
-    cwd: z
-        .string()
-        .optional()
-        .describe(`Absolute working directory. Defaults to ${VIR_ENV_USER_PATH}.`)
-});
+const bashToolParameters = BashCommandArgsSchema;
 
 type BashToolArgs = z.infer<typeof bashToolParameters>;
 
@@ -39,6 +34,7 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
         "Sandboxed Python is available through Pyodide, for example: " +
         "`python -c 'print(1 + 1)'`, and shares files under the sandbox user directory. " +
         "Install compatible pinned packages with micropip. " +
+        "Use import logseq_lib and await its methods with argument dictionaries to read or reversibly modify Logseq pages, blocks, skills, command files, and assets. " +
         `Prior tool results are read-only at ${VIR_ENV_USER_PATH}/${ToolResultStore.groupName}, ` +
         `and parsed PDF pages are read-only at ${VIR_ENV_USER_PATH}/${AnyDocParseResultStore.groupName}.`;
     readonly parameters = bashToolParameters;
@@ -47,19 +43,22 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
         {command, cwd}: BashToolArgs,
         context?: ChatToolExecutionContext
     ): Promise<ChatToolResponse<BashToolResult>> {
+        const tracker = getLastLogseqReversibleTransactionTracker(context?.messages);
         try {
-            const bash = await JustBashWrapper.getInstance();
-            const {stdout, stderr, exitCode} = await bash.exec(command, {
-                cwd,
-                signal: context?.abortSignal
-            });
-            if (!Number.isInteger(exitCode)) {
-                throw new Error("Bash returned an invalid exit code");
-            }
-            return ChatToolResponse.success({stdout, stderr, exitCode});
+            tracker.addCommand(new BashCommand({command, cwd}));
+            const result = (await tracker.execute({signal: context?.abortSignal})) as {
+                stdout: string;
+                stderr: string;
+                exitCode: number;
+            };
+            return ChatToolResponse.success(
+                result,
+                createLogseqReversibleTransactionTrackerArtifact(tracker)
+            );
         } catch (error) {
             return ChatToolResponse.error(
-                `Failed to execute bash command: ${getErrorMessageFromErrObj(error)}`
+                `Failed to execute bash command: ${getErrorMessageFromErrObj(error)}`,
+                createLogseqReversibleTransactionTrackerArtifact(tracker)
             );
         }
     }

@@ -6,15 +6,25 @@ import {
     VIR_ENV_USER,
     VIR_ENV_USER_PATH
 } from "../../constants";
-import {createPythonCommands, virtualIdentityCommands} from "./commands";
+import {virtualIdentityCommands} from "./commands";
+import {PythonCommandFactory} from "./commands/createPythonCommands";
 import {JustBashAdapterFS} from "./JustBashAdapterFS";
 import {createSecureFetch} from "./network";
+import type {CreateLogseqBridge} from "./pyodide/logseq-lib/types";
 import {ReadOnlyFileSystem} from "./ReadOnlyFileSystem";
 
 /** Singleton accessor for the shared, fully virtual just-bash sandbox. */
 export class JustBashWrapper {
     private static instance: Promise<Bash> | null = null;
     private static adapters: JustBashAdapterFS[] = [];
+
+    public static async createExecutionInstance(createLogseqBridge: CreateLogseqBridge): Promise<Bash> {
+        const shared = await JustBashWrapper.getInstance();
+        return JustBashWrapper.createBash(
+            new ReadOnlyFileSystem(shared.fs),
+            new PythonCommandFactory({createLogseqBridge})
+        );
+    }
 
     static async getInstance(): Promise<Bash> {
         if (JustBashWrapper.instance == null) {
@@ -38,11 +48,17 @@ export class JustBashWrapper {
         const mounts = JustBashAdapterFS.getMountConfigs();
         JustBashWrapper.adapters = mounts.map(({filesystem}) => filesystem);
         await Promise.all(JustBashWrapper.adapters.map((adapter) => adapter.refresh()));
-        return new Bash({
-            fs: new MountableFs({
+        return JustBashWrapper.createBash(
+            new MountableFs({
                 base: new ReadOnlyFileSystem(baseFileSystem),
                 mounts
-            }),
+            })
+        );
+    }
+
+    private static createBash(fs: Bash["fs"], pythonCommands = new PythonCommandFactory()): Bash {
+        return new Bash({
+            fs,
             cwd: VIR_ENV_USER_PATH,
             env: {
                 HOME: VIR_ENV_USER_PATH,
@@ -53,7 +69,7 @@ export class JustBashWrapper {
             processInfo: {uid: VIR_ENV_UID, gid: VIR_ENV_GID},
             fetch: createSecureFetch(globalThis.fetch.bind(globalThis)),
             customCommands: [
-                ...createPythonCommands("python", "python3", "py"),
+                ...pythonCommands.create("python", "python3", "py"),
                 ...virtualIdentityCommands
             ],
             python: false, // Python is provided by the custom Pyodide commands. We cannot use just-bash's inbuilt python environment in-browser.

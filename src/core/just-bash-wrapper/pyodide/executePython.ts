@@ -1,6 +1,7 @@
 import {proxy, releaseProxy, wrap} from "comlink";
 import type {SecureFetch} from "just-bash";
 import pTimeout, {TimeoutError} from "p-timeout";
+import type {LogseqLibBridge} from "./logseq-lib/types";
 import type {
     PythonExecutionResult,
     PythonWorkerApi,
@@ -16,7 +17,8 @@ interface PythonWorkerClient {
     ready(runtimeBaseUrl: string): Promise<void>;
     execute(
         execution: PythonWorkerExecution,
-        fetch: PythonWorkerFetch
+        fetch: PythonWorkerFetch,
+        logseqLib?: LogseqLibBridge
     ): Promise<PythonExecutionResult>;
     release(): void;
 }
@@ -29,6 +31,8 @@ interface PythonExecutionOptions extends PythonWorkerExecution {
     runtimeBaseUrl?: string;
     workerFactory?: () => Worker;
     workerClientFactory?: (worker: Worker) => PythonWorkerClient;
+    logseqLib?: LogseqLibBridge;
+    finalize?: () => Promise<void>;
 }
 
 export async function executePython(
@@ -38,6 +42,7 @@ export async function executePython(
     try {
         worker = options.workerFactory?.() ?? new PyodideWorker();
     } catch (error) {
+        await options.finalize?.();
         return failure(error);
     }
 
@@ -74,7 +79,8 @@ export async function executePython(
             Promise.race([
                 client.execute(
                     createExecution(options),
-                    proxy(createWorkerFetch(options.fetch, controller.signal))
+                    proxy(createWorkerFetch(options.fetch, controller.signal)),
+                    options.logseqLib ? proxy(options.logseqLib) : undefined
                 ),
                 workerError
             ]),
@@ -104,6 +110,7 @@ export async function executePython(
             // Worker termination remains the authoritative cleanup operation.
         } finally {
             worker.terminate();
+            await options.finalize?.();
         }
     }
 }
@@ -124,7 +131,7 @@ function createComlinkClient(worker: Worker): PythonWorkerClient {
     const remote = wrap<PythonWorkerApi>(worker);
     return {
         ready: (runtimeBaseUrl) => remote.ready(runtimeBaseUrl),
-        execute: (execution, fetch) => remote.execute(execution, fetch),
+        execute: (execution, fetch, logseqLib) => remote.execute(execution, fetch, logseqLib),
         release: () => remote[releaseProxy]()
     };
 }
