@@ -9,5 +9,6 @@ export {OpenAIChatCommand} from "./commands/OpenAIChatCommand";
 export {SetComposerTextCommand} from "./commands/SetComposerTextCommand";
 export {initAIChat} from "./initAIChat";
 export {initContextMenu} from "./initContextMenu";
+export {initGraphChangePluginReloadHandler} from "./initGraphChangePluginReloadHandler";
 export {ChatInteropCommandQueue} from "./queue/ChatInteropCommandQueue";
 export type {ChatCommand, ChatRuntimeCommand} from "./types";

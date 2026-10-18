@@ -174,7 +174,11 @@ export const CommandEditorModalComponent: React.FC<CommandEditorModalProps> = ({
             }
             returnResult(true);
             setTimeout(() => {
-                WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
+                try {
+                    WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
+                } catch {
+                    // Reload is unavailable without host access.
+                }
             }, 0);
         } catch (error) {
             await logseq.UI.showMsg(
