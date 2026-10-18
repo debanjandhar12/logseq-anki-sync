@@ -3,7 +3,7 @@ import {LogseqReversibleCommandCodec} from "./commands";
 import {LogseqReversibleTransactionTracker} from "./LogseqReversibleTransactionTracker";
 
 const LogseqReversibleTransactionTrackerDataSchema = z.object({
-    commands: z.array(LogseqReversibleCommandCodec),
+    commands: z.array(z.lazy(() => LogseqReversibleCommandCodec)),
     appliedCommandCount: z.number().int().nonnegative(),
     changedPages: z.array(z.string()),
     changedAssets: z.array(z.string()).default([])
@@ -18,8 +18,9 @@ export const LogseqReversibleTransactionTrackerCodec = z.codec(
                 throw new Error("Applied command count exceeds command count");
             }
             commands.forEach((command, index) => {
-                const expectedStatus = index < appliedCommandCount ? "executed" : "new";
-                if (command.getCommandState().status !== expectedStatus) {
+                const status = command.getCommandState().status;
+                const isApplied = status === "executed" || status === "partially-executed";
+                if (isApplied !== index < appliedCommandCount) {
                     throw new Error("Tracker command status does not match applied command count");
                 }
             });

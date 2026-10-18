@@ -1,6 +1,7 @@
 import {z} from "zod";
 import {AddPropertyToTagPageCommandCodec} from "./AddPropertyToTagPageCommand";
 import {AddTagToBlockCommandCodec} from "./AddTagToBlockCommand";
+import {BashCommandCodec} from "./BashCommand";
 import {CreatePageCommandCodec} from "./CreatePageCommand";
 import {CreateTagPageCommandCodec} from "./CreateTagPageCommand";
 import {DataScriptQueryCommandCodec} from "./DataScriptQueryCommand";
@@ -41,6 +42,7 @@ export {
     AddTagToBlockCommandArgsSchema
 } from "./AddTagToBlockCommand";
 export {BaseReversibleCommand, type ReversibleCommandStatus} from "./BaseReversibleCommand";
+export {BashCommand, type BashCommandArgs, BashCommandArgsSchema} from "./BashCommand";
 export {
     CreatePageCommand,
     type CreatePageCommandArgs,
@@ -204,7 +206,8 @@ export {
 } from "./UpsertPropertyToBlockCommand";
 export {isFlashcardBlock} from "./utils/isFlashcardBlock";
 export {isVideoBlock} from "./utils/isVideoBlock";
-export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
+
+const LogseqLeafCommandCodec = z.discriminatedUnion("type", [
     AddPropertyToTagPageCommandCodec,
     AddTagToBlockCommandCodec,
     CreatePageCommandCodec,
@@ -233,6 +236,11 @@ export const LogseqReversibleCommandCodec = z.discriminatedUnion("type", [
     UpdateBlockCommandCodec,
     UpsertPropertyPageCommandCodec,
     UpsertPropertyToBlockCommandCodec
+]);
+
+export const LogseqReversibleCommandCodec = z.union([
+    LogseqLeafCommandCodec,
+    z.lazy(() => BashCommandCodec)
 ]);
 
 export type SerializedLogseqReversibleCommand = z.input<typeof LogseqReversibleCommandCodec>;

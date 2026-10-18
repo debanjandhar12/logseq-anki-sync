@@ -1,5 +1,5 @@
 import {z} from "zod";
-import type {BaseReversibleCommand} from "./BaseReversibleCommand";
+import type {BaseReversibleCommand, ReversibleCommandStatus} from "./BaseReversibleCommand";
 
 type ReversibleCommandConstructor<ArgsInput, CommandState, Command> = new (
     args: ArgsInput,
@@ -9,7 +9,7 @@ type ReversibleCommandConstructor<ArgsInput, CommandState, Command> = new (
 type ReversibleCommandCodecOptions<
     Type extends string,
     ArgsSchema extends z.ZodType,
-    CommandStateSchema extends z.ZodType<{status: "new" | "executed"}>,
+    CommandStateSchema extends z.ZodType<{status: ReversibleCommandStatus}>,
     Command extends BaseReversibleCommand<z.output<CommandStateSchema>> & {
         readonly args: z.output<ArgsSchema>;
     }
@@ -27,7 +27,7 @@ type ReversibleCommandCodecOptions<
 export function createReversibleCommandCodec<
     Type extends string,
     ArgsSchema extends z.ZodType,
-    CommandStateSchema extends z.ZodType<{status: "new" | "executed"}>,
+    CommandStateSchema extends z.ZodType<{status: ReversibleCommandStatus}>,
     Command extends BaseReversibleCommand<z.output<CommandStateSchema>> & {
         readonly args: z.output<ArgsSchema>;
     }

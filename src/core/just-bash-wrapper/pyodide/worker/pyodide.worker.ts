@@ -12,9 +12,9 @@ const workerApi: PythonWorkerApi = {
         runtimePromise ??= initializePyodideWorker(runtimeBaseUrl);
         await runtimePromise;
     },
-    async execute(execution, fetch) {
+    async execute(execution, fetch, logseqLib) {
         if (!runtimePromise) throw new Error("Pyodide is not initialized");
-        return executePythonInWorker(await runtimePromise, execution, fetch);
+        return executePythonInWorker(await runtimePromise, execution, fetch, logseqLib);
     }
 };
 

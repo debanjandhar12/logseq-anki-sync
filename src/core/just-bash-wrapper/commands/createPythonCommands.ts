@@ -7,12 +7,15 @@ import {applySandboxChanges} from "../pyodide/just-bash-fs-bridge/applySandboxCh
 import {captureSandboxSnapshot} from "../pyodide/just-bash-fs-bridge/captureSandboxSnapshot";
 import {SandboxWriteBackAbortedError} from "../pyodide/just-bash-fs-bridge/SandboxWriteBackAbortedError";
 import type {WriteBackFailure} from "../pyodide/just-bash-fs-bridge/types";
+import type {CreateLogseqBridge} from "../pyodide/logseq-lib/types";
 import type {SandboxSnapshot} from "../pyodide/sandbox-tree/types";
 
 const HELP = `Usage: python [-c CODE | FILE | -] [ARGS...]
 
 Execute Python in browser-compatible Pyodide. Top-level await and micropip are
 available. Network access is restricted to allowlisted HTTPS hosts.
+Within the Bash tool, import logseq_lib to call awaited Logseq commands with
+argument dictionaries, for example await logseq_lib.create_page({"pageName": "Example"}).
 `;
 
 const PARSER_OPTIONS: Options = {
@@ -33,123 +36,147 @@ const PARSER_OPTIONS: Options = {
 };
 
 export function createPythonCommands(...commandNames: string[]) {
-    if (commandNames.some((name) => !name || /\s/.test(name))) {
-        throw new Error("Python command aliases must be non-empty and contain no whitespace");
-    }
-    if (new Set(commandNames).size !== commandNames.length) {
-        throw new Error("Python command aliases must be unique");
-    }
-    return commandNames.map(createPythonCommand);
+    return new PythonCommandFactory().create(...commandNames);
 }
 
-function createPythonCommand(commandName: string) {
-    return defineCommand(commandName, async (args, context) => {
-        let parsed: ReturnType<typeof parseArguments>;
-        try {
-            parsed = parseArguments(args);
-        } catch (cause) {
-            return error(commandName, cause instanceof Error ? cause.message : String(cause));
-        }
-        if (parsed.help) {
-            return {stdout: HELP.replace("python", commandName), stderr: "", exitCode: 0};
-        }
-        if (parsed.version) {
-            return {stdout: "Python 3.14.2 (Pyodide 314.0.6)\n", stderr: "", exitCode: 0};
-        }
+/** Capture execution dependencies once; handlers do not need the host dispatcher or tracker. */
+export class PythonCommandFactory {
+    public constructor(private readonly options: {createLogseqBridge?: CreateLogseqBridge} = {}) {}
 
-        const stdin = decodeStdin(context.stdin);
-        let code: string;
-        let fileName: string;
-        let scriptArgs: string[];
-        let programStdin = stdin;
-        if (parsed.command !== undefined) {
-            code = parsed.command;
-            fileName = "<string>";
-            scriptArgs = args.slice(2);
-        } else if (args[0] === "-" || args[0] == null) {
-            code = stdin;
-            programStdin = "";
-            fileName = "<stdin>";
-            scriptArgs = args[0] === "-" ? args.slice(1) : [];
-        } else {
-            fileName = context.fs.resolvePath(context.cwd, args[0]);
-            if (!(await context.fs.exists(fileName))) {
-                return error(commandName, `${args[0]}: No such file`);
+    public create(...commandNames: string[]) {
+        if (commandNames.some((name) => !name || /\s/.test(name))) {
+            throw new Error("Python command aliases must be non-empty and contain no whitespace");
+        }
+        if (new Set(commandNames).size !== commandNames.length) {
+            throw new Error("Python command aliases must be unique");
+        }
+        return commandNames.map((name) => this.createCommand(name));
+    }
+
+    private createCommand(commandName: string) {
+        return defineCommand(commandName, async (args, context) => {
+            let parsed: ReturnType<typeof parseArguments>;
+            try {
+                parsed = parseArguments(args);
+            } catch (cause) {
+                return error(commandName, cause instanceof Error ? cause.message : String(cause));
             }
-            code = await context.fs.readFile(fileName);
-            scriptArgs = args.slice(1);
-        }
+            if (parsed.help) {
+                return {stdout: HELP.replace("python", commandName), stderr: "", exitCode: 0};
+            }
+            if (parsed.version) {
+                return {stdout: "Python 3.14.2 (Pyodide 314.0.6)\n", stderr: "", exitCode: 0};
+            }
 
-        if (code.startsWith("#!")) {
-            const newline = code.indexOf("\n");
-            code = newline === -1 ? "" : code.slice(newline + 1);
-        }
-        if (!code.trim()) return error(commandName, "no input provided");
-        if (!context.fetch) return error(commandName, "network access is not configured");
+            const stdin = decodeStdin(context.stdin);
+            let code: string;
+            let fileName: string;
+            let scriptArgs: string[];
+            let programStdin = stdin;
+            if (parsed.command !== undefined) {
+                code = parsed.command;
+                fileName = "<string>";
+                scriptArgs = args.slice(2);
+            } else if (args[0] === "-" || args[0] == null) {
+                code = stdin;
+                programStdin = "";
+                fileName = "<stdin>";
+                scriptArgs = args[0] === "-" ? args.slice(1) : [];
+            } else {
+                fileName = context.fs.resolvePath(context.cwd, args[0]);
+                if (!(await context.fs.exists(fileName))) {
+                    return error(commandName, `${args[0]}: No such file`);
+                }
+                code = await context.fs.readFile(fileName);
+                scriptArgs = args.slice(1);
+            }
 
-        let snapshot: SandboxSnapshot;
-        try {
-            snapshot = await captureSandboxSnapshot(context.fs, VIR_ENV_USER_PATH);
-        } catch (cause) {
-            return error(
-                commandName,
-                `cannot snapshot sandbox filesystem: ${getErrorMessage(cause)}`,
-                1
-            );
-        }
+            if (code.startsWith("#!")) {
+                const newline = code.indexOf("\n");
+                code = newline === -1 ? "" : code.slice(newline + 1);
+            }
+            if (!code.trim()) return error(commandName, "no input provided");
+            if (!context.fetch) return error(commandName, "network access is not configured");
 
-        const result = await executePython({
-            code,
-            fileName,
-            args: scriptArgs,
-            stdin: programStdin,
-            cwd: context.cwd,
-            env: context.exportedEnv ?? {},
-            snapshot,
-            fetch: context.fetch,
-            signal: context.signal
-        });
-        if (!result.changes) return toExecResult(result);
-        if (context.signal?.aborted) {
-            return {
-                stdout: result.stdout,
-                stderr: `${result.stderr}${commandName}: execution aborted before filesystem write-back\n`,
-                exitCode: 124
-            };
-        }
+            let snapshot: SandboxSnapshot;
+            try {
+                snapshot = await captureSandboxSnapshot(context.fs, VIR_ENV_USER_PATH);
+            } catch (cause) {
+                return error(
+                    commandName,
+                    `cannot snapshot sandbox filesystem: ${getErrorMessage(cause)}`,
+                    1
+                );
+            }
 
-        // Once this commit starts, it runs to completion rather than exposing a
-        // partially applied filesystem to cancellation.
-        let failures: WriteBackFailure[];
-        try {
-            failures = await applySandboxChanges(
-                context.fs,
-                result.changes,
+            const lease = this.options.createLogseqBridge?.();
+            const result = await executePython({
+                code,
+                fileName,
+                args: scriptArgs,
+                stdin: programStdin,
+                cwd: context.cwd,
+                env: context.exportedEnv ?? {},
                 snapshot,
-                context.signal
-            );
-        } catch (cause) {
-            if (cause instanceof SandboxWriteBackAbortedError) {
+                fetch: context.fetch,
+                signal: context.signal,
+                logseqLib: lease?.bridge,
+                finalize: lease?.close
+            });
+            if (!result.changes) return toExecResult(result);
+            if (lease) {
+                const hasChanges = Object.values(result.changes).some(
+                    (entries) => entries.length > 0
+                );
+                return hasChanges
+                    ? {
+                          ...toExecResult(result),
+                          stderr: `${result.stderr}${commandName}: shared filesystem is read-only; use logseq_lib for changes\n`,
+                          exitCode: 1
+                      }
+                    : toExecResult(result);
+            }
+            if (context.signal?.aborted) {
                 return {
                     stdout: result.stdout,
-                    stderr: `${result.stderr}${commandName}: ${cause.message}\n`,
+                    stderr: `${result.stderr}${commandName}: execution aborted before filesystem write-back\n`,
                     exitCode: 124
                 };
             }
-            throw cause;
-        }
-        const writeBackErrors = failures
-            .map(
-                ({path, message}) =>
-                    `${commandName}: cannot write back ${JSON.stringify(path)}: ${message}\n`
-            )
-            .join("");
-        return {
-            stdout: result.stdout,
-            stderr: result.stderr + writeBackErrors,
-            exitCode: failures.length > 0 && result.exitCode === 0 ? 1 : result.exitCode
-        };
-    });
+
+            // Once this commit starts, it runs to completion rather than exposing a
+            // partially applied filesystem to cancellation.
+            let failures: WriteBackFailure[];
+            try {
+                failures = await applySandboxChanges(
+                    context.fs,
+                    result.changes,
+                    snapshot,
+                    context.signal
+                );
+            } catch (cause) {
+                if (cause instanceof SandboxWriteBackAbortedError) {
+                    return {
+                        stdout: result.stdout,
+                        stderr: `${result.stderr}${commandName}: ${cause.message}\n`,
+                        exitCode: 124
+                    };
+                }
+                throw cause;
+            }
+            const writeBackErrors = failures
+                .map(
+                    ({path, message}) =>
+                        `${commandName}: cannot write back ${JSON.stringify(path)}: ${message}\n`
+                )
+                .join("");
+            return {
+                stdout: result.stdout,
+                stderr: result.stderr + writeBackErrors,
+                exitCode: failures.length > 0 && result.exitCode === 0 ? 1 : result.exitCode
+            };
+        });
+    }
 }
 
 function toExecResult(result: Awaited<ReturnType<typeof executePython>>): ExecResult {
