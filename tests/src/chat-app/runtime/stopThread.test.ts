@@ -189,6 +189,61 @@ describe("stopThread", () => {
         });
     });
 
+    test("restores a finished tool result into stale storage without replacing the stored branch", async () => {
+        const {runtime} = createRuntime("requires-action");
+        const repository = runtime.export();
+        const message = repository.messages[0]!.message;
+        runtime.import({
+            ...repository,
+            messages: [
+                {
+                    parentId: null,
+                    message: {
+                        ...message,
+                        content: [
+                            {
+                                ...message.content[0],
+                                result: {success: true},
+                                artifact: {type: "real-artifact"}
+                            }
+                        ]
+                    } as ThreadMessage
+                }
+            ]
+        });
+        const otherBranch = {...assistantMessage("incomplete"), id: "other-branch"};
+        let saved: ExportedMessageRepository | undefined;
+        vi.mocked(ThreadStore.updateThread).mockImplementation(async (_id, updater) => {
+            const update = await updater({
+                remoteId: "thread-1",
+                status: "regular",
+                exportedMessageRepository: {
+                    headId: otherBranch.id,
+                    messages: [
+                        {message: assistantMessage("requires-action"), parentId: null},
+                        {message: otherBranch, parentId: null}
+                    ]
+                },
+                custom: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    createdByPluginVersion: "test"
+                }
+            });
+            if (update.type === "save") saved = update.threadData.exportedMessageRepository;
+            return update.result;
+        });
+
+        await stopThread({threadId: "thread-1", runtime});
+
+        expect(saved?.headId).toBe(otherBranch.id);
+        expect(saved?.messages[0]?.message.content[0]).toMatchObject({
+            result: {success: true},
+            artifact: {type: "real-artifact"}
+        });
+        expect(saved?.messages[1]?.message).toEqual(otherBranch);
+    });
+
     test("restores a missing persisted parent chain without removing newer messages", async () => {
         const {runtime} = createRuntime("requires-action");
         const continuation = {

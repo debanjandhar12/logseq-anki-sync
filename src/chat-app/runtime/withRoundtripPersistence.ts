@@ -9,7 +9,7 @@ export function withRoundtripPersistence(
     return {
         async *run(options) {
             // Public isRunning can be false while a frontend tool still owns this adapter run.
-            const endRun = trackThreadRun(threadId);
+            const endRun = trackThreadRun(threadId, options.abortSignal);
             try {
                 const result = chatModel.run(options);
                 if (Symbol.asyncIterator in result) {

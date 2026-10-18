@@ -1,5 +1,6 @@
 import type {ThreadMessage} from "@assistant-ui/react";
 import {ChatToolResponse} from "src/chat-app/tools/base/ChatToolResponse";
+import {getThreadRunControl} from "../thread-run/ThreadRunTracker";
 import type {FrontendToolPlanItem} from "./frontend-tool-planner";
 import type {ToolCallResultPatch} from "./tool-call-message-part";
 import {
@@ -36,8 +37,9 @@ export async function* executeFrontendToolPlan(
     plan: readonly FrontendToolPlanItem[],
     {abortSignal, getMessages, now = Date.now}: FrontendToolExecutorOptions
 ): AsyncGenerator<FrontendToolExecutionEvent> {
+    const run = getThreadRunControl(abortSignal);
     for (const item of plan) {
-        if (abortSignal.aborted) {
+        if (abortSignal.aborted || run?.stopRequested) {
             yield {type: "cancelled", completedAt: now()};
             return;
         }
@@ -53,9 +55,9 @@ export async function* executeFrontendToolPlan(
         }
 
         const startedAt = now();
-        yield {type: "started", toolCallId: item.toolCall.toolCallId, startedAt};
-
+        if (run) run.isExecutingTool = true;
         try {
+            yield {type: "started", toolCallId: item.toolCall.toolCallId, startedAt};
             const output = await invokeFrontendTool(
                 item.tool,
                 item.toolCall,
@@ -94,6 +96,14 @@ export async function* executeFrontendToolPlan(
                 startedAt,
                 completedAt: now()
             };
+        } finally {
+            // A yielded result is accepted by LocalRuntime before execution resumes here.
+            if (run) run.isExecutingTool = false;
+        }
+        // Also stop after the last tool; otherwise LocalRuntime can start another model step.
+        if (run?.stopRequested) {
+            yield {type: "cancelled", completedAt: now()};
+            return;
         }
     }
 }
