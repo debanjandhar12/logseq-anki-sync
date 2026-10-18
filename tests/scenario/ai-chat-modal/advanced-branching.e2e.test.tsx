@@ -6,6 +6,8 @@ import {ThreadStore} from "../../../src/core/stores/thread-store/ThreadStore";
 import {
     expectBranchCounter,
     expectEditable,
+    expectOriginalNodesRetained,
+    expectTracker,
     nodeWithText,
     trackerAt
 } from "../../helpers/chat-scenario/assertions";
@@ -49,56 +51,22 @@ const commitStep = (): ModelStep => ({
     ]
 });
 
-async function loadRepository(id: string) {
-    return (await ThreadStore.loadThread(id))!.exportedMessageRepository!;
-}
-
-function expectTracker(
-    repository: ExportedMessageRepository,
-    retained: number,
-    applied: number,
-    location?: {messageId: string; toolCallId: string}
-) {
-    const result = trackerAt(repository, location);
-    expect(result.tracker.getCommands()).toHaveLength(retained);
-    expect(result.tracker.getAppliedCommandCount()).toBe(applied);
-}
-
-function expectOriginalNodesRetained(
-    saved: ExportedMessageRepository,
-    original: ExportedMessageRepository,
-    location: {messageId: string; toolCallId: string}
-) {
-    for (const node of original.messages) {
-        const retained = saved.messages.find(({message}) => message.id === node.message.id);
-        expect(retained).toBeDefined();
-        const normalizeNode = (item: typeof node) => {
-            const copy = structuredClone(item);
-            if (copy.message.id === location.messageId && copy.message.role === "assistant") {
-                for (const part of copy.message.content) {
-                    if (part.type === "tool-call" && part.toolCallId === location.toolCallId) {
-                        // Only the captured rollback artifact is allowed to change.
-                        Object.assign(part, {artifact: undefined});
-                    }
-                }
-            }
-            return copy;
-        };
-        expect(normalizeNode(retained!)).toEqual(normalizeNode(node));
-    }
-}
-
 async function expectPages(pages: readonly {name: string; uuid: string}[], active: boolean) {
     for (const {name, uuid} of pages) {
         await expect
             .poll(async () => {
                 const entity = await logseq.Editor.getPage(uuid);
-                if (active) return entity?.uuid === uuid && !isPageSoftDeleted(entity);
-                return !entity || isPageSoftDeleted(entity);
+                return active
+                    ? entity?.uuid === uuid && !isPageSoftDeleted(entity)
+                    : !entity || isPageSoftDeleted(entity);
             })
             .toBe(true);
         if (active) expect((await logseq.Editor.getPage(name))?.uuid).toBe(uuid);
     }
+}
+
+async function loadRepository(id: string) {
+    return (await ThreadStore.loadThread(id))!.exportedMessageRepository!;
 }
 
 async function capturePage(repository: ExportedMessageRepository, name: string, callId: string) {

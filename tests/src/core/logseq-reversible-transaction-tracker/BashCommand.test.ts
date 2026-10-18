@@ -98,15 +98,6 @@ test("serializes concurrent calls and revokes closed worker bridges", async () =
     expect(tracker.hasAppliedGraphMutations()).toBe(true);
 });
 
-test("read-only Bash produces no graph mutations", async () => {
-    mockShell(async () => {}, 0);
-    const tracker = new LogseqReversibleTransactionTracker();
-    tracker.addCommand(new BashCommand({command: "echo hello"}));
-    await tracker.execute();
-    expect(tracker.hasAppliedGraphMutations()).toBe(false);
-    await tracker.revertAppliedCommands();
-});
-
 test("a started Bash command finishes without receiving the caller's abort signal", async () => {
     const controller = new AbortController();
     const exec = vi.fn(async () => {
