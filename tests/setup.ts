@@ -7,12 +7,15 @@ if (typeof window !== "undefined") {
     // @ts-ignore -- Vitest supports top-level await in setup files.
     const {setupLogseqProxy} = await import("./helpers/logseq-api-proxy");
     // @ts-ignore -- Vitest supports top-level await in setup files.
+    const {LogseqHttpProxy} = await import("../src/logseq/LogseqHttpProxy");
+    // @ts-ignore -- Vitest supports top-level await in setup files.
     const {LogseqPluginStorageManager} = await import("../src/logseq/LogseqPluginStorageManager");
 
     // Setup logseq proxy before all test cases run
     setupLogseqProxy();
 
     beforeAll(async () => {
+        await LogseqHttpProxy.init();
         await LogseqPluginStorageManager.init();
     });
 

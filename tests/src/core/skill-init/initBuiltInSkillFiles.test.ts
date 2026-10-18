@@ -4,6 +4,7 @@ import propertyReverseLookup from "src/chat-app/prompts/skills/logseq-datascript
 import recursiveInheritance from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/RECURSIVE_CLASS_INHERITANCE.ds?raw";
 import statusHistory from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/STATUS_HISTORY.ds?raw";
 import recursiveBacklinks from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/RECURSIVE_PAGE_REFERENCE_BACKLINKS.ds?raw";
+import bilibiliTranscript from "src/chat-app/prompts/skills/working-with-bash-and-pyodide/examples/BILIBILI_TRANSCRIPT.py?raw";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {VIR_ENV_USER_PATH} from "../../../../src/constants";
 import {initBuiltInSkillFiles} from "../../../../src/core/skill-init/initBuiltInSkillFiles";
@@ -39,16 +40,39 @@ describe("initBuiltInSkillFiles", () => {
         }
         const paths = await Storage.getFiles("skills");
         expect(paths.filter((path) => !path.endsWith("/SKILL.md")).sort()).toEqual(
-            expectedResources.map((path) => `logseq-datascript-queries/${path}`)
+            [
+                ...expectedResources.map((path) => `logseq-datascript-queries/${path}`),
+                "working-with-bash-and-pyodide/examples/BILIBILI_TRANSCRIPT.py"
+            ].sort()
         );
         expect(await SkillStore.getSkillFiles("logseq-datascript-queries")).toMatchObject(
             expectedExamples
         );
-        const bash = await SkillStore.getSkill("working-with-bash");
+        const bash = await SkillStore.getSkill("working-with-bash-and-pyodide");
         expect(bash?.content).toContain("micropip");
-        expect(bash?.content).toContain("scipy==1.18.0");
+        expect(bash?.content).toContain("sympy==1.14.0");
         expect(bash?.content).toContain("youtube-transcript-api==1.2.4");
         expect(bash?.content).not.toContain("qjs");
+        expect(bash?.content).not.toContain("includeFile");
+        const internalSources = import.meta.glob(
+            "../../../../src/chat-app/prompts/skills/working-with-bash-and-pyodide/internal/*.py",
+            {eager: true, query: "?raw", import: "default"}
+        );
+        expect(Object.keys(internalSources)).toHaveLength(5);
+        const embeddedSources = [
+            ...bash!.content.matchAll(/```bash\npython - <<'PY'\n([\s\S]*?)\nPY\n```/g)
+        ].map((match) => match[1]);
+        expect(embeddedSources).toHaveLength(5);
+        for (const source of Object.values(internalSources))
+            expect(embeddedSources).toContain((source as string).trim());
+        expect(await SkillStore.getSkillFiles("working-with-bash-and-pyodide")).toMatchObject({
+            "examples/BILIBILI_TRANSCRIPT.py": bilibiliTranscript
+        });
+        expect(
+            await parseTemplateString(bash!.content, {virEnvUserPath: VIR_ENV_USER_PATH})
+        ).toContain(
+            `${VIR_ENV_USER_PATH}/skills/working-with-bash-and-pyodide/examples/BILIBILI_TRANSCRIPT.py`
+        );
         expect((await SkillStore.getSkill("logseq-datascript-queries"))?.content).not.toContain(
             "includeFile"
         );
@@ -96,6 +120,47 @@ describe("initBuiltInSkillFiles", () => {
             "malformed user content"
         );
         expect((await SkillStore.getSkill("working-with-bash"))?.content).toBe(user);
+    });
+
+    test("replaces the obsolete Bash built-in folder with the renamed bundle", async () => {
+        await SkillStore.saveSkillFile(
+            "---\nname: working-with-bash\ndescription: Old Bash skill\nbuilt-in-skill: true\n---\nOld",
+            {examples: {"nested/old.py": "print('old')"}}
+        );
+        await initBuiltInSkillFiles();
+        expect(await SkillStore.listSkillFiles("working-with-bash")).toEqual([]);
+        expect(await SkillStore.listSkillFiles("working-with-bash-and-pyodide")).toEqual([
+            "SKILL.md",
+            "examples/BILIBILI_TRANSCRIPT.py"
+        ]);
+        expect(await SkillStore.getAllSkills()).toHaveLength(6);
+    });
+
+    test.each(["user-owned", "malformed"])("preserves a %s renamed destination", async (kind) => {
+        const name = "working-with-bash-and-pyodide";
+        const content =
+            kind === "malformed"
+                ? "User instructions without frontmatter"
+                : `---\nname: ${name}\ndescription: User instructions\n---\nUser body`;
+        await Storage.saveFile(`skills/${name}`, "SKILL.md", content);
+        await initBuiltInSkillFiles();
+        expect(await Storage.getFileContent(`skills/${name}`, "SKILL.md")).toBe(content);
+        expect(await SkillStore.listSkillFiles(name)).toEqual(["SKILL.md"]);
+    });
+
+    test.each(["edit", "remove", "add"])("repairs Bash example resource %s", async (change) => {
+        await initBuiltInSkillFiles();
+        const group = "skills/working-with-bash-and-pyodide";
+        const path = "examples/BILIBILI_TRANSCRIPT.py";
+        if (change === "edit") await Storage.saveFile(group, path, "changed");
+        if (change === "remove") await Storage.deleteFile(group, path);
+        if (change === "add") await Storage.saveFile(group, "internal/unbundled.py", "extra");
+        await initBuiltInSkillFiles();
+        expect(await Storage.getFileContent(group, path)).toBe(bilibiliTranscript);
+        expect(await SkillStore.listSkillFiles("working-with-bash-and-pyodide")).toEqual([
+            "SKILL.md",
+            path
+        ]);
     });
 
     test("unchanged bundles and invocation-only changes perform no writes", async () => {

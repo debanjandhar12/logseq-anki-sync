@@ -1,4 +1,4 @@
-import {describe, expect, test} from "vitest";
+import {afterEach, describe, expect, test, vi} from "vitest";
 import {LOGSEQ_PROXY_FINAL_URL_HEADER, LogseqHttpProxy} from "../../../src/logseq/LogseqHttpProxy";
 
 type ProxyInternals = {
@@ -14,6 +14,45 @@ type ProxyInternals = {
 };
 
 const proxy = LogseqHttpProxy as unknown as ProxyInternals;
+
+describe("LogseqHttpProxy Vite browser transport", () => {
+    const internals = LogseqHttpProxy as unknown as {
+        originalFetch: typeof fetch | null;
+        fetchInBrowserTest(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
+    };
+    const original = internals.originalFetch;
+    afterEach(() => {
+        internals.originalFetch = original;
+    });
+
+    test("routes external HTTPS requests through Vite server.proxy and records final URL", async () => {
+        const fetch = vi.fn().mockResolvedValue(new Response("upstream", {status: 200}));
+        internals.originalFetch = fetch;
+        const response = await internals.fetchInBrowserTest(
+            "https://www.youtube.com/watch?v=example"
+        );
+        expect(fetch).toHaveBeenCalledWith(
+            "/__logseq_http_proxy/www.youtube.com/watch?v=example",
+            expect.objectContaining({method: "GET", credentials: "omit", redirect: "manual"})
+        );
+        expect(response.headers.get(LOGSEQ_PROXY_FINAL_URL_HEADER)).toBe(
+            "https://www.youtube.com/watch?v=example"
+        );
+        expect(await response.text()).toBe("upstream");
+    });
+
+    test("leaves local API calls and runtime assets on original fetch", async () => {
+        const fetch = vi.fn().mockResolvedValue(new Response("local"));
+        internals.originalFetch = fetch;
+        for (const url of [
+            "http://127.0.0.1:12315/api",
+            new URL("/pyodide/pyodide.mjs", window.location.href).href
+        ]) {
+            await internals.fetchInBrowserTest(url);
+            expect(fetch).toHaveBeenLastCalledWith(url, undefined);
+        }
+    });
+});
 
 describe("LogseqHttpProxy binary responses", () => {
     test("selects binary mode for GET runtime and package assets", () => {

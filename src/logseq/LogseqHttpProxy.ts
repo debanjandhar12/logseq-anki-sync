@@ -17,6 +17,7 @@ type LogseqProxyResponse = {
  * Carries the host proxy's post-redirect final URL; needed because constructed Responses have an empty `response.url` (read-only per spec).
  */
 export const LOGSEQ_PROXY_FINAL_URL_HEADER = "x-logseq-proxy-final-url";
+const TEST_HTTP_PROXY_PREFIX = "/__logseq_http_proxy";
 
 /**
  * Replaces window.fetch to avoid electron cross-origin restrictions.
@@ -26,8 +27,14 @@ export class LogseqHttpProxy {
     private static originalFetch: typeof fetch | null = null;
 
     static async init() {
+        if (process.env.NODE_ENV === "test") {
+            // jsdom tests must not install a browser-server transport.
+            if (import.meta.env?.SSR !== false || LogseqHttpProxy.originalFetch !== null) return;
+            LogseqHttpProxy.originalFetch = window.fetch.bind(window);
+            window.fetch = (input, init) => LogseqHttpProxy.fetchInBrowserTest(input, init);
+            return;
+        }
         if (
-            process.env.NODE_ENV === "test" ||
             !(await LogseqAppInfoFetcher.checkCurrentIsDbGraph()) ||
             LogseqHttpProxy.originalFetch !== null
         ) {
@@ -37,6 +44,34 @@ export class LogseqHttpProxy {
         LogseqHttpProxy.originalFetch = window.fetch.bind(window);
         window.fetch = (input: RequestInfo | URL, init?: RequestInit) =>
             LogseqHttpProxy.fetch(input, init);
+    }
+
+    private static async fetchInBrowserTest(
+        input: RequestInfo | URL,
+        init?: RequestInit
+    ): Promise<Response> {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        if (url.protocol !== "https:" || url.origin === window.location.origin)
+            return LogseqHttpProxy.getOriginalFetch()(input, init);
+        const response = await LogseqHttpProxy.getOriginalFetch()(
+            `${TEST_HTTP_PROXY_PREFIX}/${url.hostname}${url.pathname}${url.search}`,
+            {
+                method: request.method,
+                headers: request.headers,
+                body: request.body === null ? undefined : await request.arrayBuffer(),
+                credentials: "omit",
+                redirect: "manual",
+                signal: request.signal
+            }
+        );
+        const headers = new Headers(response.headers);
+        headers.set(LOGSEQ_PROXY_FINAL_URL_HEADER, url.href);
+        return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers
+        });
     }
 
     /**

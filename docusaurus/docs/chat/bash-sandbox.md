@@ -34,28 +34,42 @@ Scripts in skill folders can be read by Bash or passed to supported interpreters
 
 Python 3.14 is available through the `python`, `python3`, and `py` commands, backed by Pyodide in an isolated Web Worker. It supports `-c`, script files, stdin, command arguments, and top-level `await`. Ordinary APIs including `open`, `pathlib`, `os.listdir`, and `json.load` can access files under `/home/user`.
 
-Before each Python execution, the Bash `/home/user` subtree is copied into Pyodide. When Python exits, its creates, modifications, and deletions on writable mounts are written back. Changes may persist even if the script exits nonzero, as they can for a normal process.
+Before each Python execution, the Bash `/home/user` subtree is copied into Pyodide as a read-only snapshot. The production Bash tool rejects shared-filesystem writes, including attempts to bypass Python's read-only mode bits with `chmod`.
 
-The same `read`, `readexecute`, and `readwrite` mount permissions govern write-back. Read-only mode bits normally make Python raise `PermissionError` immediately. If a script uses `chmod` to bypass those bits, the host still rejects the write-back, reports the failure on stderr, and returns a nonzero command result.
+Use the asynchronous `logseq_lib` module for persistent changes to Logseq pages, blocks, skills, command files, and assets. Methods accept one argument dictionary with camelCase keys and return ordinary Python values:
 
-Write-back also checks that affected host paths still match the captured snapshot. If Bash or plugin storage changes one of those paths while Python is running, the Python command reports a conflict instead of knowingly overwriting the newer value. Logseq storage does not provide an atomic compare-and-swap transaction, so external changes in the final check-to-write interval remain a narrow race.
+```python
+import logseq_lib
+
+page = await logseq_lib.create_page({"pageName": "Python notes"})
+await logseq_lib.insert_block({
+    "parentUuid": page["uuid"],
+    "content": "Created through logseq_lib",
+    "sibling": False,
+})
+```
+
+Successful operations are recorded for undo, but a later Python error does not automatically roll them back. The filesystem snapshot does not refresh during a command; use `read_raw_skill` or `read_command_file` to read instructions saved earlier in that command.
 
 Only `/home/user` is shared. Python's `/tmp`, site packages, and `micropip` packages remain private to the one-use Python runtime. There is no pip wheel cache. A snapshot or change set is limited to 16 MiB per file and 128 MiB total; oversized transfers fail with a clear error.
 
-For maintainers, the bridge's shared types, content comparison, pure tree diff, and byte budgets live in `src/core/just-bash-wrapper/pyodide/sandbox-tree/`. Host storage reads and conflict-checked writes live in `just-bash-fs-bridge/`, while the Emscripten filesystem reader and loader live in `worker/`. Snapshots use a structured-cloneable path-to-entry `Map`; write-back remains controlled by the host after Python execution completes.
+For maintainers, the bridge's shared types, content comparison, pure tree diff, and byte budgets live in `src/core/just-bash-wrapper/pyodide/sandbox-tree/`. Host storage reads and lower-level conflict-checked write-back support live in `just-bash-fs-bridge/`, while the Emscripten filesystem reader and loader live in `worker/`. Production Bash executions enforce read-only sharing even for otherwise writable adapters.
 
 Use `micropip` to install compatible packages and pin exact versions. Package installations exist only for the current command. For example:
 
 ```bash
 python - <<'PY'
 import micropip
-await micropip.install("scipy==1.18.0")
-import numpy as np
-print(np.sin(np.deg2rad(45)) ** 2)
+await micropip.install(["sympy==1.14.0", "mpmath==1.4.1"])
+from sympy import Symbol, integrate, latex
+x = Symbol("x")
+print(latex(integrate(x**2, x)))
 PY
 ```
 
-The built-in `working-with-bash` skill contains Python examples for public YouTube and Bilibili transcripts. YouTube uses the pinned `youtube-transcript-api` package. Bilibili uses its public HTTP APIs directly because available Bilibili Python libraries are not compatible with Pyodide.
+The built-in `working-with-bash-and-pyodide` skill contains tested-source examples for symbolic integration, public video transcripts, method discovery, page creation, and skill creation. YouTube uses the pinned `youtube-transcript-api` package, whose synchronous HTTP transport requires a JSPI-capable browser; automated requests may be blocked. The installed `examples/BILIBILI_TRANSCRIPT.py` fetches a known public subtitle URL for Princeton Algorithms (`BV1Jt411P77c`, part 2). Bilibili can require login to discover subtitle URLs even when downloading a known URL is public.
+
+The example tests execute the same Python sources included in the skill or installed as resources. In browser tests, `LogseqHttpProxy` routes external HTTPS requests through Vite's built-in `server.proxy` instead of Electron's `exper_request`, while local API calls and runtime assets stay on original fetch.
 
 The Pyodide interpreter and standard library are bundled with the plugin. Additional wheels are loaded from pinned, allowlisted HTTPS sources. Python runs in a one-use worker, so cancelling or timing out a command terminates the runtime and its private filesystem and package state.
 

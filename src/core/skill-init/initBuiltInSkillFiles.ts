@@ -9,7 +9,8 @@ import SKILL_LOGSEQ_PROPERTIES_AND_TAGS_RAW from "../../chat-app/prompts/skills/
 import SKILL_LOGSEQ_TOOLS_GUIDE_RAW from "../../chat-app/prompts/skills/logseq-tools-guide/SKILL.md?inlineSkill";
 import SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW from "../../chat-app/prompts/skills/logseq-video-and-web-embeds/SKILL.md?inlineSkill";
 import SKILL_CREATOR_RAW from "../../chat-app/prompts/skills/skill-creator/SKILL.md?inlineSkill";
-import SKILL_WORKING_WITH_BASH_RAW from "../../chat-app/prompts/skills/working-with-bash/SKILL.md?inlineSkill";
+import BILIBILI_TRANSCRIPT_RAW from "../../chat-app/prompts/skills/working-with-bash-and-pyodide/examples/BILIBILI_TRANSCRIPT.py?raw";
+import SKILL_WORKING_WITH_BASH_AND_PYODIDE_RAW from "../../chat-app/prompts/skills/working-with-bash-and-pyodide/SKILL.md?inlineSkill";
 import {parseSkillFile} from "../skill-parser";
 import {SkillStore} from "../stores/skill-store/SkillStore";
 import type {BundledSkill} from "../stores/skill-store/types";
@@ -28,11 +29,14 @@ const BUILT_IN_SKILLS: BundledSkill[] = [
             "STATUS_HISTORY.ds": QUERY_STATUS_HISTORY_RAW
         }
     },
+    {
+        content: SKILL_WORKING_WITH_BASH_AND_PYODIDE_RAW,
+        examples: {"BILIBILI_TRANSCRIPT.py": BILIBILI_TRANSCRIPT_RAW}
+    },
     ...[
         SKILL_LOGSEQ_TOOLS_GUIDE_RAW,
         SKILL_LOGSEQ_PROPERTIES_AND_TAGS_RAW,
         SKILL_LOGSEQ_VIDEO_AND_WEB_EMBEDS_RAW,
-        SKILL_WORKING_WITH_BASH_RAW,
         SKILL_CREATOR_RAW
     ].map((content) => ({
         content,

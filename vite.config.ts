@@ -18,6 +18,29 @@ import {stripUseClientDirectivePlugin} from "./vite-plugins/stripUseClientDirect
 
 export default defineConfig(({mode}) => {
     const env = loadEnv(mode, process.cwd(), "");
+    const createBrowserTestConfig = () => ({
+        browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright(),
+            instances: [
+                {
+                    browser: "chromium" as const,
+                    viewport: {width: 1280, height: 720}
+                }
+            ],
+            screenshotFailures: false,
+            trace: {
+                mode: "retain-on-failure" as const,
+                tracesDir: ".vitest/traces"
+            }
+        },
+        server: {
+            deps: {
+                inline: [/@floating-ui/]
+            }
+        }
+    });
     return {
         base: "./",
         cacheDir: ".vite_cache",
@@ -61,6 +84,35 @@ export default defineConfig(({mode}) => {
         server: {
             port: 5173,
             cors: true,
+            proxy: Object.fromEntries(
+                [
+                    "cdn.jsdelivr.net",
+                    "files.pythonhosted.org",
+                    "i0.hdslb.com",
+                    "pypi.org",
+                    "www.youtube.com"
+                ].map((host) => [
+                    `/__logseq_http_proxy/${host}`,
+                    {
+                        target: `https://${host}`,
+                        changeOrigin: true,
+                        rewrite: (requestPath: string) =>
+                            requestPath.slice(`/__logseq_http_proxy/${host}`.length) || "/",
+                        configure: (proxy: {
+                            on(
+                                event: "proxyReq",
+                                listener: (request: {removeHeader(name: string): void}) => void
+                            ): void;
+                        }) => {
+                            proxy.on("proxyReq", (request) => {
+                                request.removeHeader("cookie");
+                                request.removeHeader("origin");
+                                request.removeHeader("referer");
+                            });
+                        }
+                    }
+                ])
+            ),
             watch: {
                 ignored: ["**/dist/**", "**/node_modules/**"]
             }
@@ -103,7 +155,7 @@ export default defineConfig(({mode}) => {
                 {
                     test: {
                         name: "prompts",
-                        environment: "jsdom",
+                        ...createBrowserTestConfig(),
                         include: [
                             "tests/src/chat-app/prompts/**/*.test.{ts,tsx}",
                             "tests/src/chat-app/prompts/**/*.test.e2e.{ts,tsx}"
@@ -113,28 +165,9 @@ export default defineConfig(({mode}) => {
                 {
                     test: {
                         name: "e2e",
+                        ...createBrowserTestConfig(),
                         include: ["tests/**/*.e2e.test.{ts,tsx}"],
-                        browser: {
-                            enabled: true,
-                            headless: true,
-                            provider: playwright(),
-                            instances: [
-                                {
-                                    browser: "chromium",
-                                    viewport: {width: 1280, height: 720}
-                                }
-                            ],
-                            screenshotFailures: false,
-                            trace: {
-                                mode: "retain-on-failure",
-                                tracesDir: ".vitest/traces"
-                            }
-                        },
-                        server: {
-                            deps: {
-                                inline: [/@floating-ui/]
-                            }
-                        }
+                        exclude: ["tests/src/chat-app/prompts/**"]
                     }
                 }
             ]
