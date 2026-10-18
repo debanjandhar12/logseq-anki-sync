@@ -2,7 +2,7 @@ import type {ExportedMessageRepository, ThreadRuntime} from "@assistant-ui/react
 import {ThreadStore} from "src/core/stores/thread-store/ThreadStore";
 import {createLogger, LoggerCategory} from "src/logger";
 import pkg from "../../../../package.json";
-import {isThreadRunActive} from "./ThreadRunTracker";
+import {isThreadRunActive, requestThreadRunStop} from "./ThreadRunTracker";
 import {
     getActiveAssistantMessageTarget,
     type ToolTurnTarget,
@@ -29,8 +29,11 @@ export function stopThreadRun(options: {
     errorMessage?: string;
     targetMessageId?: string;
 }): Promise<StopThreadRunResult> {
+    const targetMessageId =
+        options.targetMessageId ??
+        getActiveAssistantMessageTarget(options.runtime.export())?.messageId;
     const previous = pendingStops.get(options.threadId) ?? Promise.resolve();
-    const operation = previous.then(() => stopThreadRunOnce(options));
+    const operation = previous.then(() => stopThreadRunOnce({...options, targetMessageId}));
     const barrier = operation.then(
         () => undefined,
         () => undefined
@@ -59,14 +62,14 @@ async function stopThreadRunOnce(options: {
     const wasRunning = targetsActiveTurn && (hadTrackedRun || options.runtime.getState().isRunning);
 
     if (wasRunning) {
-        await cancelActiveRun(options.runtime);
+        await cancelActiveRun(options.runtime, options.threadId);
     }
     if (!target) return {didStop: wasRunning};
 
     const terminated = terminateToolTurn(options.runtime.export(), {target, errorMessage});
-    if (!terminated.didChange) return {didStop: wasRunning};
+    if (!terminated.didChange && !wasRunning) return {didStop: false};
 
-    options.runtime.import(terminated.repository);
+    if (terminated.didChange) options.runtime.import(terminated.repository);
     try {
         await persistTerminatedToolTurn({
             threadId: options.threadId,
@@ -81,9 +84,10 @@ async function stopThreadRunOnce(options: {
     }
 }
 
-async function cancelActiveRun(runtime: ThreadRuntime): Promise<void> {
+async function cancelActiveRun(runtime: ThreadRuntime, threadId: string): Promise<void> {
     await new Promise<void>((resolve, reject) => {
         let didSettle = false;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
         const settle = (error?: Error) => {
             if (didSettle) return;
             didSettle = true;
@@ -91,14 +95,17 @@ async function cancelActiveRun(runtime: ThreadRuntime): Promise<void> {
             unsubscribe();
             error ? reject(error) : resolve();
         };
-        const timeout = setTimeout(
-            () => settle(new Error("Timed out while stopping the current chat run")),
-            RUN_END_TIMEOUT_MS
-        );
         // Subscribe before cancellation so a synchronous runEnd cannot be missed.
         const unsubscribe = runtime.unstable_on("runEnd", () => settle());
 
         try {
+            // Tools (including output normalization) may legitimately take longer than 10s.
+            // The adapter ends naturally after delivering their real result, without continuation.
+            if (requestThreadRunStop(threadId)) return;
+            timeout = setTimeout(
+                () => settle(new Error("Timed out while stopping the current chat run")),
+                RUN_END_TIMEOUT_MS
+            );
             runtime.cancelRun();
         } catch (error) {
             settle(error instanceof Error ? error : new Error(String(error)));
@@ -172,7 +179,39 @@ function ensureTargetAncestry(
     }
     ancestryIds.reverse();
 
-    const ancestry = ancestryIds.map((id) => storedById.get(id) ?? sourceById.get(id));
+    const ancestry = ancestryIds.map((id) => {
+        const stored = storedById.get(id);
+        const source = sourceById.get(id);
+        if (
+            id !== targetMessageId ||
+            !stored ||
+            !source ||
+            stored.message.role !== "assistant" ||
+            source.message.role !== "assistant"
+        ) {
+            return stored ?? source;
+        }
+        // History may still contain the pre-tool snapshot. Restore only newly completed calls,
+        // never replace a newer stored result or unrelated branch/history metadata.
+        const completedCalls = new Map(
+            source.message.content.flatMap((part) =>
+                part.type === "tool-call" && part.result !== undefined
+                    ? [[part.toolCallId, part] as const]
+                    : []
+            )
+        );
+        return {
+            ...stored,
+            message: {
+                ...stored.message,
+                content: stored.message.content.map((part) =>
+                    part.type === "tool-call" && part.result === undefined
+                        ? (completedCalls.get(part.toolCallId) ?? part)
+                        : part
+                )
+            }
+        };
+    });
     if (ancestry.some((item) => item === undefined)) {
         throw new Error(`Unable to restore ancestry for stopped message ${targetMessageId}`);
     }
