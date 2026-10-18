@@ -197,6 +197,7 @@ test("replay failures remove the failed child and keep earlier successes undoabl
         JSON.parse(JSON.stringify(Serializer.serialize(tracker)))
     );
     expect((restored.getCommands()[0] as BashCommand).getCommands()).toHaveLength(1);
+    expect(restored.getCommands()[0].getCommandState().status).toBe("executed");
     replay.mockRestore();
     await restored.revertAppliedCommands();
     expect(await CommandFileStore.getCommandFileByName("Example")).toBeNull();
@@ -234,6 +235,58 @@ test("preceding pending commands execute before Python reads", async () => {
     await tracker.execute();
 });
 
+test("partial replay has an explicit status and blocks new work until reverted", async () => {
+    const shell = mockShell(async (lib) => {
+        const {bridge, close} = lib.createBridge();
+        try {
+            for (const body of ["first", "second", "third"]) {
+                await bridge.call("save_command_file", {
+                    commandName: "Example",
+                    content: markdown(body)
+                });
+            }
+        } finally {
+            await close();
+        }
+    }, 0);
+    const tracker = new LogseqReversibleTransactionTracker();
+    tracker.addCommand(new BashCommand({command: "python -c pass"}));
+    await tracker.execute();
+    await tracker.revertAppliedCommands();
+    expect(tracker.getCommands()[0].getCommandState().status).toBe("new");
+
+    const original = PutCommandFileCommand.prototype.execute;
+    const replay = vi.spyOn(PutCommandFileCommand.prototype, "execute");
+    replay.mockImplementationOnce(original).mockRejectedValueOnce(new Error("replay failed"));
+    await expect(tracker.execute()).rejects.toThrow("replay failed");
+    expect(tracker.getCommands()[0].getCommandState().status).toBe("partially-executed");
+    const data = JSON.parse(JSON.stringify(Serializer.serialize(tracker)));
+    expect(data.commands[0].commandState.status).toBe("partially-executed");
+    const restored = Serializer.deserialize(data);
+    expect(restored.getAppliedCommandCount()).toBe(1);
+    await expect(restored.execute()).rejects.toThrow("partially applied");
+    await expect(restored.getCommands()[0].execute()).rejects.toThrow("partially executed");
+    expect(() => Serializer.deserialize({...data, appliedCommandCount: 0})).toThrow(
+        "status does not match"
+    );
+
+    // Persisted histories from before this status existed still recover correctly.
+    data.commands[0].commandState.status = "executed";
+    expect(Serializer.deserialize(data).getCommands()[0].getCommandState().status).toBe(
+        "partially-executed"
+    );
+
+    replay.mockRestore();
+    await restored.revertAppliedCommands();
+    expect(restored.getCommands()[0].getCommandState().status).toBe("new");
+    await restored.execute();
+    expect(restored.getCommands()[0].getCommandState().status).toBe("executed");
+    expect((await CommandFileStore.getCommandFileByName("Example"))?.content).toBe(
+        markdown("third")
+    );
+    expect(shell).toHaveBeenCalledOnce();
+}, 15_000);
+
 test("partial child undo can be serialized and retried without repeating successful undos", async () => {
     mockShell(async (lib) => {
         const {bridge, close} = lib.createBridge();
@@ -254,10 +307,14 @@ test("partial child undo can be serialized and retried without repeating success
     const writeUndo = vi.spyOn(PutCommandFileCommand.prototype, "revert");
     writeUndo.mockRejectedValueOnce(new Error("undo failed"));
     await expect(tracker.revertAppliedCommands()).rejects.toThrow("undo failed");
+    expect(tracker.getCommands()[0].getCommandState().status).toBe("partially-executed");
     const restored = Serializer.deserialize(
         JSON.parse(JSON.stringify(Serializer.serialize(tracker)))
     );
+    expect(restored.getCommands()[0].getCommandState().status).toBe("partially-executed");
+    await expect(restored.execute()).rejects.toThrow("partially applied");
     await restored.revertAppliedCommands();
+    expect(restored.getCommands()[0].getCommandState().status).toBe("new");
     expect(readUndo).toHaveBeenCalledOnce();
     expect(await CommandFileStore.getCommandFileByName("Example")).toBeNull();
 });

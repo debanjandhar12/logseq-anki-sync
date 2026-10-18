@@ -1,6 +1,6 @@
 import type {LogseqReversibleTransactionResult} from "../types";
 
-export type ReversibleCommandStatus = "new" | "executed";
+export type ReversibleCommandStatus = "new" | "executed" | "partially-executed";
 
 export abstract class BaseReversibleCommand<
     CommandState extends {status: ReversibleCommandStatus}
@@ -19,16 +19,14 @@ export abstract class BaseReversibleCommand<
         return true;
     }
 
-    /** Composites can retain a partially replayed history after execution fails. */
-    public isExecutionComplete(): boolean {
-        return true;
-    }
-
     public getCommandState(): CommandState {
         return {...this.commandState};
     }
 
     protected assertCanExecute(): void {
+        if (this.commandState.status === "partially-executed") {
+            throw new Error("Command is partially executed. Revert it before executing again.");
+        }
         if (this.commandState.status === "executed") {
             throw new Error("Command has already been executed");
         }

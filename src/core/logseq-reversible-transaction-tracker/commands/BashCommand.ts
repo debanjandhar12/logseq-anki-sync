@@ -21,7 +21,7 @@ const BashResultSchema = z.object({
     exitCode: z.number().int()
 });
 const BashCommandStateSchema = z.object({
-    status: z.enum(["new", "executed"]),
+    status: z.enum(["new", "executed", "partially-executed"]),
     result: BashResultSchema.nullable(),
     // The existing tracker serializer validates nested data in the constructor.
     // Keeping its input unknown avoids recursive codec inference/initialization.
@@ -44,8 +44,15 @@ export class BashCommand extends BaseReversibleCommand<BashCommandState> {
         this.childTracker = state
             ? LogseqReversibleTransactionTrackerSerializer.deserialize(state.childTracker)
             : new LogseqReversibleTransactionTracker();
-        if (state?.status === "executed" && !state.result) {
+        if (state && state.status !== "new" && !state.result) {
             throw new Error("An executed Bash command must have a recorded result");
+        }
+        // Older histories represented incomplete child progress as executed.
+        if (
+            this.commandState.status === "executed" &&
+            this.childTracker.getAppliedCommandCount() !== this.childTracker.getCommands().length
+        ) {
+            this.commandState.status = "partially-executed";
         }
     }
 
@@ -72,18 +79,19 @@ export class BashCommand extends BaseReversibleCommand<BashCommandState> {
         return this.childTracker.getChangedAssets();
     }
 
-    public override isExecutionComplete(): boolean {
-        return (
-            this.childTracker.getAppliedCommandCount() === this.childTracker.getCommands().length
-        );
-    }
-
     public async execute() {
         this.assertCanExecute();
         if (this.commandState.result) {
             // Retain the composite's ownership even if replay fails after some children succeeded.
-            this.commandState.status = "executed";
-            await this.childTracker.executeCommands();
+            try {
+                await this.childTracker.executeCommands();
+            } finally {
+                this.commandState.status =
+                    this.childTracker.getAppliedCommandCount() ===
+                    this.childTracker.getCommands().length
+                        ? "executed"
+                        : "partially-executed";
+            }
             return this.commandState.result;
         }
 
@@ -112,7 +120,12 @@ export class BashCommand extends BaseReversibleCommand<BashCommandState> {
 
     public async revert(): Promise<void> {
         this.assertCanRevert();
-        await this.childTracker.revertCommands();
+        try {
+            await this.childTracker.revertCommands();
+        } catch (error) {
+            this.commandState.status = "partially-executed";
+            throw error;
+        }
         this.commandState.status = "new";
     }
 }

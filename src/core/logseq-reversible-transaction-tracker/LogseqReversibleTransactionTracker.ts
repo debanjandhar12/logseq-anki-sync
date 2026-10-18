@@ -91,7 +91,7 @@ export class LogseqReversibleTransactionTracker {
         if (
             commands
                 .slice(0, this.appliedCommandCount)
-                .some((command) => !command.isExecutionComplete())
+                .some((command) => command.getCommandState().status === "partially-executed")
         ) {
             throw new LogseqReversibleTransactionExecutionError(
                 "A composite command is partially applied. Revert it before executing further changes.",
@@ -108,7 +108,7 @@ export class LogseqReversibleTransactionTracker {
             try {
                 lastCommandResult = await command.execute();
             } catch (error) {
-                if (command.getCommandState().status === "executed") {
+                if (command.getCommandState().status !== "new") {
                     this.appliedCommandCount += 1;
                     this.changedPages = [
                         ...new Set([...this.changedPages, ...command.getChangedPages()])
