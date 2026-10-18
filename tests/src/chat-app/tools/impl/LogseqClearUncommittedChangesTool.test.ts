@@ -2,6 +2,7 @@ import type {ThreadMessage} from "@assistant-ui/react";
 import {afterEach, describe, expect, test, vi} from "vitest";
 import {LogseqClearUncommittedChangesTool} from "../../../../../src/chat-app/tools/impl/LogseqClearUncommittedChangesTool";
 import {createLogseqReversibleTransactionTrackerArtifact} from "../../../../../src/chat-app/tools/transaction/createLogseqReversibleTransactionTrackerArtifact";
+import {getLastLogseqReversibleTransactionTracker} from "../../../../../src/chat-app/tools/transaction/getLastLogseqReversibleTransactionTracker";
 import {
     CreatePageCommand,
     LogseqReversibleTransactionTracker,
@@ -70,5 +71,12 @@ describe("LogseqClearUncommittedChangesTool", () => {
             "error"
         );
         expect(getTrackerFromResponse(response).getCommands()).toEqual([]);
+        const clearedMessage = createMessage(getTrackerFromResponse(response));
+        expect(
+            getLastLogseqReversibleTransactionTracker([
+                createMessage(tracker),
+                {...clearedMessage, id: "clear-message"}
+            ]).getCommands()
+        ).toEqual([]);
     });
 });

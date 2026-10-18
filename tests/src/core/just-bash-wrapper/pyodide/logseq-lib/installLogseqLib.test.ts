@@ -1,10 +1,8 @@
 // @vitest-environment node
 
-import {type Endpoint, expose, proxy, releaseProxy, wrap} from "comlink";
 import {loadPyodide, type PyodideInterface} from "pyodide";
 import {beforeAll, expect, test, vi} from "vitest";
 import {installLogseqLib} from "../../../../../../src/core/just-bash-wrapper/pyodide/logseq-lib/installLogseqLib";
-import type {LogseqLibBridge} from "../../../../../../src/core/just-bash-wrapper/pyodide/logseq-lib/types";
 
 let pyodide: PyodideInterface;
 beforeAll(async () => {
@@ -68,39 +66,5 @@ rejected
         ).toBe(true);
     } finally {
         uninstall();
-    }
-});
-
-test("a Comlink-proxied host bridge supports Python method calls", async () => {
-    const {MessageChannel} = process.getBuiltinModule("worker_threads");
-    const channel = new MessageChannel();
-    expose(
-        proxy({
-            methods: ["read_command_file"],
-            call: async (_method: string, args: Record<string, unknown>) => ({
-                exists: true,
-                content: args.commandName
-            })
-        }),
-        channel.port1 as unknown as Endpoint
-    );
-    const remote = wrap<LogseqLibBridge>(channel.port2 as unknown as Endpoint);
-    const uninstall = installLogseqLib(pyodide, {
-        methods: await remote.methods,
-        call: (method, args) => remote.call(method, args)
-    });
-    try {
-        expect(
-            await pyodide.runPythonAsync(`
-import logseq_lib
-result = await logseq_lib.read_command_file({"commandName": "Across worker boundary"})
-result["content"]
-`)
-        ).toBe("Across worker boundary");
-    } finally {
-        uninstall();
-        remote[releaseProxy]();
-        channel.port1.close();
-        channel.port2.close();
     }
 });

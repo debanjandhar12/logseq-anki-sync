@@ -8,8 +8,10 @@ export {
     expectEditable,
     nodeWithText
 } from "./expectBranch";
+export {expectCommand} from "./expectCommand";
 // Commit-related assertions
 export {expectCommitResult, expectNoPendingTracker} from "./expectCommit";
+export {expectOriginalNodesRetained} from "./expectOriginalNodesRetained";
 // Repository structure assertions
 export {
     expectLinearConversation,
@@ -17,10 +19,10 @@ export {
     normalizeRepositoryDeep
 } from "./expectRepository";
 export {expectToolResultInPrompt} from "./expectToolResultInPrompt";
+export {expectTracker} from "./expectTracker";
 export {findToolPart} from "./findToolPart";
 export {normalizeRepository} from "./normalizeRepository";
 export type {TrackerLocation, TrackerWithLocation} from "./trackerAt";
-
 // Tracker location helpers
 export {trackerAt} from "./trackerAt";
 export {waitForSavedConversation} from "./waitForSavedConversation";

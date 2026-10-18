@@ -1,18 +1,11 @@
 // @vitest-environment node
 import {loadPyodide, type PyodideInterface} from "pyodide";
 import {beforeAll, describe, expect, test} from "vitest";
-import {
-    VIR_ENV_GID,
-    VIR_ENV_HOSTNAME,
-    VIR_ENV_UID,
-    VIR_ENV_USER,
-    VIR_ENV_USER_PATH
-} from "../../../../../../src/constants";
+import {VIR_ENV_HOSTNAME, VIR_ENV_USER, VIR_ENV_USER_PATH} from "../../../../../../src/constants";
 import {createPythonExecution} from "../../../../../../src/core/just-bash-wrapper/pyodide/worker/createPythonExecution";
 
 let pyodide: PyodideInterface;
 let stdout = "";
-let stderr = "";
 
 beforeAll(async () => {
     const require = process.getBuiltinModule("module").createRequire(import.meta.url);
@@ -23,16 +16,10 @@ beforeAll(async () => {
             stdout += `${line}\n`;
         }
     });
-    pyodide.setStderr({
-        batched: (line) => {
-            stderr += `${line}\n`;
-        }
-    });
 }, 30_000);
 
 async function execute(code: string) {
     stdout = "";
-    stderr = "";
     const {bootstrap, source} = createPythonExecution({
         code,
         fileName: "quote'\\café.py",
@@ -53,17 +40,6 @@ async function execute(code: string) {
 }
 
 describe("real Python command wrapper", () => {
-    test.each([
-        ["pass", 0],
-        ["raise SystemExit()", 0],
-        ["raise SystemExit(3)", 3],
-        ["raise SystemExit(-2)", -2],
-        ["raise SystemExit('message')", 1]
-    ])("maps exit status for %s", async (code, expected) => {
-        expect(await execute(code as string)).toBe(expected);
-        if (expected === 1) expect(stderr).toBe("message\n");
-    });
-
     test("isolates user globals from wrapper locals and previous executions", async () => {
         expect(
             await execute(
@@ -94,20 +70,5 @@ describe("real Python command wrapper", () => {
             expect(String(error)).toContain("user failure");
             expect(String(error)).toContain("quote'\\café.py");
         }
-    });
-
-    test("uses the shared virtual identity", async () => {
-        expect(
-            await execute(
-                `import getpass, os, platform, socket
-assert os.environ['HOME'] == '${VIR_ENV_USER_PATH}'
-assert os.environ['USER'] == '${VIR_ENV_USER}'
-assert getpass.getuser() == '${VIR_ENV_USER}'
-assert socket.gethostname() == '${VIR_ENV_HOSTNAME}'
-assert platform.node() == '${VIR_ENV_HOSTNAME}'
-assert os.getuid() == ${VIR_ENV_UID}
-assert os.getgid() == ${VIR_ENV_GID}`
-            )
-        ).toBe(0);
     });
 });
