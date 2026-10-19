@@ -83,6 +83,10 @@ export const ReviewChangesDisplay: FC<ReviewChangesDisplayProps> = ({
                         <span className="text-muted-foreground">Changed pages</span>
                         <span className="font-mono tabular-nums">{summary.changedPageCount}</span>
                     </div>
+                    <div className="flex items-center justify-between gap-4">
+                        <span className="text-muted-foreground">Changed files</span>
+                        <span className="font-mono tabular-nums">{summary.changedAssetCount}</span>
+                    </div>
                     <Button
                         variant="secondary"
                         size="sm"

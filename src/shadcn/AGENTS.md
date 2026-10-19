@@ -16,4 +16,5 @@ This should contain only original shadcn components.
 
 Notes:
 - When updating with `--overwrite`, we need to review the diff and make same the same changes in our custom components.
+- When updating the upstream assistant-ui DiffViewer (`src/shadcn/assistant-ui/diff-viewer.tsx`), apply applicable changes to both custom viewers in `src/chat-app/components/diff-viewer/`: `LogseqPageDiffViewer.tsx` and `AssetDiffViewer.tsx`, including their shared `DiffViewerFrame.tsx`. Preserve page/asset-specific behavior and keep customization comments current.
 - Use `--overwrite` sparingly

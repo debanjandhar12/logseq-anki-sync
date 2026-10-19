@@ -2,7 +2,7 @@ import {FileIcon} from "lucide-react";
 import {createElement} from "react";
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, test} from "vitest";
-import {DiffViewer} from "../../../../src/chat-app/components/DiffViewer";
+import {LogseqPageDiffViewer as DiffViewer} from "../../../../../src/chat-app/components/diff-viewer";
 
 const files = {
     oldFile: {name: "page.md", content: "Before"},

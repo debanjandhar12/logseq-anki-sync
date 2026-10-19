@@ -4,6 +4,7 @@ import {findLastLogseqReversibleTransactionTracker} from "src/chat-app/tools/tra
 export interface ReviewChangesSummary {
     commandCount: number;
     changedPageCount: number;
+    changedAssetCount: number;
 }
 
 export type ReviewChangesLifecycleLabel =
@@ -12,7 +13,8 @@ export type ReviewChangesLifecycleLabel =
 
 const EMPTY_REVIEW_CHANGES_SUMMARY: ReviewChangesSummary = {
     commandCount: 0,
-    changedPageCount: 0
+    changedPageCount: 0,
+    changedAssetCount: 0
 };
 
 export function getReviewChangesSummary(messages: readonly ThreadMessage[]): ReviewChangesSummary {
@@ -24,7 +26,8 @@ export function getReviewChangesSummary(messages: readonly ThreadMessage[]): Rev
 
     return {
         commandCount,
-        changedPageCount: locatedTracker.tracker.getChangedPages().length
+        changedPageCount: locatedTracker.tracker.getChangedPages().length,
+        changedAssetCount: locatedTracker.tracker.getChangedAssets().length
     };
 }
 

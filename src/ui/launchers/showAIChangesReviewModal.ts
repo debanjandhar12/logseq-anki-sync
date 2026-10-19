@@ -1,18 +1,18 @@
 import React from "react";
-import type {LogseqPrintedPageChange} from "src/core/logseq-reversible-transaction-tracker";
 import {createModalPromise} from "../modals/utils/createModalPromise";
 import {
+    type AIChangesReviewChanges,
     AIChangesReviewModalComponent,
     type AIChangesReviewResult
 } from "../pages/AIChangesReviewModal";
 
 export async function showAIChangesReviewModal(
-    changes: LogseqPrintedPageChange[]
+    changes: AIChangesReviewChanges
 ): Promise<AIChangesReviewResult> {
     return createModalPromise<AIChangesReviewResult>(
         (props) =>
             React.createElement(AIChangesReviewModalComponent, {
-                changes,
+                ...changes,
                 ...props
             }),
         {enableOutsideClickClose: true},

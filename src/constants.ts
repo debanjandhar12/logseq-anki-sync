@@ -3,6 +3,9 @@ export const DONATE_ICON =
 
 export const LOGSEQ_HTTP_PROXY_TIMEOUT_MS = 30_000;
 
+/** Maximum captured content for each Before/After asset in commit review. */
+export const MAX_ASSET_DIFF_BYTES = 32 * 1024 * 1024;
+
 /** Virtual identity shared by the Bash sandbox and Python runtime. */
 export const VIR_ENV_USER = "user";
 export const VIR_ENV_HOSTNAME = "localhost";

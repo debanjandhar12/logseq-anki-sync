@@ -1,4 +1,6 @@
 import {Buffer} from "buffer";
+import {getStreamAsArrayBuffer, MaxBufferError} from "get-stream";
+import {MAX_ASSET_DIFF_BYTES} from "src/constants";
 import {WindowParentBridge} from "src/logseq/WindowParentBridge";
 import {z} from "zod";
 import {type ResolvedGraphAssetPath, resolveGraphAssetPath} from "./resolveGraphAssetPath";
@@ -18,6 +20,11 @@ export const assetSnapshotSchema = z.discriminatedUnion("exists", [
 ]);
 
 export type AssetSnapshot = z.output<typeof assetSnapshotSchema>;
+
+export type AssetPreviewRead =
+    | {exists: false}
+    | {exists: true; byteLength: number; bytes: Uint8Array}
+    | {exists: true; byteLength: number; sizeIsExact: boolean; omitted: true};
 
 /** Desktop asset I/O; commands own lifecycle, write policy, and undo state. */
 export class AssetFileOperations {
@@ -92,7 +99,48 @@ export class AssetFileOperations {
         }
     }
 
+    public static async readForPreview(
+        resolved: ResolvedGraphAssetPath
+    ): Promise<AssetPreviewRead> {
+        const metadata = await AssetFileOperations.getMetadata(resolved);
+        if (!metadata.exists) return {exists: false};
+        if (metadata.byteLength > MAX_ASSET_DIFF_BYTES)
+            return {...metadata, omitted: true, sizeIsExact: true};
+        const url = await WindowParentBridge.makeAssetUrl(resolved.graphRelativePath);
+        if (!/^[a-z][a-z\d+.-]*:/i.test(url))
+            throw new Error("Logseq did not resolve an asset URL");
+        // Both sides use the same URL around rollback; never reuse a cached applied version.
+        const response = await WindowParentBridge.getFetch()(url, {cache: "no-store"});
+        if (!response.ok) throw new Error(`Failed to read asset: ${response.status}`);
+        if (!response.body) throw new Error("Asset response does not support bounded reading");
+        let bytes: Uint8Array;
+        try {
+            bytes = new Uint8Array(
+                await getStreamAsArrayBuffer(response.body, {maxBuffer: MAX_ASSET_DIFF_BYTES})
+            );
+        } catch (error) {
+            if (!(error instanceof MaxBufferError)) throw error;
+            // The library truncates bufferedData at the cap; the actual size is at least cap + 1.
+            return {
+                exists: true,
+                omitted: true,
+                byteLength: MAX_ASSET_DIFF_BYTES + 1,
+                sizeIsExact: false
+            };
+        }
+        const byteLength = bytes.byteLength;
+        if (byteLength !== metadata.byteLength)
+            throw new Error("Asset size changed while capturing its preview");
+        return {exists: true, byteLength, bytes};
+    }
+
     private static async exists(resolved: ResolvedGraphAssetPath): Promise<boolean> {
+        return (await AssetFileOperations.getMetadata(resolved)).exists;
+    }
+
+    public static async getMetadata(
+        resolved: ResolvedGraphAssetPath
+    ): Promise<{exists: false} | {exists: true; byteLength: number}> {
         const {fullPath, graphRoot} = resolved;
         try {
             const stat = await WindowParentBridge.getWindow().apis.doAction([
@@ -122,14 +170,14 @@ export class AssetFileOperations {
                     )
                 )
                     throw new Error("Unable to read metadata for the existing asset");
-                return false;
+                return {exists: false};
             }
-            if (!stat || typeof stat.size !== "number")
+            if (!Number.isSafeInteger(stat.size) || stat.size < 0)
                 throw new Error("Host did not return asset file metadata");
-            return true;
+            return {exists: true, byteLength: stat.size};
         } catch (error) {
             // Electron preserves ENOENT in the IPC error message, but not necessarily its code.
-            if (error instanceof Error && /\bENOENT\b/.test(error.message)) return false;
+            if (error instanceof Error && /\bENOENT\b/.test(error.message)) return {exists: false};
             throw error;
         }
     }
