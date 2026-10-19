@@ -4,6 +4,7 @@
     "title": "Logseq AI Chat",
     "description": "The best logseq plugin ever.",
     "main": "dist/index.html",
+    "type": "module",
     "license": "AGPL-3.0",
     "repository": "debanjandhar12/logseq-ai-chat",
     "author": "@debanjandhar12",

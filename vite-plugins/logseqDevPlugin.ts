@@ -1,7 +1,7 @@
-import { Plugin } from "vite";
-import { readFileSync, mkdirSync, writeFileSync } from "fs";
-import { resolve } from "path";
-import { get } from "http";
+import type {Plugin} from "vite";
+import {readFileSync, mkdirSync, writeFileSync} from "node:fs";
+import {resolve} from "node:path";
+import {get} from "node:http";
 import MagicString from "magic-string";
 function getLogseqPluginId() {
     try {

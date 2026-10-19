@@ -1,5 +1,5 @@
 import type {Plugin} from "vite";
-import path from "path";
+import path from "node:path";
 
 /**
  * Plugin to ensure all React imports use the same instance.
@@ -8,9 +8,9 @@ import path from "path";
  * Those files, in turn, attempt to use logseq's React if available in production mode.
  */
 export function logseqReactBridgePlugin(): Plugin {
-    const reactWrapperPath = path.resolve(__dirname, "./React.ts");
-    const reactDOMWrapperPath = path.resolve(__dirname, "./ReactDOM.ts");
-    const jsxRuntimeWrapperPath = path.resolve(__dirname, "./ReactJsxRuntime.ts");
+    const reactWrapperPath = path.resolve(import.meta.dirname, "./React.ts");
+    const reactDOMWrapperPath = path.resolve(import.meta.dirname, "./ReactDOM.ts");
+    const jsxRuntimeWrapperPath = path.resolve(import.meta.dirname, "./ReactJsxRuntime.ts");
 
     function isReactDomInternal(importer: string | undefined): boolean {
         if (!importer) return false;

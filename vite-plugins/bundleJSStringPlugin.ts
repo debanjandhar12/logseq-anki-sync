@@ -15,7 +15,7 @@ export function bundleJSStringPlugin(mode: string) {
                         sourcefile: id,
                         loader: id.endsWith(".ts?string") ? "ts" : "js"
                     },
-                    sourceRoot: __dirname,
+                    sourceRoot: import.meta.dirname,
                     bundle: true,
                     minify: true,
                     platform: "browser",

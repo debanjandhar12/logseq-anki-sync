@@ -6,9 +6,12 @@ import type {Plugin} from "vite";
  * wrapper while keeping the original packages available through npm aliases.
  */
 export function shadowDOMFloatingUIReactPopperBridgePlugin(): Plugin {
-    const radixPopperCompatPath = path.resolve(__dirname, "./radixPopperCompat.tsx");
-    const radixPortalCompatPath = path.resolve(__dirname, "./radixPortalCompat.tsx");
-    const floatingUiReactDomCompatPath = path.resolve(__dirname, "./floatingUiReactDomCompat.ts");
+    const radixPopperCompatPath = path.resolve(import.meta.dirname, "./radixPopperCompat.tsx");
+    const radixPortalCompatPath = path.resolve(import.meta.dirname, "./radixPortalCompat.tsx");
+    const floatingUiReactDomCompatPath = path.resolve(
+        import.meta.dirname,
+        "./floatingUiReactDomCompat.ts"
+    );
 
     return {
         name: "shadow-dom-react-popper-bridge",

@@ -4,15 +4,15 @@ import reactPlugin from "@vitejs/plugin-react";
 import {playwright} from "@vitest/browser-playwright";
 import {defineConfig, loadEnv} from "vite";
 import {nodePolyfills} from "vite-plugin-node-polyfills";
-import {bundleJSStringPlugin} from "./vite-plugins/bundleJSStringPlugin";
-import {inlineSkillFilePlugin} from "./vite-plugins/inlineSkillFilePlugin";
-import {logseqDevPlugin} from "./vite-plugins/logseqDevPlugin";
-import {logseqReactBridgePlugin} from "./vite-plugins/logseqReactBridgePlugin";
-import {pyodideAssetsPlugin} from "./vite-plugins/pyodideAssetsPlugin";
-import {rewriteDistReqToRootPlugin} from "./vite-plugins/rewriteDistReqToRootPlugin";
-import {shadowDOMFloatingUIReactPopperBridgePlugin} from "./vite-plugins/shadowDOMFloatingUIReactPopperBridgePlugin";
-import {staticFileSyncTransformPlugin} from "./vite-plugins/staticFileSyncTransformPlugin";
-import {stripUseClientDirectivePlugin} from "./vite-plugins/stripUseClientDirectivePlugin";
+import {bundleJSStringPlugin} from "./vite-plugins/bundleJSStringPlugin.ts";
+import {inlineSkillFilePlugin} from "./vite-plugins/inlineSkillFilePlugin.ts";
+import {logseqDevPlugin} from "./vite-plugins/logseqDevPlugin.ts";
+import {logseqReactBridgePlugin} from "./vite-plugins/logseqReactBridgePlugin/index.ts";
+import {pyodideAssetsPlugin} from "./vite-plugins/pyodideAssetsPlugin.ts";
+import {rewriteDistReqToRootPlugin} from "./vite-plugins/rewriteDistReqToRootPlugin.ts";
+import {shadowDOMFloatingUIReactPopperBridgePlugin} from "./vite-plugins/shadowDOMFloatingUIReactPopperBridgePlugin/index.ts";
+import {staticFileSyncTransformPlugin} from "./vite-plugins/staticFileSyncTransformPlugin.ts";
+import {stripUseClientDirectivePlugin} from "./vite-plugins/stripUseClientDirectivePlugin.ts";
 
 // https://vitejs.dev/config/
 
@@ -48,7 +48,7 @@ export default defineConfig(({mode}) => {
             dedupe: ["react", "react-dom"],
             alias: {
                 // Required for src/ imports used in shadcn
-                src: path.resolve(__dirname, "./src")
+                src: path.resolve(import.meta.dirname, "./src")
             }
         },
         plugins: [
