@@ -14,16 +14,14 @@ export const MoveBlockCommandArgsSchema = z
         before: z
             .boolean()
             .optional()
-            .describe(
-                "Move src as a sibling BEFORE dest. Only meaningful with children=false. Omit when children=true."
-            ),
+            .describe("Move src as a sibling BEFORE dest. Omit when children=true."),
         children: z
             .boolean()
             .default(false)
             .describe("Make src a child of dest. When true, `before` must be omitted.")
     })
     .refine((args) => !(args.children === true && args.before !== undefined), {
-        message: "`before` is meaningless when `children` is true. Omit `before`.",
+        message: "When `children` is true, omit `before`.",
         path: ["before"]
     });
 

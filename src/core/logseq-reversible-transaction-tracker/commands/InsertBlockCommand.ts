@@ -15,9 +15,7 @@ export const InsertBlockCommandArgsSchema = z
         before: z
             .boolean()
             .optional()
-            .describe(
-                "Insert before the anchor. Only meaningful with sibling=true. Omit when sibling=false."
-            ),
+            .describe("Insert before the anchor. Omit when sibling=false; use start/end instead."),
         sibling: z
             .boolean()
             .default(true)
@@ -27,21 +25,17 @@ export const InsertBlockCommandArgsSchema = z
         start: z
             .boolean()
             .optional()
-            .describe("Insert as the FIRST child. Only valid when sibling=false."),
-        end: z
-            .boolean()
-            .optional()
-            .describe("Insert as the LAST child. Only valid when sibling=false.")
+            .describe("Insert as the FIRST child. Omit when sibling=true."),
+        end: z.boolean().optional().describe("Insert as the LAST child. Omit when sibling=true.")
     })
     .refine((args) => !(args.sibling === false && args.before !== undefined), {
-        message:
-            "`before` is meaningless when `sibling` is false. Omit `before` and use start/end.",
+        message: "For child insertion, omit `before`; use `start`/`end`.",
         path: ["before"]
     })
     .refine(
         (args) => !(args.sibling === true && (args.start !== undefined || args.end !== undefined)),
         {
-            message: "`start`/`end` are only valid when `sibling` is false.",
+            message: "For sibling insertion, omit `start`/`end`; use `before`.",
             path: ["start"]
         }
     );
