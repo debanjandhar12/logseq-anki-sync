@@ -5,6 +5,7 @@ import recursiveInheritance from "src/chat-app/prompts/skills/logseq-datascript-
 import statusHistory from "src/chat-app/prompts/skills/logseq-datascript-queries/examples/STATUS_HISTORY.ds?raw";
 import recursiveBacklinks from "src/chat-app/prompts/skills/logseq-datascript-queries/internal/RECURSIVE_PAGE_REFERENCE_BACKLINKS.ds?raw";
 import bilibiliTranscript from "src/chat-app/prompts/skills/working-with-bash-and-pyodide/examples/BILIBILI_TRANSCRIPT.py?raw";
+import readSkillFile from "src/chat-app/prompts/skills/working-with-bash-and-pyodide/internal/READ_SKILL_FILE.sh?raw";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {VIR_ENV_USER_PATH} from "../../../../src/constants";
 import {initBuiltInSkillFiles} from "../../../../src/core/skill-init/initBuiltInSkillFiles";
@@ -52,17 +53,19 @@ describe("initBuiltInSkillFiles", () => {
         expect(bash?.content).toContain("micropip");
         expect(bash?.content).toContain("sympy==1.14.0");
         expect(bash?.content).toContain("youtube-transcript-api==1.2.4");
+        expect(bash?.content).toContain("Pillow==12.2.0");
+        expect(bash?.content).toContain(readSkillFile.trim());
         expect(bash?.content).not.toContain("qjs");
         expect(bash?.content).not.toContain("includeFile");
         const internalSources = import.meta.glob(
             "../../../../src/chat-app/prompts/skills/working-with-bash-and-pyodide/internal/*.py",
             {eager: true, query: "?raw", import: "default"}
         );
-        expect(Object.keys(internalSources)).toHaveLength(5);
+        expect(Object.keys(internalSources)).toHaveLength(6);
         const embeddedSources = [
             ...bash!.content.matchAll(/```bash\npython - <<'PY'\n([\s\S]*?)\nPY\n```/g)
         ].map((match) => match[1]);
-        expect(embeddedSources).toHaveLength(5);
+        expect(embeddedSources).toHaveLength(6);
         for (const source of Object.values(internalSources))
             expect(embeddedSources).toContain((source as string).trim());
         expect(await SkillStore.getSkillFiles("working-with-bash-and-pyodide")).toMatchObject({

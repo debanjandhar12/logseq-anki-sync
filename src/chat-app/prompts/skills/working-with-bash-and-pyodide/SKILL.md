@@ -6,9 +6,19 @@ built-in-skill: true
 built-in-skill-user-controllable: false
 ---
 
-# Working with Bash and Pyodide
+# Working with Bash
 
-The Bash tool runs in a virtual read-only filesystem with Pyodide support. Use `python`, `python3`, or `py` to run Python 3.14. Skills and command files can be modified through `logseq_lib`, which also provides programmatic access to Logseq pages and blocks. Host files and Node.js are unavailable.
+The Bash tool runs in a virtual read-only filesystem. 
+
+## Reading a file in the skill store
+
+```bash
+<% #includeFile %>internal/READ_SKILL_FILE.sh<% /includeFile %>
+```
+
+# Working with Pyodide
+
+Pyodide is available in the Bash environment with the same read-only virtual filesystem. Use `python`, `python3`, or `py` to run Python 3.14. Skills and command files can be modified through `logseq_lib`, which also provides programmatic access to Logseq pages and blocks.
 
 Pyodide supports external Pyodide-compatible packages through `micropip`. Always pin exact versions, and install and use packages in the same command. Packages are not preserved between Bash tool invocations, and there is no pip wheel cache.
 
@@ -35,6 +45,14 @@ PY
 ```
 
 > For Bilibili, check `<% &virEnvUserPath %>/skills/working-with-bash-and-pyodide/examples/BILIBILI_TRANSCRIPT.py`.
+
+### Convert an existing PNG asset to grayscale
+
+```bash
+python - <<'PY'
+<% #includeFile %>internal/GRAYSCALE_ASSET.py<% /includeFile %>
+PY
+```
 
 ## Using Logseq Lib
 
