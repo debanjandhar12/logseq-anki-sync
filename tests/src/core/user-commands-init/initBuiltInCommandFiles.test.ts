@@ -31,7 +31,6 @@ describe("initBuiltInCommandFiles", () => {
     )("installs %s with the intended invocation settings", async (name) => {
         await initBuiltInCommandFiles();
         const command = (await CommandFileStore.getCommandFile(`${name}.md`))!;
-        const attachment = (await CommandFileStore.getCommandFile(ADD_AS_ATTACHMENT_FILE_NAME))!;
 
         expect(command).toEqual(
             expect.objectContaining({
@@ -47,7 +46,11 @@ describe("initBuiltInCommandFiles", () => {
                         ? ["Block Context Menu/Video"]
                         : name === "Evaluate Math"
                           ? ["Block Context Menu/Math"]
-                          : attachment.invokeLocations
+                          : [
+                                "Block Context Menu/Flashcard",
+                                "Block Context Menu/Other Blocks",
+                                "Page Context Menu/Other Pages"
+                            ]
             })
         );
         const prompt = await renderCommandFileTemplate(command.content, {} as never);

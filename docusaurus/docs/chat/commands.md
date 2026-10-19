@@ -12,23 +12,29 @@ These commands start a new chat thread with the selected block or page attached:
   transcript passages as direct children of the video, each with its own timestamp.
   Caption fragments are grouped into complete sentences or coherent passages, not
   copied one API segment per block. The original language, embed, and notes are preserved.
-- **Translate to English** is available in every block and page context menu. It
-  automatically sends the prompt and translates editable prose in place, including
-  descendants, while preserving structure, references, code, and metadata.
-- **Fix Content** is available in every block and page context menu. It corrects typos,
-  spelling, and clearly wrong grammar in place, including descendants. Slightly
-  imperfect grammar and personal writing style are intentionally left alone.
-- **Summarize Content** is available in every block and page context menu. It preserves
-  the source and adds a `Summary` child subtree beneath a block, or a top-level
-  `Summary` subtree on a page, covering the selected content and its descendants.
+- **Translate to English** is available in the Flashcard, Other Blocks, and Other
+  Pages context menus. It automatically sends the prompt and translates editable
+  prose in place, including descendants, while preserving structure, references,
+  code, and metadata.
+- **Fix Content** is available in the Flashcard, Other Blocks, and Other Pages context
+  menus. It corrects typos, spelling, and clearly wrong grammar in place, including
+  descendants. Slightly imperfect grammar and personal writing style are intentionally
+  left alone.
+- **Summarize Content** is available in the Flashcard, Other Blocks, and Other Pages
+  context menus. It preserves the source and adds a `Summary` child subtree beneath
+  a block, or a top-level `Summary` subtree on a page, covering the selected content
+  and its descendants.
 - **Evaluate Math** is available for blocks tagged `#Math` or containing LaTeX math.
   It preserves the expression and adds a `Result` child subtree, with optional
   step-by-step working beneath it.
 
 Only Translate to English sends automatically. The other four leave the prompt in
 the composer so you can adjust it before sending. Page commands work on page content,
-not page names or definitions. Translation and proofreading do not modify underlying
-media files. Graph changes use the existing Review & Commit workflow.
+not page names or definitions. Graph changes use the existing Review & Commit workflow.
+
+The text commands (Translate to English, Fix Content, and Summarize Content) are
+limited to the Flashcard, Other Blocks, and Other Pages context menus. They are not
+offered for image, PDF, video, math, tag, property, or journal contexts.
 
 Math blocks are detected from the `#Math` tag or inline/display LaTeX such as
 `$x^2$` or `$$...$$`. A mathematical flashcard stays in the Flashcard category
