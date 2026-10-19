@@ -63,6 +63,7 @@ describe("InvokeLocationTreePopover", () => {
             "Block Context Menu/Pdf",
             "Block Context Menu/Video",
             "Block Context Menu/Flashcard",
+            "Block Context Menu/Math",
             "Block Context Menu/Other Blocks"
         ]);
     });

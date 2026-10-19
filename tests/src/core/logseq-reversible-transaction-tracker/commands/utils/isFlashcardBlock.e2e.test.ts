@@ -15,7 +15,9 @@ describe.skipIf(!shouldRunTests)("isFlashcardBlock", () => {
     let createdCardTag = false;
 
     beforeAll(async () => {
-        cardTag = await logseq.Editor.getTag("card");
+        cardTag =
+            (await logseq.Editor.getTag("card")) ??
+            (await logseq.Editor.getTag(":logseq.class/Card"));
         if (!cardTag) {
             cardTag = await logseq.Editor.createTag("card");
             createdCardTag = true;

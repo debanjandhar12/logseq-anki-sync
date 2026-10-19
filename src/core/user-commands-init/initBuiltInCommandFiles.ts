@@ -1,11 +1,24 @@
 import matter from "gray-matter";
 import COMMAND_ADD_AS_ATTACHMENT_RAW from "../../chat-app/prompts/COMMAND_ADD_AS_ATTACHMENT.md?inlineSkill";
 import COMMAND_ADD_TO_CHAT_RAW from "../../chat-app/prompts/COMMAND_ADD_TO_CHAT.md?inlineSkill";
+import COMMAND_EVALUATE_MATH_RAW from "../../chat-app/prompts/COMMAND_EVALUATE_MATH.md?inlineSkill";
+import COMMAND_FIX_CONTENT_RAW from "../../chat-app/prompts/COMMAND_FIX_CONTENT.md?inlineSkill";
+import COMMAND_SUMMARIZE_CONTENT_RAW from "../../chat-app/prompts/COMMAND_SUMMARIZE_CONTENT.md?inlineSkill";
+import COMMAND_TRANSCRIBE_VIDEO_RAW from "../../chat-app/prompts/COMMAND_TRANSCRIBE_VIDEO.md?inlineSkill";
+import COMMAND_TRANSLATE_TO_ENGLISH_RAW from "../../chat-app/prompts/COMMAND_TRANSLATE_TO_ENGLISH.md?inlineSkill";
 import {COMMAND_FRONTMATTER_KEYS, parseCommandFile} from "../command-parser";
 import {CommandFileStore} from "../stores/command-file-store/CommandFileStore";
 import type {CommandFileData} from "../stores/command-file-store/types";
 
-const BUILT_IN_COMMAND_FILES = [COMMAND_ADD_AS_ATTACHMENT_RAW, COMMAND_ADD_TO_CHAT_RAW];
+const BUILT_IN_COMMAND_FILES = [
+    COMMAND_ADD_AS_ATTACHMENT_RAW,
+    COMMAND_ADD_TO_CHAT_RAW,
+    COMMAND_TRANSCRIBE_VIDEO_RAW,
+    COMMAND_TRANSLATE_TO_ENGLISH_RAW,
+    COMMAND_FIX_CONTENT_RAW,
+    COMMAND_SUMMARIZE_CONTENT_RAW,
+    COMMAND_EVALUATE_MATH_RAW
+];
 
 export const initBuiltInCommandFiles = async () => {
     const builtInCommandFileNames = new Set(

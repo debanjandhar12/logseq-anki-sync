@@ -31,6 +31,18 @@ describe("initBuiltInSkillFiles", () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
+    test("installs separate timestamp blocks and coherent transcript grouping guidance", async () => {
+        await initBuiltInSkillFiles();
+        const skill = (await SkillStore.getSkill("logseq-video-and-web-embeds"))!;
+        expect(skill.content).toContain(
+            "- Use `{{youtube-timestamp ...}}` only in a child block of its video embed.\n" +
+                "- Give each `{{youtube-timestamp ...}}` annotation its own child block, together with the corresponding text."
+        );
+        expect(skill.content).toContain(
+            "Group transcript fragments into complete sentences or coherent passages rather than copying the transcript API's segment boundaries."
+        );
+    });
+
     test("installs six matching folders with exact query examples, rules, and debugging reference", async () => {
         await initBuiltInSkillFiles();
         const skills = await SkillStore.getAllSkills();

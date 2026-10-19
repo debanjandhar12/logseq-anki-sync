@@ -2,6 +2,7 @@ import type {BlockEntity, PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {LogseqEditor} from "../../logseq/LogseqEditor";
 import {getJournalDayByPageUuid} from "../logseq-reversible-transaction-tracker/commands/utils/getJournalDayByPageUuid";
 import {isFlashcardBlock} from "../logseq-reversible-transaction-tracker/commands/utils/isFlashcardBlock";
+import {isMathBlock} from "../logseq-reversible-transaction-tracker/commands/utils/isMathBlock";
 import {isVideoBlock} from "../logseq-reversible-transaction-tracker/commands/utils/isVideoBlock";
 import type {
     BlockCommandInvocationContext,
@@ -44,6 +45,7 @@ async function classifyBlockLocation(block: BlockEntity): Promise<BlockContextMe
     if (LogseqEditor.isPdfAssetBlock(block)) return "Block Context Menu/Pdf";
     if (isVideoBlock(block)) return "Block Context Menu/Video";
     if (await isFlashcardBlock(block)) return "Block Context Menu/Flashcard";
+    if (await isMathBlock(block)) return "Block Context Menu/Math";
     return "Block Context Menu/Other Blocks";
 }
 

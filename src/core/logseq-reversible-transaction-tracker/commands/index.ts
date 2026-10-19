@@ -205,6 +205,7 @@ export {
     UpsertPropertyToBlockCommandArgsSchema
 } from "./UpsertPropertyToBlockCommand";
 export {isFlashcardBlock} from "./utils/isFlashcardBlock";
+export {isMathBlock} from "./utils/isMathBlock";
 export {isVideoBlock} from "./utils/isVideoBlock";
 
 const LogseqLeafCommandCodec = z.discriminatedUnion("type", [

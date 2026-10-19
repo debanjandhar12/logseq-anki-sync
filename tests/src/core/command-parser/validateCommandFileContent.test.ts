@@ -41,6 +41,15 @@ describe("validateCommandFileContent", () => {
         });
     });
 
+    test("accepts the Math block invoke location", () => {
+        const result = validateCommandFileContent(
+            "---\nname: Evaluate Math\ninvoke-location:\n  - Block Context Menu/Math\n---"
+        );
+
+        expect(result.valid).toBe(true);
+        expect(result.commandFile?.invokeLocations).toEqual(["Block Context Menu/Math"]);
+    });
+
     test.each([true, false])("accepts command-auto-send: %s", (value) => {
         const result = validateCommandFileContent(
             createCommandSource(`command-auto-send: ${value}\n`)

@@ -18,7 +18,7 @@ describe("command frontmatter fields", () => {
             "builtInCommand",
             "builtInCommandUserControllable"
         ]);
-        expect(new Set(COMMAND_INVOKE_LOCATIONS).size).toBe(11);
+        expect(new Set(COMMAND_INVOKE_LOCATIONS).size).toBe(12);
     });
 
     test("exposes YAML keys by data key", () => {

@@ -126,6 +126,29 @@ describe("getEligibleCommandFiles", () => {
         await expect(getEligibleCommandFiles(context)).resolves.toHaveLength(1);
     });
 
+    test("matches Math eligibility exactly", async () => {
+        vi.spyOn(CommandFileStore, "getAllCommandFiles").mockResolvedValue([
+            commandFile({
+                name: "Add as attachment",
+                invokeLocations: ["Block Context Menu/Math"],
+                commandInvokeInNewThread: false
+            }),
+            commandFile({
+                name: "Evaluate Math",
+                invokeLocations: ["Block Context Menu/Math"]
+            }),
+            commandFile({name: "Other Blocks only"})
+        ]);
+
+        const commands = await getEligibleCommandFiles({
+            source: "block-context-menu",
+            location: "Block Context Menu/Math",
+            uuid: "block-uuid"
+        });
+
+        expect(commands.map(({name}) => name)).toEqual(["Add as attachment", "Evaluate Math"]);
+    });
+
     test("does not enqueue anything when template rendering fails", async () => {
         vi.spyOn(commandTemplate, "renderCommandFileTemplate").mockRejectedValue(
             new Error("Template failed")

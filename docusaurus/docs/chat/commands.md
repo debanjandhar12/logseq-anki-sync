@@ -4,6 +4,39 @@ Commands populate the AI chat composer from a Markdown prompt, optionally includ
 the block or page from which they were invoked as an attachment. Edit user commands
 in the Command Editor.
 
+## Built-in transformation commands
+
+These commands start a new chat thread with the selected block or page attached:
+
+- **Transcribe Video** is available for video blocks. It retrieves captions and adds
+  transcript passages as direct children of the video, each with its own timestamp.
+  Caption fragments are grouped into complete sentences or coherent passages, not
+  copied one API segment per block. The original language, embed, and notes are preserved.
+- **Translate to English** is available in every block and page context menu. It
+  automatically sends the prompt and translates editable prose in place, including
+  descendants, while preserving structure, references, code, and metadata.
+- **Fix Content** is available in every block and page context menu. It corrects typos,
+  spelling, and clearly wrong grammar in place, including descendants. Slightly
+  imperfect grammar and personal writing style are intentionally left alone.
+- **Summarize Content** is available in every block and page context menu. It preserves
+  the source and adds a `Summary` child subtree beneath a block, or a top-level
+  `Summary` subtree on a page, covering the selected content and its descendants.
+- **Evaluate Math** is available for blocks tagged `#Math` or containing LaTeX math.
+  It preserves the expression and adds a `Result` child subtree, with optional
+  step-by-step working beneath it.
+
+Only Translate to English sends automatically. The other four leave the prompt in
+the composer so you can adjust it before sending. Page commands work on page content,
+not page names or definitions. Translation and proofreading do not modify underlying
+media files. Graph changes use the existing Review & Commit workflow.
+
+Math blocks are detected from the `#Math` tag or inline/display LaTeX such as
+`$x^2$` or `$$...$$`. A mathematical flashcard stays in the Flashcard category
+because Flashcard takes precedence over Math.
+
+These built-ins can be enabled or disabled in the Command Editor; their bundled
+prompts and metadata are maintained by the plugin.
+
 ## Automatically send a command
 
 Set `command-auto-send: true` in a command's YAML frontmatter to submit the composer
@@ -36,5 +69,5 @@ steps, including auto-send, are still attempted. Review this behavior before
 enabling automatic submission for commands that depend on attachments.
 
 Bundled commands support the same field. Built-in command metadata remains owned
-by the plugin; this does not make it user-editable. Existing bundled commands do
-not opt into automatic sending.
+by the plugin; this does not make it user-editable. Translate to English opts into
+automatic sending; the other bundled commands do not.

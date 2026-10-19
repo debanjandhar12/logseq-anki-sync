@@ -3,6 +3,7 @@ export const BLOCK_CONTEXT_MENU_INVOKE_LOCATIONS = [
     "Block Context Menu/Pdf",
     "Block Context Menu/Video",
     "Block Context Menu/Flashcard",
+    "Block Context Menu/Math",
     "Block Context Menu/Other Blocks"
 ] as const;
 

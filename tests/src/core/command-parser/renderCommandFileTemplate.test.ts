@@ -28,4 +28,23 @@ describe("renderCommandFileTemplate", () => {
             )
         ).resolves.toBe("");
     });
+
+    test.each([
+        "\n",
+        "\r\n"
+    ])("preserves Logseq macros while rendering template variables with %j newlines", async (newline) => {
+        const body =
+            "For <% today %>: {{video URL}} {{youtube-timestamp 263}} {{youtube-timestamp ...}}";
+        const source = [
+            "---",
+            "name: Transcribe",
+            "invoke-location:",
+            "  - Block Context Menu/Video",
+            "---",
+            body
+        ].join(newline);
+        await expect(renderCommandFileTemplate(source, {today: "today"} as never)).resolves.toBe(
+            "For today: {{video URL}} {{youtube-timestamp 263}} {{youtube-timestamp ...}}"
+        );
+    });
 });

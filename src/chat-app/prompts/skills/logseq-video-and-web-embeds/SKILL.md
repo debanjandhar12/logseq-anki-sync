@@ -28,6 +28,7 @@ Add a timestamp annotation as a child of the video block. `youtube-timestamp` ac
 ```
 
 - Use `{{youtube-timestamp ...}}` only in a child block of its video embed.
+- Give each `{{youtube-timestamp ...}}` annotation its own child block, together with the corresponding text. Group transcript fragments into complete sentences or coherent passages rather than copying the transcript API's segment boundaries.
 - Convert requested timestamps to seconds before writing the macro.
 - When asked to add comments based on video content, fetch the online video's transcript first, then write the comments as timestamp children.
 - Load the `working-with-bash-and-pyodide` skill for supported YouTube and Bilibili transcript commands.
