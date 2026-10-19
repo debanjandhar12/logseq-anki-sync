@@ -27,6 +27,7 @@ export interface CommandFileData {
     invokeLocations: CommandInvokeLocation[];
     userInvocable: boolean;
     commandInvokeInNewThread: boolean;
+    commandAutoSend: boolean;
     commandAppearSeparatelyInContextMenu: boolean;
     content: string;
     builtInCommand?: boolean;

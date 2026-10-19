@@ -6,6 +6,7 @@ import {
     ChatInteropCommandQueue,
     ClearComposerCommand,
     NewThreadCommand,
+    SendComposerCommand,
     SetComposerTextCommand
 } from "../../core/chat-interop";
 import {createLogger, LoggerCategory} from "../../logger";
@@ -45,6 +46,11 @@ async function executeRuntimeCommand(
 
         if (command.type === SetComposerTextCommand.TYPE) {
             aui.composer().setText(command.payload.text);
+            return;
+        }
+
+        if (command.type === SendComposerCommand.TYPE) {
+            aui.composer().send();
         }
     } catch (error) {
         logger.error("Failed to execute AI Chat runtime command", error);

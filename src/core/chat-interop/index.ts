@@ -6,6 +6,7 @@ export {AddAttachmentCommand} from "./commands/AddAttachmentCommand";
 export {ClearComposerCommand} from "./commands/ClearComposerCommand";
 export {NewThreadCommand} from "./commands/NewThreadCommand";
 export {OpenAIChatCommand} from "./commands/OpenAIChatCommand";
+export {SendComposerCommand} from "./commands/SendComposerCommand";
 export {SetComposerTextCommand} from "./commands/SetComposerTextCommand";
 export {initAIChat} from "./initAIChat";
 export {initContextMenu} from "./initContextMenu";

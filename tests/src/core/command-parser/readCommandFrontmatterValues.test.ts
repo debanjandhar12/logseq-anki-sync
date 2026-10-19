@@ -13,6 +13,7 @@ describe("command frontmatter fields", () => {
             "invokeLocations",
             "userInvocable",
             "commandInvokeInNewThread",
+            "commandAutoSend",
             "commandAppearSeparatelyInContextMenu",
             "builtInCommand",
             "builtInCommandUserControllable"
@@ -26,6 +27,7 @@ describe("command frontmatter fields", () => {
             invokeLocations: "invoke-location",
             userInvocable: "user-invocable",
             commandInvokeInNewThread: "command-invoke-in-new-thread",
+            commandAutoSend: "command-auto-send",
             commandAppearSeparatelyInContextMenu: "command-appear-separately-in-context-menu",
             builtInCommand: "built-in-command",
             builtInCommandUserControllable: "built-in-command-user-controllable"
@@ -44,5 +46,13 @@ describe("command frontmatter fields", () => {
             name: "Test",
             userInvocable: false
         });
+    });
+
+    test.each([true, false])("reads command-auto-send: %s without applying defaults", (value) => {
+        expect(readCommandFrontmatterValues({"command-auto-send": value})).toEqual({
+            commandAutoSend: value
+        });
+        expect(readCommandFrontmatterValues({"command-auto-send": String(value)})).toEqual({});
+        expect(readCommandFrontmatterValues({})).toEqual({});
     });
 });

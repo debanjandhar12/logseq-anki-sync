@@ -4,6 +4,7 @@ import {
     ClearComposerCommand,
     NewThreadCommand,
     OpenAIChatCommand,
+    SendComposerCommand,
     SetComposerTextCommand
 } from "../chat-interop";
 import {renderCommandFileTemplate} from "../command-parser";
@@ -24,7 +25,8 @@ export function createUserCommand(
                 ...(commandFile.commandInvokeInNewThread ? [new NewThreadCommand()] : []),
                 ...(commandFile.commandInvokeInNewThread ? [new ClearComposerCommand()] : []),
                 ...("uuid" in context ? [new AddAttachmentCommand(context.uuid)] : []),
-                ...(prompt ? [new SetComposerTextCommand(prompt)] : [])
+                ...(prompt ? [new SetComposerTextCommand(prompt)] : []),
+                ...(commandFile.commandAutoSend === true ? [new SendComposerCommand()] : [])
             ];
 
             // Every step enqueues synchronously, keeping this invocation contiguous.

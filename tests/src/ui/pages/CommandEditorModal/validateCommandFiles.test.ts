@@ -35,6 +35,33 @@ beforeEach(() => {
 });
 
 describe("validateCommandFilesForSave", () => {
+    test.each([true, false, "invalid"])("validates auto-send %s before saving", async (value) => {
+        const content = createCommandContent().replace(
+            "name:",
+            `command-auto-send: ${value}\nname:`
+        );
+        const result = await validateCommandFilesForSave([{id: "auto-send", content}]);
+        if (typeof value === "boolean") {
+            expect(result.issue).toBeNull();
+            expect(result.parsedFiles[0].commandAutoSend).toBe(value);
+        } else {
+            expect(result.issue).toMatchObject({kind: "parse-error", fileId: "auto-send"});
+            expect(result.issue?.message).toContain("command-auto-send must be a boolean");
+        }
+    });
+
+    test("does not allow auto-send edits on controllable built-ins", async () => {
+        const original = createCommandContent({builtIn: true, controllable: true});
+        const result = await validateCommandFilesForSave([
+            {
+                id: "built-in",
+                content: original.replace("name:", "command-auto-send: true\nname:"),
+                originalContent: original,
+                originalFileName: "My command.md"
+            }
+        ]);
+        expect(result.issue).toMatchObject({kind: "built-in-modified", fileId: "built-in"});
+    });
     test.each([
         "../Command",
         "folder\\Command",

@@ -25,6 +25,7 @@ describe("initBuiltInCommandFiles", () => {
                 name: "Add to Chat",
                 userInvocable: true,
                 commandInvokeInNewThread: false,
+                commandAutoSend: false,
                 commandAppearSeparatelyInContextMenu: true,
                 builtInCommand: true,
                 builtInCommandUserControllable: true
@@ -40,6 +41,7 @@ describe("initBuiltInCommandFiles", () => {
                 name: "Add as attachment",
                 userInvocable: true,
                 commandInvokeInNewThread: false,
+                commandAutoSend: false,
                 builtInCommand: true,
                 builtInCommandUserControllable: false,
                 invokeLocations: [

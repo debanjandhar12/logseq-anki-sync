@@ -8,7 +8,7 @@ function createCommandSource(metadata = "", body = "Prompt") {
 describe("validateCommandFileContent", () => {
     test("parses all fields and preserves unknown metadata", () => {
         const content = createCommandSource(
-            "user-invocable: false\ncommand-invoke-in-new-thread: false\ncommand-appear-separately-in-context-menu: true\nbuilt-in-command: true\nbuilt-in-command-user-controllable: true\ncustom-field: accepted\n"
+            "user-invocable: false\ncommand-invoke-in-new-thread: false\ncommand-auto-send: true\ncommand-appear-separately-in-context-menu: true\nbuilt-in-command: true\nbuilt-in-command-user-controllable: true\ncustom-field: accepted\n"
         );
         const result = validateCommandFileContent(content);
 
@@ -19,6 +19,7 @@ describe("validateCommandFileContent", () => {
                 invokeLocations: ["Block Context Menu/Image"],
                 userInvocable: false,
                 commandInvokeInNewThread: false,
+                commandAutoSend: true,
                 commandAppearSeparatelyInContextMenu: true,
                 builtInCommand: true,
                 builtInCommandUserControllable: true,
@@ -35,8 +36,38 @@ describe("validateCommandFileContent", () => {
         expect(result.commandFile).toMatchObject({
             userInvocable: true,
             commandInvokeInNewThread: true,
+            commandAutoSend: false,
             commandAppearSeparatelyInContextMenu: false
         });
+    });
+
+    test.each([true, false])("accepts command-auto-send: %s", (value) => {
+        const result = validateCommandFileContent(
+            createCommandSource(`command-auto-send: ${value}\n`)
+        );
+        expect(result.valid).toBe(true);
+        expect(result.commandFile?.commandAutoSend).toBe(value);
+    });
+
+    test.each([
+        '"true"',
+        '"false"',
+        "null",
+        "",
+        "1",
+        "[]",
+        "{}"
+    ])("rejects nonboolean command-auto-send: %s", (value) => {
+        const content = createCommandSource(`command-auto-send: ${value}\n`);
+        const result = validateCommandFileContent(content);
+        expect(result.valid).toBe(false);
+        expect(result.issues).toHaveLength(1);
+        expect(result.issues[0].message).toBe(
+            "Invalid command file metadata: command-auto-send must be a boolean"
+        );
+        expect(content.slice(result.issues[0].from, result.issues[0].to)).toContain(
+            "command-auto-send:"
+        );
     });
 
     test.each([

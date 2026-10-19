@@ -31,6 +31,7 @@ invoke-location:
   - Block Context Menu/Other Blocks
 user-invocable: true
 command-invoke-in-new-thread: true
+command-auto-send: false
 ---
 
 Write the prompt for this command.

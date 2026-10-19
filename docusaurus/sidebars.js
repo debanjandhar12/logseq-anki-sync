@@ -9,7 +9,7 @@ const sidebars = {
         {
             type: "category",
             label: "Chat",
-            items: ["chat/skills", "chat/bash-sandbox"],
+            items: ["chat/skills", "chat/commands", "chat/bash-sandbox"],
         },
     ],
 };

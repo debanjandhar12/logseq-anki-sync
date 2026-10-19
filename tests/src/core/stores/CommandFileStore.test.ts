@@ -76,6 +76,28 @@ describe("CommandFileStore", () => {
         await expect(CommandFileStore.getCommandFile("broken.md")).resolves.toBeNull();
     });
 
+    test.each([
+        true,
+        false
+    ])("round-trips auto-send %s for user and built-in files", async (value) => {
+        for (const builtIn of [true, false]) {
+            const name = builtIn ? "Bundled command" : "User command";
+            const source = createCommandSource(name, "Block Slash Command", builtIn).replace(
+                "name:",
+                `command-auto-send: ${value}\nname:`
+            );
+            await CommandFileStore.saveCommandFile(source);
+            await expect(CommandFileStore.getCommandFile(`${name}.md`)).resolves.toMatchObject({
+                commandAutoSend: value,
+                content: source
+            });
+        }
+        expect(await CommandFileStore.getAllCommandFiles()).toEqual([
+            expect.objectContaining({name: "Bundled command", commandAutoSend: value}),
+            expect.objectContaining({name: "User command", commandAutoSend: value})
+        ]);
+    });
+
     test("skips a file that cannot be read without hiding valid commands", async () => {
         await CommandFileStore.saveCommandFile(createCommandSource("Readable"));
         await LogseqPluginStorageManager.saveFile(

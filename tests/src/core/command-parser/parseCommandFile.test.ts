@@ -15,6 +15,7 @@ Prompt`;
             invokeLocations: ["Logseq Command Center"],
             userInvocable: true,
             commandInvokeInNewThread: true,
+            commandAutoSend: false,
             commandAppearSeparatelyInContextMenu: false,
             builtInCommand: undefined,
             builtInCommandUserControllable: undefined,

@@ -10,6 +10,7 @@ export function getCommandFileMetadata(
     | "invokeLocations"
     | "userInvocable"
     | "commandInvokeInNewThread"
+    | "commandAutoSend"
     | "builtInCommand"
     | "builtInCommandUserControllable"
 > | null {
@@ -22,6 +23,7 @@ export function getCommandFileMetadata(
             invokeLocations: values.invokeLocations ?? [],
             userInvocable: values.userInvocable !== false,
             commandInvokeInNewThread: values.commandInvokeInNewThread !== false,
+            commandAutoSend: values.commandAutoSend === true,
             builtInCommand: values.builtInCommand,
             builtInCommandUserControllable: values.builtInCommandUserControllable
         };

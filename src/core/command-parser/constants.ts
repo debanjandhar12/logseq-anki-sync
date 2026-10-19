@@ -39,6 +39,11 @@ export const COMMAND_FRONTMATTER_FIELDS = [
         valueType: "boolean"
     },
     {
+        key: "command-auto-send",
+        dataKey: "commandAutoSend",
+        valueType: "boolean"
+    },
+    {
         key: "command-appear-separately-in-context-menu",
         dataKey: "commandAppearSeparatelyInContextMenu",
         valueType: "boolean"

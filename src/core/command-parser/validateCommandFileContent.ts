@@ -101,6 +101,7 @@ export function validateCommandFileContent(content: string): CommandFileValidati
             invokeLocations: values.invokeLocations as CommandInvokeLocation[],
             userInvocable: values.userInvocable !== false,
             commandInvokeInNewThread: values.commandInvokeInNewThread !== false,
+            commandAutoSend: values.commandAutoSend === true,
             commandAppearSeparatelyInContextMenu:
                 values.commandAppearSeparatelyInContextMenu === true,
             builtInCommand: values.builtInCommand,

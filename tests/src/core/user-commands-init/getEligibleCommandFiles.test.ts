@@ -13,6 +13,7 @@ function commandFile(overrides: Partial<CommandFileData> = {}): CommandFileData 
         invokeLocations: ["Block Context Menu/Other Blocks"],
         userInvocable: true,
         commandInvokeInNewThread: true,
+        commandAutoSend: false,
         commandAppearSeparatelyInContextMenu: false,
         content: `---\nname: Summarize\ninvoke-location:\n  - Block Context Menu/Other Blocks\n---\nSummarize this`,
         ...overrides
@@ -81,6 +82,42 @@ describe("getEligibleCommandFiles", () => {
         ]);
     });
 
+    test("appends auto-send after every preparation step and before opening chat", async () => {
+        vi.spyOn(commandTemplate, "renderCommandFileTemplate").mockResolvedValue("  Full prompt\n");
+        const enqueue = vi.spyOn(ChatInteropCommandQueue, "enqueue").mockImplementation(() => {});
+        const open = vi.spyOn(OpenAIChatCommand.prototype, "execute").mockResolvedValue();
+
+        await createUserCommand(commandFile({commandAutoSend: true}), context).execute();
+
+        expect(enqueue.mock.calls.map(([command]) => command)).toEqual([
+            {type: "new-thread"},
+            {type: "clear-composer"},
+            {type: "add-attachment", payload: {uuid: "block-uuid"}},
+            {type: "set-composer-text", payload: {text: "Full prompt"}},
+            {type: "send-composer"}
+        ]);
+        expect(open).toHaveBeenCalledOnce();
+        expect(enqueue.mock.invocationCallOrder.at(-1)).toBeLessThan(
+            open.mock.invocationCallOrder[0]
+        );
+    });
+
+    test("auto-sends attachment-only commands without clearing the current draft", async () => {
+        vi.spyOn(commandTemplate, "renderCommandFileTemplate").mockResolvedValue(" \n");
+        const enqueue = vi.spyOn(ChatInteropCommandQueue, "enqueue").mockImplementation(() => {});
+        vi.spyOn(OpenAIChatCommand.prototype, "execute").mockResolvedValue();
+
+        await createUserCommand(
+            commandFile({commandAutoSend: true, commandInvokeInNewThread: false}),
+            context
+        ).execute();
+
+        expect(enqueue.mock.calls.map(([command]) => command)).toEqual([
+            {type: "add-attachment", payload: {uuid: "block-uuid"}},
+            {type: "send-composer"}
+        ]);
+    });
+
     test("keeps separately displayed commands eligible for native registration", async () => {
         vi.spyOn(CommandFileStore, "getAllCommandFiles").mockResolvedValue([
             commandFile({commandAppearSeparatelyInContextMenu: true})
@@ -97,7 +134,10 @@ describe("getEligibleCommandFiles", () => {
         const open = vi.spyOn(OpenAIChatCommand.prototype, "execute").mockResolvedValue();
 
         const command = createUserCommand(
-            commandFile({content: "---\nname: Summarize\n---\n<% unknownVariable %>"}),
+            commandFile({
+                commandAutoSend: true,
+                content: "---\nname: Summarize\n---\n<% unknownVariable %>"
+            }),
             context
         );
         await expect(command.execute()).rejects.toThrow();

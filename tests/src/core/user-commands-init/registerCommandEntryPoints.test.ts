@@ -22,6 +22,7 @@ function commandFile(
         invokeLocations,
         userInvocable: true,
         commandInvokeInNewThread: false,
+        commandAutoSend: false,
         commandAppearSeparatelyInContextMenu: false,
         content: `---\nname: Summarize\ninvoke-location:\n${invokeLocations.map((location) => `  - ${location}`).join("\n")}\n---\nSummarize`,
         ...overrides
