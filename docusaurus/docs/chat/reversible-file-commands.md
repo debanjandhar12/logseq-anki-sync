@@ -1,6 +1,16 @@
 # Reversible file commands
 
-The transaction tracker provides file operations for internal callers. These commands are not registered as chat tools, and asset diffs are not yet displayed in the diff viewer.
+The transaction tracker provides file operations for internal callers. These commands are not registered as individual chat tools. Review & Commit includes tracked files alongside page changes, including changes made through Bash/Pyodide `logseq_lib`.
+
+## Reviewing file changes
+
+Text assets use the same split line-diff presentation as pages. Raster images show labeled Before/After panes (stacked on narrow screens), using captured bytes so the proposed image remains visible after the transaction is reverted for review. SVG, HTML, and XML are displayed as source text, never active markup. Other binary files show metadata instead of a content preview.
+
+The unified content limit is **32 MiB for each Before/After side**, for both text and images. Larger files are not fetched for preview. Metadata-only and image-decode warnings do not block approval, but actual read/validation failures do. When content could not be captured, identical sizes are not assumed to mean identical bytes; the asset remains listed with an equality warning. The limit is not an aggregate memory or text-rendering budget.
+
+All file previews use the desktop asset transport, both for ordinary graph assets and files under this plugin's storage directory. Missing desktop capabilities produce a review error rather than silently hiding changes. Asset-only transactions are reviewable; only transactions with no net page or asset changes are treated as empty.
+
+Review captures the applied state, reverts recorded commands, then captures the original state. Approval replays those commands (not the Python source); rejection discards the already-reverted transaction, while closing or deferring preserves the existing pending-change lifecycle. Preview payloads are transient and are not added to thread artifacts; existing command undo snapshots still contain serialized file bytes as described below.
 
 ## Commands
 

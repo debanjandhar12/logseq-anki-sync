@@ -19,7 +19,10 @@ import {
 import {getTrackerArtifactFromError} from "src/chat-app/tools/transaction/getTrackerArtifactFromError";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
 import {
+    LogseqAssetDataPrinter,
     LogseqPageDataPrinter,
+    type LogseqPrintedAssetChange,
+    type LogseqPrintedAssetSnapshot,
     type LogseqPrintedPageChange,
     type LogseqPrintedPageSnapshot,
     type LogseqReversibleTransactionTracker
@@ -55,8 +58,12 @@ export type LogseqCommitChangesResult =
 
 type PreparedReview =
     | {kind: "no-graph-mutations"}
-    | {kind: "no-reviewable-page-changes"}
-    | {kind: "reviewable-page-changes"; changes: LogseqPrintedPageChange[]};
+    | {kind: "no-reviewable-changes"}
+    | {
+          kind: "reviewable-changes";
+          pageChanges: LogseqPrintedPageChange[];
+          assetChanges: LogseqPrintedAssetChange[];
+      };
 
 export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     LogseqCommitChangesArgs,
@@ -68,7 +75,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
     readonly type = "human";
     readonly display = "standalone";
     readonly description =
-        "Ask the user to review and approve committing applied uncommitted Logseq graph changes made by block/page editing tools.";
+        "Ask the user to review and approve committing uncommitted Logseq page/block and file/asset changes, including changes made through Bash.";
     readonly parameters = LogseqCommitChangesArgsZodObj;
 
     async executeApprove(
@@ -125,9 +132,12 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
             return {kind: "no-graph-mutations"};
         }
         const changedPages = transactionTracker.getChangedPages();
+        const changedAssets = transactionTracker.getChangedAssets();
         let afterChanges: LogseqPrintedPageSnapshot[];
+        let afterAssets: LogseqPrintedAssetSnapshot[];
         try {
             afterChanges = await LogseqPageDataPrinter.print(changedPages);
+            afterAssets = await LogseqAssetDataPrinter.print(changedAssets);
         } catch (error) {
             // Revert failure while generating diffs is handled by the caller; rethrow so the review
             // flow can clear the tracker and report a meaningful error to addResult.
@@ -145,10 +155,12 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
         }
         const beforeChanges = await LogseqPageDataPrinter.print(changedPages);
         const changes = LogseqPageDataPrinter.createChanges(beforeChanges, afterChanges);
+        const beforeAssets = await LogseqAssetDataPrinter.print(changedAssets);
+        const assetChanges = LogseqAssetDataPrinter.createChanges(beforeAssets, afterAssets);
 
-        return changes.length === 0
-            ? {kind: "no-reviewable-page-changes"}
-            : {kind: "reviewable-page-changes", changes};
+        return changes.length === 0 && assetChanges.length === 0
+            ? {kind: "no-reviewable-changes"}
+            : {kind: "reviewable-changes", pageChanges: changes, assetChanges};
     }
 
     async executeCancel(
@@ -203,7 +215,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                         transactionTracker.clear();
                         addResult(
                             ChatToolResponse.error(
-                                `Failed to generate diff as revert failed due to: ${causeMessage}. Uncommitted changes were discarded.`,
+                                `Failed to generate diff as revert failed due to: ${causeMessage}. The transaction tracker was discarded; some changes may remain applied.`,
                                 createLogseqReversibleTransactionTrackerArtifact(transactionTracker)
                             )
                         );
@@ -212,7 +224,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                             await persistTrackerArtifact({...located, tracker: transactionTracker});
                         }
                         await logseq.UI.showMsg(
-                            `Failed to generate diff as revert failed due to: ${causeMessage}. Uncommitted changes were discarded.`,
+                            `Failed to generate diff as revert failed due to: ${causeMessage}. The transaction tracker was discarded; some changes may remain applied.`,
                             "error"
                         );
                         return;
@@ -234,7 +246,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                     addResult(await this.executeApprove({}, {messages}, transactionTracker));
                     return;
                 }
-                if (prepared.kind === "no-reviewable-page-changes") {
+                if (prepared.kind === "no-reviewable-changes") {
                     transactionTracker.clear();
                     const artifact =
                         createLogseqReversibleTransactionTrackerArtifact(transactionTracker);
@@ -244,7 +256,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                         } catch (error) {
                             addResult(
                                 ChatToolResponse.error(
-                                    `No reviewable page changes were found, but the cleared tracker could not be persisted: ${getErrorMessageFromErrObj(error)}. Uncommitted changes were discarded.`,
+                                    `No reviewable changes were found, but the cleared tracker could not be persisted: ${getErrorMessageFromErrObj(error)}. Uncommitted changes were discarded.`,
                                     artifact
                                 )
                             );
@@ -254,7 +266,7 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                     addResult(
                         ChatToolResponse.success(
                             {
-                                changes: "No reviewable page changes are available to commit.",
+                                changes: "No reviewable changes are available to commit.",
                                 outcome: "no-changes"
                             },
                             artifact
@@ -266,7 +278,10 @@ export class LogseqCommitChangesTool extends BaseChatToolWithCustomUI<
                 if (located) {
                     await persistTrackerArtifact({...located, tracker: transactionTracker});
                 }
-                const reviewResult = await showAIChangesReviewModal(prepared.changes);
+                const reviewResult = await showAIChangesReviewModal({
+                    pageChanges: prepared.pageChanges,
+                    assetChanges: prepared.assetChanges
+                });
 
                 switch (reviewResult) {
                     case null:

@@ -1,5 +1,12 @@
 export * from "./commands";
 export {
+    type AssetChangeSide,
+    type AssetPreview,
+    LogseqAssetDataPrinter,
+    type LogseqPrintedAssetChange,
+    type LogseqPrintedAssetSnapshot
+} from "./LogseqAssetDataPrinter";
+export {
     LogseqPageDataPrinter,
     type LogseqPageType,
     type LogseqPrintedPageChange,

@@ -13,9 +13,12 @@ import {
 } from "@floating-ui/react";
 import {CheckIcon, ChevronDownIcon} from "lucide-react";
 import React from "react";
-import {DiffViewer} from "src/chat-app/components/DiffViewer";
+import {AssetDiffViewer, LogseqPageDiffViewer} from "src/chat-app/components/diff-viewer";
 import {getLogseqAttachmentIcon} from "src/chat-app/utils/getLogseqAttachmentIcon";
-import type {LogseqPrintedPageChange} from "src/core/logseq-reversible-transaction-tracker";
+import type {
+    LogseqPrintedAssetChange,
+    LogseqPrintedPageChange
+} from "src/core/logseq-reversible-transaction-tracker";
 import {LogseqButton} from "../components/LogseqButton";
 import {Modal} from "../modals/core/Modal";
 import {ModalHeader} from "../modals/core/ModalHeader";
@@ -51,46 +54,55 @@ const AI_CHANGES_REVIEW_ACTIONS: ReadonlyArray<{
     }
 ];
 
-export interface AIChangesReviewModalProps {
-    changes: LogseqPrintedPageChange[];
+export interface AIChangesReviewChanges {
+    pageChanges: LogseqPrintedPageChange[];
+    assetChanges: LogseqPrintedAssetChange[];
+}
+
+export interface AIChangesReviewModalProps extends AIChangesReviewChanges {
     resolve: (value: AIChangesReviewResult) => void;
     reject: (error: any) => void;
     modalContext?: {modalId: string | null};
 }
 
-export function createAIChangesReviewDiffViewers(
-    changes: LogseqPrintedPageChange[]
-): React.ReactElement[] {
-    return changes.map((change) => {
-        const pageType = change.before.pageType ?? change.after.pageType;
-        return (
-            <DiffViewer
-                key={change.key}
-                oldFile={{
-                    name: change.before.pageName,
-                    content: change.before.content
-                }}
-                newFile={{
-                    name: change.after.pageName,
-                    content: change.after.content
-                }}
-                language="markdown"
-                viewMode="split"
-                size="sm"
-                showLineNumbers={false}
-                showIcon={true}
-                fileIcon={getLogseqAttachmentIcon(pageType)}
-                showStats={true}
-                variant="ghost"
-                className="rounded border border-border bg-secondary-background"
-                contentClassName="max-h-[60vh] overflow-auto"
-            />
-        );
-    });
+export function createAIChangesReviewDiffViewers({
+    pageChanges,
+    assetChanges
+}: AIChangesReviewChanges): React.ReactElement[] {
+    return [
+        ...pageChanges.map((change) => {
+            const pageType = change.before.pageType ?? change.after.pageType;
+            return (
+                <LogseqPageDiffViewer
+                    key={change.key}
+                    oldFile={{
+                        name: change.before.pageName,
+                        content: change.before.content
+                    }}
+                    newFile={{
+                        name: change.after.pageName,
+                        content: change.after.content
+                    }}
+                    language="markdown"
+                    viewMode="split"
+                    size="sm"
+                    showLineNumbers={false}
+                    showIcon={true}
+                    fileIcon={getLogseqAttachmentIcon(pageType)}
+                    showStats={true}
+                    variant="ghost"
+                    className="rounded border border-border bg-secondary-background"
+                    contentClassName="max-h-[60vh] overflow-auto"
+                />
+            );
+        }),
+        ...assetChanges.map((change) => <AssetDiffViewer key={change.key} change={change} />)
+    ];
 }
 
 export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> = ({
-    changes,
+    pageChanges,
+    assetChanges,
     resolve,
     modalContext
 }) => {
@@ -125,7 +137,7 @@ export const AIChangesReviewModalComponent: React.FC<AIChangesReviewModalProps> 
                 </p>
 
                 <div className="mx-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-                    {createAIChangesReviewDiffViewers(changes)}
+                    {createAIChangesReviewDiffViewers({pageChanges, assetChanges})}
                 </div>
 
                 <AIChangesReviewModalFooter onConfirm={(action) => handleConfirm(action)} />

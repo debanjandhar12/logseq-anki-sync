@@ -2,7 +2,10 @@ import {HashIcon} from "lucide-react";
 import {act, createElement} from "react";
 import {createRoot, type Root} from "react-dom/client";
 import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
-import {DiffViewer} from "../../../../src/chat-app/components/DiffViewer";
+import {
+    AssetDiffViewer,
+    LogseqPageDiffViewer
+} from "../../../../src/chat-app/components/diff-viewer";
 import type {LogseqPrintedPageChange} from "../../../../src/core/logseq-reversible-transaction-tracker";
 import {
     AIChangesReviewModalFooter,
@@ -19,16 +22,40 @@ function change(overrides: Partial<LogseqPrintedPageChange> = {}): LogseqPrinted
 }
 
 describe("createAIChangesReviewDiffViewers", () => {
+    test("includes assets even when no page changed", () => {
+        const [viewer] = createAIChangesReviewDiffViewers({
+            pageChanges: [],
+            assetChanges: [
+                {
+                    key: "asset",
+                    assetPath: "assets/file",
+                    status: "added",
+                    comparison: "different",
+                    before: {exists: false},
+                    after: {
+                        exists: true,
+                        byteLength: 0,
+                        sizeIsExact: true,
+                        preview: {kind: "text", content: ""}
+                    }
+                }
+            ]
+        });
+        expect(viewer.type).toBe(AssetDiffViewer);
+    });
     test("uses the before page type for existing and deleted pages", () => {
-        const [viewer] = createAIChangesReviewDiffViewers([
-            change({
-                before: {pageName: "#tag", content: "Before", pageType: "logseq-tag-page"},
-                after: {pageName: "[DOES NOT EXIST]", content: "", pageType: null}
-            })
-        ]);
+        const [viewer] = createAIChangesReviewDiffViewers({
+            pageChanges: [
+                change({
+                    before: {pageName: "#tag", content: "Before", pageType: "logseq-tag-page"},
+                    after: {pageName: "[DOES NOT EXIST]", content: "", pageType: null}
+                })
+            ],
+            assetChanges: []
+        });
 
         const props = viewer.props as {showIcon: boolean; fileIcon: unknown};
-        expect(viewer.type).toBe(DiffViewer);
+        expect(viewer.type).toBe(LogseqPageDiffViewer);
         expect(props.showIcon).toBe(true);
         expect(props.fileIcon).toBe(HashIcon);
     });

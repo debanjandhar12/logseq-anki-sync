@@ -89,8 +89,23 @@ const getAppendedToolCall = (runtime: ThreadRuntime) => {
 };
 
 describe("ReviewChangesDisplay", () => {
+    test("includes tracked assets in the pending summary", () => {
+        const tracker = new LogseqReversibleTransactionTracker({
+            changedAssets: ["assets/image.png"]
+        });
+        tracker.addCommand(new CreatePageCommand({pageName: "Ready"}));
+        expect(getReviewChangesSummary([createTrackerMessage(tracker)])).toEqual({
+            commandCount: 1,
+            changedPageCount: 0,
+            changedAssetCount: 1
+        });
+    });
     test("returns an empty summary without a tracker artifact", () => {
-        expect(getReviewChangesSummary([])).toEqual({commandCount: 0, changedPageCount: 0});
+        expect(getReviewChangesSummary([])).toEqual({
+            commandCount: 0,
+            changedPageCount: 0,
+            changedAssetCount: 0
+        });
         expect(getReviewChangesLifecycleLabel([])).toBeNull();
     });
 
@@ -102,7 +117,11 @@ describe("ReviewChangesDisplay", () => {
         );
         const messages = [createTrackerMessage(tracker)];
 
-        expect(getReviewChangesSummary(messages)).toEqual({commandCount: 0, changedPageCount: 0});
+        expect(getReviewChangesSummary(messages)).toEqual({
+            commandCount: 0,
+            changedPageCount: 0,
+            changedAssetCount: 0
+        });
         expect(getReviewChangesLifecycleLabel(messages)).toBeNull();
     });
 
