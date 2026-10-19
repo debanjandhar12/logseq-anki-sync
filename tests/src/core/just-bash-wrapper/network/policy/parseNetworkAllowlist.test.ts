@@ -1,5 +1,5 @@
 import {describe, expect, test} from "vitest";
-import {parseNetworkAllowlist} from "../../../../../../src/core/just-bash-wrapper/network/utils/parseNetworkAllowlist";
+import {parseNetworkAllowlist} from "../../../../../../src/core/just-bash-wrapper/network/policy/parseNetworkAllowlist";
 
 describe("parseNetworkAllowlist", () => {
     test("ignores comments and blank lines", () => {
@@ -43,10 +43,26 @@ describe("parseNetworkAllowlist", () => {
         "*.example.com",
         "example_com",
         "example com",
-        "example.com # inline comment"
+        "example.com # inline comment",
+        "-example.com",
+        "example-.com",
+        "example..com",
+        "example.com.",
+        `${"a".repeat(64)}.com`,
+        `${"a".repeat(63)}.${"b".repeat(63)}.${"c".repeat(63)}.${"d".repeat(63)}.com`,
+        "127.0.0.2",
+        "127.1",
+        "2130706433",
+        "[::1]"
     ])("rejects invalid characters in a host: %j", (host) => {
         expect(() => parseNetworkAllowlist(`valid.example\n${host}`)).toThrow(
-            "Network allowlist contains an invalid host."
+            "Network allowlist contains an invalid host at line 2."
+        );
+    });
+
+    test("accepts explicit local services", () => {
+        expect(parseNetworkAllowlist("localhost\n127.0.0.1")).toEqual(
+            new Set(["localhost", "127.0.0.1"])
         );
     });
 });

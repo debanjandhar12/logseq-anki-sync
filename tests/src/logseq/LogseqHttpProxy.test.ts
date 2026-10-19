@@ -9,8 +9,8 @@ type ProxyInternals = {
         returnType: "text";
         signal: AbortSignal;
     }): Promise<unknown>;
-    getReturnType(request: Request): string;
-    toResponse(result: unknown, returnType: "text" | "arraybuffer"): Response;
+    fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
+    toResponse(result: unknown, returnType: "text" | "arraybuffer", method?: string): Response;
 };
 
 const proxy = LogseqHttpProxy as unknown as ProxyInternals;
@@ -55,16 +55,57 @@ describe("LogseqHttpProxy Vite browser transport", () => {
 });
 
 describe("LogseqHttpProxy binary responses", () => {
-    test("selects binary mode for GET runtime and package assets", () => {
-        for (const extension of ["wasm", "whl", "zip"]) {
-            expect(proxy.getReturnType(new Request(`https://plugins.test/file.${extension}`))).toBe(
-                "arraybuffer"
-            );
+    test("requests binary mode for arbitrary paths and methods", async () => {
+        const originalLogseq = globalThis.logseq;
+        globalThis.logseq = {_execCallableAPIAsync: vi.fn()} as unknown as typeof logseq;
+        const request = vi.spyOn(proxy, "experRequest").mockResolvedValue({
+            status: 200,
+            ok: true,
+            body: [0, 255, 128, 65]
+        });
+        try {
+            for (const method of ["GET", "POST"]) {
+                for (const path of ["package.whl", "download", "api/export"]) {
+                    const response = await proxy.fetch(`https://plugins.test/${path}`, {method});
+                    expect(request).toHaveBeenLastCalledWith(
+                        expect.objectContaining({method, returnType: "arraybuffer"})
+                    );
+                    expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+                        new Uint8Array([0, 255, 128, 65])
+                    );
+                }
+            }
+        } finally {
+            request.mockRestore();
+            globalThis.logseq = originalLogseq;
         }
-        expect(proxy.getReturnType(new Request("https://plugins.test/api"))).toBe("text");
+    });
+
+    test("binary transport preserves text and JSON decoding", async () => {
+        const text = "Unicode text: café 日本語";
+        await expect(
+            proxy.toResponse(new TextEncoder().encode(text), "arraybuffer").text()
+        ).resolves.toBe(text);
+        const response = proxy.toResponse(
+            {status: 200, ok: true, body: [...new TextEncoder().encode('{"ok":true}')]},
+            "arraybuffer"
+        );
+        await expect(response.json()).resolves.toEqual({ok: true});
+    });
+
+    test.each([
+        204, 205, 304
+    ])("constructs bodyless status %s without decoding a payload", async (status) => {
+        const response = proxy.toResponse({status, ok: true, body: undefined}, "arraybuffer");
+        expect(response.status).toBe(status);
+        expect(response.body).toBeNull();
+    });
+
+    test("HEAD responses have no body", () => {
         expect(
-            proxy.getReturnType(new Request("https://plugins.test/anydoc.wasm", {method: "POST"}))
-        ).toBe("text");
+            proxy.toResponse({status: 200, ok: true, body: undefined}, "arraybuffer", "HEAD").body
+        ).toBeNull();
+        expect(proxy.toResponse(undefined, "arraybuffer", "HEAD").body).toBeNull();
     });
 
     test.each([

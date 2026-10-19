@@ -81,7 +81,7 @@ export class LogseqHttpProxy {
     private static async fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
         const request = new Request(input, init);
         const urlStr = request.url;
-        const returnType = LogseqHttpProxy.getReturnType(request);
+        const returnType: ProxyReturnType = "arraybuffer";
 
         if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://")) {
             return LogseqHttpProxy.getOriginalFetch()(input, init);
@@ -100,7 +100,7 @@ export class LogseqHttpProxy {
             signal: request.signal
         });
 
-        return LogseqHttpProxy.toResponse(result, returnType);
+        return LogseqHttpProxy.toResponse(result, returnType, request.method);
     }
 
     private static getOriginalFetch(): typeof fetch {
@@ -167,21 +167,33 @@ export class LogseqHttpProxy {
         }
     }
 
-    private static toResponse(result: unknown, returnType: ProxyReturnType): Response {
+    private static toResponse(
+        result: unknown,
+        returnType: ProxyReturnType,
+        method = "GET"
+    ): Response {
+        const hasNoBody = method === "HEAD";
         if (LogseqHttpProxy.isProxyResponse(result)) {
             const headers = new Headers(result.headers);
             if (result.url) headers.set(LOGSEQ_PROXY_FINAL_URL_HEADER, result.url);
-            return new Response(LogseqHttpProxy.getResponseBody(result.body, returnType), {
+            const body =
+                hasNoBody || [204, 205, 304].includes(result.status)
+                    ? null
+                    : LogseqHttpProxy.getResponseBody(result.body, returnType);
+            return new Response(body, {
                 status: result.status,
                 statusText: result.statusText,
                 headers
             });
         }
 
-        return new Response(LogseqHttpProxy.getResponseBody(result, returnType), {
-            status: 200,
-            statusText: "OK"
-        });
+        return new Response(
+            hasNoBody ? null : LogseqHttpProxy.getResponseBody(result, returnType),
+            {
+                status: 200,
+                statusText: "OK"
+            }
+        );
     }
 
     private static isProxyResponse(value: unknown): value is LogseqProxyResponse {
@@ -196,14 +208,6 @@ export class LogseqHttpProxy {
             return method as HttpMethod;
         }
         throw new Error(`Unsupported HTTP method for Logseq exper_request: ${method}`);
-    }
-
-    private static getReturnType(request: Request): ProxyReturnType {
-        const pathname = new URL(request.url).pathname.toLowerCase();
-        const hasBinaryExtension = [".wasm", ".whl", ".zip"].some((extension) =>
-            pathname.endsWith(extension)
-        );
-        return request.method === "GET" && hasBinaryExtension ? "arraybuffer" : "text";
     }
 
     private static getHeaders(headersInit?: HeadersInit): Record<string, string> {

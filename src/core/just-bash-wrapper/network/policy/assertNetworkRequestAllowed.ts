@@ -1,5 +1,5 @@
-import NETWORK_ALLOWLIST from "./network-allowlist.txt?raw";
-import {parseNetworkAllowlist} from "./utils/parseNetworkAllowlist";
+import NETWORK_ALLOWLIST from "../network-allowlist.txt?raw";
+import {parseNetworkAllowlist} from "./parseNetworkAllowlist";
 
 const ALLOWED_METHODS = new Set(["GET", "HEAD", "POST"]);
 
@@ -19,14 +19,22 @@ export function assertNetworkRequestAllowed(
 
     const normalizedMethod = method.toUpperCase();
     const hostname = url.hostname.toLowerCase().replace(/\.$/, "");
-    const hostAllowed = [...allowedHosts].some(
-        (host) => hostname === host || hostname.endsWith(`.${host}`)
-    );
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+    const hostAllowed = isLocalHost
+        ? allowedHosts.has(hostname)
+        : [...allowedHosts].some(
+              (host) =>
+                  host !== "localhost" &&
+                  host !== "127.0.0.1" &&
+                  (hostname === host || hostname.endsWith(`.${host}`))
+          );
+    const transportAllowed = isLocalHost
+        ? url.protocol === "http:" || url.protocol === "https:"
+        : url.protocol === "https:" && (!url.port || url.port === "443");
     if (
-        url.protocol !== "https:" ||
+        !transportAllowed ||
         url.username ||
         url.password ||
-        (url.port && url.port !== "443") ||
         !ALLOWED_METHODS.has(normalizedMethod) ||
         !hostAllowed
     ) {
