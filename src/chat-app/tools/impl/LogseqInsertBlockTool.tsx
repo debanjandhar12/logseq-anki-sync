@@ -29,7 +29,9 @@ export class LogseqInsertBlockTool extends BaseChatToolWithDefaultUI<
     static readonly NAME = "logseq_insert_block";
 
     readonly name = LogseqInsertBlockTool.NAME;
-    readonly description = "Insert a Logseq block under a parent block or page by UUID.";
+    readonly description =
+        "Insert a Logseq block relative to a block or page by UUID. " +
+        "Use `before` for siblings and `start`/`end` for children.";
     readonly parameters = InsertBlockCommandArgsSchema;
 
     async execute(

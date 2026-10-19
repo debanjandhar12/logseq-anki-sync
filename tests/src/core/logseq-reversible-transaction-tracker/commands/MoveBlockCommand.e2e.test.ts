@@ -116,11 +116,11 @@ describe.skipIf(!shouldRunTests())("MoveBlockCommand", () => {
     it("should throw error when children is true and before is true.", () => {
         expect(() => {
             new MoveBlockCommand({
-                srcBlockUuid: "dummy-src",
-                destBlockUuid: "dummy-dest",
+                srcBlockUuid: "00000000-0000-4000-8000-000000000001",
+                destBlockUuid: "00000000-0000-4000-8000-000000000002",
                 children: true,
                 before: true
             });
-        }).toThrow(/`before` is meaningless/);
+        }).toThrow("When `children` is true, omit `before`.");
     });
 });

@@ -100,6 +100,6 @@ describe.skipIf(!shouldRunTests())("InsertBlockCommand", () => {
                 sibling: false,
                 before: true
             });
-        }).toThrow(/`before` is meaningless/);
+        }).toThrow("For child insertion, omit `before`; use `start`/`end`.");
     }, 60_000);
 });

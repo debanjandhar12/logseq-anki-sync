@@ -6,13 +6,10 @@ import {
     type ChatToolSuccessResult
 } from "src/chat-app/tools/base/ChatToolResponse";
 import {getErrorMessageFromErrObj} from "src/chat-app/utils/getErrorMessageFromErrObj";
-import {VIR_ENV_USER_PATH} from "src/constants";
 import {
     BashCommand,
     BashCommandArgsSchema
 } from "src/core/logseq-reversible-transaction-tracker/commands/BashCommand";
-import {AnyDocParseResultStore} from "src/core/stores/anydoc-parse-result-store/AnyDocParseResultStore";
-import {ToolResultStore} from "src/core/stores/tool-results/ToolResultStore";
 import type {z} from "zod";
 import {createLogseqReversibleTransactionTrackerArtifact} from "../transaction/createLogseqReversibleTransactionTrackerArtifact";
 import {getLastLogseqReversibleTransactionTracker} from "../transaction/getLastLogseqReversibleTransactionTracker";
@@ -30,13 +27,10 @@ export class BashTool extends BaseChatToolWithDefaultUI<BashToolArgs, BashToolRe
 
     readonly name = BashTool.NAME;
     readonly description =
-        "Run a bash command in an isolated virtual filesystem with no host access. " +
-        "Sandboxed Python is available through Pyodide, for example: " +
-        "`python -c 'print(1 + 1)'`, and shares files under the sandbox user directory. " +
-        "Install compatible pinned packages with micropip. " +
-        "Use import logseq_lib and await its methods with argument dictionaries to read or reversibly modify Logseq pages, blocks, skills, command files, and assets. " +
-        `Prior tool results are read-only at ${VIR_ENV_USER_PATH}/${ToolResultStore.groupName}, ` +
-        `and parsed PDF pages are read-only at ${VIR_ENV_USER_PATH}/${AnyDocParseResultStore.groupName}.`;
+        "Run a bash command in an isolated virtual filesystem. " +
+        "Python is available through Pyodide, for example: " +
+        "`python -c 'print(1 + 1)'`, and shares the virtual filesystem. " +
+        "Inside python, packages if used need to be installed with micropip on every tool call as no package cache is shared between tool calls. ";
     readonly parameters = bashToolParameters;
 
     async execute(
