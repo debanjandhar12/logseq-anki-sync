@@ -1,6 +1,5 @@
 import _ from "lodash";
 import {createLogger, LoggerCategory} from "../../logger";
-import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import * as AnkiConnect from "../AnkiConnect";
 import type {AnkiAction} from "../types";
 
@@ -92,7 +91,7 @@ export class AssetOperation {
 
     private async getBase64FromUrl(url: string): Promise<string> {
         try {
-            const response = await WindowParentBridge.getFetch()(url);
+            const response = await fetch(url);
             const blob = await response.blob();
             const reader = new FileReader();
             await new Promise((resolve, reject) => {

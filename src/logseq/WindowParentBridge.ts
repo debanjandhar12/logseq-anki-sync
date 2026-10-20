@@ -133,13 +133,6 @@ export class WindowParentBridge {
     }
 
     /**
-     * Get the fetch API from parent window
-     */
-    static getFetch(): typeof fetch {
-        return WindowParentBridge.getParentWindow().fetch.bind(WindowParentBridge.parentWindow);
-    }
-
-    /**
      * Open a URL in a new window/tab
      * @param url - The URL to open
      * @param target - The target (defaults to '_blank')
@@ -147,6 +140,14 @@ export class WindowParentBridge {
      */
     static openWindow(url: string, target: string = "_blank", features?: string): Window | null {
         return WindowParentBridge.getParentWindow().open(url, target, features);
+    }
+
+    /**
+     * Open local file path
+     * @param path - The URL to open
+     */
+    static openPath(path: string): Window | null {
+        return WindowParentBridge.getParentWindow().apis.openPath(path);
     }
 
     /**

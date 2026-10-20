@@ -1,0 +1,295 @@
+import {LOGSEQ_HTTP_PROXY_TIMEOUT_MS} from "../constants";
+import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
+
+type HttpMethod = "GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE";
+type ProxyReturnType = "text" | "arraybuffer";
+
+type LogseqProxyResponse = {
+    status: number;
+    statusText?: string;
+    ok: boolean;
+    body: unknown;
+    headers?: Record<string, string>;
+    url?: string;
+};
+
+/**
+ * Carries the host proxy's post-redirect final URL; needed because constructed Responses have an empty `response.url` (read-only per spec).
+ */
+export const LOGSEQ_PROXY_FINAL_URL_HEADER = "x-logseq-proxy-final-url";
+const TEST_HTTP_PROXY_PREFIX = "/__logseq_http_proxy";
+
+/**
+ * Replaces window.fetch to avoid electron cross-origin restrictions.
+ * Does not support streaming at the moment.
+ */
+export class LogseqHttpProxy {
+    private static originalFetch: typeof fetch | null = null;
+
+    static async init() {
+        if (process.env.NODE_ENV === "test") {
+            // jsdom tests must not install a browser-server transport.
+            if (import.meta.env?.SSR !== false || LogseqHttpProxy.originalFetch !== null) return;
+            LogseqHttpProxy.originalFetch = window.fetch.bind(window);
+            window.fetch = (input, init) => LogseqHttpProxy.fetchInBrowserTest(input, init);
+            return;
+        }
+        if (
+            !(await LogseqAppInfoFetcher.checkCurrentIsDbGraph()) ||
+            LogseqHttpProxy.originalFetch !== null
+        ) {
+            return;
+        }
+
+        LogseqHttpProxy.originalFetch = window.fetch.bind(window);
+        window.fetch = (input: RequestInfo | URL, init?: RequestInit) =>
+            LogseqHttpProxy.fetch(input, init);
+    }
+
+    private static async fetchInBrowserTest(
+        input: RequestInfo | URL,
+        init?: RequestInit
+    ): Promise<Response> {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        if (url.protocol !== "https:" || url.origin === window.location.origin)
+            return LogseqHttpProxy.getOriginalFetch()(input, init);
+        const response = await LogseqHttpProxy.getOriginalFetch()(
+            `${TEST_HTTP_PROXY_PREFIX}/${url.hostname}${url.pathname}${url.search}`,
+            {
+                method: request.method,
+                headers: request.headers,
+                body: request.body === null ? undefined : await request.arrayBuffer(),
+                credentials: "omit",
+                redirect: "manual",
+                signal: request.signal
+            }
+        );
+        const headers = new Headers(response.headers);
+        headers.set(LOGSEQ_PROXY_FINAL_URL_HEADER, url.href);
+        return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers
+        });
+    }
+
+    /**
+     * Fetch through Logseq's host-side exper_request proxy to bypass iframe CORS restrictions.
+     * The host proxy buffers responses, so this returns a normal non-streaming Response.
+     */
+    private static async fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+        const request = new Request(input, init);
+        const urlStr = request.url;
+        const returnType: ProxyReturnType = "arraybuffer";
+
+        if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://")) {
+            return LogseqHttpProxy.getOriginalFetch()(input, init);
+        }
+
+        if (!LogseqHttpProxy.hasExecCallableAPIAsync()) {
+            return LogseqHttpProxy.getOriginalFetch()(input, init);
+        }
+
+        const result = await LogseqHttpProxy.experRequest({
+            url: urlStr,
+            method: LogseqHttpProxy.getMethod(request.method),
+            headers: LogseqHttpProxy.getHeaders(request.headers),
+            body: await LogseqHttpProxy.getRequestBody(request),
+            returnType,
+            signal: request.signal
+        });
+
+        return LogseqHttpProxy.toResponse(result, returnType, request.method);
+    }
+
+    private static getOriginalFetch(): typeof fetch {
+        if (LogseqHttpProxy.originalFetch === null) {
+            throw new Error("LogseqHttpProxy not initialized");
+        }
+
+        return LogseqHttpProxy.originalFetch;
+    }
+
+    private static hasExecCallableAPIAsync(): boolean {
+        return (
+            typeof (logseq as {_execCallableAPIAsync?: unknown})._execCallableAPIAsync ===
+            "function"
+        );
+    }
+
+    private static async experRequest(options: {
+        url: string;
+        method: HttpMethod;
+        headers: Record<string, string>;
+        body?: unknown;
+        returnType: ProxyReturnType;
+        signal: AbortSignal;
+    }): Promise<unknown> {
+        const host = logseq as typeof logseq & {
+            _execCallableAPIAsync: (
+                ...args: unknown[]
+            ) => Promise<string | number | null | undefined>;
+            Request: {once: (event: string, callback: (payload: unknown) => void) => void};
+        };
+
+        const requestId = await withAbort(
+            host._execCallableAPIAsync("exper_request", host.baseInfo.id, {
+                url: options.url,
+                method: options.method,
+                headers: options.headers,
+                data: options.body,
+                returnType: options.returnType,
+                includeResponse: true,
+                abortable: true,
+                timeout: LOGSEQ_HTTP_PROXY_TIMEOUT_MS
+            }),
+            options.signal
+        );
+
+        if (!requestId) {
+            throw new Error("Logseq exper_request is not available");
+        }
+
+        const abortHostRequest = () => {
+            void host._execCallableAPIAsync("http_request_abort", requestId);
+        };
+        options.signal.addEventListener("abort", abortHostRequest, {once: true});
+        try {
+            return await withAbort(
+                new Promise((resolve) => {
+                    host.Request.once(`task_callback_${requestId}`, resolve);
+                }),
+                options.signal
+            );
+        } finally {
+            options.signal.removeEventListener("abort", abortHostRequest);
+        }
+    }
+
+    private static toResponse(
+        result: unknown,
+        returnType: ProxyReturnType,
+        method = "GET"
+    ): Response {
+        const hasNoBody = method === "HEAD";
+        if (LogseqHttpProxy.isProxyResponse(result)) {
+            const headers = new Headers(result.headers);
+            if (result.url) headers.set(LOGSEQ_PROXY_FINAL_URL_HEADER, result.url);
+            const body =
+                hasNoBody || [204, 205, 304].includes(result.status)
+                    ? null
+                    : LogseqHttpProxy.getResponseBody(result.body, returnType);
+            return new Response(body, {
+                status: result.status,
+                statusText: result.statusText,
+                headers
+            });
+        }
+
+        return new Response(
+            hasNoBody ? null : LogseqHttpProxy.getResponseBody(result, returnType),
+            {
+                status: 200,
+                statusText: "OK"
+            }
+        );
+    }
+
+    private static isProxyResponse(value: unknown): value is LogseqProxyResponse {
+        return (
+            typeof value === "object" && value !== null && typeof (value as any).status === "number"
+        );
+    }
+
+    private static getMethod(requestMethod: string): HttpMethod {
+        const method = requestMethod.toUpperCase();
+        if (["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+            return method as HttpMethod;
+        }
+        throw new Error(`Unsupported HTTP method for Logseq exper_request: ${method}`);
+    }
+
+    private static getHeaders(headersInit?: HeadersInit): Record<string, string> {
+        return Object.fromEntries(new Headers(headersInit).entries());
+    }
+
+    private static async getRequestBody(request: Request): Promise<unknown> {
+        if (request.body === null) return undefined;
+
+        const contentType = request.headers.get("content-type") ?? "";
+        if (contentType.includes("application/json")) {
+            return LogseqHttpProxy.getBody(await request.clone().text());
+        }
+        if (contentType.startsWith("text/")) {
+            return await request.clone().text();
+        }
+        return await request.clone().arrayBuffer();
+    }
+
+    private static getBody(body: BodyInit | null | undefined): unknown {
+        if (typeof body !== "string") {
+            return body;
+        }
+
+        try {
+            return JSON.parse(body);
+        } catch {
+            return body;
+        }
+    }
+
+    private static getBodyString(body: unknown): BodyInit | null | undefined {
+        if (body === null || body === undefined || typeof body === "string") {
+            return body as BodyInit | null | undefined;
+        }
+
+        if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
+            return body as BodyInit;
+        }
+
+        return JSON.stringify(body);
+    }
+
+    private static getResponseBody(
+        body: unknown,
+        returnType: ProxyReturnType
+    ): BodyInit | null | undefined {
+        if (returnType === "text") return LogseqHttpProxy.getBodyString(body);
+        if (body instanceof ArrayBuffer) return body;
+        if (ArrayBuffer.isView(body)) {
+            return new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
+        }
+        if (Array.isArray(body) && body.every((value) => Number.isInteger(value))) {
+            return new Uint8Array(body);
+        }
+        if (
+            typeof body === "object" &&
+            body !== null &&
+            Array.isArray((body as {data?: unknown}).data)
+        ) {
+            return new Uint8Array((body as {data: number[]}).data);
+        }
+        throw new Error("Logseq exper_request returned an invalid binary response");
+    }
+}
+
+function withAbort<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+    if (signal.aborted)
+        return Promise.reject(signal.reason ?? new DOMException("Aborted", "AbortError"));
+
+    return new Promise((resolve, reject) => {
+        const abort = () => reject(signal.reason ?? new DOMException("Aborted", "AbortError"));
+        signal.addEventListener("abort", abort, {once: true});
+        operation.then(
+            (value) => {
+                signal.removeEventListener("abort", abort);
+                resolve(value);
+            },
+            (error) => {
+                signal.removeEventListener("abort", abort);
+                reject(error);
+            }
+        );
+    });
+}

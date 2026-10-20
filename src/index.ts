@@ -14,6 +14,7 @@ import {Note} from "./anki-notes/Note";
 import {SwiftArrowNote} from "./anki-notes/SwiftArrowNote";
 import {ANKI_ICON} from "./constants";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
+import {LogseqHttpProxy} from "./logseq/LogseqHttpProxy";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
 import {registerToolbar} from "./registerToolbar";
@@ -26,6 +27,8 @@ import {UI} from "./ui/UI";
 const logger = createLogger(LoggerCategory.Others);
 
 async function main(baseInfo: LSPluginBaseInfo) {
+    await LogseqHttpProxy.init();
+
     // Register UI and Commands
     const syncLogseqToAnki = async () => {
         await new LogseqToAnkiSync().sync();
