@@ -25,7 +25,8 @@ export default async function getLogseqContentDirectDependencies(
     format = "markdown"
 ): Promise<DependencyEntity[]> {
     // Normalize content to our internal format
-    if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
+    const isDbGraph = await LogseqProxy.App.checkCurrentIsDbGraph();
+    if (isDbGraph) {
         const preprocessResult = await LogseqContentPreprocessorProxy.preprocess(
             content,
             format as "markdown" | "org"
@@ -37,8 +38,7 @@ export default async function getLogseqContentDirectDependencies(
     const pageDependency: Set<number> = new Set();
 
     //  Add dependencies due to LOGSEQ_EMBDED_BLOCK_REGEXP
-    let match;
-    while ((match = LOGSEQ_EMBDED_BLOCK_REGEXP.exec(content))) {
+    for (const match of content.matchAll(LOGSEQ_EMBDED_BLOCK_REGEXP)) {
         const block = await LogseqProxy.Editor.getBlock(match[1], {
             includeChildren: true
         });
@@ -59,21 +59,24 @@ export default async function getLogseqContentDirectDependencies(
     }
 
     // Add dependencies due to LOGSEQ_BLOCK_REF_REGEXP
-    while ((match = LOGSEQ_BLOCK_REF_REGEXP.exec(content))) {
+    for (const match of content.matchAll(LOGSEQ_BLOCK_REF_REGEXP)) {
         blockDependency.add(match[1]);
     }
 
     // Add dependencies due to LOGSEQ_EMBDED_PAGE_REGEXP
-    while ((match = LOGSEQ_EMBDED_PAGE_REGEXP.exec(content))) {
-        const pageIdStr = match[1];
-        const pageId = safeParseInt(pageIdStr);
+    for (const pageMatch of content.matchAll(LOGSEQ_EMBDED_PAGE_REGEXP)) {
+        const pageIdentity = isDbGraph ? safeParseInt(pageMatch[1]) : pageMatch[1];
+        if (isDbGraph && !Number.isInteger(pageIdentity)) continue;
+        const page = await LogseqProxy.Editor.getPage(pageIdentity);
+        if (!page) continue;
 
-        const isValidNumber =
-            typeof pageId === "number" && !Number.isNaN(pageId) && Number.isInteger(pageId);
-        if (!isValidNumber) continue;
-
-        pageDependency.add(pageId);
-        // TODO: Add all blocks in the page as dependencies if req
+        pageDependency.add(page.id);
+        const queue = [...(await LogseqProxy.Editor.getPageBlocksTree(page.id))];
+        while (queue.length > 0) {
+            const block = queue.pop();
+            blockDependency.add(getUUIDFromBlock(block));
+            if (block.children) queue.push(...(block.children as BlockEntity[]));
+        }
     }
 
     return [

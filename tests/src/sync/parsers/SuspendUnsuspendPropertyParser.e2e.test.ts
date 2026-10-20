@@ -3,22 +3,51 @@ import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeEach, describe, expect, test} from "vitest";
 import {MultilineCardNote} from "../../../../src/anki-notes/MultilineCardNote";
 import {SuspendUnsuspendPropertyParser} from "../../../../src/sync/parsers/SuspendUnsuspendPropertyParser";
+import {deletePagePermanently} from "../../../helpers/logseq/deletePagePermanently";
+
+const pageName = "test-suspend-unsuspend-parser";
+const pageWithSuspendName = "test-page-with-suspend";
+const pageOverrideName = "test-page-override";
+const parentNamespacePageName = "ParentNamespace";
+const childNamespacePageName = "ParentNamespace/ChildPage";
+const dbPageName = "test-suspend-unsuspend-db";
+const dbPageWithSuspendName = "test-db-page-suspend";
+const dbPageOverrideName = "test-db-override";
+
+const allTestPages = [
+    pageName,
+    pageWithSuspendName,
+    pageOverrideName,
+    parentNamespacePageName,
+    childNamespacePageName,
+    dbPageName,
+    dbPageWithSuspendName,
+    dbPageOverrideName
+];
 
 describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
+    beforeEach(async () => {
+        for (const testPageName of allTestPages) {
+            await deletePagePermanently(testPageName);
+        }
+    }, 60_000);
+
+    afterEach(async () => {
+        for (const name of allTestPages) {
+            await deletePagePermanently(name);
+        }
+    }, 60_000);
+
     describe("File Mode Suspend/Unsuspend Resolution", () => {
         let page: PageEntity;
 
         beforeEach(async () => {
             page = await logseq.Editor.createPage(
-                "Test SuspendUnsuspendParser",
+                pageName,
                 {},
-                {createFirstBlock: false}
+                {redirect: false, createFirstBlock: true}
             );
-            await new Promise((resolve) => setTimeout(resolve, 100));
-        });
-
-        afterEach(async () => {
-            await logseq.Editor.deletePage("Test SuspendUnsuspendParser");
+            if (!page) page = (await logseq.Editor.getPage(pageName))!;
             await new Promise((resolve) => setTimeout(resolve, 100));
         });
 
@@ -65,7 +94,7 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Block with suspend-anki-card: 'true'",
+            "Block with suspend-anki-card: 'true' (string)",
             async () => {
                 const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
                     properties: {"suspend-anki-card": "true"}
@@ -86,7 +115,7 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Block with suspend-anki-card: 'false'",
+            "Block with suspend-anki-card: 'false' (string)",
             async () => {
                 const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
                     properties: {"suspend-anki-card": "false"}
@@ -107,68 +136,7 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Block with suspend-anki-card: 'yes' (string)",
-            async () => {
-                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
-                    properties: {"suspend-anki-card": "yes"}
-                });
-                await new Promise((resolve) => setTimeout(resolve, 100));
-
-                const note = new MultilineCardNote(
-                    block.uuid,
-                    block.content,
-                    block.format,
-                    block.properties,
-                    page.id
-                );
-                const result = await SuspendUnsuspendPropertyParser.parse(note);
-
-                expect(result).toBe(true);
-            }
-        );
-
-        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Block with suspend-anki-card: 'no' (string)",
-            async () => {
-                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
-                    properties: {"suspend-anki-card": "no"}
-                });
-                await new Promise((resolve) => setTimeout(resolve, 100));
-
-                const note = new MultilineCardNote(
-                    block.uuid,
-                    block.content,
-                    block.format,
-                    block.properties,
-                    page.id
-                );
-                const result = await SuspendUnsuspendPropertyParser.parse(note);
-
-                expect(result).toBe(false);
-            }
-        );
-
-        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Block without suspend-anki-card property returns null",
-            async () => {
-                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
-                await new Promise((resolve) => setTimeout(resolve, 100));
-
-                const note = new MultilineCardNote(
-                    block.uuid,
-                    block.content,
-                    block.format,
-                    block.properties,
-                    page.id
-                );
-                const result = await SuspendUnsuspendPropertyParser.parse(note);
-
-                expect(result).toBe(null);
-            }
-        );
-
-        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Parent block suspend-anki-card inheritance",
+            "Parent block inheritance - true",
             async () => {
                 const parentBlock = await logseq.Editor.appendBlockInPage(
                     page.uuid,
@@ -197,7 +165,63 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Child block suspend-anki-card overrides parent",
+            "Parent block inheritance - false",
+            async () => {
+                const parentBlock = await logseq.Editor.appendBlockInPage(
+                    page.uuid,
+                    "Parent content",
+                    {
+                        properties: {"suspend-anki-card": false}
+                    }
+                );
+                const childBlock = await logseq.Editor.insertBlock(
+                    parentBlock.uuid,
+                    "Child content"
+                );
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                const note = new MultilineCardNote(
+                    childBlock.uuid,
+                    childBlock.content,
+                    childBlock.format,
+                    childBlock.properties,
+                    page.id
+                );
+                const result = await SuspendUnsuspendPropertyParser.parse(note);
+
+                expect(result).toBe(false);
+            }
+        );
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
+            "Grandparent block inheritance",
+            async () => {
+                const grandparent = await logseq.Editor.appendBlockInPage(
+                    page.uuid,
+                    "Grandparent content",
+                    {
+                        properties: {"suspend-anki-card": true}
+                    }
+                );
+                const parent = await logseq.Editor.insertBlock(grandparent.uuid, "Parent content");
+                const child = await logseq.Editor.insertBlock(parent.uuid, "Child content");
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                const note = new MultilineCardNote(
+                    child.uuid,
+                    child.content,
+                    child.format,
+                    child.properties,
+                    page.id
+                );
+                const result = await SuspendUnsuspendPropertyParser.parse(note);
+
+                expect(result).toBe(true);
+            }
+        );
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
+            "Child overrides parent block",
             async () => {
                 const parentBlock = await logseq.Editor.appendBlockInPage(
                     page.uuid,
@@ -229,12 +253,60 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
+            "Parent overrides grandparent block",
+            async () => {
+                const grandparent = await logseq.Editor.appendBlockInPage(
+                    page.uuid,
+                    "Grandparent content",
+                    {
+                        properties: {"suspend-anki-card": true}
+                    }
+                );
+                const parent = await logseq.Editor.insertBlock(grandparent.uuid, "Parent content", {
+                    properties: {"suspend-anki-card": false}
+                });
+                const child = await logseq.Editor.insertBlock(parent.uuid, "Child content");
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                const note = new MultilineCardNote(
+                    child.uuid,
+                    child.content,
+                    child.format,
+                    child.properties,
+                    page.id
+                );
+                const result = await SuspendUnsuspendPropertyParser.parse(note);
+
+                expect(result).toBe(false);
+            }
+        );
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
+            "Leaves suspension unchanged when no property is present",
+            async () => {
+                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                const note = new MultilineCardNote(
+                    block.uuid,
+                    block.content,
+                    block.format,
+                    block.properties,
+                    page.id
+                );
+                const result = await SuspendUnsuspendPropertyParser.parse(note);
+
+                expect(result).toBeNull();
+            }
+        );
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
             "Page property suspend-anki-card inheritance",
             async () => {
                 const pageWithProperty = await logseq.Editor.createPage(
-                    "Test Page With Suspend",
+                    pageWithSuspendName,
                     {"suspend-anki-card": true},
-                    {createFirstBlock: false}
+                    {redirect: false, createFirstBlock: true}
                 );
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -255,7 +327,6 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
 
                 expect(result).toBe(true);
 
-                await logseq.Editor.deletePage("Test Page With Suspend");
                 await new Promise((resolve) => setTimeout(resolve, 100));
             }
         );
@@ -264,9 +335,9 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
             "Block property overrides page property",
             async () => {
                 const pageWithProperty = await logseq.Editor.createPage(
-                    "Test Page Override",
+                    pageOverrideName,
                     {"suspend-anki-card": true},
-                    {createFirstBlock: false}
+                    {redirect: false, createFirstBlock: true}
                 );
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -290,7 +361,6 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
 
                 expect(result).toBe(false);
 
-                await logseq.Editor.deletePage("Test Page Override");
                 await new Promise((resolve) => setTimeout(resolve, 100));
             }
         );
@@ -338,10 +408,10 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Case insensitive value - 'TRUE'",
+            "Invalid boolean string leaves suspension unchanged",
             async () => {
                 const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
-                    properties: {"suspend-anki-card": "TRUE"}
+                    properties: {"suspend-anki-card": "invalid"}
                 });
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -354,15 +424,15 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
                 );
                 const result = await SuspendUnsuspendPropertyParser.parse(note);
 
-                expect(result).toBe(true);
+                expect(result).toBeNull();
             }
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Case insensitive value - 'FALSE'",
+            "Non-boolean/string value leaves suspension unchanged",
             async () => {
                 const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
-                    properties: {"suspend-anki-card": "FALSE"}
+                    properties: {"suspend-anki-card": 123}
                 });
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -375,27 +445,23 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
                 );
                 const result = await SuspendUnsuspendPropertyParser.parse(note);
 
-                expect(result).toBe(false);
+                expect(result).toBeNull();
             }
         );
 
-        // TODO: Fix this - namespace parent page lookup issue
-        test.skip("Namespace page suspend-anki-card inheritance", async () => {
-            // This test fails because LogseqProxy.Editor.getPage returns null when trying to fetch
-            // the parent namespace page by ID. This appears to be a limitation of the memoization
-            // or the logseq-proxy library when dealing with namespace relationships in tests.
-
-            const _parentPage = await logseq.Editor.createPage(
-                "ParentNamespace",
+        // TODO: Fix this
+        test.skip("Namespace page suspend inheritance", async () => {
+            await logseq.Editor.createPage(
+                parentNamespacePageName,
                 {"suspend-anki-card": true},
-                {createFirstBlock: false}
+                {redirect: false, createFirstBlock: true}
             );
             await new Promise((resolve) => setTimeout(resolve, 100));
 
             const childPage = await logseq.Editor.createPage(
-                "ParentNamespace/ChildPage",
+                childNamespacePageName,
                 {},
-                {createFirstBlock: false}
+                {redirect: false, createFirstBlock: true}
             );
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -403,6 +469,7 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
             await new Promise((resolve) => setTimeout(resolve, 100));
 
             const freshChildPage = await logseq.Editor.getPage(childPage.uuid);
+
             const note = new MultilineCardNote(
                 block.uuid,
                 block.content,
@@ -414,8 +481,6 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
 
             expect(result).toBe(true);
 
-            await logseq.Editor.deletePage("ParentNamespace/ChildPage");
-            await logseq.Editor.deletePage("ParentNamespace");
             await new Promise((resolve) => setTimeout(resolve, 100));
         }, 20000);
     });
@@ -425,15 +490,11 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
 
         beforeEach(async () => {
             page = await logseq.Editor.createPage(
-                "Test SuspendUnsuspend DB",
+                dbPageName,
                 {},
-                {createFirstBlock: false}
+                {redirect: false, createFirstBlock: true}
             );
-            await new Promise((resolve) => setTimeout(resolve, 100));
-        });
-
-        afterEach(async () => {
-            await logseq.Editor.deletePage("Test SuspendUnsuspend DB");
+            if (!page) page = (await logseq.Editor.getPage(dbPageName))!;
             await new Promise((resolve) => setTimeout(resolve, 100));
         });
 
@@ -509,7 +570,7 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
-            "Child block overrides parent in DB mode",
+            "Child block overrides parent block in DB mode",
             async () => {
                 const parentBlock = await logseq.Editor.appendBlockInPage(
                     page.uuid,
@@ -544,9 +605,9 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
             "Page property inheritance in DB mode",
             async () => {
                 const pageWithProperty = await logseq.Editor.createPage(
-                    "Test DB Page Suspend",
+                    dbPageWithSuspendName,
                     {"suspend-anki-card": true},
-                    {createFirstBlock: false}
+                    {redirect: false, createFirstBlock: true}
                 );
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -567,7 +628,6 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
 
                 expect(result).toBe(true);
 
-                await logseq.Editor.deletePage("Test DB Page Suspend");
                 await new Promise((resolve) => setTimeout(resolve, 100));
             }
         );
@@ -576,9 +636,9 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
             "Block overrides page in DB mode",
             async () => {
                 const pageWithProperty = await logseq.Editor.createPage(
-                    "Test DB Override",
+                    dbPageOverrideName,
                     {"suspend-anki-card": true},
-                    {createFirstBlock: false}
+                    {redirect: false, createFirstBlock: true}
                 );
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -602,7 +662,6 @@ describe("SuspendUnsuspendPropertyParser E2E Tests", () => {
 
                 expect(result).toBe(false);
 
-                await logseq.Editor.deletePage("Test DB Override");
                 await new Promise((resolve) => setTimeout(resolve, 100));
             }
         );

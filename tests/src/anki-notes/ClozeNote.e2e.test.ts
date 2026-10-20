@@ -2,23 +2,28 @@ import "@logseq/libs";
 import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeEach, describe, expect, test} from "vitest";
 import {ClozeNote} from "../../../src/anki-notes/ClozeNote";
+import {deletePagePermanently} from "../../helpers/logseq/deletePagePermanently";
+
+const pageName = "test-cloze-note";
 
 describe("ClozeNote E2E Tests", () => {
     let page: PageEntity;
 
     beforeEach(async () => {
+        await deletePagePermanently(pageName);
         page = await logseq.Editor.createPage(
-            "Test ClozeNote E2E",
+            pageName,
             {},
-            {redirect: false, createFirstBlock: false}
+            {redirect: false, createFirstBlock: true}
         );
+        if (!page) page = (await logseq.Editor.getPage(pageName))!;
         await new Promise((resolve) => setTimeout(resolve, 100));
-    });
+    }, 60_000);
 
     afterEach(async () => {
-        await logseq.Editor.deletePage("Test ClozeNote E2E");
+        await deletePagePermanently(pageName);
         await new Promise((resolve) => setTimeout(resolve, 100));
-    });
+    }, 60_000);
 
     test.skipIf(!globalThis.isLogseqAvailable)(
         "Creates notes for all cloze syntax variants",
@@ -38,7 +43,7 @@ describe("ClozeNote E2E Tests", () => {
         }
     );
 
-    test.skipIf(!globalThis.isLogseqAvailable)(
+    test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
         "Creates note with replacecloze property",
         async () => {
             const initialNotes = await ClozeNote.getNotesFromLogseqBlocks();

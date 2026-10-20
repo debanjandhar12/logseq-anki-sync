@@ -3,18 +3,45 @@ import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeEach, describe, expect, test} from "vitest";
 import {MultilineCardNote} from "../../../../src/anki-notes/MultilineCardNote";
 import {DeckParser} from "../../../../src/sync/parsers/DeckParser";
+import {deletePagePermanently} from "../../../helpers/logseq/deletePagePermanently";
+
+const pageName = "test-deck-parser";
+const japanPageName = "Geography/Japan";
+const parentNamespacePageName = "ParentNamespacePage";
+const childNamespacePageName = "ParentNamespacePage/ChildPage";
+const dbPageName = "test-deck-parser-db";
+
+const allTestPages = [
+    pageName,
+    japanPageName,
+    parentNamespacePageName,
+    childNamespacePageName,
+    dbPageName
+];
 
 describe("DeckParser E2E Tests", () => {
+    beforeEach(async () => {
+        for (const testPageName of allTestPages) {
+            await deletePagePermanently(testPageName);
+        }
+    }, 60_000);
+
+    afterEach(async () => {
+        for (const name of allTestPages) {
+            await deletePagePermanently(name);
+        }
+    }, 60_000);
+
     describe("File Mode Deck Resolution", () => {
         let page: PageEntity;
 
         beforeEach(async () => {
-            page = await logseq.Editor.createPage("Test DeckParser", {}, {createFirstBlock: false});
-            await new Promise((resolve) => setTimeout(resolve, 100));
-        });
-
-        afterEach(async () => {
-            await logseq.Editor.deletePage("Test DeckParser");
+            page = await logseq.Editor.createPage(
+                pageName,
+                {},
+                {redirect: false, createFirstBlock: true}
+            );
+            if (!page) page = (await logseq.Editor.getPage(pageName))!;
             await new Promise((resolve) => setTimeout(resolve, 100));
         });
 
@@ -61,13 +88,34 @@ describe("DeckParser E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
+            "Block with simple deck property",
+            async () => {
+                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
+                    properties: {deck: "SimpleDeck"}
+                });
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                const note = new MultilineCardNote(
+                    block.uuid,
+                    block.content,
+                    block.format,
+                    block.properties,
+                    page.id
+                );
+                const deck = await DeckParser.parse(note);
+
+                expect(deck).toBe("SimpleDeck");
+            }
+        );
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
             "Parent block deck inheritance",
             async () => {
                 const parentBlock = await logseq.Editor.appendBlockInPage(
                     page.uuid,
                     "Parent content",
                     {
-                        properties: {deck: "Deck"}
+                        properties: {deck: "ParentDeck"}
                     }
                 );
                 const childBlock = await logseq.Editor.insertBlock(
@@ -85,25 +133,54 @@ describe("DeckParser E2E Tests", () => {
                 );
                 const deck = await DeckParser.parse(note);
 
-                expect(deck).toBe("Deck");
+                expect(deck).toBe("ParentDeck");
             }
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Child block deck overrides parent",
+            "Parent block deck inheritance with [[Parent/Child]] format",
             async () => {
                 const parentBlock = await logseq.Editor.appendBlockInPage(
                     page.uuid,
                     "Parent content",
                     {
-                        properties: {deck: "Parent Deck"}
+                        properties: {deck: "[[Parent/Child]]"}
+                    }
+                );
+                const childBlock = await logseq.Editor.insertBlock(
+                    parentBlock.uuid,
+                    "Child content"
+                );
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                const note = new MultilineCardNote(
+                    childBlock.uuid,
+                    childBlock.content,
+                    childBlock.format,
+                    childBlock.properties,
+                    page.id
+                );
+                const deck = await DeckParser.parse(note);
+
+                expect(deck).toBe("Parent::Child");
+            }
+        );
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
+            "Child block deck overrides parent block deck",
+            async () => {
+                const parentBlock = await logseq.Editor.appendBlockInPage(
+                    page.uuid,
+                    "Parent content",
+                    {
+                        properties: {deck: "ParentDeck"}
                     }
                 );
                 const childBlock = await logseq.Editor.insertBlock(
                     parentBlock.uuid,
                     "Child content",
                     {
-                        properties: {deck: "Child Deck"}
+                        properties: {deck: "ChildDeck"}
                     }
                 );
                 await new Promise((resolve) => setTimeout(resolve, 100));
@@ -117,12 +194,12 @@ describe("DeckParser E2E Tests", () => {
                 );
                 const deck = await DeckParser.parse(note);
 
-                expect(deck).toBe("Child Deck");
+                expect(deck).toBe("ChildDeck");
             }
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Default to current page name when no deck specified",
+            "Default to current page name when no deck property",
             async () => {
                 const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
                 await new Promise((resolve) => setTimeout(resolve, 100));
@@ -136,7 +213,7 @@ describe("DeckParser E2E Tests", () => {
                 );
                 const deck = await DeckParser.parse(note);
 
-                expect(deck).toBe("Test DeckParser");
+                expect(deck).toBe(pageName);
             }
         );
 
@@ -144,9 +221,9 @@ describe("DeckParser E2E Tests", () => {
             "Default to current page name with namespace",
             async () => {
                 const namespacedPage = await logseq.Editor.createPage(
-                    "Geography/Japan",
+                    japanPageName,
                     {},
-                    {createFirstBlock: false}
+                    {redirect: false, createFirstBlock: true}
                 );
                 const block = await logseq.Editor.appendBlockInPage(
                     namespacedPage.uuid,
@@ -165,22 +242,17 @@ describe("DeckParser E2E Tests", () => {
 
                 expect(deck).toBe("Geography::Japan");
 
-                await logseq.Editor.deletePage("Geography/Japan");
                 await new Promise((resolve) => setTimeout(resolve, 100));
             }
         );
 
         // TODO: Fix this
         test.skip("Namespace page deck inheritance - LogseqProxy.Editor.getPage returns null for namespace parent", async () => {
-            // This test fails because LogseqProxy.Editor.getPage returns null when trying to fetch
-            // the parent namespace page by ID. This appears to be a limitation of the memoization
-            // or the logseq-proxy library when dealing with namespace relationships in tests.
-
             // Create parent namespace page with deck property
             await logseq.Editor.createPage(
-                "ParentNamespacePage",
+                parentNamespacePageName,
                 {deck: "Parent Namespaced Page"},
-                {createFirstBlock: false}
+                {redirect: false, createFirstBlock: true}
             );
 
             // Wait a bit for namespace to be established
@@ -188,9 +260,9 @@ describe("DeckParser E2E Tests", () => {
 
             // Create child page in namespace
             const childPage = await logseq.Editor.createPage(
-                "ParentNamespacePage/ChildPage",
+                childNamespacePageName,
                 {},
-                {createFirstBlock: false}
+                {redirect: false, createFirstBlock: true}
             );
 
             // Wait for namespace relationship to be established
@@ -213,9 +285,6 @@ describe("DeckParser E2E Tests", () => {
 
             expect(deck).toBe("Parent Namespaced Page");
 
-            // Cleanup
-            await logseq.Editor.deletePage("ParentNamespacePage/ChildPage");
-            await logseq.Editor.deletePage("ParentNamespacePage");
             await new Promise((resolve) => setTimeout(resolve, 100));
         }, 20000);
     });
@@ -225,15 +294,11 @@ describe("DeckParser E2E Tests", () => {
 
         beforeEach(async () => {
             page = await logseq.Editor.createPage(
-                "Test DeckParser DB",
+                dbPageName,
                 {},
-                {createFirstBlock: false}
+                {redirect: false, createFirstBlock: true}
             );
-            await new Promise((resolve) => setTimeout(resolve, 100));
-        });
-
-        afterEach(async () => {
-            await logseq.Editor.deletePage("Test DeckParser DB");
+            if (!page) page = (await logseq.Editor.getPage(dbPageName))!;
             await new Promise((resolve) => setTimeout(resolve, 100));
         });
 
@@ -243,7 +308,9 @@ describe("DeckParser E2E Tests", () => {
                 const parentBlock = await logseq.Editor.appendBlockInPage(
                     page.uuid,
                     "Parent content",
-                    {properties: {deck: "Deck"}}
+                    {
+                        properties: {deck: "ParentDeck"}
+                    }
                 );
                 const childBlock = await logseq.Editor.insertBlock(
                     parentBlock.uuid,
@@ -260,22 +327,26 @@ describe("DeckParser E2E Tests", () => {
                 );
                 const deck = await DeckParser.parse(note);
 
-                expect(deck).toBe("Deck");
+                expect(deck).toBe("ParentDeck");
             }
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
-            "Child block deck overrides parent in DB mode",
+            "Child block deck overrides parent block deck in DB mode",
             async () => {
                 const parentBlock = await logseq.Editor.appendBlockInPage(
                     page.uuid,
                     "Parent content",
-                    {properties: {deck: "Parent Deck"}}
+                    {
+                        properties: {deck: "ParentDeck"}
+                    }
                 );
                 const childBlock = await logseq.Editor.insertBlock(
                     parentBlock.uuid,
                     "Child content",
-                    {properties: {deck: "Child Deck"}}
+                    {
+                        properties: {deck: "ChildDeck"}
+                    }
                 );
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -288,26 +359,7 @@ describe("DeckParser E2E Tests", () => {
                 );
                 const deck = await DeckParser.parse(note);
 
-                expect(deck).toBe("Child Deck");
-            }
-        );
-
-        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
-            "Default to current page name when no deck specified in DB mode",
-            async () => {
-                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
-                await new Promise((resolve) => setTimeout(resolve, 100));
-
-                const note = new MultilineCardNote(
-                    block.uuid,
-                    block.content,
-                    block.format,
-                    block.properties,
-                    page.id
-                );
-                const deck = await DeckParser.parse(note);
-
-                expect(deck).toBe("Test DeckParser DB");
+                expect(deck).toBe("ChildDeck");
             }
         );
     });

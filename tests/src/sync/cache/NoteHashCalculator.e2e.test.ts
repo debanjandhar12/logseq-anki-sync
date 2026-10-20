@@ -7,51 +7,54 @@ import {WindowParentBridge} from "../../../../src/logseq/WindowParentBridge";
 import {init as initBlockPageHashCache} from "../../../../src/sync/cache/BlockAndPageHashCache";
 import NoteHashCalculator from "../../../../src/sync/cache/NoteHashCalculator";
 import type {ParsedNoteData} from "../../../../src/sync/types";
+import {deletePagePermanently} from "../../../helpers/logseq/deletePagePermanently";
 
-// Mock settings
-vi.mock("../../../../src/logseq/LogseqProxy", async () => {
-    const actual = await vi.importActual<typeof import("../../../../src/logseq/LogseqProxy")>(
-        "../../../../src/logseq/LogseqProxy"
-    );
-    return {
-        ...actual,
-        LogseqProxy: {
-            ...actual.LogseqProxy,
-            Settings: {
-                getPluginSettings: () => ({
-                    defaultDeck: "Default",
-                    useNamespaceAsDefaultDeck: false,
-                    includeParentContent: false
-                })
-            }
-        }
-    };
-});
+const filePageName = "test-note-hash";
+const fileEmbedPageName = "test-embed-page-hash";
+const dbPageName = "test-note-hash-db";
+const dbEmbedPageName = "test-embed-page-hash-db";
 
-beforeAll(() => {
-    // Mock logseq event handlers not available in test proxy
-    logseq.onSettingsChanged = vi.fn();
-    logseq.App.onCurrentGraphChanged = vi.fn();
-    logseq.beforeunload = vi.fn();
-
-    initBlockPageHashCache();
-    LogseqProxy.init();
-});
+const allTestPages = [filePageName, fileEmbedPageName, dbPageName, dbEmbedPageName];
 
 const clearAllCaches = () => {
     WindowParentBridge.dispatchEvent("syncLogseqToAnkiComplete");
 };
 
 describe("NoteHashCalculator E2E Tests", () => {
+    beforeAll(async () => {
+        vi.spyOn(LogseqProxy.Settings, "getPluginSettings").mockReturnValue({
+            disabled: false,
+            defaultDeck: "Default",
+            useNamespaceAsDefaultDeck: false,
+            includeParentContent: false
+        } as any);
+        initBlockPageHashCache();
+        LogseqProxy.init();
+    });
+
+    beforeEach(async () => {
+        clearAllCaches();
+        for (const testPageName of allTestPages) {
+            await deletePagePermanently(testPageName);
+        }
+    }, 60_000);
+
+    afterEach(async () => {
+        for (const name of allTestPages) {
+            await deletePagePermanently(name);
+        }
+    }, 60_000);
+
     describe("File Mode Hash Calculation", () => {
         let page: PageEntity;
 
         beforeEach(async () => {
-            page = await logseq.Editor.createPage("Test NoteHash", {}, {createFirstBlock: false});
-        });
-
-        afterEach(async () => {
-            await logseq.Editor.deletePage("Test NoteHash");
+            page = await logseq.Editor.createPage(
+                filePageName,
+                {},
+                {redirect: false, createFirstBlock: true}
+            );
+            if (!page) page = (await logseq.Editor.getPage(filePageName))!;
         });
 
         const createAnkiFields = (): ParsedNoteData => ["", new Set<string>(), "", "", []];
@@ -112,9 +115,11 @@ describe("NoteHashCalculator E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Hash changes when tag is added to block",
+            "Hash changes when block property is removed",
             async () => {
-                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
+                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
+                    properties: {deck: "Deck1"}
+                });
 
                 const note = new MultilineCardNote(
                     block.uuid,
@@ -125,7 +130,7 @@ describe("NoteHashCalculator E2E Tests", () => {
                 );
                 const hash1 = await NoteHashCalculator.getHash(note, createAnkiFields());
 
-                await logseq.Editor.upsertBlockProperty(block.uuid, "tags", "newtag");
+                await logseq.Editor.removeBlockProperty(block.uuid, "deck");
                 clearAllCaches();
                 const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
 
@@ -134,15 +139,15 @@ describe("NoteHashCalculator E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Hash changes when content of block ref changes",
+            "Hash changes when content of block in block ref changes",
             async () => {
-                const refBlock = await logseq.Editor.appendBlockInPage(
+                const referencedBlock = await logseq.Editor.appendBlockInPage(
                     page.uuid,
                     "Referenced content"
                 );
                 const block = await logseq.Editor.appendBlockInPage(
                     page.uuid,
-                    `Block with ref ((${refBlock.uuid}))`
+                    `Block with ref ((${referencedBlock.uuid}))`
                 );
 
                 const note = new MultilineCardNote(
@@ -154,7 +159,10 @@ describe("NoteHashCalculator E2E Tests", () => {
                 );
                 const hash1 = await NoteHashCalculator.getHash(note, createAnkiFields());
 
-                await logseq.Editor.updateBlock(refBlock.uuid, "Modified referenced content");
+                await logseq.Editor.updateBlock(
+                    referencedBlock.uuid,
+                    "Modified referenced content"
+                );
                 clearAllCaches();
                 const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
 
@@ -163,15 +171,15 @@ describe("NoteHashCalculator E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Hash changes when content of block embed changes",
+            "Hash changes when content of block in block embed changes",
             async () => {
-                const embedBlock = await logseq.Editor.appendBlockInPage(
+                const embeddedBlock = await logseq.Editor.appendBlockInPage(
                     page.uuid,
                     "Embedded content"
                 );
                 const block = await logseq.Editor.appendBlockInPage(
                     page.uuid,
-                    `Block with embed {{embed ((${embedBlock.uuid}))}}`
+                    `Block with embed {{embed ((${embeddedBlock.uuid}))}}`
                 );
 
                 const note = new MultilineCardNote(
@@ -183,7 +191,37 @@ describe("NoteHashCalculator E2E Tests", () => {
                 );
                 const hash1 = await NoteHashCalculator.getHash(note, createAnkiFields());
 
-                await logseq.Editor.updateBlock(embedBlock.uuid, "Modified embedded content");
+                await logseq.Editor.updateBlock(embeddedBlock.uuid, "Modified embedded content");
+                clearAllCaches();
+                const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
+
+                expect(hash1).not.toBe(hash2);
+            }
+        );
+
+        test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
+            "Hash changes when content of block in transitive block ref changes",
+            async () => {
+                const blockC = await logseq.Editor.appendBlockInPage(page.uuid, "Original Block C");
+                const blockB = await logseq.Editor.appendBlockInPage(
+                    page.uuid,
+                    `Block B refs ((${blockC.uuid}))`
+                );
+                const blockA = await logseq.Editor.appendBlockInPage(
+                    page.uuid,
+                    `Block A refs ((${blockB.uuid}))`
+                );
+
+                const note = new MultilineCardNote(
+                    blockA.uuid,
+                    blockA.content,
+                    blockA.format,
+                    blockA.properties,
+                    page.id
+                );
+                const hash1 = await NoteHashCalculator.getHash(note, createAnkiFields());
+
+                await logseq.Editor.updateBlock(blockC.uuid, "Modified Block C");
                 clearAllCaches();
                 const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
 
@@ -195,9 +233,9 @@ describe("NoteHashCalculator E2E Tests", () => {
             "Hash changes when content of block in page embed changes",
             async () => {
                 const embedPage = await logseq.Editor.createPage(
-                    "Test Embed Page Hash",
+                    fileEmbedPageName,
                     {},
-                    {createFirstBlock: false}
+                    {redirect: false, createFirstBlock: true}
                 );
                 const embedBlock = await logseq.Editor.appendBlockInPage(
                     embedPage.uuid,
@@ -205,7 +243,7 @@ describe("NoteHashCalculator E2E Tests", () => {
                 );
                 const block = await logseq.Editor.appendBlockInPage(
                     page.uuid,
-                    `Block with page embed {{embed [[Test Embed Page Hash]]}}`
+                    `Block with page embed {{embed [[${fileEmbedPageName}]]}}`
                 );
 
                 const note = new MultilineCardNote(
@@ -222,15 +260,8 @@ describe("NoteHashCalculator E2E Tests", () => {
                 const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
 
                 expect(hash1).not.toBe(hash2);
-
-                await logseq.Editor.deletePage("Test Embed Page Hash");
             }
         );
-
-        // This case currently fails since logseq does not update page props imediately after upsertBlockProperty
-        // test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)("Hash changes when page property in page embed changes", async () => {
-        // TODO: Implement similar to db case
-        // });
     });
 
     describe("DB Mode Hash Calculation", () => {
@@ -238,14 +269,11 @@ describe("NoteHashCalculator E2E Tests", () => {
 
         beforeEach(async () => {
             page = await logseq.Editor.createPage(
-                "Test NoteHash DB",
+                dbPageName,
                 {},
-                {createFirstBlock: false}
+                {redirect: false, createFirstBlock: true}
             );
-        });
-
-        afterEach(async () => {
-            await logseq.Editor.deletePage("Test NoteHash DB");
+            if (!page) page = (await logseq.Editor.getPage(dbPageName))!;
         });
 
         const createAnkiFields = (): ParsedNoteData => ["", new Set<string>(), "", "", []];
@@ -297,65 +325,10 @@ describe("NoteHashCalculator E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
-            "Hash changes when tag is added to block in DB mode",
+            "Hash changes when block property is removed in DB mode",
             async () => {
-                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
-
-                const note = new MultilineCardNote(
-                    block.uuid,
-                    block.content,
-                    block.format,
-                    block.properties,
-                    page.id
-                );
-                const hash1 = await NoteHashCalculator.getHash(note, createAnkiFields());
-
-                await logseq.Editor.upsertBlockProperty(block.uuid, "tags", "newtag");
-                clearAllCaches();
-                const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
-
-                expect(hash1).not.toBe(hash2);
-            }
-        );
-
-        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
-            "Hash changes when content of block ref changes in DB mode",
-            async () => {
-                const refBlock = await logseq.Editor.appendBlockInPage(
-                    page.uuid,
-                    "Referenced content"
-                );
-                const block = await logseq.Editor.appendBlockInPage(
-                    page.uuid,
-                    `Block with ref [[${refBlock.uuid}]]`
-                );
-
-                const note = new MultilineCardNote(
-                    block.uuid,
-                    block.content,
-                    block.format,
-                    block.properties,
-                    page.id
-                );
-                const hash1 = await NoteHashCalculator.getHash(note, createAnkiFields());
-
-                await logseq.Editor.updateBlock(refBlock.uuid, "Modified referenced content");
-                clearAllCaches();
-                const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
-
-                expect(hash1).not.toBe(hash2);
-            }
-        );
-
-        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
-            "Hash changes when content of block embed changes in DB mode",
-            async () => {
-                const embedBlock = await logseq.Editor.appendBlockInPage(
-                    page.uuid,
-                    "Embedded content"
-                );
-                const block = await logseq.Editor.appendBlockInPage(page.uuid, ``, {
-                    properties: {link: embedBlock.id}
+                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content", {
+                    properties: {deck: "Deck1"}
                 });
 
                 const note = new MultilineCardNote(
@@ -367,7 +340,68 @@ describe("NoteHashCalculator E2E Tests", () => {
                 );
                 const hash1 = await NoteHashCalculator.getHash(note, createAnkiFields());
 
-                await logseq.Editor.updateBlock(embedBlock.uuid, "Modified embedded content");
+                await logseq.Editor.removeBlockProperty(block.uuid, "deck");
+                clearAllCaches();
+                const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
+
+                expect(hash1).not.toBe(hash2);
+            }
+        );
+
+        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+            "Hash changes when content of block in block ref changes in DB mode",
+            async () => {
+                const referencedBlock = await logseq.Editor.appendBlockInPage(
+                    page.uuid,
+                    "Referenced content"
+                );
+                const block = await logseq.Editor.appendBlockInPage(
+                    page.uuid,
+                    `Block with ref ((${referencedBlock.uuid}))`
+                );
+
+                const note = new MultilineCardNote(
+                    block.uuid,
+                    block.content,
+                    block.format,
+                    block.properties,
+                    page.id
+                );
+                const hash1 = await NoteHashCalculator.getHash(note, createAnkiFields());
+
+                await logseq.Editor.updateBlock(
+                    referencedBlock.uuid,
+                    "Modified referenced content"
+                );
+                clearAllCaches();
+                const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
+
+                expect(hash1).not.toBe(hash2);
+            }
+        );
+
+        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+            "Hash changes when content of block in block embed changes in DB mode",
+            async () => {
+                const embeddedBlock = await logseq.Editor.appendBlockInPage(
+                    page.uuid,
+                    "Embedded content"
+                );
+                const block = await logseq.Editor.appendBlockInPage(
+                    page.uuid,
+                    `Block with embed {{embed ((${embeddedBlock.uuid}))}}`
+                );
+
+                const note = new MultilineCardNote(
+                    block.uuid,
+                    block.content,
+                    block.format,
+                    block.properties,
+                    page.id
+                );
+                const hash1 = await NoteHashCalculator.getHash(note, createAnkiFields());
+
+                await logseq.Editor.updateBlock(embeddedBlock.uuid, "Modified embedded content");
                 clearAllCaches();
                 const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
 
@@ -379,9 +413,9 @@ describe("NoteHashCalculator E2E Tests", () => {
             "Hash changes when content of block in page ref changes in DB mode",
             async () => {
                 const embedPage = await logseq.Editor.createPage(
-                    "Test Embed Page Hash DB",
+                    dbEmbedPageName,
                     {},
-                    {createFirstBlock: false}
+                    {redirect: false, createFirstBlock: true}
                 );
                 const embedBlock = await logseq.Editor.appendBlockInPage(
                     embedPage.uuid,
@@ -405,26 +439,7 @@ describe("NoteHashCalculator E2E Tests", () => {
                 const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
 
                 expect(hash1).not.toBe(hash2);
-
-                await logseq.Editor.deletePage("Test Embed Page Hash DB");
             }
         );
-
-        // This case currently fails since logseq does not update page props imediately after upsertBlockProperty
-        // test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)("Hash changes when page property in page ref changes in DB mode", async () => {
-        //     const embedPage = await logseq.Editor.createPage('Test Embed Page Prop DB', null, { createFirstBlock: false });
-        //     const blockPropForEmbedPage = await logseq.Editor.appendBlockInPage(page.uuid, ``, { properties:{ prop: "value1" } });
-        //     const block = await logseq.Editor.appendBlockInPage(page.uuid, ``, { properties:{link: embedPage.id} });
-        //
-        //     const note = new MultilineCardNote(block.uuid, block.content, block.format, block.properties, page.id);
-        //     const hash1 = await NoteHashCalculator.getHash(note, createAnkiFields());
-        //     await logseq.Editor.upsertBlockProperty(blockPropForEmbedPage.uuid, "prop", "value2");
-        //     clearAllCaches();
-        //     const hash2 = await NoteHashCalculator.getHash(note, createAnkiFields());
-        //
-        //     expect(hash1).not.toBe(hash2);
-        //
-        //     await logseq.Editor.deletePage('Test Embed Page Prop DB');
-        // });
     });
 });

@@ -2,30 +2,32 @@ import "@logseq/libs";
 import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import {afterEach, beforeEach, describe, expect, test} from "vitest";
 import {HighlightMaskNote} from "../../../src/anki-notes/HighlightMaskNote";
+import {deletePagePermanently} from "../../helpers/logseq/deletePagePermanently";
+
+const pageName = "test-highlight-mask-note";
 
 describe("HighlightMaskNote E2E Tests", () => {
     let page: PageEntity | null = null;
 
     beforeEach(async () => {
+        await deletePagePermanently(pageName);
         page = await logseq.Editor.createPage(
-            "Test HighlightMaskNote E2E",
+            pageName,
             {},
-            {redirect: false, createFirstBlock: false}
+            {redirect: false, createFirstBlock: true}
         );
+        if (!page) page = (await logseq.Editor.getPage(pageName))!;
         await new Promise((resolve) => setTimeout(resolve, 100));
-    });
+    }, 60_000);
 
     afterEach(async () => {
-        if (page) {
-            await logseq.Editor.deletePage("Test HighlightMaskNote E2E");
-            await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-    });
+        await deletePagePermanently(pageName);
+    }, 60_000);
 
     test.skipIf(!globalThis.isLogseqAvailable)(
         "Returns empty array for non-DB graphs",
         async () => {
-            const isDbGraph = await logseq.App.checkCurrentIsDbGraph();
+            const isDbGraph = globalThis.isLogseqCurrentIsDBGraph;
             if (isDbGraph) {
                 return;
             }
@@ -40,7 +42,7 @@ describe("HighlightMaskNote E2E Tests", () => {
         async () => {
             if (!page) return;
 
-            const isDbGraph = await logseq.App.checkCurrentIsDbGraph();
+            const isDbGraph = globalThis.isLogseqCurrentIsDBGraph;
             if (!isDbGraph) {
                 return;
             }
@@ -69,7 +71,7 @@ describe("HighlightMaskNote E2E Tests", () => {
         async () => {
             if (!page) return;
 
-            const isDbGraph = await logseq.App.checkCurrentIsDbGraph();
+            const isDbGraph = globalThis.isLogseqCurrentIsDBGraph;
             if (!isDbGraph) {
                 return;
             }
