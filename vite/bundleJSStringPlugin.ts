@@ -14,7 +14,7 @@ export function bundleJSStringPlugin(mode: string) {
                         resolveDir: path.dirname(id),
                         sourcefile: id,
                     },
-                    sourceRoot: __dirname,
+                    sourceRoot: import.meta.dirname,
                     bundle: true,
                     minify: true,
                     //format: 'cjs',

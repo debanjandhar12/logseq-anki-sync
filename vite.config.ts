@@ -1,13 +1,17 @@
+import {createRequire} from "node:module";
 import reactPlugin from "@vitejs/plugin-react";
 import {defineConfig, loadEnv} from "vite";
 import {nodePolyfills} from "vite-plugin-node-polyfills";
-import {bundleJSStringPlugin} from "./vite/bundleJSStringPlugin";
-import {logseqDevPlugin} from "./vite/logseqDevPlugin";
-import {rewriteDistReqToRootPlugin} from "./vite/rewriteDistReqToRootPlugin";
-import {staticFileSyncTransformPlugin} from "./vite/staticFileSyncTransformPlugin";
+import {bundleJSStringPlugin} from "./vite/bundleJSStringPlugin.ts";
+import {logseqDevPlugin} from "./vite/logseqDevPlugin.ts";
+import {rewriteDistReqToRootPlugin} from "./vite/rewriteDistReqToRootPlugin.ts";
+import {staticFileSyncTransformPlugin} from "./vite/staticFileSyncTransformPlugin.ts";
+
 // https://vitejs.dev/config/
 
-export default defineConfig(({command, mode}) => {
+const require = createRequire(import.meta.url);
+
+export default defineConfig(({mode}) => {
     const env = loadEnv(mode, process.cwd(), "");
     return {
         base: "./",
@@ -39,7 +43,7 @@ export default defineConfig(({command, mode}) => {
         build: {
             sourcemap: true,
             target: "esnext",
-            minify: "esbuild",
+            minify: "oxc",
             emptyOutDir: true
         },
         css: {
@@ -57,7 +61,7 @@ export default defineConfig(({command, mode}) => {
             environment: "jsdom",
             env: {...env, NODE_ENV: mode},
             pool: "forks",
-            singleFork: true,
+            maxWorkers: 1,
             fileParallelism: false,
             server: {
                 deps: {

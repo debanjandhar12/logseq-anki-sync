@@ -56,7 +56,7 @@ export const OcclusionEditorComponent: React.FC<{
         modalId: modalContext?.modalId
     });
     const [tags, setTags] = React.useState<string[]>(blockTags);
-    const fabricRef = React.useRef<any>();
+    const fabricRef = React.useRef<any>(undefined);
     const canvasRef = React.useRef(null);
     const cidSelectorRef = React.useRef(null);
     const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -554,7 +554,7 @@ export const OcclusionEditorComponent: React.FC<{
             if (e.ctrlKey && e.key === "a") {
                 if (activeTool !== "select") return;
                 fabricRef.current.discardActiveObject();
-                var sel = new fabric.ActiveSelection(fabricRef.current.getObjects(), {
+                const sel = new fabric.ActiveSelection(fabricRef.current.getObjects(), {
                     canvas: fabricRef.current
                 });
                 fabricRef.current.setActiveObject(sel);

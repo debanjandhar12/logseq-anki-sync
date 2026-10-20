@@ -1,5 +1,7 @@
+import {createRequire} from "node:module";
 import * as path from "path";
 import * as fs from "fs";
+const require = createRequire(import.meta.url);
 const { parseSync, traverse } = require("@babel/core");
 const generate = require("@babel/generator").default;
 
@@ -15,7 +17,7 @@ export function staticFileSyncTransformPlugin() {
             if (curDir.includes("node_modules/.vite")) {
                 // We are in a vite cache folder. We need original path.
                 curDir = path.join(
-                    __dirname,
+                    import.meta.dirname,
                     "/node_modules/",
                     path.parse(path.basename(id)).name,
                 );
