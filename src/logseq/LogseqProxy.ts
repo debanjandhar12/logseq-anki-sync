@@ -8,9 +8,8 @@ import type {
     PropertySchema,
     SettingSchemaDesc
 } from "@logseq/libs/dist/LSPlugin";
-import AwaitLock from "await-lock";
+import {Semaphore} from "async-mutex";
 import pMemoize, {pMemoizeClear} from "p-memoize";
-import platform from "platform";
 import {createLogger, LoggerCategory} from "../logger";
 import type {PluginSettings} from "../settings";
 import objectHashOptimized from "../utils/objectHashOptimized";
@@ -24,14 +23,10 @@ const logger = createLogger(LoggerCategory.LogseqWrappers);
 
 /***
  * This is a cached + synchronization-safe logseq api wrapper.
- * Fixes the following issues: #58 (synchronization-safety is enabled only for macos / dev mode)
+ * Bounds concurrent proxy operations on every OS to avoid Logseq API overload (#58, #348).
  * */
 
-const isMacOs = platform.os?.family?.includes("Mac") || platform.os?.family?.includes("OS X");
-const getLogseqLock =
-    isMacOs || process.env.NODE_ENV !== "production"
-        ? new AwaitLock()
-        : {acquireAsync: async (): Promise<void> => {}, release: async (): Promise<void> => {}};
+const getLogseqLock = new Semaphore(16);
 
 export namespace LogseqProxy {
     export class Editor {
@@ -44,7 +39,7 @@ export namespace LogseqProxy {
             ): Promise<BlockEntity | null> => {
                 srcBlock = typeof srcBlock === "string" ? srcBlock.toLowerCase() : srcBlock; // Convert to lowercase to avoid case sensitivity issues
                 let block = null;
-                await getLogseqLock.acquireAsync();
+                await getLogseqLock.acquire();
                 try {
                     block = await LogseqPropertiesHelperProxy.getBlock(srcBlock, opts);
                 } catch (e) {
@@ -65,7 +60,7 @@ export namespace LogseqProxy {
             ): Promise<PageEntity | null> => {
                 srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
                 let page = null;
-                await getLogseqLock.acquireAsync();
+                await getLogseqLock.acquire();
                 try {
                     // Use helper method to fetch page with properties
                     page = await LogseqPropertiesHelperProxy.getPage(srcPage);
@@ -87,7 +82,7 @@ export namespace LogseqProxy {
             ): Promise<BlockEntity[]> => {
                 srcPage = typeof srcPage === "string" ? srcPage.toLowerCase() : srcPage; // Convert to lowercase to avoid case sensitivity issues
                 let pageBlockTree = [];
-                await getLogseqLock.acquireAsync();
+                await getLogseqLock.acquire();
                 try {
                     pageBlockTree = await LogseqPropertiesHelperProxy.getPageBlocksTree(srcPage);
                 } catch (e) {
@@ -171,7 +166,7 @@ export namespace LogseqProxy {
             value: any,
             opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
         ) {
-            await getLogseqLock.acquireAsync();
+            await getLogseqLock.acquire();
             try {
                 await logseq.Editor.upsertBlockProperty(block, key, value);
             } catch (e) {
@@ -183,7 +178,7 @@ export namespace LogseqProxy {
         }
 
         static async createTagSilentlyIfNotExists(tagName: string) {
-            await getLogseqLock.acquireAsync();
+            await getLogseqLock.acquire();
             try {
                 // Handle both DB ver and File ver
                 // In File ver, tags are same as pages
@@ -207,7 +202,7 @@ export namespace LogseqProxy {
         }
 
         static async registerProperty(key: string, schema?: Partial<PropertySchema>) {
-            await getLogseqLock.acquireAsync();
+            await getLogseqLock.acquire();
             try {
                 const isDb = await LogseqProxy.App.checkCurrentIsDbGraph();
                 if (!isDb) return; // upsertProperty does not work in non db version
@@ -224,8 +219,8 @@ export namespace LogseqProxy {
             query: string,
             opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
         ): Promise<T> {
-            let result;
-            await getLogseqLock.acquireAsync();
+            let result: T | undefined;
+            await getLogseqLock.acquire();
             try {
                 result = await logseq.DB.datascriptQuery(query);
             } catch (e) {
@@ -287,7 +282,7 @@ export namespace LogseqProxy {
                 }[]
             > => {
                 let files = [];
-                await getLogseqLock.acquireAsync();
+                await getLogseqLock.acquire();
                 try {
                     files = await logseq.Assets.listFilesOfCurrentGraph(exts);
                 } catch (e) {
