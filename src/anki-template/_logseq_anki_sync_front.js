@@ -14,6 +14,7 @@ const onLoadHandler = () => {
     handleImageOcclusion();
     handleShowAllTestOneTagForClozesAndHighlightAndMultilineIncrementalCards();
     handleTypeInTag();
+    window.flipToBack = flipToBack;
 };
 
 function handleImageOcclusion() {
@@ -171,6 +172,38 @@ function handleShowAllTestOneTagForClozesAndHighlightAndMultilineIncrementalCard
     });
 }
 
+function flipToBack() {
+    try {
+        // 1. Anki Desktop (Qt / WebEngine)
+        if (typeof pycmd === "function" || typeof pycmd !== "undefined") {
+            pycmd("ans");
+            return;
+        }
+        // 2. AnkiDroid (Android WebView)
+        if (typeof showAnswer === "function") {
+            showAnswer();
+            return;
+        }
+        if (typeof window.showAnswer === "function") {
+            window.showAnswer();
+            return;
+        }
+        // 3. AnkiMobile (iOS WKWebView tap simulation)
+        if (window.webkit?.messageHandlers?.cb) {
+            window.webkit.messageHandlers.cb.postMessage(
+                JSON.stringify({scheme: "ankitap", msg: "midCenter"})
+            );
+            return;
+        }
+        // 4. AnkiWeb (DOM button fallback)
+        const ankiWebBtn = document.querySelector("#ansbut, .btn.btn-primary.btn-lg");
+        if (ankiWebBtn) {
+            ankiWebBtn.click();
+            return;
+        }
+    } catch (_e) {}
+}
+
 function handleTypeInTag() {
     localStorage.setItem("logseq-prev-typeans", "");
     const typeans = document.getElementById("typeans");
@@ -182,7 +215,7 @@ function handleTypeInTag() {
     try {
         let resized = false;
         typeans.addEventListener("focusin", async (_event) => {
-            if (!AnkiDroidJS) return;
+            if (typeof AnkiDroidJS === "undefined") return;
             if (!resized) {
                 window.addEventListener("resize", () => {
                     resized = true;
@@ -207,6 +240,16 @@ function handleTypeInTag() {
     };
     typeans.onchange = onInput;
     typeans.onkeyup = onInput;
+    typeans.onkeydown = (event) => {
+        if (event.key === "Enter" || event.keyCode === 13) {
+            if (event.isComposing || event.keyCode === 229) {
+                return;
+            }
+            event.preventDefault();
+            localStorage.setItem("logseq-prev-typeans", typeans.value);
+            flipToBack();
+        }
+    };
 }
 
 if (document.readyState === "complete") {
