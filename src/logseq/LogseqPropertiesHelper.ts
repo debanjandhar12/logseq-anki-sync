@@ -94,7 +94,6 @@ export class LogseqPropertiesHelper {
                 let name = getNameFromPage(tagEntity);
                 if (!(typeof name === "string" && name.length > 0) && typeof id === "number") {
                     if (!referencedPages.has(id)) {
-                        // Raw access avoids proxy locks and recursive property normalization.
                         referencedPages.set(id, logseq.Editor.getPage(id));
                     }
                     name = getNameFromPage(await referencedPages.get(id));
