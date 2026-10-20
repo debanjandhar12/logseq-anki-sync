@@ -464,14 +464,21 @@ export class LogseqToHtmlConverter {
                     // Select the raw first line before conversion applies annotation/DB formatting.
                     const [block_content, , rawPropertiesStr] =
                         LogseqContentPreprocessor.extractProperties(
-                            block.content,
+                            block.content || "",
                             block.format || "markdown"
                         );
                     let block_content_first_line = getFirstNonEmptyLine(block_content).trim();
-                    block_content_first_line =
-                        escapeClozesAndMacroDelimiters(block_content_first_line);
-
-                    const blockRef_content = rawPropertiesStr + block_content_first_line;
+                    // Preprocess without properties so for edge case were page name contains ::.
+                    const firstLinePreprocessResult = await LogseqToHtmlConverter.preprocess(
+                        block_content_first_line,
+                        block.format || "markdown"
+                    );
+                    block_content_first_line = escapeClozesAndMacroDelimiters(
+                        firstLinePreprocessResult.content
+                    );
+                    const blockRef_content = rawPropertiesStr
+                        ? `${rawPropertiesStr.trimEnd()}\n${block_content_first_line}`
+                        : block_content_first_line;
 
                     const blockRefHTMLFile = await LogseqToHtmlConverter.convertToHTMLFile(
                         blockRef_content,
