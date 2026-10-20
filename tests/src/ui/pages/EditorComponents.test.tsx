@@ -137,7 +137,11 @@ vi.mock("fabric", () => ({
         }
     }
 }));
-vi.mock("tesseract.js", () => ({createWorker: vi.fn(), PSM: {SPARSE_TEXT: 11}}));
+vi.mock("tesseract.js", () => ({
+    createWorker: vi.fn(),
+    OEM: {LSTM_ONLY: 1},
+    PSM: {SPARSE_TEXT: 11}
+}));
 
 let root: Root;
 let container: HTMLDivElement;

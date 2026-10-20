@@ -6,7 +6,11 @@ import {SyncResultDialogComponent} from "../../../../src/ui/pages/SyncResultDial
 import * as selection from "../../../../src/ui/pages/SyncSelectionDialog";
 
 vi.mock("fabric", () => ({fabric: {}}));
-vi.mock("tesseract.js", () => ({createWorker: vi.fn(), PSM: {SPARSE_TEXT: 11}}));
+vi.mock("tesseract.js", () => ({
+    createWorker: vi.fn(),
+    OEM: {LSTM_ONLY: 1},
+    PSM: {SPARSE_TEXT: 11}
+}));
 
 test("directory entry points preserve the root UI barrel's public component identities", () => {
     expect(ui.HighlightMaskEditorComponent).toBe(HighlightMaskEditorComponent);
