@@ -6,6 +6,7 @@ import type {
     PageIdentity
 } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
+import getNameFromPage from "./getNameFromPage";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqProxy} from "./LogseqProxy";
 
@@ -26,16 +27,16 @@ export class LogseqPropertiesHelper {
     /**
      * Handles the tags property by merging user-defined tag properties with block / page tags.
      */
-    public static handleTagProperty(
+    public static async handleTagProperty(
         entity: BlockEntity | PageEntity,
         properties: Record<string, any>
-    ): Record<string, any> {
+    ): Promise<Record<string, any>> {
         if (!properties) return properties;
 
         const blockTags = properties[":block/tags"] || [];
         const propertyTags = properties.tags || [];
 
-        let mergedTags: string[] = [];
+        let mergedTags: unknown[] = [];
 
         // Process user-defined tags (comma-separated string or array)
         if (propertyTags) {
@@ -57,7 +58,7 @@ export class LogseqPropertiesHelper {
         // Return properties with merged tags (remove :block/tags key)
         const result = {...properties};
         delete result[":block/tags"];
-        result.tags = mergedTags;
+        result.tags = await LogseqPropertiesHelper.resolveTagReturnValue(mergedTags);
 
         // Populate tag ids - tag ids currently contain only block tags
         // Due to complexity, property tags are not added currently to tagIds
@@ -75,6 +76,38 @@ export class LogseqPropertiesHelper {
         }
 
         return result;
+    }
+
+    /**
+     * Logseq can return tags as string or object or simple db entity number.
+     * This unifies handling of tags and returns them as string array.
+     */
+    private static async resolveTagReturnValue(tags: unknown[]): Promise<string[]> {
+        const referencedPages = new Map<number, Promise<PageEntity | null>>();
+
+        return Promise.all(
+            tags.map(async (tag, index) => {
+                if (typeof tag === "string") return tag;
+
+                const tagEntity = typeof tag === "object" ? (tag as PageEntity) : null;
+                const id = typeof tag === "number" ? tag : tagEntity?.id;
+                let name = getNameFromPage(tagEntity);
+                if (!(typeof name === "string" && name.length > 0) && typeof id === "number") {
+                    if (!referencedPages.has(id)) {
+                        // Raw access avoids proxy locks and recursive property normalization.
+                        referencedPages.set(id, logseq.Editor.getPage(id));
+                    }
+                    name = getNameFromPage(await referencedPages.get(id));
+                }
+
+                if (typeof name === "string" && name.length > 0) return name;
+
+                throw new Error(
+                    `LogseqPropertiesHelper failed to resolve tag at index ${index}` +
+                        (typeof id === "number" ? ` (entity ID ${id})` : "")
+                );
+            })
+        );
     }
 
     /**
@@ -138,7 +171,7 @@ export class LogseqPropertiesHelper {
 
                 const tagProperties = await logseq.Editor.getPageProperties(tagId);
                 if (tagProperties) {
-                    const strippedTagProperties = LogseqPropertiesHelper.handleTagProperty(
+                    const strippedTagProperties = await LogseqPropertiesHelper.handleTagProperty(
                         entity,
                         LogseqPropertiesHelper.addStripedPropertyPrefixes(tagProperties)
                     );
@@ -173,19 +206,10 @@ export class LogseqPropertiesHelper {
 
         const properties = await logseq.Editor.getBlockProperties(b.uuid);
         if (properties) {
-            b.properties = {
-                ...LogseqPropertiesHelper.handleTagProperty(
-                    b,
-                    LogseqPropertiesHelper.addStripedPropertyPrefixes(properties)
-                ),
+            b.properties = await LogseqPropertiesHelper.handleTagProperty(b, {
+                ...LogseqPropertiesHelper.addStripedPropertyPrefixes(properties),
                 ...b.properties
-            };
-            if (b.properties["tags"] && typeof b.properties["tags"] === "string") {
-                b.properties["tags"] = b.properties["tags"]
-                    .split(",")
-                    .map((t: string) => t.trim())
-                    .filter((t: string) => t);
-            }
+            });
             if (!b.properties.uuid) b.properties.uuid = b.uuid;
         }
 
@@ -230,11 +254,10 @@ export class LogseqPropertiesHelper {
         if (isDbGraph) {
             const properties = await logseq.Editor.getPageProperties(page.id);
             if (properties) {
-                const strippedProperties = LogseqPropertiesHelper.handleTagProperty(
-                    page,
-                    LogseqPropertiesHelper.addStripedPropertyPrefixes(properties)
-                );
-                page.properties = {...strippedProperties, ...page.properties};
+                page.properties = await LogseqPropertiesHelper.handleTagProperty(page, {
+                    ...LogseqPropertiesHelper.addStripedPropertyPrefixes(properties),
+                    ...page.properties
+                });
             }
         }
 
