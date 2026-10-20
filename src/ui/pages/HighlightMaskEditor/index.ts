@@ -1,0 +1,1 @@
+export {HighlightMaskEditorComponent} from "./HighlightMaskEditor";

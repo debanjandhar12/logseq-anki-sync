@@ -1,0 +1,1 @@
+export {SyncResultDialogComponent} from "./SyncResultDialog";
