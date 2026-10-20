@@ -131,7 +131,7 @@ describe("LogseqPropertiesHelper.handleTagProperty", () => {
         } as unknown as BlockEntity;
     };
 
-    it("should merge tags from user properties and block tags", () => {
+    it("should merge tags from user properties and block tags", async () => {
         const entity = createMockEntity([
             {id: 1, name: "Card"},
             {id: 2, name: "Test"}
@@ -141,14 +141,14 @@ describe("LogseqPropertiesHelper.handleTagProperty", () => {
             tags: "a,b"
         };
 
-        const result = LogseqPropertiesHelper.handleTagProperty(entity, input);
+        const result = await LogseqPropertiesHelper.handleTagProperty(entity, input);
 
         expect(result.tags).toEqual(["a", "b", "Card", "Test"]);
         expect(result[":block/tags"]).toBeUndefined();
         expect(result.tagIds).toEqual([1, 2]);
     });
 
-    it("should handle block tags only", () => {
+    it("should handle block tags only", async () => {
         const entity = createMockEntity([
             {id: 1, name: "Card"},
             {id: 2, name: "Test"}
@@ -157,65 +157,65 @@ describe("LogseqPropertiesHelper.handleTagProperty", () => {
             ":block/tags": ["Card", "Test"]
         };
 
-        const result = LogseqPropertiesHelper.handleTagProperty(entity, input);
+        const result = await LogseqPropertiesHelper.handleTagProperty(entity, input);
 
         expect(result.tags).toEqual(["Card", "Test"]);
         expect(result[":block/tags"]).toBeUndefined();
         expect(result.tagIds).toEqual([1, 2]);
     });
 
-    it("should handle user tags only (string)", () => {
+    it("should handle user tags only (string)", async () => {
         const entity = createMockEntity(); // No entity tags
         const input = {
             tags: "a,b,c"
         };
 
-        const result = LogseqPropertiesHelper.handleTagProperty(entity, input);
+        const result = await LogseqPropertiesHelper.handleTagProperty(entity, input);
 
         expect(result.tags).toEqual(["a", "b", "c"]);
         expect(result.tagIds).toEqual([]);
     });
 
-    it("should handle user tags only (array)", () => {
+    it("should handle user tags only (array)", async () => {
         const entity = createMockEntity(); // No entity tags
         const input = {
             tags: ["a", "b", "c"]
         };
 
-        const result = LogseqPropertiesHelper.handleTagProperty(entity, input);
+        const result = await LogseqPropertiesHelper.handleTagProperty(entity, input);
 
         expect(result.tags).toEqual(["a", "b", "c"]);
         expect(result.tagIds).toEqual([]);
     });
 
-    it("should return null for null input", () => {
+    it("should return null for null input", async () => {
         const entity = createMockEntity();
-        const result = LogseqPropertiesHelper.handleTagProperty(entity, null as any);
+        const result = await LogseqPropertiesHelper.handleTagProperty(entity, null as any);
         expect(result).toBeNull();
     });
 
-    it("should handle empty block tags array with user tags", () => {
+    it("should handle empty block tags array with user tags", async () => {
         const entity = createMockEntity(); // No entity tags
         const input = {
             ":block/tags": [],
             tags: "a,b"
         };
 
-        const result = LogseqPropertiesHelper.handleTagProperty(entity, input);
+        const result = await LogseqPropertiesHelper.handleTagProperty(entity, input);
 
         expect(result.tags).toEqual(["a", "b"]);
         expect(result[":block/tags"]).toBeUndefined();
         expect(result.tagIds).toEqual([]);
     });
 
-    it("should handle entity without tags property but with block tags in properties", () => {
+    it("should handle entity without tags property but with block tags in properties", async () => {
         const entity = {uuid: "test-uuid"} as unknown as BlockEntity;
         const input = {
             ":block/tags": ["Card"],
             tags: "a,b"
         };
 
-        const result = LogseqPropertiesHelper.handleTagProperty(entity, input);
+        const result = await LogseqPropertiesHelper.handleTagProperty(entity, input);
 
         expect(result.tags).toEqual(["a", "b", "Card"]);
         expect(result.tagIds).toEqual([]);
@@ -230,7 +230,7 @@ describe("LogseqPropertiesHelper.addStripedPropertyPrefixes + handleTagProperty 
         } as unknown as BlockEntity;
     };
 
-    it("should add stripped prefixes first, then handle tags", () => {
+    it("should add stripped prefixes first, then handle tags", async () => {
         const entity = createMockEntity([
             {id: 1, name: "Card"},
             {id: 2, name: "Test"}
@@ -242,14 +242,14 @@ describe("LogseqPropertiesHelper.addStripedPropertyPrefixes + handleTagProperty 
 
         const stripped = LogseqPropertiesHelper.addStripedPropertyPrefixes(rawProperties);
         // handleTagProperty then merges :block/tags with tags
-        const result = LogseqPropertiesHelper.handleTagProperty(entity, stripped);
+        const result = await LogseqPropertiesHelper.handleTagProperty(entity, stripped);
 
         expect(result.tags).toEqual(["a", "b", "Card", "Test"]);
         expect(result[":block/tags"]).toBeUndefined();
         expect(result.tagIds).toEqual([1, 2]);
     });
 
-    it("should handle full property object", () => {
+    it("should handle full property object", async () => {
         const entity = createMockEntity([
             {id: 1, name: "Card"},
             {id: 2, name: "Test"}
@@ -263,7 +263,7 @@ describe("LogseqPropertiesHelper.addStripedPropertyPrefixes + handleTagProperty 
         };
 
         const stripped = LogseqPropertiesHelper.addStripedPropertyPrefixes(rawProperties);
-        const result = LogseqPropertiesHelper.handleTagProperty(entity, stripped);
+        const result = await LogseqPropertiesHelper.handleTagProperty(entity, stripped);
 
         expect(result["hnsw-label-updated-at"]).toBe(0);
         expect(result.tags).toEqual(["a", "b", "Card", "Test"]);
