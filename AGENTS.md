@@ -69,7 +69,7 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
 - **HTML Conversion:** Use `LogseqToHtmlConverterProxy` for sync operations (cached), `LogseqToHtmlConverter` for UI operations (non-cached). Same pattern applies to `LogseqContentPreprocessorProxy` vs `LogseqContentPreprocessor`. Proxy classes extend base classes, override protected methods to use LogseqProxy, and add pMemoize caching that clears on 'syncLogseqToAnkiComplete' event
 - **Parent Window Access:** Always use WindowParentBridge instead of direct `window.parent` access for iframe communication. WindowParentBridge provides type-safe, testable access to parent window objects (Logseq API, AnkiConnect, Fabric.js, DOM elements, etc.)
 - **Settings Access:** Use `LogseqProxy.Settings.getPluginSettings()` instead of `logseq.settings`
-- **React Imports:** Import React/ReactDOM from `ui/React.ts` and `ui/ReactDOM.ts`, not directly from npm packages
+- **React Imports:** Import from `react`, `react-dom`, or `react-dom/client`. `vite-plugins/logseqReactBridgePlugin` unifies these imports with the automatic JSX runtime; do not add application-level React wrappers.
 - **Anki Operations:** Use LazyAnkiNoteManager instead of direct AnkiConnect calls during sync.
 - **UI Development:** Follow existing modal/page patterns from `src/ui/` directory
 - **Build & Dev:** Use `pnpm dev` for hot reload development, `pnpm build` for production (pnpm is enforced via preinstall)

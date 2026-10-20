@@ -2,13 +2,12 @@
 This provides UI framework for the plugin.
 
 ## Styling & Theming
-- Import colors from Logseq via tailwind.config.js and UI.ts (e.g., `bg-primary`)
+- Import colors from Logseq via theme/tailwind.config.mjs and UI.ts (e.g., `bg-primary`)
 - For custom colors not in theme, use Tailwind directly (e.g., `bg-green-600`) - no config changes needed
 - Imported colors from logseq are automatically updated when logseq theme changes (`UI.ts`).
 
 ## React Import
-- Always import React from `./React.ts` and ReactDOM from `./ReactDOM.ts`.
-- Never import directly from 'react' or 'react-dom' packages.
+- Import from `react`, `react-dom`, or `react-dom/client`. The Vite React bridge unifies all instances, including third-party imports and the automatic JSX runtime.
 
 ## UI Mounting System
 - Modals are mounted to isolated iframe via UI.showModal() - with proper z-index stacking.

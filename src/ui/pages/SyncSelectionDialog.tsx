@@ -1,4 +1,5 @@
 import _ from "lodash";
+import React, {useCallback, useEffect, useState} from "react";
 import {ANKI_ICON} from "../../constants";
 import {LogseqContentPreprocessor} from "../../logseq/LogseqContentPreprocessor";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
@@ -10,7 +11,6 @@ import {LogseqCheckbox} from "../components/LogseqCheckbox";
 import {LogseqDropdownMenu} from "../components/LogseqDropdownMenu";
 import {LogseqPopover} from "../components/LogseqPopover";
 import {LogseqTooltip} from "../components/LogseqTooltip";
-import React, {useCallback, useEffect, useState} from "../React";
 import {UI} from "../UI";
 
 export const SyncSelectionDialogComponent: React.FC<{

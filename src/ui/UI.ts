@@ -1,9 +1,9 @@
 import "./styles/main.css";
 
+import {createRoot, type Root} from "react-dom/client";
 import {createLogger, LoggerCategory} from "../logger";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {WindowBridge} from "../logseq/WindowBridge";
-import {createRoot, type Root} from "./ReactDOM";
 
 const logger = createLogger(LoggerCategory.UI);
 
@@ -94,7 +94,7 @@ export class UI {
     }
 
     private static async loadThemeVariables() {
-        // Core theme variables used by Tailwind (see tailwind.config.js)
+        // Core theme variables used by Tailwind (see theme/tailwind.config.mjs)
         const props = [
             // Background colors
             "--ls-primary-background-color",

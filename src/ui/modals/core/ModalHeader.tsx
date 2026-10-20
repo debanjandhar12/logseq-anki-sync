@@ -1,4 +1,4 @@
-import React from "../../React";
+import type React from "react";
 
 export interface ModalHeaderProps {
     title: string;

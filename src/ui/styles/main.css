@@ -1,6 +1,20 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../theme/tailwind.config.mjs";
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--ls-border-color, #e5e7eb);
+    }
+
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+}
 
 /* Theme variables will be set dynamically by UI.loadThemeVariables() */
 /* No defaults needed - Logseq provides all theme variables */

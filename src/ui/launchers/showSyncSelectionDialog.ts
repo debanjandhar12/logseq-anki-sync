@@ -1,6 +1,6 @@
+import React from "react";
 import {createModalPromise} from "../modals/utils/createModalPromise";
 import {SyncSelectionDialogComponent} from "../pages/SyncSelectionDialog";
-import React from "../React";
 
 export async function showSyncSelectionDialog(
     toCreateNotes: Array<any>,

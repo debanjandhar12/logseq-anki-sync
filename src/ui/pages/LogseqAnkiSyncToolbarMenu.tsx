@@ -4,12 +4,12 @@ import LOGS_ICON from "@tabler/icons/outline/logs.svg?raw";
 import PLAYER_PLAY_ICON from "@tabler/icons/outline/player-play.svg?raw";
 import SETTINGS_ICON from "@tabler/icons/outline/settings.svg?raw";
 import FocusTrap from "focus-trap-react";
+import type {FC} from "react";
+// biome-ignore lint/style/useImportType: required for re-exported react
+import React, {useEffect, useState} from "react";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import {LogseqToAnkiSync} from "../../sync/syncLogseqToAnki";
 import {showSyncResultDialog} from "../launchers/showSyncResultDialog";
-import type {FC} from "../React";
-// biome-ignore lint/style/useImportType: required for re-exported react
-import React, {useEffect, useState} from "../React";
 import {UI} from "../UI";
 
 const focusTrapOptions = {
@@ -131,7 +131,7 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
             <div
                 role="menuitem"
                 tabIndex={item.disabled ? -1 : 0}
-                className={`ui__dropdown-menu-item relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors ${item.disabled ? "pointer-events-none opacity-50" : ""}`}
+                className={`ui__dropdown-menu-item relative flex cursor-default select-none items-center rounded-xs px-2 py-1.5 text-sm outline-hidden transition-colors ${item.disabled ? "pointer-events-none opacity-50" : ""}`}
                 style={{
                     backgroundColor: isSelected
                         ? "var(--ls-quaternary-background-color, #ddd)"

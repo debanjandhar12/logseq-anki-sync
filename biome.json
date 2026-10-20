@@ -17,6 +17,11 @@
             "quoteProperties": "asNeeded"
         }
     },
+    "css": {
+        "parser": {
+            "tailwindDirectives": true
+        }
+    },
     "linter": {
         "enabled": true,
         "rules": {
@@ -48,6 +53,7 @@
         "includes": [
             "src/**",
             "tests/**",
+            "vite-plugins/**",
             "*.ts",
             "*.tsx",
             "*.js",

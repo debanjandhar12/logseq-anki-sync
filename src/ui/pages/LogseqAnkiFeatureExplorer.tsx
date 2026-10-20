@@ -1,4 +1,6 @@
 import _ from "lodash";
+// biome-ignore lint/style/useImportType: required for re-exported react
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import {ImageOcclusionNote} from "../../anki-notes/ImageOcclusionNote";
 import {createLogger, LoggerCategory} from "../../logger";
 import {BlockContentParser} from "../../logseq/BlockContentParser";
@@ -8,8 +10,6 @@ import {LogseqPropertiesHelper} from "../../logseq/LogseqPropertiesHelper";
 import {getFirstNonEmptyLine, getLogseqBlockPropSafe} from "../../utils/utils";
 import {Modal, useModal} from "../";
 import {LogseqButton} from "../components/LogseqButton";
-// biome-ignore lint/style/useImportType: required for re-exported react
-import React, {useCallback, useEffect, useRef, useState} from "../React";
 import {UI} from "../UI";
 
 const logger = createLogger(LoggerCategory.Others);

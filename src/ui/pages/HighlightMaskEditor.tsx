@@ -3,6 +3,7 @@ import {Plugin, PluginKey} from "@tiptap/pm/state";
 import {Decoration, DecorationSet} from "@tiptap/pm/view";
 import StarterKit from "@tiptap/starter-kit";
 import _ from "lodash";
+import React from "react";
 import HINT_ICON from "../../../node_modules/@tabler/icons/icons/outline/bulb.svg?raw";
 import ADD_HIGHLIGHT_ICON from "../../../node_modules/@tabler/icons/icons/outline/plus.svg?raw";
 import SETTINGS_ICON from "../../../node_modules/@tabler/icons/icons/outline/settings.svg?raw";
@@ -34,7 +35,6 @@ import type {
     HighlightMaskData,
     HighlightMaskElement
 } from "../launchers/showHighlightMaskEditor";
-import React from "../React";
 import {UI} from "../UI";
 
 const logger = createLogger(LoggerCategory.UI);
@@ -116,7 +116,7 @@ export const HighlightMaskEditorComponent: React.FC<{
             editable: true,
             editorProps: {
                 attributes: {
-                    class: "prose prose-sm max-w-none focus:outline-none p-4 font-mono whitespace-pre-wrap"
+                    class: "prose prose-sm max-w-none focus:outline-hidden p-4 font-mono whitespace-pre-wrap"
                 }
             },
             onTransaction: ({editor}) => {

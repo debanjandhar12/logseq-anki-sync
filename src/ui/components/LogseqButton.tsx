@@ -1,6 +1,6 @@
-import type {FC} from "../React";
+import type {FC} from "react";
 // biome-ignore lint/style/useImportType: required for re-exported react
-import React from "../React";
+import React from "react";
 
 type LogseqButtonProps = {
     children?: React.ReactNode;
@@ -34,7 +34,7 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
     title
 }) => {
     let classNameString =
-        "ui__button transition-colors transition-opacity inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
+        "ui__button transition-colors transition-opacity inline-flex items-center justify-center whitespace-nowrap text-sm gap-1 font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none";
 
     // Color variants using Tailwind color aliases
     if (color === "primary" || color === "default") {
@@ -69,7 +69,7 @@ export const LogseqButton: FC<LogseqButtonProps> = ({
     }
 
     return (
-        <div style={{margin: "0.25rem"}} className={"flex rounded-md shadow-sm sm:ml-3 sm:w-auto"}>
+        <div style={{margin: "0.25rem"}} className={"flex rounded-md shadow-xs sm:ml-3 sm:w-auto"}>
             <button disabled={disabled} className={classNameString} title={title} onClick={onClick}>
                 {icon && (
                     <span className="ui__icon ti" dangerouslySetInnerHTML={{__html: icon}}></span>

@@ -1,5 +1,5 @@
 import FocusTrap from "focus-trap-react";
-import React, {type PropsWithChildren} from "../../React";
+import React, {type PropsWithChildren} from "react";
 import {UI} from "../../UI";
 
 const focusTrapOptions = {

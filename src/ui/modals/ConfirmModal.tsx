@@ -1,5 +1,5 @@
 // biome-ignore lint/style/useImportType: required for re-exported react
-import React from "../React";
+import React from "react";
 import {UI} from "../UI";
 import {Modal} from "./core/Modal";
 import {ModalFooter} from "./core/ModalFooter";

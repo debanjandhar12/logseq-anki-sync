@@ -1,6 +1,6 @@
+import React from "react";
 import {createModalPromise} from "../modals/utils/createModalPromise";
 import {HighlightMaskEditorComponent} from "../pages/HighlightMaskEditor";
-import React from "../React";
 
 export type HighlightMaskElement = {
     cId: number;

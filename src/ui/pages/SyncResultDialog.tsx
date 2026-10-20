@@ -1,9 +1,9 @@
 import _ from "lodash";
+import React, {useState} from "react";
 import {ANKI_ICON} from "../../constants";
 import {createLogger, LoggerCategory} from "../../logger";
 import type {SyncResult} from "../../sync/types";
 import {Modal, ModalHeader, useModal} from "../";
-import React, {useState} from "../React";
 import {UI} from "../UI";
 import {CreateLineDisplay, UpdateLineDisplay} from "./SyncSelectionDialog";
 

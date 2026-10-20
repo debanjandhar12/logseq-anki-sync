@@ -1,6 +1,6 @@
+import React from "react";
 import {createModalPromise} from "../modals/utils/createModalPromise";
 import {OcclusionEditorComponent} from "../pages/OcclusionEditor";
-import React from "../React";
 
 export type OcclusionElement = {
     left: number;

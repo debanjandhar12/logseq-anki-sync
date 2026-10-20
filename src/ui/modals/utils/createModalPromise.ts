@@ -1,5 +1,5 @@
+import type React from "react";
 import {createLogger, LoggerCategory} from "../../../logger";
-import type React from "../../React";
 import {UI} from "../../UI";
 
 const logger = createLogger(LoggerCategory.UI);

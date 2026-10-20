@@ -1,5 +1,5 @@
+import type React from "react";
 import {LogseqButton} from "../../components/LogseqButton";
-import React from "../../React";
 
 export interface ModalFooterProps {
     onConfirm?: () => void;
