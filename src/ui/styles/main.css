@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @config "../theme/tailwind.config.mjs";
 
 @layer base {
@@ -7,7 +8,7 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--ls-border-color, #e5e7eb);
+        border-color: var(--ls-border-color, hsl(var(--border, 214.3 31.8% 91.4%)));
     }
 
     button:not(:disabled),
@@ -16,17 +17,24 @@
     }
 }
 
-/* Theme variables will be set dynamically by UI.loadThemeVariables() */
-/* No defaults needed - Logseq provides all theme variables */
+/* Theme variables will be set dynamically by ThemeManager.applyThemeToBody() */
+/* CSS fallbacks support themes that do not provide every variable. */
 
 body {
     padding: 0;
     margin: 0;
     box-sizing: border-box;
-    font-family: sans-serif;
+    font-family: var(--ls-font-family, Inter), sans-serif;
     color: var(--ls-primary-text-color, #333);
     background-color: transparent;
     overflow: hidden;
+}
+
+code,
+kbd,
+pre,
+samp {
+    font-family: MonoLisa, monospace;
 }
 
 #app {
@@ -95,19 +103,15 @@ body {
 }
 
 /* Shortcut key styles for selection modal */
-.reveal .ui__button-shortcut-key,
 .ui__button-shortcut-key {
     align-items: center;
-    justify-content: center;
-}
-
-.ui__button-shortcut-key {
     background-color: var(--lx-gray-06-alpha, var(--rx-gray-06-alpha, rgba(128, 128, 128, 0.15)));
     border-radius: 0.25rem;
     display: inline-flex;
     font-size: 0.75rem;
     font-weight: 400;
     height: 1.25rem;
+    justify-content: center;
     line-height: 1rem;
     width: 1.25rem;
     color: inherit;

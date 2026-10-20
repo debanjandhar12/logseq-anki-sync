@@ -7,11 +7,29 @@ type LogseqSelectProps = {
     title?: string;
     size?: "sm" | "md" | "lg";
     width?: string;
+    disabled?: boolean;
+    invalid?: boolean;
+    errorField?: string;
+    id?: string;
 };
 
 export const LogseqSelect = React.forwardRef<HTMLSelectElement, LogseqSelectProps>(
-    ({value, onChange, options, title, size = "md", width = "auto"}, ref) => {
-        let height = "auto";
+    (
+        {
+            value,
+            onChange,
+            options,
+            title,
+            size = "md",
+            width = "auto",
+            disabled = false,
+            invalid = false,
+            errorField,
+            id
+        },
+        ref
+    ) => {
+        let height = "2.25rem";
         let fontSize = "0.875rem";
         let padding = "0.375rem 0.75rem";
 
@@ -42,8 +60,12 @@ export const LogseqSelect = React.forwardRef<HTMLSelectElement, LogseqSelectProp
                     </span>
                 )}
                 <select
+                    id={id}
                     ref={ref}
                     value={value}
+                    disabled={disabled}
+                    aria-invalid={invalid || undefined}
+                    data-error-field={errorField}
                     onChange={(e) => onChange(e.target.value)}
                     className={"focus-visible:ring-2"}
                     style={{
@@ -55,23 +77,26 @@ export const LogseqSelect = React.forwardRef<HTMLSelectElement, LogseqSelectProp
                         backgroundColor:
                             "var(--lx-gray-03, var(--ls-primary-background-color, transparent))",
                         backgroundRepeat: "no-repeat",
-                        borderColor:
-                            "var(--lx-gray-06, var(--ls-quaternary-background-color, var(--rx-gray-06)))",
+                        borderColor: invalid
+                            ? "var(--ls-error-color, #ef4444)"
+                            : "var(--lx-gray-06, var(--ls-quaternary-background-color, var(--rx-gray-06)))",
                         borderRadius: "0.25rem",
                         borderWidth: "1px",
                         borderStyle: "solid",
                         color: "var(--ls-primary-text-color, inherit)",
                         fontSize,
                         padding,
-                        cursor: "pointer",
+                        cursor: disabled ? "not-allowed" : "pointer",
+                        opacity: disabled ? 0.6 : 1,
                         outline: "none"
                     }}
                     onFocus={(e) => {
                         e.target.style.borderColor = "var(--primary, #000)";
                     }}
                     onBlur={(e) => {
-                        e.target.style.borderColor =
-                            "var(--lx-gray-06, var(--ls-quaternary-background-color, var(--rx-gray-06)))";
+                        e.target.style.borderColor = invalid
+                            ? "var(--ls-error-color, #ef4444)"
+                            : "var(--lx-gray-06, var(--ls-quaternary-background-color, var(--rx-gray-06)))";
                     }}>
                     {options.map((opt) => (
                         <option key={opt.value} value={opt.value}>

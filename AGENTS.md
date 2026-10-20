@@ -19,7 +19,7 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
 
 - **Language:** TypeScript
 - **Build:** Vite with custom plugins for static file inlining and JS bundling
-- **UI Framework:** React 17 with focus-trap-react
+- **UI Framework:** React 19 with focus-trap-react
 - **Testing:** Vitest with jsdom environment
 - **Key Libraries:** @logseq/libs, mldoc (logseq markdown parsing), cheerio (HTML manipulation)
 

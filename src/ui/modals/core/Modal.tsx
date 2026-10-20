@@ -1,18 +1,13 @@
 import FocusTrap from "focus-trap-react";
 import React, {type PropsWithChildren} from "react";
 import {UI} from "../../UI";
+import {ModalTitleContext} from "./ModalTitleContext";
 
-const focusTrapOptions = {
-    tabbableOptions: {
-        displayCheck: "none" as const
-    }
-};
-
-interface ModalProps {
+interface ModalProps extends Pick<React.AriaAttributes, "aria-label" | "aria-labelledby"> {
     open: boolean;
     setOpen: React.Dispatch<React.SetStateAction<boolean>>;
     onClose?: () => void;
-    size?: "default" | "large";
+    size?: "default" | "large" | "commandPalette";
     zDepth?: "high" | "default";
     hasCloseButton?: boolean;
     className?: string;
@@ -26,8 +21,11 @@ export function Modal({
     onClose,
     children,
     hasCloseButton = true,
-    className = ""
+    className = "",
+    "aria-label": ariaLabel,
+    "aria-labelledby": ariaLabelledBy
 }: PropsWithChildren<ModalProps>) {
+    const titleId = React.useId();
     // Handle close - calls setOpen(false), onClose callback, and UI.hideModal()
     const handleClose = React.useCallback(() => {
         setOpen(false);
@@ -40,14 +38,28 @@ export function Modal({
     let style = {};
     if (size === "large") {
         style = {...style, width: "90vw"};
+    } else {
+        style = {...style, width: "60vw"};
     }
-
-    if (!open) return null;
 
     // Calculate z-index based on modal depth (number of modals currently open)
     const modalDepth = UI.getModalCount();
     const baseZIndex = zDepth === "high" ? 9999 : 1000;
     const calculatedZIndex = baseZIndex + modalDepth * 10;
+
+    // Focus trap configs
+    const panelRef = React.useRef<HTMLDivElement>(null);
+    const focusTrapOptions = React.useMemo(
+        () => ({
+            fallbackFocus: () => panelRef.current ?? document.body,
+            tabbableOptions: {
+                displayCheck: "none" as const
+            }
+        }),
+        []
+    );
+
+    if (!open) return null;
 
     return (
         <FocusTrap focusTrapOptions={focusTrapOptions}>
@@ -55,12 +67,18 @@ export function Modal({
                 className="fixed inset-0 flex items-center justify-center p-4"
                 style={{zIndex: calculatedZIndex}}>
                 {/* Overlay */}
-                <div className="fixed inset-0 bg-black/50" />
+                <div className="fixed inset-0 bg-black/50 animate-in fade-in-0 motion-reduce:animate-none" />
 
                 {/* Modal Panel */}
                 <div
-                    className="relative bg-secondary-background border border-border rounded-md shadow-lg z-10"
-                    style={size === "large" ? {width: "90vw"} : {width: "60vw"}}>
+                    ref={panelRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={ariaLabel}
+                    aria-labelledby={ariaLabelledBy ?? (ariaLabel ? undefined : titleId)}
+                    tabIndex={-1}
+                    className="relative bg-secondary-background border border-border rounded-md shadow-lg z-10 animate-in fade-in-0 zoom-in-95 duration-160 ease-[ease-out] motion-reduce:animate-none"
+                    style={style}>
                     {hasCloseButton && (
                         <div className="absolute top-0 right-0 pt-2 pr-2">
                             <button
@@ -69,6 +87,7 @@ export function Modal({
                                 className="text-gray-400 hover:text-gray-600 opacity-60 hover:opacity-100 transition-opacity cursor-pointer bg-transparent border-none"
                                 onClick={handleClose}>
                                 <svg
+                                    aria-hidden="true"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
                                     fill="none"
@@ -82,7 +101,12 @@ export function Modal({
                             </button>
                         </div>
                     )}
-                    <div className={`max-h-[80vh] ${className}`}>{children}</div>
+                    <div
+                        className={`${size === "large" ? "max-h-[90vh]" : "max-h-[75vh]"} ${className}`}>
+                        <ModalTitleContext.Provider value={titleId}>
+                            {children}
+                        </ModalTitleContext.Provider>
+                    </div>
                 </div>
             </div>
         </FocusTrap>

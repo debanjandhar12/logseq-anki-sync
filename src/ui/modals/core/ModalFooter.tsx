@@ -7,11 +7,22 @@ export interface ModalFooterProps {
     confirmText?: string;
     cancelText?: string;
     confirmColor?: "primary" | "outline-link";
+    cancelColor?:
+        | "primary"
+        | "default"
+        | "secondary"
+        | "success"
+        | "failed"
+        | "ghost"
+        | "link"
+        | "outline-link";
     showConfirm?: boolean;
     showCancel?: boolean;
     confirmShortcut?: string;
     children?: React.ReactNode;
     className?: string;
+    confirmDisabled?: boolean;
+    cancelDisabled?: boolean;
 }
 
 export const ModalFooter: React.FC<ModalFooterProps> = ({
@@ -20,17 +31,24 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
     confirmText = "Confirm",
     cancelText = "Cancel",
     confirmColor = "primary",
+    cancelColor = "outline-link",
     showConfirm = true,
     showCancel = true,
     confirmShortcut = "⏎",
     children,
-    className = ""
+    className = "",
+    confirmDisabled = false,
+    cancelDisabled = false
 }) => {
     return (
         <div className={`mt-5 sm:mt-4 sm:flex sm:flex-row-reverse ${className}`}>
             {children}
             {showConfirm && onConfirm && (
-                <LogseqButton isFullWidth={true} onClick={onConfirm} color={confirmColor}>
+                <LogseqButton
+                    isFullWidth={true}
+                    onClick={onConfirm}
+                    color={confirmColor}
+                    disabled={confirmDisabled}>
                     <span
                         style={{
                             display: "flex",
@@ -47,7 +65,11 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
                 </LogseqButton>
             )}
             {showCancel && onCancel && (
-                <LogseqButton color={"outline-link"} isFullWidth={true} onClick={onCancel}>
+                <LogseqButton
+                    color={cancelColor}
+                    isFullWidth={true}
+                    onClick={onCancel}
+                    disabled={cancelDisabled}>
                     {cancelText}
                 </LogseqButton>
             )}

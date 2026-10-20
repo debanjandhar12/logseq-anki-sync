@@ -60,7 +60,7 @@ export default defineConfig(({mode}) => {
             format: "es"
         },
         test: {
-            include: ["**/*.test.ts"],
+            include: ["**/*.test.{ts,tsx}"],
             exclude: ["**/logseq-dev-plugin/**", "**/node_modules/**"],
             setupFiles: ["./tests/setup.ts"],
             environment: "jsdom",

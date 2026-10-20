@@ -94,6 +94,7 @@ export const SelectionModalComponent: React.FC<SelectionModalProps> = ({
 
     return (
         <Modal
+            aria-label={message || "Select an option"}
             open={open}
             setOpen={setOpen}
             onClose={() => UI.hideModal(modalContext?.modalId)}

@@ -5,8 +5,7 @@ import PLAYER_PLAY_ICON from "@tabler/icons/outline/player-play.svg?raw";
 import SETTINGS_ICON from "@tabler/icons/outline/settings.svg?raw";
 import FocusTrap from "focus-trap-react";
 import type {FC} from "react";
-// biome-ignore lint/style/useImportType: required for re-exported react
-import React, {useEffect, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import {LogseqToAnkiSync} from "../../sync/syncLogseqToAnki";
 import {showSyncResultDialog} from "../launchers/showSyncResultDialog";
@@ -24,6 +23,23 @@ interface ToolbarMenuModalProps {
     modalId: string;
 }
 
+type SelectableToolbarMenuItem = {
+    key: string;
+    icon: string;
+    text: string;
+    disabled: boolean;
+    color?: string;
+    onClick: () => unknown;
+    separator?: false;
+};
+
+type ToolbarMenuItem =
+    | {
+          key: string;
+          separator: true;
+      }
+    | SelectableToolbarMenuItem;
+
 const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
     triggerRect,
     parentWidth,
@@ -36,10 +52,10 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
         setIsVisible(true);
     }, []);
 
-    const close = () => {
+    const close = useCallback(() => {
         setIsVisible(false);
         setTimeout(() => UI.hideModal(modalId), 150);
-    };
+    }, [modalId]);
 
     const hasLastSync =
         WindowParentBridge.getGlobalObject("lastSyncLogseqToAnkiResult") !== null &&
@@ -48,44 +64,64 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
     const rightPos = triggerRect ? (parentWidth || window.innerWidth) - triggerRect.right : 20;
     const topPos = triggerRect ? triggerRect.bottom + 8 : 40;
 
-    const items = [
-        {
-            icon: PLAYER_PLAY_ICON,
-            text: "Start Sync",
-            color: "text-green-500",
-            onClick: async () => {
-                await new LogseqToAnkiSync().sync();
+    const items = useMemo<ToolbarMenuItem[]>(
+        () => [
+            {
+                key: "start-sync",
+                icon: PLAYER_PLAY_ICON,
+                text: "Start Sync",
+                disabled: false,
+                separator: false,
+                color: "text-green-500",
+                onClick: async () => {
+                    await new LogseqToAnkiSync().sync();
+                }
+            },
+            {
+                key: "last-sync-details",
+                icon: LOGS_ICON,
+                text: "Last Sync Details",
+                disabled: !hasLastSync,
+                separator: false,
+                onClick: () => {
+                    const result = WindowParentBridge.getGlobalObject("lastSyncLogseqToAnkiResult");
+                    if (result) showSyncResultDialog(result as any);
+                }
+            },
+            {key: "sync-separator", separator: true},
+            {
+                key: "documentation",
+                icon: BOOK_ICON,
+                text: "Documentation",
+                disabled: false,
+                separator: false,
+                onClick: () =>
+                    window.open("https://debanjandhar12.github.io/logseq-anki-sync/docs/intro")
+            },
+            {
+                key: "settings",
+                icon: SETTINGS_ICON,
+                text: "Settings",
+                disabled: false,
+                separator: false,
+                onClick: () => logseq.showSettingsUI()
+            },
+            {
+                key: "donate",
+                icon: HEART_ICON,
+                text: "Donate",
+                disabled: false,
+                separator: false,
+                onClick: () => window.open("https://github.com/sponsors/debanjandhar12")
             }
-        },
-        {
-            icon: LOGS_ICON,
-            text: "Last Sync Details",
-            disabled: !hasLastSync,
-            onClick: () => {
-                const result = WindowParentBridge.getGlobalObject("lastSyncLogseqToAnkiResult");
-                if (result) showSyncResultDialog(result as any);
-            }
-        },
-        {separator: true},
-        {
-            icon: BOOK_ICON,
-            text: "Documentation",
-            onClick: () =>
-                window.open("https://debanjandhar12.github.io/logseq-anki-sync/docs/intro")
-        },
-        {
-            icon: SETTINGS_ICON,
-            text: "Settings",
-            onClick: () => logseq.showSettingsUI()
-        },
-        {
-            icon: HEART_ICON,
-            text: "Donate",
-            onClick: () => window.open("https://github.com/sponsors/debanjandhar12")
-        }
-    ];
+        ],
+        [hasLastSync]
+    );
 
-    const selectableItems = items.filter((i) => !i.separator && !i.disabled);
+    const selectableItems = useMemo(
+        () => items.filter(isSelectableToolbarMenuItem).filter((item) => !item.disabled),
+        [items]
+    );
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -116,22 +152,23 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
             doc.removeEventListener("keydown", handleKeyDown, true);
             window.removeEventListener("keydown", handleKeyDown, true);
         };
-    }, [selectableItems, selectedIndex]);
+    }, [close, selectableItems, selectedIndex]);
 
-    const MenuItem = ({item, isSelected}: any) => {
-        if (item.separator) {
+    const MenuItem = ({item, isSelected}: {item: ToolbarMenuItem; isSelected: boolean}) => {
+        if (item.separator === true) {
             return (
-                <div
-                    role="separator"
+                <hr
                     className="-mx-1 my-1 h-px bg-muted"
-                    style={{backgroundColor: "var(--ls-border-color, #eee)"}}></div>
+                    style={{backgroundColor: "var(--ls-border-color, #eee)"}}
+                />
             );
         }
         return (
-            <div
+            <button
+                type="button"
                 role="menuitem"
-                tabIndex={item.disabled ? -1 : 0}
-                className={`ui__dropdown-menu-item relative flex cursor-default select-none items-center rounded-xs px-2 py-1.5 text-sm outline-hidden transition-colors ${item.disabled ? "pointer-events-none opacity-50" : ""}`}
+                disabled={item.disabled}
+                className={`ui__dropdown-menu-item relative flex w-full cursor-default select-none items-center rounded-sm border-0 bg-transparent px-2 py-1.5 text-left text-sm outline-none transition-colors ${item.disabled ? "pointer-events-none opacity-50" : ""}`}
                 style={{
                     backgroundColor: isSelected
                         ? "var(--ls-quaternary-background-color, #ddd)"
@@ -139,7 +176,6 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
                 }}
                 onClick={(e) => {
                     e.stopPropagation();
-                    if (item.disabled) return;
                     close();
                     item.onClick();
                 }}
@@ -152,12 +188,13 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
                 <span className="flex items-center w-full">
                     <span
                         className={`ui__icon ti flex items-center ${item.color || ""}`}
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: icons are bundled local SVG assets
                         dangerouslySetInnerHTML={{__html: item.icon}}
                         style={{width: 18, height: 18}}
                     />
                     <span className="pl-2">{item.text}</span>
                 </span>
-            </div>
+            </button>
         );
     };
 
@@ -165,7 +202,9 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
         <FocusTrap focusTrapOptions={focusTrapOptions}>
             <div style={{position: "fixed", inset: 0, zIndex: 9999}}>
                 {/* Backdrop */}
-                <div
+                <button
+                    type="button"
+                    aria-label="Close toolbar menu"
                     style={{position: "absolute", inset: 0}}
                     onClick={(e) => {
                         e.stopPropagation();
@@ -185,12 +224,12 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
                         color: "var(--ls-primary-text-color, #000)",
                         transformOrigin: "top right"
                     }}>
-                    {items.map((item, idx) => (
+                    {items.map((item) => (
                         <MenuItem
-                            key={idx}
+                            key={item.key}
                             item={item}
                             isSelected={
-                                !item.separator &&
+                                isSelectableToolbarMenuItem(item) &&
                                 !item.disabled &&
                                 selectableItems.indexOf(item) === selectedIndex
                             }
@@ -201,6 +240,10 @@ const LogseqAnkiSyncToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
         </FocusTrap>
     );
 };
+
+function isSelectableToolbarMenuItem(item: ToolbarMenuItem): item is SelectableToolbarMenuItem {
+    return item.separator !== true;
+}
 
 export function showToolbarMenu(triggerRect: DOMRect | null, parentWidth?: number) {
     const modalId = `modal-toolbar-${Date.now()}`;

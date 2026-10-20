@@ -2,9 +2,10 @@
 This provides UI framework for the plugin.
 
 ## Styling & Theming
-- Import colors from Logseq via theme/tailwind.config.mjs and UI.ts (e.g., `bg-primary`)
+- Import colors from Logseq via theme/tailwind.config.mjs and theme/ThemeManager.ts (e.g., `bg-primary`)
 - For custom colors not in theme, use Tailwind directly (e.g., `bg-green-600`) - no config changes needed
-- Imported colors from logseq are automatically updated when logseq theme changes (`UI.ts`).
+- ThemeManager fetches the variables listed in theme/constants.ts. UI.ts refreshes them on theme, theme-mode, and visibility changes.
+- Preserve surface aliases such as `primary-background` and include every referenced host variable in theme/constants.ts for file and DB graph compatibility.
 
 ## React Import
 - Import from `react`, `react-dom`, or `react-dom/client`. The Vite React bridge unifies all instances, including third-party imports and the automatic JSX runtime.

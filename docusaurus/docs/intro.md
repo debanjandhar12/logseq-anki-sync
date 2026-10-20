@@ -18,6 +18,10 @@ alt="Image occlusion editor demo"
 - **[Usage](./usage/extra-details-hints.md)** - Basic usage guide
 - **[Advanced](./advanced/custom-css.md)** - Advanced Customization options
 
+## Plugin dialogs
+
+Plugin dialogs follow Logseq's theme and font, including light/dark mode changes, in both file and DB graphs. Dialog headings provide accessible names, and dialogs keep keyboard focus inside the active panel. Entrance animations respect your system's reduced-motion preference.
+
 ## Resources
 
 - [GitHub Repository](https://github.com/debanjandhar12/logseq-anki-sync)
