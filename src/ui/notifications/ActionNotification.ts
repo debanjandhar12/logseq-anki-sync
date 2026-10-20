@@ -63,7 +63,7 @@ export async function ActionNotification(
             // Provide UI
             logseq.provideUI({
                 key: uiKey,
-                path: "div.notifications",
+                path: "div.notifications, .ui__toaster-viewport",
                 template: `
                     <div class="ui__notifications-content enter-done">
                         <div class="max-w-sm w-full shadow-lg rounded-lg pointer-events-auto notification-area transition ease-out duration-300 transform translate-y-0 opacity-100 sm:translate-x-0">
@@ -76,7 +76,7 @@ export async function ActionNotification(
                                         <div class="ml-3 w-0 flex-1">
                                             <div class="text-sm leading-5 font-medium" style="margin: 0px;">
                                                 <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                                                    <span style="align-self: flex-start; margin-bottom: 0.2em;" class="whitespace-pre-line">${msg}</span>
+                                                    <span style="align-self: flex-start; margin-bottom: 0.2em; white-space: pre-line;" class="whitespace-pre-line">${msg}</span>
                                                     ${buttonsHtml}
                                                 </div>
                                             </div>

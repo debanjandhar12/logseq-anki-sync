@@ -13,13 +13,13 @@ export class ProgressNotification {
         this.current = 0;
         logseq.provideUI({
             key: `logseq-anki-sync-progress-notification-${logseq.baseInfo.id}`,
-            path: "div.notifications",
+            path: "div.notifications, .ui__toaster-viewport",
             template: `
             <div class="ui__notifications-content enter-done" style=""><div class="max-w-sm w-full shadow-lg rounded-lg pointer-events-auto notification-area transition ease-out duration-300 transform translate-y-0 opacity-100 sm:translate-x-0"><div class="rounded-lg shadow-xs" style="max-height: calc(100vh - 200px); overflow: hidden auto;"><div class="p-4"><div class="flex items-start"><div class="flex-shrink-0">${
                 icon === "anki" ? ANKI_ICON : GRAPH_ICON
             }</div><div class="ml-3 w-0 flex-1">
             <div class="text-sm leading-5 font-medium" style="margin: 0;">
-            <span id="logseq-anki-sync-progress-bar-msg" class="my-0 mx-0">${msg}</span>
+            <span id="logseq-anki-sync-progress-bar-msg" class="my-0 mx-0" style="white-space: pre-line; display: block; margin-bottom: 0.25rem;">${msg}</span>
             <progress id="logseq-anki-sync-progress-bar-${logseq.baseInfo.id}" value="${
                 this.current
             }" max="${this.max}" style="width: 62%;" />
