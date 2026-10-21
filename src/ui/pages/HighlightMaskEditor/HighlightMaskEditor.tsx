@@ -203,6 +203,25 @@ export const HighlightMaskEditorComponent: React.FC<HighlightMaskEditorProps> = 
         }
     };
 
+    const handleExtraClick = async () => {
+        if (selectedElementIndex === null) return;
+        const extra = await showInputModal({
+            title: "Set Extra",
+            message: "Enter extra text for this highlight (shown on the back side):",
+            placeholder: "Type extra text...",
+            initialValue: elements[selectedElementIndex].extra || ""
+        });
+
+        if (extra !== null) {
+            const newElements = [...elements];
+            newElements[selectedElementIndex] = {
+                ...newElements[selectedElementIndex],
+                extra: extra || undefined
+            };
+            setElements(newElements);
+        }
+    };
+
     useHighlightMaskKeyboard({
         open,
         modalId: modalContext?.modalId,
@@ -262,6 +281,11 @@ export const HighlightMaskEditorComponent: React.FC<HighlightMaskEditorProps> = 
                             : elements[selectedElementIndex]?.hint
                     }
                     clozeId={clozeId}
+                    extra={
+                        selectedElementIndex === null
+                            ? undefined
+                            : elements[selectedElementIndex]?.extra
+                    }
                     hasTextSelection={hasTextSelection}
                     tags={tags}
                     setTags={setTags}
@@ -270,6 +294,7 @@ export const HighlightMaskEditorComponent: React.FC<HighlightMaskEditorProps> = 
                         onCIdChange(value);
                     }}
                     onHint={handleHintClick}
+                    onExtra={handleExtraClick}
                     onAdd={addHighlight}
                     onDelete={deleteHighlight}
                 />

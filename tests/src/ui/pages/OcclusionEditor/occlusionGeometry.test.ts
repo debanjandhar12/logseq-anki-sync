@@ -52,12 +52,23 @@ describe("occlusion bounds and checkpoints", () => {
             calcTransformMatrix: () => [1, 0, 0, 1, 42, 53],
             angle: 15,
             hint: "hint",
+            extra: "back extra",
             _objects: [{}, {text: "3"}]
         });
         expect(serializeOcclusionElements([obj])).toEqual([
-            {left: 42, top: 53, width: 20, height: 10, angle: 15, cId: 3, hint: "hint"}
+            {
+                left: 42,
+                top: 53,
+                width: 20,
+                height: 10,
+                angle: 15,
+                cId: 3,
+                hint: "hint",
+                extra: "back extra"
+            }
         ]);
         expect(serializeOcclusionElements([object()])[0]).not.toHaveProperty("hint");
+        expect(serializeOcclusionElements([object()])[0]).not.toHaveProperty("extra");
         expect(serializeOcclusionElements([object()])[0].cId).toBe(1);
     });
 });

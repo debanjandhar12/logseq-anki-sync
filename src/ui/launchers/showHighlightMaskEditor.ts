@@ -8,6 +8,7 @@ export type HighlightMaskElement = {
     prefix: string;
     suffix: string;
     hint?: string;
+    extra?: string;
 };
 
 export type HighlightMaskConfig = {

@@ -1,6 +1,7 @@
 import _ from "lodash";
 import type {Dispatch, SetStateAction} from "react";
 import HINT_ICON from "../../../../node_modules/@tabler/icons/icons/outline/bulb.svg?raw";
+import EXTRA_ICON from "../../../../node_modules/@tabler/icons/icons/outline/notes.svg?raw";
 import ADD_ICON from "../../../../node_modules/@tabler/icons/icons/outline/plus.svg?raw";
 import SETTINGS_ICON from "../../../../node_modules/@tabler/icons/icons/outline/settings.svg?raw";
 import REMOVE_ICON from "../../../../node_modules/@tabler/icons/icons/outline/trash.svg?raw";
@@ -13,12 +14,14 @@ import {LogseqTooltip} from "../../components/LogseqTooltip";
 interface HighlightMaskToolbarProps {
     selected: boolean;
     hint?: string;
+    extra?: string;
     clozeId: string;
     hasTextSelection: boolean;
     tags: string[];
     setTags: Dispatch<SetStateAction<string[]>>;
     onClozeIdChange: (value: string) => void;
     onHint: () => void;
+    onExtra: () => void;
     onAdd: () => void;
     onDelete: () => void;
 }
@@ -26,12 +29,14 @@ interface HighlightMaskToolbarProps {
 export function HighlightMaskToolbar({
     selected,
     hint,
+    extra,
     clozeId,
     hasTextSelection,
     tags,
     setTags,
     onClozeIdChange,
     onHint,
+    onExtra,
     onAdd,
     onDelete
 }: HighlightMaskToolbarProps) {
@@ -67,6 +72,15 @@ export function HighlightMaskToolbar({
                         title={hint ? `Hint: ${hint}` : "Set Hint"}
                         onClick={onHint}
                         icon={HINT_ICON}
+                    />
+                )}
+                {selected && (
+                    <LogseqButton
+                        color={extra ? "primary" : "secondary"}
+                        size="sm"
+                        title={extra ? `Extra: ${extra}` : "Set Extra"}
+                        onClick={onExtra}
+                        icon={EXTRA_ICON}
                     />
                 )}
             </span>

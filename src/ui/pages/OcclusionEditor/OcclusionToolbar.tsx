@@ -3,6 +3,7 @@ import type {ChangeEvent, Dispatch, SetStateAction} from "react";
 import HINT_ICON from "../../../../node_modules/@tabler/icons/icons/outline/bulb.svg?raw";
 import SELECT_ICON from "../../../../node_modules/@tabler/icons/icons/outline/click.svg?raw";
 import HAND_ICON from "../../../../node_modules/@tabler/icons/icons/outline/hand-stop.svg?raw";
+import EXTRA_ICON from "../../../../node_modules/@tabler/icons/icons/outline/notes.svg?raw";
 import SETTINGS_ICON from "../../../../node_modules/@tabler/icons/icons/outline/settings.svg?raw";
 import REMOVE_ICON from "../../../../node_modules/@tabler/icons/icons/outline/square-minus.svg?raw";
 import ADD_ICON from "../../../../node_modules/@tabler/icons/icons/outline/square-plus-2.svg?raw";
@@ -22,6 +23,7 @@ interface OcclusionToolbarProps {
     clozeId: string;
     onClozeIdChange: (value: string) => void;
     onHint: () => void;
+    onExtra: () => void;
     onAdd: () => void;
     onDelete: () => void;
     tags: string[];
@@ -39,6 +41,7 @@ export function OcclusionToolbar({
     clozeId,
     onClozeIdChange,
     onHint,
+    onExtra,
     onAdd,
     onDelete,
     tags,
@@ -118,6 +121,15 @@ export function OcclusionToolbar({
                         title={selection[0].hint ? `Hint: ${selection[0].hint}` : "Set Hint"}
                         onClick={onHint}
                         icon={HINT_ICON}
+                    />
+                )}
+                {selection?.length === 1 && (
+                    <LogseqButton
+                        color={selection[0].extra ? "primary" : "secondary"}
+                        size="sm"
+                        title={selection[0].extra ? `Extra: ${selection[0].extra}` : "Set Extra"}
+                        onClick={onExtra}
+                        icon={EXTRA_ICON}
                     />
                 )}
             </span>

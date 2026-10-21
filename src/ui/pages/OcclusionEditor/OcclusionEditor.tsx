@@ -111,6 +111,24 @@ export const OcclusionEditorComponent: React.FC<OcclusionEditorProps> = ({
         }
     };
 
+    const handleExtraClick = async () => {
+        if (!fabricSelection || fabricSelection.length !== 1) return;
+        const selectedObj = fabricSelection[0];
+        const extra = await showInputModal({
+            title: "Set Extra",
+            message: "Enter extra text for this occlusion (shown on the back side):",
+            placeholder: "Type extra text...",
+            initialValue: selectedObj.extra || ""
+        });
+
+        if (extra !== null) {
+            if (extra) selectedObj.extra = extra;
+            else delete selectedObj.extra;
+            setFabricSelection([...fabricSelection]);
+            saveCanvasState();
+        }
+    };
+
     useOcclusionCanvas({
         open,
         imgURL,
@@ -172,7 +190,8 @@ export const OcclusionEditorComponent: React.FC<OcclusionEditorProps> = ({
             newElement.height,
             newElement.angle,
             newElement.cId,
-            newElement.hint
+            newElement.hint,
+            newElement.extra
         );
         fabricRef.current.add(occlusionEl);
         fabricRef.current.setActiveObject(occlusionEl);
@@ -263,6 +282,7 @@ export const OcclusionEditorComponent: React.FC<OcclusionEditorProps> = ({
                         onCIdChange(value);
                     }}
                     onHint={handleHintClick}
+                    onExtra={handleExtraClick}
                     onAdd={addOcclusion}
                     onDelete={deleteOcclusion}
                     tags={tags}

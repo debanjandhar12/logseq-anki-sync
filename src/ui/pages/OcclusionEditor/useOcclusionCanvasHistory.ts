@@ -32,7 +32,8 @@ export function useOcclusionCanvasHistory(
                     obj.height,
                     obj.angle,
                     obj.cId,
-                    obj.hint
+                    obj.hint,
+                    obj.extra
                 )
             )
         );

@@ -13,6 +13,7 @@ export function serializeOcclusionElements(objects: any[]): OcclusionElement[] {
             cId: obj._objects?.[1]?.text ? parseInt(obj._objects[1].text, 10) : 1
         };
         if (obj.hint) element.hint = obj.hint;
+        if (obj.extra) element.extra = obj.extra;
         return element;
     });
 }

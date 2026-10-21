@@ -1,6 +1,7 @@
 import {act, type ReactNode} from "react";
 import {createRoot, type Root} from "react-dom/client";
 import {afterEach, beforeEach, expect, test, vi} from "vitest";
+import {showInputModal} from "../../../../src/ui/launchers/showInputModal";
 import {HighlightMaskEditorComponent} from "../../../../src/ui/pages/HighlightMaskEditor";
 import {OcclusionEditorComponent} from "../../../../src/ui/pages/OcclusionEditor";
 
@@ -28,17 +29,27 @@ vi.mock("../../../../src/ui/modals/core/ModalFooter", () => ({
     )
 }));
 vi.mock("../../../../src/ui/pages/HighlightMaskEditor/HighlightMaskToolbar", () => ({
-    HighlightMaskToolbar: ({setTags}) => (
-        <button type="button" onClick={() => setTags(["hide-all-test-one"])}>
-            Change tags
-        </button>
+    HighlightMaskToolbar: ({setTags, onExtra}) => (
+        <>
+            <button type="button" onClick={() => setTags(["hide-all-test-one"])}>
+                Change tags
+            </button>
+            <button type="button" onClick={onExtra}>
+                Set Extra
+            </button>
+        </>
     )
 }));
 vi.mock("../../../../src/ui/pages/OcclusionEditor/OcclusionToolbar", () => ({
-    OcclusionToolbar: ({setTags}) => (
-        <button type="button" onClick={() => setTags(["hide-all-test-one"])}>
-            Change tags
-        </button>
+    OcclusionToolbar: ({setTags, onExtra}) => (
+        <>
+            <button type="button" onClick={() => setTags(["hide-all-test-one"])}>
+                Change tags
+            </button>
+            <button type="button" onClick={onExtra}>
+                Set Extra
+            </button>
+        </>
     )
 }));
 vi.mock("../../../../src/logseq/WindowParentBridge", () => ({
@@ -58,11 +69,12 @@ vi.mock("../../../../src/logseq/WindowBridge", () => ({
 }));
 vi.mock("../../../../src/utils/occlusionUtils", () => ({
     updateOcclusionHint: vi.fn(),
-    createOcclusionRectEl: (_fabric, left, top, width, height, angle, cId, hint) => ({
+    createOcclusionRectEl: (_fabric, left, top, width, height, angle, cId, hint, extra) => ({
         left,
         top,
         angle,
         hint,
+        extra,
         originX: "center",
         _objects: [
             {},
@@ -231,5 +243,99 @@ test("real occlusion component saves tag-only changes and updates a newly select
         config: {},
         elements: [{left: 20, top: 20, width: 20, height: 10, angle: 0, cId: 2}],
         tags: ["hide-all-test-one"]
+    });
+});
+
+test.each([
+    "Answer details",
+    "",
+    null
+])("occlusion extra editing preserves save, clear, and cancel semantics: %s", async (extra) => {
+    const resolve = vi.fn();
+    const element = {
+        left: 20,
+        top: 20,
+        width: 20,
+        height: 10,
+        angle: 0,
+        cId: 1,
+        extra: "Old extra"
+    };
+    await act(async () =>
+        root.render(
+            <OcclusionEditorComponent
+                imgURL="https://example.com/image.png"
+                occlusionElements={[element]}
+                occlusionConfig={{}}
+                blockTags={[]}
+                resolve={resolve}
+                reject={vi.fn()}
+                modalContext={{modalId: "editor"}}
+            />
+        )
+    );
+    await act(async () => state.image!.onload!(new Event("load")));
+    const canvas = state.canvas;
+    await act(async () => canvas.setActiveObject(canvas.getObjects()[0]));
+    vi.mocked(showInputModal).mockResolvedValueOnce(extra);
+    await act(async () =>
+        Array.from(container.querySelectorAll("button"))
+            .find((button) => button.textContent === "Set Extra")!
+            .click()
+    );
+    expect(showInputModal).toHaveBeenLastCalledWith(
+        expect.objectContaining({initialValue: "Old extra"})
+    );
+    await press("Enter");
+    const expectedElement = {...element};
+    if (extra === "") delete expectedElement.extra;
+    else expectedElement.extra = extra ?? "Old extra";
+    expect(resolve).toHaveBeenCalledWith({
+        config: {},
+        tags: [],
+        elements: [expectedElement]
+    });
+});
+
+test.each([
+    "Answer details",
+    "",
+    null
+])("highlight extra editing preserves save, clear, and cancel semantics: %s", async (extra) => {
+    const resolve = vi.fn();
+    const element = {cId: 1, text: "text", prefix: "", suffix: "", extra: "Old extra"};
+    await act(async () =>
+        root.render(
+            <HighlightMaskEditorComponent
+                rawText="text"
+                highlightElements={[element]}
+                highlightConfig={{}}
+                blockTags={[]}
+                resolve={resolve}
+                reject={vi.fn()}
+                modalContext={{modalId: "editor"}}
+            />
+        )
+    );
+    await act(async () => container.querySelector<HTMLElement>("[data-highlight-index]")!.click());
+    vi.mocked(showInputModal).mockResolvedValueOnce(extra);
+    await act(async () =>
+        Array.from(container.querySelectorAll("button"))
+            .find((button) => button.textContent === "Set Extra")!
+            .click()
+    );
+    expect(showInputModal).toHaveBeenLastCalledWith(
+        expect.objectContaining({initialValue: "Old extra"})
+    );
+    await press("Enter");
+    expect(resolve).toHaveBeenCalledWith({
+        config: {},
+        tags: [],
+        elements: [
+            expect.objectContaining({
+                text: "text",
+                extra: extra === null ? "Old extra" : extra || undefined
+            })
+        ]
     });
 });

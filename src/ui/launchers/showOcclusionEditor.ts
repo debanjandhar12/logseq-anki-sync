@@ -10,6 +10,7 @@ export type OcclusionElement = {
     angle: number;
     cId: number;
     hint?: string;
+    extra?: string;
 };
 
 export type OcclusionConfig = {

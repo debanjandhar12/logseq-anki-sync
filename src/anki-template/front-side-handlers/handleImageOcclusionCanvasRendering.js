@@ -54,8 +54,11 @@ export function handleImageOcclusionCanvasRendering() {
     document.getElementById("main-content").style.visibility = "visible";
 
     // Iterate the images in imgToOcclusionDataHashMap and inject the canvas into dom instead of images
+    const occlusionData = document.getElementById("imgToOcclusionDataHashMap");
     const imgToOcclusionDataHashMap = JSON.parse(
-        document.getElementById("imgToOcclusionDataHashMap").innerHTML
+        occlusionData.dataset.encoding === "uri"
+            ? decodeURIComponent(occlusionData.textContent)
+            : occlusionData.innerHTML
     );
 
     // Check for hide-all-test-one tag

@@ -172,10 +172,15 @@ export class ImageOcclusionNote extends Note {
         }
         clozedContent = escapeClozesAndMacroDelimiters(clozedContent);
         clozedContent += `\n<div class="hidden">
+        <div data-element-extra-markers>
         ${Array.from(clozes)
-            .map((cloze) => `{{c${cloze}:: ::<span id="c${cloze}"></span>}}`)
+            .map(
+                (cloze) =>
+                    `{{c${cloze}::<span data-element-extra-cloze="${cloze}"> </span>::<span id="c${cloze}"></span>}}`
+            )
             .join("")}
-        <div id="imgToOcclusionDataHashMap">${JSON.stringify(imgToOcclusionDataHashMap)}</div>
+        </div>
+        <div id="imgToOcclusionDataHashMap" data-encoding="uri">${encodeURIComponent(JSON.stringify(imgToOcclusionDataHashMap))}</div>
         <img id="localImgBasePath" src="_logseq_anki_sync.css"></img>
         </div>`;
 

@@ -7,11 +7,12 @@ import {useOcclusionCanvasHistory} from "../../../../../src/ui/pages/OcclusionEd
 
 vi.mock("fabric", () => ({fabric: {}}));
 vi.mock("../../../../../src/utils/occlusionUtils", () => ({
-    createOcclusionRectEl: (_fabric, left, top, width, height, angle, cId, hint) => ({
+    createOcclusionRectEl: (_fabric, left, top, width, height, angle, cId, hint, extra) => ({
         left,
         top,
         angle,
         hint,
+        extra,
         originX: "center",
         _objects: [{}, {text: String(cId)}],
         getScaledWidth: () => width,
@@ -68,14 +69,17 @@ test("actual modification subscription records corrected bounds; undo/redo repla
         expect(objects[0]).toBe(original); // Own checkpoint must not rebuild the canvas.
         await act(async () => {
             original.left = 30;
+            original.extra = "Answer details";
             save();
         });
         expect(state[0].past).toHaveLength(2);
         await act(async () => state[1].undo());
         expect(objects[0].left).toBe(10);
+        expect(objects[0].extra).toBeUndefined();
         expect(state[0].past).toHaveLength(1);
         await act(async () => state[1].redo());
         expect(objects[0].left).toBe(30);
+        expect(objects[0].extra).toBe("Answer details");
         expect(state[0].past).toHaveLength(2);
     } finally {
         await act(async () => root.unmount());

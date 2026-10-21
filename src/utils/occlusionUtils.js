@@ -10,7 +10,8 @@ export function createOcclusionRectEl(
     height = 40,
     angle = 0,
     cId = 1,
-    hint = null
+    hint = null,
+    extra = null
 ) {
     const rect = new fabric.Rect({
         fill: "#FFEBA2",
@@ -45,6 +46,7 @@ export function createOcclusionRectEl(
     if (hint) {
         updateOcclusionHint(group, hint, fabric);
     }
+    if (extra) group.extra = extra;
 
     return group;
 }

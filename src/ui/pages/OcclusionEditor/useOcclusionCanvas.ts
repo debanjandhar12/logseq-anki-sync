@@ -71,7 +71,8 @@ export function useOcclusionCanvas({
                             obj.height,
                             obj.angle,
                             obj.cId,
-                            obj.hint
+                            obj.hint,
+                            obj.extra
                         )
                     );
                 });

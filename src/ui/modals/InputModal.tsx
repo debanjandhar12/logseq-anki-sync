@@ -37,7 +37,7 @@ export const InputModalComponent: React.FC<InputModalProps> = ({
     });
 
     const handleConfirm = React.useCallback(() => {
-        returnResult(inputValue.trim() || null);
+        returnResult(inputValue.trim());
     }, [inputValue, returnResult]);
 
     const handleCancel = React.useCallback(() => {
