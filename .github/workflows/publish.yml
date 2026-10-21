@@ -3,9 +3,20 @@ name: Publish plugin
 on:
     workflow_dispatch:
 
+permissions:
+    contents: read
+
 jobs:
+    test:
+        uses: ./.github/workflows/test.yml
+
     build:
+        needs: test
+        # Failed tests remain visible but do not prevent creating a draft release.
+        if: ${{ !cancelled() && (needs.test.result == 'success' || needs.test.result == 'failure') }}
         runs-on: ubuntu-latest
+        permissions:
+            contents: write
 
         steps:
             - uses: actions/checkout@v6
@@ -14,22 +25,53 @@ jobs:
               uses: jarrettmeyer/github-action-package-values@v1
               id: package
 
-            - uses: pnpm/action-setup@v3
+            - name: Read tool versions from mise.toml
+              id: tools
+              run: |
+                  python3 - <<'PY' >> "$GITHUB_OUTPUT"
+                  import tomllib
+                  with open("mise.toml", "rb") as config:
+                      tools = tomllib.load(config)["tools"]
+                  for tool in ("node", "pnpm"):
+                      print(f"{tool}={tools[tool]}")
+                  PY
+
+            - uses: pnpm/action-setup@v4
               with:
-                  version: 10
+                  version: ${{ steps.tools.outputs.pnpm }}
 
             - name: Use Node.js
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: ${{ steps.tools.outputs.node }}
                   cache: "pnpm"
                   cache-dependency-path: pnpm-lock.yaml
+
+            - name: Install native canvas build dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y build-essential python3 pkg-config \
+                    libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
-            - name: Run tests
-              run: npx vitest run --reporter=verbose --reporter=json --outputFile=test-report.json
+            - name: Download HTML test report
+              id: test_report
+              # Setup failures can prevent Vitest from generating a report.
+              continue-on-error: true
+              uses: actions/download-artifact@v4
+              with:
+                  name: test-report
+                  path: release-test-report
+
+            - name: Verify HTML test report
+              if: steps.test_report.outcome == 'success'
+              run: unzip -t release-test-report/test-report.zip
+
+            - name: Note unavailable test report
+              if: steps.test_report.outcome != 'success'
+              run: echo "::warning::HTML test report could not be downloaded; the draft release will still be created"
 
             - name: Build
               id: build
@@ -42,10 +84,13 @@ jobs:
                   zip -r ${{ steps.package.outputs.package_name }}.zip *
                   cd ..
                   mv ${{ steps.package.outputs.package_name }}/${{ steps.package.outputs.package_name }}.zip ./
-                  echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
 
             - name: Generate Release Notes
               id: release_notes
+              env:
+                  TEST_RESULT: ${{ needs.test.result }}
+                  REPORT_DOWNLOADED: ${{ steps.test_report.outcome }}
+                  RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
               run: |
                   cat > release_notes.md << 'EOF'
                   ## What's Changed
@@ -56,6 +101,15 @@ jobs:
 
                   Loved the tool? Please consider [donating via GitHub Sponsors](https://github.com/sponsors/debanjandhar12) to help it improve!
                   EOF
+                  {
+                    echo
+                    echo "## Test results"
+                    echo
+                    echo "Test workflow result: **$TEST_RESULT**. [View workflow run]($RUN_URL)."
+                    if [[ "$REPORT_DOWNLOADED" != success ]]; then
+                      echo "The HTML test report is unavailable; inspect the workflow run and diagnostics."
+                    fi
+                  } >> release_notes.md
 
             - name: Create Release
               uses: softprops/action-gh-release@v2
@@ -68,6 +122,7 @@ jobs:
                   prerelease: false
                   generate_release_notes: true
                   body_path: release_notes.md
+                  fail_on_unmatched_files: true
                   files: |
                       ./${{ steps.package.outputs.package_name }}.zip
-                      ./test-report.json
+                      ${{ steps.test_report.outcome == 'success' && './release-test-report/test-report.zip' || '' }}
