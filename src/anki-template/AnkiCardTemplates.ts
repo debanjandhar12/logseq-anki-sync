@@ -35,21 +35,31 @@ function getTemplate() {
 }
 
 export function getTemplateFront() {
-    return `<script src="_logseq_anki_sync_front.js" type='text/javascript' async=false defer=false></script>
-        ${getTemplate()}
+    return `${getTemplate()}
         {{#User Controlled Field (Front)}}<div class="user-controlled-field-front">{{User Controlled Field (Front)}}</div>{{/User Controlled Field (Front)}}
         {{#User Controlled Field (Both)}}<div class="user-controlled-field-both">{{User Controlled Field (Both)}}</div>{{/User Controlled Field (Both)}}
         <span style="display: none" class="anki-card-front-side"></span>
-        <link rel="stylesheet" href="_logseq_anki_sync_front.css">`;
+        <link rel="stylesheet" href="_logseq_anki_sync_front.css">
+        ${getRuntimeScripts("front")}`;
 }
 
 export function getTemplateBack() {
-    return `<script src="_logseq_anki_sync_back.js" type='text/javascript' async=false defer=false></script>
-        ${getTemplate()}
+    return `${getTemplate()}
         {{#User Controlled Field (Back)}}<div class="user-controlled-field-back">{{User Controlled Field (Back)}}</div>{{/User Controlled Field (Back)}}
         {{#User Controlled Field (Both)}}<div class="user-controlled-field-both">{{User Controlled Field (Both)}}</div>{{/User Controlled Field (Both)}}
         <span style="display: none" class="anki-card-back-side"></span>
-        <link rel="stylesheet" href="_logseq_anki_sync_back.css">`;
+        <link rel="stylesheet" href="_logseq_anki_sync_back.css">
+        ${getRuntimeScripts("back")}`;
+}
+
+function getRuntimeScripts(side: "front" | "back") {
+    // Keep all three load triggers for compatibility with Anki clients, but only
+    // dispatch after the card, user fields, side marker, and runtimes exist.
+    return `<script src="_logseq_anki_sync.js"></script>
+        <script src="_logseq_anki_sync_${side}.js" type="text/javascript"></script>
+        <script async="false" defer="false">window.dispatchEvent(new Event("load"));</script>
+        <script>window.dispatchEvent(new Event("load"));</script>
+        <script defer="defer">window.dispatchEvent(new Event("load"));</script>`;
 }
 
 export function getTemplateMediaFiles() {

@@ -1,5 +1,28 @@
 import {describe, expect, test} from "vitest";
-import {compareAnswer} from "../../../src/anki-template/compareAnswer.js";
+import {compareAnswer} from "../../../src/anki-template/type-in-comparator/index.js";
+
+describe("comparison normalization and escaping", () => {
+    test("normalizes NFC-equivalent answers", () => {
+        expect(compareAnswer("café", "cafe\u0301")).toBe(compareAnswer("café", "café"));
+    });
+    test("normalizes expected newlines and trims both answers", () => {
+        expect(compareAnswer("  first\r\nsecond  ", " first second ")).toBe(
+            compareAnswer("first second", "first second")
+        );
+    });
+    test("escapes HTML with empty and matching provided answers", () => {
+        const expected = '<tag a="b">&\'';
+        const escaped = "&lt;tag a=&quot;b&quot;&gt;&amp;&#039;";
+        expect(compareAnswer(expected, null)).toBe(`<code id="typeans">${escaped}</code>`);
+        expect(compareAnswer(expected, expected)).toBe(
+            `<code id="typeans"><span class="typeGood">${escaped}</span></code>`
+        );
+    });
+    test("accepts missing and empty answers", () => {
+        expect(compareAnswer(null, undefined)).toBe('<code id="typeans"></code>');
+        expect(compareAnswer("", "")).toBe('<code id="typeans"></code>');
+    });
+});
 
 describe("compareAnswer basic tests", () => {
     test("completely correct input", async () => {

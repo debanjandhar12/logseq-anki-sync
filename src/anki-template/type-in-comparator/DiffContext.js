@@ -6,11 +6,8 @@
  * Based on: https://github.com/ankitects/anki/blob/8fc4225b2965da81adcbd1687d0ff5a4d6ac2030/rslib/src/typeanswer.rs#L32
  */
 import difflib from "difflib";
-
-export function compareAnswer(expected, provided) {
-    const diffContext = new DiffContext(expected, provided);
-    return diffContext.toHtml();
-}
+import {DiffOutput, escapeHtml, renderTokens} from "./DiffOutput.js";
+import {DiffToken} from "./DiffToken.js";
 
 function prepareExpected(expected) {
     if (expected == null) return "";
@@ -25,7 +22,7 @@ function prepareProvided(provided) {
     return normalizeToNFC(withoutOuterWhitespace);
 }
 
-class DiffContext {
+export class DiffContext {
     constructor(expected, provided) {
         this.expected = prepareExpected(expected);
         this.provided = prepareProvided(provided);
@@ -85,75 +82,6 @@ class DiffContext {
             return `<code id="typeans">${provided}<br><span id="typearrow">&darr;</span><br>${expected}</code>`;
         }
     }
-}
-
-class DiffToken {
-    constructor(kind, text) {
-        this.kind = kind;
-        this.text = text;
-    }
-
-    static bad(text) {
-        return new DiffToken("bad", text);
-    }
-
-    static good(text) {
-        return new DiffToken("good", text);
-    }
-
-    static missing(text) {
-        return new DiffToken("missing", text);
-    }
-}
-
-class DiffOutput {
-    constructor(provided, expected) {
-        this.provided = provided;
-        this.expected = expected;
-    }
-}
-
-function renderTokens(tokens) {
-    return tokens
-        .map((token) => {
-            const text = withIsolatedLeadingMark(token.text);
-            const encoded = escapeHtml(text);
-            const className =
-                token.kind === "good"
-                    ? "typeGood"
-                    : token.kind === "bad"
-                      ? "typeBad"
-                      : "typeMissed";
-            return `<span class="${className}">${encoded}</span>`;
-        })
-        .join("");
-}
-
-function escapeHtml(text) {
-    return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function withIsolatedLeadingMark(text) {
-    const firstChar = text.charAt(0);
-
-    const category = getUnicodeCategory(firstChar);
-    if (category.startsWith("M")) {
-        // If the first character is a mark, prepend a non-breaking space (U+00A0)
-        return "\u00A0" + text;
-    }
-
-    return text;
-}
-
-function getUnicodeCategory(char) {
-    const code = char.codePointAt(0);
-    const category = String.fromCodePoint(code).normalize("NFD").charAt(0);
-    return category;
 }
 
 function normalizeToNFC(text) {
