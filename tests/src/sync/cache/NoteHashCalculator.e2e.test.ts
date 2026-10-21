@@ -271,7 +271,7 @@ describe("NoteHashCalculator E2E Tests", () => {
             page = await logseq.Editor.createPage(
                 dbPageName,
                 {},
-                {redirect: false, createFirstBlock: true}
+                {redirect: false, createFirstBlock: false}
             );
             if (!page) page = (await logseq.Editor.getPage(dbPageName))!;
         });
@@ -415,7 +415,7 @@ describe("NoteHashCalculator E2E Tests", () => {
                 const embedPage = await logseq.Editor.createPage(
                     dbEmbedPageName,
                     {},
-                    {redirect: false, createFirstBlock: true}
+                    {redirect: false, createFirstBlock: false}
                 );
                 const embedBlock = await logseq.Editor.appendBlockInPage(
                     embedPage.uuid,

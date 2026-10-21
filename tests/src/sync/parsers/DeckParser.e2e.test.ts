@@ -298,7 +298,7 @@ describe("DeckParser E2E Tests", () => {
             page = await logseq.Editor.createPage(
                 dbPageName,
                 {},
-                {redirect: false, createFirstBlock: true}
+                {redirect: false, createFirstBlock: false}
             );
             if (!page) page = (await logseq.Editor.getPage(dbPageName))!;
             await new Promise((resolve) => setTimeout(resolve, 100));

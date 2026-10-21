@@ -537,7 +537,7 @@ describe("E2E cases for DB mode", () => {
         page = await logseq.Editor.createPage(
             "Test LogseqAnkiSync DB",
             {},
-            {redirect: false, createFirstBlock: true}
+            {redirect: false, createFirstBlock: false}
         );
         await new Promise((resolve) => setTimeout(resolve, 100));
     });
@@ -576,7 +576,7 @@ describe("E2E cases for DB mode", () => {
                 await logseq.Editor.createPage(
                     "Test DB Ref Page",
                     {},
-                    {redirect: false, createFirstBlock: true}
+                    {redirect: false, createFirstBlock: false}
                 );
                 await new Promise((resolve) => setTimeout(resolve, 100));
                 const htmlFile = await LogseqToHtmlConverter.convertToHTMLFile(
@@ -633,9 +633,8 @@ describe("E2E cases for DB mode", () => {
                     {},
                     {redirect: false, createFirstBlock: true}
                 );
-                const [firstBlock] = await logseq.Editor.getPageBlocksTree(embedPage.uuid);
-                expect(firstBlock).toBeDefined();
-                await logseq.Editor.updateBlock(firstBlock.uuid, "First block");
+                // createFirstBlock is not honored in DB graphs - create blocks explicitly
+                await logseq.Editor.appendBlockInPage(embedPage.uuid, "First block");
                 await logseq.Editor.appendBlockInPage(embedPage.uuid, "Second block");
                 await new Promise((resolve) => setTimeout(resolve, 100));
                 const embedBlockUuid = "67890123-4567-89ab-cdef-012345678902";
@@ -678,7 +677,7 @@ describe("E2E cases for DB mode", () => {
                 const pdfPage = await logseq.Editor.createPage(
                     "hls__Linux_Slides_DB_Test",
                     {},
-                    {redirect: false, createFirstBlock: true}
+                    {redirect: false, createFirstBlock: false}
                 );
                 const block = await logseq.Editor.appendBlockInPage(
                     pdfPage.uuid,
