@@ -23,13 +23,17 @@ export function handleImageOcclusionCanvasRendering() {
         const canvasEl = document.createElement("canvas");
         canvasEl.width = image.width;
         canvasEl.height = image.height;
-        const canvas = new fabric.Canvas(canvasEl, {
+        const canvas = new fabric.StaticCanvas(canvasEl, {
             imageSmoothingEnabled: false
         });
         canvasesToDispose.push(canvas);
         const imgEl = new Image();
         pendingImages.push(imgEl);
         imgEl.onload = () => {
+            canvas.setDimensions({
+                width: canvas.width || imgEl.naturalWidth,
+                height: canvas.height || imgEl.naturalHeight
+            });
             const imgFabric = new fabric.Image(imgEl);
             const scaleX = canvas.width / imgFabric.width,
                 scaleY = canvas.height / imgFabric.height;

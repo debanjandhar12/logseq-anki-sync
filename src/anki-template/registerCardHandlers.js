@@ -14,16 +14,16 @@ export function registerCardHandlers(channel, handlers, side) {
     // Re-evaluating a card script replaces the previous runtime in this channel.
     document.dispatchEvent(new Event(cleanupEvent));
 
-
     // Subscribe before attempting immediate initialization: a script may run
     // before the card DOM is ready, and subsequent events must retry it.
-    document.addEventListener(cleanupEvent, disposeRuntime);
-    window.addEventListener("load", initializeCurrentCard);
-    if (document.readyState === "complete") initializeCurrentCard();
-
-    // Additional event for anki desktop incase above doesn't work
     const updateHooks = Array.isArray(window.onUpdateHook) ? window.onUpdateHook : undefined;
-    updateHooks?.push(initializeCurrentCard);
+    document.addEventListener(cleanupEvent, disposeRuntime);
+    if (updateHooks) {
+        updateHooks.push(initializeCurrentCard);
+    } else {
+        window.addEventListener("load", initializeCurrentCard);
+        if (document.readyState === "complete") initializeCurrentCard();
+    }
 
     return disposeRuntime;
 
