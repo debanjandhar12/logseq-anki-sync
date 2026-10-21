@@ -1,7 +1,8 @@
 import "@logseq/libs";
 import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
-import {afterEach, beforeEach, describe, expect, test} from "vitest";
+import {afterEach, beforeEach, describe, expect, test, vi} from "vitest";
 import {MultilineCardNote} from "../../../../src/anki-notes/MultilineCardNote";
+import {LogseqProxy} from "../../../../src/logseq/LogseqProxy";
 import {DeckParser} from "../../../../src/sync/parsers/DeckParser";
 import {deletePagePermanently} from "../../../helpers/logseq/deletePagePermanently";
 
@@ -27,6 +28,7 @@ describe("DeckParser E2E Tests", () => {
     }, 60_000);
 
     afterEach(async () => {
+        vi.restoreAllMocks();
         for (const name of allTestPages) {
             await deletePagePermanently(name);
         }
@@ -199,7 +201,7 @@ describe("DeckParser E2E Tests", () => {
         );
 
         test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
-            "Default to current page name when no deck property",
+            "Default to shared deck for a standalone page when no deck property",
             async () => {
                 const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
                 await new Promise((resolve) => setTimeout(resolve, 100));
@@ -213,7 +215,7 @@ describe("DeckParser E2E Tests", () => {
                 );
                 const deck = await DeckParser.parse(note);
 
-                expect(deck).toBe(pageName);
+                expect(deck).toBe("Default");
             }
         );
 
@@ -301,6 +303,39 @@ describe("DeckParser E2E Tests", () => {
             if (!page) page = (await logseq.Editor.getPage(dbPageName))!;
             await new Promise((resolve) => setTimeout(resolve, 100));
         });
+
+        test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+            "Standalone DB page uses the configured fallback and supports page-name mode",
+            async () => {
+                const block = await logseq.Editor.appendBlockInPage(page.uuid, "Test content");
+                const note = new MultilineCardNote(
+                    block.uuid,
+                    block.content,
+                    block.format,
+                    block.properties,
+                    page.id
+                );
+                const settings = {...LogseqProxy.Settings.getPluginSettings()};
+                const getSettings = vi.spyOn(LogseqProxy.Settings, "getPluginSettings");
+                getSettings.mockReturnValue({
+                    ...settings,
+                    standalonePageDeckBehavior: "Define in settings",
+                    standalonePageDeckName: "Default"
+                });
+                expect(await DeckParser.parse(note)).toBe("Default");
+                getSettings.mockReturnValue({
+                    ...settings,
+                    standalonePageDeckBehavior: "Define in settings",
+                    standalonePageDeckName: "Study/Inbox"
+                });
+                expect(await DeckParser.parse(note)).toBe("Study::Inbox");
+                getSettings.mockReturnValue({
+                    ...settings,
+                    standalonePageDeckBehavior: "Derive from page name"
+                });
+                expect(await DeckParser.parse(note)).toBe(dbPageName);
+            }
+        );
 
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
             "Parent block deck inheritance in DB mode",

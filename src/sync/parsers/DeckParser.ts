@@ -12,7 +12,7 @@ export class DeckParser {
      * Resolves the deck name for a note following the hierarchy:
      * 1. Block hierarchy (traverse up looking for deck property)
      * 2. Namespace hierarchy (traverse up looking for deck property)
-     * 3. Current page name
+     * 3. Configured fallback for standalone pages, otherwise current page name
      */
     static async parse(note: Note): Promise<string> {
         let deck = await DeckParser.findDeckInBlockHierarchy(note);
@@ -25,7 +25,7 @@ export class DeckParser {
             return DeckParser.normalizeDeck(deck);
         }
 
-        const defaultDeck = await DeckParser.getDefaultDeck(note.pageId); // Default Deck = Page Name with namespace of note
+        const defaultDeck = await DeckParser.getDefaultDeck(note.pageId);
         return DeckParser.normalizeDeck(defaultDeck);
     }
 
@@ -61,6 +61,23 @@ export class DeckParser {
 
     private static async getDefaultDeck(pageId: number): Promise<string> {
         const page = await LogseqProxy.Editor.getPage(pageId);
+        const settings = LogseqProxy.Settings.getPluginSettings();
+        if (page && settings.standalonePageDeckBehavior !== "Derive from page name") {
+            const parents = await LogseqProxy.Editor.getParentNamespacePages(page, {
+                includeLibrary: false,
+                suppressErrors: false
+            });
+            if (parents.length === 0) {
+                const descendants = await LogseqProxy.Editor.getNamespaceDescendants(page, {
+                    suppressErrors: false
+                });
+                if (descendants.length === 0) {
+                    // Set from setting for standalone pages (no namespace ancestors nor child pages)
+                    return settings.standalonePageDeckName?.trim() || "Default";
+                }
+            }
+        }
+        // Use page name for non-standalone pages or when Derive from page name is set
         return await LogseqProxy.Editor.getFullPageName(page, {includeLibrary: false});
     }
 

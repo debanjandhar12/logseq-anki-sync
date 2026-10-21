@@ -13,6 +13,8 @@ export interface PluginSettings {
     enableExperimentalWebSync?: boolean;
     breadcrumbDisplayOptions?: ("Page name" | "Page namespace" | "Parent blocks")[];
     includeParentContent?: boolean;
+    standalonePageDeckBehavior?: "Derive from page name" | "Define in settings";
+    standalonePageDeckName?: string;
     renderClozeMarcosInLogseq?: boolean;
     hideClozeMarcosUntilHoverInLogseq?: boolean;
     addonsList?: string[];
@@ -56,6 +58,24 @@ export const addSettingsToLogseq = async () => {
             default: true,
             title: "Include parent content in cards? (Recommended: Enabled)",
             description: "When enabled, the parent blocks content will be shown in the card."
+        },
+        {
+            key: "standalonePageDeckBehavior",
+            type: "enum",
+            default: "Define in settings",
+            title: "Default Fallback Deck Resolution Behavior for standalone pages",
+            description:
+                "Used only when no deck property is found and the page has neither namespace ancestors nor child pages. The DB Library container does not count as a namespace.",
+            enumChoices: ["Derive from page name", "Define in settings"],
+            enumPicker: "select"
+        },
+        {
+            key: "standalonePageDeckName",
+            type: "string",
+            default: "Default",
+            title: "Default Deck Name for standalone pages",
+            description:
+                "Fallback deck for standalone pages. Blank values use Default. Changes take effect on the next sync."
         },
         {
             key: "logseqSideSettingsHeading",
@@ -152,8 +172,21 @@ export const addSettingsToLogseq = async () => {
         }
     ];
     LogseqProxy.Settings.useSettingsSchema(settingsTemplate);
+    const updateFallbackDeckNameVisibility = (settings: PluginSettings) => {
+        logseq.provideStyle({
+            key: "hide-standalone-page-deck-name",
+            style:
+                settings.standalonePageDeckBehavior === "Derive from page name"
+                    ? `[data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="standalonePageDeckName"] { display: none; }`
+                    : ""
+        });
+    };
+    updateFallbackDeckNameVisibility(LogseqProxy.Settings.getPluginSettings());
     LogseqProxy.Settings.registerSettingsChangeListener(
         (newSettings: PluginSettings, oldSettings: PluginSettings) => {
+            if (newSettings.standalonePageDeckBehavior !== oldSettings.standalonePageDeckBehavior) {
+                updateFallbackDeckNameVisibility(newSettings);
+            }
             if (oldSettings.addonsList === undefined) oldSettings.addonsList = [];
             if (!_.isEqual(newSettings.addonsList, oldSettings.addonsList)) {
                 for (const addon of oldSettings.addonsList) {

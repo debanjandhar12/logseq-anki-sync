@@ -121,6 +121,26 @@ export namespace LogseqProxy {
             {cacheKey: (arguments_) => objectHashOptimized(arguments_)}
         );
 
+        static getNamespaceDescendants = pMemoize(
+            async (
+                page: PageEntity,
+                opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
+            ): Promise<PageEntity[]> => {
+                let descendants: PageEntity[] = [];
+                await getLogseqLock.acquire();
+                try {
+                    descendants = await LogseqNamespaceHelperProxy.getNamespaceDescendants(page);
+                } catch (e) {
+                    logger.error(e);
+                    if (!opts.suppressErrors) throw e;
+                } finally {
+                    getLogseqLock.release();
+                }
+                return descendants;
+            },
+            {cacheKey: (arguments_) => objectHashOptimized(arguments_)}
+        );
+
         static getFullPageName = pMemoize(
             async (
                 page: PageEntity | null | undefined,
@@ -351,6 +371,7 @@ export namespace LogseqProxy {
             pMemoizeClear(LogseqProxy.Editor.getPage);
             pMemoizeClear(LogseqProxy.Editor.getPageBlocksTree);
             pMemoizeClear(LogseqProxy.Editor.getParentNamespacePages);
+            pMemoizeClear(LogseqProxy.Editor.getNamespaceDescendants);
             pMemoizeClear(LogseqProxy.Editor.getFullPageName);
             pMemoizeClear(LogseqProxy.Assets.listFilesOfCurrentGraph);
             pMemoizeClear(LogseqProxy.App.checkCurrentIsDbGraph);

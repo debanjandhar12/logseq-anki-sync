@@ -21,7 +21,7 @@ Use the `deck` property to specify where cards should be stored:
 
 </LogseqExample>
 
-When there is no deck property in the current block, parent block, page properties, or namespace page properties, the card is created in a deck named after the current page name.
+When there is no deck property in the current block, parent block, page properties, or namespace page properties, the card uses the fallback described below.
 
 ## Property Specificity Rules
 
@@ -75,12 +75,15 @@ The Japan capital card goes to the `World Geography` deck (as defined in page pr
 
 If no deck property is found in the current block, parent block, or page properties, the plugin will look for a `deck` property in the namespace pages.
 
-### 5. Current Page Name (Default)
+### 5. Fallback Deck
 
-If no deck property is found anywhere, the deck is named after the current page.
+If no deck property is found anywhere, pages within a namespace or with child pages use the current page name, with `/` converted to `::`.
 
 - Page `Tutorial/Getting Started` → `Tutorial::Getting Started` deck
-- Page `Getting Started` (no namespace) → `Getting Started` deck
+- Page `Tutorial` with child pages → `Tutorial` deck
+- Standalone page `Getting Started` → `Default` deck (can be modified from settings)
+
+> Standalone pages are ones that have neither namespace ancestors nor child pages.
 
 ## Setting Tags with Properties
 

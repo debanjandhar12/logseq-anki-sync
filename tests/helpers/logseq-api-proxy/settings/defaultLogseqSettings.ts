@@ -4,6 +4,8 @@ export const MOCK_LOGSEQ_SETTINGS: PluginSettings = {
     disabled: false,
     breadcrumbDisplayOptions: ["Page name"],
     includeParentContent: true,
+    standalonePageDeckBehavior: "Define in settings",
+    standalonePageDeckName: "Default",
     renderClozeMarcosInLogseq: false,
     hideClozeMarcosUntilHoverInLogseq: false,
     addonsList: [],
