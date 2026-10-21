@@ -6,6 +6,7 @@ import type {
     PageIdentity
 } from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
+import {getBlockTagsForLogseqFileVersion} from "./getBlockTagsForLogseqFileVersion";
 import getNameFromPage from "./getNameFromPage";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqProxy} from "./LogseqProxy";
@@ -204,13 +205,15 @@ export class LogseqPropertiesHelper {
         if (!b?.uuid) return;
 
         const properties = await logseq.Editor.getBlockProperties(b.uuid);
-        if (properties) {
-            b.properties = await LogseqPropertiesHelper.handleTagProperty(b, {
-                ...LogseqPropertiesHelper.addStripedPropertyPrefixes(properties),
-                ...b.properties
-            });
-            if (!b.properties.uuid) b.properties.uuid = b.uuid;
+        b.properties = await LogseqPropertiesHelper.handleTagProperty(b, {
+            ...LogseqPropertiesHelper.addStripedPropertyPrefixes(properties),
+            ...b.properties
+        });
+        if (!isDbGraph) {
+            const inlineTags = await getBlockTagsForLogseqFileVersion(b);
+            b.properties.tags = [...new Set([...b.properties.tags, ...inlineTags])];
         }
+        if (!b.properties.uuid) b.properties.uuid = b.uuid;
 
         if (b.properties?.tags && Array.isArray(b.properties.tags)) {
             await LogseqPropertiesHelper.inheritTagProperties(b, b.properties.tagIds, isDbGraph);
@@ -252,12 +255,15 @@ export class LogseqPropertiesHelper {
 
         if (isDbGraph) {
             const properties = await logseq.Editor.getPageProperties(page.id);
-            if (properties) {
-                page.properties = await LogseqPropertiesHelper.handleTagProperty(page, {
-                    ...LogseqPropertiesHelper.addStripedPropertyPrefixes(properties),
-                    ...page.properties
-                });
-            }
+            page.properties = await LogseqPropertiesHelper.handleTagProperty(page, {
+                ...LogseqPropertiesHelper.addStripedPropertyPrefixes(properties),
+                ...page.properties
+            });
+        } else {
+            page.properties = await LogseqPropertiesHelper.handleTagProperty(
+                page,
+                page.properties || {}
+            );
         }
 
         if (page.properties?.tags && Array.isArray(page.properties.tags)) {

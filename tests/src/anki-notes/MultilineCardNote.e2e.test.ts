@@ -49,6 +49,32 @@ describe("MultilineCardNote E2E Tests", () => {
         expect(finalNotes.length).toBe(initialCount + 1);
     });
 
+    test.skipIf(!globalThis.isLogseqAvailable || globalThis.isLogseqCurrentIsDBGraph)(
+        "incremental, depth and direction tags work in file version (#335, #338)",
+        async () => {
+            const parent = await logseq.Editor.appendBlockInPage(
+                page.uuid,
+                "Question #card #incremental #[[bidirectional]] #depth-1"
+            );
+            const first = await logseq.Editor.insertBlock(parent.uuid, "Answer one");
+            await logseq.Editor.insertBlock(first.uuid, "Excluded grandchild");
+            await logseq.Editor.insertBlock(first.uuid, "Answer two", {sibling: true});
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            const notes = await MultilineCardNote.getNotesFromLogseqBlocks([]);
+            const note = notes.find(({uuid}) => uuid === parent.uuid);
+            expect(note?.tags).toEqual(["card", "incremental", "bidirectional", "depth-1"]);
+            const {html} = await note!.getClozedContentHTML();
+            expect([...html.matchAll(/\{\{c(\d+)::/g)].map((match) => match[1])).toEqual([
+                "2",
+                "1",
+                "3"
+            ]);
+            expect(html).not.toContain("Excluded grandchild");
+            expect(html).not.toMatch(/placeholder|\{\{c\d*::\s*\}\}/);
+        }
+    );
+
     test.skipIf(!globalThis.isLogseqAvailable)(
         "Creates multiple notes with #card-group tag",
         async () => {

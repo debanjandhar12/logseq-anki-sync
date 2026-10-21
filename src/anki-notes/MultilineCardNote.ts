@@ -7,7 +7,7 @@ import type {DependencyEntity} from "../logseq/getLogseqContentDirectDependencie
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {type HTMLFile, LogseqToHtmlConverterProxy} from "../logseq/LogseqToHtmlConverter";
-import {escapeClozesAndMacroDelimiters, safeReplace} from "../utils/utils";
+import {escapeClozesAndMacroDelimiters} from "../utils/utils";
 import {appendExtraToHtmlFile} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
@@ -110,7 +110,7 @@ export class MultilineCardNote extends Note {
         for (const tag of this.tags) {
             const match = /^depth-(\d+)$/i.exec(tag);
             if (match) {
-                maxDepth = parseInt(match[1]);
+                maxDepth = parseInt(match[1], 10);
             }
         }
         return maxDepth;
@@ -130,7 +130,7 @@ export class MultilineCardNote extends Note {
             this.format
         );
         parentBlockHTMLFile.assets.forEach((asset) => clozedContentAssets.add(asset));
-        if (direction == "<->" || direction == "<-")
+        if (direction === "<->" || direction === "<-")
             // Insert cloze braces depending upon direction else simply add parent block html to clozedContent
             clozedContent = `{{c2::${parentBlockHTMLFile.html}}}`;
         else clozedContent = parentBlockHTMLFile.html;
@@ -143,7 +143,7 @@ export class MultilineCardNote extends Note {
             const childrenListAssets = new Set<string>();
             let childrenListHTML = `\n<ul class="children-list left-border">`;
             for (const child of childrenList) {
-                childrenListHTML += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") == "number" ? "numbered" : ""}">`;
+                childrenListHTML += `\n<li class="children ${_.get(child, "properties['logseq.orderListType']") === "number" ? "numbered" : ""}">`;
                 const childContent = _.get(child, "content", "");
                 const sanitizedChildContent = escapeClozesAndMacroDelimiters(childContent);
                 const sanitizedChildHTMLFile = await LogseqToHtmlConverterProxy.convertToHTMLFile(
@@ -168,10 +168,10 @@ export class MultilineCardNote extends Note {
                     allChildrenHTMLFile.assets.forEach((asset) => childrenListAssets.add(asset));
                 }
 
-                if (level == 0 && (direction == "<->" || direction == "->")) {
+                if (level === 0 && (direction === "<->" || direction === "->")) {
                     childrenListHTML += `{{c${cloze_id}:: ${sanitizedChildHTML} }}`;
                     if (this.tags.includes("incremental")) cloze_id++;
-                    if (cloze_id == 2) cloze_id++;
+                    if (cloze_id === 2) cloze_id++;
                 } else childrenListHTML += sanitizedChildHTML;
                 childrenListHTML += `</li>`;
             }
@@ -186,7 +186,7 @@ export class MultilineCardNote extends Note {
         childrenHTMLFile.assets.forEach((asset) => clozedContentAssets.add(asset));
         clozedContent += childrenHTMLFile.html;
 
-        if (this.children.length == 0 && (direction == "<->" || direction == "->"))
+        if (this.children.length === 0 && (direction === "<->" || direction === "->"))
             clozedContent += `{{c${cloze_id}::}}`; // #16
 
         // --- Add extra property content for parent block (non-indented) ---
@@ -279,7 +279,6 @@ export class MultilineCardNote extends Note {
         }
         logseqCardGroup_blocks = await Promise.all(
             logseqCardGroup_blocks.map(async (block) => {
-                const uuid = getUUIDFromBlock(block[0]);
                 const parent = block[0].parent.id;
                 const parentBlock = await LogseqProxy.Editor.getBlock(parent);
                 const tags = _.get(parentBlock, "properties.tags", []) as string[];
@@ -303,7 +302,7 @@ export class MultilineCardNote extends Note {
                     includeChildren: true
                 });
                 if (block) {
-                    const blockTags = _.get(block, "properties.tags", []) as string[];
+                    const blockTags: string[] = block.properties?.tags ?? [];
                     return new MultilineCardNote(
                         uuid,
                         block.content,
@@ -311,7 +310,7 @@ export class MultilineCardNote extends Note {
                         block.properties || {},
                         pageId,
                         // Apply tags in parent card group block - #168
-                        blockTags && blockTags.length > 0 ? blockTags : tagsFromParentCardGroup,
+                        blockTags.length > 0 ? blockTags : tagsFromParentCardGroup,
                         block.children
                     );
                 } else {
