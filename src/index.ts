@@ -14,6 +14,7 @@ import {Note} from "./anki-notes/Note";
 import {SwiftArrowNote} from "./anki-notes/SwiftArrowNote";
 import {ANKI_ICON} from "./constants";
 import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
+import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqHttpProxy} from "./logseq/LogseqHttpProxy";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
@@ -65,6 +66,14 @@ async function main(baseInfo: LSPluginBaseInfo) {
     AddonRegistry.getAll().forEach((addon) => addon.init());
     UI.init();
     WindowParentBridge.setGlobalObject("AnkiConnect", AnkiConnect); // Make AnkiConnect available globally
+
+    // Handle graph changes
+    if (LogseqAppInfoFetcher.checkHostAccess()) {
+        LogseqProxy.App.registerGraphChangeListener(() => {
+            logger.info("Graph changed. Reloading Logseq Anki Sync plugin...");
+            WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
+        });
+    }
 
     // The lines below are needed for vite build and dev to work properly.
     // @ts-ignore
