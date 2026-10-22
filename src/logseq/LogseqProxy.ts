@@ -9,10 +9,10 @@ import type {
     SettingSchemaDesc
 } from "@logseq/libs/dist/LSPlugin";
 import {Semaphore} from "async-mutex";
-import pMemoize, {pMemoizeClear} from "p-memoize";
 import {createLogger, LoggerCategory} from "../logger";
 import type {PluginSettings} from "../settings";
 import objectHashOptimized from "../utils/objectHashOptimized";
+import pMemoize, {pMemoizeClear} from "../utils/pMemoizeWithClone";
 import getNameFromPage from "./getNameFromPage";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqNamespaceHelperProxy} from "./LogseqNamespaceHelper";

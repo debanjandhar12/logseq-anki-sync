@@ -25,7 +25,7 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
 
 ## Architecture
 
-**LogseqProxy Cache Layer:** All Logseq API calls go through `LogseqProxy` which provides memoized, synchronization-safe wrappers around @logseq/libs using p-memoize. Cache clears after sync via 'syncLogseqToAnkiComplete' event. For fresh, non-cached data with properties attached, use `LogseqPropertiesHelper` class.
+**LogseqProxy Cache Layer:** All Logseq API calls go through `LogseqProxy` which provides memoized, synchronization-safe wrappers around @logseq/libs using `src/utils/pMemoizeWithClone.ts`. Cache clears after sync via 'syncLogseqToAnkiComplete' event. For fresh, non-cached data with properties attached, use `LogseqPropertiesHelper` class.
 
 **Property Access (Logseq 0.2.3+):** Properties are now namespaced (e.g., `:user.property/deck-bavZ5684`). The `LogseqPropertiesHelper` class automatically fetches properties, strips prefixes, and filters system properties, maintaining backward compatibility. Use this helper when:
 - Bypassing cache for fresh data (e.g., UI interactions, image occlusion editor)

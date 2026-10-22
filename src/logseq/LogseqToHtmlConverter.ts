@@ -5,7 +5,6 @@ import {edn} from "@yellowdig/cljs-tools";
 import * as cheerio from "cheerio";
 import _ from "lodash";
 import {Mldoc} from "mldoc";
-import pMemoize, {pMemoizeClear} from "p-memoize";
 import path from "path-browserify";
 import {
     ANKI_CLOZE_REGEXP,
@@ -27,6 +26,7 @@ import {
 import {createLogger, LoggerCategory} from "../logger";
 import type {PluginSettings} from "../settings";
 import objectHashOptimized from "../utils/objectHashOptimized";
+import pMemoize, {pMemoizeClear} from "../utils/pMemoizeWithClone";
 import {
     decodeHTMLEntities,
     escapeClozesAndMacroDelimiters,

@@ -1,7 +1,6 @@
 import "@logseq/libs";
 import type {EntityID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-import pMemoize, {pMemoizeClear} from "p-memoize";
 import {
     LOGSEQ_EMBDED_PAGE_REGEXP,
     LOGSEQ_PAGE_REF_REGEXP,
@@ -10,6 +9,7 @@ import {
     ORG_PROPERTIES_REGEXP
 } from "../constants";
 import objectHashOptimized from "../utils/objectHashOptimized";
+import pMemoize, {pMemoizeClear} from "../utils/pMemoizeWithClone";
 import {safeReplace, safeReplaceAsync} from "../utils/utils";
 import getIDFromPage from "./getIDFromPage";
 import getNameFromPage from "./getNameFromPage";
