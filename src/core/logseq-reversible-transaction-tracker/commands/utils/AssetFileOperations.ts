@@ -61,7 +61,7 @@ export class AssetFileOperations {
         const exists = await AssetFileOperations.exists(resolved);
         if (!exists) return {exists: false};
         const url = await WindowParentBridge.makeAssetUrl(resolved.graphRelativePath);
-        const response = await WindowParentBridge.getFetch()(url);
+        const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to read asset: ${response.status}`);
         return {
             exists: true,
@@ -110,7 +110,7 @@ export class AssetFileOperations {
         if (!/^[a-z][a-z\d+.-]*:/i.test(url))
             throw new Error("Logseq did not resolve an asset URL");
         // Both sides use the same URL around rollback; never reuse a cached applied version.
-        const response = await WindowParentBridge.getFetch()(url, {cache: "no-store"});
+        const response = await fetch(url, {cache: "no-store"});
         if (!response.ok) throw new Error(`Failed to read asset: ${response.status}`);
         if (!response.body) throw new Error("Asset response does not support bounded reading");
         let bytes: Uint8Array;

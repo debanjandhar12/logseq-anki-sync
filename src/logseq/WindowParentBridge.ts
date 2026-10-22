@@ -137,13 +137,6 @@ export class WindowParentBridge {
     }
 
     /**
-     * Get the fetch API from parent window
-     */
-    static getFetch(): typeof fetch {
-        return WindowParentBridge.getParentWindow().fetch.bind(WindowParentBridge.parentWindow);
-    }
-
-    /**
      * Open a URL in a new window/tab
      * @param url - The URL to open
      * @param target - The target (defaults to '_blank')
