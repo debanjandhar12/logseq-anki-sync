@@ -66,10 +66,28 @@ p {
 }
 
 .extra {
+    position: relative;
     background-color: antiquewhite;
     border-radius: 4px;
     padding: 3px;
+    padding-left: 1.6em;
     font-size: small;
+    min-height: 1.2em;
+}
+
+.extra:not(:empty)::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 3px;
+    width: 1.2em;
+    height: 1.2em;
+    background-color: currentColor;
+    opacity: 0.65;
+    pointer-events: none;
+    -webkit-mask: url("../../node_modules/@tabler/icons/icons/outline/notes.svg?inline") center / contain no-repeat;
+    mask: url("../../node_modules/@tabler/icons/icons/outline/notes.svg?inline") center / contain no-repeat;
 }
 
 .extra:empty {
