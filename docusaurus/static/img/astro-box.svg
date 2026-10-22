@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Logseq AstroBox</title>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#172554"/>
+  <path d="m16 27 16-8 16 8v19l-16 8-16-8Z" fill="#60a5fa"/>
+  <path d="m16 27 16 8 16-8M32 35v19" fill="none" stroke="#172554" stroke-width="3" stroke-linejoin="round"/>
+  <path d="m45 8 2.5 5.5L53 16l-5.5 2.5L45 24l-2.5-5.5L37 16l5.5-2.5Z" fill="#fbbf24"/>
+</svg>

@@ -16,7 +16,7 @@ interface ModalStackEntry {
 }
 
 /**
- * UI Manager for Logseq Anki Sync Plugin
+ * UI Manager for the Logseq AstroBox plugin
  *
  * Manages modal display with proper stacking support. Multiple modals can be open
  * simultaneously, each in its own container with proper z-index layering.

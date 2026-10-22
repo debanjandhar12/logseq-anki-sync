@@ -32,7 +32,7 @@ const ReactDOMInternals = ReactDOM as any;
 const OriginalReactDOMInternals = OriginalReactDOM as any;
 
 const getDefaultPortalContainer = (): Element | DocumentFragment | null => {
-    return (globalThis as any).__LOGSEQ_AI_CHAT_PORTAL_CONTAINERS__?.at(-1) ?? null;
+    return (globalThis as any).__LOGSEQ_ASTRO_BOX_PORTAL_CONTAINERS__?.at(-1) ?? null;
 };
 
 const isDocumentBody = (container: Element | DocumentFragment): boolean => {

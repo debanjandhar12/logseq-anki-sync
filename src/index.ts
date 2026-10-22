@@ -32,7 +32,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     // Check db version or not
     if (!(await LogseqAppInfoFetcher.checkCurrentIsDbGraph())) {
         await logseq.UI.showMsg(
-            "Logseq AI Chat is only supported in DB Graphs. Please switch to DB Graphs and try again.",
+            "Logseq AstroBox is only supported in DB Graphs. Please switch to DB Graphs and try again.",
             "error"
         );
         return;
@@ -45,7 +45,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
 
     // Register UI and Commands
     await initAIChat();
-    WindowParentBridge.setGlobalObject("LogseqAIChat", {
+    WindowParentBridge.setGlobalObject("LogseqAstroBox", {
         showAIChat: () => new OpenAIChatCommand().execute()
     });
     registerToolbar(baseInfo);
@@ -72,9 +72,9 @@ async function main(baseInfo: LSPluginBaseInfo) {
     if (lastWelcomeVersion && lastWelcomeVersion !== pkg.version) {
         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait logseq's react to load
         await showButtonModal(
-            `<span class="flex items-center"><i class="px-1">${AI_ICON}</i>Welcome to Logseq AI Chat ${pkg.version}!</span>
+            `<span class="flex items-center"><i class="px-1">${AI_ICON}</i>Welcome to Logseq AstroBox ${pkg.version}!</span>
             <div style="overflow-y: auto; margin-top: 10px; border: 1px solid var(--ls-border-color); border-radius: 4px;">
-                <iframe src="https://github.com/debanjandhar12/logseq-ai-chat/releases/tag/v${pkg.version}" style="width: 100%; height: 100%; min-height: 400px; border: none;"></iframe>
+                <iframe src="https://github.com/debanjandhar12/logseq-astro-box/releases/tag/v${pkg.version}" style="width: 100%; height: 100%; min-height: 400px; border: none;"></iframe>
             </div>`,
             [
                 {
@@ -89,7 +89,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
                     name: "Open in GitHub",
                     f: () => {
                         window.open(
-                            `https://github.com/debanjandhar12/logseq-ai-chat/releases/tag/v${pkg.version}`
+                            `https://github.com/debanjandhar12/logseq-astro-box/releases/tag/v${pkg.version}`
                         );
                     },
                     closeOnClick: false,

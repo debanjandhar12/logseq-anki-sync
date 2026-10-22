@@ -20,7 +20,7 @@ export const initAIChat = async () => {
 
     try {
         await logseq.Experiments.registerSidebarRenderer(getSidebarRendererKey(), {
-            title: "Logseq AI Chat",
+            title: "Logseq AstroBox",
             render: () => {
                 const settings = LogseqSettingAccessor.getPluginSettings();
                 const openInSidebar = settings.openChatInSidebar ?? true;

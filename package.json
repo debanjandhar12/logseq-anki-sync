@@ -1,12 +1,12 @@
 {
-    "name": "logseq-ai-chat",
+    "name": "logseq-astro-box",
     "version": "0.0.1",
-    "title": "Logseq AI Chat",
-    "description": "The best logseq plugin ever.",
+    "title": "Logseq AstroBox",
+    "description": "An harness for logseq with superpowers.",
     "main": "dist/index.html",
     "type": "module",
     "license": "AGPL-3.0",
-    "repository": "debanjandhar12/logseq-ai-chat",
+    "repository": "debanjandhar12/logseq-astro-box",
     "author": "@debanjandhar12",
     "engines": {
         "node": ">=22.12 <23"

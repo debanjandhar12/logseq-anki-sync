@@ -7,7 +7,7 @@ export default function GiscusComments({ discussionNumber }) {
 
   return (
     <Giscus
-      repo="debanjandhar12/logseq-anki-sync"
+      repo="debanjandhar12/logseq-astro-box"
       repoId="R_kgDOGqWYhA"
       category="Documentation"
       categoryId="DIC_kwDOGqWYhM4CUl_j"

@@ -2,6 +2,6 @@ import "@logseq/libs";
 
 declare global {
     interface Window {
-        LogseqAiChat: any;
+        LogseqAstroBox: {showAIChat: () => Promise<void>};
     }
 }

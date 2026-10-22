@@ -1,51 +1,31 @@
-# Logseq Anki Sync [<img align="right" src="https://img.shields.io/github/stars/debanjandhar12/logseq-anki-sync.svg?logo=GitHub&style=flat" height="30"/>](https://github.com/debanjandhar12/logseq-anki-sync/)[<img align="right" src="https://img.shields.io/github/sponsors/debanjandhar12.svg?logo=github&style=flat&height=60&label=Donate&cacheSeconds=28800&color=orange" height="30"/>](https://github.com/sponsors/debanjandhar12)
+# Logseq AstroBox
 
-<h3 align="center">An logseq to anki syncing plugin with super powers.</h3>
+[![GitHub stars](https://img.shields.io/github/stars/debanjandhar12/logseq-astro-box?logo=GitHub)](https://github.com/debanjandhar12/logseq-astro-box)
+[![Sponsor](https://img.shields.io/github/sponsors/debanjandhar12?logo=github&label=Sponsor)](https://github.com/sponsors/debanjandhar12)
 
-## 🚀 Features
-<ul><li>
-<details open>
-  <summary><b>🐾 Supports rendering of logseq markdown and org mode in anki</b></summary>
-  <div>
-   The plugin supports rendering block and page references, pdf annotations, math and everything else.
-   <img src='https://github.com/debanjandhar12/logseq-anki-sync/assets/49021233/7985cdb4-910d-43bf-833d-7b04403a503f' height='440' /> <br/>
-  </div>
-</details></li><li>
-<details>
-  <summary><b>🔥 Several additional features like image occlusion, pdfs, card direction, etc</b></summary>
-  <div>
-   The plugin supports image occlusion, occlusion on pdf annotaion, card direction, incremental cards, clozes, hints and a lot more. Check <a href="#-documentation">documentation</a> for more details!
-   <img src='https://github.com/debanjandhar12/logseq-anki-sync/assets/49021233/5b036383-d7cc-4837-9f74-da21a5f504f8' height='440' /> <br/>
-  </div>
-</details></li><li>
-<details>
-  <summary><b>🃟 Supports various features of anki</b></summary>
-  Anki employs advanced scheduling algorithms, making it a superior choice for many users. Additionally, anki allows the creation of filtered decks, enabling you to study a specific set of cards for exams, regardless of their original scheduling. The plugin allows you to use all those features and various others like heatmaps, tts, leach cards, etc. 
-</details></li><li>
-<details>
-  <summary><b>🚕 Extremely fast</b></summary>
-  The plugin uses state of art hashing techniques to detect changes in logseq or anki and provides the user option to resync (with logseq as source of truth).
-</details></li>
-</ul>
+An harness for logseq with superpowers.
 
-## 🛠️ Installation ([Video](https://www.youtube.com/watch?v=XOkJmncK-o0)) and Documentation
+## Features
 
-1. Install Logseq Anki Sync from Marketplace.
-    - Go to `⋯` > `Settings` > `Features` and enable `Plugins`.
-    - Now, go to `⋯` > `Plugin` > `Marketplace` and find Logseq Anki Sync and click install.
-2. Download and install [Anki](https://apps.ankiweb.net/) if not done already.
-3. Install AnkiConnect on Anki.
-    - Open Anki.
-    - Select `Tools` > `Add-ons `. Now a Anki addon's dialog will open.
-    - Now click `Get Add-ons...` in addon's dialog and enter [2055492159](https://ankiweb.net/shared/info/2055492159) into the text box labeled `Code` and press the `OK` button to proceed.
-4. **Restart Anki and Logseq**.
-5. Now, you can use the plugin by clicking Sync to Anki button in Logseq's toolbar.<br/>
-   NB: Make sure the anki is running in background before clicking the Sync to Anki button.
-6. If you receive a [logseq wants to access anki message](https://raw.githubusercontent.com/debanjandhar12/Obsidian-Anki-Sync/main/docs/images/permission.png), click `Yes`.
+- **Chat GUI:** Chat window with tools such as Logseq page editing, DataScript search, web search, etc.
+- **Version Control:** Git-like version control to review and revert changes made by the LLM.
+- **Multiple Providers Supported:** Choose models from OpenAI, Google, Codex subscription, and other custom endpoints (yes, an Ollama endpoint will work as well...).
+- **Skills, Reusable commands:** Save prompts you use often as commands, and add skills to teach the assistant how you like things done.
+- **Sandboxed Environment:** LLMs run commands in a completely emulated environment powered by just-bash and Pyodide.
 
-For usage, please see documentation: https://debanjandhar12.github.io/logseq-anki-sync/docs/intro/
+AstroBox requires a **Logseq DB graph**. File graphs are not supported.
 
-> Please create a [github issue](https://github.com/debanjandhar12/logseq-anki-sync/issues) for any feature request and reporting bugs.
+## Installation and first use
+
+1. Download `logseq-astro-box.zip` from a [release](https://github.com/debanjandhar12/logseq-astro-box/releases) and extract it.
+2. In Logseq desktop, enable plugins and Developer mode, open the Plugins dashboard, and use **Load unpacked plugin** to select the extracted folder containing `package.json`.
+3. Open Logseq AstroBox's plugin settings and select **Open Provider Configurations**. Configure a provider, enable a model, and save.
+4. Choose **Open Logseq AstroBox Chat** from Logseq's command palette, or click the AstroBox toolbar icon and choose **Open Chat**.
+
+## Documentation and feedback
+
+- [Documentation](https://debanjandhar12.github.io/logseq-astro-box/docs/intro)
+- [Report a bug or request a feature](https://github.com/debanjandhar12/logseq-astro-box/issues)
 
 # 🙏 Support
 

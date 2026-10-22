@@ -26,7 +26,7 @@ Please add a screenshot of the error in logseq's developer console if applicable
 **Device Information (please complete the following information):**
 
 -   OS with version: [e.g. Windows 11 Home 21H2]
--   Logseq Anki Sync Plugin Version: [e.g. 0.3.3]
--   Anki Version: [e.g. 2.1.49]
--   AnkiConnect Addon Version: [e.g. 2.1.0]
--   Logseq Version: [e.g. 0.5.9]
+-   Logseq AstroBox Plugin Version: [e.g. 0.0.1]
+-   Logseq Version:
+-   Logseq environment: [desktop or web]
+-   Graph type: [DB graph or file graph]

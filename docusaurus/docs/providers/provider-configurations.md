@@ -4,7 +4,7 @@ title: Provider Configurations
 
 # Provider Configurations
 
-Open Logseq's plugin settings for Logseq AI Chat and select **Open Provider Configurations**. Provider configurations let you use multiple accounts, endpoints, and provider types in the same model selector.
+Open Logseq's plugin settings for Logseq AstroBox and select **Open Provider Configurations**. Provider configurations let you use multiple accounts, endpoints, and provider types in the same model selector.
 
 ## Supported Providers
 

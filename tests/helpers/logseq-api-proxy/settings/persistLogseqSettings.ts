@@ -1,7 +1,7 @@
 import type {PluginSettings} from "../../../../src/settings";
 import {getDefaultSettings} from "./defaultLogseqSettings";
 
-const LOGSEQ_SETTINGS_STORAGE_KEY = "logseq-ai-chat-test-settings";
+const LOGSEQ_SETTINGS_STORAGE_KEY = "logseq-astro-box-test-settings";
 
 export function readPersistedSettings(): PluginSettings {
     if (typeof localStorage !== "undefined") {

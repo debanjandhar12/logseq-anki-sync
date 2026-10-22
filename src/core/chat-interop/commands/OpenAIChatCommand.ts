@@ -7,7 +7,7 @@ import {showAIChatModal} from "../../../ui";
 import type {ChatCommand} from "../types";
 
 const logger = createLogger(LoggerCategory.CHAT_UI);
-const sidebarRendererKey = "logseq-ai-chat-ui-sidebar";
+const sidebarRendererKey = "logseq-astro-box-ui-sidebar";
 const sidebarPageName = `_sidebar.${sidebarRendererKey}`;
 
 /**

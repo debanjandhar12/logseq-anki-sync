@@ -3,13 +3,13 @@ const lightCodeTheme = themes.github;
 const darkCodeTheme = themes.dracula;
 
 const config = {
-  title: 'Logseq Anki Sync',
-  tagline: 'Sync Logseq flashcards to Anki with superpowers',
-  favicon: 'img/anki-logo.svg',
+  title: 'Logseq AstroBox',
+  tagline: 'An harness for logseq with superpowers.',
+  favicon: 'img/astro-box.svg',
   url: 'https://debanjandhar12.github.io',
-  baseUrl: '/logseq-anki-sync/',
+  baseUrl: '/logseq-astro-box/',
   organizationName: 'debanjandhar12',
-  projectName: 'logseq-anki-sync',
+  projectName: 'logseq-astro-box',
   deploymentBranch: 'gh-pages',
   trailingSlash: false,
   onBrokenLinks: 'warn',
@@ -24,7 +24,7 @@ const config = {
             {
                 docs: {
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: 'https://github.com/debanjandhar12/logseq-anki-sync/tree/main/docs/',
+          editUrl: 'https://github.com/debanjandhar12/logseq-astro-box/tree/ai/docusaurus/docs/',
                     breadcrumbs: true,
                 },
                 blog: false,
@@ -51,8 +51,8 @@ const config = {
         },
         navbar: {
             logo: {
-        alt: 'Anki logo',
-        src: 'img/anki-logo.svg',
+        alt: 'Logseq AstroBox logo',
+        src: 'img/astro-box.svg',
             },
             items: [
                 {
@@ -66,7 +66,7 @@ const config = {
                     position: 'right',
                 },
                 {
-          href: 'https://github.com/debanjandhar12/logseq-anki-sync',
+          href: 'https://github.com/debanjandhar12/logseq-astro-box',
           position: 'right',
           label: 'GitHub Project',
                 },
@@ -91,11 +91,11 @@ const config = {
                     items: [
                         {
               label: 'GitHub Issues',
-              href: 'https://github.com/debanjandhar12/logseq-anki-sync/issues',
+              href: 'https://github.com/debanjandhar12/logseq-astro-box/issues',
                         },
                         {
               label: 'GitHub Discussions',
-              href: 'https://github.com/debanjandhar12/logseq-anki-sync/discussions',
+              href: 'https://github.com/debanjandhar12/logseq-astro-box/discussions',
                         },
                     ],
                 },

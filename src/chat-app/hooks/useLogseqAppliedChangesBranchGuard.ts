@@ -10,7 +10,7 @@ const logger = createLogger(LoggerCategory.CHAT_UI);
 
 const BRANCH_SWITCH_CONFIRMATION_MESSAGE =
     "The current branch has applied uncommitted changes. Do you want to revert them and switch branches?";
-const BRANCH_SWITCH_ERROR_NOTIFICATION_KEY = "logseq-ai-chat-branch-switch-revert-error";
+const BRANCH_SWITCH_ERROR_NOTIFICATION_KEY = "logseq-astro-box-branch-switch-revert-error";
 const BRANCH_SWITCH_ERROR_NOTIFICATION_TIMEOUT_MS = 10_000;
 
 export const hasAppliedChanges = (

@@ -10,8 +10,8 @@ export const initContextMenu = async () => {
     });
     logseq.App.registerCommandPalette(
         {
-            key: `logseq-ai-chat-command-palette-${logseq.baseInfo.id}`,
-            label: `Open Logseq AI Chat`,
+            key: `logseq-astro-box-command-palette-${logseq.baseInfo.id}`,
+            label: "Open Logseq AstroBox Chat",
             keybinding: {mode: "global", binding: ""}
         },
         () => new OpenAIChatCommand().execute()

@@ -5,8 +5,8 @@ import {offsetParent} from "composed-offset-position";
  * sidebar's shadow root. Radix Popper and Floating UI read global portal,
  * collision-boundary, and offset-parent state while ShadowWrapper is mounted.
  */
-const portalContainersKey = "__LOGSEQ_AI_CHAT_PORTAL_CONTAINERS__";
-const compatibilityStateKey = "__LOGSEQ_AI_CHAT_SHADOW_DOM_COMPATIBILITY__";
+const portalContainersKey = "__LOGSEQ_ASTRO_BOX_PORTAL_CONTAINERS__";
+const compatibilityStateKey = "__LOGSEQ_ASTRO_BOX_SHADOW_DOM_COMPATIBILITY__";
 
 interface ShadowDomCompatibilityOptions {
     container: HTMLElement;

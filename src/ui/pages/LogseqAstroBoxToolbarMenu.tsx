@@ -40,7 +40,7 @@ type ToolbarMenuItem =
       }
     | SelectableToolbarMenuItem;
 
-const LogseqAIChatToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
+const LogseqAstroBoxToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
     triggerRect,
     parentWidth,
     modalId
@@ -95,7 +95,7 @@ const LogseqAIChatToolbarMenuComponent: FC<ToolbarMenuModalProps> = ({
                 disabled: true,
                 separator: false,
                 onClick: () => {
-                    window.open("https://debanjandhar12.github.io/logseq-anki-sync/docs/intro");
+                    window.open("https://debanjandhar12.github.io/logseq-astro-box/docs/intro");
                 }
             },
             {
@@ -242,7 +242,7 @@ function isSelectableToolbarMenuItem(item: ToolbarMenuItem): item is SelectableT
 export function showToolbarMenu(triggerRect: DOMRect | null, parentWidth?: number) {
     const modalId = `modal-toolbar-${Date.now()}`;
     UI.showModal(
-        <LogseqAIChatToolbarMenuComponent
+        <LogseqAstroBoxToolbarMenuComponent
             modalId={modalId}
             triggerRect={triggerRect}
             parentWidth={parentWidth}
