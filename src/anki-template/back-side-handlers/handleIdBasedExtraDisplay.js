@@ -1,4 +1,9 @@
-export function handleExtraForOcclusionAndForHighlightNote() {
+/**
+ * Displays ID-specific extra details for Highlight Notes, Cloze Notes, and Occlusion Notes.
+ * Individual notes add data-element-extra-markers, which are used to determine
+ * which extra details to show.
+ */
+export function handleIdBasedExtraDisplay() {
     const content = document.getElementById("main-content");
     if (!content || !document.querySelector(".anki-card-back-side")) return;
     const markers = content.querySelector("[data-element-extra-markers]");
@@ -9,20 +14,20 @@ export function handleExtraForOcclusionAndForHighlightNote() {
             (marker) => marker.dataset.elementExtraCloze
         )
     );
-    // Remove synthetic answers before the type-in handler collects native clozes.
-    markers.remove();
-
+    const clozeData = content.querySelector("[data-id-based-extras]");
     const occlusionData = content.querySelector("#imgToOcclusionDataHashMap");
     const highlightData = content.querySelector("#highlightMaskData");
     let elements;
     try {
-        if (occlusionData) {
+        if (clozeData) {
+            elements = JSON.parse(decodeURIComponent(clozeData.textContent)).elements;
+        } else if (occlusionData) {
             const data = JSON.parse(
                 occlusionData.dataset.encoding === "uri"
                     ? decodeURIComponent(occlusionData.textContent)
                     : occlusionData.innerHTML
             );
-            elements = Object.values(data).flatMap((image) => image.elements);
+            elements = Object.values(data).flatMap((image) => image?.elements ?? []);
         } else if (highlightData) {
             elements = JSON.parse(decodeURIComponent(highlightData.textContent)).elements;
         }
@@ -32,6 +37,8 @@ export function handleExtraForOcclusionAndForHighlightNote() {
     }
     if (!Array.isArray(elements)) return;
 
+    // Rebuild only generated extras; retained markers allow safe repeated execution.
+    content.querySelectorAll("[data-element-extra]").forEach((extra) => extra.remove());
     const globalExtra = content.querySelector(".extra-block");
     for (const element of elements) {
         if (!element || !activeIds.has(String(element.cId))) continue;

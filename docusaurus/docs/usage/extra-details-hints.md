@@ -7,7 +7,25 @@ discussion: "92"
 
 import LogseqExample from '@site/src/components/LogseqExample';
 
-Add supporting information to your flashcards using block properties.
+Add supporting information to your flashcards using hints and extra details.
+
+## Hints
+
+It is possible to add hints to the front side of cloze cards using this syntax:
+
+<LogseqExample>
+
+- {{c1 Tokyo::what city?}} is the capital of Japan.
+
+</LogseqExample>
+
+This produces the following card:
+
+| Front | Back |
+| --- | --- |
+| ![Hint front](/img/hint-front.png) | ![Hint back](/img/hint-back.png) |
+
+Hints can also be added to Highlight Note and Occlusion Note through the GUI.
 
 ## Extra Details
 
@@ -27,20 +45,16 @@ This produces the following card:
 | --- | --- |
 | ![Extra card front](/img/extra-details-front.png) | ![Extra card back](/img/extra-details-back.png) |
 
-This above property supported by all card types.
+The above property is supported by all card types.
 
-## Hints
-
-It is possible to add hints to front size of cloze cards using this syntax:
+For ID-specific extra details, use `{{c1 clozed_text::hint::extra}}`:
 
 <LogseqExample>
 
-- {{c1 Tokyo::what city?}} is the capital of Japan.
+- {{c1 Tokyo::what city?::Japan's capital}} is the capital of Japan.
 
 </LogseqExample>
 
-This produces the following card:
+The extra appears as plain text on the back of the corresponding cloze card.
 
-| Front | Back |
-| --- | --- |
-| ![Hint front](/img/hint-front.png) | ![Hint back](/img/hint-back.png) |
+> Extra Details can also be added to Highlight Note and Occlusion Note through the GUI.

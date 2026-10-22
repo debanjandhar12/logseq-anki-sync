@@ -1,7 +1,9 @@
+import {getAnswerClozeElements} from "../utils/getAnswerClozeElements.js";
+
 export function handleScrollToClozeElement() {
     const action = document.querySelector('[data-card-action="scroll-to-cloze"]');
     const scrollToClozeElement = () => {
-        document.querySelector(".cloze")?.scrollIntoView({
+        getAnswerClozeElements()[0]?.scrollIntoView({
             behavior: "smooth",
             block: "center",
             inline: "center"

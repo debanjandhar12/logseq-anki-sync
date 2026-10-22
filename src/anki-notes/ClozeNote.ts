@@ -8,8 +8,13 @@ import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {type HTMLFile, LogseqToHtmlConverterProxy} from "../logseq/LogseqToHtmlConverter";
 import {WindowParentBridge} from "../logseq/WindowParentBridge";
-import {escapeClozesAndMacroDelimiters, safeReplace, string_to_arr} from "../utils/utils";
-import {appendExtraToHtmlFile} from "./NoteUtils";
+import {
+    escapeClozesAndMacroDelimiters,
+    getRandomUnicodeString,
+    safeReplace,
+    string_to_arr
+} from "../utils/utils";
+import {appendExtraToHtmlFile, appendIdBasedExtrasToContent, type IdBasedExtra} from "./NoteUtils";
 
 export class ClozeNote extends Note {
     public type = "cloze";
@@ -99,7 +104,7 @@ export class ClozeNote extends Note {
                 if (mutations.length <= 8) {
                     for (const mutation of mutations) {
                         const addedNode = mutation.addedNodes[0];
-                        if (addedNode && addedNode.childNodes.length) {
+                        if (addedNode?.childNodes.length) {
                             displayAnkiCloze(addedNode as Element);
                         }
                     }
@@ -116,6 +121,26 @@ export class ClozeNote extends Note {
     public async getClozedContentHTML(): Promise<HTMLFile> {
         let cloze_id = 1;
         let clozedContent: string = this.content;
+        const extras: IdBasedExtra[] = [];
+        const renderCloze = (cId: number, body: string) => {
+            const parts = body.split("::");
+            if (parts.length >= 3) {
+                const answer = parts.shift()!.trim();
+                const hint = parts.shift()!.trim();
+                const extra = parts.join("::").trim();
+                if (extra) extras.push({cId, extra});
+                return `{{c${cId}::${answer}${hint ? `::${hint}` : ""}}}`;
+            }
+            // Preserve the existing Logseq cloze cue syntax.
+            const clozeBody = body.replace(
+                /(.*)(\\\\|::)(.*)/,
+                (_match, answer, _separator, hint) =>
+                    `${answer.trim()}${hint.trim() ? `::${hint.trim()}` : ""}`
+            );
+            return `{{c${cId}::${clozeBody}}}`;
+        };
+        const macroStart = getRandomUnicodeString();
+        const macroEnd = getRandomUnicodeString();
 
         // --- Remove logseq properties and store it in removedLogseqProperties as it might cause problems during cloze creation ---
         const [contentWithoutProperties, , removedLogseqProperties] =
@@ -126,16 +151,17 @@ export class ClozeNote extends Note {
         clozedContent = contentWithoutProperties;
 
         // --- Add anki cloze marco clozes ---
+        // Mark eligible macros first: safeReplace restores math/code before we extract extras.
         clozedContent = safeReplace(
             clozedContent,
             /\{\{(c|cloze)([1-9]) (.*?)\}\}/g,
-            (_match, _group1, group2, group3) => {
-                cloze_id = Math.max(cloze_id, parseInt(group2, 10) + 1);
-                group3 = group3.replace(
-                    /(.*)(\\\\|::)(.*)/,
-                    (_match, g1, _g2, g3) => `${g1.trim()}::${g3.trim()}`
-                ); // Add support for logseq cloze cue
-                return `{{c${parseInt(group2, 10)}::${group3}}}`;
+            (macro) => `${macroStart}${macro}${macroEnd}`
+        ).replace(
+            new RegExp(`${macroStart}\\{\\{(?:c|cloze)([1-9]) ([\\s\\S]*?)\\}\\}${macroEnd}`, "g"),
+            (_match, id, body) => {
+                const cId = parseInt(id, 10);
+                cloze_id = Math.max(cloze_id, cId + 1);
+                return renderCloze(cId, body);
             }
         );
 
@@ -146,13 +172,13 @@ export class ClozeNote extends Note {
             if (replaceclozeProp) {
                 let replaceclozeArr: any;
                 try {
-                    if (typeof replaceclozeProp == "string" && replaceclozeProp.trim() != "") {
+                    if (typeof replaceclozeProp === "string" && replaceclozeProp.trim() !== "") {
                         replaceclozeArr = string_to_arr(
                             replaceclozeProp.replace(/(^\s*"|\s*"$)/g, "")
                         );
                     } else if (
-                        typeof replaceclozeProp == "object" &&
-                        replaceclozeProp.constructor == Array
+                        typeof replaceclozeProp === "object" &&
+                        replaceclozeProp.constructor === Array
                     ) {
                         replaceclozeArr = string_to_arr(replaceclozeProp.join(","));
                     } else replaceclozeArr = [];
@@ -166,13 +192,16 @@ export class ClozeNote extends Note {
                 const replaceclozehintProp =
                     this.properties?.replaceclozehint ?? this.properties?.[".replaceclozehint"];
                 let replaceclozeHintArr: any;
-                if (typeof replaceclozehintProp == "string" && replaceclozehintProp.trim() != "") {
+                if (
+                    typeof replaceclozehintProp === "string" &&
+                    replaceclozehintProp.trim() !== ""
+                ) {
                     replaceclozeHintArr = replaceclozehintProp
                         .replace(/(^\s*"|\s*"$)/g, "")
                         .split(",");
                 } else if (
-                    typeof replaceclozehintProp == "object" &&
-                    replaceclozehintProp.constructor == Array
+                    typeof replaceclozehintProp === "object" &&
+                    replaceclozehintProp.constructor === Array
                 ) {
                     replaceclozeHintArr = replaceclozehintProp;
                 } else replaceclozeHintArr = [];
@@ -202,23 +231,25 @@ export class ClozeNote extends Note {
         }
 
         // --- Add logseq clozes ---
-        clozedContent = safeReplace(clozedContent, /\{\{cloze (.*?)\}\}/g, (match, group1) => {
-            group1 = group1.replace(
-                /(.*)(\\\\|::)(.*)/,
-                (match, g1, g2, g3) => `${g1.trim()}::${g3.trim()}`
-            ); // Add support for logseq cloze cue
-            return `{{c${cloze_id++}::${group1}}}`;
-        });
+        clozedContent = safeReplace(
+            clozedContent,
+            /\{\{cloze (.*?)\}\}/g,
+            (macro) => `${macroStart}${macro}${macroEnd}`
+        ).replace(
+            new RegExp(`${macroStart}\\{\\{cloze ([\\s\\S]*?)\\}\\}${macroEnd}`, "g"),
+            (_match, body) => renderCloze(cloze_id++, body)
+        );
 
         // --- Add org block clozes ---
         clozedContent = safeReplace(
             clozedContent,
             /#\+BEGIN_(CLOZE)( .*)?\n((.|\n)*?)#\+END_\1/gi,
-            (match, g1, g2, g3) => `{{c${cloze_id++}::${g3.trim()}}}`
+            (_match, _g1, _g2, g3) => `{{c${cloze_id++}::${g3.trim()}}}`
         );
 
         // --- Add back the removed logseq properties ---
         clozedContent = removedLogseqProperties + clozedContent;
+        clozedContent = appendIdBasedExtrasToContent(clozedContent, extras);
 
         const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(
             clozedContent,

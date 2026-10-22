@@ -1,10 +1,11 @@
 import {compareAnswer} from "../type-in-comparator/index.js";
+import {getAnswerClozeElements} from "../utils/getAnswerClozeElements.js";
 
 export function handleTypeInTagResult() {
     const input = document.querySelector("input#typeans");
     if (!input) return;
     const provided = localStorage.getItem("logseq-prev-typeans");
-    const expected = Array.from(document.getElementsByClassName("cloze"))
+    const expected = getAnswerClozeElements()
         .map((element) => element.innerText)
         .join(", ");
     const result = document.createElement("div");
