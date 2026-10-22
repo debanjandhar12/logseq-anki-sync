@@ -10,11 +10,11 @@ export interface IdBasedExtra {
     extra: string;
 }
 
-/** Append plain-text extra metadata after conversion so its contents remain literal. */
-export function appendIdBasedExtrasToHtmlFile(htmlFile: HTMLFile, elements: IdBasedExtra[]): void {
-    if (!elements.length) return;
+/** Encode plain-text extras before conversion so they stay literal and enter the cache key. */
+export function appendIdBasedExtrasToContent(content: string, elements: IdBasedExtra[]): string {
+    if (!elements.length) return content;
     const ids = [...new Set(elements.map((element) => element.cId))];
-    htmlFile.html += `\n<div class="hidden">
+    return `${content}\n<div class="hidden">
         <div data-element-extra-markers>${ids.map((cId) => `{{c${cId}::<span data-element-extra-cloze="${cId}"> </span>}}`).join("")}</div>
         <div data-id-based-extras>${encodeURIComponent(JSON.stringify({elements}))}</div>
         </div>`;

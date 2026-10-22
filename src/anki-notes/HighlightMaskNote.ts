@@ -12,7 +12,7 @@ import {type HighlightMaskData, showHighlightMaskEditor} from "../ui";
 import {getHealedHighlightGeometry, matchTextQuote} from "../utils/HighlightNoteQuotePosFinder";
 import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
 import {escapeClozesAndMacroDelimiters} from "../utils/utils";
-import {appendExtraToHtmlFile} from "./NoteUtils";
+import {appendExtraToHtmlFile, appendIdBasedExtrasToContent} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
@@ -158,7 +158,9 @@ export class HighlightMaskNote extends Note {
         }
 
         // Extract before sorting: extras must retain stored element order, not reverse replacement order.
-        const extraElements = replacements.map(({element}) => element);
+        const extraElements = replacements.flatMap(({element}) =>
+            element.extra?.trim() ? [{cId: element.cId, extra: element.extra}] : []
+        );
 
         // Sort from end to start to avoid shifting earlier substitution positions
         replacements.sort((a, b) => b.start - a.start);
@@ -172,21 +174,7 @@ export class HighlightMaskNote extends Note {
         }
 
         // Add back properties
-        clozedContent = removedLogseqProperties + rawContent;
-        if (extraElements.some((element) => element.extra?.trim())) {
-            // Transport element metadata like image occlusions; the back handler renders extras.
-            const extraIds = [
-                ...new Set(
-                    extraElements
-                        .filter((element) => element.extra?.trim())
-                        .map((element) => element.cId)
-                )
-            ];
-            clozedContent += `\n<div class="hidden">
-            <div data-element-extra-markers>${extraIds.map((cId) => `{{c${cId}::<span data-element-extra-cloze="${cId}"> </span>}}`).join("")}</div>
-            <div id="highlightMaskData">${encodeURIComponent(JSON.stringify({elements: extraElements}))}</div>
-            </div>`;
-        }
+        clozedContent = appendIdBasedExtrasToContent(removedLogseqProperties + rawContent, extraElements);
 
         const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(
             clozedContent,
