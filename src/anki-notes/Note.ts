@@ -100,7 +100,12 @@ export abstract class Note {
             cardinality: "one",
             hide: false
         });
-        // TODO: Add EXTRA, ANKI_ONLY here
+        LogseqProxy.Editor.registerProperty("extra", {
+            type: "default",
+            cardinality: "one",
+            hide: false
+        });
+        // TODO: Add ANKI_ONLY here
     };
 
     public static async removeUnwantedNotes(notes: Note[]): Promise<Note[]> {
