@@ -9,10 +9,14 @@ type CombinedReactDOM = typeof ReactDOMTypes & {
     hydrateRoot: typeof ReactDOMClientTypes.hydrateRoot;
 };
 
-const ReactDOM = (getHostReact()?.ReactDOM as CombinedReactDOM) ?? {
-    ...OriginalReactDOM,
-    ...OriginalReactDOMClient
-};
+const hostReactDOM = getHostReact()?.ReactDOM as CombinedReactDOM | undefined;
+const ReactDOM = hostReactDOM
+    ? {
+          ...hostReactDOM,
+          createRoot: hostReactDOM.createRoot ?? OriginalReactDOMClient.createRoot,
+          hydrateRoot: hostReactDOM.hydrateRoot ?? OriginalReactDOMClient.hydrateRoot
+      }
+    : {...OriginalReactDOM, ...OriginalReactDOMClient};
 const ReactDOMInternals = ReactDOM as any;
 const OriginalReactDOMInternals = OriginalReactDOM as any;
 

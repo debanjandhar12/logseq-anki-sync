@@ -13,7 +13,7 @@ describe("Logseq host React selection", () => {
         vi.stubEnv("NODE_ENV", "production");
         vi.spyOn(LogseqAppInfoFetcher, "checkHostAccess").mockReturnValue(true);
         const React = {version: reactVersion};
-        const ReactDOM = {version: domVersion, createRoot: vi.fn()};
+        const ReactDOM = {version: domVersion, createRoot: vi.fn(), createPortal: vi.fn()};
         vi.stubGlobal("logseq", {Experiments: {React, ReactDOM}});
         return {React, ReactDOM};
     }
@@ -51,10 +51,28 @@ describe("Logseq host React selection", () => {
         expect(getHostReact()).toBeNull();
     });
 
-    test("falls back when the host cannot create roots in development", () => {
+    test("accepts a standard react-dom host without client root APIs in development", () => {
         const host = mockHost();
         vi.stubEnv("NODE_ENV", "development");
         host.ReactDOM.createRoot = undefined;
+        expect(getHostReact()).toEqual(host);
+    });
+
+    test("accepts a standard react-dom host without client root APIs in production", () => {
+        const host = mockHost();
+        host.ReactDOM.createRoot = undefined;
+        expect(getHostReact()).toEqual(host);
+    });
+
+    test("rejects a different host version when bundled client APIs would be required", () => {
+        const host = mockHost("19.1.0");
+        host.ReactDOM.createRoot = undefined;
+        expect(getHostReact()).toBeNull();
+    });
+
+    test("rejects hosts without portal support", () => {
+        const host = mockHost();
+        host.ReactDOM.createPortal = undefined;
         expect(getHostReact()).toBeNull();
     });
 
