@@ -20,5 +20,5 @@ export class AddonRegistry {
 }
 
 AddonRegistry.add(PreviewInAnkiContextMenu.getInstance());
-AddonRegistry.add(HideOcclusionData.getInstance());
+AddonRegistry.add(new HideOcclusionData());
 // AddonRegistry.add(AnkiFeatureExplorer.getInstance());
