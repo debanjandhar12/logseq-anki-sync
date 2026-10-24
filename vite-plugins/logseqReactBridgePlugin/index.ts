@@ -1,11 +1,11 @@
-import type {Plugin} from "vite";
 import path from "node:path";
+import type {Plugin} from "vite";
 
 /**
  * Plugin to ensure all React imports use the same instance.
  *
  * This plugin redirects react imports to React.ts / ReactDOM.ts / ReactJsxRuntime.ts.
- * Those files, in turn, attempt to use logseq's React if available in production mode.
+ * Those files use a compatible Logseq React pair when available in both development and production.
  */
 export function logseqReactBridgePlugin(): Plugin {
     const reactWrapperPath = path.resolve(import.meta.dirname, "./React.ts");
@@ -14,7 +14,9 @@ export function logseqReactBridgePlugin(): Plugin {
 
     function isReactDomInternal(importer: string | undefined): boolean {
         if (!importer) return false;
-        return /node_modules[/\\](.pnpm[/\\].*[/\\]node_modules[/\\])?react-dom[/\\]/.test(importer);
+        return /node_modules[/\\](.pnpm[/\\].*[/\\]node_modules[/\\])?react-dom[/\\]/.test(
+            importer
+        );
     }
 
     return {
@@ -23,26 +25,32 @@ export function logseqReactBridgePlugin(): Plugin {
         resolveId(source, importer) {
             // --- react ---
             // Intercept all "react" imports EXCEPT from React.ts itself.
-            if (source === "react" &&
+            if (
+                source === "react" &&
                 importer &&
-                !importer.endsWith("/logseqReactBridgePlugin/React.ts")) {
+                !importer.endsWith("/logseqReactBridgePlugin/React.ts")
+            ) {
                 return reactWrapperPath;
             }
 
             // --- react-dom and react-dom/client ---
             // Intercept from our code and third-party libs, but NOT from
             // within react-dom/ itself (to prevent circular deps).
-            if ((source === "react-dom" || source === "react-dom/client") &&
+            if (
+                (source === "react-dom" || source === "react-dom/client") &&
                 importer &&
                 !importer.endsWith("/logseqReactBridgePlugin/ReactDOM.ts") &&
-                !isReactDomInternal(importer)) {
+                !isReactDomInternal(importer)
+            ) {
                 return reactDOMWrapperPath;
             }
 
             // --- react/jsx-runtime and react/jsx-dev-runtime ---
-            if ((source === "react/jsx-runtime" || source === "react/jsx-dev-runtime") &&
+            if (
+                (source === "react/jsx-runtime" || source === "react/jsx-dev-runtime") &&
                 importer &&
-                !importer.endsWith("/logseqReactBridgePlugin/ReactJsxRuntime.ts")) {
+                !importer.endsWith("/logseqReactBridgePlugin/ReactJsxRuntime.ts")
+            ) {
                 return jsxRuntimeWrapperPath;
             }
 

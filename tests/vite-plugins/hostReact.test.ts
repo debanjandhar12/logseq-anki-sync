@@ -33,9 +33,28 @@ describe("Logseq host React selection", () => {
         expect(getHostReact()).toBeNull();
     });
 
-    test("uses bundled React in development even when the host is compatible", () => {
-        mockHost();
+    test("selects a compatible host pair in development", () => {
+        const host = mockHost();
         vi.stubEnv("NODE_ENV", "development");
+        expect(getHostReact()).toEqual(host);
+    });
+
+    test("still rejects incompatible hosts in development", () => {
+        mockHost("18.3.1");
+        vi.stubEnv("NODE_ENV", "development");
+        expect(getHostReact()).toBeNull();
+    });
+
+    test("still rejects mismatched host versions in development", () => {
+        mockHost("19.2.6", "19.2.3");
+        vi.stubEnv("NODE_ENV", "development");
+        expect(getHostReact()).toBeNull();
+    });
+
+    test("falls back when the host cannot create roots in development", () => {
+        const host = mockHost();
+        vi.stubEnv("NODE_ENV", "development");
+        host.ReactDOM.createRoot = undefined;
         expect(getHostReact()).toBeNull();
     });
 
