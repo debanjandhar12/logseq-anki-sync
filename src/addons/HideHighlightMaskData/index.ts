@@ -9,6 +9,10 @@ export class HideHighlightMaskData extends Addon {
         return "Hide Highlight Mask Data";
     }
 
+    public override isSupported(isDbGraph: boolean): boolean {
+        return isDbGraph;
+    }
+
     public init(): void {
         this.dispose?.();
         this.dispose = undefined;

@@ -27,6 +27,7 @@ export interface PluginSettings {
 }
 
 export const addSettingsToLogseq = async () => {
+    const isDbGraph = await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
     const settingsTemplate: SettingSchemaDesc[] = [
         {
             key: "donationHeading",
@@ -103,9 +104,13 @@ export const addSettingsToLogseq = async () => {
         {
             key: "addonsList",
             type: "enum",
-            default: AddonRegistry.getAll().map((addon) => addon.getName()),
+            default: AddonRegistry.getAll()
+                .filter((addon) => addon.isSupported(isDbGraph))
+                .map((addon) => addon.getName()),
             title: "Addons:",
-            enumChoices: AddonRegistry.getAll().map((addon) => addon.getName()),
+            enumChoices: AddonRegistry.getAll()
+                .filter((addon) => addon.isSupported(isDbGraph))
+                .map((addon) => addon.getName()),
             enumPicker: "checkbox",
             description:
                 "Select the addons to use. They add / modify gui elements to enhance plugin capabilities inside Logseq."
@@ -297,7 +302,6 @@ export const addSettingsToLogseq = async () => {
     `);
 
     // Hide inheritPropertiesFromTags setting for non-DB graphs
-    const isDbGraph = await LogseqAppInfoFetcher.checkCurrentIsDbGraph();
     logseq.provideStyle({
         key: "hide-inherit-properties-from-tags",
         style: isDbGraph

@@ -47,7 +47,7 @@ async function main(baseInfo: LSPluginBaseInfo) {
     );
     registerToolbar(baseInfo);
     updateLoggerLevels();
-    addSettingsToLogseq();
+    await addSettingsToLogseq();
 
     // Init various modules
     WindowParentBridge.setGlobalObject("LogseqAnkiSync", {

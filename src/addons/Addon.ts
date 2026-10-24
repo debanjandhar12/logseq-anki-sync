@@ -17,8 +17,20 @@ export abstract class Addon {
         logger.info("Reloading Logseq Anki Sync plugin...");
         WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
     }
+
+    /**
+     * Whether the addon is enabled in settings.
+     */
     public isEnabled(): boolean {
         const {addonsList} = LogseqProxy.Settings.getPluginSettings();
         return addonsList?.includes(this.getName()) ?? false;
+    }
+
+    /**
+     * Whether the addon can be used in the current graph.
+     * When false, the addon is not listed in settings.
+     */
+    public isSupported(_isDbGraph: boolean): boolean {
+        return true;
     }
 }
