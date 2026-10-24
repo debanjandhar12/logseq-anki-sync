@@ -31,6 +31,17 @@ Use the slash command `/Highlight Mask` or right-click a block and select "Highl
   <div>In the <code>highlight_mask</code> block property. Deleting this property removes the card.</div>
 </details>
 
+<details>
+  <summary>How can I hide the highlight mask data property?</summary>
+  <div>
+    Enable <strong>Hide Highlight Mask Data</strong> in the plugin's addon settings.
+    The addon hides the raw <code>highlight_mask</code> value while preserving its native label and other properties.
+    On supported DB hosts, it shows <code>&lt;hidden highlight mask data with N cards&gt;</code> and an <strong>Edit</strong> link that opens the Highlight Mask editor.
+    The count is the number of distinct positive cloze IDs in the stored highlights, not the number of highlighted regions, and refreshes after editing.
+    If the count cannot be resolved, the summary omits it. Hosts without compatible property-renderer support show only <code>&lt;hidden highlight mask data&gt;</code>; use the slash command or block context menu to edit instead.
+  </div>
+</details>
+
 ## Tips
 
 -   Use `extra::` to add mnemonics or additional context

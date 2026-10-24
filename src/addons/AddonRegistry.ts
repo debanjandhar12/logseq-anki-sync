@@ -1,4 +1,5 @@
 import type {Addon} from "./Addon";
+import {HideHighlightMaskData} from "./HideHighlightMaskData";
 import {HideOcclusionData} from "./HideOcclusionData";
 import {PreviewInAnkiContextMenu} from "./PreviewInAnki";
 // import {AnkiFeatureExplorer} from "./LogseqAnkiFeatureExplorer";
@@ -21,4 +22,5 @@ export class AddonRegistry {
 
 AddonRegistry.add(PreviewInAnkiContextMenu.getInstance());
 AddonRegistry.add(new HideOcclusionData());
+AddonRegistry.add(new HideHighlightMaskData());
 // AddonRegistry.add(AnkiFeatureExplorer.getInstance());
