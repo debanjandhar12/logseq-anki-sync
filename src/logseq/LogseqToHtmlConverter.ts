@@ -215,6 +215,7 @@ export class LogseqToHtmlConverter {
             );
 
         // Render the markdown
+        const startsWithListItem = /^\s*-\s+/.test(resultContent);
         resultContent = Mldoc.export(
             "html",
             resultContent,
@@ -292,7 +293,18 @@ export class LogseqToHtmlConverter {
             $("span:first-child").addClass(`block-highlight-${block_props["background-color"]}`);
         }
 
-        resultContent = decodeHTMLEntities(decodeHTMLEntities($("#content ul li").html() || ""));
+        // Extract the outer Logseq block; preserve Markdown lists within its content.
+        const exportedContent = $("#content");
+        const outline = exportedContent.children("ul");
+        const items = outline.children("li");
+        const html =
+            !startsWithListItem &&
+            exportedContent.children().length === 1 &&
+            outline.length === 1 &&
+            items.length === 1
+                ? items.first().html()
+                : exportedContent.html();
+        resultContent = decodeHTMLEntities(decodeHTMLEntities(html || ""));
         logger.info("After Mldoc.export", {contentLength: resultContent.length});
 
         // Bring back inline html content and clozes from hashmap

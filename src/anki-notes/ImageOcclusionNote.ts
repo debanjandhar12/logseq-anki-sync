@@ -29,7 +29,7 @@ import {
     getFirstNonEmptyLine,
     safeReplaceAsync
 } from "../utils/utils";
-import {appendExtraToHtmlFile} from "./NoteUtils";
+import {appendExtraToHtmlFile, appendIdBasedExtrasToHtmlFile} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
@@ -171,7 +171,7 @@ export class ImageOcclusionNote extends Note {
             }
         }
         clozedContent = escapeClozesAndMacroDelimiters(clozedContent);
-        clozedContent += `\n<div class="hidden">
+        const metadata = `\n<div class="hidden">
         <div data-element-extra-markers>
         ${Array.from(clozes)
             .map(
@@ -184,10 +184,20 @@ export class ImageOcclusionNote extends Note {
         <img id="localImgBasePath" src="_logseq_anki_sync.css"></img>
         </div>`;
 
-        const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(
+        const converted = await LogseqToHtmlConverterProxy.convertToHTMLFile(
             clozedContent,
             this.format
         );
+
+        const extras = Object.entries(imgToOcclusionDataHashMap).flatMap(([image, data]) =>
+            block_images.includes(image)
+                ? data.elements.flatMap((element) =>
+                      element.extra?.trim() ? [{cId: element.cId, extra: element.extra}] : []
+                  )
+                : []
+        );
+        const result = await appendIdBasedExtrasToHtmlFile(converted, extras, this.format);
+        result.html += metadata;
 
         // --- Add extra property content (non-indented) ---
         return appendExtraToHtmlFile(

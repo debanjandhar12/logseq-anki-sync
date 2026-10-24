@@ -10,14 +10,31 @@ export interface IdBasedExtra {
     extra: string;
 }
 
-/** Encode plain-text extras before conversion so they stay literal and enter the cache key. */
-export function appendIdBasedExtrasToContent(content: string, elements: IdBasedExtra[]): string {
-    if (!elements.length) return content;
+/** Append markers after conversion so Math/Code/Quote blocks cannot absorb them. */
+export function createIdBasedExtraMarkers(elements: readonly IdBasedExtra[]): string {
     const ids = [...new Set(elements.map((element) => element.cId))];
-    return `${content}\n<div class="hidden">
-        <div data-element-extra-markers>${ids.map((cId) => `{{c${cId}::<span data-element-extra-cloze="${cId}"> </span>}}`).join("")}</div>
-        <div data-id-based-extras>${encodeURIComponent(JSON.stringify({elements}))}</div>
-        </div>`;
+    if (!ids.length) return "";
+    return `<div class="hidden" data-element-extra-markers>${ids.map((cId) => `{{c${cId}::<span data-element-extra-cloze="${cId}"> </span>}}`).join("")}</div>`;
+}
+
+/** Convert extras separately, keeping inactive HTML inert until the answer is shown. */
+export async function appendIdBasedExtrasToHtmlFile(
+    htmlFile: HTMLFile,
+    elements: readonly IdBasedExtra[],
+    format: string
+): Promise<HTMLFile> {
+    const result: HTMLFile = _.cloneDeep(htmlFile);
+    const rendered = [];
+    for (const element of elements) {
+        if (!element.extra.trim()) continue;
+        const converted = await LogseqToHtmlConverterProxy.convertToHTMLFile(element.extra, format);
+        converted.assets.forEach((asset) => result.assets.add(asset));
+        rendered.push({cId: element.cId, html: converted.html});
+    }
+    if (rendered.length) {
+        result.html += `\n<div class="hidden" data-id-based-extras>${encodeURIComponent(JSON.stringify({elements: rendered}))}</div>`;
+    }
+    return result;
 }
 
 /**

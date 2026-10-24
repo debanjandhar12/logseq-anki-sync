@@ -12,7 +12,11 @@ import {type HighlightMaskData, showHighlightMaskEditor} from "../ui";
 import {getHealedHighlightGeometry, matchTextQuote} from "../utils/HighlightNoteQuotePosFinder";
 import {ObjectPropertyDataManager} from "../utils/ObjectPropertyDataManager";
 import {escapeClozesAndMacroDelimiters} from "../utils/utils";
-import {appendExtraToHtmlFile, appendIdBasedExtrasToContent} from "./NoteUtils";
+import {
+    appendExtraToHtmlFile,
+    appendIdBasedExtrasToHtmlFile,
+    createIdBasedExtraMarkers
+} from "./NoteUtils";
 
 const logger = createLogger(LoggerCategory.AnkiNotes);
 
@@ -174,12 +178,15 @@ export class HighlightMaskNote extends Note {
         }
 
         // Add back properties
-        clozedContent = appendIdBasedExtrasToContent(removedLogseqProperties + rawContent, extraElements);
+        clozedContent = removedLogseqProperties + rawContent;
 
-        const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(
+        const converted = await LogseqToHtmlConverterProxy.convertToHTMLFile(
             clozedContent,
             this.format
         );
+
+        const result = await appendIdBasedExtrasToHtmlFile(converted, extraElements, this.format);
+        result.html += createIdBasedExtraMarkers(extraElements);
 
         // Add extra property content
         return appendExtraToHtmlFile(

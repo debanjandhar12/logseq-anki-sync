@@ -2,7 +2,9 @@ import "@logseq/libs";
 import type {PageEntity} from "@logseq/libs/dist/LSPlugin";
 import * as cheerio from "cheerio";
 import {afterEach, beforeEach, describe, expect, test} from "vitest";
+import {appendIdBasedExtrasToHtmlFile} from "../../../src/anki-notes/NoteUtils";
 import getNameFromPage from "../../../src/logseq/getNameFromPage";
+import {LogseqPropertiesHelper} from "../../../src/logseq/LogseqPropertiesHelper";
 import {LogseqToHtmlConverter} from "../../../src/logseq/LogseqToHtmlConverter";
 import {deletePagePermanently} from "../../helpers/logseq/deletePagePermanently";
 
@@ -541,6 +543,60 @@ describe("E2E cases for DB mode", () => {
         );
         await new Promise((resolve) => setTimeout(resolve, 100));
     });
+
+    test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+        "extra with an inner Markdown list retains every section and nested item",
+        async () => {
+            const block = await logseq.Editor.appendBlockInPage(page.uuid, "Question");
+            const extra =
+                "**Explanation**\n\n- first\n  - nested\n- second\n\n**Conclusion**\nAll items remain.";
+            await logseq.Editor.upsertBlockProperty(block.uuid, "extra", extra);
+            const freshBlock = await LogseqPropertiesHelper.getBlock(block.uuid);
+            const main = await LogseqToHtmlConverter.convertToHTMLFile(freshBlock.content);
+            const result = await appendIdBasedExtrasToHtmlFile(
+                main,
+                [{cId: 1, extra: freshBlock.properties.extra as string}],
+                "markdown"
+            );
+            const $ = cheerio.load(result.html);
+            const payload = JSON.parse(decodeURIComponent($("[data-id-based-extras]").text()));
+            const rendered = cheerio.load(payload.elements[0].html);
+            expect(
+                rendered("b")
+                    .map((_, element) => rendered(element).text())
+                    .get()
+            ).toEqual(["Explanation", "Conclusion"]);
+            expect(rendered("ul ul > li").text().trim()).toBe("nested");
+            for (const text of ["first", "nested", "second", "All items remain."]) {
+                expect(rendered.root().text()).toContain(text);
+            }
+            expect(payload.elements[0].html.match(/nested/g)).toHaveLength(1);
+        }
+    );
+
+    test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(
+        "blocks starting with a dash preserve single, nested and sibling list items",
+        async () => {
+            for (const content of ["- only", "- parent\n  - child\n- sibling", "-literal"]) {
+                const block = await logseq.Editor.appendBlockInPage(page.uuid, content);
+                const freshBlock = await LogseqPropertiesHelper.getBlock(block.uuid);
+                const result = await LogseqToHtmlConverter.convertToHTMLFile(freshBlock.content);
+                const $ = cheerio.load(result.html);
+                if (content === "- only") {
+                    expect($("body > ul > li")).toHaveLength(1);
+                    expect($("body > ul > li").text().trim()).toBe("only");
+                } else if (content === "-literal") {
+                    expect($("body").text().trim()).toBe("-literal");
+                    expect($("ul")).toHaveLength(0);
+                } else {
+                    expect($("body > ul > li")).toHaveLength(2);
+                    expect($("body > ul > li > ul > li").text().trim()).toBe("child");
+                    expect(result.html.match(/child/g)).toHaveLength(1);
+                    expect($("body").text()).toContain("sibling");
+                }
+            }
+        }
+    );
 
     describe("Block Reference Rendering", () => {
         test.skipIf(!globalThis.isLogseqAvailable || !globalThis.isLogseqCurrentIsDBGraph)(

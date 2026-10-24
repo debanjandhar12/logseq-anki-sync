@@ -14,7 +14,12 @@ import {
     safeReplace,
     string_to_arr
 } from "../utils/utils";
-import {appendExtraToHtmlFile, appendIdBasedExtrasToContent, type IdBasedExtra} from "./NoteUtils";
+import {
+    appendExtraToHtmlFile,
+    appendIdBasedExtrasToHtmlFile,
+    createIdBasedExtraMarkers,
+    type IdBasedExtra
+} from "./NoteUtils";
 
 export class ClozeNote extends Note {
     public type = "cloze";
@@ -249,12 +254,14 @@ export class ClozeNote extends Note {
 
         // --- Add back the removed logseq properties ---
         clozedContent = removedLogseqProperties + clozedContent;
-        clozedContent = appendIdBasedExtrasToContent(clozedContent, extras);
 
-        const result = await LogseqToHtmlConverterProxy.convertToHTMLFile(
+        const converted = await LogseqToHtmlConverterProxy.convertToHTMLFile(
             clozedContent,
             this.format
         );
+
+        const result = await appendIdBasedExtrasToHtmlFile(converted, extras, this.format);
+        result.html += createIdBasedExtraMarkers(extras);
 
         // --- Add extra property content (non-indented) ---
         return appendExtraToHtmlFile(
