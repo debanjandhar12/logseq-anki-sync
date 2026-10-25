@@ -171,7 +171,9 @@ export class HighlightMaskNote extends Note {
 
         for (const {start, end, element} of replacements) {
             const matchedText = rawContent.substring(start, end);
-            const hintSuffix = element.hint ? `::${element.hint}` : "";
+            const hintSuffix = element.hint
+                ? `::${escapeClozesAndMacroDelimiters(element.hint)}`
+                : "";
             const clozeText = `{{c${element.cId}::${matchedText}${hintSuffix}\u{2063}}}`; // Add extra space between braces
 
             rawContent = rawContent.substring(0, start) + clozeText + rawContent.substring(end);
