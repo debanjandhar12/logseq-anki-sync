@@ -29,12 +29,14 @@ To test multiple regions together, assign them the same cloze ID:
 
 <details>
   <summary>Where is occlusion data stored?</summary>
-  <div>In the <code>occlusion</code> block property as base64 on file graphs, or backtick-wrapped JSON on DB graphs. Deleting this property removes the card.</div>
+  <div>In the <code>occlusion</code> block property as base64. Deleting this property removes the card.</div>
+  <summary>How do I hide the occlusion property in Logseq?</summary>
+  <div>Enable the "Hide Occlusion Data" addon in plugin settings.</div>
 </details>
 
 <details>
   <summary>How do I hide the occlusion property in Logseq?</summary>
-  <div>Enable the "Hide Occlusion Data" addon in plugin settings. On DB graphs with host access and support for Logseq's experimental property renderer API, only the occlusion property's value is replaced with <code>&lt;hidden occlusion data with 4 cards&gt; (Edit)</code>. The native property label and icon remain visible. The count represents distinct cloze IDs across all stored images; repeated IDs count as one card, even across different images. Edit opens the occlusion editor. Other block properties remain visible. File graphs, Logseq Web without host access, and unsupported hosts retain the plain hidden-data placeholder.</div>
+  <div>Enable the "Hide Occlusion Data" addon in plugin settings.</div>
 </details>
 
 ## Tips
