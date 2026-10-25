@@ -197,6 +197,22 @@ export namespace LogseqProxy {
             }
         }
 
+        static async removeBlockProperty(
+            block: BlockIdentity,
+            key: string,
+            opts: Partial<{suppressErrors: boolean}> = {suppressErrors: true}
+        ) {
+            await getLogseqLock.acquire();
+            try {
+                await logseq.Editor.removeBlockProperty(block, key);
+            } catch (e) {
+                logger.error(e);
+                if (!opts.suppressErrors) throw e;
+            } finally {
+                getLogseqLock.release();
+            }
+        }
+
         static async createTagSilentlyIfNotExists(tagName: string) {
             await getLogseqLock.acquire();
             try {

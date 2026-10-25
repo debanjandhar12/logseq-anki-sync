@@ -129,11 +129,23 @@ export class ImageOcclusionNote extends Note {
             );
             if (newOcclusionData && typeof newOcclusionData === "object") {
                 imgToOcclusionDataHashMap[selectedImage] = newOcclusionData;
-                await ObjectPropertyDataManager.save(
-                    fetchedBlock,
-                    "occlusion",
-                    imgToOcclusionDataHashMap
+                imgToOcclusionDataHashMap = Object.fromEntries(
+                    Object.entries(imgToOcclusionDataHashMap).filter(
+                        ([, data]) => data.elements.length > 0
+                    )
                 );
+                if (Object.keys(imgToOcclusionDataHashMap).length > 0) {
+                    await ObjectPropertyDataManager.save(
+                        fetchedBlock,
+                        "occlusion",
+                        imgToOcclusionDataHashMap
+                    );
+                } else {
+                    await LogseqProxy.Editor.removeBlockProperty(
+                        getUUIDFromBlock(fetchedBlock),
+                        "occlusion"
+                    );
+                }
 
                 // Handle tag updates for hide-all-test-one
                 const blockUUID = getUUIDFromBlock(fetchedBlock);

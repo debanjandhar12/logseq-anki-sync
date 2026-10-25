@@ -96,7 +96,18 @@ export class HighlightMaskNote extends Note {
         );
 
         if (newHighlightData && typeof newHighlightData === "object") {
-            await ObjectPropertyDataManager.save(fetchedBlock, "highlight_mask", newHighlightData);
+            if (newHighlightData.elements.length > 0) {
+                await ObjectPropertyDataManager.save(
+                    fetchedBlock,
+                    "highlight_mask",
+                    newHighlightData
+                );
+            } else {
+                await LogseqProxy.Editor.removeBlockProperty(
+                    getUUIDFromBlock(fetchedBlock),
+                    "highlight_mask"
+                );
+            }
 
             // Handle tag updates for hide-all-test-one
             const blockUUID = getUUIDFromBlock(fetchedBlock);
