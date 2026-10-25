@@ -323,7 +323,7 @@ export const HighlightMaskEditorComponent: React.FC<HighlightMaskEditorProps> = 
                         onClick={(e) => {
                             // If user clicked inside the editor but not on a decoration, deselect
                             const target = e.target as HTMLElement;
-                            if (!target.hasAttribute("data-highlight-index")) {
+                            if (!target.closest("[data-highlight-index]")) {
                                 setSelectedElementIndex(null);
                             }
                         }}>

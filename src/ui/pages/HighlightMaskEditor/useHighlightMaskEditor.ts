@@ -40,7 +40,10 @@ export function useHighlightMaskEditor(
         if (!editor) return;
         const dom = editor.view.dom;
         const handleClick = (event: MouseEvent) => {
-            const index = (event.target as HTMLElement).getAttribute("data-highlight-index");
+            const index =
+                (event.target as HTMLElement)
+                    .closest("[data-highlight-index]")
+                    ?.getAttribute("data-highlight-index") ?? null;
             onHighlightSelect(index === null ? null : parseInt(index, 10));
             if (index !== null) {
                 editor.commands.setTextSelection(0);

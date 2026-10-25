@@ -28,18 +28,27 @@ export function useHighlightDecorations(
                 if (!match) continue;
                 const {from, to} = textRangeToEditorRange(editor.state.doc, match.start, match.end);
                 if (from === -1 || to === -1) continue;
+                const selected = selectedElementIndex === index;
+                const title = el.hint
+                    ? `Cloze ID: ${el.cId} | Hint: ${el.hint}`
+                    : `Cloze ID: ${el.cId}`;
                 decorations.push(
                     Decoration.inline(from, to, {
-                        class: `cursor-pointer px-1 rounded transition-all ${selectedElementIndex === index ? "bg-blue-500 text-white ring-2 ring-blue-300" : "bg-yellow-500 hover:bg-yellow-500"}`,
-                        title: el.hint
-                            ? `Cloze ID: ${el.cId} | Hint: ${el.hint}`
-                            : `Cloze ID: ${el.cId}`,
+                        class: `highlight-mask-text ${selected ? "bg-blue-500 text-white" : "bg-yellow-500"}`,
+                        title,
+                        "data-highlight-selected": String(selected),
                         "data-highlight-index": String(index)
                     })
                 );
                 const badge = document.createElement("span");
-                badge.className = "mr-1 text-xs font-bold opacity-30 user-select-none";
-                badge.innerText = `c${el.cId}`;
+                badge.className = `highlight-mask-badge ${selected ? "bg-blue-500 text-white" : "bg-secondary-background text-text"}`;
+                const label = document.createElement("span");
+                label.className = "highlight-mask-badge-label";
+                label.textContent = `c${el.cId}`;
+                badge.append(label);
+                badge.dataset.highlightIndex = String(index);
+                badge.dataset.highlightSelected = String(selected);
+                badge.title = title;
                 badge.contentEditable = "false";
                 decorations.push(Decoration.widget(from, badge));
             }
