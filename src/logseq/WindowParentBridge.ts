@@ -58,6 +58,18 @@ export class WindowParentBridge {
     }
 
     /**
+     * Read a desktop asset through the host renderer's custom protocol handlers.
+     * Compatibility mode uses the plugin window, whose patched fetch would recurse.
+     */
+    static fetchFromHost(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+        const host = WindowParentBridge.getParentWindow();
+        if (host === window) {
+            return Promise.reject(new Error("Host window fetch is unavailable"));
+        }
+        return host.fetch(input, init);
+    }
+
+    /**
      * Dispatch a custom event on the parent window
      * @param eventName - Name of the event to dispatch
      * @param detail - Optional event detail data
@@ -114,22 +126,34 @@ export class WindowParentBridge {
     /**
      * Make an asset URL using Logseq's asset API
      * @param path - The asset path to convert
-     * @returns The full asset URL or the original path if API unavailable
+     * @returns A URL that can be fetched by the asset uploader
      */
     static async makeAssetUrl(path: string): Promise<string> {
-        if (path.startsWith("memory")) {
-            // In web db ver, all images are memory link, those does not work properly with makeUrl
-            path = path.replace(/^memory:\/[^/]+\/?/, ".");
+        if (/^memory:/i.test(path)) {
+            // DB web's SDK returns absolute memory URLs unchanged; give it a graph-relative
+            // reference so it reads the browser filesystem and creates a blob URL instead.
+            path = path.replace(/^memory:\/+[^/]+\//i, "./");
         }
 
-        let result = null;
-        try {
-            result = await logseq.Assets.makeUrl(path);
-            if (!await LogseqProxy.App.checkCurrentIsDbGraph()) {
-                result = result.replace('assets://', '');
-            }
-        } catch {}
-        return result || path;
+        const result = await logseq.Assets.makeUrl(path);
+        if (await LogseqProxy.App.checkCurrentIsDbGraph()) {
+            return result;
+        }
+
+        if (!/^assets:\/\//i.test(result)) {
+            return result;
+        }
+
+        // The SDK has already resolved the graph root (or an external asset alias).
+        // Match Electron's handler: restore drive markers, then decode exactly once.
+        const encodedPath = result.slice("assets://".length).split(/[?#]/, 1)[0];
+        const assetPath = decodeURIComponent(
+            encodedPath.replace(/^(\/?[a-zA-Z])\/logseq__colon\//, "$1:/")
+        );
+        const filePath = assetPath.replace(/\\/g, "/");
+        const rootedPath = /^[a-zA-Z]:\//.test(filePath) ? `/${filePath}` : filePath;
+        const fileUrl = rootedPath.startsWith("//") ? `file:${rootedPath}` : `file://${rootedPath}`;
+        return encodeURI(fileUrl).replace(/\?/g, "%3F").replace(/#/g, "%23");
     }
 
     /**

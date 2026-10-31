@@ -15,7 +15,6 @@ export class UpdateNotesTask {
         notes: Note[],
         modelName: string,
         graphName: string,
-        graphPath: string,
         ankiNoteManager: LazyAnkiNoteManager,
         progressNotification: ProgressNotification
     ): Promise<{succeeded: Note[]; failed: {[key: string]: Error}}> {
@@ -23,7 +22,7 @@ export class UpdateNotesTask {
 
         for (const note of notes) {
             try {
-                await this.updateNote(note, modelName, graphName, graphPath, ankiNoteManager);
+                await this.updateNote(note, modelName, graphName, ankiNoteManager);
             } catch (e) {
                 logger.error(e);
                 failedUpdated[`${note.uuid}-${note.type}`] = e;
@@ -45,7 +44,6 @@ export class UpdateNotesTask {
         note: Note,
         modelName: string,
         graphName: string,
-        graphPath: string,
         ankiNoteManager: LazyAnkiNoteManager
     ): Promise<void> {
         const ankiId = note.getAnkiId();
@@ -70,16 +68,16 @@ export class UpdateNotesTask {
 
         const {skipOnDependencyHashMatch} = LogseqProxy.Settings.getPluginSettings();
 
-        for (const asset of oldConfig.assets ?? []) {
-            const name = path.basename(asset);
-            if (
-                skipOnDependencyHashMatch &&
-                oldConfig.dependencyHash === dependencyHash &&
-                ankiNoteManager.mediaInfo.has(name)
-            )
-                continue;
-            const url = await WindowParentBridge.makeAssetUrl(asset);
-            ankiNoteManager.storeAsset(name, url);
+        if (skipOnDependencyHashMatch && oldConfig.dependencyHash === dependencyHash) {
+            // Repair media removed from Anki manually by user.
+            // Also, retry previous failed asset sync.
+            for (const asset of oldConfig.assets ?? []) {
+                const name = path.basename(asset);
+                if (ankiNoteManager.mediaInfo.has(name)) continue;
+                const url = await WindowParentBridge.makeAssetUrl(asset);
+                ankiNoteManager.storeAsset(name, url);
+            }
+            return;
         }
 
         const [html, assets, deck, breadcrumb, tags] = await parseNote(note, graphName);
@@ -91,11 +89,10 @@ export class UpdateNotesTask {
             tags
         ]);
 
-        assets.forEach((asset) => {
-            // Normalize asset path by removing leading ../ or ./ since assets are relative to graph root
-            const normalizedAsset = asset.replace(/^(\.\.\/)+(\.\/)*|^(\.\/)+/, "");
-            ankiNoteManager.storeAsset(path.basename(asset), path.join(graphPath, normalizedAsset));
-        });
+        for (const asset of assets) {
+            const url = await WindowParentBridge.makeAssetUrl(asset);
+            ankiNoteManager.storeAsset(path.basename(asset), url);
+        }
 
         logger.info(`dependencyHash mismatch for note with id ${note.uuid}-${note.type}`);
 

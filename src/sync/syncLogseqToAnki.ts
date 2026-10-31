@@ -121,13 +121,11 @@ export class LogseqToAnkiSync {
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification
     ): Promise<void> {
-        const graphPath = (await LogseqProxy.App.getCurrentGraph()).path;
         const task = new CreateNotesTask();
         const result = await task.execute(
             toCreateNotes,
             this.modelName,
             this.graphName,
-            graphPath,
             ankiNoteManager,
             syncNotificationObj
         );
@@ -140,13 +138,11 @@ export class LogseqToAnkiSync {
         ankiNoteManager: LazyAnkiNoteManager,
         syncNotificationObj: ProgressNotification
     ): Promise<void> {
-        const graphPath = (await LogseqProxy.App.getCurrentGraph()).path;
         const task = new UpdateNotesTask();
         const result = await task.execute(
             toUpdateNotes,
             this.modelName,
             this.graphName,
-            graphPath,
             ankiNoteManager,
             syncNotificationObj
         );

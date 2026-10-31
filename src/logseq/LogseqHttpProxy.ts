@@ -1,5 +1,6 @@
 import {LOGSEQ_HTTP_PROXY_TIMEOUT_MS} from "../constants";
 import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
+import {WindowParentBridge} from "./WindowParentBridge";
 
 type HttpMethod = "GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE";
 type ProxyReturnType = "text" | "arraybuffer";
@@ -83,8 +84,18 @@ export class LogseqHttpProxy {
         const urlStr = request.url;
         const returnType: ProxyReturnType = "arraybuffer";
 
-        if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://")) {
+        const shouldUseHostRequest =
+            urlStr.startsWith("http://") ||
+            urlStr.startsWith("https://") ||
+            urlStr.startsWith("assets:") ||
+            urlStr.startsWith("blob:");
+        if (!shouldUseHostRequest) {
             return LogseqHttpProxy.getOriginalFetch()(input, init);
+        }
+
+        if (urlStr.startsWith("assets:")) {
+            // Electron's exper_request uses node-fetch, not the renderer's asset handler.
+            return WindowParentBridge.fetchFromHost(input, init);
         }
 
         if (!LogseqHttpProxy.hasExecCallableAPIAsync()) {

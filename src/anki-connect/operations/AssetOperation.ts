@@ -2,6 +2,7 @@ import _ from "lodash";
 import {createLogger, LoggerCategory} from "../../logger";
 import * as AnkiConnect from "../AnkiConnect";
 import type {AnkiAction} from "../types";
+import {getAnkiNativePath} from "./utils/getAnkiNativePath";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
@@ -80,11 +81,14 @@ export class AssetOperation {
             };
         }
 
+        const nativePath = getAnkiNativePath(asset.path);
+        if (nativePath === null) return null;
+
         return {
             action: "storeMediaFile",
             params: {
                 filename: asset.filename,
-                path: asset.path
+                path: nativePath
             }
         };
     }
@@ -92,6 +96,7 @@ export class AssetOperation {
     private async getBase64FromUrl(url: string): Promise<string> {
         try {
             const response = await fetch(url);
+            if (!response.ok) throw new Error(`Asset fetch failed: ${response.status}`);
             const blob = await response.blob();
             const reader = new FileReader();
             await new Promise((resolve, reject) => {
