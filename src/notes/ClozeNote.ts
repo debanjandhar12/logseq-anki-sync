@@ -115,7 +115,9 @@ export class ClozeNote extends Note {
             removedLogseqProperties += match;
             return "";
         }); //Remove org properties
-        if (!removedLogseqProperties.trim().endsWith("\n")) removedLogseqProperties += "\n";
+        if (removedLogseqProperties && !removedLogseqProperties.endsWith("\n")) {
+            removedLogseqProperties += "\n";
+        }
 
         // --- Add anki cloze marco clozes ---
         clozedContent = safeReplace(
