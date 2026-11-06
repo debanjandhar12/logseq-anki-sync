@@ -167,7 +167,7 @@ export class LogseqContentPreprocessor {
         });
 
         // Ensure rawPropertiesStr ends with newline if not empty
-        if (rawPropertiesStr && !rawPropertiesStr.trim().endsWith("\n")) {
+        if (rawPropertiesStr && !rawPropertiesStr.endsWith("\n")) {
             rawPropertiesStr += "\n";
         }
 
