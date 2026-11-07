@@ -1,7 +1,10 @@
+import ALERT_CIRCLE_ICON from "@tabler/icons/outline/alert-circle.svg?raw";
+import CIRCLE_CHECK_ICON from "@tabler/icons/outline/circle-check.svg?raw";
 import {getPathForPassingToAnki} from "../../../anki-connect/operations/utils/getPathForPassingToAnki";
 import {createLogger, LoggerCategory} from "../../../logger";
 import {WindowParentBridge} from "../../../logseq/WindowParentBridge";
 import {LogseqTooltip} from "../../components/LogseqTooltip";
+import {TablerIcon} from "../../components/TablerIcon";
 import {ResultDisplayLink} from "./ResultDisplayLink";
 import {ResultSectionHeading} from "./ResultSectionHeading";
 import {SyncErrorDetailsLink} from "./SyncErrorDetailsLink";
@@ -41,12 +44,11 @@ function AssetResultLine({url, error}: {url: string; error?: Error}) {
     };
     return (
         <span className="inline-flex items-center flex-wrap" style={{fontSize: "14px"}}>
-            <span
+            <TablerIcon
                 className={error ? "text-danger" : "text-success"}
-                style={{userSelect: "none"}}
-                title={error ? "Sync Failed" : "Synced Successfully"}>
-                {error ? "⚠" : "✓"}
-            </span>
+                icon={error ? ALERT_CIRCLE_ICON : CIRCLE_CHECK_ICON}
+                title={error ? "Sync Failed" : "Synced Successfully"}
+            />
             <LogseqTooltip content={url}>
                 <ResultDisplayLink
                     href={isBrowserAsset ? url : undefined}

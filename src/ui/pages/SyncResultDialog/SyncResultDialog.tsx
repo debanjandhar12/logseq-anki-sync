@@ -1,7 +1,10 @@
+import ALERT_CIRCLE_ICON from "@tabler/icons/outline/alert-circle.svg?raw";
+import CIRCLE_CHECK_ICON from "@tabler/icons/outline/circle-check.svg?raw";
 import _ from "lodash";
 import React, {useState} from "react";
 import {ANKI_ICON} from "../../../constants";
 import type {SyncResult} from "../../../sync/types";
+import {TablerIcon} from "../../components/TablerIcon";
 import {Modal} from "../../modals/core/Modal";
 import {ModalHeader} from "../../modals/core/ModalHeader";
 import {useModal} from "../../modals/hooks/useModal";
@@ -38,15 +41,11 @@ function NoteResultsSection({
             {notes.map((note) =>
                 failures[`${note.uuid}-${note.type}`] ? null : (
                     <span className="inline-flex items-center" key={note.uuid + note.type}>
-                        <span
-                            style={{
-                                fontSize: "14px",
-                                color: "var(--amplify-colors-font-success)",
-                                userSelect: "none"
-                            }}
-                            title="Synced Successfully">
-                            ✓
-                        </span>
+                        <TablerIcon
+                            className="text-success"
+                            icon={CIRCLE_CHECK_ICON}
+                            title="Synced Successfully"
+                        />
                         <UpdateLineDisplay note={note} graphName={graphName} />
                         {kind === "Created" ? " " : null}
                     </span>
@@ -56,15 +55,11 @@ function NoteResultsSection({
                 const note = parseFailedNoteKey(key);
                 return (
                     <span className="inline-flex items-center" key={note.uuid + note.type}>
-                        <span
-                            style={{
-                                fontSize: "14px",
-                                color: "var(--amplify-colors-font-error)",
-                                userSelect: "none"
-                            }}
-                            title="Sync Failed">
-                            ⚠
-                        </span>
+                        <TablerIcon
+                            className="text-danger"
+                            icon={ALERT_CIRCLE_ICON}
+                            title="Sync Failed"
+                        />
                         <FailureLineDisplay note={note} graphName={graphName} />
                         <SyncErrorDetailsLink identifier={key} error={failures[key]} />
                     </span>

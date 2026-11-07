@@ -1,3 +1,5 @@
+import ARROW_RIGHT_ICON from "@tabler/icons/outline/arrow-right.svg?raw";
+import {TablerIcon} from "../../components/TablerIcon";
 import {AnkiLink} from "./AnkiLink";
 import {LogseqLink} from "./LogseqLink";
 
@@ -19,9 +21,7 @@ export const CreateLineDisplay = ({note, graphName}: NoteLineProps) => (
         <span className="truncate">
             <LogseqLink uuid={note.uuid} graphName={graphName} />
         </span>
-        <span className="px-1" style={{userSelect: "none"}}>
-            ⟶
-        </span>
+        <TablerIcon icon={ARROW_RIGHT_ICON} style={{padding: "0 4px"}} />
         <span style={{flexShrink: "0"}}>
             <AnkiLink />
         </span>
@@ -38,9 +38,7 @@ export const UpdateLineDisplay = ({note, graphName}: NoteLineProps) => (
         </span>
         {note.ankiId && (
             <>
-                <span className="px-1" style={{userSelect: "none"}}>
-                    ⟶
-                </span>
+                <TablerIcon icon={ARROW_RIGHT_ICON} style={{padding: "0 4px"}} />
                 <span style={{flexShrink: "0"}}>
                     <AnkiLink ankiId={note.ankiId} />
                 </span>
