@@ -1,2 +1,2 @@
-export {createLogger, updateLoggerLevels} from "./createLogger";
-export {LoggerCategory} from "./types";
+export {logger} from "./logger";
+export {resolveMinLogLevel} from "./resolveMinLogLevel";

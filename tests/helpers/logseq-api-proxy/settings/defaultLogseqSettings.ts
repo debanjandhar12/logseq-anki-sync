@@ -13,7 +13,7 @@ export const MOCK_LOGSEQ_SETTINGS: PluginSettings = {
     syncOverwriteList: ["Template", "Content", "Deck", "Tags", "Suspended"],
     inheritPropertiesFromTags: false,
     enableExperimentalWebSync: false,
-    debug: []
+    minimumLogLevel: "ERROR"
 };
 
 let defaultSettings: PluginSettings = MOCK_LOGSEQ_SETTINGS;

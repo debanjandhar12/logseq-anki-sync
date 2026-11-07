@@ -1,9 +1,7 @@
 import {useCallback, useEffect, useState} from "react";
-import {createLogger, LoggerCategory} from "../../../logger";
+import {logger} from "../../../logger";
 import {countOcclusionGroups} from "../utils/countOcclusionGroups";
 import {resolveOcclusionCount} from "../utils/resolveOcclusionCount";
-
-const logger = createLogger(LoggerCategory.Others);
 
 export function useOcclusionCount(blockId: string, value: unknown) {
     // Host reference objects may be freshly allocated even when their contents are unchanged.

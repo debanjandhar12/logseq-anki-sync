@@ -47,9 +47,6 @@ importers:
       cheerio:
         specifier: ^1.2.0
         version: 1.2.0
-      consola:
-        specifier: ^3.4.2
-        version: 3.4.2
       dependency-graph:
         specifier: ^1.0.0
         version: 1.0.0
@@ -101,6 +98,9 @@ importers:
       tesseract.js-core:
         specifier: ^7.0.0
         version: 7.0.0
+      tslog:
+        specifier: 5.4.0
+        version: 5.4.0
       tw-animate-css:
         specifier: 1.4.0
         version: 1.4.0
@@ -1953,10 +1953,6 @@ packages:
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
-  consola@3.4.2:
-    resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
-    engines: {node: ^14.18.0 || >=16.10.0}
-
   console-browserify@1.2.0:
     resolution: {integrity: sha512-ZMkYO/LkF17QvCPqM0gxw8yUzigAOZOSWSHg91FH6orS7vcEj5dVZTidN2fQ14yBSdg97RqhSNwLUXInd52OTA==}
 
@@ -3501,6 +3497,11 @@ packages:
 
   tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
+
+  tslog@5.4.0:
+    resolution: {integrity: sha512-LXFfS+Fc6L6FxDswCwagpnb3crfby/UuQpTMh0uZKuMI9ppdFn6fd7wpPV4begwVarhOwzLdUNpjW/LTBc8nbA==}
+    engines: {node: '>=22'}
+    hasBin: true
 
   tty-browserify@0.0.1:
     resolution: {integrity: sha512-C3TaO7K81YvjCgQH9Q1S3R3P3BtN3RIM8n+OvX4il1K1zgE8ZhI0op7kClgkxtutIE8hQrcrHBXvIheqKUUCxw==}
@@ -5595,8 +5596,6 @@ snapshots:
   concat-map@0.0.1:
     optional: true
 
-  consola@3.4.2: {}
-
   console-browserify@1.2.0: {}
 
   console-control-strings@1.1.0:
@@ -7284,6 +7283,8 @@ snapshots:
       punycode: 2.3.1
 
   tslib@2.6.2: {}
+
+  tslog@5.4.0: {}
 
   tty-browserify@0.0.1: {}
 

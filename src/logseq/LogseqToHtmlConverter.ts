@@ -23,7 +23,7 @@ import {
     ORG_MATH_BLOCK_REGEXP,
     specialChars
 } from "../constants";
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import type {PluginSettings} from "../settings";
 import objectHashOptimized from "../utils/objectHashOptimized";
 import pMemoize, {pMemoizeClear} from "../utils/pMemoizeWithClone";
@@ -46,8 +46,6 @@ import {
 import {LogseqPropertiesHelper} from "./LogseqPropertiesHelper";
 import {LogseqProxy} from "./LogseqProxy";
 import {WindowParentBridge} from "./WindowParentBridge";
-
-const logger = createLogger(LoggerCategory.LogseqContentConverter);
 
 const mldocsOptions = {
     toc: false,
@@ -87,7 +85,7 @@ export class LogseqToHtmlConverter {
             resultAssets = new Set<string>(),
             resultTags = new Set<string>();
 
-        logger.info("Start converting", {originalLength: resultContent.length});
+        logger.debug("Start converting", {originalLength: resultContent.length});
 
         // Preprocess content to normalize format (DB/MD/Org -> internal format)
         const preprocessResult = await LogseqToHtmlConverter.preprocess(
@@ -97,7 +95,7 @@ export class LogseqToHtmlConverter {
         resultContent = preprocessResult.content;
         const block_props = preprocessResult.properties;
 
-        logger.info("After preprocessing", {contentLength: resultContent.length});
+        logger.debug("After preprocessing", {contentLength: resultContent.length});
 
         if (format == "org") {
             mldocsOptions.format = "Org";
@@ -195,7 +193,7 @@ export class LogseqToHtmlConverter {
             }
         }
         resultContent = new TextDecoder().decode(resultUTF8);
-        logger.info("After replacing erroneous terms", {contentLength: resultContent.length});
+        logger.debug("After replacing erroneous terms", {contentLength: resultContent.length});
 
         // Process the block & page refs + embeds
         if (opts.processRefEmbeds)
@@ -244,7 +242,7 @@ export class LogseqToHtmlConverter {
                     );
                 }
             } catch (e) {
-                logger.warn(e);
+                logger.warn("Failed to highlight code block", e);
             }
         });
 
@@ -305,13 +303,13 @@ export class LogseqToHtmlConverter {
                 ? items.first().html()
                 : exportedContent.html();
         resultContent = decodeHTMLEntities(decodeHTMLEntities(html || ""));
-        logger.info("After Mldoc.export", {contentLength: resultContent.length});
+        logger.debug("After Mldoc.export", {contentLength: resultContent.length});
 
         // Bring back inline html content and clozes from hashmap
         for (const key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]);
         for (const key in hashmap) resultContent = safeReplace(resultContent, key, hashmap[key]);
 
-        logger.info("Conversion complete", {contentLength: resultContent.length});
+        logger.debug("Conversion complete", {contentLength: resultContent.length});
 
         return {html: resultContent, assets: resultAssets, tags: resultTags};
     }
@@ -364,7 +362,7 @@ export class LogseqToHtmlConverter {
                 try {
                     block = await LogseqToHtmlConverter.getBlock(g1, {includeChildren: true});
                 } catch (e) {
-                    logger.warn(e);
+                    logger.warn("Failed to load embedded block", {block: g1}, e);
                 }
                 const str = getRandomUnicodeString();
                 hashmap[str] =
@@ -412,7 +410,7 @@ export class LogseqToHtmlConverter {
                 try {
                     pageTree = await LogseqToHtmlConverter.getPageBlocksTree(pageId);
                 } catch (e) {
-                    logger.warn(e);
+                    logger.warn("Failed to load embedded page blocks", {pageId}, e);
                 }
 
                 const str = getRandomUnicodeString();
@@ -503,7 +501,7 @@ export class LogseqToHtmlConverter {
                     hashmap[str] =
                         `<span onclick="window.open('logseq://graph/${encodeURIComponent(graphName)}?block-id=${encodeURIComponent(blockUUID)}')" class="block-ref">${blockRefHTMLFile.html}</span>`;
                 } catch (e) {
-                    logger.warn(e);
+                    logger.warn("Failed to render block reference", {block: blockUUID}, e);
                     hashmap[str] = `<span class="failed-block-ref">${blockUUID}</span>`;
                 }
                 return str;
@@ -561,11 +559,14 @@ export class LogseqToHtmlConverter {
     ): Promise<Uint8Array> {
         const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
         if (content != node[0][1]) {
-            logger.error(
-                "Error: content mismatch html",
-                content,
-                resultContent.substring(start_pos, end_pos)
-            );
+            logger.warn("Inline HTML content mismatch", {start_pos, end_pos});
+            if (logger.isLevelEnabled("DEBUG")) {
+                logger.debug(
+                    "Inline HTML mismatch fragments",
+                    content,
+                    resultContent.substring(start_pos, end_pos)
+                );
+            }
         }
         const str = getRandomUnicodeString();
         hashmap[str] = content;
@@ -589,11 +590,14 @@ export class LogseqToHtmlConverter {
     ): Promise<Uint8Array> {
         const content = new TextDecoder().decode(resultUTF8.slice(start_pos, end_pos));
         if (content != node[0][1]) {
-            logger.error(
-                "Error: content mismatch hiccup",
-                content,
-                resultContent.substring(start_pos, end_pos)
-            );
+            logger.warn("Inline Hiccup content mismatch", {start_pos, end_pos});
+            if (logger.isLevelEnabled("DEBUG")) {
+                logger.debug(
+                    "Inline Hiccup mismatch fragments",
+                    content,
+                    resultContent.substring(start_pos, end_pos)
+                );
+            }
         }
         const str = getRandomUnicodeString();
         hashmap[str] = hiccupConverter.serialize(edn.decode(content));
@@ -624,7 +628,7 @@ export class LogseqToHtmlConverter {
         try {
             metadata = await edn.decode(node[0][1].metadata);
         } catch (e) {
-            logger.warn(e);
+            logger.warn("Failed to decode link metadata", e);
         }
         const link_full_text = node[0][1]?.full_text;
         const link_label_type = node[0][1]?.label?.[0]?.[0];
@@ -799,7 +803,9 @@ export class LogseqToHtmlConverter {
             if (page) {
                 return getNameFromPage(page) || String(pageId);
             }
-        } catch (e) {}
+        } catch (e) {
+            logger.warn("Failed to resolve page name; using page ID", {pageId}, e);
+        }
         return String(pageId);
     }
 

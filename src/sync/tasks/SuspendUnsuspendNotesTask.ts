@@ -2,11 +2,9 @@ import * as AnkiConnect from "../../anki-connect/AnkiConnect";
 import {AnkiNoteCache} from "../../anki-connect/internal/AnkiNoteCache";
 import type {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
 import type {Note} from "../../anki-notes/Note";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import type {ProgressNotification} from "../../ui";
 import {SuspendUnsuspendPropertyParser} from "../parsers/SuspendUnsuspendPropertyParser";
-
-const logger = createLogger(LoggerCategory.SyncInternal);
 
 export class SuspendUnsuspendNotesTask {
     async execute(
@@ -37,18 +35,22 @@ export class SuspendUnsuspendNotesTask {
                     cardsToUnsuspend.push(...cardIds);
                 }
             } catch (e) {
-                logger.error(`Error processing note ${note.uuid}`, e);
+                logger.error(
+                    "Failed to process note suspension state",
+                    {blockUUID: note.uuid, noteType: note.type},
+                    e
+                );
             }
         }
 
         // Batch execute suspend/unsuspend operations
         if (cardsToSuspend.length > 0) {
-            logger.info(`Suspending ${cardsToSuspend.length} cards`);
+            logger.debug(`Suspending ${cardsToSuspend.length} cards`);
             await AnkiConnect.suspend(cardsToSuspend);
         }
 
         if (cardsToUnsuspend.length > 0) {
-            logger.info(`Unsuspending ${cardsToUnsuspend.length} cards`);
+            logger.debug(`Unsuspending ${cardsToUnsuspend.length} cards`);
             await AnkiConnect.unsuspend(cardsToUnsuspend);
         }
 

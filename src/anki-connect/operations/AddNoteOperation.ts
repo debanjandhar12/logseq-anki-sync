@@ -1,11 +1,9 @@
 import _ from "lodash";
 import {ANKI_CLOZE_REGEXP} from "../../constants";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import * as AnkiConnect from "../AnkiConnect";
 import {AnkiActionQueue} from "../internal/AnkiActionQueue";
 import type {AddNotesResult, AnkiIdUuidPair, AnkiNoteFields, OperationFailure} from "../types";
-
-const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
 export class AddNoteOperation {
     private queue1: AnkiActionQueue = new AnkiActionQueue();
@@ -54,7 +52,7 @@ export class AddNoteOperation {
     }
 
     async execute(): Promise<AddNotesResult> {
-        logger.info("Executing add notes operation", this.queue1, this.queue2);
+        logger.debug("Executing add notes operation with queues", this.queue1, this.queue2);
 
         // Execute queue 1: Create notes with dummy content (required to do this due to anki bug where note creation fails otherwise)
         const result1 = await this.queue1.execute();
@@ -122,7 +120,11 @@ export class AddNoteOperation {
         this.uuidTypeQueue1 = [];
         this.uuidTypeQueue2 = [];
 
-        logger.info("Add notes operation completed", {successfulNotes, failedNotes});
+        logger.info("Add notes operation completed", {
+            successfulCount: successfulNotes.length,
+            failedCount: failedNotes.length
+        });
+        logger.debug("Add notes operation results", {successfulNotes, failedNotes});
         return {
             successfulNotes,
             failedNotes

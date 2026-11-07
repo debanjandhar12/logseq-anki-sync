@@ -2,7 +2,7 @@ import {Note} from "./Note";
 import "@logseq/libs";
 import type {BlockEntity, BlockUUID} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import {LogseqPropertiesHelper} from "../logseq/LogseqPropertiesHelper";
@@ -17,8 +17,6 @@ import {
     appendIdBasedExtrasToHtmlFile,
     createIdBasedExtraMarkers
 } from "./NoteUtils";
-
-const logger = createLogger(LoggerCategory.AnkiNotes);
 
 export class HighlightMaskNote extends Note {
     public type = "highlight_mask";
@@ -82,7 +80,7 @@ export class HighlightMaskNote extends Note {
             tags: []
         };
 
-        logger.info("Opening Highlight Mask Editor", highlightData);
+        logger.debug("Highlight mask editor data", {uuid, highlightData});
 
         // Get block tags
         const blockTags = _.get(fetchedBlock, "properties.tags", []) as string[];
@@ -166,9 +164,11 @@ export class HighlightMaskNote extends Note {
                     element
                 });
             } else {
-                logger.warn(
-                    `HighlightMask: Could not locate text "${element.text}" in block content.`
-                );
+                logger.warn("Could not locate highlight text in block content", {
+                    uuid: this.uuid,
+                    clozeId: element.cId
+                });
+                logger.debug("Unmatched highlight text", {uuid: this.uuid, text: element.text});
             }
         }
 
@@ -256,7 +256,7 @@ export class HighlightMaskNote extends Note {
             })
         );
 
-        logger.info("HighlightMaskNote Loaded", notes);
+        logger.debug("Highlight mask notes loaded", notes);
         let validNotes = (await Note.removeUnwantedNotes(
             notes.filter(Boolean) as Note[]
         )) as HighlightMaskNote[];

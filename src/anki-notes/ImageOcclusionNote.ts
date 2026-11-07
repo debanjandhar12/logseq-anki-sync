@@ -8,7 +8,7 @@ import {
     LOGSEQ_BLOCK_REF_REGEXP,
     MD_IMAGE_EMBEDED_REGEXP
 } from "../constants";
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
 import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
@@ -30,8 +30,6 @@ import {
     safeReplaceAsync
 } from "../utils/utils";
 import {appendExtraToHtmlFile, appendIdBasedExtrasToHtmlFile} from "./NoteUtils";
-
-const logger = createLogger(LoggerCategory.AnkiNotes);
 
 export type ImageToOcclusionDataHashMap = {[key: string]: OcclusionData};
 
@@ -88,12 +86,18 @@ export class ImageOcclusionNote extends Note {
             ImageOcclusionNote.upgradeProperties(
                 ObjectPropertyDataManager.load(fetchedBlock, "occlusion") || {}
             );
-        logger.info(imgToOcclusionDataHashMap);
+        logger.debug("Occlusion editor data before PDF migration", {
+            uuid,
+            imgToOcclusionDataHashMap
+        });
         imgToOcclusionDataHashMap = ImageOcclusionNote.migratePdfImages(
             imgToOcclusionDataHashMap,
             block_images
         );
-        logger.info(imgToOcclusionDataHashMap);
+        logger.debug("Occlusion editor data after PDF migration", {
+            uuid,
+            imgToOcclusionDataHashMap
+        });
         let selectedImage = null;
         const selectedImageIdx =
             block_images.length === 1
@@ -268,7 +272,7 @@ export class ImageOcclusionNote extends Note {
                 }
             })
         );
-        logger.info("ImageOcclusionNote Loaded", notes);
+        logger.debug("Image occlusion notes loaded", notes);
         notes = await Note.removeUnwantedNotes(notes as ImageOcclusionNote[]);
         notes = await Promise.all(
             _.map(notes, async (note: ImageOcclusionNote) => {
@@ -337,7 +341,7 @@ export class ImageOcclusionNote extends Note {
 
                     return getFirstNonEmptyLine(blockRef_content);
                 } catch (e) {
-                    logger.warn(e);
+                    logger.warn("Failed to resolve image block reference", {blockUUID}, e);
                 }
                 return match;
             }
@@ -372,7 +376,10 @@ export class ImageOcclusionNote extends Note {
                     try {
                         imageURLParams = new URLSearchParams(image.split("?")[1]);
                     } catch (_e) {}
-                    logger.info(image, imageURLParams.get("imageAnnotationBlockUUID"));
+                    logger.debug("Checking PDF image annotation for migration", {
+                        image,
+                        annotationBlockUUID: imageURLParams.get("imageAnnotationBlockUUID")
+                    });
                     if (
                         imageURLParams.get("imageAnnotationBlockUUID") &&
                         key.includes(imageURLParams.get("imageAnnotationBlockUUID"))
@@ -385,8 +392,8 @@ export class ImageOcclusionNote extends Note {
                 newImgToOcclusionDataHashMap[image.split("?")[0]] = imgToOcclusionDataHashMap[k];
             }
         });
-        logger.info(
-            "migratePdfImages",
+        logger.debug(
+            "PDF image occlusion migration data",
             block_images,
             imgToOcclusionDataHashMap,
             newImgToOcclusionDataHashMap

@@ -1,11 +1,9 @@
 import _ from "lodash";
 import type {Note} from "../../anki-notes/Note";
 import {LOGSEQ_PAGE_REF_REGEXP} from "../../constants";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 import {getLogseqBlockPropSafe} from "../../utils/utils";
-
-const logger = createLogger(LoggerCategory.SyncInternal);
 
 export class DeckParser {
     /**
@@ -39,7 +37,7 @@ export class DeckParser {
                 parentBlockUUID = _.get(parentBlock, "parent.id", null);
             }
         } catch (e) {
-            logger.error("[DeckParser] Error finding deck in block hierarchy:", e);
+            logger.warn("Could not resolve deck in block hierarchy", {blockUUID: note.uuid}, e);
         }
         return null;
     }
@@ -54,7 +52,7 @@ export class DeckParser {
                 if (deck != null) return deck;
             }
         } catch (e) {
-            logger.error("[DeckParser] Error finding deck in namespace hierarchy:", e);
+            logger.warn("Could not resolve deck in namespace hierarchy", {pageId: note.pageId}, e);
         }
         return null;
     }

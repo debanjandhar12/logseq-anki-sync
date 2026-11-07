@@ -1,14 +1,12 @@
 import type {BlockPropertiesRendererProps} from "@logseq/libs/dist/modules/LSPlugin.Experiments";
 import * as React from "react";
 import {createPortal} from "react-dom";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import {LogseqAppInfoFetcher} from "../../logseq/LogseqAppInfoFetcher";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import {HighlightMaskPropertyRenderer} from "./HighlightMaskPropertyRenderer";
 import {normalizeRendererProperties} from "./utils/normalizeRendererProperties";
-
-const logger = createLogger(LoggerCategory.Others);
 
 export function registerRenderer(isEnabled: () => boolean): () => void {
     let disposed = false;

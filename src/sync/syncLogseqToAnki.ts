@@ -17,7 +17,7 @@ import {
     getTemplateFront,
     getTemplateMediaFiles
 } from "../anki-template/AnkiCardTemplates";
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {WindowParentBridge} from "../logseq/WindowParentBridge";
@@ -35,8 +35,6 @@ import {DeleteNotesTask} from "./tasks/DeleteNotesTask";
 import {SuspendUnsuspendNotesTask} from "./tasks/SuspendUnsuspendNotesTask";
 import {UpdateNotesTask} from "./tasks/UpdateNotesTask";
 import type {SyncResult} from "./types";
-
-const logger = createLogger(LoggerCategory.SyncMain);
 
 export class LogseqToAnkiSync {
     static isSyncing: boolean;
@@ -81,7 +79,7 @@ export class LogseqToAnkiSync {
     private async performSync(): Promise<void> {
         this.graphName = await this.getGraphName();
         this.modelName = this.getModelName();
-        logger.success(`Starting Logseq to Anki Sync V${pkg.version} for graph ${this.graphName}`);
+        logger.info(`Starting Logseq to Anki Sync V${pkg.version} for graph ${this.graphName}`);
 
         await this.setupAnkiModel();
         const ankiNoteManager = await this.initializeAnkiNoteManager();
@@ -264,7 +262,7 @@ export class LogseqToAnkiSync {
                 try {
                     await LogseqProxy.Editor.upsertBlockProperty(note.uuid, "id", note.uuid);
                 } catch (e) {
-                    logger.error("Failed to persist block ID", e);
+                    logger.error("Failed to persist block ID", {blockUUID: note.uuid}, e);
                 }
             }
         }
@@ -450,7 +448,7 @@ export class LogseqToAnkiSync {
         if (Object.keys(failedDeleted).length > 0)
             summery += `\nFailed Deleted: ${Object.keys(failedDeleted).length} `;
 
-        logger.info("Sync summary", {
+        logger.debug("Synced note collections", {
             created: toCreateNotes,
             updated: toUpdateNotes,
             deleted: toDeleteNotes
@@ -475,13 +473,22 @@ export class LogseqToAnkiSync {
         );
 
         logger.info(summery);
-        if (Object.keys(failedCreated).length > 0) logger.error("Failed Created", failedCreated);
-        if (Object.keys(failedUpdated).length > 0) logger.error("Failed Updated", failedUpdated);
-        if (Object.keys(failedDeleted).length > 0) logger.error("Failed Deleted", failedDeleted);
+        if (Object.keys(failedCreated).length > 0) {
+            logger.error("Notes failed to create", {count: Object.keys(failedCreated).length});
+            logger.debug("Note creation failures", failedCreated);
+        }
+        if (Object.keys(failedUpdated).length > 0) {
+            logger.error("Notes failed to update", {count: Object.keys(failedUpdated).length});
+            logger.debug("Note update failures", failedUpdated);
+        }
+        if (Object.keys(failedDeleted).length > 0) {
+            logger.error("Notes failed to delete", {count: Object.keys(failedDeleted).length});
+            logger.debug("Note deletion failures", failedDeleted);
+        }
     }
 
     private completeSyncCleanup(): void {
         WindowParentBridge.dispatchLogseqAnkiSyncEvent("syncLogseqToAnkiComplete");
-        logger.info("Sync cleanup completed");
+        logger.debug("Sync cleanup completed");
     }
 }

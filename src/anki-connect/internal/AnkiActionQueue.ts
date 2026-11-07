@@ -1,9 +1,6 @@
 import {chunk, flatten} from "lodash";
-import {createLogger, LoggerCategory} from "../../logger";
 import * as AnkiConnect from "../AnkiConnect";
 import type {AnkiAction, AnkiActionResult} from "../types";
-
-const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
 export class AnkiActionQueue {
     private queue: AnkiAction[] = [];

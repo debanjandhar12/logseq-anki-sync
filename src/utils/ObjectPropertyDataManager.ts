@@ -1,10 +1,8 @@
 import type {BlockEntity} from "@logseq/libs/dist/LSPlugin";
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {LogseqAppInfoFetcher} from "../logseq/LogseqAppInfoFetcher";
 import {LogseqProxy} from "../logseq/LogseqProxy";
-
-const logger = createLogger(LoggerCategory.Others);
 
 /**
  * ObjectPropertyDataManager - Handles saving and loading object data

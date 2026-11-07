@@ -1,11 +1,8 @@
-import type {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
-import type {Note} from "../../anki-notes/Note";
-import {createLogger, LoggerCategory} from "../../logger";
-
-const logger = createLogger(LoggerCategory.SyncInternal);
-
 import _ from "lodash";
 import path from "path-browserify";
+import type {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
+import type {Note} from "../../anki-notes/Note";
+import {logger} from "../../logger";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import type {ProgressNotification} from "../../ui";
 import {NoteHashCalculator} from "../cache";
@@ -25,7 +22,11 @@ export class CreateNotesTask {
             try {
                 await this.createNote(note, modelName, graphName, ankiNoteManager);
             } catch (e) {
-                logger.error("Failed to create note", e);
+                logger.error(
+                    "Failed to prepare note for creation",
+                    {blockUUID: note.uuid, noteType: note.type},
+                    e
+                );
                 failedCreated[`${note.uuid}-${note.type}`] = e;
             }
             progressNotification.increment();
@@ -44,13 +45,17 @@ export class CreateNotesTask {
         }
 
         for (const failure of addResult.failedNotes) {
-            logger.error("Failed to add note", failure.error);
+            logger.error("Failed to add note", {identifier: failure.identifier}, failure.error);
             failedCreated[failure.identifier] = failure.error;
         }
 
         const secondAddResult = await ankiNoteManager.executeAddNotes();
         for (const failure of secondAddResult.failedNotes) {
-            logger.error("Failed to add note (second attempt)", failure.error);
+            logger.error(
+                "Failed to add note (second attempt)",
+                {identifier: failure.identifier},
+                failure.error
+            );
         }
 
         const succeeded = notes.filter((n) => !failedCreated[`${n.uuid}-${n.type}`]);

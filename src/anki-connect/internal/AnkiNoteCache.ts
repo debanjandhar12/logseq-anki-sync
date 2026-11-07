@@ -1,8 +1,6 @@
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import * as AnkiConnect from "../AnkiConnect";
 import type {AnkiNoteInfo} from "../types";
-
-const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
 export class AnkiNoteCache {
     private noteInfoMap: Map<number, AnkiNoteInfo> = new Map();
@@ -29,14 +27,14 @@ export class AnkiNoteCache {
             this.noteInfoMap.set(note.noteId, {...note, deck});
         }
 
-        logger.debug("noteInfoMap built", this.noteInfoMap);
+        logger.debug("Note cache built", {modelName, notes: this.noteInfoMap});
     }
 
     async buildMediaInfo(): Promise<void> {
         const mediaFileNames = await AnkiConnect.invoke("getMediaFilesNames", {});
         this.mediaInfo = new Set(mediaFileNames);
 
-        logger.debug("mediaInfo built", this.mediaInfo);
+        logger.debug("Media cache built", this.mediaInfo);
     }
 
     getNoteInfo(ankiId: number): AnkiNoteInfo | undefined {

@@ -1,13 +1,14 @@
-import {afterEach, expect, test, vi} from "vitest";
+import {afterEach, beforeEach, expect, test, vi} from "vitest";
+import {logger} from "../../../src/logger";
 import {LOGSEQ_THEME_VARIABLES} from "../../../src/ui/theme/constants";
 import {ThemeManager} from "../../../src/ui/theme/ThemeManager";
 
 vi.mock("../../../src/logger", () => ({
-    createLogger: () => ({warn: vi.fn(), error: vi.fn()}),
-    LoggerCategory: {UI: "UI"}
+    logger: {warn: vi.fn(), error: vi.fn()}
 }));
 
 afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => vi.clearAllMocks());
 
 test.each([
     {"--ls-primary-background-color": "#002b36", "--ls-popover-text-color": "#eee"},
@@ -35,6 +36,11 @@ test.each([
     body.style.setProperty("--ls-primary-background-color", "#123456");
     await ThemeManager.applyThemeToBody(body);
     expect(body.style.getPropertyValue("--ls-primary-background-color")).toBe("#123456");
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.error).not.toHaveBeenCalled();
+    if (result instanceof Error) {
+        expect(vi.mocked(logger.warn).mock.calls.some((args) => args.includes(result))).toBe(true);
+    }
 });
 
 test("the inventory covers host tokens in UI styles and every fallback branch", () => {

@@ -1,14 +1,12 @@
 import path from "path-browserify";
 import type {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
 import type {Note} from "../../anki-notes/Note";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import type {ProgressNotification} from "../../ui";
 import {NoteHashCalculator} from "../cache";
 import {parseNote} from "../parsers/NoteParser";
-
-const logger = createLogger(LoggerCategory.SyncInternal);
 
 export class UpdateNotesTask {
     async execute(
@@ -24,7 +22,11 @@ export class UpdateNotesTask {
             try {
                 await this.updateNote(note, modelName, graphName, ankiNoteManager);
             } catch (e) {
-                logger.error(e);
+                logger.error(
+                    "Failed to prepare note for update",
+                    {blockUUID: note.uuid, noteType: note.type},
+                    e
+                );
                 failedUpdated[`${note.uuid}-${note.type}`] = e;
             }
             progressNotification.increment();
@@ -32,7 +34,7 @@ export class UpdateNotesTask {
 
         const updateResult = await ankiNoteManager.executeUpdateNotes();
         for (const failure of updateResult.failedNotes) {
-            logger.error(failure.error);
+            logger.error("Failed to update note", {identifier: failure.identifier}, failure.error);
             failedUpdated[failure.identifier] = failure.error;
         }
 
@@ -94,7 +96,7 @@ export class UpdateNotesTask {
             ankiNoteManager.storeAsset(path.basename(asset), url);
         }
 
-        logger.info(`dependencyHash mismatch for note with id ${note.uuid}-${note.type}`);
+        logger.debug("Preparing note update", {blockUUID: note.uuid, noteType: note.type});
 
         ankiNoteManager.updateNote(
             ankiId,

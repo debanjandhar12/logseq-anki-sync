@@ -1,9 +1,7 @@
 // import { Addon } from "./Addon";
 // import { showLogseqAnkiFeatureExplorer } from "../ui/pages/LogseqAnkiFeatureExplorer";
 //
-// import { createLogger, LoggerCategory } from "../utils/logger";
 //
-// const logger = createLogger(LoggerCategory.Others);
 //
 // export class AnkiFeatureExplorer extends Addon {
 //     static _instance: AnkiFeatureExplorer;

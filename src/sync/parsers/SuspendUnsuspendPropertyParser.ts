@@ -1,10 +1,8 @@
 import _ from "lodash";
 import type {Note} from "../../anki-notes/Note";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 import {getLogseqBlockPropSafe} from "../../utils/utils";
-
-const logger = createLogger(LoggerCategory.SyncInternal);
 
 export class SuspendUnsuspendPropertyParser {
     /**
@@ -44,8 +42,9 @@ export class SuspendUnsuspendPropertyParser {
                 parentBlockUUID = _.get(parentBlock, "parent.id", null);
             }
         } catch (e) {
-            logger.error(
-                "[SuspendUnsuspendPropertyParser] Error finding suspend-anki-card in block hierarchy:",
+            logger.warn(
+                "Could not resolve suspend-anki-card in block hierarchy",
+                {blockUUID: note.uuid},
                 e
             );
         }
@@ -66,8 +65,9 @@ export class SuspendUnsuspendPropertyParser {
                     return SuspendUnsuspendPropertyParser.normalizeValue(suspendValue);
             }
         } catch (e) {
-            logger.error(
-                "[SuspendUnsuspendPropertyParser] Error finding suspend-anki-card in namespace hierarchy:",
+            logger.warn(
+                "Could not resolve suspend-anki-card in namespace hierarchy",
+                {pageId: note.pageId},
                 e
             );
         }

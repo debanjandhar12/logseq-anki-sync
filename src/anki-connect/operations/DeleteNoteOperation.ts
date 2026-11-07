@@ -1,8 +1,6 @@
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import {AnkiActionQueue} from "../internal/AnkiActionQueue";
 import type {DeleteNotesResult, OperationFailure} from "../types";
-
-const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
 export class DeleteNoteOperation {
     private queue: AnkiActionQueue = new AnkiActionQueue();
@@ -17,7 +15,7 @@ export class DeleteNoteOperation {
     }
 
     async execute(): Promise<DeleteNotesResult> {
-        logger.info("Executing delete notes operation", this.queue);
+        logger.debug("Executing delete notes operation with queue", this.queue);
 
         const result = await this.queue.execute();
 
@@ -39,7 +37,11 @@ export class DeleteNoteOperation {
         this.queue.clear();
         this.ankiIdQueue = [];
 
-        logger.info("Delete notes operation completed", {successfulNotes, failedNotes});
+        logger.info("Delete notes operation completed", {
+            successfulCount: successfulNotes.length,
+            failedCount: failedNotes.length
+        });
+        logger.debug("Delete notes operation results", {successfulNotes, failedNotes});
         return {successfulNotes, failedNotes};
     }
 }

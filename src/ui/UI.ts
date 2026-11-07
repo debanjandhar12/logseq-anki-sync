@@ -1,12 +1,10 @@
 import "./styles/main.css";
 
 import {createRoot, type Root} from "react-dom/client";
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {WindowBridge} from "../logseq/WindowBridge";
 import {ThemeManager} from "./theme/ThemeManager";
-
-const logger = createLogger(LoggerCategory.UI);
 
 interface ModalStackEntry {
     id: string;
@@ -194,7 +192,7 @@ export class UI {
     public static hideModal(modalId?: string) {
         try {
             if (UI.modalStack.length === 0) {
-                logger.warn("hideModal called but modal stack is empty");
+                logger.debug("hideModal called but modal stack is empty");
                 return;
             }
 
@@ -204,7 +202,7 @@ export class UI {
                 // Remove specific modal by ID
                 const index = UI.modalStack.findIndex((entry) => entry.id === modalId);
                 if (index === -1) {
-                    logger.warn(`Modal with ID ${modalId} not found in stack`);
+                    logger.debug(`Modal with ID ${modalId} not found in stack`);
                     return;
                 }
                 entryToRemove = UI.modalStack[index];

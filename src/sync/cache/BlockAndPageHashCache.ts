@@ -11,13 +11,11 @@
 import type {BlockUUID, PageIdentity} from "@logseq/libs/dist/LSPlugin";
 import {DepGraph} from "dependency-graph";
 import _ from "lodash";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import getLogseqContentDirectDependencies from "../../logseq/getLogseqContentDirectDependencies";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 import {WindowParentBridge} from "../../logseq/WindowParentBridge";
 import objectHashOptimized from "../../utils/objectHashOptimized";
-
-const logger = createLogger(LoggerCategory.SyncCacheLayer);
 
 let graph = new DepGraph();
 
@@ -128,7 +126,7 @@ export const getPageHash = async (pageId: number) => {
 // -- Maintain Cache State by using DB.onChanged --
 export const init = () => {
     WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
-        logger.info("Clearing dependency graph cache");
+        logger.debug("Clearing dependency graph cache");
         clearGraph();
     });
 };

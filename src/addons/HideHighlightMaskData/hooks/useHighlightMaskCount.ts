@@ -1,9 +1,7 @@
 import {useCallback, useEffect, useState} from "react";
-import {createLogger, LoggerCategory} from "../../../logger";
+import {logger} from "../../../logger";
 import {countHighlightMaskGroups} from "../utils/countHighlightMaskGroups";
 import {resolveHighlightMaskCount} from "../utils/resolveHighlightMaskCount";
-
-const logger = createLogger(LoggerCategory.Others);
 
 export function useHighlightMaskCount(blockId: string, value: unknown) {
     // Host reference objects may be freshly allocated even when their contents are unchanged.

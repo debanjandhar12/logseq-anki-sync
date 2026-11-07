@@ -1,10 +1,8 @@
 import _ from "lodash";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import * as AnkiConnect from "../AnkiConnect";
 import type {AnkiAction, AnkiActionResult, StoreAssetsResult} from "../types";
 import {getPathForPassingToAnki} from "./utils/getPathForPassingToAnki";
-
-const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
 interface AssetParams {
     filename: string;
@@ -20,7 +18,7 @@ export class AssetOperation {
     }
 
     async execute(): Promise<StoreAssetsResult> {
-        logger.info("Executing asset operation", this.queue);
+        logger.debug("Executing asset operation with queued assets", this.queue);
         const result: StoreAssetsResult = {successfulAssets: [], failedAssets: []};
         const batches = _.chunk(_.uniqBy(this.queue, "filename"), this.BATCH_SIZE);
         this.queue = [];
@@ -30,7 +28,15 @@ export class AssetOperation {
             for (const asset of assets) {
                 result.failedAssets.push({identifier: asset.path, error});
             }
-            logger.error("Error storing assets", {assets, error});
+            logger.error(
+                "Failed to store assets",
+                {
+                    count: assets.length,
+                    identifier: assets.length === 1 ? assets[0].path : undefined
+                },
+                error
+            );
+            logger.debug("Assets that failed to store", assets);
         };
 
         for (const currentBatch of batches) {
@@ -100,7 +106,11 @@ export class AssetOperation {
             }
         }
 
-        logger.info("Asset operation completed", result);
+        logger.info("Asset operation completed", {
+            successfulCount: result.successfulAssets.length,
+            failedCount: result.failedAssets.length
+        });
+        logger.debug("Asset operation results", result);
         return result;
     }
 

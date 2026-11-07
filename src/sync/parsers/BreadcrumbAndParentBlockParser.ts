@@ -2,11 +2,9 @@ import type {BlockEntity} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
 import type {Note} from "../../anki-notes/Note";
 import {ANKI_CLOZE_REGEXP, MD_PROPERTIES_REGEXP} from "../../constants";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import getNameFromPage from "../../logseq/getNameFromPage";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
-
-const logger = createLogger(LoggerCategory.SyncInternal);
 
 export class BreadcrumbAndParentBlockParser {
     static async parse(note: Note, graphName: string, tags: Set<string>): Promise<string> {
@@ -79,8 +77,9 @@ export class BreadcrumbAndParentBlockParser {
                     }">⚪${firstLine}</a>`;
                 }
             } catch (e) {
-                logger.error(
-                    "[BreadcrumbAndParentBlockParser] Error adding parent blocks to breadcrumb:",
+                logger.warn(
+                    "Could not include all parent blocks in breadcrumb",
+                    {blockUUID: note.uuid},
                     e
                 );
             }

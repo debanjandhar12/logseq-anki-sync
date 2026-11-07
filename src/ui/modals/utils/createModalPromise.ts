@@ -1,8 +1,6 @@
 import type React from "react";
-import {createLogger, LoggerCategory} from "../../../logger";
+import {logger} from "../../../logger";
 import {UI} from "../../UI";
-
-const logger = createLogger(LoggerCategory.UI);
 
 export interface ModalPromiseOptions {
     mountPath?: string;
@@ -45,7 +43,7 @@ export async function createModalPromise<T>(
             );
         } catch (e) {
             await logseq.UI.showMsg(errorMessage, "error");
-            logger.info(e);
+            logger.error(errorMessage, e);
             reject(e);
         }
     });

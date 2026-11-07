@@ -1,6 +1,4 @@
-import {createLogger, LoggerCategory} from "../../../logger";
-
-const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
+import {logger} from "../../../logger";
 
 /**
  * Convert Logseq SDK-resolved local asset URL into AnkiConnect's filesystem path.
@@ -43,7 +41,7 @@ export function getPathForPassingToAnki(source: string): string | null {
         if (!nativePath || nativePath.includes("\0")) throw new Error("Invalid native asset path");
         return nativePath;
     } catch (error) {
-        logger.error("Failed to resolve native asset path", {url: source, error});
+        logger.error("Failed to resolve native asset path", {url: source}, error);
         return null;
     }
 }

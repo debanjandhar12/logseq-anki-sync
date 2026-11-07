@@ -1,10 +1,8 @@
 import _ from "lodash";
 import type {Note} from "../../anki-notes/Note";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 import {getCaseInsensitive} from "../../utils/utils";
-
-const logger = createLogger(LoggerCategory.SyncInternal);
 
 export class TagParser {
     static async parse(note: Note, initialTags: string[]): Promise<string[]> {
@@ -32,7 +30,11 @@ export class TagParser {
                 parentBlockUUID = _.get(parentBlock, "parent.id", null);
             }
         } catch (e) {
-            logger.error("[TagParser] Error collecting tags from block hierarchy:", e);
+            logger.warn(
+                "Could not collect all tags from block hierarchy",
+                {blockUUID: note.uuid},
+                e
+            );
         }
         return tags;
     }
@@ -50,7 +52,11 @@ export class TagParser {
                 tags = [...tags, ...pageTags];
             }
         } catch (e) {
-            logger.error("[TagParser] Error collecting tags from namespace hierarchy:", e);
+            logger.warn(
+                "Could not collect all tags from namespace hierarchy",
+                {pageId: note.pageId},
+                e
+            );
         }
         return tags;
     }

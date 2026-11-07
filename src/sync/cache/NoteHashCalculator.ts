@@ -11,15 +11,13 @@ import _ from "lodash";
 import path from "path-browserify";
 import pkg from "../../../package.json";
 import type {Note} from "../../anki-notes/Note";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import getNameFromPage from "../../logseq/getNameFromPage";
 import getUUIDFromBlock from "../../logseq/getUUIDFromBlock";
 import {LogseqProxy} from "../../logseq/LogseqProxy";
 import objectHashOptimized from "../../utils/objectHashOptimized";
 import type {ParsedNoteData} from "../types";
 import {getBlockHash, getPageHash} from "./BlockAndPageHashCache";
-
-const logger = createLogger(LoggerCategory.SyncCacheLayer);
 
 export default class NoteHashCalculator {
     /**
@@ -38,7 +36,7 @@ export default class NoteHashCalculator {
                 throw new Error("Failed to load file list... likely called from web ver");
             }
         } catch (e) {
-            logger.error("Error getting asset modified times", e);
+            logger.warn("Could not collect all asset modification times", e);
         }
         return assetModifiedTimeMap;
     }
@@ -95,6 +93,8 @@ export default class NoteHashCalculator {
                 "skipOnDependencyHashMatch",
                 "lastWelcomeVersion",
                 "ankiFieldOptions",
+                "minimumLogLevel",
+                "enableExperimentalWebSync",
                 "debug"
             ])
         );

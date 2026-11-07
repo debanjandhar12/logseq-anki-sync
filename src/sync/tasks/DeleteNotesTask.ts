@@ -1,7 +1,5 @@
 import type {LazyAnkiNoteManager} from "../../anki-connect/LazyAnkiNoteManager";
-import {createLogger, LoggerCategory} from "../../logger";
-
-const logger = createLogger(LoggerCategory.SyncInternal);
+import {logger} from "../../logger";
 
 import type {ProgressNotification} from "../../ui";
 
@@ -20,7 +18,7 @@ export class DeleteNotesTask {
 
         const deleteResult = await ankiNoteManager.executeDeleteNotes();
         for (const failure of deleteResult.failedNotes) {
-            logger.error("Failed to delete note", failure.error);
+            logger.error("Failed to delete note", {identifier: failure.identifier}, failure.error);
             failedDeleted[failure.identifier] = failure.error;
         }
 

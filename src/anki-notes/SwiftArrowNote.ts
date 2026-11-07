@@ -2,15 +2,13 @@ import {Note} from "./Note";
 import "@logseq/libs";
 import type {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 import _ from "lodash";
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {LogseqContentPreprocessor} from "../logseq/LogseqContentPreprocessor";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {type HTMLFile, LogseqToHtmlConverterProxy} from "../logseq/LogseqToHtmlConverter";
 import {escapeClozesAndMacroDelimiters, getRandomUnicodeString, safeReplace} from "../utils/utils";
 import {appendExtraToHtmlFile} from "./NoteUtils";
-
-const logger = createLogger(LoggerCategory.AnkiNotes);
 
 export class SwiftArrowNote extends Note {
     public type = "swift_arrow";
@@ -36,7 +34,10 @@ export class SwiftArrowNote extends Note {
             clozedContent,
             this.format as "markdown" | "org"
         );
-        logger.info(clozedContent);
+        logger.debug("Swift arrow content before cloze conversion", {
+            uuid: this.uuid,
+            clozedContent
+        });
 
         // --- Add clozes ---
         const endDoubleBracket = getRandomUnicodeString();
@@ -117,7 +118,7 @@ export class SwiftArrowNote extends Note {
                 }
             })
         );
-        logger.info("SwiftArrowNote Blocks Loaded");
+        logger.debug("Swift arrow blocks loaded");
         notes = await Note.removeUnwantedNotes(notes);
         notes = _.filter(notes, (note) => {
             // Remove notes that do not genetate any clozes

@@ -1,6 +1,4 @@
-import {createLogger, LoggerCategory} from "../logger";
-
-const logger = createLogger(LoggerCategory.AnkiConnect);
+import {logger} from "../logger";
 
 const ANKI_PORT = 8765;
 
@@ -25,7 +23,7 @@ export function invoke(action: string, params = {}): any {
                 if (response.error) {
                     throw response.error;
                 }
-                logger.info("AnkiConnect.invoke", {action, params, response});
+                logger.debug("AnkiConnect invocation result", {action, params, response});
                 resolve(response.result);
             } catch (e) {
                 reject(e);
@@ -123,9 +121,15 @@ export async function createBackup(): Promise<any> {
     const timestamp = Date.now();
     const decknames = await invoke("deckNames", {});
     for (const deck of decknames) {
-        if (deck.includes("::") === false) { // if deck not a sub deck
-            const safeDeckName = deck.trim().replace(/[\s/]/g, "_").replace(/[<>:"/\\|?*\x00-\x1F]/g, '');
-            logger.info(`Created backup with name LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`);
+        if (deck.includes("::") === false) {
+            // if deck not a sub deck
+            const safeDeckName = deck
+                .trim()
+                .replace(/[\s/]/g, "_")
+                .replace(/[<>:"/\\|?*\x00-\x1F]/g, "");
+            logger.debug(
+                `Exporting backup to LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`
+            );
             await invoke("exportPackage", {
                 deck: deck,
                 path: `./LogseqAnkiSync-Backup-${timestamp}_${safeDeckName}.apkg`,
@@ -180,7 +184,7 @@ export async function upsertModel(
     } catch (e) {
         // Solves #1 by failing silenty, #1 was caused by AnkiConnect calling old Anki API but apprarenty even if it gives error, it works correctly.
         if (e === "save() takes from 1 to 2 positional arguments but 3 were given")
-            logger.error("Model template update error:", e);
+            logger.warn("Ignoring known model template update error", e);
         else throw e;
     }
 
@@ -207,7 +211,7 @@ export async function upsertModel(
     const updateTemplateFiles = await invoke("multi", {
         actions: storeTemplateFilesActions
     });
-    logger.info("Updated Template Files:", updateTemplateFiles);
+    logger.debug("Updated template files result", updateTemplateFiles);
 }
 
 export async function storeMediaFileByContent(filename: string, content: string): Promise<any> {
@@ -264,7 +268,7 @@ async function updateModelFieldsIfNeeded(
         return;
     }
 
-    logger.info(`Updating model fields for ${modelName}`, {
+    logger.debug(`Updating model fields for ${modelName}`, {
         current: currentFields,
         desired: desiredFields
     });
@@ -274,7 +278,7 @@ async function updateModelFieldsIfNeeded(
     try {
         await createBackup();
     } catch (e) {
-        logger.warn('Failed to take backup', e);
+        logger.warn("Failed to take backup", e);
     }
 
     // Add fields
@@ -285,7 +289,7 @@ async function updateModelFieldsIfNeeded(
                 modelName: modelName,
                 fieldName: fieldName
             });
-            logger.info(`Added field "${fieldName}" to model ${modelName}`);
+            logger.debug(`Added field "${fieldName}" to model ${modelName}`);
         } catch (e) {
             logger.error(`Failed to add field "${fieldName}" to model ${modelName}:`, e);
             throw e;
@@ -307,7 +311,7 @@ async function updateModelFieldsIfNeeded(
                     fieldName: fieldName,
                     index: i
                 });
-                logger.info(
+                logger.debug(
                     `Repositioned field "${fieldName}" to index ${i} in model ${modelName}`
                 );
                 // Update our local copy to reflect the repositioning
@@ -328,7 +332,7 @@ async function updateModelFieldsIfNeeded(
                 modelName: modelName,
                 fieldName: fieldName
             });
-            logger.info(`Removed field "${fieldName}" from model ${modelName}`);
+            logger.debug(`Removed field "${fieldName}" from model ${modelName}`);
         } catch (e) {
             logger.error(`Failed to remove field "${fieldName}" from model ${modelName}:`, e);
             throw e;

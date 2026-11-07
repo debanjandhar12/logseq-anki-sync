@@ -13,7 +13,7 @@ import {MultilineCardNote} from "./anki-notes/MultilineCardNote";
 import {Note} from "./anki-notes/Note";
 import {SwiftArrowNote} from "./anki-notes/SwiftArrowNote";
 import {ANKI_ICON} from "./constants";
-import {createLogger, LoggerCategory, updateLoggerLevels} from "./logger";
+import {logger} from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqHttpProxy} from "./logseq/LogseqHttpProxy";
 import {LogseqProxy} from "./logseq/LogseqProxy";
@@ -24,8 +24,6 @@ import {BlockAndPageHashCache} from "./sync/cache";
 import {LogseqToAnkiSync} from "./sync/syncLogseqToAnki";
 import {showButtonModal} from "./ui";
 import {UI} from "./ui/UI";
-
-const logger = createLogger(LoggerCategory.Others);
 
 async function main(baseInfo: LSPluginBaseInfo) {
     await LogseqHttpProxy.init();
@@ -46,7 +44,6 @@ async function main(baseInfo: LSPluginBaseInfo) {
         syncLogseqToAnki
     );
     registerToolbar(baseInfo);
-    updateLoggerLevels();
     await addSettingsToLogseq();
 
     // Init various modules
@@ -117,4 +114,4 @@ async function main(baseInfo: LSPluginBaseInfo) {
 }
 
 // Bootstrap
-logseq.ready(main).catch((e) => logger.error("Failed to initialize plugin", e));
+logseq.ready(main).catch((e) => logger.fatal("Failed to initialize plugin", e));

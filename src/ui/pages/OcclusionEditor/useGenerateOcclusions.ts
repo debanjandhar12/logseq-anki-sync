@@ -4,10 +4,8 @@ import {type RefObject, useState} from "react";
 import {createWorker, OEM, PSM, type Worker} from "tesseract.js";
 import workerPath from "tesseract.js/dist/worker.min.js?url";
 import corePath from "tesseract.js-core/tesseract-core-simd-lstm.wasm.js?url";
-import {createLogger, LoggerCategory} from "../../../logger";
+import {logger} from "../../../logger";
 import {createOcclusionRectEl} from "../../../utils/occlusionUtils";
-
-const logger = createLogger(LoggerCategory.Others);
 
 export function useGenerateOcclusions(
     fabricRef: RefObject<any>,
@@ -27,7 +25,7 @@ export function useGenerateOcclusions(
             });
             await worker.setParameters({tessedit_pageseg_mode: PSM.SPARSE_TEXT});
             const ret = await worker.recognize(imgEl.src, {}, {text: true, blocks: true});
-            logger.info(ret);
+            logger.debug("OCR recognition result", ret);
             let counter = 0;
             if (!ret.data.confidence || ret.data.confidence < 40)
                 throw new Error("AI failed to recognize the image");
@@ -91,13 +89,13 @@ export function useGenerateOcclusions(
                 saveCanvasState();
             }
         } catch (e) {
-            logger.error(e);
+            logger.error("Failed to generate occlusions", e);
             logseq.Editor.showMsg("Failed to generate occlusions", "error");
         } finally {
             try {
                 if (worker) await worker.terminate();
             } catch (e) {
-                logger.error(e);
+                logger.warn("Failed to terminate OCR worker", e);
             } finally {
                 setIsAIGeneratingOcclusion(false);
             }

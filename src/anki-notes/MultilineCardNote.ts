@@ -2,15 +2,13 @@ import {Note} from "./Note";
 import "@logseq/libs";
 import type {BlockUUID} from "@logseq/libs/dist/LSPlugin.user";
 import _ from "lodash";
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import type {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import getUUIDFromBlock from "../logseq/getUUIDFromBlock";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {type HTMLFile, LogseqToHtmlConverterProxy} from "../logseq/LogseqToHtmlConverter";
 import {escapeClozesAndMacroDelimiters} from "../utils/utils";
 import {appendExtraToHtmlFile} from "./NoteUtils";
-
-const logger = createLogger(LoggerCategory.AnkiNotes);
 
 export class MultilineCardNote extends Note {
     public type = "multiline_card";
@@ -318,7 +316,7 @@ export class MultilineCardNote extends Note {
                 }
             })
         );
-        logger.info("MultilineCardNote Loaded");
+        logger.debug("Multiline card notes loaded");
         notes = (await Note.removeUnwantedNotes(notes)) as MultilineCardNote[];
         notes = _.filter(notes, (note) => {
             // Retain only blocks whose children count > 0 or direction is expictly specifed or no other note type is being generated from that block

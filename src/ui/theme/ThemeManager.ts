@@ -1,7 +1,5 @@
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import {LOGSEQ_THEME_VARIABLES} from "./constants";
-
-const logger = createLogger(LoggerCategory.UI);
 
 /**
  * ThemeManager - Centralized theme variable management
@@ -23,7 +21,7 @@ export class ThemeManager {
             }
             return vals as Record<string, string>;
         } catch (error) {
-            logger.error("Failed to fetch theme variables:", error);
+            logger.warn("Failed to fetch theme variables; retaining existing styles", error);
             return null;
         }
     }

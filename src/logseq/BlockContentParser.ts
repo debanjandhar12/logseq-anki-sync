@@ -1,9 +1,7 @@
 import {Mldoc} from "mldoc";
 import {isAudio_REGEXP, isImage_REGEXP, isVideo_REGEXP} from "../constants";
 
-import {createLogger, LoggerCategory} from "../logger";
-
-const logger = createLogger(LoggerCategory.Others);
+import {logger} from "../logger";
 
 export class BlockContentParser {
     private static async _find(
@@ -49,9 +47,9 @@ export class BlockContentParser {
         const blockContentUTF8 = new TextEncoder().encode(blockContent); // Convert to utf8 array as mldocs outputs position according to utf8 https://github.com/logseq/mldoc/issues/120
         try {
             parsedJson = JSON.parse(parsedJson);
-        } catch {
+        } catch (e) {
             parsedJson = [];
-            logger.info("Error parsing block content");
+            logger.warn("Error parsing block content", e);
             logseq.UI.showMsg(
                 "LogseqWrapper.BlockContentParser.forEach: Error parsing block content",
                 "error"

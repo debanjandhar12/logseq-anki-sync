@@ -1,7 +1,5 @@
 import {ImageOcclusionNote} from "../../anki-notes/ImageOcclusionNote";
-import {createLogger, LoggerCategory} from "../../logger";
-
-const logger = createLogger(LoggerCategory.Others);
+import {logger} from "../../logger";
 
 export async function openEditor(blockId: string): Promise<void> {
     try {

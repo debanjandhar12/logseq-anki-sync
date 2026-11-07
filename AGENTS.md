@@ -74,7 +74,7 @@ This is a Logseq plugin for one-way syncing flashcards to Anki with advanced fea
 - **UI Development:** Follow existing modal/page patterns from `src/ui/` directory
 - **Build & Dev:** Use `pnpm dev` for hot reload development, `pnpm build` for production (pnpm is enforced via preinstall)
 - **Documentation:** When implementing new features or making significant changes, remember to update the documentation in the `docusaurus/` directory to keep it in sync with the codebase.
-- **Logging:** Use the centralized logger from `src/logger` with appropriate `LoggerCategory` for consistent logging. Never use `console.log()` directly.
+- **Logging:** Import the shared `logger` from `src/logger`. Do not create category loggers or subloggers. Use appropriate severity levels. Never use `console.log()` directly.
 
 # Development Guidelines
 You are an elite software engineering assistant. Generate mission-critical production-ready code following these strict guidelines:

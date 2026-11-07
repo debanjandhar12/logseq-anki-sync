@@ -9,7 +9,7 @@ import type {
     SettingSchemaDesc
 } from "@logseq/libs/dist/LSPlugin";
 import {Semaphore} from "async-mutex";
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import type {PluginSettings} from "../settings";
 import objectHashOptimized from "../utils/objectHashOptimized";
 import pMemoize, {pMemoizeClear} from "../utils/pMemoizeWithClone";
@@ -18,8 +18,6 @@ import {LogseqAppInfoFetcher} from "./LogseqAppInfoFetcher";
 import {LogseqNamespaceHelperProxy} from "./LogseqNamespaceHelper";
 import {LogseqPropertiesHelperProxy} from "./LogseqPropertiesHelper";
 import {WindowParentBridge} from "./WindowParentBridge";
-
-const logger = createLogger(LoggerCategory.LogseqWrappers);
 
 /***
  * This is a cached + synchronization-safe logseq api wrapper.
@@ -43,8 +41,15 @@ export namespace LogseqProxy {
                 try {
                     block = await LogseqPropertiesHelperProxy.getBlock(srcBlock, opts);
                 } catch (e) {
-                    logger.error(e);
-                    if (!opts.suppressErrors) throw e;
+                    if (!opts.suppressErrors) {
+                        logger.debug(
+                            "Failed to get block; propagating error",
+                            {block: srcBlock},
+                            e
+                        );
+                        throw e;
+                    }
+                    logger.warn("Failed to get block; returning null", {block: srcBlock}, e);
                 } finally {
                     getLogseqLock.release();
                 }
@@ -65,8 +70,11 @@ export namespace LogseqProxy {
                     // Use helper method to fetch page with properties
                     page = await LogseqPropertiesHelperProxy.getPage(srcPage);
                 } catch (e) {
-                    logger.error(e);
-                    if (!opts.suppressErrors) throw e;
+                    if (!opts.suppressErrors) {
+                        logger.debug("Failed to get page; propagating error", {page: srcPage}, e);
+                        throw e;
+                    }
+                    logger.warn("Failed to get page; returning null", {page: srcPage}, e);
                 } finally {
                     getLogseqLock.release();
                 }
@@ -86,8 +94,19 @@ export namespace LogseqProxy {
                 try {
                     pageBlockTree = await LogseqPropertiesHelperProxy.getPageBlocksTree(srcPage);
                 } catch (e) {
-                    logger.error(e);
-                    if (!opts.suppressErrors) throw e;
+                    if (!opts.suppressErrors) {
+                        logger.debug(
+                            "Failed to get page blocks; propagating error",
+                            {page: srcPage},
+                            e
+                        );
+                        throw e;
+                    }
+                    logger.warn(
+                        "Failed to get page blocks; returning empty list",
+                        {page: srcPage},
+                        e
+                    );
                 } finally {
                     getLogseqLock.release();
                 }
@@ -113,8 +132,19 @@ export namespace LogseqProxy {
                         includeLibrary
                     });
                 } catch (e) {
-                    logger.error(e);
-                    if (!suppressErrors) throw e;
+                    if (!suppressErrors) {
+                        logger.debug(
+                            "Failed to get parent namespace pages; propagating error",
+                            {pageId: page?.id},
+                            e
+                        );
+                        throw e;
+                    }
+                    logger.warn(
+                        "Failed to get parent namespace pages; returning empty list",
+                        {pageId: page?.id},
+                        e
+                    );
                 }
                 return [];
             },
@@ -131,8 +161,19 @@ export namespace LogseqProxy {
                 try {
                     descendants = await LogseqNamespaceHelperProxy.getNamespaceDescendants(page);
                 } catch (e) {
-                    logger.error(e);
-                    if (!opts.suppressErrors) throw e;
+                    if (!opts.suppressErrors) {
+                        logger.debug(
+                            "Failed to get namespace descendants; propagating error",
+                            {pageId: page?.id},
+                            e
+                        );
+                        throw e;
+                    }
+                    logger.warn(
+                        "Failed to get namespace descendants; returning empty list",
+                        {pageId: page?.id},
+                        e
+                    );
                 } finally {
                     getLogseqLock.release();
                 }
@@ -172,8 +213,19 @@ export namespace LogseqProxy {
                     ];
                     return segments.filter((s) => !!s).join("/");
                 } catch (e) {
-                    logger.error(e);
-                    if (!opts.suppressErrors) throw e;
+                    if (!opts.suppressErrors) {
+                        logger.debug(
+                            "Failed to get full page name; propagating error",
+                            {pageId: page?.id},
+                            e
+                        );
+                        throw e;
+                    }
+                    logger.warn(
+                        "Failed to get full page name; returning empty name",
+                        {pageId: page?.id},
+                        e
+                    );
                 }
                 return "";
             },
@@ -190,7 +242,7 @@ export namespace LogseqProxy {
             try {
                 await logseq.Editor.upsertBlockProperty(block, key, value);
             } catch (e) {
-                logger.error(e);
+                logger.error("Failed to upsert block property", {block, key}, e);
                 if (!opts.suppressErrors) throw e;
             } finally {
                 getLogseqLock.release();
@@ -206,7 +258,7 @@ export namespace LogseqProxy {
             try {
                 await logseq.Editor.removeBlockProperty(block, key);
             } catch (e) {
-                logger.error(e);
+                logger.error("Failed to remove block property", {block, key}, e);
                 if (!opts.suppressErrors) throw e;
             } finally {
                 getLogseqLock.release();
@@ -231,7 +283,7 @@ export namespace LogseqProxy {
                         : await logseq.Editor.createPage(tagName, {}, {redirect: false});
                 }
             } catch (e) {
-                logger.error(e);
+                logger.error("Failed to create tag if missing", {tagName}, e);
             } finally {
                 getLogseqLock.release();
             }
@@ -244,7 +296,7 @@ export namespace LogseqProxy {
                 if (!isDb) return; // upsertProperty does not work in non db version
                 await logseq.Editor.upsertProperty(key, schema);
             } catch (e) {
-                logger.error(e);
+                logger.error("Failed to register property", {key}, e);
             } finally {
                 getLogseqLock.release();
             }
@@ -260,8 +312,11 @@ export namespace LogseqProxy {
             try {
                 result = await logseq.DB.datascriptQuery(query);
             } catch (e) {
-                logger.error(e);
-                if (!opts.suppressErrors) throw e;
+                if (!opts.suppressErrors) {
+                    logger.debug("Failed to run Datascript query; propagating error", e);
+                    throw e;
+                }
+                logger.warn("Failed to run Datascript query; returning undefined", e);
             } finally {
                 getLogseqLock.release();
             }
@@ -322,7 +377,7 @@ export namespace LogseqProxy {
                 try {
                     files = await logseq.Assets.listFilesOfCurrentGraph(exts);
                 } catch (e) {
-                    logger.error(e);
+                    logger.warn("Failed to list graph files; returning empty list", {exts}, e);
                 } finally {
                     getLogseqLock.release();
                 }
@@ -380,7 +435,7 @@ export namespace LogseqProxy {
             }
         });
         WindowParentBridge.addEventListener("syncLogseqToAnkiComplete", () => {
-            logger.info(
+            logger.debug(
                 "Clearing memoization caches for getBlock, getPage, getPageBlocksTree, namespace helpers, listFilesOfCurrentGraph, and checkCurrentIsDbGraph"
             );
             pMemoizeClear(LogseqProxy.Editor.getBlock);

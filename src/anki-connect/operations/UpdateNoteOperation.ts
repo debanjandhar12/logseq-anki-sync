@@ -1,10 +1,8 @@
 import _ from "lodash";
-import {createLogger, LoggerCategory} from "../../logger";
+import {logger} from "../../logger";
 import {AnkiActionQueue} from "../internal/AnkiActionQueue";
 import type {AnkiNoteCache} from "../internal/AnkiNoteCache";
 import type {AnkiNoteFields, OperationFailure, UpdateNotesResult} from "../types";
-
-const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
 export class UpdateNoteOperation {
     private queue: AnkiActionQueue = new AnkiActionQueue();
@@ -65,7 +63,8 @@ export class UpdateNoteOperation {
                 noteinfo.fields[key as keyof typeof fields]?.value !==
                 fields[key as keyof typeof fields]
             ) {
-                logger.info("Field difference found", {
+                logger.debug("Field difference found", {
+                    ankiId,
                     key,
                     oldValue: noteinfo.fields[key as keyof typeof fields]?.value,
                     newValue: fields[key as keyof typeof fields]
@@ -92,11 +91,11 @@ export class UpdateNoteOperation {
     }
 
     async execute(): Promise<UpdateNotesResult> {
-        logger.info("Executing update notes operation", this.queue);
+        logger.debug("Executing update notes operation with queue", this.queue);
 
         const result = await this.queue.execute();
 
-        logger.info("Update notes operation completed", {resultCount: result.length});
+        logger.debug("Update notes action results received", {resultCount: result.length});
 
         const successfulNotes: string[] = [];
         const failedNotes: OperationFailure[] = [];
@@ -116,7 +115,11 @@ export class UpdateNoteOperation {
         this.queue.clear();
         this.uuidTypeQueue = [];
 
-        logger.info("Update notes operation completed", {successfulNotes, failedNotes});
+        logger.info("Update notes operation completed", {
+            successfulCount: successfulNotes.length,
+            failedCount: failedNotes.length
+        });
+        logger.debug("Update notes operation results", {successfulNotes, failedNotes});
         return {successfulNotes, failedNotes};
     }
 }

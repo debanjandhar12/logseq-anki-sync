@@ -1,15 +1,13 @@
 import ALERT_CIRCLE_ICON from "@tabler/icons/outline/alert-circle.svg?raw";
 import CIRCLE_CHECK_ICON from "@tabler/icons/outline/circle-check.svg?raw";
 import {getPathForPassingToAnki} from "../../../anki-connect/operations/utils/getPathForPassingToAnki";
-import {createLogger, LoggerCategory} from "../../../logger";
+import {logger} from "../../../logger";
 import {WindowParentBridge} from "../../../logseq/WindowParentBridge";
 import {LogseqTooltip} from "../../components/LogseqTooltip";
 import {TablerIcon} from "../../components/TablerIcon";
 import {ResultDisplayLink} from "./ResultDisplayLink";
 import {ResultSectionHeading} from "./ResultSectionHeading";
 import {SyncErrorDetailsLink} from "./SyncErrorDetailsLink";
-
-const logger = createLogger(LoggerCategory.UI);
 
 function getAssetFilename(sourceUrl: string): string {
     let pathname = sourceUrl;
@@ -35,7 +33,7 @@ function AssetResultLine({url, error}: {url: string; error?: Error}) {
             if (nativePath === null) throw new Error(`Unable to resolve local asset: ${url}`);
             await WindowParentBridge.openPath(nativePath);
         } catch (error) {
-            logger.error("Failed to open asset", {url, error});
+            logger.error("Failed to open asset", {url}, error);
             void logseq.UI.showMsg(
                 `Unable to open asset: ${error instanceof Error ? error.message : String(error)}`,
                 "warning"

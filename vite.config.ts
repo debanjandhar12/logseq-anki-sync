@@ -4,6 +4,7 @@ import {playwright} from "@vitest/browser-playwright";
 import {defineConfig, loadEnv} from "vite";
 import {nodePolyfills} from "vite-plugin-node-polyfills";
 import {bundleJSStringPlugin} from "./vite-plugins/bundleJSStringPlugin.ts";
+import {logSourceLocationPlugin} from "./vite-plugins/logSourceLocationPlugin.ts";
 import {logseqDevPlugin} from "./vite-plugins/logseqDevPlugin.ts";
 import {logseqReactBridgePlugin} from "./vite-plugins/logseqReactBridgePlugin/index.ts";
 import {rewriteDistReqToRootPlugin} from "./vite-plugins/rewriteDistReqToRootPlugin.ts";
@@ -43,6 +44,7 @@ export default defineConfig(({mode}) => {
             dedupe: ["react", "react-dom"]
         },
         plugins: [
+            logSourceLocationPlugin(),
             tailwindcss(),
             logseqReactBridgePlugin(),
             mode === "development" && logseqDevPlugin(), // for dev only
@@ -74,6 +76,13 @@ export default defineConfig(({mode}) => {
             }
         },
         build: {
+            rolldownOptions: {
+                output: {
+                    codeSplitting: {
+                        groups: [{name: "tslog", test: /[\\/]node_modules[\\/]tslog[\\/]/}]
+                    }
+                }
+            },
             sourcemap: true,
             target: "esnext",
             minify: "oxc",

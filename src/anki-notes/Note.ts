@@ -1,13 +1,11 @@
 import "@logseq/libs";
 import _ from "lodash";
 import type {LazyAnkiNoteManager} from "../anki-connect/LazyAnkiNoteManager";
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import type {DependencyEntity} from "../logseq/getLogseqContentDirectDependencies";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import type {HTMLFile} from "../logseq/LogseqToHtmlConverter";
 import {getLogseqBlockPropSafe} from "../utils/utils";
-
-const logger = createLogger(LoggerCategory.AnkiNotes);
 
 export abstract class Note {
     public uuid: string;
@@ -149,7 +147,13 @@ export abstract class Note {
                             parentBlockUUID = parentBlock?.parent?.id ?? null;
                         }
                     } catch (e) {
-                        logger.error(e);
+                        logger.warn(
+                            "Failed to check block hierarchy for disabled sync",
+                            {
+                                uuid: note.uuid
+                            },
+                            e
+                        );
                     }
 
                     if (isAnkiSyncDisabled === null) {
@@ -177,7 +181,14 @@ export abstract class Note {
                                 }
                             }
                         } catch (e) {
-                            logger.error(e);
+                            logger.warn(
+                                "Failed to check page hierarchy for disabled sync",
+                                {
+                                    uuid: note.uuid,
+                                    pageId: note.pageId
+                                },
+                                e
+                            );
                         }
                     }
 

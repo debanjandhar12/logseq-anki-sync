@@ -1,8 +1,9 @@
 import type {SettingSchemaDesc} from "@logseq/libs/dist/LSPlugin";
 import _ from "lodash";
+import {LogLevel, type TLogLevelName} from "tslog";
 import {AddonRegistry} from "./addons/AddonRegistry";
 import {DONATE_ICON} from "./constants";
-import {LoggerCategory, updateLoggerLevels} from "./logger";
+import {logger, resolveMinLogLevel} from "./logger";
 import {LogseqAppInfoFetcher} from "./logseq/LogseqAppInfoFetcher";
 import {LogseqProxy} from "./logseq/LogseqProxy";
 import {WindowParentBridge} from "./logseq/WindowParentBridge";
@@ -21,7 +22,7 @@ export interface PluginSettings {
     ankiFieldOptions?: ("furigana" | "kana" | "kanji" | "tts" | "tags" | "rtl")[];
     syncOverwriteList?: string[];
     inheritPropertiesFromTags?: boolean;
-    debug?: LoggerCategory[];
+    minimumLogLevel?: TLogLevelName;
     skipOnDependencyHashMatch?: boolean;
     lastWelcomeVersion?: string;
 }
@@ -166,17 +167,22 @@ export const addSettingsToLogseq = async () => {
             enumPicker: "checkbox"
         },
         {
-            key: "debug",
+            key: "minimumLogLevel",
             type: "enum",
-            default: [],
-            title: "Enable info-level logging for categories? (Recommended: None)",
-            enumChoices: Object.values(LoggerCategory),
-            enumPicker: "checkbox",
-            description:
-                "Select the categories to enable info-level logging for. Warnings and errors are always shown."
+            default: LogLevel[LogLevel.ERROR],
+            title: "Minimum Logging level (Recommended: WARN)",
+            enumChoices: Object.values(LogLevel).filter(
+                (level): level is TLogLevelName =>
+                    typeof level === "string" && LogLevel[level] >= LogLevel.DEBUG
+            ),
+            enumPicker: "select",
+            description: "Select minimum log level"
         }
     ];
     LogseqProxy.Settings.useSettingsSchema(settingsTemplate);
+    logger.setMinLevel(
+        resolveMinLogLevel(LogseqProxy.Settings.getPluginSettings()?.minimumLogLevel)
+    );
     const updateFallbackDeckNameVisibility = (settings: PluginSettings) => {
         logseq.provideStyle({
             key: "hide-standalone-page-deck-name",
@@ -216,9 +222,8 @@ export const addSettingsToLogseq = async () => {
                 WindowParentBridge.reloadPlugin(logseq.baseInfo.id);
             }
 
-            // Handle debug category changes - update logger levels
-            if (!_.isEqual(newSettings.debug, oldSettings.debug)) {
-                updateLoggerLevels();
+            if (newSettings.minimumLogLevel !== oldSettings.minimumLogLevel) {
+                logger.setMinLevel(resolveMinLogLevel(newSettings.minimumLogLevel));
             }
 
             // Handle overwriting list
@@ -298,6 +303,11 @@ export const addSettingsToLogseq = async () => {
         
         [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="donationHeading"].heading-item {
             border: none;
+        }
+
+        [data-id="${logseq.baseInfo.id}"] .cp__plugins-settings-inner [data-key="minimumLogLevel"] select {
+            width: 100%;
+            box-sizing: border-box;
         }
     `);
 

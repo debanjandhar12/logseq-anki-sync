@@ -1,10 +1,8 @@
 import "@logseq/libs";
 
-import {createLogger, LoggerCategory} from "../logger";
+import {logger} from "../logger";
 import {LogseqProxy} from "../logseq/LogseqProxy";
 import {WindowParentBridge} from "../logseq/WindowParentBridge";
-
-const logger = createLogger(LoggerCategory.Others);
 
 /**
  * This is base class for all addons of Logseq Anki Sync Plugin.
