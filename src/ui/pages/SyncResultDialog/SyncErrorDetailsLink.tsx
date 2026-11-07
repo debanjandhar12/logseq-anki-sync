@@ -2,14 +2,14 @@ import {createLogger, LoggerCategory} from "../../../logger";
 
 const logger = createLogger(LoggerCategory.UI);
 
-export function SyncErrorDetailsLink({noteKey, error}: {noteKey: string; error: Error}) {
+export function SyncErrorDetailsLink({identifier, error}: {identifier: string; error: Error}) {
     return (
         // biome-ignore lint/a11y/noStaticElementInteractions: preserve existing error-detail action semantics
         <a
             style={{fontSize: "14px", marginLeft: "5px"}}
             // biome-ignore lint/a11y/useValidAnchor: existing notification action, not URL navigation
             onClick={() => {
-                logger.info(`Error object for ${noteKey}:`, error);
+                logger.info(`Error object for ${identifier}:`, error);
                 logseq.UI.showMsg(
                     `Error: ${error?.message}\n\nStack trace:\n${error?.stack}`,
                     "warning",

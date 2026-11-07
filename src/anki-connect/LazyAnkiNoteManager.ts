@@ -8,6 +8,7 @@ import type {
     AnkiNoteFields,
     AnkiNoteInfo,
     DeleteNotesResult,
+    StoreAssetsResult,
     UpdateNotesResult
 } from "./types";
 
@@ -75,7 +76,7 @@ export class LazyAnkiNoteManager {
         return await this.deleteOperation.execute();
     }
 
-    async executeAssets(): Promise<void> {
-        await this.assetOperation.execute();
+    async executeAssets(): Promise<StoreAssetsResult> {
+        return await this.assetOperation.execute();
     }
 }

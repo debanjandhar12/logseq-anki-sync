@@ -45,7 +45,7 @@ export interface AnkiIdUuidPair {
 }
 
 export interface OperationFailure {
-    identifier: string | number; // either ankiId or uuid-type
+    identifier: string | number; // either ankiId or uuid-type or asset url
     error: Error;
 }
 
@@ -62,6 +62,11 @@ export interface UpdateNotesResult {
 export interface DeleteNotesResult {
     successfulNotes: number[]; // anki IDs
     failedNotes: OperationFailure[];
+}
+
+export interface StoreAssetsResult {
+    successfulAssets: string[]; // source asset URLs
+    failedAssets: OperationFailure[];
 }
 
 export type OperationType = "addNotes" | "updateNotes" | "deleteNotes" | "storeAssets";

@@ -5,6 +5,7 @@ import SUCCESS_ICON from "../../node_modules/@tabler/icons/icons/outline/circle-
 import pkg from "../../package.json";
 import * as AnkiConnect from "../anki-connect/AnkiConnect";
 import {LazyAnkiNoteManager} from "../anki-connect/LazyAnkiNoteManager";
+import type {StoreAssetsResult} from "../anki-connect/types";
 import {ClozeNote} from "../anki-notes/ClozeNote";
 import {HighlightMaskNote} from "../anki-notes/HighlightMaskNote";
 import {ImageOcclusionNote} from "../anki-notes/ImageOcclusionNote";
@@ -149,8 +150,8 @@ export class LogseqToAnkiSync {
         Object.assign(failedUpdated, result.failed);
     }
 
-    private async updateAssets(ankiNoteManager: LazyAnkiNoteManager): Promise<void> {
-        await ankiNoteManager.executeAssets();
+    private async updateAssets(ankiNoteManager: LazyAnkiNoteManager): Promise<StoreAssetsResult> {
+        return await ankiNoteManager.executeAssets();
     }
 
     private async deleteNotes(
@@ -387,7 +388,15 @@ export class LogseqToAnkiSync {
         }
 
         syncNotificationObj.updateMessage("Syncing logseq assets to anki...");
-        await this.updateAssets(ankiNoteManager);
+        const {successfulAssets, failedAssets: assetFailures} =
+            await this.updateAssets(ankiNoteManager);
+        const toCreateAssets = [
+            ...successfulAssets,
+            ...assetFailures.map(({identifier}) => String(identifier))
+        ];
+        const failedAssets = Object.fromEntries(
+            assetFailures.map(({identifier, error}) => [identifier, error])
+        );
         syncNotificationObj.increment(twentyPercent);
         await AnkiConnect.invoke("reloadCollection", {});
         syncNotificationObj.increment();
@@ -400,9 +409,11 @@ export class LogseqToAnkiSync {
             toCreateNotes,
             toUpdateNotes,
             toDeleteNotes,
+            toCreateAssets,
             failedCreated,
             failedUpdated,
-            failedDeleted
+            failedDeleted,
+            failedAssets
         };
     }
 

@@ -14,6 +14,7 @@ import {
 import {DeletedNotesSection} from "./DeletedNotesSection";
 import {ResultSectionHeading} from "./ResultSectionHeading";
 import {SyncErrorDetailsLink} from "./SyncErrorDetailsLink";
+import {SyncedAssetsSection} from "./SyncedAssetsSection";
 import {parseFailedNoteKey} from "./utils/parseFailedNoteKey";
 
 function NoteResultsSection({
@@ -65,7 +66,7 @@ function NoteResultsSection({
                             ⚠
                         </span>
                         <FailureLineDisplay note={note} graphName={graphName} />
-                        <SyncErrorDetailsLink noteKey={key} error={failures[key]} />
+                        <SyncErrorDetailsLink identifier={key} error={failures[key]} />
                     </span>
                 );
             })}
@@ -89,9 +90,11 @@ export const SyncResultDialogComponent: React.FC<SyncResultDialogProps> = ({
         toCreateNotes,
         toUpdateNotes,
         toDeleteNotes,
+        toCreateAssets,
         failedCreated,
         failedUpdated,
-        failedDeleted
+        failedDeleted,
+        failedAssets
     } = syncResult;
     const {open, setOpen} = useModal(resolve, {
         onClose: () => UI.hideModal(modalContext?.modalId),
@@ -140,6 +143,7 @@ export const SyncResultDialogComponent: React.FC<SyncResultDialogProps> = ({
                             failures={failedUpdated}
                             graphName={graphName}
                         />
+                        <SyncedAssetsSection assets={toCreateAssets} failures={failedAssets} />
                     </div>
                 </div>
             </div>
