@@ -68,6 +68,8 @@ export class AssetOperation {
                         recordFailures([asset], preparation.reason);
                     } else if (preparation.value !== null) {
                         preparedAssets.push({asset, action: preparation.value});
+                    } else { // already present in anki with same content
+                        result.successfulAssets.push(asset.path);
                     }
                 }
 
