@@ -65,7 +65,7 @@ export interface DeleteNotesResult {
 }
 
 export interface StoreAssetsResult {
-    successfulAssets: string[]; // source URLs uploaded or already matching Anki
+    successfulAssets: string[]; // source asset URLs
     failedAssets: OperationFailure[];
 }
 

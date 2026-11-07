@@ -26,7 +26,7 @@ export interface SyncResult {
     toUpdateNotes: Note[];
     /** Anki note IDs that were deleted or attempted to be deleted */
     toDeleteNotes: number[];
-    /** Source URLs of processed assets, including uploads, existing matches, and failures */
+    /** Source URLs of assets uploaded or attempted, excluding assets already matching Anki */
     toCreateAssets: string[];
     /** Map of failed create operations: key is "uuid-type", value is the error */
     failedCreated: {[key: string]: Error};
