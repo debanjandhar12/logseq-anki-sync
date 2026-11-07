@@ -2,7 +2,7 @@ import _ from "lodash";
 import {createLogger, LoggerCategory} from "../../logger";
 import * as AnkiConnect from "../AnkiConnect";
 import type {AnkiAction, AnkiActionResult, StoreAssetsResult} from "../types";
-import {getAnkiNativePath} from "./utils/getAnkiNativePath";
+import {getPathForPassingToAnki} from "./utils/getPathForPassingToAnki";
 
 const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 
@@ -124,7 +124,7 @@ export class AssetOperation {
             };
         }
 
-        const nativePath = getAnkiNativePath(asset.path);
+        const nativePath = getPathForPassingToAnki(asset.path);
         if (nativePath === null) {
             throw new Error(`Unable to read asset "${asset.filename}" from ${asset.path}.`);
         }

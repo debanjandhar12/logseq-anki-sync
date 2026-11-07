@@ -125,7 +125,7 @@ export const SyncResultDialogComponent: React.FC<SyncResultDialogProps> = ({
                     className="sm:flex sm:items-start"
                     style={{maxHeight: "60vh", overflowY: "auto", overflowX: "hidden"}}>
                     <div
-                        className="mt-3 sm:mt-0 ml-4 mr-4 flex"
+                        className="mt-3 sm:mt-0 ml-4 mr-4 pb-4 flex"
                         style={{width: "100%", flexDirection: "column"}}>
                         <NoteResultsSection
                             kind="Created"

@@ -1,5 +1,12 @@
+import {getPathForPassingToAnki} from "../../../anki-connect/operations/utils/getPathForPassingToAnki";
+import {createLogger, LoggerCategory} from "../../../logger";
+import {WindowParentBridge} from "../../../logseq/WindowParentBridge";
+import {LogseqTooltip} from "../../components/LogseqTooltip";
+import {ResultDisplayLink} from "./ResultDisplayLink";
 import {ResultSectionHeading} from "./ResultSectionHeading";
 import {SyncErrorDetailsLink} from "./SyncErrorDetailsLink";
+
+const logger = createLogger(LoggerCategory.UI);
 
 function getAssetFilename(sourceUrl: string): string {
     let pathname = sourceUrl;
@@ -18,6 +25,20 @@ function getAssetFilename(sourceUrl: string): string {
 }
 
 function AssetResultLine({url, error}: {url: string; error?: Error}) {
+    const isBrowserAsset = /^(https?:|blob:|data:)/i.test(url);
+    const openLocalAsset = async () => {
+        try {
+            const nativePath = getPathForPassingToAnki(url);
+            if (nativePath === null) throw new Error(`Unable to resolve local asset: ${url}`);
+            await WindowParentBridge.openPath(nativePath);
+        } catch (error) {
+            logger.error("Failed to open asset", {url, error});
+            void logseq.UI.showMsg(
+                `Unable to open asset: ${error instanceof Error ? error.message : String(error)}`,
+                "warning"
+            );
+        }
+    };
     return (
         <span className="inline-flex items-center flex-wrap" style={{fontSize: "14px"}}>
             <span
@@ -26,9 +47,13 @@ function AssetResultLine({url, error}: {url: string; error?: Error}) {
                 title={error ? "Sync Failed" : "Synced Successfully"}>
                 {error ? "⚠" : "✓"}
             </span>
-            <a className="ml-1 break-all" href={url} title={url} target="_blank" rel="noreferrer">
-                {getAssetFilename(url)}
-            </a>
+            <LogseqTooltip content={url}>
+                <ResultDisplayLink
+                    href={isBrowserAsset ? url : undefined}
+                    onClick={isBrowserAsset ? undefined : () => void openLocalAsset()}>
+                    {getAssetFilename(url)}
+                </ResultDisplayLink>
+            </LogseqTooltip>
             {error && <SyncErrorDetailsLink identifier={url} error={error} />}
         </span>
     );

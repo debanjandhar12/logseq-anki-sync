@@ -1,13 +1,12 @@
 import {createLogger, LoggerCategory} from "../../../logger";
+import {ResultDisplayLink} from "./ResultDisplayLink";
 
 const logger = createLogger(LoggerCategory.UI);
 
 export function SyncErrorDetailsLink({identifier, error}: {identifier: string; error: Error}) {
     return (
-        // biome-ignore lint/a11y/noStaticElementInteractions: preserve existing error-detail action semantics
-        <a
-            style={{fontSize: "14px", marginLeft: "5px"}}
-            // biome-ignore lint/a11y/useValidAnchor: existing notification action, not URL navigation
+        <ResultDisplayLink
+            variant="error"
             onClick={() => {
                 logger.info(`Error object for ${identifier}:`, error);
                 logseq.UI.showMsg(
@@ -17,21 +16,19 @@ export function SyncErrorDetailsLink({identifier, error}: {identifier: string; e
                 );
             }}>
             (show error details)
-        </a>
+        </ResultDisplayLink>
     );
 }
 
 export function DeleteErrorDetailsLink({errors}: {errors: Record<number, Error>}) {
     return (
-        // biome-ignore lint/a11y/noStaticElementInteractions: preserve existing error-detail action semantics
-        <a
-            style={{fontSize: "14px", marginLeft: "5px"}}
-            // biome-ignore lint/a11y/useValidAnchor: existing notification action, not URL navigation
+        <ResultDisplayLink
+            variant="error"
             onClick={() => {
                 logger.info("Error object for all failed deletes:", errors);
                 logseq.UI.showMsg(JSON.stringify(errors), "warning", {timeout: 0});
             }}>
             (show error details)
-        </a>
+        </ResultDisplayLink>
     );
 }

@@ -5,7 +5,7 @@ const logger = createLogger(LoggerCategory.LazyAnkiNoteManagerInternal);
 /**
  * Convert Logseq SDK-resolved local asset URL into AnkiConnect's filesystem path.
  */
-export function getAnkiNativePath(source: string): string | null {
+export function getPathForPassingToAnki(source: string): string | null {
     if (/^blob:/i.test(source)) {
         // DB-web blob URLs refer to browser storage, not files Anki can open.
         logger.error("Failed to read browser-backed asset", {url: source});
