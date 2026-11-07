@@ -1,5 +1,7 @@
+import X_ICON from "@tabler/icons/outline/x.svg?raw";
 import type React from "react";
 import {useContext} from "react";
+import {TablerIcon} from "../../components/TablerIcon";
 import {ModalTitleContext} from "./ModalTitleContext";
 
 export interface ModalHeaderProps {
@@ -30,18 +32,7 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
                         type="button"
                         className="ui__modal-close opacity-60 hover:opacity-100"
                         onClick={onClose}>
-                        <svg
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            className="h-6 w-6">
-                            <path
-                                d="M6 18L18 6M6 6l12 12"
-                                strokeWidth="2"
-                                strokeLinejoin="round"
-                                strokeLinecap="round"
-                            />
-                        </svg>
+                        <TablerIcon icon={X_ICON} size={24} aria-hidden="true" />
                     </button>
                 </div>
             )}
@@ -68,10 +59,7 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
     );
 };
 
-export const SimpleModalHeader: React.FC<{title: string; onClose?: () => void}> = ({
-    title,
-    onClose
-}) => {
+export const SimpleModalHeader: React.FC<{title: string; onClose?: () => void}> = ({title}) => {
     const titleId = useContext(ModalTitleContext);
     return (
         <div className="sm:flex sm:items-start">

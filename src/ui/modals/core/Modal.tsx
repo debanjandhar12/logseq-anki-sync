@@ -1,5 +1,7 @@
+import X_ICON from "@tabler/icons/outline/x.svg?raw";
 import FocusTrap from "focus-trap-react";
 import React, {type PropsWithChildren} from "react";
+import {TablerIcon} from "../../components/TablerIcon";
 import {UI} from "../../UI";
 import {ModalTitleContext} from "./ModalTitleContext";
 
@@ -86,18 +88,7 @@ export function Modal({
                                 type="button"
                                 className="text-gray-400 hover:text-gray-600 opacity-60 hover:opacity-100 transition-opacity cursor-pointer bg-transparent border-none"
                                 onClick={handleClose}>
-                                <svg
-                                    aria-hidden="true"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    className="h-6 w-6">
-                                    <path
-                                        d="M6 18L18 6M6 6l12 12"
-                                        strokeWidth="2"
-                                        strokeLinejoin="round"
-                                        strokeLinecap="round"></path>
-                                </svg>
+                                <TablerIcon icon={X_ICON} size={24} aria-hidden="true" />
                             </button>
                         </div>
                     )}

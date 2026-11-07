@@ -1,8 +1,11 @@
+import CHEVRON_UP_ICON from "@tabler/icons/outline/chevron-up.svg?raw";
+import HELP_ICON from "@tabler/icons/outline/help.svg?raw";
 import {useEffect, useState} from "react";
 import {LogseqButton} from "../../components/LogseqButton";
 import {LogseqCheckbox} from "../../components/LogseqCheckbox";
 import {LogseqPopover} from "../../components/LogseqPopover";
 import {LogseqTooltip} from "../../components/LogseqTooltip";
+import {TablerIcon} from "../../components/TablerIcon";
 
 export function SyncSettingsPopover() {
     const [skipOnHashMatch, setSkipOnHashMatch] = useState(true);
@@ -32,14 +35,14 @@ export function SyncSettingsPopover() {
                         onChange={() => setSkipOnHashMatch(!skipOnHashMatch)}>
                         Skip on hash match (
                         <LogseqTooltip content="When enabled, this will result in faster performance. However, sometimes this may lead to ignoring some changes.">
-                            ?
+                            <TablerIcon icon={HELP_ICON} size={14} aria-hidden="true" />
                         </LogseqTooltip>
                         )
                     </LogseqCheckbox>
                 </div>
             }>
             <LogseqButton color="outline-link" size="sm">
-                🢁
+                <TablerIcon icon={CHEVRON_UP_ICON} aria-hidden="true" />
             </LogseqButton>
         </LogseqPopover>
     );

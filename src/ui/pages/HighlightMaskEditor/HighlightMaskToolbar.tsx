@@ -1,3 +1,4 @@
+import HELP_ICON from "@tabler/icons/outline/help.svg?raw";
 import _ from "lodash";
 import type {Dispatch, SetStateAction} from "react";
 import HINT_ICON from "../../../../node_modules/@tabler/icons/icons/outline/bulb.svg?raw";
@@ -10,6 +11,7 @@ import {LogseqCheckbox} from "../../components/LogseqCheckbox";
 import {LogseqPopover} from "../../components/LogseqPopover";
 import {LogseqSelect} from "../../components/LogseqSelect";
 import {LogseqTooltip} from "../../components/LogseqTooltip";
+import {TablerIcon} from "../../components/TablerIcon";
 
 interface HighlightMaskToolbarProps {
     selected: boolean;
@@ -110,7 +112,7 @@ export function HighlightMaskToolbar({
                                 }>
                                 Hide All, Test One (
                                 <LogseqTooltip content="When enabled, hides all highlights including the one being tested during anki review.">
-                                    ?
+                                    <TablerIcon icon={HELP_ICON} size={14} aria-hidden="true" />
                                 </LogseqTooltip>
                                 )
                             </LogseqCheckbox>

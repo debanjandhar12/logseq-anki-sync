@@ -3,15 +3,15 @@ import type {FC} from "react";
 
 export const DEFAULT_TABLER_ICON_SIZE = 16;
 
-export interface TablerIconProps {
+export interface TablerIconProps extends React.HTMLAttributes<HTMLSpanElement> {
     /** Raw SVG string, e.g. imported via `import X_ICON from "@tabler/icons/outline/x.svg?raw"`. */
     icon?: string;
-    /** Rendered size in px. Defaults to 16, matching the `h-4 w-4` size of LogseqCheckbox. */
-    size?: number;
-    className?: string;
-    /** Native tooltip rendered on the wrapper span. */
-    title?: string;
-    style?: React.CSSProperties;
+    /**
+     * Rendered size. Numbers are pixels and default to 16, matching the `h-4 w-4`
+     * size of LogseqCheckbox. CSS length strings (e.g. "1em") pass through
+     * (same pattern as OcclusionPropertyRenderer's em sizing).
+     */
+    size?: number | string;
 }
 
 const TABLER_SVG_WIDTH_ATTR = 'width="24"';
@@ -28,7 +28,8 @@ export const TablerIcon: FC<TablerIconProps> = ({
     size = DEFAULT_TABLER_ICON_SIZE,
     className,
     title,
-    style
+    style,
+    ...rest
 }) => {
     if (!icon) return null;
     const sizedIcon = icon
@@ -45,6 +46,7 @@ export const TablerIcon: FC<TablerIconProps> = ({
                 userSelect: "none",
                 ...style
             }}
+            {...rest}
             // biome-ignore lint/security/noDangerouslySetInnerHtml: icon is a bundled @tabler/icons asset, not user content
             dangerouslySetInnerHTML={{__html: sizedIcon}}
         />
